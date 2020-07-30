@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="../../external/libxml2-2.7.2/chvalid.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/dict.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/encoding.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/entities.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/error.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/globals.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/hash.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/list.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/parser.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/parserInternals.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/SAX2.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/threads.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/tree.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/uri.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/valid.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/xmlIO.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/xmlmemory.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/xmlreader.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/xmlregexp.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/xmlsave.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/xmlstring.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/libxml2-2.7.2/xmlunicode.c">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{00000000-0000-0000-0000-000000000001}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

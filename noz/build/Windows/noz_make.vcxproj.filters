@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="../../tools/noz_make/main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../tools/noz_make/noz.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/BinaryReader.cpp">
+      <Filter>src\noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/BinaryWriter.cpp">
+      <Filter>src\noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/Directory.cpp">
+      <Filter>src\noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/File.cpp">
+      <Filter>src\noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/FileStream.cpp">
+      <Filter>src\noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/MemoryStream.cpp">
+      <Filter>src\noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/Path.cpp">
+      <Filter>src\noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/Stream.cpp">
+      <Filter>src\noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/StreamReader.cpp">
+      <Filter>src\noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/StreamWriter.cpp">
+      <Filter>src\noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/StringReader.cpp">
+      <Filter>src\noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/TextReader.cpp">
+      <Filter>src\noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/TextWriter.cpp">
+      <Filter>src\noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Text/String.cpp">
+      <Filter>src\noz\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Text/StringBuilder.cpp">
+      <Filter>src\noz\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Text/StringLexer.cpp">
+      <Filter>src\noz\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Text/Json/JsonArray.cpp">
+      <Filter>src\noz\Text\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Text/Json/JsonObject.cpp">
+      <Filter>src\noz\Text\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Text/Json/JsonReader.cpp">
+      <Filter>src\noz\Text\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Text/Json/JsonString.cpp">
+      <Filter>src\noz\Text\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Text/Json/JsonValue.cpp">
+      <Filter>src\noz\Text\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Text/Json/JsonWriter.cpp">
+      <Filter>src\noz\Text\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Editor/Tool/Makefile.cpp">
+      <Filter>src\noz\Editor\Tool</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueClass.cpp">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueFile.cpp">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueGen.cpp">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueLexer.cpp">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueMeta.cpp">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueParse.cpp">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueState.cpp">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueType.cpp">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueWrite.cpp">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Editor/Tool/ProjectGen/ProjectGen.cpp">
+      <Filter>src\noz\Editor\Tool\ProjectGen</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Editor/Tool/ProjectGen/VisualStudioProjectGen.cpp">
+      <Filter>src\noz\Editor\Tool\ProjectGen</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Editor/Tool/ProjectGen/XCodeProjectGen.cpp">
+      <Filter>src\noz\Editor\Tool\ProjectGen</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Boolean.cpp">
+      <Filter>src\noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Byte.cpp">
+      <Filter>src\noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Console.cpp">
+      <Filter>src\noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/DateTime.cpp">
+      <Filter>src\noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Environment.cpp">
+      <Filter>src\noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Float.cpp">
+      <Filter>src\noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Guid.cpp">
+      <Filter>src\noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Int32.cpp">
+      <Filter>src\noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Name.cpp">
+      <Filter>src\noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Object.cpp">
+      <Filter>src\noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/UInt32.cpp">
+      <Filter>src\noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsDirectory.cpp">
+      <Filter>src\noz\Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsFile.cpp">
+      <Filter>src\noz\Platform\Windows</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="../../src/noz/IO/BinaryReader.h">
+      <Filter>src\noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/BinaryWriter.h">
+      <Filter>src\noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/Directory.h">
+      <Filter>src\noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/DirectoryInfo.h">
+      <Filter>src\noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/File.h">
+      <Filter>src\noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/FileStream.h">
+      <Filter>src\noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/IO.h">
+      <Filter>src\noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/MemoryStream.h">
+      <Filter>src\noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/Path.h">
+      <Filter>src\noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/Stream.h">
+      <Filter>src\noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/StreamReader.h">
+      <Filter>src\noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/StreamWriter.h">
+      <Filter>src\noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/StringReader.h">
+      <Filter>src\noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/TextReader.h">
+      <Filter>src\noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/TextWriter.h">
+      <Filter>src\noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Text/String.h">
+      <Filter>src\noz\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Text/StringBuilder.h">
+      <Filter>src\noz\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Text/StringLexer.h">
+      <Filter>src\noz\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Text/StringObject.h">
+      <Filter>src\noz\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Text/Json/JsonArray.h">
+      <Filter>src\noz\Text\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Text/Json/JsonObject.h">
+      <Filter>src\noz\Text\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Text/Json/JsonReader.h">
+      <Filter>src\noz\Text\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Text/Json/JsonString.h">
+      <Filter>src\noz\Text\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Text/Json/JsonValue.h">
+      <Filter>src\noz\Text\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Text/Json/JsonWriter.h">
+      <Filter>src\noz\Text\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Editor/Tool/Makefile.h">
+      <Filter>src\noz\Editor\Tool</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueClass.h">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueEnum.h">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueFile.h">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueGen.h">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueLexer.h">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueMeta.h">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueMethod.h">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueParameter.h">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueProperty.h">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueState.h">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueType.h">
+      <Filter>src\noz\Editor\Tool\GlueGen</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Editor/Tool/ProjectGen/ProjectGen.h">
+      <Filter>src\noz\Editor\Tool\ProjectGen</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Editor/Tool/ProjectGen/VisualStudioProjectGen.h">
+      <Filter>src\noz\Editor\Tool\ProjectGen</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Editor/Tool/ProjectGen/XCodeProjectGen.h">
+      <Filter>src\noz\Editor\Tool\ProjectGen</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{00000000-0000-0000-0000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\noz">
+      <UniqueIdentifier>{00000000-0000-0000-0000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\noz\Editor">
+      <UniqueIdentifier>{00000000-0000-0000-0000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\noz\Editor\Tool">
+      <UniqueIdentifier>{00000000-0000-0000-0000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\noz\Editor\Tool\GlueGen">
+      <UniqueIdentifier>{00000000-0000-0000-0000-000000000005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\noz\Editor\Tool\ProjectGen">
+      <UniqueIdentifier>{00000000-0000-0000-0000-000000000006}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\noz\IO">
+      <UniqueIdentifier>{00000000-0000-0000-0000-000000000007}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\noz\Platform">
+      <UniqueIdentifier>{00000000-0000-0000-0000-000000000008}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\noz\Platform\Windows">
+      <UniqueIdentifier>{00000000-0000-0000-0000-000000000009}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\noz\Text">
+      <UniqueIdentifier>{00000000-0000-0000-0000-00000000000A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\noz\Text\Json">
+      <UniqueIdentifier>{00000000-0000-0000-0000-00000000000B}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

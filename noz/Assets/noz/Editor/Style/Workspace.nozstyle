@@ -1,0 +1,190 @@
+{
+    "Root": 1,
+    "Objects": [
+        
+        {
+            "_Id": 1,
+            "_Type": "noz::Style::Def",
+            "ControlType": "noz::Editor::Workspace",
+            "Nodes": [ 2, 3 ],
+            "Parts": [ 4, 5, 6, 7, 8, 9, 10, 11 ]
+        },
+        {
+            "_Id": 2,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#333333ff",
+            "Stretch": "Fill",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 3,
+            "_Type": "noz::DockManager",
+            "Components": [ ],
+            "Transform": 12,
+            "Children": [ 13, 14, 15, 16 ]
+        },
+        {
+            "_Id": 4,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "AssetsItem",
+            "Object": 17
+        },
+        {
+            "_Id": 5,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "ConsoleItem",
+            "Object": 18
+        },
+        {
+            "_Id": 6,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "DocumentManager",
+            "Object": 16
+        },
+        {
+            "_Id": 7,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "DockManager",
+            "Object": 3
+        },
+        {
+            "_Id": 8,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "InspectorDockItem",
+            "Object": 19
+        },
+        {
+            "_Id": 9,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "HierarchyDockItem",
+            "Object": 20
+        },
+        {
+            "_Id": 10,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "AnimationView",
+            "Object": 21
+        },
+        {
+            "_Id": 11,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "ToolBox",
+            "Object": 22
+        },
+        {
+            "_Id": 12,
+            "_Type": "noz::LayoutTransform",
+            "PaddingLeft": 6,
+            "PaddingRight": 6,
+            "PaddingTop": 6,
+            "PaddingBottom": 6
+        },
+        {
+            "_Id": 13,
+            "_Type": "noz::DockPane",
+            "Dock": "Bottom",
+            "Components": [ ],
+            "Children": [ 17, 18, 23 ]
+        },
+        {
+            "_Id": 14,
+            "_Type": "noz::DockPane",
+            "Dock": "Right",
+            "Components": [ ],
+            "Children": [ 19, 24 ]
+        },
+        {
+            "_Id": 15,
+            "_Type": "noz::DockPane",
+            "Components": [ ],
+            "Children": [ 20 ]
+        },
+        {
+            "_Id": 16,
+            "_Type": "noz::DocumentManager",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 17,
+            "_Type": "noz::DockItem",
+            "Sprite": "{ACE6FAFE-88B4-4DF2-B6CF-F83956F4711A}",
+            "Text": "Assets",
+            "Components": [ ],
+            "Name": "Assets",
+            "Children": [ 25 ]
+        },
+        {
+            "_Id": 18,
+            "_Type": "noz::DockItem",
+            "Sprite": "{85BD13E7-2F87-465C-8492-3B3D7138FB4F}",
+            "Text": "Console",
+            "Components": [ ],
+            "Name": "Console",
+            "Children": [ 26 ]
+        },
+        {
+            "_Id": 19,
+            "_Type": "noz::DockItem",
+            "Sprite": "{FFE7F1BE-FDA8-4D34-89DB-9305B1202DFB}",
+            "Text": "Inspector",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 20,
+            "_Type": "noz::DockItem",
+            "Sprite": "{1409AE1F-CA55-45EA-8FFD-E9CEFE55AFA8}",
+            "Text": "Heirarchy",
+            "Components": [ ],
+            "Visibility": "Collapsed",
+            "Children": [ ]
+        },
+        {
+            "_Id": 21,
+            "_Type": "noz::Editor::AnimationView",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 22,
+            "_Type": "noz::Editor::TypePicker",
+            "BaseType": "noz::Node",
+            "FilterEditorOnly": false,
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 23,
+            "_Type": "noz::DockItem",
+            "Sprite": "{16144FE1-4ACB-491A-B7E6-BD0A1305A6C9}",
+            "Text": "Animation",
+            "Components": [ ],
+            "Name": "Animation",
+            "Children": [ 21 ]
+        },
+        {
+            "_Id": 24,
+            "_Type": "noz::DockItem",
+            "Sprite": "{3DD2E97D-48CB-4DBD-8A18-0A122892CF52}",
+            "Text": "Toolbox",
+            "Components": [ ],
+            "Children": [ 22 ]
+        },
+        {
+            "_Id": 25,
+            "_Type": "noz::Editor::AssetBrowser",
+            "Components": [ ],
+            "Name": "ASSETS",
+            "Children": [ ]
+        },
+        {
+            "_Id": 26,
+            "_Type": "noz::Editor::ConsoleView",
+            "Components": [ ],
+            "Children": [ ]
+        }
+    ]
+}

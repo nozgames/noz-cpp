@@ -1,0 +1,81 @@
+{
+	"Organization" : "NoZ Games, LLC",
+
+	@Windows (
+		"Guid" : "34B84813-28E3-487D-BADE-FB2E1AD03C2D",
+		"SolutionGuid" : "57DD300C-ED7A-4A6E-86F9-3BA3876EF9AC",
+	)
+
+	"TargetType" : "Console",
+
+	# Project level build settings.
+	"DefaultConfiguration" : {
+		"IncludeDirectories" : [
+			"../tools/noz_make",
+			"../",
+			"../src"
+		],
+		"PrecompiledHeader" : "use",
+		"PrecompiledHeaderFile" : "noz.pch.h"
+	},
+
+	# Configurations
+	"Configurations" : {
+		"Debug" : { 
+			"PreprocessorDefinitions" : [
+				"NOZ_DEBUG",
+				"NOZ_LEAN"
+			],
+		},
+		"Release" : {
+			"Optimizations" : true,
+			"PreprocessorDefinitions" : [
+				"NOZ_LEAN"
+			],
+		},
+	},
+
+	"AutoGroupDirectory" : "../src",
+	"AutoGroupBase" : "src",
+
+	"Files" : [
+		{ "Path" : "../tools/noz_make" },
+
+		{ "Path" : "../src/noz/IO" },
+		{ "Path" : "../src/noz/Text" },
+		{ "Path" : "../src/noz/Text/Json" },
+		{ "Path" : "../src/noz/Editor/Tool/Makefile.cpp" },
+		{ "Path" : "../src/noz/Editor/Tool/Makefile.h" },
+		{ "Path" : "../src/noz/Editor/Tool/GlueGen" },
+		{ "Path" : "../src/noz/Editor/Tool/ProjectGen" },
+		{ "Path" : "../src/noz/Boolean.cpp" },
+		{ "Path" : "../src/noz/Byte.cpp" },
+		{ "Path" : "../src/noz/Console.cpp" },
+		{ "Path" : "../src/noz/DateTime.cpp" },
+		{ "Path" : "../src/noz/Environment.cpp" },
+		{ "Path" : "../src/noz/Float.cpp" },
+		{ "Path" : "../src/noz/Guid.cpp" },
+		{ "Path" : "../src/noz/Int32.cpp" },
+		{ "Path" : "../src/noz/Name.cpp" },
+		{ "Path" : "../src/noz/Object.cpp" },
+		{ "Path" : "../src/noz/UInt32.cpp" },
+
+		{ "Path" : "../src/noz/Text/Regex.cpp", "Excluded" : true },
+		{ "Path" : "../src/noz/Text/Regex.h", "Excluded" : true },
+
+		# Windows specific files
+		@WINDOWS(
+			{ "Path" : "../src/noz/Platform/Windows/WindowsDirectory.cpp" },
+			{ "Path" : "../src/noz/Platform/Windows/WindowsFile.cpp" },
+		)
+
+		# OSX specific files
+		@OSX(
+			{ "Path" : "../src/noz/Platform/OSX/OSXFile.cpp" },
+			{ "Path" : "../src/noz/Platform/OSX/OSXDirectory.cpp" },
+			{ "Path" : "../src/noz/Platform/OSX/OSXConsole.cpp" },
+		)
+		
+		{ "Path" :"../tools/noz_make/noz.cpp", "PrecompiledHeader" : "Create" }
+	],
+}

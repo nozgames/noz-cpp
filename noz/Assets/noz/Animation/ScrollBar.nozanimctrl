@@ -1,0 +1,1 @@
+{"Root": 1,"Objects": [{"_Id": 1,"_Type": "noz::AnimationController","Layers": [2]},{"_Id": 2,"_Type": "noz::AnimationLayer","States": [3,4,5]},{"_Id": 3,"_Type": "noz::AnimationState","Name": "Normal"},{"_Id": 4,"_Type": "noz::AnimationState","Name": "Hover"},{"_Id": 5,"_Type": "noz::AnimationState","Name": "Disabled","Animation": "{B836BECD-F67D-40B2-BA6D-175C4499BAAF}"}]}

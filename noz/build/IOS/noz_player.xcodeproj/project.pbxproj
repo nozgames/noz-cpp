@@ -1,0 +1,310 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		F14B505D1B2743150063476A /* libnoz_engine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F14B505A1B2743010063476A /* libnoz_engine.a */; };
+		F15500971B2F3C6A00BBE6CB /* noz_player.glue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F15500961B2F3C6A00BBE6CB /* noz_player.glue.cpp */; };
+		F1CC14A71B2775090018D2F4 /* noz_player.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F1CC14A31B2775090018D2F4 /* noz_player.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F14B50591B2743010063476A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F14B50541B2743010063476A /* noz_engine.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = F14B4EEE1B2722E70063476A;
+			remoteInfo = noz_engine;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F14B50381B2742BE0063476A /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		F14B503A1B2742BE0063476A /* libnoz_player.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libnoz_player.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		F14B50541B2743010063476A /* noz_engine.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = noz_engine.xcodeproj; sourceTree = "<group>"; };
+		F15500961B2F3C6A00BBE6CB /* noz_player.glue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = noz_player.glue.cpp; path = ../../src/player/noz_player.glue.cpp; sourceTree = "<group>"; };
+		F1CC14A31B2775090018D2F4 /* noz_player.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = noz_player.cpp; path = ../../src/player/noz_player.cpp; sourceTree = "<group>"; };
+		F1CC14A41B2775090018D2F4 /* noz_player.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = noz_player.h; path = ../../src/player/noz_player.h; sourceTree = "<group>"; };
+		F1CC14A51B2775090018D2F4 /* noz_player.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = noz_player.pch; path = ../../src/player/noz_player.pch; sourceTree = "<group>"; };
+		F1CC14A61B2775090018D2F4 /* noz_player.rc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = noz_player.rc; path = ../../src/player/noz_player.rc; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F14B50371B2742BE0063476A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F14B505D1B2743150063476A /* libnoz_engine.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		F14B50311B2742BE0063476A = {
+			isa = PBXGroup;
+			children = (
+				F1CC14A21B2774EE0018D2F4 /* src */,
+				F14B50541B2743010063476A /* noz_engine.xcodeproj */,
+				F14B503B1B2742BE0063476A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F14B503B1B2742BE0063476A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F14B503A1B2742BE0063476A /* libnoz_player.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F14B50551B2743010063476A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F14B505A1B2743010063476A /* libnoz_engine.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F1CC14A21B2774EE0018D2F4 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				F15500961B2F3C6A00BBE6CB /* noz_player.glue.cpp */,
+				F1CC14A31B2775090018D2F4 /* noz_player.cpp */,
+				F1CC14A41B2775090018D2F4 /* noz_player.h */,
+				F1CC14A51B2775090018D2F4 /* noz_player.pch */,
+				F1CC14A61B2775090018D2F4 /* noz_player.rc */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F14B50391B2742BE0063476A /* noz_player */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F14B504E1B2742BE0063476A /* Build configuration list for PBXNativeTarget "noz_player" */;
+			buildPhases = (
+				F14B50361B2742BE0063476A /* Sources */,
+				F14B50371B2742BE0063476A /* Frameworks */,
+				F14B50381B2742BE0063476A /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = noz_player;
+			productName = noz_player;
+			productReference = F14B503A1B2742BE0063476A /* libnoz_player.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F14B50321B2742BE0063476A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0630;
+				ORGANIZATIONNAME = "NoZ Games, LLC";
+				TargetAttributes = {
+					F14B50391B2742BE0063476A = {
+						CreatedOnToolsVersion = 6.3.2;
+					};
+				};
+			};
+			buildConfigurationList = F14B50351B2742BE0063476A /* Build configuration list for PBXProject "noz_player" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = F14B50311B2742BE0063476A;
+			productRefGroup = F14B503B1B2742BE0063476A /* Products */;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = F14B50551B2743010063476A /* Products */;
+					ProjectRef = F14B50541B2743010063476A /* noz_engine.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				F14B50391B2742BE0063476A /* noz_player */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		F14B505A1B2743010063476A /* libnoz_engine.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libnoz_engine.a;
+			remoteRef = F14B50591B2743010063476A /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F14B50361B2742BE0063476A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F15500971B2F3C6A00BBE6CB /* noz_player.glue.cpp in Sources */,
+				F1CC14A71B2775090018D2F4 /* noz_player.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		F14B504C1B2742BE0063476A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = NO;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+					NOZ_IOS,
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					../../src/player,
+					../../src/engine,
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 8.3;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		F14B504D1B2742BE0063476A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = NO;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = NOZ_IOS;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					../../src/player,
+					../../src/engine,
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 8.3;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		F14B504F1B2742BE0063476A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		F14B50501B2742BE0063476A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F14B50351B2742BE0063476A /* Build configuration list for PBXProject "noz_player" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F14B504C1B2742BE0063476A /* Debug */,
+				F14B504D1B2742BE0063476A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F14B504E1B2742BE0063476A /* Build configuration list for PBXNativeTarget "noz_player" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F14B504F1B2742BE0063476A /* Debug */,
+				F14B50501B2742BE0063476A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F14B50321B2742BE0063476A /* Project object */;
+}

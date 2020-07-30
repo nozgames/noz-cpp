@@ -1,0 +1,15 @@
+{
+    "Root": 1,
+    "Objects": [
+        {
+            "_Id": 1,
+            "_Type": "noz::EditorSettings",
+            "Makefile": "build/FarmerZ.nozmake",
+            "AssetDirectories": [
+                "Assets",
+                "noz/Assets"
+            ],
+            "EditorScene": "{57462A02-4019-4DDA-A301-C8AC29BA1D81}"
+        }
+    ]
+}

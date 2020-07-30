@@ -1,0 +1,50 @@
+{
+	PROJECT_DIR: @WINDOWS("Windows") @IOS("IOS") @OSX("OSX"),
+
+	ORGANIZATION : "NoZ Games, LLC",
+
+	@WINDOWS(GUID : "8DBE4FDB-FCDF-4C6D-8B06-575BCBF90BB7",)
+
+	TARGET_TYPE : LIB,
+
+	# Project level build settings.
+	DEFAULT_CONFIGURATION: {
+		WARNINGS : NO,
+		INCLUDE_DIRECTORIES : [
+			"../external/lpng163",
+			"../external/zlib-1.2.8"
+		],
+		PREPROCESSOR_DEFINITIONS : [
+			@WINDOWS("_CRT_SECURE_NO_WARNINGS",)
+			COMPILED_FROM_DSP,
+			XML_STATIC
+		],
+	},
+
+	# Configurations
+	CONFIGURATIONS : {
+		Debug : { 
+		},
+		Release : {
+			OPTIMIZATIONS: YES,
+		},
+	},
+
+	FILES : [
+		{ PATH:"../external/lpng163/png.c" },
+		{ PATH:"../external/lpng163/pngerror.c" },
+		{ PATH:"../external/lpng163/pngget.c" },
+		{ PATH:"../external/lpng163/pngmem.c" },
+		{ PATH:"../external/lpng163/pngpread.c" },
+		{ PATH:"../external/lpng163/pngread.c" },
+		{ PATH:"../external/lpng163/pngrio.c" },
+		{ PATH:"../external/lpng163/pngrtran.c" },
+		{ PATH:"../external/lpng163/pngrutil.c" },
+		{ PATH:"../external/lpng163/pngset.c" },
+		{ PATH:"../external/lpng163/pngtrans.c" },
+		{ PATH:"../external/lpng163/pngwio.c" },
+		{ PATH:"../external/lpng163/pngwrite.c" },
+		{ PATH:"../external/lpng163/pngwtran.c" },
+		{ PATH:"../external/lpng163/pngwutil.c" },
+	],
+}

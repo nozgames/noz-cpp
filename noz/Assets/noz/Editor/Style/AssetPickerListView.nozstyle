@@ -1,0 +1,51 @@
+{
+    "Root": 1,
+    "Objects": [
+        {
+            "_Id": 1,
+            "_Type": "noz::Style::Def",
+            "Nodes": [ 100 ],
+            "ControlType": "noz::ListView",
+            "Parts": [ 2, 3 ]
+        },
+        {
+            "_Id": 2,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "ItemsContainer",
+            "Object": 200
+        },
+        {
+            "_Id": 3,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "ScrollView",
+            "Object": 120
+        },
+
+        {
+            "_Id": 100,
+            "_Type": "noz::DockLayout",
+            "Children": [ 130, 120 ],
+            "Dock": "Right",
+            "Spacing": 2
+        },
+
+        {
+            "_Id": 130,
+            "_Type": "noz::ScrollBar",
+            "Style": "{9F22093B-4C77-4FE6-8C2C-B71CBDEB1074}"
+        },
+
+        {
+            "_Id": 120,
+            "_Type": "noz::ScrollView",
+            "Children": [ 200 ],
+            "VerticalScrollBar": 130,
+            "VerticalScrollBarVisibility": "Auto"
+        },
+
+        {
+            "_Id": 200,
+            "_Type": "noz::StackLayout"
+        }
+    ]
+}

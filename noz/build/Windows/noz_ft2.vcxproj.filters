@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/basepic.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftadvanc.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftapi.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftbbox.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftbdf.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftbitmap.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftcalc.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftcid.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftdbgmem.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftdebug.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftfstype.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftgasp.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftgloadr.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftglyph.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftgxval.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftinit.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftlcdfil.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftmm.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftobjs.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftotval.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftoutln.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftpatent.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftpfr.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftpic.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftrfork.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftsnames.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftstream.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftstroke.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftsynth.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftsystem.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/fttrigon.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/fttype1.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftutil.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftwinfnt.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/ftxf86.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/base/md5.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/bzip2/ftbzip2.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cf2arrst.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cf2blues.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cf2error.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cf2font.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cf2ft.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cf2hints.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cf2intrp.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cf2read.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cf2stack.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cffcmap.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cffdrivr.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cffgload.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cffload.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cffobjs.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cffparse.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/cff/cffpic.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/pshinter/pshalgo.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/pshinter/pshglob.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/pshinter/pshmod.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/pshinter/pshpic.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/pshinter/pshrec.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/psnames/psmodule.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/psnames/pspic.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/raster/ftraster.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/raster/ftrend1.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/raster/rastpic.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/sfnt/pngshim.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/sfnt/sfdriver.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/sfnt/sfntpic.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/sfnt/sfobjs.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/sfnt/ttbdf.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/sfnt/ttcmap.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/sfnt/ttkern.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/sfnt/ttload.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/sfnt/ttmtx.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/sfnt/ttpost.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/sfnt/ttsbit.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/smooth/ftgrays.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/smooth/ftsmooth.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/smooth/ftspic.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/truetype/ttdriver.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/truetype/ttgload.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/truetype/ttgxvar.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/truetype/ttinterp.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/truetype/ttobjs.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/truetype/ttpic.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/truetype/ttpload.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../external/freetype-2.5.0.1/src/truetype/ttsubpix.c">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{00000000-0000-0000-0000-000000000001}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

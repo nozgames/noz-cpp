@@ -1,0 +1,77 @@
+{
+	PROJECT_DIR: @WINDOWS("Windows") @IOS("IOS") @OSX("OSX"),
+
+	ORGANIZATION : "NoZ Games, LLC",
+
+	@WINDOWS(
+		GUID : "1B4F434E-2DB9-4E90-B5D9-D5DE2FFAC430",
+		SOLUTION_GUID : "B67766A2-9A6E-4CF7-AF75-361FE82E9B59",
+	)
+
+	TARGET_TYPE : CONSOLE,
+
+	# Project level build settings.
+	DEFAULT_CONFIGURATION: {
+		@WINDOWS(
+			INT_DIR : "../output/$(Configuration)/noz_xml2",
+			OUT_DIR : "../bin/$(Configuration)/",
+		)
+		@IOS(
+			INT_DIR : "../output/$(PLATFORM_NAME)/$(CONFIGURATION)/noz_glue",
+			OUT_DIR : "../bin/$(PLATFORM_NAME)/$(CONFIGURATION)/",
+		)
+		@OSX(
+			INT_DIR : "../output/$(PLATFORM_NAME)/$(CONFIGURATION)/noz_glue",
+			OUT_DIR : "../bin/$(PLATFORM_NAME)",
+		)	
+
+		TARGET_TYPE: CONSOLE,
+		TARGET_NAME: @WINDOWS(noz_glue.exe) @IOS(noz_glue) @OSX(noz_glue),
+		INCLUDE_DIRECTORIES : [
+			"../src",
+			"../tools/noz_glue",
+		],
+		LIBRARIES : [
+			@WINDOWS(rpcrt4.lib)
+		],
+		PREPROCESSOR_DEFINITIONS : [
+			"NOZ_LEAN",
+			@WINDOWS("_CRT_SECURE_NO_WARNINGS",)
+			@WINDOWS("NOZ_WIN",)
+			@IOS("NOZ_IOS",)
+			@OSX("NOZ_OSX",)
+		],
+		PRECOMPILED_HEADER : USE,
+		PRECOMPILED_HEADER_FILE : noz_glue.pch,
+	},
+
+	# Configurations
+	CONFIGURATIONS : {
+		Debug : { 
+			GLUE : noz.glue.cpp,
+			PREPROCESSOR_DEFINITIONS : [
+				"NOZ_DEBUG",
+			],
+		},
+		Release : {
+			GLUE : noz.glue.cpp,
+			OPTIMIZATIONS: YES,
+		},
+	},
+
+	FILES : [
+		{ PATH:"../tools/noz_glue" },
+			
+		{ 
+			PATH:"../tools/noz_glue/noz_glue.cpp",
+			DEFAULT_CONFIGURATION : {
+				PRECOMPILED_HEADER : CREATE
+			}
+		}
+	],
+
+	# List of all references
+	REFERENCES : [
+		{ PATH: noz_lean.nozmake },
+	]
+}

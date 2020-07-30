@@ -1,0 +1,1 @@
+{"Root": 1,"Objects": [{"_Id": 1,"_Type": "noz::AnimationController","Layers": [2]},{"_Id": 2,"_Type": "noz::AnimationLayer","Name": "Empty","States": [3,4]},{"_Id": 3,"_Type": "noz::AnimationState","Name": "Empty","Animation": "{B98F5C84-8334-4B28-BE7F-54157DAF97EE}"},{"_Id": 4,"_Type": "noz::AnimationState","Name": "NotEmpty"}]}

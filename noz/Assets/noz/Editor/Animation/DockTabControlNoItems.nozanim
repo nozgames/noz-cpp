@@ -1,0 +1,50 @@
+{
+    "Root": 1,
+    "Objects": [
+        {
+            "_Id": 1,
+            "_Type": "noz::Animation",
+            "Tracks": [ 100, 200, 300 ]
+        },
+
+        {
+            "_Id": 100,
+            "_Type": "noz::AnimationTrack",
+            "TargetProperty": "Visibility",
+            "TargetName": "ITEMS",
+            "KeyFrames": [ 101 ]
+        },
+        {
+            "_Id": 101,
+            "_Type": "noz::EnumKeyFrame",
+            "Value": "Collapsed"
+        },
+
+        {
+            "_Id": 200,
+            "_Type": "noz::AnimationTrack",
+            "TargetProperty": "Bottom",
+            "TargetName" : "BORDER",
+            "KeyFrames": [ 201 ]
+        },
+        {
+            "_Id": 201,
+            "_Type": "noz::FloatKeyFrame",
+            "Value": 10
+        },
+
+        {
+            "_Id": 300,
+            "_Type": "noz::AnimationTrack",
+            "TargetProperty": "PaddingBottom",
+            "TargetName" : "PADDING",
+            "TargetComponentType" : "noz::LayoutTransform",
+            "KeyFrames": [ 301 ]
+        },
+        {
+            "_Id": 301,
+            "_Type": "noz::FloatKeyFrame",
+            "Value": 1
+        }
+    ]
+}

@@ -1,0 +1,16 @@
+{
+    "Root": 1,
+    "Objects": [
+        {
+            "_Id": 1,
+            "_Type": "noz::Sprite",
+              "Rectangle": {
+                "X": 0,
+                "Y": 0,
+                "W": 64,
+                "H": 64
+            },
+            "Image": "{45CE5E90-E914-4EA3-81E4-352F2C94B224}"
+        }
+    ]
+}

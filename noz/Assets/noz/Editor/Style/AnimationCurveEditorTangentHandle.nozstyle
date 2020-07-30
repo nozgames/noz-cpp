@@ -1,0 +1,1 @@
+{"Root": 1,"Objects": [{"_Id": 1,"_Type": "noz::Style::Def","ControlType": "noz::Editor::AnimationCurveEditorTangentHandle","Nodes": [2],"Parts": []},{"_Id": 2,"_Type": "noz::SpriteNode","Sprite": "{D4D033B4-D69D-4926-93A2-F76E6FAE2631}","Color": "#a1a1a1ff","Components": [],"Name": "Sprite","Children": []}]}

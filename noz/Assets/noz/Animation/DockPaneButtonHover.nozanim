@@ -1,0 +1,1 @@
+{"Root": 1,"Objects": [{"_Id": 1,"_Type": "noz::Animation","Tracks": [2],"Targets": [3]},{"_Id": 2,"_Type": "noz::AnimationTrack","KeyFrames": [4],"Target": 3,"TargetProperty": "Color"},{"_Id": 3,"_Type": "noz::AnimationTarget","TargetType": "noz::SpriteNode","Guid": "{94C8C89F-1387-4093-86E5-2DC616480D38}"},{"_Id": 4,"_Type": "noz::ColorKeyFrame","Value": "#656565ff"}]}

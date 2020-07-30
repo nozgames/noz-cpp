@@ -1,0 +1,23 @@
+{
+    "Root": 1,
+    "Objects": [
+        {
+            "_Id": 1,
+            "_Type": "noz::Animation",
+            "Tracks": [ 300 ]
+        },
+
+        {
+            "_Id": 300,
+            "_Type": "noz::AnimationTrack",
+            "TargetProperty": "Color",
+            "TargetName": "BORDER",
+            "KeyFrames": [ 301 ]
+        },
+        {
+            "_Id": 301,
+            "_Type": "noz::ColorKeyFrame",
+            "Value": "#007acc"
+        }
+    ]
+}

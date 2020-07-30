@@ -1,0 +1,144 @@
+{
+	"Organization" : "NoZ Games, LLC",
+
+	@WINDOWS(
+		"Guid" : "C17F53EB-1D47-42C0-912D-E3C68D629467",
+		"SolutionGuid" : "2BF9D4E7-F0DF-4D09-9DA6-1EB1D58670E2",
+	)
+
+	"TargetType" : "Library",
+
+	"Glue" : true,
+
+	# Project level build settings.
+	"DefaultConfiguration": {
+		"IncludeDirectories" : [
+			"../",
+			"../src",
+			"../external/zlib-1.2.8",
+			"../external/libxml2-2.7.2/include",
+			"../external/freetype-2.5.0.1/include",
+			"../external/box2d-2.3.0",
+			@WINDOWS("../external/glew-1.10.0/include",)			
+			@OSX("../external/glew-1.10.0/include",)
+		],
+		"PrecompiledHeader" : "Use",
+		"PrecompiledHeaderFile" : "noz.pch.h",
+		@Windows("PreprocessorDefinitions" : [ "GLEW_STATIC" ])
+	},
+
+	# Configurations
+	"Configurations" : {
+		@!Deploy(
+			"Debug" : { 
+				"PreprocessorDefinitions" : [ "NOZ_DEBUG", "NOZ_EDITOR" ],
+			},
+			"Release" : {
+				"Optimizations" : true,
+				"PreprocessorDefinitions" : [ "NOZ_EDITOR" ],
+			}
+		)
+		@Deploy(
+			"Debug" : {
+				"PreprocessorDefinitions" : [ "NOZ_DEPLOY", "NOZ_DEBUG" ]
+			},
+			"Release" : {
+				"Optimizations" : true,
+				"PreprocessorDefinitions" : [ "NOZ_DEPLOY" ]
+			}
+		)
+	},
+
+	"AutoGroupDirectory" : "../src",
+
+	"Files" : [
+		{ "Path" :  "../src/noz/Animation" },
+		{ "Path" :  "../src/noz/Assets" },
+		{ "Path" :  "../src/noz/Audio" },
+		{ "Path" :  "../src/noz/Collections" },
+		{ "Path" :  "../src/noz/Components" },
+		{ "Path" :  "../src/noz/Components/Transform" },
+		{ "Path" :  "../src/noz/Diagnostics" },
+		{ "Path" :  "../src/noz/Render" },
+		{ "Path" :  "../src/noz/Render/Imaging" },
+		{ "Path" :  "../src/noz/IO" },
+		{ "Path" :  "../src/noz/IO/Compression" },
+		{ "Path" :  "../src/noz/Networking" },
+		{ "Path" :  "../src/noz/Nodes" },
+		{ "Path" :  "../src/noz/Nodes/Layout" },
+		{ "Path" :  "../src/noz/Nodes/Render" },
+		{ "Path" :  "../src/noz/Nodes/UI" },
+		{ "Path" :  "../src/noz/Physics" },
+		{ "Path" :  "../src/noz/Reflection" },
+		{ "Path" :  "../src/noz/Reflection/Properties" },
+		{ "Path" :  "../src/noz/Remote" },
+		{ "Path" :  "../src/noz/Serialization" },
+		{ "Path" :  "../src/noz/System" },
+		{ "Path" :  "../src/noz/Text" },
+		{ "Path" :  "../src/noz/Text/Json" },
+		{ "Path" :  "../src/noz/Threading" },
+		{ "Path" :  "../src/noz/Tooling" },
+		{ "Path" :  "../src/noz/UI" },
+		{ "Path" :  "../src/noz" },
+		{ "Path" :  "../src" },
+			
+		{ "Path" :  "../src/noz/Platform" },
+		{ "Path" :  "../src/noz/Platform/OpenAL" },
+		{ "Path" :  "../src/noz/Platform/OpenGL" },
+		{ "Path" :  "../src/noz/Platform/OpenGL/shaders" },
+
+		{ "Path" : "../src/noz/Text/Regex.cpp", "Excluded" : true },
+		{ "Path" : "../src/noz/Text/Regex.h", "Excluded" : true },
+
+		# Editor
+		@!Deploy(
+			{ "Path" :  "../src/noz/Editor"},
+			{ "Path" :  "../src/noz/Editor/Actions"},
+			{ "Path" :  "../src/noz/Editor/Asset"},
+			{ "Path" :  "../src/noz/Editor/Nodes/Render"},
+			{ "Path" :  "../src/noz/Editor/Nodes/UI"},
+			{ "Path" :  "../src/noz/Editor/Nodes/UI/AssetEditor"},
+			{ "Path" :  "../src/noz/Editor/Nodes/UI/Inspector"},
+			{ "Path" :  "../src/noz/Editor/Nodes/UI/PropertyEditor"},
+			{ "Path" :  "../src/noz/Editor/Mementos"},
+			{ "Path" :  "../src/noz/Editor/Tool"},
+			{ "Path" :  "../src/noz/Editor/Tool/ProjectGen"},
+			{ "Path" :  "../src/noz/Editor/Tool/GlueGen", "Glue" : false },
+		)
+
+		# Windows specific files
+		@WINDOWS(
+			{ "Path" :  "../src/noz/Platform/Windows" },
+			{ "Path" :  "../src/noz/Platform/Windows/WindowsOpenFileDialog.cpp", "Excluded" : true },
+			{ "Path" :  "../external/glew-1.10.0/src/glew.c", "Group" : "noz/Platform/GLEW", "PrecompiledHeader" :"None" },
+			{ "Path" :  "../external/glew-1.10.0/include/GL", "Group" : "noz/Platform/GLEW" },
+		)
+
+		# IOS specific files
+		@IOS(
+			{ "Path" :  "../src/noz/Platform/IOS" },
+			{ "Path" :  "../src/noz/Platform/Posix/PosixNetwork.cpp" },
+			{ "Path" :  "../src/noz/Platform/GCC/GCC.cpp" },
+		)
+
+		# OSX specific files
+		@OSX(
+			{ "Path" :  "../src/noz/Platform/OSX" },
+			{ "Path" :  "../src/noz/Platform/Posix/PosixNetwork.cpp" },
+			{ "Path" :  "../src/noz/Platform/GCC/GCC.cpp" },
+		)
+		
+		{ 
+			"Path" : "../src/noz.cpp",
+			"PrecompiledHeader" : "Create"
+		}
+	],
+
+	# List of all references
+	"References" : [
+		"noz_zlib.nozmake",
+		"noz_box2d.nozmake",
+		"noz_openal.nozmake",
+		@!Deploy("noz_ft2.nozmake")
+	]
+}

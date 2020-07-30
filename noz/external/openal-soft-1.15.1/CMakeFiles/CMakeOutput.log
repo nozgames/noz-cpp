@@ -1,0 +1,1475 @@
+The system is: Windows - 6.2 - AMD64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler:  
+Build flags: 
+Id flags: 
+
+The output was:
+0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:00 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\2.8.12.1\CompilerIdC\CompilerIdC.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "Debug\".
+  Creating directory "Debug\CompilerIdC.tlog\".
+InitializeBuildStatus:
+  Creating "Debug\CompilerIdC.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /nologo /W0 /WX- /Od /Oy- /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CMakeCCompilerId.c
+  CMakeCCompilerId.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:".\CompilerIdC.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\CompilerIdC.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\CompilerIdC.lib" /MACHINE:X86 /SAFESEH Debug\CMakeCCompilerId.obj
+  CompilerIdC.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\2.8.12.1\CompilerIdC\.\CompilerIdC.exe
+PostBuildEvent:
+  for %%i in (cl.exe) do @echo CMAKE_C_COMPILER=%%~$PATH:i
+  :VCEnd
+  CMAKE_C_COMPILER=C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\cl.exe
+FinalizeBuildStatus:
+  Deleting file "Debug\CompilerIdC.tlog\unsuccessfulbuild".
+  Touching "Debug\CompilerIdC.tlog\CompilerIdC.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\2.8.12.1\CompilerIdC\CompilerIdC.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.61
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.vcxproj"
+
+The C compiler identification is MSVC, found in "P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/2.8.12.1/CompilerIdC/CompilerIdC.exe"
+
+Determining if the C compiler works passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec3865921454.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:00 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3865921454.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec3865921454.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec3865921454.dir\Debug\cmTryCom.9DA51C34.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec3865921454.dir\Debug\cmTryCom.9DA51C34.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3865921454.dir\Debug\\" /Fd"cmTryCompileExec3865921454.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue testCCompiler.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3865921454.dir\Debug\\" /Fd"cmTryCompileExec3865921454.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue testCCompiler.c
+  
+  testCCompiler.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3865921454.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3865921454.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3865921454.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec3865921454.dir\Debug\testCCompiler.obj
+  cmTryCompileExec3865921454.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3865921454.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec3865921454.dir\Debug\cmTryCom.9DA51C34.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec3865921454.dir\Debug\cmTryCom.9DA51C34.tlog\cmTryCompileExec3865921454.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3865921454.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.66
+
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec352090885.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:01 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec352090885.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec352090885.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec352090885.dir\Debug\cmTryCom.64736323.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec352090885.dir\Debug\cmTryCom.64736323.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec352090885.dir\Debug\\" /Fd"cmTryCompileExec352090885.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCCompilerABI.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec352090885.dir\Debug\\" /Fd"cmTryCompileExec352090885.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CMakeCCompilerABI.c"
+  
+  CMakeCCompilerABI.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec352090885.exe" /INCREMENTAL /NOLOGO /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec352090885.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec352090885.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec352090885.dir\Debug\CMakeCCompilerABI.obj
+  cmTryCompileExec352090885.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec352090885.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec352090885.dir\Debug\cmTryCom.64736323.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec352090885.dir\Debug\cmTryCom.64736323.tlog\cmTryCompileExec352090885.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec352090885.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.62
+
+
+Determining if the include file sys/types.h exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec2914772076.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:02 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2914772076.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2914772076.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2914772076.dir\Debug\cmTryCom.FB6C980E.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2914772076.dir\Debug\cmTryCom.FB6C980E.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2914772076.dir\Debug\\" /Fd"cmTryCompileExec2914772076.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2914772076.dir\Debug\\" /Fd"cmTryCompileExec2914772076.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2914772076.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2914772076.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2914772076.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec2914772076.dir\Debug\CheckIncludeFile.obj
+  cmTryCompileExec2914772076.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2914772076.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec2914772076.dir\Debug\cmTryCom.FB6C980E.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec2914772076.dir\Debug\cmTryCom.FB6C980E.tlog\cmTryCompileExec2914772076.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2914772076.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.66
+
+
+Determining if the include file stdint.h exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec284705987.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:03 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec284705987.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec284705987.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec284705987.dir\Debug\cmTryCom.DB1C6399.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec284705987.dir\Debug\cmTryCom.DB1C6399.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec284705987.dir\Debug\\" /Fd"cmTryCompileExec284705987.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec284705987.dir\Debug\\" /Fd"cmTryCompileExec284705987.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec284705987.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec284705987.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec284705987.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec284705987.dir\Debug\CheckIncludeFile.obj
+  cmTryCompileExec284705987.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec284705987.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec284705987.dir\Debug\cmTryCom.DB1C6399.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec284705987.dir\Debug\cmTryCom.DB1C6399.tlog\cmTryCompileExec284705987.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec284705987.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.60
+
+
+Determining if the include file stddef.h exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec1520077048.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:04 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1520077048.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec1520077048.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec1520077048.dir\Debug\cmTryCom.192E09DD.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec1520077048.dir\Debug\cmTryCom.192E09DD.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1520077048.dir\Debug\\" /Fd"cmTryCompileExec1520077048.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1520077048.dir\Debug\\" /Fd"cmTryCompileExec1520077048.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec1520077048.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec1520077048.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec1520077048.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec1520077048.dir\Debug\CheckIncludeFile.obj
+  cmTryCompileExec1520077048.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec1520077048.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec1520077048.dir\Debug\cmTryCom.192E09DD.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec1520077048.dir\Debug\cmTryCom.192E09DD.tlog\cmTryCompileExec1520077048.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1520077048.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.62
+
+
+Determining size of long passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec2167624450.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:04 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2167624450.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2167624450.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2167624450.dir\Debug\cmTryCom.05E4A871.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2167624450.dir\Debug\cmTryCom.05E4A871.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2167624450.dir\Debug\\" /Fd"cmTryCompileExec2167624450.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CheckTypeSize\SIZEOF_LONG.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2167624450.dir\Debug\\" /Fd"cmTryCompileExec2167624450.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CheckTypeSize\SIZEOF_LONG.c"
+  
+  SIZEOF_LONG.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2167624450.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2167624450.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2167624450.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec2167624450.dir\Debug\SIZEOF_LONG.obj
+  cmTryCompileExec2167624450.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2167624450.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec2167624450.dir\Debug\cmTryCom.05E4A871.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec2167624450.dir\Debug\cmTryCom.05E4A871.tlog\cmTryCompileExec2167624450.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2167624450.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.66
+
+
+Determining size of long long passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec2565249043.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:05 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2565249043.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2565249043.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2565249043.dir\Debug\cmTryCom.D8309688.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2565249043.dir\Debug\cmTryCom.D8309688.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2565249043.dir\Debug\\" /Fd"cmTryCompileExec2565249043.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CheckTypeSize\SIZEOF_LONG_LONG.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2565249043.dir\Debug\\" /Fd"cmTryCompileExec2565249043.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CheckTypeSize\SIZEOF_LONG_LONG.c"
+  
+  SIZEOF_LONG_LONG.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2565249043.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2565249043.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2565249043.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec2565249043.dir\Debug\SIZEOF_LONG_LONG.obj
+  cmTryCompileExec2565249043.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2565249043.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec2565249043.dir\Debug\cmTryCom.D8309688.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec2565249043.dir\Debug\cmTryCom.D8309688.tlog\cmTryCompileExec2565249043.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2565249043.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.65
+
+
+Performing C SOURCE FILE Test HAVE___RESTRICT succeded with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec1991103211.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:06 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1991103211.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec1991103211.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec1991103211.dir\Debug\cmTryCom.2AA56669.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec1991103211.dir\Debug\cmTryCom.2AA56669.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D HAVE___RESTRICT /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1991103211.dir\Debug\\" /Fd"cmTryCompileExec1991103211.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue src.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D HAVE___RESTRICT /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1991103211.dir\Debug\\" /Fd"cmTryCompileExec1991103211.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue src.c
+  
+  src.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec1991103211.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec1991103211.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec1991103211.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec1991103211.dir\Debug\src.obj
+  cmTryCompileExec1991103211.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec1991103211.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec1991103211.dir\Debug\cmTryCom.2AA56669.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec1991103211.dir\Debug\cmTryCom.2AA56669.tlog\cmTryCompileExec1991103211.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1991103211.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.63
+
+Source file was:
+int *__restrict foo;
+                             int main() {return 0;}
+Performing C SOURCE FILE Test HAVE_MSSE_SWITCH succeded with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec2557250208.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:07 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2557250208.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2557250208.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2557250208.dir\Debug\cmTryCom.69605D4B.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2557250208.dir\Debug\cmTryCom.69605D4B.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2557250208.dir\Debug\\" /Fd"cmTryCompileExec2557250208.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue  -msse src.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2557250208.dir\Debug\\" /Fd"cmTryCompileExec2557250208.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue  -msse src.c
+  
+cl : Command line warning D9002: ignoring unknown option '-msse' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2557250208.vcxproj]
+  src.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2557250208.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2557250208.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2557250208.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec2557250208.dir\Debug\src.obj
+  cmTryCompileExec2557250208.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2557250208.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec2557250208.dir\Debug\cmTryCom.69605D4B.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec2557250208.dir\Debug\cmTryCom.69605D4B.tlog\cmTryCompileExec2557250208.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2557250208.vcxproj" (default targets).
+
+Build succeeded.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2557250208.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  cl : Command line warning D9002: ignoring unknown option '-msse' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2557250208.vcxproj]
+
+    1 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.65
+
+Source file was:
+
+Determining if the include file malloc.h exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec3297610366.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:08 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3297610366.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec3297610366.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec3297610366.dir\Debug\cmTryCom.118BB287.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec3297610366.dir\Debug\cmTryCom.118BB287.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3297610366.dir\Debug\\" /Fd"cmTryCompileExec3297610366.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3297610366.dir\Debug\\" /Fd"cmTryCompileExec3297610366.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3297610366.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3297610366.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3297610366.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec3297610366.dir\Debug\CheckIncludeFile.obj
+  cmTryCompileExec3297610366.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3297610366.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec3297610366.dir\Debug\cmTryCom.118BB287.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec3297610366.dir\Debug\cmTryCom.118BB287.tlog\cmTryCompileExec3297610366.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3297610366.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.63
+
+
+Determining if the include file fenv.h exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec313376257.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:10 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec313376257.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec313376257.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec313376257.dir\Debug\cmTryCom.1DADE38D.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec313376257.dir\Debug\cmTryCom.1DADE38D.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec313376257.dir\Debug\\" /Fd"cmTryCompileExec313376257.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec313376257.dir\Debug\\" /Fd"cmTryCompileExec313376257.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec313376257.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec313376257.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec313376257.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec313376257.dir\Debug\CheckIncludeFile.obj
+  cmTryCompileExec313376257.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec313376257.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec313376257.dir\Debug\cmTryCom.1DADE38D.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec313376257.dir\Debug\cmTryCom.1DADE38D.tlog\cmTryCompileExec313376257.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec313376257.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.62
+
+
+Determining if the include file float.h exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec205869164.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:11 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec205869164.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec205869164.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec205869164.dir\Debug\cmTryCom.69580A36.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec205869164.dir\Debug\cmTryCom.69580A36.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec205869164.dir\Debug\\" /Fd"cmTryCompileExec205869164.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec205869164.dir\Debug\\" /Fd"cmTryCompileExec205869164.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec205869164.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec205869164.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec205869164.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec205869164.dir\Debug\CheckIncludeFile.obj
+  cmTryCompileExec205869164.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec205869164.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec205869164.dir\Debug\cmTryCom.69580A36.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec205869164.dir\Debug\cmTryCom.69580A36.tlog\cmTryCompileExec205869164.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec205869164.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.63
+
+
+Determining if the include file guiddef.h exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec660594419.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:12 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec660594419.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec660594419.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec660594419.dir\Debug\cmTryCom.D7C44940.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec660594419.dir\Debug\cmTryCom.D7C44940.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec660594419.dir\Debug\\" /Fd"cmTryCompileExec660594419.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec660594419.dir\Debug\\" /Fd"cmTryCompileExec660594419.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec660594419.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec660594419.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec660594419.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec660594419.dir\Debug\CheckIncludeFile.obj
+  cmTryCompileExec660594419.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec660594419.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec660594419.dir\Debug\cmTryCom.D7C44940.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec660594419.dir\Debug\cmTryCom.D7C44940.tlog\cmTryCompileExec660594419.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec660594419.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.62
+
+
+Determining if the _aligned_malloc exist passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec2375886917.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:14 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2375886917.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2375886917.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2375886917.dir\Debug\cmTryCom.C3EB5EA7.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2375886917.dir\Debug\cmTryCom.C3EB5EA7.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2375886917.dir\Debug\\" /Fd"cmTryCompileExec2375886917.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2375886917.dir\Debug\\" /Fd"cmTryCompileExec2375886917.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  
+  CheckSymbolExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2375886917.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2375886917.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2375886917.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec2375886917.dir\Debug\CheckSymbolExists.obj
+  cmTryCompileExec2375886917.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2375886917.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec2375886917.dir\Debug\cmTryCom.C3EB5EA7.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec2375886917.dir\Debug\cmTryCom.C3EB5EA7.tlog\cmTryCompileExec2375886917.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2375886917.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.62
+
+File P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <malloc.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef _aligned_malloc
+  return ((int*)(&_aligned_malloc))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the lrintf exist passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec674540127.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:15 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec674540127.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec674540127.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec674540127.dir\Debug\cmTryCom.834E2BEA.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec674540127.dir\Debug\cmTryCom.834E2BEA.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec674540127.dir\Debug\\" /Fd"cmTryCompileExec674540127.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec674540127.dir\Debug\\" /Fd"cmTryCompileExec674540127.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  
+  CheckSymbolExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec674540127.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec674540127.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec674540127.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec674540127.dir\Debug\CheckSymbolExists.obj
+  cmTryCompileExec674540127.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec674540127.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec674540127.dir\Debug\cmTryCom.834E2BEA.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec674540127.dir\Debug\cmTryCom.834E2BEA.tlog\cmTryCompileExec674540127.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec674540127.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.63
+
+File P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <math.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef lrintf
+  return ((int*)(&lrintf))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the fesetround exist passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec4289964638.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:16 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec4289964638.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec4289964638.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec4289964638.dir\Debug\cmTryCom.C72FC37D.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec4289964638.dir\Debug\cmTryCom.C72FC37D.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec4289964638.dir\Debug\\" /Fd"cmTryCompileExec4289964638.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec4289964638.dir\Debug\\" /Fd"cmTryCompileExec4289964638.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  
+  CheckSymbolExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec4289964638.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec4289964638.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec4289964638.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec4289964638.dir\Debug\CheckSymbolExists.obj
+  cmTryCompileExec4289964638.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec4289964638.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec4289964638.dir\Debug\cmTryCom.C72FC37D.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec4289964638.dir\Debug\cmTryCom.C72FC37D.tlog\cmTryCompileExec4289964638.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec4289964638.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.64
+
+File P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <fenv.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef fesetround
+  return ((int*)(&fesetround))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the _controlfp exist passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec324198128.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:17 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec324198128.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec324198128.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec324198128.dir\Debug\cmTryCom.1DBCD218.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec324198128.dir\Debug\cmTryCom.1DBCD218.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec324198128.dir\Debug\\" /Fd"cmTryCompileExec324198128.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec324198128.dir\Debug\\" /Fd"cmTryCompileExec324198128.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  
+  CheckSymbolExists.c
+CheckSymbolExists.c(8): warning C4996: '_controlfp': This function or variable may be unsafe. Consider using _controlfp_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec324198128.vcxproj]
+          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\float.h(120) : see declaration of '_controlfp'
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec324198128.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec324198128.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec324198128.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec324198128.dir\Debug\CheckSymbolExists.obj
+  cmTryCompileExec324198128.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec324198128.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec324198128.dir\Debug\cmTryCom.1DBCD218.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec324198128.dir\Debug\cmTryCom.1DBCD218.tlog\cmTryCompileExec324198128.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec324198128.vcxproj" (default targets).
+
+Build succeeded.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec324198128.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  CheckSymbolExists.c(8): warning C4996: '_controlfp': This function or variable may be unsafe. Consider using _controlfp_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec324198128.vcxproj]
+
+    1 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.64
+
+File P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <float.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef _controlfp
+  return ((int*)(&_controlfp))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the __control87_2 exist passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec3274195462.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:17 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3274195462.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec3274195462.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec3274195462.dir\Debug\cmTryCom.59E71A59.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec3274195462.dir\Debug\cmTryCom.59E71A59.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3274195462.dir\Debug\\" /Fd"cmTryCompileExec3274195462.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3274195462.dir\Debug\\" /Fd"cmTryCompileExec3274195462.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  
+  CheckSymbolExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3274195462.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3274195462.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3274195462.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec3274195462.dir\Debug\CheckSymbolExists.obj
+  cmTryCompileExec3274195462.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3274195462.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec3274195462.dir\Debug\cmTryCom.59E71A59.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec3274195462.dir\Debug\cmTryCom.59E71A59.tlog\cmTryCompileExec3274195462.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3274195462.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.65
+
+File P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <float.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef __control87_2
+  return ((int*)(&__control87_2))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the function strtof exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec2576755588.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:18 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2576755588.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2576755588.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2576755588.dir\Debug\cmTryCom.0C087019.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2576755588.dir\Debug\cmTryCom.0C087019.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=strtof /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2576755588.dir\Debug\\" /Fd"cmTryCompileExec2576755588.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=strtof /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2576755588.dir\Debug\\" /Fd"cmTryCompileExec2576755588.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  
+  CheckFunctionExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2576755588.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2576755588.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2576755588.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec2576755588.dir\Debug\CheckFunctionExists.obj
+  cmTryCompileExec2576755588.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2576755588.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec2576755588.dir\Debug\cmTryCom.0C087019.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec2576755588.dir\Debug\cmTryCom.0C087019.tlog\cmTryCompileExec2576755588.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2576755588.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.61
+
+
+Determining if the function stat exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec1211941822.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:19 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1211941822.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec1211941822.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec1211941822.dir\Debug\cmTryCom.542A10A4.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec1211941822.dir\Debug\cmTryCom.542A10A4.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=stat /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1211941822.dir\Debug\\" /Fd"cmTryCompileExec1211941822.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=stat /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1211941822.dir\Debug\\" /Fd"cmTryCompileExec1211941822.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  
+  CheckFunctionExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec1211941822.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec1211941822.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec1211941822.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec1211941822.dir\Debug\CheckFunctionExists.obj
+  cmTryCompileExec1211941822.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec1211941822.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec1211941822.dir\Debug\cmTryCom.542A10A4.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec1211941822.dir\Debug\cmTryCom.542A10A4.tlog\cmTryCompileExec1211941822.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1211941822.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.62
+
+
+Determining if the function _stricmp exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec4272534061.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:20 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec4272534061.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec4272534061.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec4272534061.dir\Debug\cmTryCom.ABC9D43E.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec4272534061.dir\Debug\cmTryCom.ABC9D43E.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=_stricmp /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec4272534061.dir\Debug\\" /Fd"cmTryCompileExec4272534061.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=_stricmp /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec4272534061.dir\Debug\\" /Fd"cmTryCompileExec4272534061.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  
+  CheckFunctionExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec4272534061.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec4272534061.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec4272534061.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec4272534061.dir\Debug\CheckFunctionExists.obj
+  cmTryCompileExec4272534061.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec4272534061.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec4272534061.dir\Debug\cmTryCom.ABC9D43E.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec4272534061.dir\Debug\cmTryCom.ABC9D43E.tlog\cmTryCompileExec4272534061.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec4272534061.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.62
+
+
+Determining if the function _strnicmp exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec3808458134.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:22 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3808458134.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec3808458134.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec3808458134.dir\Debug\cmTryCom.C13BCBFC.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec3808458134.dir\Debug\cmTryCom.C13BCBFC.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=_strnicmp /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3808458134.dir\Debug\\" /Fd"cmTryCompileExec3808458134.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=_strnicmp /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3808458134.dir\Debug\\" /Fd"cmTryCompileExec3808458134.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  
+  CheckFunctionExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3808458134.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3808458134.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3808458134.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec3808458134.dir\Debug\CheckFunctionExists.obj
+  cmTryCompileExec3808458134.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3808458134.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec3808458134.dir\Debug\cmTryCom.C13BCBFC.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec3808458134.dir\Debug\cmTryCom.C13BCBFC.tlog\cmTryCompileExec3808458134.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3808458134.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.63
+
+
+Determining if the function _snprintf exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec3736629312.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:23 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3736629312.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec3736629312.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec3736629312.dir\Debug\cmTryCom.EFAA228E.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec3736629312.dir\Debug\cmTryCom.EFAA228E.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=_snprintf /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3736629312.dir\Debug\\" /Fd"cmTryCompileExec3736629312.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=_snprintf /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3736629312.dir\Debug\\" /Fd"cmTryCompileExec3736629312.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  
+  CheckFunctionExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3736629312.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3736629312.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3736629312.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec3736629312.dir\Debug\CheckFunctionExists.obj
+  cmTryCompileExec3736629312.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3736629312.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec3736629312.dir\Debug\cmTryCom.EFAA228E.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec3736629312.dir\Debug\cmTryCom.EFAA228E.tlog\cmTryCompileExec3736629312.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3736629312.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.63
+
+
+Determining if the function vsnprintf exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec3115162517.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:24 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3115162517.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec3115162517.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec3115162517.dir\Debug\cmTryCom.2328507C.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec3115162517.dir\Debug\cmTryCom.2328507C.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=vsnprintf /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3115162517.dir\Debug\\" /Fd"cmTryCompileExec3115162517.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=vsnprintf /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3115162517.dir\Debug\\" /Fd"cmTryCompileExec3115162517.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  
+  CheckFunctionExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3115162517.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3115162517.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3115162517.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec3115162517.dir\Debug\CheckFunctionExists.obj
+  cmTryCompileExec3115162517.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3115162517.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec3115162517.dir\Debug\cmTryCom.2328507C.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec3115162517.dir\Debug\cmTryCom.2328507C.tlog\cmTryCompileExec3115162517.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3115162517.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.62
+
+
+Determining if the isfinite exist passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec2292404283.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:25 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2292404283.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2292404283.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2292404283.dir\Debug\cmTryCom.6FDD3E3A.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2292404283.dir\Debug\cmTryCom.6FDD3E3A.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2292404283.dir\Debug\\" /Fd"cmTryCompileExec2292404283.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2292404283.dir\Debug\\" /Fd"cmTryCompileExec2292404283.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  
+  CheckSymbolExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2292404283.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2292404283.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2292404283.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec2292404283.dir\Debug\CheckSymbolExists.obj
+  cmTryCompileExec2292404283.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2292404283.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec2292404283.dir\Debug\cmTryCom.6FDD3E3A.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec2292404283.dir\Debug\cmTryCom.6FDD3E3A.tlog\cmTryCompileExec2292404283.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2292404283.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.67
+
+File P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <math.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef isfinite
+  return ((int*)(&isfinite))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the isnan exist passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec3348567764.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:26 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3348567764.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec3348567764.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec3348567764.dir\Debug\cmTryCom.57FEFFA9.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec3348567764.dir\Debug\cmTryCom.57FEFFA9.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3348567764.dir\Debug\\" /Fd"cmTryCompileExec3348567764.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3348567764.dir\Debug\\" /Fd"cmTryCompileExec3348567764.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  
+  CheckSymbolExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3348567764.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3348567764.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3348567764.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec3348567764.dir\Debug\CheckSymbolExists.obj
+  cmTryCompileExec3348567764.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3348567764.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec3348567764.dir\Debug\cmTryCom.57FEFFA9.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec3348567764.dir\Debug\cmTryCom.57FEFFA9.tlog\cmTryCompileExec3348567764.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3348567764.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.63
+
+File P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <math.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef isnan
+  return ((int*)(&isnan))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the include file windows.h exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec1892065135.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:27 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1892065135.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec1892065135.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec1892065135.dir\Debug\cmTryCom.9FDC443B.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec1892065135.dir\Debug\cmTryCom.9FDC443B.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _WIN32_WINNT=0x0501 /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1892065135.dir\Debug\\" /Fd"cmTryCompileExec1892065135.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _WIN32_WINNT=0x0501 /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1892065135.dir\Debug\\" /Fd"cmTryCompileExec1892065135.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec1892065135.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec1892065135.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec1892065135.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec1892065135.dir\Debug\CheckIncludeFile.obj
+  cmTryCompileExec1892065135.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec1892065135.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec1892065135.dir\Debug\cmTryCom.9FDC443B.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec1892065135.dir\Debug\cmTryCom.9FDC443B.tlog\cmTryCompileExec1892065135.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1892065135.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.90
+
+
+Determining if the timeGetTime exist in winmm passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec4040853342.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:28 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec4040853342.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec4040853342.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec4040853342.dir\Debug\cmTryCom.79F7A510.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec4040853342.dir\Debug\cmTryCom.79F7A510.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec4040853342.dir\Debug\\" /Fd"cmTryCompileExec4040853342.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec4040853342.dir\Debug\\" /Fd"cmTryCompileExec4040853342.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  
+  CheckSymbolExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec4040853342.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib winmm.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec4040853342.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec4040853342.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec4040853342.dir\Debug\CheckSymbolExists.obj
+  cmTryCompileExec4040853342.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec4040853342.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec4040853342.dir\Debug\cmTryCom.79F7A510.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec4040853342.dir\Debug\cmTryCom.79F7A510.tlog\cmTryCompileExec4040853342.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec4040853342.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.90
+
+File P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <windows.h>
+#include <mmsystem.h>
+
+void cmakeRequireSymbol(int dummy,...){(void)dummy;}
+int main()
+{
+  cmakeRequireSymbol(0,&timeGetTime);
+  return 0;
+}
+
+Determining if the include file xmmintrin.h exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec4218789097.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:29 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec4218789097.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec4218789097.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec4218789097.dir\Debug\cmTryCom.6D0E5F5C.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec4218789097.dir\Debug\cmTryCom.6D0E5F5C.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec4218789097.dir\Debug\\" /Fd"cmTryCompileExec4218789097.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue  -msse CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec4218789097.dir\Debug\\" /Fd"cmTryCompileExec4218789097.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue  -msse CheckIncludeFile.c
+  
+cl : Command line warning D9002: ignoring unknown option '-msse' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec4218789097.vcxproj]
+  CheckIncludeFile.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec4218789097.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec4218789097.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec4218789097.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec4218789097.dir\Debug\CheckIncludeFile.obj
+  cmTryCompileExec4218789097.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec4218789097.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec4218789097.dir\Debug\cmTryCom.6D0E5F5C.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec4218789097.dir\Debug\cmTryCom.6D0E5F5C.tlog\cmTryCompileExec4218789097.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec4218789097.vcxproj" (default targets).
+
+Build succeeded.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec4218789097.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  cl : Command line warning D9002: ignoring unknown option '-msse' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec4218789097.vcxproj]
+
+    1 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.62
+
+
+Determining if the include file mmdeviceapi.h exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec2872688793.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:32 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2872688793.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2872688793.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2872688793.dir\Debug\cmTryCom.23531E35.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2872688793.dir\Debug\cmTryCom.23531E35.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2872688793.dir\Debug\\" /Fd"cmTryCompileExec2872688793.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2872688793.dir\Debug\\" /Fd"cmTryCompileExec2872688793.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2872688793.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2872688793.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2872688793.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec2872688793.dir\Debug\CheckIncludeFile.obj
+  cmTryCompileExec2872688793.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2872688793.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec2872688793.dir\Debug\cmTryCom.23531E35.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec2872688793.dir\Debug\cmTryCom.23531E35.tlog\cmTryCompileExec2872688793.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2872688793.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.96
+
+
+Determining if the include file dsound.h exists passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec1027350368.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:33 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1027350368.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec1027350368.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec1027350368.dir\Debug\cmTryCom.C320004E.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec1027350368.dir\Debug\cmTryCom.C320004E.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1027350368.dir\Debug\\" /Fd"cmTryCompileExec1027350368.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1027350368.dir\Debug\\" /Fd"cmTryCompileExec1027350368.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec1027350368.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec1027350368.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec1027350368.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec1027350368.dir\Debug\CheckIncludeFile.obj
+  cmTryCompileExec1027350368.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec1027350368.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec1027350368.dir\Debug\cmTryCom.C320004E.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec1027350368.dir\Debug\cmTryCom.C320004E.tlog\cmTryCompileExec1027350368.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1027350368.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.93
+
+
+Determining if the DirectSoundCreate exist in dsound passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec933694422.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:34 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec933694422.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec933694422.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec933694422.dir\Debug\cmTryCom.BAEFD577.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec933694422.dir\Debug\cmTryCom.BAEFD577.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec933694422.dir\Debug\\" /Fd"cmTryCompileExec933694422.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec933694422.dir\Debug\\" /Fd"cmTryCompileExec933694422.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  
+  CheckSymbolExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec933694422.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib dsound.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec933694422.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec933694422.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec933694422.dir\Debug\CheckSymbolExists.obj
+  cmTryCompileExec933694422.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec933694422.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec933694422.dir\Debug\cmTryCom.BAEFD577.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec933694422.dir\Debug\cmTryCom.BAEFD577.tlog\cmTryCompileExec933694422.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec933694422.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.93
+
+File P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <dsound.h>
+
+void cmakeRequireSymbol(int dummy,...){(void)dummy;}
+int main()
+{
+  cmakeRequireSymbol(0,&DirectSoundCreate);
+  return 0;
+}
+
+Determining if files windows.h;mmsystem.h exist passed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec3633601711.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:35 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3633601711.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec3633601711.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec3633601711.dir\Debug\cmTryCom.C2F97FB4.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec3633601711.dir\Debug\cmTryCom.C2F97FB4.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3633601711.dir\Debug\\" /Fd"cmTryCompileExec3633601711.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFiles.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3633601711.dir\Debug\\" /Fd"cmTryCompileExec3633601711.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFiles.c
+  
+  CheckIncludeFiles.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3633601711.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3633601711.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3633601711.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec3633601711.dir\Debug\CheckIncludeFiles.obj
+  cmTryCompileExec3633601711.vcxproj -> P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3633601711.exe
+FinalizeBuildStatus:
+  Deleting file "cmTryCompileExec3633601711.dir\Debug\cmTryCom.C2F97FB4.tlog\unsuccessfulbuild".
+  Touching "cmTryCompileExec3633601711.dir\Debug\cmTryCom.C2F97FB4.tlog\cmTryCompileExec3633601711.lastbuildstate".
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3633601711.vcxproj" (default targets).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.92
+
+

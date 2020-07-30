@@ -1,0 +1,760 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		FF000000FF0000000000000A /* Boolean.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000009 /* Boolean.cpp */; };
+		FF000000FF0000000000000D /* Byte.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000000C /* Byte.cpp */; };
+		FF000000FF00000000000012 /* Console.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000011 /* Console.cpp */; };
+		FF000000FF00000000000015 /* DateTime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000014 /* DateTime.cpp */; };
+		FF000000FF00000000000019 /* Double.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000018 /* Double.cpp */; };
+		FF000000FF0000000000001F /* Float.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000001E /* Float.cpp */; };
+		FF000000FF00000000000022 /* Guid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000021 /* Guid.cpp */; };
+		FF000000FF00000000000025 /* BinaryReader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000024 /* BinaryReader.cpp */; };
+		FF000000FF00000000000028 /* BinaryWriter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000027 /* BinaryWriter.cpp */; };
+		FF000000FF0000000000002B /* ZipArchive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000002A /* ZipArchive.cpp */; };
+		FF000000FF0000000000002E /* Directory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000002D /* Directory.cpp */; };
+		FF000000FF00000000000032 /* File.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000031 /* File.cpp */; };
+		FF000000FF00000000000035 /* FileStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000034 /* FileStream.cpp */; };
+		FF000000FF00000000000039 /* MemoryStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000038 /* MemoryStream.cpp */; };
+		FF000000FF0000000000003C /* Path.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000003B /* Path.cpp */; };
+		FF000000FF0000000000003F /* Stream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000003E /* Stream.cpp */; };
+		FF000000FF00000000000042 /* StreamReader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000041 /* StreamReader.cpp */; };
+		FF000000FF00000000000045 /* StreamWriter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000044 /* StreamWriter.cpp */; };
+		FF000000FF00000000000048 /* StringReader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000047 /* StringReader.cpp */; };
+		FF000000FF0000000000004B /* TextReader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000004A /* TextReader.cpp */; };
+		FF000000FF0000000000004E /* TextWriter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000004D /* TextWriter.cpp */; };
+		FF000000FF00000000000052 /* Int32.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000051 /* Int32.cpp */; };
+		FF000000FF00000000000055 /* JsonArray.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000054 /* JsonArray.cpp */; };
+		FF000000FF00000000000058 /* JsonObject.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000057 /* JsonObject.cpp */; };
+		FF000000FF0000000000005B /* JsonString.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000005A /* JsonString.cpp */; };
+		FF000000FF0000000000005E /* JsonValue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000005D /* JsonValue.cpp */; };
+		FF000000FF00000000000063 /* Math.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000062 /* Math.cpp */; };
+		FF000000FF00000000000066 /* Matrix3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000065 /* Matrix3.cpp */; };
+		FF000000FF00000000000069 /* Matrix4.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000068 /* Matrix4.cpp */; };
+		FF000000FF0000000000006E /* Name.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000006D /* Name.cpp */; };
+		FF000000FF00000000000072 /* IPAddress.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000071 /* IPAddress.cpp */; };
+		FF000000FF00000000000076 /* NetworkStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000075 /* NetworkStream.cpp */; };
+		FF000000FF00000000000079 /* Socket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000078 /* Socket.cpp */; };
+		FF000000FF0000000000007C /* TcpClient.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000007B /* TcpClient.cpp */; };
+		FF000000FF0000000000007F /* TcpListener.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000007E /* TcpListener.cpp */; };
+		FF000000FF00000000000084 /* Object.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000083 /* Object.cpp */; };
+		FF000000FF00000000000094 /* Property.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000093 /* Property.cpp */; };
+		FF000000FF00000000000097 /* PropertyPath.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000096 /* PropertyPath.cpp */; };
+		FF000000FF0000000000009B /* PropertyTracker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000009A /* PropertyTracker.cpp */; };
+		FF000000FF000000000000A2 /* TypeProperty.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000A1 /* TypeProperty.cpp */; };
+		FF000000FF000000000000A6 /* Rect.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000A5 /* Rect.cpp */; };
+		FF000000FF000000000000AB /* String.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000AA /* String.cpp */; };
+		FF000000FF000000000000AE /* StringBuilder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000AD /* StringBuilder.cpp */; };
+		FF000000FF000000000000B1 /* StringLexer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000B0 /* StringLexer.cpp */; };
+		FF000000FF000000000000B5 /* Regex.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000B4 /* Regex.cpp */; };
+		FF000000FF000000000000B8 /* Thread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000B7 /* Thread.cpp */; };
+		FF000000FF000000000000BC /* Time.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000BB /* Time.cpp */; };
+		FF000000FF000000000000BF /* MakeProject.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000BE /* MakeProject.cpp */; };
+		FF000000FF000000000000C2 /* VisualStudioProject.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000C1 /* VisualStudioProject.cpp */; };
+		FF000000FF000000000000C5 /* VisualStudioSolution.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000C4 /* VisualStudioSolution.cpp */; };
+		FF000000FF000000000000C8 /* XCodeProject.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000C7 /* XCodeProject.cpp */; };
+		FF000000FF000000000000CB /* Type.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000CA /* Type.cpp */; };
+		FF000000FF000000000000CE /* UInt32.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000CD /* UInt32.cpp */; };
+		FF000000FF000000000000D1 /* Vector2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000D0 /* Vector2.cpp */; };
+		FF000000FF000000000000D4 /* Vector3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000D3 /* Vector3.cpp */; };
+		FF000000FF000000000000D9 /* XmlTextReader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000D8 /* XmlTextReader.cpp */; };
+		FF000000FF000000000000DE /* noz.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000DD /* noz.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		FF000000FF000000000000E1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FF000000FF000000000000DF /* noz_xml2.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = FF000000FF00000000000034;
+			remoteInfo = noz_xml2;
+		};
+
+/* End PBXContainerItemProxy section */
+		
+/* Begin PBXCopyFilesBuildPhase section */
+		FF000000FF00000000000004 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+		
+/* Begin PBXFileReference section */
+		FF000000FF00000000000008 /* Application.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Application.h; path = ../../src/noz/Application.h; sourceTree = "<group>"; };
+		FF000000FF00000000000009 /* Boolean.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Boolean.cpp; path = ../../src/noz/Boolean.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000000B /* Boolean.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Boolean.h; path = ../../src/noz/Boolean.h; sourceTree = "<group>"; };
+		FF000000FF0000000000000C /* Byte.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Byte.cpp; path = ../../src/noz/Byte.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000000E /* Byte.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Byte.h; path = ../../src/noz/Byte.h; sourceTree = "<group>"; };
+		FF000000FF0000000000000F /* Camera.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Camera.h; path = ../../src/noz/Camera.h; sourceTree = "<group>"; };
+		FF000000FF00000000000010 /* Component.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Component.h; path = ../../src/noz/Component.h; sourceTree = "<group>"; };
+		FF000000FF00000000000011 /* Console.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Console.cpp; path = ../../src/noz/Console.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000013 /* Console.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Console.h; path = ../../src/noz/Console.h; sourceTree = "<group>"; };
+		FF000000FF00000000000014 /* DateTime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DateTime.cpp; path = ../../src/noz/DateTime.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000016 /* DateTime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DateTime.h; path = ../../src/noz/DateTime.h; sourceTree = "<group>"; };
+		FF000000FF00000000000017 /* Delegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Delegate.h; path = ../../src/noz/Delegate.h; sourceTree = "<group>"; };
+		FF000000FF00000000000018 /* Double.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Double.cpp; path = ../../src/noz/Double.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000001A /* Double.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Double.h; path = ../../src/noz/Double.h; sourceTree = "<group>"; };
+		FF000000FF0000000000001B /* Enum.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Enum.h; path = ../../src/noz/Enum.h; sourceTree = "<group>"; };
+		FF000000FF0000000000001C /* Environment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Environment.h; path = ../../src/noz/Environment.h; sourceTree = "<group>"; };
+		FF000000FF0000000000001D /* Event.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Event.h; path = ../../src/noz/Event.h; sourceTree = "<group>"; };
+		FF000000FF0000000000001E /* Float.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Float.cpp; path = ../../src/noz/Float.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000020 /* Float.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Float.h; path = ../../src/noz/Float.h; sourceTree = "<group>"; };
+		FF000000FF00000000000021 /* Guid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Guid.cpp; path = ../../src/noz/Guid.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000023 /* Guid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Guid.h; path = ../../src/noz/Guid.h; sourceTree = "<group>"; };
+		FF000000FF00000000000024 /* BinaryReader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BinaryReader.cpp; path = ../../src/noz/IO/BinaryReader.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000026 /* BinaryReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BinaryReader.h; path = ../../src/noz/IO/BinaryReader.h; sourceTree = "<group>"; };
+		FF000000FF00000000000027 /* BinaryWriter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = BinaryWriter.cpp; path = ../../src/noz/IO/BinaryWriter.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000029 /* BinaryWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BinaryWriter.h; path = ../../src/noz/IO/BinaryWriter.h; sourceTree = "<group>"; };
+		FF000000FF0000000000002A /* ZipArchive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ZipArchive.cpp; path = ../../src/noz/IO/Compression/ZipArchive.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000002C /* ZipArchive.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ZipArchive.h; path = ../../src/noz/IO/Compression/ZipArchive.h; sourceTree = "<group>"; };
+		FF000000FF0000000000002D /* Directory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Directory.cpp; path = ../../src/noz/IO/Directory.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000002F /* Directory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Directory.h; path = ../../src/noz/IO/Directory.h; sourceTree = "<group>"; };
+		FF000000FF00000000000030 /* DirectoryInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DirectoryInfo.h; path = ../../src/noz/IO/DirectoryInfo.h; sourceTree = "<group>"; };
+		FF000000FF00000000000031 /* File.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = File.cpp; path = ../../src/noz/IO/File.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000033 /* File.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = File.h; path = ../../src/noz/IO/File.h; sourceTree = "<group>"; };
+		FF000000FF00000000000034 /* FileStream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FileStream.cpp; path = ../../src/noz/IO/FileStream.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000036 /* FileStream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileStream.h; path = ../../src/noz/IO/FileStream.h; sourceTree = "<group>"; };
+		FF000000FF00000000000037 /* IO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IO.h; path = ../../src/noz/IO/IO.h; sourceTree = "<group>"; };
+		FF000000FF00000000000038 /* MemoryStream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MemoryStream.cpp; path = ../../src/noz/IO/MemoryStream.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000003A /* MemoryStream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MemoryStream.h; path = ../../src/noz/IO/MemoryStream.h; sourceTree = "<group>"; };
+		FF000000FF0000000000003B /* Path.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Path.cpp; path = ../../src/noz/IO/Path.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000003D /* Path.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Path.h; path = ../../src/noz/IO/Path.h; sourceTree = "<group>"; };
+		FF000000FF0000000000003E /* Stream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Stream.cpp; path = ../../src/noz/IO/Stream.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000040 /* Stream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Stream.h; path = ../../src/noz/IO/Stream.h; sourceTree = "<group>"; };
+		FF000000FF00000000000041 /* StreamReader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = StreamReader.cpp; path = ../../src/noz/IO/StreamReader.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000043 /* StreamReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = StreamReader.h; path = ../../src/noz/IO/StreamReader.h; sourceTree = "<group>"; };
+		FF000000FF00000000000044 /* StreamWriter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = StreamWriter.cpp; path = ../../src/noz/IO/StreamWriter.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000046 /* StreamWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = StreamWriter.h; path = ../../src/noz/IO/StreamWriter.h; sourceTree = "<group>"; };
+		FF000000FF00000000000047 /* StringReader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = StringReader.cpp; path = ../../src/noz/IO/StringReader.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000049 /* StringReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = StringReader.h; path = ../../src/noz/IO/StringReader.h; sourceTree = "<group>"; };
+		FF000000FF0000000000004A /* TextReader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TextReader.cpp; path = ../../src/noz/IO/TextReader.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000004C /* TextReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TextReader.h; path = ../../src/noz/IO/TextReader.h; sourceTree = "<group>"; };
+		FF000000FF0000000000004D /* TextWriter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TextWriter.cpp; path = ../../src/noz/IO/TextWriter.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000004F /* TextWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TextWriter.h; path = ../../src/noz/IO/TextWriter.h; sourceTree = "<group>"; };
+		FF000000FF00000000000050 /* Input.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Input.h; path = ../../src/noz/Input.h; sourceTree = "<group>"; };
+		FF000000FF00000000000051 /* Int32.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Int32.cpp; path = ../../src/noz/Int32.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000053 /* Int32.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Int32.h; path = ../../src/noz/Int32.h; sourceTree = "<group>"; };
+		FF000000FF00000000000054 /* JsonArray.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsonArray.cpp; path = ../../src/noz/Json/JsonArray.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000056 /* JsonArray.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = JsonArray.h; path = ../../src/noz/Json/JsonArray.h; sourceTree = "<group>"; };
+		FF000000FF00000000000057 /* JsonObject.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsonObject.cpp; path = ../../src/noz/Json/JsonObject.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000059 /* JsonObject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = JsonObject.h; path = ../../src/noz/Json/JsonObject.h; sourceTree = "<group>"; };
+		FF000000FF0000000000005A /* JsonString.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsonString.cpp; path = ../../src/noz/Json/JsonString.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000005C /* JsonString.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = JsonString.h; path = ../../src/noz/Json/JsonString.h; sourceTree = "<group>"; };
+		FF000000FF0000000000005D /* JsonValue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsonValue.cpp; path = ../../src/noz/Json/JsonValue.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000005F /* JsonValue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = JsonValue.h; path = ../../src/noz/Json/JsonValue.h; sourceTree = "<group>"; };
+		FF000000FF00000000000060 /* Keys.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Keys.h; path = ../../src/noz/Keys.h; sourceTree = "<group>"; };
+		FF000000FF00000000000061 /* Layer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Layer.h; path = ../../src/noz/Layer.h; sourceTree = "<group>"; };
+		FF000000FF00000000000062 /* Math.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Math.cpp; path = ../../src/noz/Math.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000064 /* Math.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Math.h; path = ../../src/noz/Math.h; sourceTree = "<group>"; };
+		FF000000FF00000000000065 /* Matrix3.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Matrix3.cpp; path = ../../src/noz/Matrix3.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000067 /* Matrix3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Matrix3.h; path = ../../src/noz/Matrix3.h; sourceTree = "<group>"; };
+		FF000000FF00000000000068 /* Matrix4.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Matrix4.cpp; path = ../../src/noz/Matrix4.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000006A /* Matrix4.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Matrix4.h; path = ../../src/noz/Matrix4.h; sourceTree = "<group>"; };
+		FF000000FF0000000000006B /* Memory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Memory.h; path = ../../src/noz/Memory.h; sourceTree = "<group>"; };
+		FF000000FF0000000000006C /* Module.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Module.h; path = ../../src/noz/Module.h; sourceTree = "<group>"; };
+		FF000000FF0000000000006D /* Name.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Name.cpp; path = ../../src/noz/Name.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000006F /* Name.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Name.h; path = ../../src/noz/Name.h; sourceTree = "<group>"; };
+		FF000000FF00000000000070 /* Dns.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Dns.h; path = ../../src/noz/Networking/Dns.h; sourceTree = "<group>"; };
+		FF000000FF00000000000071 /* IPAddress.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IPAddress.cpp; path = ../../src/noz/Networking/IPAddress.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000073 /* IPAddress.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IPAddress.h; path = ../../src/noz/Networking/IPAddress.h; sourceTree = "<group>"; };
+		FF000000FF00000000000074 /* IPHostEntry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IPHostEntry.h; path = ../../src/noz/Networking/IPHostEntry.h; sourceTree = "<group>"; };
+		FF000000FF00000000000075 /* NetworkStream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NetworkStream.cpp; path = ../../src/noz/Networking/NetworkStream.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000077 /* NetworkStream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NetworkStream.h; path = ../../src/noz/Networking/NetworkStream.h; sourceTree = "<group>"; };
+		FF000000FF00000000000078 /* Socket.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Socket.cpp; path = ../../src/noz/Networking/Socket.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000007A /* Socket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Socket.h; path = ../../src/noz/Networking/Socket.h; sourceTree = "<group>"; };
+		FF000000FF0000000000007B /* TcpClient.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TcpClient.cpp; path = ../../src/noz/Networking/TcpClient.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000007D /* TcpClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TcpClient.h; path = ../../src/noz/Networking/TcpClient.h; sourceTree = "<group>"; };
+		FF000000FF0000000000007E /* TcpListener.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TcpListener.cpp; path = ../../src/noz/Networking/TcpListener.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000080 /* TcpListener.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TcpListener.h; path = ../../src/noz/Networking/TcpListener.h; sourceTree = "<group>"; };
+		FF000000FF00000000000081 /* Node.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Node.h; path = ../../src/noz/Node.h; sourceTree = "<group>"; };
+		FF000000FF00000000000082 /* NodePath.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NodePath.h; path = ../../src/noz/NodePath.h; sourceTree = "<group>"; };
+		FF000000FF00000000000083 /* Object.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Object.cpp; path = ../../src/noz/Object.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000085 /* Object.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Object.h; path = ../../src/noz/Object.h; sourceTree = "<group>"; };
+		FF000000FF00000000000086 /* Prefab.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Prefab.h; path = ../../src/noz/Prefab.h; sourceTree = "<group>"; };
+		FF000000FF00000000000087 /* Prefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Prefs.h; path = ../../src/noz/Prefs.h; sourceTree = "<group>"; };
+		FF000000FF00000000000088 /* BoolProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BoolProperty.h; path = ../../src/noz/Property/BoolProperty.h; sourceTree = "<group>"; };
+		FF000000FF00000000000089 /* ColorProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ColorProperty.h; path = ../../src/noz/Property/ColorProperty.h; sourceTree = "<group>"; };
+		FF000000FF0000000000008A /* ComponentProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ComponentProperty.h; path = ../../src/noz/Property/ComponentProperty.h; sourceTree = "<group>"; };
+		FF000000FF0000000000008B /* FixedArrayProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FixedArrayProperty.h; path = ../../src/noz/Property/FixedArrayProperty.h; sourceTree = "<group>"; };
+		FF000000FF0000000000008C /* IPropertyListener.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IPropertyListener.h; path = ../../src/noz/Property/IPropertyListener.h; sourceTree = "<group>"; };
+		FF000000FF0000000000008D /* Int32Property.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Int32Property.h; path = ../../src/noz/Property/Int32Property.h; sourceTree = "<group>"; };
+		FF000000FF0000000000008E /* NameProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NameProperty.h; path = ../../src/noz/Property/NameProperty.h; sourceTree = "<group>"; };
+		FF000000FF0000000000008F /* NodeProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NodeProperty.h; path = ../../src/noz/Property/NodeProperty.h; sourceTree = "<group>"; };
+		FF000000FF00000000000090 /* ObjectProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ObjectProperty.h; path = ../../src/noz/Property/ObjectProperty.h; sourceTree = "<group>"; };
+		FF000000FF00000000000091 /* ObjectPtrProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ObjectPtrProperty.h; path = ../../src/noz/Property/ObjectPtrProperty.h; sourceTree = "<group>"; };
+		FF000000FF00000000000092 /* ObjectVectorProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ObjectVectorProperty.h; path = ../../src/noz/Property/ObjectVectorProperty.h; sourceTree = "<group>"; };
+		FF000000FF00000000000093 /* Property.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Property.cpp; path = ../../src/noz/Property/Property.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000095 /* Property.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Property.h; path = ../../src/noz/Property/Property.h; sourceTree = "<group>"; };
+		FF000000FF00000000000096 /* PropertyPath.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PropertyPath.cpp; path = ../../src/noz/Property/PropertyPath.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000098 /* PropertyPath.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PropertyPath.h; path = ../../src/noz/Property/PropertyPath.h; sourceTree = "<group>"; };
+		FF000000FF00000000000099 /* PropertyProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PropertyProperty.h; path = ../../src/noz/Property/PropertyProperty.h; sourceTree = "<group>"; };
+		FF000000FF0000000000009A /* PropertyTracker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PropertyTracker.cpp; path = ../../src/noz/Property/PropertyTracker.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000009C /* PropertyTracker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PropertyTracker.h; path = ../../src/noz/Property/PropertyTracker.h; sourceTree = "<group>"; };
+		FF000000FF0000000000009D /* RectProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RectProperty.h; path = ../../src/noz/Property/RectProperty.h; sourceTree = "<group>"; };
+		FF000000FF0000000000009E /* SharedPtrProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SharedPtrProperty.h; path = ../../src/noz/Property/SharedPtrProperty.h; sourceTree = "<group>"; };
+		FF000000FF0000000000009F /* SharedPtrVectorProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SharedPtrVectorProperty.h; path = ../../src/noz/Property/SharedPtrVectorProperty.h; sourceTree = "<group>"; };
+		FF000000FF000000000000A0 /* StringProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = StringProperty.h; path = ../../src/noz/Property/StringProperty.h; sourceTree = "<group>"; };
+		FF000000FF000000000000A1 /* TypeProperty.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TypeProperty.cpp; path = ../../src/noz/Property/TypeProperty.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000A3 /* TypeProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TypeProperty.h; path = ../../src/noz/Property/TypeProperty.h; sourceTree = "<group>"; };
+		FF000000FF000000000000A4 /* VectorProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VectorProperty.h; path = ../../src/noz/Property/VectorProperty.h; sourceTree = "<group>"; };
+		FF000000FF000000000000A5 /* Rect.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Rect.cpp; path = ../../src/noz/Rect.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000A7 /* Rect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Rect.h; path = ../../src/noz/Rect.h; sourceTree = "<group>"; };
+		FF000000FF000000000000A8 /* Scene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Scene.h; path = ../../src/noz/Scene.h; sourceTree = "<group>"; };
+		FF000000FF000000000000A9 /* Screen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Screen.h; path = ../../src/noz/Screen.h; sourceTree = "<group>"; };
+		FF000000FF000000000000AA /* String.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = String.cpp; path = ../../src/noz/String.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000AC /* String.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = String.h; path = ../../src/noz/String.h; sourceTree = "<group>"; };
+		FF000000FF000000000000AD /* StringBuilder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = StringBuilder.cpp; path = ../../src/noz/StringBuilder.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000AF /* StringBuilder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = StringBuilder.h; path = ../../src/noz/StringBuilder.h; sourceTree = "<group>"; };
+		FF000000FF000000000000B0 /* StringLexer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = StringLexer.cpp; path = ../../src/noz/StringLexer.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000B2 /* StringLexer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = StringLexer.h; path = ../../src/noz/StringLexer.h; sourceTree = "<group>"; };
+		FF000000FF000000000000B3 /* SystemEvent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SystemEvent.h; path = ../../src/noz/SystemEvent.h; sourceTree = "<group>"; };
+		FF000000FF000000000000B4 /* Regex.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Regex.cpp; path = ../../src/noz/Text/Regex.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000B6 /* Regex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Regex.h; path = ../../src/noz/Text/Regex.h; sourceTree = "<group>"; };
+		FF000000FF000000000000B7 /* Thread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Thread.cpp; path = ../../src/noz/Threading/Thread.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000B9 /* Thread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Thread.h; path = ../../src/noz/Threading/Thread.h; sourceTree = "<group>"; };
+		FF000000FF000000000000BA /* ThreadStart.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ThreadStart.h; path = ../../src/noz/Threading/ThreadStart.h; sourceTree = "<group>"; };
+		FF000000FF000000000000BB /* Time.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Time.cpp; path = ../../src/noz/Time.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000BD /* Time.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Time.h; path = ../../src/noz/Time.h; sourceTree = "<group>"; };
+		FF000000FF000000000000BE /* MakeProject.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MakeProject.cpp; path = ../../src/noz/Tooling/MakeProject.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000C0 /* MakeProject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MakeProject.h; path = ../../src/noz/Tooling/MakeProject.h; sourceTree = "<group>"; };
+		FF000000FF000000000000C1 /* VisualStudioProject.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VisualStudioProject.cpp; path = ../../src/noz/Tooling/VisualStudioProject.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000C3 /* VisualStudioProject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VisualStudioProject.h; path = ../../src/noz/Tooling/VisualStudioProject.h; sourceTree = "<group>"; };
+		FF000000FF000000000000C4 /* VisualStudioSolution.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = VisualStudioSolution.cpp; path = ../../src/noz/Tooling/VisualStudioSolution.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000C6 /* VisualStudioSolution.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VisualStudioSolution.h; path = ../../src/noz/Tooling/VisualStudioSolution.h; sourceTree = "<group>"; };
+		FF000000FF000000000000C7 /* XCodeProject.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = XCodeProject.cpp; path = ../../src/noz/Tooling/XCodeProject.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000C9 /* XCodeProject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = XCodeProject.h; path = ../../src/noz/Tooling/XCodeProject.h; sourceTree = "<group>"; };
+		FF000000FF000000000000CA /* Type.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Type.cpp; path = ../../src/noz/Type.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000CC /* Type.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Type.h; path = ../../src/noz/Type.h; sourceTree = "<group>"; };
+		FF000000FF000000000000CD /* UInt32.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = UInt32.cpp; path = ../../src/noz/UInt32.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000CF /* UInt32.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UInt32.h; path = ../../src/noz/UInt32.h; sourceTree = "<group>"; };
+		FF000000FF000000000000D0 /* Vector2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Vector2.cpp; path = ../../src/noz/Vector2.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000D2 /* Vector2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Vector2.h; path = ../../src/noz/Vector2.h; sourceTree = "<group>"; };
+		FF000000FF000000000000D3 /* Vector3.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Vector3.cpp; path = ../../src/noz/Vector3.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000D5 /* Vector3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Vector3.h; path = ../../src/noz/Vector3.h; sourceTree = "<group>"; };
+		FF000000FF000000000000D6 /* Vector4.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Vector4.h; path = ../../src/noz/Vector4.h; sourceTree = "<group>"; };
+		FF000000FF000000000000D7 /* Window.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Window.h; path = ../../src/noz/Window.h; sourceTree = "<group>"; };
+		FF000000FF000000000000D8 /* XmlTextReader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = XmlTextReader.cpp; path = ../../src/noz/Xml/XmlTextReader.cpp; sourceTree = "<group>"; };
+		FF000000FF000000000000DA /* XmlTextReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = XmlTextReader.h; path = ../../src/noz/Xml/XmlTextReader.h; sourceTree = "<group>"; };
+		FF000000FF000000000000DB /* XmlWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = XmlWriter.h; path = ../../src/noz/Xml/XmlWriter.h; sourceTree = "<group>"; };
+		FF000000FF000000000000DC /* noz.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = noz.h; path = ../../src/noz/noz.h; sourceTree = "<group>"; };
+		FF000000FF000000000000E2 /* libnoz_lean.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libnoz_lean.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		FF000000FF000000000000DF /* noz_xml2.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = noz_xml2.xcodeproj; sourceTree = "<group>"; };
+		FF000000FF000000000000DD /* noz.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = noz.cpp; path = ../../src/noz.cpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FF000000FF00000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+		
+/* Begin PBXGroup section */
+		FF000000FF000000000000E3 = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF000000000000E5 /* noz */,
+				FF000000FF000000000000EF /* Products */,
+				FF000000FF000000000000DF /* noz_xml2.xcodeproj */,
+				FF000000FF000000000000DD /* noz.cpp */,
+			);
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000E4 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF000000000000E0 /* libnoz_xml2.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000EF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF000000000000E2 /* libnoz_lean.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000E5 /* noz */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF00000000000008 /* Application.h */,
+				FF000000FF00000000000009 /* Boolean.cpp */,
+				FF000000FF0000000000000B /* Boolean.h */,
+				FF000000FF0000000000000C /* Byte.cpp */,
+				FF000000FF0000000000000E /* Byte.h */,
+				FF000000FF0000000000000F /* Camera.h */,
+				FF000000FF00000000000010 /* Component.h */,
+				FF000000FF00000000000011 /* Console.cpp */,
+				FF000000FF00000000000013 /* Console.h */,
+				FF000000FF00000000000014 /* DateTime.cpp */,
+				FF000000FF00000000000016 /* DateTime.h */,
+				FF000000FF00000000000017 /* Delegate.h */,
+				FF000000FF00000000000018 /* Double.cpp */,
+				FF000000FF0000000000001A /* Double.h */,
+				FF000000FF0000000000001B /* Enum.h */,
+				FF000000FF0000000000001C /* Environment.h */,
+				FF000000FF0000000000001D /* Event.h */,
+				FF000000FF0000000000001E /* Float.cpp */,
+				FF000000FF00000000000020 /* Float.h */,
+				FF000000FF00000000000021 /* Guid.cpp */,
+				FF000000FF00000000000023 /* Guid.h */,
+				FF000000FF000000000000E6 /* IO */,
+				FF000000FF00000000000050 /* Input.h */,
+				FF000000FF00000000000051 /* Int32.cpp */,
+				FF000000FF00000000000053 /* Int32.h */,
+				FF000000FF000000000000E8 /* Json */,
+				FF000000FF00000000000060 /* Keys.h */,
+				FF000000FF00000000000061 /* Layer.h */,
+				FF000000FF00000000000062 /* Math.cpp */,
+				FF000000FF00000000000064 /* Math.h */,
+				FF000000FF00000000000065 /* Matrix3.cpp */,
+				FF000000FF00000000000067 /* Matrix3.h */,
+				FF000000FF00000000000068 /* Matrix4.cpp */,
+				FF000000FF0000000000006A /* Matrix4.h */,
+				FF000000FF0000000000006B /* Memory.h */,
+				FF000000FF0000000000006C /* Module.h */,
+				FF000000FF0000000000006D /* Name.cpp */,
+				FF000000FF0000000000006F /* Name.h */,
+				FF000000FF000000000000E9 /* Networking */,
+				FF000000FF00000000000081 /* Node.h */,
+				FF000000FF00000000000082 /* NodePath.h */,
+				FF000000FF00000000000083 /* Object.cpp */,
+				FF000000FF00000000000085 /* Object.h */,
+				FF000000FF00000000000086 /* Prefab.h */,
+				FF000000FF00000000000087 /* Prefs.h */,
+				FF000000FF000000000000EA /* Property */,
+				FF000000FF000000000000A5 /* Rect.cpp */,
+				FF000000FF000000000000A7 /* Rect.h */,
+				FF000000FF000000000000A8 /* Scene.h */,
+				FF000000FF000000000000A9 /* Screen.h */,
+				FF000000FF000000000000AA /* String.cpp */,
+				FF000000FF000000000000AC /* String.h */,
+				FF000000FF000000000000AD /* StringBuilder.cpp */,
+				FF000000FF000000000000AF /* StringBuilder.h */,
+				FF000000FF000000000000B0 /* StringLexer.cpp */,
+				FF000000FF000000000000B2 /* StringLexer.h */,
+				FF000000FF000000000000B3 /* SystemEvent.h */,
+				FF000000FF000000000000EB /* Text */,
+				FF000000FF000000000000EC /* Threading */,
+				FF000000FF000000000000BB /* Time.cpp */,
+				FF000000FF000000000000BD /* Time.h */,
+				FF000000FF000000000000ED /* Tooling */,
+				FF000000FF000000000000CA /* Type.cpp */,
+				FF000000FF000000000000CC /* Type.h */,
+				FF000000FF000000000000CD /* UInt32.cpp */,
+				FF000000FF000000000000CF /* UInt32.h */,
+				FF000000FF000000000000D0 /* Vector2.cpp */,
+				FF000000FF000000000000D2 /* Vector2.h */,
+				FF000000FF000000000000D3 /* Vector3.cpp */,
+				FF000000FF000000000000D5 /* Vector3.h */,
+				FF000000FF000000000000D6 /* Vector4.h */,
+				FF000000FF000000000000D7 /* Window.h */,
+				FF000000FF000000000000EE /* Xml */,
+				FF000000FF000000000000DC /* noz.h */,
+			);
+			name = noz;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000E6 /* IO */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF00000000000024 /* BinaryReader.cpp */,
+				FF000000FF00000000000026 /* BinaryReader.h */,
+				FF000000FF00000000000027 /* BinaryWriter.cpp */,
+				FF000000FF00000000000029 /* BinaryWriter.h */,
+				FF000000FF000000000000E7 /* Compression */,
+				FF000000FF0000000000002D /* Directory.cpp */,
+				FF000000FF0000000000002F /* Directory.h */,
+				FF000000FF00000000000030 /* DirectoryInfo.h */,
+				FF000000FF00000000000031 /* File.cpp */,
+				FF000000FF00000000000033 /* File.h */,
+				FF000000FF00000000000034 /* FileStream.cpp */,
+				FF000000FF00000000000036 /* FileStream.h */,
+				FF000000FF00000000000037 /* IO.h */,
+				FF000000FF00000000000038 /* MemoryStream.cpp */,
+				FF000000FF0000000000003A /* MemoryStream.h */,
+				FF000000FF0000000000003B /* Path.cpp */,
+				FF000000FF0000000000003D /* Path.h */,
+				FF000000FF0000000000003E /* Stream.cpp */,
+				FF000000FF00000000000040 /* Stream.h */,
+				FF000000FF00000000000041 /* StreamReader.cpp */,
+				FF000000FF00000000000043 /* StreamReader.h */,
+				FF000000FF00000000000044 /* StreamWriter.cpp */,
+				FF000000FF00000000000046 /* StreamWriter.h */,
+				FF000000FF00000000000047 /* StringReader.cpp */,
+				FF000000FF00000000000049 /* StringReader.h */,
+				FF000000FF0000000000004A /* TextReader.cpp */,
+				FF000000FF0000000000004C /* TextReader.h */,
+				FF000000FF0000000000004D /* TextWriter.cpp */,
+				FF000000FF0000000000004F /* TextWriter.h */,
+			);
+			name = IO;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000E7 /* Compression */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF0000000000002A /* ZipArchive.cpp */,
+				FF000000FF0000000000002C /* ZipArchive.h */,
+			);
+			name = Compression;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000E8 /* Json */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF00000000000054 /* JsonArray.cpp */,
+				FF000000FF00000000000056 /* JsonArray.h */,
+				FF000000FF00000000000057 /* JsonObject.cpp */,
+				FF000000FF00000000000059 /* JsonObject.h */,
+				FF000000FF0000000000005A /* JsonString.cpp */,
+				FF000000FF0000000000005C /* JsonString.h */,
+				FF000000FF0000000000005D /* JsonValue.cpp */,
+				FF000000FF0000000000005F /* JsonValue.h */,
+			);
+			name = Json;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000E9 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF00000000000070 /* Dns.h */,
+				FF000000FF00000000000071 /* IPAddress.cpp */,
+				FF000000FF00000000000073 /* IPAddress.h */,
+				FF000000FF00000000000074 /* IPHostEntry.h */,
+				FF000000FF00000000000075 /* NetworkStream.cpp */,
+				FF000000FF00000000000077 /* NetworkStream.h */,
+				FF000000FF00000000000078 /* Socket.cpp */,
+				FF000000FF0000000000007A /* Socket.h */,
+				FF000000FF0000000000007B /* TcpClient.cpp */,
+				FF000000FF0000000000007D /* TcpClient.h */,
+				FF000000FF0000000000007E /* TcpListener.cpp */,
+				FF000000FF00000000000080 /* TcpListener.h */,
+			);
+			name = Networking;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000EA /* Property */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF00000000000088 /* BoolProperty.h */,
+				FF000000FF00000000000089 /* ColorProperty.h */,
+				FF000000FF0000000000008A /* ComponentProperty.h */,
+				FF000000FF0000000000008B /* FixedArrayProperty.h */,
+				FF000000FF0000000000008C /* IPropertyListener.h */,
+				FF000000FF0000000000008D /* Int32Property.h */,
+				FF000000FF0000000000008E /* NameProperty.h */,
+				FF000000FF0000000000008F /* NodeProperty.h */,
+				FF000000FF00000000000090 /* ObjectProperty.h */,
+				FF000000FF00000000000091 /* ObjectPtrProperty.h */,
+				FF000000FF00000000000092 /* ObjectVectorProperty.h */,
+				FF000000FF00000000000093 /* Property.cpp */,
+				FF000000FF00000000000095 /* Property.h */,
+				FF000000FF00000000000096 /* PropertyPath.cpp */,
+				FF000000FF00000000000098 /* PropertyPath.h */,
+				FF000000FF00000000000099 /* PropertyProperty.h */,
+				FF000000FF0000000000009A /* PropertyTracker.cpp */,
+				FF000000FF0000000000009C /* PropertyTracker.h */,
+				FF000000FF0000000000009D /* RectProperty.h */,
+				FF000000FF0000000000009E /* SharedPtrProperty.h */,
+				FF000000FF0000000000009F /* SharedPtrVectorProperty.h */,
+				FF000000FF000000000000A0 /* StringProperty.h */,
+				FF000000FF000000000000A1 /* TypeProperty.cpp */,
+				FF000000FF000000000000A3 /* TypeProperty.h */,
+				FF000000FF000000000000A4 /* VectorProperty.h */,
+			);
+			name = Property;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000EB /* Text */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF000000000000B4 /* Regex.cpp */,
+				FF000000FF000000000000B6 /* Regex.h */,
+			);
+			name = Text;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000EC /* Threading */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF000000000000B7 /* Thread.cpp */,
+				FF000000FF000000000000B9 /* Thread.h */,
+				FF000000FF000000000000BA /* ThreadStart.h */,
+			);
+			name = Threading;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000ED /* Tooling */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF000000000000BE /* MakeProject.cpp */,
+				FF000000FF000000000000C0 /* MakeProject.h */,
+				FF000000FF000000000000C1 /* VisualStudioProject.cpp */,
+				FF000000FF000000000000C3 /* VisualStudioProject.h */,
+				FF000000FF000000000000C4 /* VisualStudioSolution.cpp */,
+				FF000000FF000000000000C6 /* VisualStudioSolution.h */,
+				FF000000FF000000000000C7 /* XCodeProject.cpp */,
+				FF000000FF000000000000C9 /* XCodeProject.h */,
+			);
+			name = Tooling;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000EE /* Xml */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF000000000000D8 /* XmlTextReader.cpp */,
+				FF000000FF000000000000DA /* XmlTextReader.h */,
+				FF000000FF000000000000DB /* XmlWriter.h */,
+			);
+			name = Xml;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FF000000FF00000000000005 /* noz_lean */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FF000000FF000000000000F0 /* Build configuration list for PBXNativeTarget "noz_lean" */;
+			buildPhases = (
+				FF000000FF00000000000003 /* Sources */,
+				FF000000FF00000000000002 /* Frameworks */,
+				FF000000FF00000000000004 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = noz_lean;
+			productName = noz_lean;
+			productReference = FF000000FF000000000000E2;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FF000000FF00000000000007 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0640;
+				ORGANIZATIONNAME = "NoZ Games, LLC";
+				TargetAttributes = {
+					FF000000FF00000000000005 = {
+						CreatedOnToolsVersion = 6.3.2;
+					};
+				};
+			};
+			buildConfigurationList = FF000000FF00000000000006;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = FF000000FF000000000000E3;
+			productRefGroup = FF000000FF000000000000EF;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = FF000000FF000000000000E4 /* Products */;
+					ProjectRef = FF000000FF000000000000DF /* noz_xml2.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				FF000000FF00000000000005 /* noz_lean */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		FF000000FF000000000000E0 /* libnoz_xml2.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libnoz_xml2.a;
+			remoteRef = FF000000FF000000000000E1 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+		
+/* Begin PBXSourcesBuildPhase section */
+		FF000000FF00000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF000000FF0000000000000A /* Boolean.cpp in Sources */,
+				FF000000FF0000000000000D /* Byte.cpp in Sources */,
+				FF000000FF00000000000012 /* Console.cpp in Sources */,
+				FF000000FF00000000000015 /* DateTime.cpp in Sources */,
+				FF000000FF00000000000019 /* Double.cpp in Sources */,
+				FF000000FF0000000000001F /* Float.cpp in Sources */,
+				FF000000FF00000000000022 /* Guid.cpp in Sources */,
+				FF000000FF00000000000025 /* BinaryReader.cpp in Sources */,
+				FF000000FF00000000000028 /* BinaryWriter.cpp in Sources */,
+				FF000000FF0000000000002B /* ZipArchive.cpp in Sources */,
+				FF000000FF0000000000002E /* Directory.cpp in Sources */,
+				FF000000FF00000000000032 /* File.cpp in Sources */,
+				FF000000FF00000000000035 /* FileStream.cpp in Sources */,
+				FF000000FF00000000000039 /* MemoryStream.cpp in Sources */,
+				FF000000FF0000000000003C /* Path.cpp in Sources */,
+				FF000000FF0000000000003F /* Stream.cpp in Sources */,
+				FF000000FF00000000000042 /* StreamReader.cpp in Sources */,
+				FF000000FF00000000000045 /* StreamWriter.cpp in Sources */,
+				FF000000FF00000000000048 /* StringReader.cpp in Sources */,
+				FF000000FF0000000000004B /* TextReader.cpp in Sources */,
+				FF000000FF0000000000004E /* TextWriter.cpp in Sources */,
+				FF000000FF00000000000052 /* Int32.cpp in Sources */,
+				FF000000FF00000000000055 /* JsonArray.cpp in Sources */,
+				FF000000FF00000000000058 /* JsonObject.cpp in Sources */,
+				FF000000FF0000000000005B /* JsonString.cpp in Sources */,
+				FF000000FF0000000000005E /* JsonValue.cpp in Sources */,
+				FF000000FF00000000000063 /* Math.cpp in Sources */,
+				FF000000FF00000000000066 /* Matrix3.cpp in Sources */,
+				FF000000FF00000000000069 /* Matrix4.cpp in Sources */,
+				FF000000FF0000000000006E /* Name.cpp in Sources */,
+				FF000000FF00000000000072 /* IPAddress.cpp in Sources */,
+				FF000000FF00000000000076 /* NetworkStream.cpp in Sources */,
+				FF000000FF00000000000079 /* Socket.cpp in Sources */,
+				FF000000FF0000000000007C /* TcpClient.cpp in Sources */,
+				FF000000FF0000000000007F /* TcpListener.cpp in Sources */,
+				FF000000FF00000000000084 /* Object.cpp in Sources */,
+				FF000000FF00000000000094 /* Property.cpp in Sources */,
+				FF000000FF00000000000097 /* PropertyPath.cpp in Sources */,
+				FF000000FF0000000000009B /* PropertyTracker.cpp in Sources */,
+				FF000000FF000000000000A2 /* TypeProperty.cpp in Sources */,
+				FF000000FF000000000000A6 /* Rect.cpp in Sources */,
+				FF000000FF000000000000AB /* String.cpp in Sources */,
+				FF000000FF000000000000AE /* StringBuilder.cpp in Sources */,
+				FF000000FF000000000000B1 /* StringLexer.cpp in Sources */,
+				FF000000FF000000000000B5 /* Regex.cpp in Sources */,
+				FF000000FF000000000000B8 /* Thread.cpp in Sources */,
+				FF000000FF000000000000BC /* Time.cpp in Sources */,
+				FF000000FF000000000000BF /* MakeProject.cpp in Sources */,
+				FF000000FF000000000000C2 /* VisualStudioProject.cpp in Sources */,
+				FF000000FF000000000000C5 /* VisualStudioSolution.cpp in Sources */,
+				FF000000FF000000000000C8 /* XCodeProject.cpp in Sources */,
+				FF000000FF000000000000CB /* Type.cpp in Sources */,
+				FF000000FF000000000000CE /* UInt32.cpp in Sources */,
+				FF000000FF000000000000D1 /* Vector2.cpp in Sources */,
+				FF000000FF000000000000D4 /* Vector3.cpp in Sources */,
+				FF000000FF000000000000D9 /* XmlTextReader.cpp in Sources */,
+				FF000000FF000000000000DE /* noz.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		FF000000FF000000000000F1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SDKROOT = iphoneos;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"../../../noz",
+					"../../src",
+					"../../external/zlib-1.2.8",
+					"../../external/libxml2-2.7.2/include",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"NOZ_LEAN",
+					"NOZ_DEBUG",
+					"NOZ_IOS",
+				);
+			};
+			name = Debug;
+		};
+		FF000000FF000000000000F2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				OTHER_LDFLAGS = "-ObjC";
+				USE_HEADERMAP = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+				);
+			};
+			name = Debug;
+		};
+		FF000000FF000000000000F3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SDKROOT = iphoneos;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"../../../noz",
+					"../../src",
+					"../../external/zlib-1.2.8",
+					"../../external/libxml2-2.7.2/include",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"NOZ_LEAN",
+					"NOZ_IOS",
+				);
+			};
+			name = Release;
+		};
+		FF000000FF000000000000F4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				OTHER_LDFLAGS = "-ObjC";
+				USE_HEADERMAP = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+				);
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FF000000FF00000000000006 /* Build configuration list for PBXProject "noz_lean" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF000000FF000000000000F1 /* Debug */,
+				FF000000FF000000000000F3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FF000000FF000000000000F0 /* Build configuration list for PBXNativeTarget "noz_lean" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF000000FF000000000000F2 /* Debug */,
+				FF000000FF000000000000F4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = FF000000FF00000000000007 /* Project object */;
+}

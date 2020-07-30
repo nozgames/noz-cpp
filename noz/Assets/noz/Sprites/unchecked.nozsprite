@@ -1,0 +1,15 @@
+{
+    "Root": 1,
+    "Objects": [
+        {
+            "_Id": 1,
+            "_Type": "noz::Sprite",
+            "Rectangle": {
+                "W": 16,
+                "H": 16
+            },
+            "Size": 16,
+            "Image": "noz/Textures/unchecked"
+        }
+    ]
+}

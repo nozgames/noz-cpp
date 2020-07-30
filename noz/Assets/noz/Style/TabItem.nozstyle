@@ -1,0 +1,117 @@
+{
+    "Root": 1,
+    "Objects": [
+        {
+            "_Id": 1,
+            "_Type": "noz::Style::Def",
+            "Nodes": [ 100 ],
+            "ControlType": "noz::TabItem",
+            "Parts": [ 10, 11 ]
+        },
+        {
+            "_Id": 10,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "TextNode",
+            "Object": 600
+        },
+        {
+            "_Id": 11,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "SpriteNode",
+            "Object": 700
+        },
+
+        {
+            "_Id": 100,
+            "_Type": "noz::Node",
+            "Components": [ 101 ],
+            "Children": [ 200 ]
+        },
+        {
+            "_Id": 101,
+            "_Type": "noz::Animator",
+            "Layers": [ 110 ]
+        },
+        {
+            "_Id": 110,
+            "_Type": "noz::AnimatorLayer",
+            "States": [ 111, 112, 113 ]
+        },
+        {
+            "_Id": 111,
+            "_Type": "noz::AnimatorState",
+            "Name": "UnSelected"
+        },
+        {
+            "_Id": 112,
+            "_Type": "noz::AnimatorState",
+            "Name": "Selected",
+            "Animation": "{B32A6B8D-2875-48FB-9C28-AF710576861B}"
+        },
+        {
+            "_Id": 113,
+            "_Type": "noz::AnimatorState",
+            "Name": "SelectedUnFocused",
+            "Animation": "{B32A6B8D-2875-48FB-9C28-AF710576861B}"
+        },
+
+
+        {
+            "_Id": 200,
+            "_Type": "noz::BorderNode",
+            "Name" : "BORDER",
+            "Children": [ 300, 400 ],
+            "Color": "#00000000",
+            "Bottom": 0
+        },
+
+
+        {
+            "_Id": 300,
+            "_Type": "noz::RectangleNode",
+            "Name": "RECTANGLE",
+            "Transform": 301
+        },
+        {
+            "_Id": 301,
+            "_Type": "noz::LayoutTransform",
+            "MarginLeft": 1,
+            "MarginRight": 1,
+            "MarginTop": 1,
+            "MarginBottom": -1
+        },
+
+        {
+            "_Id": 400,
+            "_Type": "noz::DockLayout",
+            "Transform": 401,
+            "Children": [ 700, 600 ],
+            "Dock" : "Left",
+            "Spacing": 4,
+            "Orientation": "Horizontal"
+        },
+        {
+            "_Id": 401,
+            "_Type": "noz::LayoutTransform",
+            "MarginLeft": 6,
+            "MarginRight": 6,
+            "MarginTop": 4,
+            "MarginBottom": 4
+        },
+
+
+        {
+            "_Id": 600,
+            "_Type": "noz::TextNode",
+            "Name": "TEXT",
+            "HorizontalAlignment": "Left",
+            "VerticalAlignment": "Center",
+            "HorizontalOverflow": "Ellipsis"
+        },
+
+        {
+            "_Id": 700,
+            "_Type": "noz::SpriteNode"
+        }
+    ]
+}

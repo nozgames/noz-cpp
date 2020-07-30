@@ -1,0 +1,57 @@
+{
+	@Windows ("Guid" : "83A98603-B1AF-441D-A88A-916D95DBDA2D",)
+
+	"TargetType" : "Library",
+
+	# Project level build settings.
+	"DefaultConfiguration" : {
+		"Warnings" : false,
+		"IncludeDirectories" : [ 
+			"../external/openal-soft-1.15.1/include",
+			"../external/openal-soft-1.15.1/OpenAL32/Include", 
+			"../external/openal-soft-1.15.1" 
+		],
+		"PreprocessorDefinitions" : [
+			@Windows ("_CRT_SECURE_NO_WARNINGS",)
+			"AL_ALEXT_PROTOTYPES",
+			"AL_LIBTYPE_STATIC"
+		],
+	},
+
+	# Configurations
+	"Configurations" : {
+		"Debug" : {  },
+		"Release" : { "Optimizations" : true, },
+	},
+
+	"Files" : [
+		{ "Path" : "../external/openal-soft-1.15.1/OpenAL32" },
+		{ "Path" : "../external/openal-soft-1.15.1/Alc/ALc.c" },
+
+		{ "Path" : "../external/openal-soft-1.15.1/Alc/alcConfig.c" },
+		{ "Path" : "../external/openal-soft-1.15.1/Alc/alcDedicated.c" },
+		{ "Path" : "../external/openal-soft-1.15.1/Alc/alcEcho.c" },
+		{ "Path" : "../external/openal-soft-1.15.1/Alc/alcModulator.c" },
+		{ "Path" : "../external/openal-soft-1.15.1/Alc/alcReverb.c" },
+		{ "Path" : "../external/openal-soft-1.15.1/Alc/alcRing.c" },
+		{ "Path" : "../external/openal-soft-1.15.1/Alc/alcThread.c" },
+		{ "Path" : "../external/openal-soft-1.15.1/Alc/ALu.c" },
+		{ "Path" : "../external/openal-soft-1.15.1/Alc/bs2b.c" },
+		{ "Path" : "../external/openal-soft-1.15.1/Alc/helpers.c" },
+		{ "Path" : "../external/openal-soft-1.15.1/Alc/hrtf.c" },
+		{ "Path" : "../external/openal-soft-1.15.1/Alc/mixer.c" },
+		{ "Path" : "../external/openal-soft-1.15.1/Alc/mixer_c.c" },
+		{ "Path" : "../external/openal-soft-1.15.1/Alc/panning.c" },
+
+		
+		@Windows( 
+			{ "Path" : "../external/openal-soft-1.15.1/Alc/backends/dsound.c" }, 
+			{ "Path" : "../external/openal-soft-1.15.1/Alc/backends/loopback.c" }, 
+			{ "Path" : "../external/openal-soft-1.15.1/Alc/backends/mmdevapi.c" }, 
+			{ "Path" : "../external/openal-soft-1.15.1/Alc/backends/null.c" }, 
+			{ "Path" : "../external/openal-soft-1.15.1/Alc/backends/wave.c" }, 
+			{ "Path" : "../external/openal-soft-1.15.1/Alc/backends/winmm.c" }, 
+			{ "Path" : "../external/openal-soft-1.15.1/Alc/mixer_sse.c" },
+		)
+	],
+}

@@ -1,0 +1,267 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		FF000000FF0000000000000D /* png.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000000E /* png.c */; };
+		FF000000FF0000000000000F /* pngerror.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000010 /* pngerror.c */; };
+		FF000000FF00000000000011 /* pngget.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000012 /* pngget.c */; };
+		FF000000FF00000000000013 /* pngmem.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000014 /* pngmem.c */; };
+		FF000000FF00000000000015 /* pngpread.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000016 /* pngpread.c */; };
+		FF000000FF00000000000017 /* pngread.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000018 /* pngread.c */; };
+		FF000000FF00000000000019 /* pngrio.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000001A /* pngrio.c */; };
+		FF000000FF0000000000001B /* pngrtran.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000001C /* pngrtran.c */; };
+		FF000000FF0000000000001D /* pngrutil.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000001E /* pngrutil.c */; };
+		FF000000FF0000000000001F /* pngset.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000020 /* pngset.c */; };
+		FF000000FF00000000000021 /* pngtrans.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000022 /* pngtrans.c */; };
+		FF000000FF00000000000023 /* pngwio.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000024 /* pngwio.c */; };
+		FF000000FF00000000000025 /* pngwrite.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000026 /* pngwrite.c */; };
+		FF000000FF00000000000027 /* pngwtran.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000028 /* pngwtran.c */; };
+		FF000000FF00000000000029 /* pngwutil.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000002A /* pngwutil.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		FF000000FF0000000000000A /* libnoz_png.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libnoz_png.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		FF000000FF0000000000000E /* png.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = png.c; path = ../../external/lpng163/png.c; sourceTree = "<group>"; };
+		FF000000FF00000000000010 /* pngerror.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pngerror.c; path = ../../external/lpng163/pngerror.c; sourceTree = "<group>"; };
+		FF000000FF00000000000012 /* pngget.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pngget.c; path = ../../external/lpng163/pngget.c; sourceTree = "<group>"; };
+		FF000000FF00000000000014 /* pngmem.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pngmem.c; path = ../../external/lpng163/pngmem.c; sourceTree = "<group>"; };
+		FF000000FF00000000000016 /* pngpread.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pngpread.c; path = ../../external/lpng163/pngpread.c; sourceTree = "<group>"; };
+		FF000000FF00000000000018 /* pngread.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pngread.c; path = ../../external/lpng163/pngread.c; sourceTree = "<group>"; };
+		FF000000FF0000000000001A /* pngrio.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pngrio.c; path = ../../external/lpng163/pngrio.c; sourceTree = "<group>"; };
+		FF000000FF0000000000001C /* pngrtran.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pngrtran.c; path = ../../external/lpng163/pngrtran.c; sourceTree = "<group>"; };
+		FF000000FF0000000000001E /* pngrutil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pngrutil.c; path = ../../external/lpng163/pngrutil.c; sourceTree = "<group>"; };
+		FF000000FF00000000000020 /* pngset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pngset.c; path = ../../external/lpng163/pngset.c; sourceTree = "<group>"; };
+		FF000000FF00000000000022 /* pngtrans.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pngtrans.c; path = ../../external/lpng163/pngtrans.c; sourceTree = "<group>"; };
+		FF000000FF00000000000024 /* pngwio.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pngwio.c; path = ../../external/lpng163/pngwio.c; sourceTree = "<group>"; };
+		FF000000FF00000000000026 /* pngwrite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pngwrite.c; path = ../../external/lpng163/pngwrite.c; sourceTree = "<group>"; };
+		FF000000FF00000000000028 /* pngwtran.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pngwtran.c; path = ../../external/lpng163/pngwtran.c; sourceTree = "<group>"; };
+		FF000000FF0000000000002A /* pngwutil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pngwutil.c; path = ../../external/lpng163/pngwutil.c; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FF000000FF00000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		FF000000FF00000000000001 = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF00000000000002 /* Products */,
+				FF000000FF0000000000000E /* png.c */,
+				FF000000FF00000000000010 /* pngerror.c */,
+				FF000000FF00000000000012 /* pngget.c */,
+				FF000000FF00000000000014 /* pngmem.c */,
+				FF000000FF00000000000016 /* pngpread.c */,
+				FF000000FF00000000000018 /* pngread.c */,
+				FF000000FF0000000000001A /* pngrio.c */,
+				FF000000FF0000000000001C /* pngrtran.c */,
+				FF000000FF0000000000001E /* pngrutil.c */,
+				FF000000FF00000000000020 /* pngset.c */,
+				FF000000FF00000000000022 /* pngtrans.c */,
+				FF000000FF00000000000024 /* pngwio.c */,
+				FF000000FF00000000000026 /* pngwrite.c */,
+				FF000000FF00000000000028 /* pngwtran.c */,
+				FF000000FF0000000000002A /* pngwutil.c */,
+			);
+			name = "";
+			sourceTree = "<group>";
+		};
+		FF000000FF00000000000002 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF0000000000000A /* libnoz_png.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FF000000FF00000000000009 /* noz_png */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FF000000FF00000000000004 /* Build configuration list for PBXNativeTarget "noz_png" */;
+			buildPhases = (
+				FF000000FF00000000000006 /* Sources */,
+				FF000000FF00000000000005 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = noz_png;
+			productName = noz_png;
+			productReference = FF000000FF0000000000000A /* libnoz_png.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FF000000FF0000000000000C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0720;
+				ORGANIZATIONNAME = "NoZ Games, LLC";
+				TargetAttributes = {
+					FF000000FF00000000000009 = {
+						CreatedOnToolsVersion = 6.3.2;
+					};
+				};
+			};
+			buildConfigurationList = FF000000FF0000000000000B /* Build configuration list for PBXProject "noz_png" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = FF000000FF00000000000001;
+			productRefGroup = FF000000FF00000000000002 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FF000000FF00000000000009 /* noz_png */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		FF000000FF00000000000006 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF000000FF0000000000000D /* png.c in Sources */,
+				FF000000FF0000000000000F /* pngerror.c in Sources */,
+				FF000000FF00000000000011 /* pngget.c in Sources */,
+				FF000000FF00000000000013 /* pngmem.c in Sources */,
+				FF000000FF00000000000015 /* pngpread.c in Sources */,
+				FF000000FF00000000000017 /* pngread.c in Sources */,
+				FF000000FF00000000000019 /* pngrio.c in Sources */,
+				FF000000FF0000000000001B /* pngrtran.c in Sources */,
+				FF000000FF0000000000001D /* pngrutil.c in Sources */,
+				FF000000FF0000000000001F /* pngset.c in Sources */,
+				FF000000FF00000000000021 /* pngtrans.c in Sources */,
+				FF000000FF00000000000023 /* pngwio.c in Sources */,
+				FF000000FF00000000000025 /* pngwrite.c in Sources */,
+				FF000000FF00000000000027 /* pngwtran.c in Sources */,
+				FF000000FF00000000000029 /* pngwutil.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		FF000000FF0000000000002B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_TESTABILITY = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					COMPILED_FROM_DSP,
+					XML_STATIC,
+					NOZ_IOS,
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					../../external/lpng163,
+					"../../external/zlib-1.2.8",
+				);
+				OBJROOT = output/Release/noz_png;
+				SDKROOT = iphoneos;
+				SYMROOT = bin/Release;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+			};
+			name = Release;
+		};
+		FF000000FF0000000000002C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USE_HEADERMAP = NO;
+			};
+			name = Release;
+		};
+		FF000000FF0000000000002D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_TESTABILITY = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				ONLY_ACTIVE_ARCH = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					COMPILED_FROM_DSP,
+					XML_STATIC,
+					NOZ_IOS,
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					../../external/lpng163,
+					"../../external/zlib-1.2.8",
+				);
+				OBJROOT = output/Debug/noz_png;
+				SDKROOT = iphoneos;
+				SYMROOT = bin/Debug;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+			};
+			name = Debug;
+		};
+		FF000000FF0000000000002E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USE_HEADERMAP = NO;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FF000000FF0000000000000B /* Build configuration list for PBXProject "noz_png" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF000000FF0000000000002B /* Release */,
+				FF000000FF0000000000002D /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FF000000FF00000000000004 /* Build configuration list for PBXNativeTarget "noz_png" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF000000FF0000000000002C /* Release */,
+				FF000000FF0000000000002E /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = FF000000FF0000000000000C /* Project object */;
+}

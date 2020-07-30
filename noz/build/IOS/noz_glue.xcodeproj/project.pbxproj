@@ -1,0 +1,308 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		FF000000FF00000000000009 /* GlueClass.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000008 /* GlueClass.cpp */; };
+		FF000000FF0000000000000D /* GlueFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000000C /* GlueFile.cpp */; };
+		FF000000FF00000000000010 /* GlueMeta.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000000F /* GlueMeta.cpp */; };
+		FF000000FF00000000000016 /* GlueState.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000015 /* GlueState.cpp */; };
+		FF000000FF00000000000019 /* GlueType.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000018 /* GlueType.cpp */; };
+		FF000000FF0000000000001C /* Lexer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000001B /* Lexer.cpp */; };
+		FF000000FF0000000000001F /* Parse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000001E /* Parse.cpp */; };
+		FF000000FF00000000000021 /* Write.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000020 /* Write.cpp */; };
+		FF000000FF00000000000023 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000022 /* main.cpp */; };
+		FF000000FF00000000000025 /* noz_glue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000024 /* noz_glue.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		FF000000FF00000000000029 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FF000000FF00000000000027 /* noz_lean.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = FF000000FF000000000000E2;
+			remoteInfo = noz_lean;
+		};
+
+/* End PBXContainerItemProxy section */
+		
+/* Begin PBXCopyFilesBuildPhase section */
+		FF000000FF00000000000004 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+		
+/* Begin PBXFileReference section */
+		FF000000FF00000000000008 /* GlueClass.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GlueClass.cpp; path = ../../tools/noz_glue/GlueClass.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000000A /* GlueClass.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueClass.h; path = ../../tools/noz_glue/GlueClass.h; sourceTree = "<group>"; };
+		FF000000FF0000000000000B /* GlueEnum.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueEnum.h; path = ../../tools/noz_glue/GlueEnum.h; sourceTree = "<group>"; };
+		FF000000FF0000000000000C /* GlueFile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GlueFile.cpp; path = ../../tools/noz_glue/GlueFile.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000000E /* GlueFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueFile.h; path = ../../tools/noz_glue/GlueFile.h; sourceTree = "<group>"; };
+		FF000000FF0000000000000F /* GlueMeta.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GlueMeta.cpp; path = ../../tools/noz_glue/GlueMeta.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000011 /* GlueMeta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueMeta.h; path = ../../tools/noz_glue/GlueMeta.h; sourceTree = "<group>"; };
+		FF000000FF00000000000012 /* GlueMethod.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueMethod.h; path = ../../tools/noz_glue/GlueMethod.h; sourceTree = "<group>"; };
+		FF000000FF00000000000013 /* GlueParameter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueParameter.h; path = ../../tools/noz_glue/GlueParameter.h; sourceTree = "<group>"; };
+		FF000000FF00000000000014 /* GlueProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueProperty.h; path = ../../tools/noz_glue/GlueProperty.h; sourceTree = "<group>"; };
+		FF000000FF00000000000015 /* GlueState.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GlueState.cpp; path = ../../tools/noz_glue/GlueState.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000017 /* GlueState.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueState.h; path = ../../tools/noz_glue/GlueState.h; sourceTree = "<group>"; };
+		FF000000FF00000000000018 /* GlueType.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GlueType.cpp; path = ../../tools/noz_glue/GlueType.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000001A /* GlueType.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueType.h; path = ../../tools/noz_glue/GlueType.h; sourceTree = "<group>"; };
+		FF000000FF0000000000001B /* Lexer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Lexer.cpp; path = ../../tools/noz_glue/Lexer.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000001D /* Lexer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Lexer.h; path = ../../tools/noz_glue/Lexer.h; sourceTree = "<group>"; };
+		FF000000FF0000000000001E /* Parse.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Parse.cpp; path = ../../tools/noz_glue/Parse.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000020 /* Write.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Write.cpp; path = ../../tools/noz_glue/Write.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000022 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = ../../tools/noz_glue/main.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000024 /* noz_glue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = noz_glue.cpp; path = ../../tools/noz_glue/noz_glue.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000026 /* noz_glue.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = noz_glue.pch; path = ../../tools/noz_glue/noz_glue.pch; sourceTree = "<group>"; };
+		FF000000FF0000000000002A /* libnoz_glue.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libnoz_glue.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		FF000000FF00000000000027 /* noz_lean.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = noz_lean.xcodeproj; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FF000000FF00000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+		
+/* Begin PBXGroup section */
+		FF000000FF0000000000002B = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF00000000000008 /* GlueClass.cpp */,
+				FF000000FF0000000000000A /* GlueClass.h */,
+				FF000000FF0000000000000B /* GlueEnum.h */,
+				FF000000FF0000000000000C /* GlueFile.cpp */,
+				FF000000FF0000000000000E /* GlueFile.h */,
+				FF000000FF0000000000000F /* GlueMeta.cpp */,
+				FF000000FF00000000000011 /* GlueMeta.h */,
+				FF000000FF00000000000012 /* GlueMethod.h */,
+				FF000000FF00000000000013 /* GlueParameter.h */,
+				FF000000FF00000000000014 /* GlueProperty.h */,
+				FF000000FF00000000000015 /* GlueState.cpp */,
+				FF000000FF00000000000017 /* GlueState.h */,
+				FF000000FF00000000000018 /* GlueType.cpp */,
+				FF000000FF0000000000001A /* GlueType.h */,
+				FF000000FF0000000000001B /* Lexer.cpp */,
+				FF000000FF0000000000001D /* Lexer.h */,
+				FF000000FF0000000000001E /* Parse.cpp */,
+				FF000000FF00000000000020 /* Write.cpp */,
+				FF000000FF00000000000022 /* main.cpp */,
+				FF000000FF00000000000024 /* noz_glue.cpp */,
+				FF000000FF00000000000026 /* noz_glue.pch */,
+				FF000000FF0000000000002D /* Products */,
+				FF000000FF00000000000027 /* noz_lean.xcodeproj */,
+			);
+			sourceTree = "<group>";
+		};
+		FF000000FF0000000000002C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF00000000000028 /* libnoz_lean.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FF000000FF0000000000002D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF0000000000002A /* libnoz_glue.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FF000000FF00000000000005 /* noz_glue */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FF000000FF0000000000002E /* Build configuration list for PBXNativeTarget "noz_glue" */;
+			buildPhases = (
+				FF000000FF00000000000003 /* Sources */,
+				FF000000FF00000000000002 /* Frameworks */,
+				FF000000FF00000000000004 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = noz_glue;
+			productName = noz_glue;
+			productReference = FF000000FF0000000000002A;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FF000000FF00000000000007 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0640;
+				ORGANIZATIONNAME = "NoZ Games, LLC";
+				TargetAttributes = {
+					FF000000FF00000000000005 = {
+						CreatedOnToolsVersion = 6.3.2;
+					};
+				};
+			};
+			buildConfigurationList = FF000000FF00000000000006;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = FF000000FF0000000000002B;
+			productRefGroup = FF000000FF0000000000002D;
+			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = FF000000FF0000000000002C /* Products */;
+					ProjectRef = FF000000FF00000000000027 /* noz_lean.xcodeproj */;
+				},
+			);
+			projectRoot = "";
+			targets = (
+				FF000000FF00000000000005 /* noz_glue */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		FF000000FF00000000000028 /* libnoz_lean.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libnoz_lean.a;
+			remoteRef = FF000000FF00000000000029 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
+		
+/* Begin PBXSourcesBuildPhase section */
+		FF000000FF00000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF000000FF00000000000009 /* GlueClass.cpp in Sources */,
+				FF000000FF0000000000000D /* GlueFile.cpp in Sources */,
+				FF000000FF00000000000010 /* GlueMeta.cpp in Sources */,
+				FF000000FF00000000000016 /* GlueState.cpp in Sources */,
+				FF000000FF00000000000019 /* GlueType.cpp in Sources */,
+				FF000000FF0000000000001C /* Lexer.cpp in Sources */,
+				FF000000FF0000000000001F /* Parse.cpp in Sources */,
+				FF000000FF00000000000021 /* Write.cpp in Sources */,
+				FF000000FF00000000000023 /* main.cpp in Sources */,
+				FF000000FF00000000000025 /* noz_glue.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		FF000000FF0000000000002F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SDKROOT = iphoneos;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"../../src",
+					"../../tools/noz_glue",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"NOZ_DEBUG",
+					"NOZ_LEAN",
+					"NOZ_IOS",
+				);
+			};
+			name = Debug;
+		};
+		FF000000FF00000000000030 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				OTHER_LDFLAGS = "-ObjC";
+				USE_HEADERMAP = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+				);
+			};
+			name = Debug;
+		};
+		FF000000FF00000000000031 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SDKROOT = iphoneos;
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"../../src",
+					"../../tools/noz_glue",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"NOZ_LEAN",
+					"NOZ_IOS",
+				);
+			};
+			name = Release;
+		};
+		FF000000FF00000000000032 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				OTHER_LDFLAGS = "-ObjC";
+				USE_HEADERMAP = NO;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+				);
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FF000000FF00000000000006 /* Build configuration list for PBXProject "noz_glue" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF000000FF0000000000002F /* Debug */,
+				FF000000FF00000000000031 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FF000000FF0000000000002E /* Build configuration list for PBXNativeTarget "noz_glue" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF000000FF00000000000030 /* Debug */,
+				FF000000FF00000000000032 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = FF000000FF00000000000007 /* Project object */;
+}

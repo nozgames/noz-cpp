@@ -1,0 +1,10 @@
+{
+    "Makefile": "build/FarmerZ.nozmake",
+    "AssetDirectories": [
+        "Assets",
+        "noz/Assets"
+    ],
+    "EditorScene": "{57462A02-4019-4DDA-A301-C8AC29BA1D81}",
+    "TestPrefab.": "{F428F690-C271-4EF0-8F2C-44498BA14728}",
+    "MainScene": "{0FA909DE-E236-4043-A521-A9B3DE9B79D3}"
+}

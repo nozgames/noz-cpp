@@ -1,0 +1,15 @@
+///////////////////////////////////////////////////////////////////////////////
+// NoZ Engine Framework
+// Copyright (C) 2015 NoZ Games, LLC
+// http://www.nozgames.com
+///////////////////////////////////////////////////////////////////////////////
+
+#include <noz.pch.h>
+#include "Method.h"
+
+using namespace noz;
+
+Method::Method(MethodAttributes attr) {
+  parent_type_ = nullptr;
+  attr_ = attr;
+}

@@ -1,0 +1,5 @@
+P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/ALL_BUILD.dir
+P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/OpenAL32.dir
+P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/ZERO_CHECK.dir
+P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/makehrtf.dir
+P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/openal-info.dir

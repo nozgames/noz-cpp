@@ -1,0 +1,108 @@
+{
+    "Root": 1,
+    "Objects": [
+        {
+            "_Id": 1,
+            "_Type": "noz::Style::Def",
+            "Nodes": [ 100 ],
+            "Parts": [ 2, 3, 4, 5, 6]
+        },
+        {
+            "_Id": 2,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "YesButton",
+            "Object": 500
+        },
+        {
+            "_Id": 3,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "NoButton",
+            "Object": 400
+        },
+        {
+            "_Id": 4,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "MessageText",
+            "Object": 200
+        },
+        {
+            "_Id": 5,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "OkButton",
+            "Object": 700
+        },
+        {
+            "_Id": 6,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "CancelButton",
+            "Object": 600
+        },
+
+        {
+            "_Id": 100,
+            "_Type": "noz::RectangleNode",
+            "Color": "#2d2d30",
+            "Transform": 101,
+            "Children": [ 110 ]
+        },
+        {
+            "_Id": 101,
+            "_Type": "noz::LayoutTransform",
+            "Padding": 8,
+            "MinWidth": 200
+        },
+        {
+            "_Id": 110,
+            "_Type": "noz::StackLayout",
+            "Spacing": 8,
+            "Children": [ 200, 300 ]
+        },
+        {
+            "_Id": 200,
+            "_Type": "noz::TextNode",
+            "Transform":  201,
+            "HorizontalOverflow" : "Wrap"
+        },
+        {
+            "_Id": 201,
+            "_Type": "noz::LayoutTransform"
+        },
+    
+        {
+            "_Id": 300,
+            "_Type": "noz::DockLayout",
+            "Dock": "Right",
+            "Spacing": 8,
+            "LastChildFill" : false,
+            "Children": [600, 400, 500, 700]
+        },
+
+        {
+            "_Id": 600,
+            "_Type": "noz::Button",
+            "Text": "Cancel",
+            "Style": "{C0E94C6B-1F73-4C53-B6FE-D3E16B63FD8B}"
+        },
+
+        {
+            "_Id": 700,
+            "_Type": "noz::Button",
+            "Text" : "OK",
+            "Style": "{C0E94C6B-1F73-4C53-B6FE-D3E16B63FD8B}"
+        },
+
+        {
+            "_Id": 400,
+            "_Type": "noz::Button",
+            "Text" : "No",
+            "Style": "{C0E94C6B-1F73-4C53-B6FE-D3E16B63FD8B}"
+        },
+
+        {
+            "_Id": 500,
+            "_Type": "noz::Button",
+            "Text": "Yes",
+            "Style": "{C0E94C6B-1F73-4C53-B6FE-D3E16B63FD8B}"
+        }
+    ]
+}

@@ -1,0 +1,303 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		FF000000FF0000000000000C /* chvalid.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000000D /* chvalid.c */; };
+		FF000000FF0000000000000E /* dict.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000000F /* dict.c */; };
+		FF000000FF00000000000010 /* encoding.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000011 /* encoding.c */; };
+		FF000000FF00000000000012 /* entities.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000013 /* entities.c */; };
+		FF000000FF00000000000014 /* error.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000015 /* error.c */; };
+		FF000000FF00000000000016 /* globals.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000017 /* globals.c */; };
+		FF000000FF00000000000018 /* hash.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000019 /* hash.c */; };
+		FF000000FF0000000000001A /* list.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000001B /* list.c */; };
+		FF000000FF0000000000001C /* parser.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000001D /* parser.c */; };
+		FF000000FF0000000000001E /* parserInternals.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000001F /* parserInternals.c */; };
+		FF000000FF00000000000020 /* SAX2.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000021 /* SAX2.c */; };
+		FF000000FF00000000000022 /* threads.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000023 /* threads.c */; };
+		FF000000FF00000000000024 /* tree.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000025 /* tree.c */; };
+		FF000000FF00000000000026 /* uri.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000027 /* uri.c */; };
+		FF000000FF00000000000028 /* valid.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000029 /* valid.c */; };
+		FF000000FF0000000000002A /* xmlIO.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000002B /* xmlIO.c */; };
+		FF000000FF0000000000002C /* xmlmemory.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000002D /* xmlmemory.c */; };
+		FF000000FF0000000000002E /* xmlreader.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000002F /* xmlreader.c */; };
+		FF000000FF00000000000030 /* xmlregexp.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000031 /* xmlregexp.c */; };
+		FF000000FF00000000000032 /* xmlsave.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000033 /* xmlsave.c */; };
+		FF000000FF00000000000034 /* xmlstring.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000035 /* xmlstring.c */; };
+		FF000000FF00000000000036 /* xmlunicode.c in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000037 /* xmlunicode.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		FF000000FF0000000000000A /* libnoz_xml2.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libnoz_xml2.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		FF000000FF0000000000000D /* chvalid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = chvalid.c; path = "../../external/libxml2-2.7.2/chvalid.c"; sourceTree = "<group>"; };
+		FF000000FF0000000000000F /* dict.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = dict.c; path = "../../external/libxml2-2.7.2/dict.c"; sourceTree = "<group>"; };
+		FF000000FF00000000000011 /* encoding.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = encoding.c; path = "../../external/libxml2-2.7.2/encoding.c"; sourceTree = "<group>"; };
+		FF000000FF00000000000013 /* entities.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = entities.c; path = "../../external/libxml2-2.7.2/entities.c"; sourceTree = "<group>"; };
+		FF000000FF00000000000015 /* error.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = error.c; path = "../../external/libxml2-2.7.2/error.c"; sourceTree = "<group>"; };
+		FF000000FF00000000000017 /* globals.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = globals.c; path = "../../external/libxml2-2.7.2/globals.c"; sourceTree = "<group>"; };
+		FF000000FF00000000000019 /* hash.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = hash.c; path = "../../external/libxml2-2.7.2/hash.c"; sourceTree = "<group>"; };
+		FF000000FF0000000000001B /* list.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = list.c; path = "../../external/libxml2-2.7.2/list.c"; sourceTree = "<group>"; };
+		FF000000FF0000000000001D /* parser.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = parser.c; path = "../../external/libxml2-2.7.2/parser.c"; sourceTree = "<group>"; };
+		FF000000FF0000000000001F /* parserInternals.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = parserInternals.c; path = "../../external/libxml2-2.7.2/parserInternals.c"; sourceTree = "<group>"; };
+		FF000000FF00000000000021 /* SAX2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = SAX2.c; path = "../../external/libxml2-2.7.2/SAX2.c"; sourceTree = "<group>"; };
+		FF000000FF00000000000023 /* threads.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = threads.c; path = "../../external/libxml2-2.7.2/threads.c"; sourceTree = "<group>"; };
+		FF000000FF00000000000025 /* tree.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tree.c; path = "../../external/libxml2-2.7.2/tree.c"; sourceTree = "<group>"; };
+		FF000000FF00000000000027 /* uri.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uri.c; path = "../../external/libxml2-2.7.2/uri.c"; sourceTree = "<group>"; };
+		FF000000FF00000000000029 /* valid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = valid.c; path = "../../external/libxml2-2.7.2/valid.c"; sourceTree = "<group>"; };
+		FF000000FF0000000000002B /* xmlIO.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = xmlIO.c; path = "../../external/libxml2-2.7.2/xmlIO.c"; sourceTree = "<group>"; };
+		FF000000FF0000000000002D /* xmlmemory.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = xmlmemory.c; path = "../../external/libxml2-2.7.2/xmlmemory.c"; sourceTree = "<group>"; };
+		FF000000FF0000000000002F /* xmlreader.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = xmlreader.c; path = "../../external/libxml2-2.7.2/xmlreader.c"; sourceTree = "<group>"; };
+		FF000000FF00000000000031 /* xmlregexp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = xmlregexp.c; path = "../../external/libxml2-2.7.2/xmlregexp.c"; sourceTree = "<group>"; };
+		FF000000FF00000000000033 /* xmlsave.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = xmlsave.c; path = "../../external/libxml2-2.7.2/xmlsave.c"; sourceTree = "<group>"; };
+		FF000000FF00000000000035 /* xmlstring.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = xmlstring.c; path = "../../external/libxml2-2.7.2/xmlstring.c"; sourceTree = "<group>"; };
+		FF000000FF00000000000037 /* xmlunicode.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = xmlunicode.c; path = "../../external/libxml2-2.7.2/xmlunicode.c"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FF000000FF00000000000006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		FF000000FF00000000000002 = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF00000000000038 /* src */,
+				FF000000FF00000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		FF000000FF00000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF0000000000000A /* libnoz_xml2.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FF000000FF00000000000038 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF0000000000000D /* chvalid.c */,
+				FF000000FF0000000000000F /* dict.c */,
+				FF000000FF00000000000011 /* encoding.c */,
+				FF000000FF00000000000013 /* entities.c */,
+				FF000000FF00000000000015 /* error.c */,
+				FF000000FF00000000000017 /* globals.c */,
+				FF000000FF00000000000019 /* hash.c */,
+				FF000000FF0000000000001B /* list.c */,
+				FF000000FF0000000000001D /* parser.c */,
+				FF000000FF0000000000001F /* parserInternals.c */,
+				FF000000FF00000000000021 /* SAX2.c */,
+				FF000000FF00000000000023 /* threads.c */,
+				FF000000FF00000000000025 /* tree.c */,
+				FF000000FF00000000000027 /* uri.c */,
+				FF000000FF00000000000029 /* valid.c */,
+				FF000000FF0000000000002B /* xmlIO.c */,
+				FF000000FF0000000000002D /* xmlmemory.c */,
+				FF000000FF0000000000002F /* xmlreader.c */,
+				FF000000FF00000000000031 /* xmlregexp.c */,
+				FF000000FF00000000000033 /* xmlsave.c */,
+				FF000000FF00000000000035 /* xmlstring.c */,
+				FF000000FF00000000000037 /* xmlunicode.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FF000000FF00000000000009 /* noz_xml2 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FF000000FF00000000000005 /* Build configuration list for PBXNativeTarget "noz_xml2" */;
+			buildPhases = (
+				FF000000FF00000000000007 /* Sources */,
+				FF000000FF00000000000006 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = noz_xml2;
+			productName = noz_xml2;
+			productReference = FF000000FF0000000000000A /* libnoz_xml2.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FF000000FF00000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0720;
+				ORGANIZATIONNAME = "NoZ Games, LLC";
+				TargetAttributes = {
+					FF000000FF00000000000009 = {
+						CreatedOnToolsVersion = 6.3.2;
+					};
+				};
+			};
+			buildConfigurationList = FF000000FF0000000000000B /* Build configuration list for PBXProject "noz_xml2" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = FF000000FF00000000000002;
+			productRefGroup = FF000000FF00000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FF000000FF00000000000009 /* noz_xml2 */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		FF000000FF00000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF000000FF0000000000000C /* chvalid.c in Sources */,
+				FF000000FF0000000000000E /* dict.c in Sources */,
+				FF000000FF00000000000010 /* encoding.c in Sources */,
+				FF000000FF00000000000012 /* entities.c in Sources */,
+				FF000000FF00000000000014 /* error.c in Sources */,
+				FF000000FF00000000000016 /* globals.c in Sources */,
+				FF000000FF00000000000018 /* hash.c in Sources */,
+				FF000000FF0000000000001A /* list.c in Sources */,
+				FF000000FF0000000000001C /* parser.c in Sources */,
+				FF000000FF0000000000001E /* parserInternals.c in Sources */,
+				FF000000FF00000000000020 /* SAX2.c in Sources */,
+				FF000000FF00000000000022 /* threads.c in Sources */,
+				FF000000FF00000000000024 /* tree.c in Sources */,
+				FF000000FF00000000000026 /* uri.c in Sources */,
+				FF000000FF00000000000028 /* valid.c in Sources */,
+				FF000000FF0000000000002A /* xmlIO.c in Sources */,
+				FF000000FF0000000000002C /* xmlmemory.c in Sources */,
+				FF000000FF0000000000002E /* xmlreader.c in Sources */,
+				FF000000FF00000000000030 /* xmlregexp.c in Sources */,
+				FF000000FF00000000000032 /* xmlsave.c in Sources */,
+				FF000000FF00000000000034 /* xmlstring.c in Sources */,
+				FF000000FF00000000000036 /* xmlunicode.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		FF000000FF00000000000039 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USE_HEADERMAP = NO;
+			};
+			name = Debug;
+		};
+		FF000000FF0000000000003A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_TESTABILITY = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					NOZ_IOS,
+					COMPILED_FROM_DSP,
+					XML_STATIC,
+				);
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					../../src,
+					"../../external/libxml2-2.7.2",
+					"../../external/libxml2-2.7.2/config/ios",
+					"../../external/libxml2-2.7.2/include",
+				);
+				OBJROOT = output/Debug/noz_xml2;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SYMROOT = bin/Debug;
+			};
+			name = Debug;
+		};
+		FF000000FF0000000000003B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USE_HEADERMAP = NO;
+			};
+			name = Release;
+		};
+		FF000000FF0000000000003C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_TESTABILITY = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					NOZ_IOS,
+					COMPILED_FROM_DSP,
+					XML_STATIC,
+				);
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					../../src,
+					"../../external/libxml2-2.7.2",
+					"../../external/libxml2-2.7.2/config/ios",
+					"../../external/libxml2-2.7.2/include",
+				);
+				OBJROOT = output/Release/noz_xml2;
+				SDKROOT = iphoneos;
+				SYMROOT = bin/Release;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FF000000FF00000000000005 /* Build configuration list for PBXNativeTarget "noz_xml2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF000000FF00000000000039 /* Debug */,
+				FF000000FF0000000000003B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FF000000FF0000000000000B /* Build configuration list for PBXProject "noz_xml2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF000000FF0000000000003A /* Debug */,
+				FF000000FF0000000000003C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = FF000000FF00000000000001 /* Project object */;
+}

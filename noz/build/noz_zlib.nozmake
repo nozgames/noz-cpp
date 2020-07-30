@@ -1,0 +1,62 @@
+{
+	"Organization" : "NoZ Games, LLC",
+
+	@Windows ("Guid" : "3E43BBB8-395D-4958-AEEF-C3A0BB06E037",)
+
+	"TargetType" : "Library",
+
+	# Project level build settings.
+	"DefaultConfiguration" : {
+		"Warnings" : false,
+		"IncludeDirectories" : [ "../external/zlib-1.2.8" ],
+		"PreprocessorDefinitions" : [
+			@Windows ("_CRT_SECURE_NO_WARNINGS",)
+		],
+	},
+
+	# Configurations
+	"Configurations" : {
+		"Debug" : { },
+		"Release" : { "Optimizations": true }
+	},
+
+	"Files" : [
+		{ "Path" : "../external/zlib-1.2.8/contrib/minizip/ioapi.c" },
+		{ "Path" : "../external/zlib-1.2.8/contrib/minizip/mztools.c" },
+		{ "Path" : "../external/zlib-1.2.8/contrib/minizip/unzip.c" },
+		{ "Path" : "../external/zlib-1.2.8/contrib/minizip/zip.c" },
+		{ "Path" : "../external/zlib-1.2.8/contrib/minizip/ioapi.h" },
+		{ "Path" : "../external/zlib-1.2.8/contrib/minizip/crypt.h" },
+		{ "Path" : "../external/zlib-1.2.8/contrib/minizip/iowin32.h" },
+		{ "Path" : "../external/zlib-1.2.8/contrib/minizip/mztools.h" },
+		{ "Path" : "../external/zlib-1.2.8/contrib/minizip/unzip.h" },
+		{ "Path" : "../external/zlib-1.2.8/contrib/minizip/zip.h" },
+		{ "Path" : "../external/zlib-1.2.8/adler32.c" },
+		{ "Path" : "../external/zlib-1.2.8/compress.c" },
+		{ "Path" : "../external/zlib-1.2.8/crc32.c" },
+		{ "Path" : "../external/zlib-1.2.8/deflate.c" },
+		{ "Path" : "../external/zlib-1.2.8/infback.c" },
+		{ "Path" : "../external/zlib-1.2.8/inffast.c" },
+		{ "Path" : "../external/zlib-1.2.8/inflate.c" },
+		{ "Path" : "../external/zlib-1.2.8/inftrees.c" },
+		{ "Path" : "../external/zlib-1.2.8/trees.c" },
+		{ "Path" : "../external/zlib-1.2.8/uncompr.c" },
+		{ "Path" : "../external/zlib-1.2.8/zutil.c" },
+		{ "Path" : "../external/zlib-1.2.8/zutil.h" },
+		{ "Path" : "../external/zlib-1.2.8/crc32.h" },
+		{ "Path" : "../external/zlib-1.2.8/deflate.h" },
+		{ "Path" : "../external/zlib-1.2.8/inffast.h" },
+		{ "Path" : "../external/zlib-1.2.8/inffixed.h" },
+		{ "Path" : "../external/zlib-1.2.8/inflate.h" },
+		{ "Path" : "../external/zlib-1.2.8/inftrees.h" },
+		{ "Path" : "../external/zlib-1.2.8/trees.h" },
+		{ "Path" : "../external/zlib-1.2.8/zconf.h" },
+		{ "Path" : "../external/zlib-1.2.8/zlib.h" },
+		{ "Path" : "../external/zlib-1.2.8/zutil.h" },
+		{ "Path" : "../external/zlib-1.2.8/gzguts.h" },
+
+		@Windows (
+			{ "Path" : "../external/zlib-1.2.8/contrib/minizip/iowin32.c" },
+		)
+	],
+}

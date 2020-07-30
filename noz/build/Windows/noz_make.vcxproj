@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="Projectcfgs">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{34B84813-28E3-487D-BADE-FB2E1AD03C2D}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>
+    </RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>bin\Debug\</OutDir>
+    <IntDir>output\Debug\noz_make\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>bin\Release\</OutDir>
+    <IntDir>output\Release\noz_make\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>noz.pch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>NOZ_DEBUG;NOZ_LEAN;NOZ_WINDOWS; WIN32;_WINDOWS;_MBCS; %(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../tools/noz_make;../../../noz;../../src;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>opengl32.lib;rpcrt4.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>noz.pch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NOZ_LEAN;NOZ_WINDOWS; WIN32;_WINDOWS;_MBCS; %(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../tools/noz_make;../../../noz;../../src;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>opengl32.lib;rpcrt4.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="../../tools/noz_make/main.cpp" />
+    <ClCompile Include="../../tools/noz_make/noz.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/BinaryReader.cpp" />
+    <ClCompile Include="../../src/noz/IO/BinaryWriter.cpp" />
+    <ClCompile Include="../../src/noz/IO/Directory.cpp" />
+    <ClCompile Include="../../src/noz/IO/File.cpp" />
+    <ClCompile Include="../../src/noz/IO/FileStream.cpp" />
+    <ClCompile Include="../../src/noz/IO/MemoryStream.cpp" />
+    <ClCompile Include="../../src/noz/IO/Path.cpp" />
+    <ClCompile Include="../../src/noz/IO/Stream.cpp" />
+    <ClCompile Include="../../src/noz/IO/StreamReader.cpp" />
+    <ClCompile Include="../../src/noz/IO/StreamWriter.cpp" />
+    <ClCompile Include="../../src/noz/IO/StringReader.cpp" />
+    <ClCompile Include="../../src/noz/IO/TextReader.cpp" />
+    <ClCompile Include="../../src/noz/IO/TextWriter.cpp" />
+    <ClCompile Include="../../src/noz/Text/String.cpp" />
+    <ClCompile Include="../../src/noz/Text/StringBuilder.cpp" />
+    <ClCompile Include="../../src/noz/Text/StringLexer.cpp" />
+    <ClCompile Include="../../src/noz/Text/Json/JsonArray.cpp" />
+    <ClCompile Include="../../src/noz/Text/Json/JsonObject.cpp" />
+    <ClCompile Include="../../src/noz/Text/Json/JsonReader.cpp" />
+    <ClCompile Include="../../src/noz/Text/Json/JsonString.cpp" />
+    <ClCompile Include="../../src/noz/Text/Json/JsonValue.cpp" />
+    <ClCompile Include="../../src/noz/Text/Json/JsonWriter.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/Makefile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueClass.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueFile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueGen.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueLexer.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueMeta.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueParse.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueState.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueType.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueWrite.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/ProjectGen/ProjectGen.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/ProjectGen/VisualStudioProjectGen.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/ProjectGen/XCodeProjectGen.cpp" />
+    <ClCompile Include="../../src/noz/Boolean.cpp" />
+    <ClCompile Include="../../src/noz/Byte.cpp" />
+    <ClCompile Include="../../src/noz/Console.cpp" />
+    <ClCompile Include="../../src/noz/DateTime.cpp" />
+    <ClCompile Include="../../src/noz/Environment.cpp" />
+    <ClCompile Include="../../src/noz/Float.cpp" />
+    <ClCompile Include="../../src/noz/Guid.cpp" />
+    <ClCompile Include="../../src/noz/Int32.cpp" />
+    <ClCompile Include="../../src/noz/Name.cpp" />
+    <ClCompile Include="../../src/noz/Object.cpp" />
+    <ClCompile Include="../../src/noz/UInt32.cpp" />
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsDirectory.cpp" />
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsFile.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="../../src/noz/IO/BinaryReader.h" />
+    <ClInclude Include="../../src/noz/IO/BinaryWriter.h" />
+    <ClInclude Include="../../src/noz/IO/Directory.h" />
+    <ClInclude Include="../../src/noz/IO/DirectoryInfo.h" />
+    <ClInclude Include="../../src/noz/IO/File.h" />
+    <ClInclude Include="../../src/noz/IO/FileStream.h" />
+    <ClInclude Include="../../src/noz/IO/IO.h" />
+    <ClInclude Include="../../src/noz/IO/MemoryStream.h" />
+    <ClInclude Include="../../src/noz/IO/Path.h" />
+    <ClInclude Include="../../src/noz/IO/Stream.h" />
+    <ClInclude Include="../../src/noz/IO/StreamReader.h" />
+    <ClInclude Include="../../src/noz/IO/StreamWriter.h" />
+    <ClInclude Include="../../src/noz/IO/StringReader.h" />
+    <ClInclude Include="../../src/noz/IO/TextReader.h" />
+    <ClInclude Include="../../src/noz/IO/TextWriter.h" />
+    <ClInclude Include="../../src/noz/Text/String.h" />
+    <ClInclude Include="../../src/noz/Text/StringBuilder.h" />
+    <ClInclude Include="../../src/noz/Text/StringLexer.h" />
+    <ClInclude Include="../../src/noz/Text/StringObject.h" />
+    <ClInclude Include="../../src/noz/Text/Json/JsonArray.h" />
+    <ClInclude Include="../../src/noz/Text/Json/JsonObject.h" />
+    <ClInclude Include="../../src/noz/Text/Json/JsonReader.h" />
+    <ClInclude Include="../../src/noz/Text/Json/JsonString.h" />
+    <ClInclude Include="../../src/noz/Text/Json/JsonValue.h" />
+    <ClInclude Include="../../src/noz/Text/Json/JsonWriter.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/Makefile.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueClass.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueEnum.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueFile.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueGen.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueLexer.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueMeta.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueMethod.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueParameter.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueProperty.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueState.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueType.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/ProjectGen/ProjectGen.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/ProjectGen/VisualStudioProjectGen.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/ProjectGen/XCodeProjectGen.h" />
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="Projectcfgs">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C17F53EB-1D47-42C0-912D-E3C68D629467}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>noz_lean</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>../../bin/Debug\</OutDir>
+    <IntDir>../../output/Debug/noz_lean\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>../../bin/Release\</OutDir>
+    <IntDir>../../output/Release/noz_lean\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>noz.pch</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>NOZ_LEAN;NOZ_DEBUG;NOZ_WIN;WIN32;_WINDOWS;_MBCS; %(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../noz;../../src;../../external/zlib-1.2.8;../../external/libxml2-2.7.2/include;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>noz.pch</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NOZ_LEAN;NOZ_WIN;WIN32;_WINDOWS;_MBCS; %(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../noz;../../src;../../external/zlib-1.2.8;../../external/libxml2-2.7.2/include;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="../../src/noz/Boolean.cpp" />
+    <ClCompile Include="../../src/noz/Byte.cpp" />
+    <ClCompile Include="../../src/noz/Console.cpp" />
+    <ClCompile Include="../../src/noz/DateTime.cpp" />
+    <ClCompile Include="../../src/noz/Double.cpp" />
+    <ClCompile Include="../../src/noz/Float.cpp" />
+    <ClCompile Include="../../src/noz/Guid.cpp" />
+    <ClCompile Include="../../src/noz/IO/BinaryReader.cpp" />
+    <ClCompile Include="../../src/noz/IO/BinaryWriter.cpp" />
+    <ClCompile Include="../../src/noz/IO/Compression/ZipArchive.cpp" />
+    <ClCompile Include="../../src/noz/IO/Directory.cpp" />
+    <ClCompile Include="../../src/noz/IO/File.cpp" />
+    <ClCompile Include="../../src/noz/IO/FileStream.cpp" />
+    <ClCompile Include="../../src/noz/IO/MemoryStream.cpp" />
+    <ClCompile Include="../../src/noz/IO/Path.cpp" />
+    <ClCompile Include="../../src/noz/IO/Stream.cpp" />
+    <ClCompile Include="../../src/noz/IO/StreamReader.cpp" />
+    <ClCompile Include="../../src/noz/IO/StreamWriter.cpp" />
+    <ClCompile Include="../../src/noz/IO/StringReader.cpp" />
+    <ClCompile Include="../../src/noz/IO/TextReader.cpp" />
+    <ClCompile Include="../../src/noz/IO/TextWriter.cpp" />
+    <ClCompile Include="../../src/noz/Int32.cpp" />
+    <ClCompile Include="../../src/noz/Json/JsonArray.cpp" />
+    <ClCompile Include="../../src/noz/Json/JsonObject.cpp" />
+    <ClCompile Include="../../src/noz/Json/JsonString.cpp" />
+    <ClCompile Include="../../src/noz/Json/JsonValue.cpp" />
+    <ClCompile Include="../../src/noz/Math.cpp" />
+    <ClCompile Include="../../src/noz/Matrix3.cpp" />
+    <ClCompile Include="../../src/noz/Matrix4.cpp" />
+    <ClCompile Include="../../src/noz/Name.cpp" />
+    <ClCompile Include="../../src/noz/Networking/IPAddress.cpp" />
+    <ClCompile Include="../../src/noz/Networking/NetworkStream.cpp" />
+    <ClCompile Include="../../src/noz/Networking/Socket.cpp" />
+    <ClCompile Include="../../src/noz/Networking/TcpClient.cpp" />
+    <ClCompile Include="../../src/noz/Networking/TcpListener.cpp" />
+    <ClCompile Include="../../src/noz/Object.cpp" />
+    <ClCompile Include="../../src/noz/Property/Property.cpp" />
+    <ClCompile Include="../../src/noz/Property/PropertyPath.cpp" />
+    <ClCompile Include="../../src/noz/Property/PropertyTracker.cpp" />
+    <ClCompile Include="../../src/noz/Property/TypeProperty.cpp" />
+    <ClCompile Include="../../src/noz/Rect.cpp" />
+    <ClCompile Include="../../src/noz/String.cpp" />
+    <ClCompile Include="../../src/noz/StringBuilder.cpp" />
+    <ClCompile Include="../../src/noz/StringLexer.cpp" />
+    <ClCompile Include="../../src/noz/Text/Regex.cpp" />
+    <ClCompile Include="../../src/noz/Threading/Thread.cpp" />
+    <ClCompile Include="../../src/noz/Time.cpp" />
+    <ClCompile Include="../../src/noz/Tooling/MakeProject.cpp" />
+    <ClCompile Include="../../src/noz/Tooling/VisualStudioProject.cpp" />
+    <ClCompile Include="../../src/noz/Tooling/VisualStudioSolution.cpp" />
+    <ClCompile Include="../../src/noz/Tooling/XCodeProject.cpp" />
+    <ClCompile Include="../../src/noz/Type.cpp" />
+    <ClCompile Include="../../src/noz/UInt32.cpp" />
+    <ClCompile Include="../../src/noz/Vector2.cpp" />
+    <ClCompile Include="../../src/noz/Vector3.cpp" />
+    <ClCompile Include="../../src/noz/Xml/XmlTextReader.cpp" />
+    <ClCompile Include="../../src/noz.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsDirectory.cpp" />
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsFile.cpp" />
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsTime.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="../../src/noz/Application.h" />
+    <ClInclude Include="../../src/noz/Boolean.h" />
+    <ClInclude Include="../../src/noz/Byte.h" />
+    <ClInclude Include="../../src/noz/Camera.h" />
+    <ClInclude Include="../../src/noz/Component.h" />
+    <ClInclude Include="../../src/noz/Console.h" />
+    <ClInclude Include="../../src/noz/DateTime.h" />
+    <ClInclude Include="../../src/noz/Delegate.h" />
+    <ClInclude Include="../../src/noz/Double.h" />
+    <ClInclude Include="../../src/noz/Enum.h" />
+    <ClInclude Include="../../src/noz/Environment.h" />
+    <ClInclude Include="../../src/noz/Event.h" />
+    <ClInclude Include="../../src/noz/Float.h" />
+    <ClInclude Include="../../src/noz/Guid.h" />
+    <ClInclude Include="../../src/noz/IO/BinaryReader.h" />
+    <ClInclude Include="../../src/noz/IO/BinaryWriter.h" />
+    <ClInclude Include="../../src/noz/IO/Compression/ZipArchive.h" />
+    <ClInclude Include="../../src/noz/IO/Directory.h" />
+    <ClInclude Include="../../src/noz/IO/DirectoryInfo.h" />
+    <ClInclude Include="../../src/noz/IO/File.h" />
+    <ClInclude Include="../../src/noz/IO/FileStream.h" />
+    <ClInclude Include="../../src/noz/IO/IO.h" />
+    <ClInclude Include="../../src/noz/IO/MemoryStream.h" />
+    <ClInclude Include="../../src/noz/IO/Path.h" />
+    <ClInclude Include="../../src/noz/IO/Stream.h" />
+    <ClInclude Include="../../src/noz/IO/StreamReader.h" />
+    <ClInclude Include="../../src/noz/IO/StreamWriter.h" />
+    <ClInclude Include="../../src/noz/IO/StringReader.h" />
+    <ClInclude Include="../../src/noz/IO/TextReader.h" />
+    <ClInclude Include="../../src/noz/IO/TextWriter.h" />
+    <ClInclude Include="../../src/noz/Input.h" />
+    <ClInclude Include="../../src/noz/Int32.h" />
+    <ClInclude Include="../../src/noz/Json/JsonArray.h" />
+    <ClInclude Include="../../src/noz/Json/JsonObject.h" />
+    <ClInclude Include="../../src/noz/Json/JsonString.h" />
+    <ClInclude Include="../../src/noz/Json/JsonValue.h" />
+    <ClInclude Include="../../src/noz/Keys.h" />
+    <ClInclude Include="../../src/noz/Layer.h" />
+    <ClInclude Include="../../src/noz/Math.h" />
+    <ClInclude Include="../../src/noz/Matrix3.h" />
+    <ClInclude Include="../../src/noz/Matrix4.h" />
+    <ClInclude Include="../../src/noz/Memory.h" />
+    <ClInclude Include="../../src/noz/Module.h" />
+    <ClInclude Include="../../src/noz/Name.h" />
+    <ClInclude Include="../../src/noz/Networking/Dns.h" />
+    <ClInclude Include="../../src/noz/Networking/IPAddress.h" />
+    <ClInclude Include="../../src/noz/Networking/IPHostEntry.h" />
+    <ClInclude Include="../../src/noz/Networking/NetworkStream.h" />
+    <ClInclude Include="../../src/noz/Networking/Socket.h" />
+    <ClInclude Include="../../src/noz/Networking/TcpClient.h" />
+    <ClInclude Include="../../src/noz/Networking/TcpListener.h" />
+    <ClInclude Include="../../src/noz/Node.h" />
+    <ClInclude Include="../../src/noz/NodePath.h" />
+    <ClInclude Include="../../src/noz/Object.h" />
+    <ClInclude Include="../../src/noz/Prefab.h" />
+    <ClInclude Include="../../src/noz/Prefs.h" />
+    <ClInclude Include="../../src/noz/Property/BoolProperty.h" />
+    <ClInclude Include="../../src/noz/Property/ColorProperty.h" />
+    <ClInclude Include="../../src/noz/Property/ComponentProperty.h" />
+    <ClInclude Include="../../src/noz/Property/FixedArrayProperty.h" />
+    <ClInclude Include="../../src/noz/Property/IPropertyListener.h" />
+    <ClInclude Include="../../src/noz/Property/Int32Property.h" />
+    <ClInclude Include="../../src/noz/Property/NameProperty.h" />
+    <ClInclude Include="../../src/noz/Property/NodeProperty.h" />
+    <ClInclude Include="../../src/noz/Property/ObjectProperty.h" />
+    <ClInclude Include="../../src/noz/Property/ObjectPtrProperty.h" />
+    <ClInclude Include="../../src/noz/Property/ObjectVectorProperty.h" />
+    <ClInclude Include="../../src/noz/Property/Property.h" />
+    <ClInclude Include="../../src/noz/Property/PropertyPath.h" />
+    <ClInclude Include="../../src/noz/Property/PropertyProperty.h" />
+    <ClInclude Include="../../src/noz/Property/PropertyTracker.h" />
+    <ClInclude Include="../../src/noz/Property/RectProperty.h" />
+    <ClInclude Include="../../src/noz/Property/SharedPtrProperty.h" />
+    <ClInclude Include="../../src/noz/Property/SharedPtrVectorProperty.h" />
+    <ClInclude Include="../../src/noz/Property/StringProperty.h" />
+    <ClInclude Include="../../src/noz/Property/TypeProperty.h" />
+    <ClInclude Include="../../src/noz/Property/VectorProperty.h" />
+    <ClInclude Include="../../src/noz/Rect.h" />
+    <ClInclude Include="../../src/noz/Scene.h" />
+    <ClInclude Include="../../src/noz/Screen.h" />
+    <ClInclude Include="../../src/noz/String.h" />
+    <ClInclude Include="../../src/noz/StringBuilder.h" />
+    <ClInclude Include="../../src/noz/StringLexer.h" />
+    <ClInclude Include="../../src/noz/SystemEvent.h" />
+    <ClInclude Include="../../src/noz/Text/Regex.h" />
+    <ClInclude Include="../../src/noz/Threading/Thread.h" />
+    <ClInclude Include="../../src/noz/Threading/ThreadStart.h" />
+    <ClInclude Include="../../src/noz/Time.h" />
+    <ClInclude Include="../../src/noz/Tooling/MakeProject.h" />
+    <ClInclude Include="../../src/noz/Tooling/VisualStudioProject.h" />
+    <ClInclude Include="../../src/noz/Tooling/VisualStudioSolution.h" />
+    <ClInclude Include="../../src/noz/Tooling/XCodeProject.h" />
+    <ClInclude Include="../../src/noz/Type.h" />
+    <ClInclude Include="../../src/noz/UInt32.h" />
+    <ClInclude Include="../../src/noz/Vector2.h" />
+    <ClInclude Include="../../src/noz/Vector3.h" />
+    <ClInclude Include="../../src/noz/Vector4.h" />
+    <ClInclude Include="../../src/noz/Window.h" />
+    <ClInclude Include="../../src/noz/Xml/XmlTextReader.h" />
+    <ClInclude Include="../../src/noz/Xml/XmlWriter.h" />
+    <ClInclude Include="../../src/noz/noz.h" />
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="noz_xml2.vcxproj">
+      <Project>{F688F2AD-7F6F-4199-92B5-3B11BDEAE158}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

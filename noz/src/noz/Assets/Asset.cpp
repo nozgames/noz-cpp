@@ -1,0 +1,16 @@
+///////////////////////////////////////////////////////////////////////////////
+// NoZ Engine Framework
+// Copyright (C) 2015 NoZ Games, LLC
+// http://www.nozgames.com
+///////////////////////////////////////////////////////////////////////////////
+
+#include <noz.pch.h>
+
+using namespace noz;
+
+static noz_uint64 next_uid_ = 1;
+
+Asset::Asset(void) {
+  managed_ = false;
+  uid_ = next_uid_++;
+}

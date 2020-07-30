@@ -1,0 +1,58 @@
+{
+    "Root": 1,
+    "Objects": [
+        {
+            "_Id": 1,
+            "_Type": "noz::AnimationController",
+            "Layers": [ 3 ]
+        },
+        {
+            "_Id": 2,
+            "_Type": "noz::AnimationLayer",
+            "Name": "Layer1",
+            "States": [ 4, 5, 6 ],
+            "Weight": 0
+        },
+        {
+            "_Id": 3,
+            "_Type": "noz::AnimationLayer",
+            "Name": "Layer2",
+            "States": [ 7, 8, 9 ]
+        },
+        {
+            "_Id": 4,
+            "_Type": "noz::AnimationState",
+            "Name": "Normal"
+        },
+        {
+            "_Id": 5,
+            "_Type": "noz::AnimationState",
+            "Name": "Pressed",
+            "Animation": "{116C0808-1966-4440-9A01-048039FCD3F7}"
+        },
+        {
+            "_Id": 6,
+            "_Type": "noz::AnimationState",
+            "Name": "Hover"
+        },
+        {
+            "_Id": 7,
+            "_Type": "noz::AnimationState",
+            "Name": "Normal",
+            "BlendTime": 1
+        },
+        {
+            "_Id": 8,
+            "_Type": "noz::AnimationState",
+            "Name": "Pressed",
+            "Animation": "{A20B401D-B120-4304-B945-4583EF5E8F5D}",
+            "BlendTime": 1
+        },
+        {
+            "_Id": 9,
+            "_Type": "noz::AnimationState",
+            "Name": "Hover",
+            "BlendTime": 4
+        }
+    ]
+}

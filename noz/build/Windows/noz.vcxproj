@@ -1,0 +1,904 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C17F53EB-1D47-42C0-912D-E3C68D629467}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>
+    </RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>bin\Debug\Win32\</OutDir>
+    <IntDir>output\Debug\noz\Win32\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>bin\Debug\x64\</OutDir>
+    <IntDir>output\Debug\noz\x64\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>bin\Release\Win32\</OutDir>
+    <IntDir>output\Release\noz\Win32\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>bin\Release\x64\</OutDir>
+    <IntDir>output\Release\noz\x64\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>noz.pch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>NOZ_DEBUG;NOZ_EDITOR;GLEW_STATIC;NOZ_WINDOWS; WIN32;_WINDOWS;_MBCS; %(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../noz;../../src;../../external/zlib-1.2.8;../../external/libxml2-2.7.2/include;../../external/freetype-2.5.0.1/include;../../external/box2d-2.3.0;../../external/glew-1.10.0/include;output/Debug/noz/glue;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>bin\Release\noz_make.exe glue ..\noz.nozmake -platform=windows -config=Debug</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>noz.pch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>NOZ_DEBUG;NOZ_EDITOR;GLEW_STATIC;NOZ_WINDOWS; WIN32;_WINDOWS;_MBCS; %(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../noz;../../src;../../external/zlib-1.2.8;../../external/libxml2-2.7.2/include;../../external/freetype-2.5.0.1/include;../../external/box2d-2.3.0;../../external/glew-1.10.0/include;output/Debug/noz/glue;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>bin\Release\noz_make.exe glue ..\noz.nozmake -platform=windows -config=Debug</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>noz.pch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NOZ_EDITOR;GLEW_STATIC;NOZ_WINDOWS; WIN32;_WINDOWS;_MBCS; %(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../noz;../../src;../../external/zlib-1.2.8;../../external/libxml2-2.7.2/include;../../external/freetype-2.5.0.1/include;../../external/box2d-2.3.0;../../external/glew-1.10.0/include;output/Release/noz/glue;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>bin\Release\noz_make.exe glue ..\noz.nozmake -platform=windows -config=Release</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>noz.pch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NOZ_EDITOR;GLEW_STATIC;NOZ_WINDOWS; WIN32;_WINDOWS;_MBCS; %(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../../noz;../../src;../../external/zlib-1.2.8;../../external/libxml2-2.7.2/include;../../external/freetype-2.5.0.1/include;../../external/box2d-2.3.0;../../external/glew-1.10.0/include;output/Release/noz/glue;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>bin\Release\noz_make.exe glue ..\noz.nozmake -platform=windows -config=Release</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="../../src/noz/Animation/Animation.cpp" />
+    <ClCompile Include="../../src/noz/Animation/AnimationController.cpp" />
+    <ClCompile Include="../../src/noz/Animation/AnimationCurve.cpp" />
+    <ClCompile Include="../../src/noz/Animation/AnimationLayer.cpp" />
+    <ClCompile Include="../../src/noz/Animation/AnimationState.cpp" />
+    <ClCompile Include="../../src/noz/Animation/AnimationTarget.cpp" />
+    <ClCompile Include="../../src/noz/Animation/AnimationTrack.cpp" />
+    <ClCompile Include="../../src/noz/Animation/Animator.cpp" />
+    <ClCompile Include="../../src/noz/Animation/AnimatorLayer.cpp" />
+    <ClCompile Include="../../src/noz/Animation/BlendTarget.cpp" />
+    <ClCompile Include="../../src/noz/Animation/ColorBlendTarget.cpp" />
+    <ClCompile Include="../../src/noz/Animation/EnumBlendTarget.cpp" />
+    <ClCompile Include="../../src/noz/Animation/EnumKeyFrame.cpp" />
+    <ClCompile Include="../../src/noz/Animation/EventBlendTarget.cpp" />
+    <ClCompile Include="../../src/noz/Animation/EventKeyFrame.cpp" />
+    <ClCompile Include="../../src/noz/Animation/FixedBlendTarget.cpp" />
+    <ClCompile Include="../../src/noz/Animation/FloatBlendTarget.cpp" />
+    <ClCompile Include="../../src/noz/Animation/FloatKeyFrame.cpp" />
+    <ClCompile Include="../../src/noz/Animation/KeyFrame.cpp" />
+    <ClCompile Include="../../src/noz/Animation/SpriteBlendTarget.cpp" />
+    <ClCompile Include="../../src/noz/Animation/SpriteKeyFrame.cpp" />
+    <ClCompile Include="../../src/noz/Animation/Vector2BlendTarget.cpp" />
+    <ClCompile Include="../../src/noz/Animation/WeightedBlendTarget.cpp" />
+    <ClCompile Include="../../src/noz/Animation/WeightedKeyFrame.cpp" />
+    <ClCompile Include="../../src/noz/Assets/Asset.cpp" />
+    <ClCompile Include="../../src/noz/Assets/AssetManager.cpp" />
+    <ClCompile Include="../../src/noz/Assets/DirectoryAssetArchive.cpp" />
+    <ClCompile Include="../../src/noz/Assets/PakAssetArchive.cpp" />
+    <ClCompile Include="../../src/noz/Audio/AudioClip.cpp" />
+    <ClCompile Include="../../src/noz/Collections/ObjectArray.cpp" />
+    <ClCompile Include="../../src/noz/Components/Behavior.cpp" />
+    <ClCompile Include="../../src/noz/Components/Transform/LayoutTransform.cpp" />
+    <ClCompile Include="../../src/noz/Components/Transform/Transform.cpp" />
+    <ClCompile Include="../../src/noz/Diagnostics/Debugger.cpp" />
+    <ClCompile Include="../../src/noz/Diagnostics/PerformanceCounter.cpp" />
+    <ClCompile Include="../../src/noz/Render/BinPacker.cpp" />
+    <ClCompile Include="../../src/noz/Render/Color.cpp" />
+    <ClCompile Include="../../src/noz/Render/Font.cpp" />
+    <ClCompile Include="../../src/noz/Render/Image.cpp" />
+    <ClCompile Include="../../src/noz/Render/Mesh.cpp" />
+    <ClCompile Include="../../src/noz/Render/RenderContext.cpp" />
+    <ClCompile Include="../../src/noz/Render/RenderMesh.cpp" />
+    <ClCompile Include="../../src/noz/Render/RenderTarget.cpp" />
+    <ClCompile Include="../../src/noz/Render/Sprite.cpp" />
+    <ClCompile Include="../../src/noz/Render/Imaging/AlphaMapFilter.cpp" />
+    <ClCompile Include="../../src/noz/Render/Imaging/ResizeFilter.cpp" />
+    <ClCompile Include="../../src/noz/Render/Imaging/SignedDistanceFieldFilter.cpp" />
+    <ClCompile Include="../../src/noz/IO/BinaryReader.cpp" />
+    <ClCompile Include="../../src/noz/IO/BinaryWriter.cpp" />
+    <ClCompile Include="../../src/noz/IO/Directory.cpp" />
+    <ClCompile Include="../../src/noz/IO/File.cpp" />
+    <ClCompile Include="../../src/noz/IO/FileStream.cpp" />
+    <ClCompile Include="../../src/noz/IO/MemoryStream.cpp" />
+    <ClCompile Include="../../src/noz/IO/Path.cpp" />
+    <ClCompile Include="../../src/noz/IO/Stream.cpp" />
+    <ClCompile Include="../../src/noz/IO/StreamReader.cpp" />
+    <ClCompile Include="../../src/noz/IO/StreamWriter.cpp" />
+    <ClCompile Include="../../src/noz/IO/StringReader.cpp" />
+    <ClCompile Include="../../src/noz/IO/TextReader.cpp" />
+    <ClCompile Include="../../src/noz/IO/TextWriter.cpp" />
+    <ClCompile Include="../../src/noz/IO/Compression/ZipArchive.cpp" />
+    <ClCompile Include="../../src/noz/Networking/IPAddress.cpp" />
+    <ClCompile Include="../../src/noz/Networking/NetworkStream.cpp" />
+    <ClCompile Include="../../src/noz/Networking/Socket.cpp" />
+    <ClCompile Include="../../src/noz/Networking/TcpClient.cpp" />
+    <ClCompile Include="../../src/noz/Networking/TcpListener.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/Prefab.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/PrefabNode.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/SceneNode.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/Layout/DockLayout.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/Layout/GridLayout.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/Layout/Layout.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/Layout/StackLayout.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/Layout/TabLayout.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/Layout/WrapLayout.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/Render/BorderNode.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/Render/EditableTextNode.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/Render/ImageNode.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/Render/RectangleNode.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/Render/RenderNode.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/Render/SpriteNode.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/Render/TextNode.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/Button.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/ButtonBase.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/CheckBox.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/ColorPicker.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/ColorPickerPopup.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/ContentControl.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/Control.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/DialogBox.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/DockItem.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/DockManager.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/DockPane.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/DockTabItem.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/Document.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/DocumentManager.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/DocumentTabItem.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/DropDownList.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/DropDownListItem.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/Expander.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/FPSMeter.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/ListView.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/ListViewItem.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/MeasureScaler.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/MessageBox.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/Popup.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/ProgressBar.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/RadioButton.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/RepeatButton.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/ScrollBar.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/ScrollView.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/SearchTextBox.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/Spacer.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/Splitter.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/TabControl.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/TabItem.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/TextBox.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/Thumb.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/ThumbTrack.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/ToggleButton.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/TreeView.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/TreeViewItem.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/UINode.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/ViewBox.cpp" />
+    <ClCompile Include="../../src/noz/Nodes/UI/WindowNode.cpp" />
+    <ClCompile Include="../../src/noz/Physics/Body.cpp" />
+    <ClCompile Include="../../src/noz/Physics/Fixture.cpp" />
+    <ClCompile Include="../../src/noz/Physics/World.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Method.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Property.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/PropertyPath.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Type.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/BooleanProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/ByteProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/ColorProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/EnumProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/FloatProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/GuidProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/Int32Property.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/LayoutLengthProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/MethodProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/NameProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/NodePathProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/ObjectProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/ObjectPtrProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/ObjectPtrVectorProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/ObjectVectorProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/PropertyPathProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/PropertyProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/RectProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/StringProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/TypeProperty.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/UInt32Property.cpp" />
+    <ClCompile Include="../../src/noz/Reflection/Properties/Vector2Property.cpp" />
+    <ClCompile Include="../../src/noz/Remote/RemoteArchive.cpp" />
+    <ClCompile Include="../../src/noz/Remote/RemoteClientView.cpp" />
+    <ClCompile Include="../../src/noz/Remote/RemoteFrame.cpp" />
+    <ClCompile Include="../../src/noz/Remote/RemoteGraphicsContext.cpp" />
+    <ClCompile Include="../../src/noz/Remote/RemoteMessage.cpp" />
+    <ClCompile Include="../../src/noz/Remote/RemoteServerView.cpp" />
+    <ClCompile Include="../../src/noz/Remote/RemoteView.cpp" />
+    <ClCompile Include="../../src/noz/Serialization/BinaryDeserializer.cpp" />
+    <ClCompile Include="../../src/noz/Serialization/BinarySerializer.cpp" />
+    <ClCompile Include="../../src/noz/Serialization/JsonDeserializer.cpp" />
+    <ClCompile Include="../../src/noz/Serialization/JsonSerializer.cpp" />
+    <ClCompile Include="../../src/noz/Serialization/SerializedObject.cpp" />
+    <ClCompile Include="../../src/noz/System/Mutex.cpp" />
+    <ClCompile Include="../../src/noz/System/Process.cpp" />
+    <ClCompile Include="../../src/noz/System/Semaphore.cpp" />
+    <ClCompile Include="../../src/noz/System/Thread.cpp" />
+    <ClCompile Include="../../src/noz/Text/String.cpp" />
+    <ClCompile Include="../../src/noz/Text/StringBuilder.cpp" />
+    <ClCompile Include="../../src/noz/Text/StringLexer.cpp" />
+    <ClCompile Include="../../src/noz/Text/Json/JsonArray.cpp" />
+    <ClCompile Include="../../src/noz/Text/Json/JsonObject.cpp" />
+    <ClCompile Include="../../src/noz/Text/Json/JsonReader.cpp" />
+    <ClCompile Include="../../src/noz/Text/Json/JsonString.cpp" />
+    <ClCompile Include="../../src/noz/Text/Json/JsonValue.cpp" />
+    <ClCompile Include="../../src/noz/Text/Json/JsonWriter.cpp" />
+    <ClCompile Include="../../src/noz/Tooling/MakeProject.cpp" />
+    <ClCompile Include="../../src/noz/UI/Application.cpp" />
+    <ClCompile Include="../../src/noz/UI/ApplicationSettings.cpp" />
+    <ClCompile Include="../../src/noz/UI/Cursor.cpp" />
+    <ClCompile Include="../../src/noz/UI/Cursors.cpp" />
+    <ClCompile Include="../../src/noz/UI/DragDrop.cpp" />
+    <ClCompile Include="../../src/noz/UI/ImageCursor.cpp" />
+    <ClCompile Include="../../src/noz/UI/Input.cpp" />
+    <ClCompile Include="../../src/noz/UI/Style.cpp" />
+    <ClCompile Include="../../src/noz/UI/StyleSheet.cpp" />
+    <ClCompile Include="../../src/noz/UI/SystemCursor.cpp" />
+    <ClCompile Include="../../src/noz/UI/UIStates.cpp" />
+    <ClCompile Include="../../src/noz/UI/Window.cpp" />
+    <ClCompile Include="../../src/noz/Boolean.cpp" />
+    <ClCompile Include="../../src/noz/Byte.cpp" />
+    <ClCompile Include="../../src/noz/Component.cpp" />
+    <ClCompile Include="../../src/noz/Console.cpp" />
+    <ClCompile Include="../../src/noz/DateTime.cpp" />
+    <ClCompile Include="../../src/noz/Double.cpp" />
+    <ClCompile Include="../../src/noz/Environment.cpp" />
+    <ClCompile Include="../../src/noz/Factory.cpp" />
+    <ClCompile Include="../../src/noz/Float.cpp" />
+    <ClCompile Include="../../src/noz/Guid.cpp" />
+    <ClCompile Include="../../src/noz/Int32.cpp" />
+    <ClCompile Include="../../src/noz/Math.cpp" />
+    <ClCompile Include="../../src/noz/Matrix3.cpp" />
+    <ClCompile Include="../../src/noz/Matrix4.cpp" />
+    <ClCompile Include="../../src/noz/Name.cpp" />
+    <ClCompile Include="../../src/noz/Node.cpp" />
+    <ClCompile Include="../../src/noz/NodePath.cpp" />
+    <ClCompile Include="../../src/noz/Object.cpp" />
+    <ClCompile Include="../../src/noz/Prefs.cpp" />
+    <ClCompile Include="../../src/noz/Rect.cpp" />
+    <ClCompile Include="../../src/noz/Scene.cpp" />
+    <ClCompile Include="../../src/noz/SystemEvent.cpp" />
+    <ClCompile Include="../../src/noz/Time.cpp" />
+    <ClCompile Include="../../src/noz/UInt32.cpp" />
+    <ClCompile Include="../../src/noz/Vector2.cpp" />
+    <ClCompile Include="../../src/noz/Vector3.cpp" />
+    <ClCompile Include="../../src/noz/Viewport.cpp" />
+    <ClCompile Include="../../src/noz.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="../../src/noz.glue.cpp" />
+    <ClCompile Include="../../src/noz/Platform/OpenAL/OpenALAudioChannel.cpp" />
+    <ClCompile Include="../../src/noz/Platform/OpenAL/OpenALAudioClip.cpp" />
+    <ClCompile Include="../../src/noz/Platform/OpenAL/OpenALManager.cpp" />
+    <ClCompile Include="../../src/noz/Platform/OpenGL/OpenGLRenderContext.cpp" />
+    <ClCompile Include="../../src/noz/Platform/OpenGL/OpenGLRenderTarget.cpp" />
+    <ClCompile Include="../../src/noz/Platform/OpenGL/OpenGLTexture.cpp" />
+    <ClCompile Include="../../src/noz/Editor/EditorApplication.cpp" />
+    <ClCompile Include="../../src/noz/Editor/EditorDocument.cpp" />
+    <ClCompile Include="../../src/noz/Editor/EditorFactory.cpp" />
+    <ClCompile Include="../../src/noz/Editor/EditorSettings.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Actions/AddAnimationTrackAction.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Actions/SetAnimatorTargetAction.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Asset/AnimationControllerFile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Asset/AnimationFile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Asset/AssetDatabase.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Asset/AssetFile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Asset/AssetFolder.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Asset/AudioClipFile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Asset/FactoryFile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Asset/FontFile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Asset/ImageFile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Asset/PrefabFile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Asset/SceneFile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Asset/SpriteFile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Asset/StyleFile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Asset/StyleSheetFile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/Render/GridNode.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AnimationCurveEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AnimationTimeline.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AnimationView.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AnimationViewDopeSheet.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AnimationViewTrack.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AssetBrowser.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AssetBrowserListViewItem.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AssetBrowserTreeViewItem.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AssetPicker.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/ConsoleView.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/DeployDialog.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/Hierarchy.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/HierarchyItem.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/Inspector.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/InspectorExpander.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/InspectorRow.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyPicker.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/TypePicker.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/Workspace.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AssetEditor/AnimationControllerEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AssetEditor/AssetEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AssetEditor/FontEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AssetEditor/ImageEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AssetEditor/PrefabEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AssetEditor/SceneEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AssetEditor/SpriteEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/AssetEditor/StyleEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/Inspector/ComponentInspector.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/Inspector/EventKeyFrameInspector.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/Inspector/LayoutTransformInspector.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/Inspector/NodeInspector.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/Inspector/StyleInspector.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/BoolPropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/ColorPropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/ControlPartPropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/EnumPropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/FloatPropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/Int32PropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/LayoutLengthPropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/NamePropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/ObjectPtrPropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/ObjectPtrVectorPropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/PropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/RectPropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/SpritePropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/StringPropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/TextBoxPropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/TypePropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/Vector2PropertyEditor.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/Makefile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/PakWriter.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/ProjectGen/ProjectGen.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/ProjectGen/VisualStudioProjectGen.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/ProjectGen/XCodeProjectGen.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueClass.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueFile.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueGen.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueLexer.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueMeta.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueParse.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueState.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueType.cpp" />
+    <ClCompile Include="../../src/noz/Editor/Tool/GlueGen/GlueWrite.cpp" />
+    <ClCompile Include="../../src/noz/Platform/Windows/Windows.cpp" />
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsDirectory.cpp" />
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsDragDrop.cpp" />
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsFile.cpp" />
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsMain.cpp" />
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsMutex.cpp" />
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsScreen.cpp" />
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsSocket.cpp" />
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsThread.cpp" />
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsTime.cpp" />
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsWindow.cpp" />
+    <ClCompile Include="../../external/glew-1.10.0/src/glew.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="../../src/noz/Animation/Animation.h" />
+    <ClInclude Include="../../src/noz/Animation/AnimationController.h" />
+    <ClInclude Include="../../src/noz/Animation/AnimationCurve.h" />
+    <ClInclude Include="../../src/noz/Animation/AnimationLayer.h" />
+    <ClInclude Include="../../src/noz/Animation/AnimationState.h" />
+    <ClInclude Include="../../src/noz/Animation/AnimationTarget.h" />
+    <ClInclude Include="../../src/noz/Animation/AnimationTrack.h" />
+    <ClInclude Include="../../src/noz/Animation/Animator.h" />
+    <ClInclude Include="../../src/noz/Animation/AnimatorLayer.h" />
+    <ClInclude Include="../../src/noz/Animation/BlendTarget.h" />
+    <ClInclude Include="../../src/noz/Animation/ColorBlendTarget.h" />
+    <ClInclude Include="../../src/noz/Animation/EnumBlendTarget.h" />
+    <ClInclude Include="../../src/noz/Animation/EnumKeyFrame.h" />
+    <ClInclude Include="../../src/noz/Animation/EventBlendTarget.h" />
+    <ClInclude Include="../../src/noz/Animation/EventKeyFrame.h" />
+    <ClInclude Include="../../src/noz/Animation/FixedBlendTarget.h" />
+    <ClInclude Include="../../src/noz/Animation/FloatBlendTarget.h" />
+    <ClInclude Include="../../src/noz/Animation/FloatKeyFrame.h" />
+    <ClInclude Include="../../src/noz/Animation/KeyFrame.h" />
+    <ClInclude Include="../../src/noz/Animation/SpriteBlendTarget.h" />
+    <ClInclude Include="../../src/noz/Animation/SpriteKeyFrame.h" />
+    <ClInclude Include="../../src/noz/Animation/Vector2BlendTarget.h" />
+    <ClInclude Include="../../src/noz/Animation/WeightedBlendTarget.h" />
+    <ClInclude Include="../../src/noz/Animation/WeightedKeyFrame.h" />
+    <ClInclude Include="../../src/noz/Assets/Asset.h" />
+    <ClInclude Include="../../src/noz/Assets/AssetArchive.h" />
+    <ClInclude Include="../../src/noz/Assets/AssetManager.h" />
+    <ClInclude Include="../../src/noz/Assets/DirectoryAssetArchive.h" />
+    <ClInclude Include="../../src/noz/Assets/PakAssetArchive.h" />
+    <ClInclude Include="../../src/noz/Assets/ZipAssetArchive.h" />
+    <ClInclude Include="../../src/noz/Audio/AudioClip.h" />
+    <ClInclude Include="../../src/noz/Collections/LinkedList.h" />
+    <ClInclude Include="../../src/noz/Collections/ObjectArray.h" />
+    <ClInclude Include="../../src/noz/Components/Behavior.h" />
+    <ClInclude Include="../../src/noz/Components/Transform/LayoutTransform.h" />
+    <ClInclude Include="../../src/noz/Components/Transform/Transform.h" />
+    <ClInclude Include="../../src/noz/Diagnostics/Debugger.h" />
+    <ClInclude Include="../../src/noz/Diagnostics/PerformanceCounter.h" />
+    <ClInclude Include="../../src/noz/Render/BinPacker.h" />
+    <ClInclude Include="../../src/noz/Render/Color.h" />
+    <ClInclude Include="../../src/noz/Render/Font.h" />
+    <ClInclude Include="../../src/noz/Render/Image.h" />
+    <ClInclude Include="../../src/noz/Render/Mesh.h" />
+    <ClInclude Include="../../src/noz/Render/RenderContext.h" />
+    <ClInclude Include="../../src/noz/Render/RenderMesh.h" />
+    <ClInclude Include="../../src/noz/Render/RenderTarget.h" />
+    <ClInclude Include="../../src/noz/Render/Sprite.h" />
+    <ClInclude Include="../../src/noz/Render/Imaging/AlphaMapFilter.h" />
+    <ClInclude Include="../../src/noz/Render/Imaging/ImageFilter.h" />
+    <ClInclude Include="../../src/noz/Render/Imaging/ResizeFilter.h" />
+    <ClInclude Include="../../src/noz/Render/Imaging/SignedDistanceFieldFilter.h" />
+    <ClInclude Include="../../src/noz/IO/BinaryReader.h" />
+    <ClInclude Include="../../src/noz/IO/BinaryWriter.h" />
+    <ClInclude Include="../../src/noz/IO/Directory.h" />
+    <ClInclude Include="../../src/noz/IO/DirectoryInfo.h" />
+    <ClInclude Include="../../src/noz/IO/File.h" />
+    <ClInclude Include="../../src/noz/IO/FileStream.h" />
+    <ClInclude Include="../../src/noz/IO/IO.h" />
+    <ClInclude Include="../../src/noz/IO/MemoryStream.h" />
+    <ClInclude Include="../../src/noz/IO/Path.h" />
+    <ClInclude Include="../../src/noz/IO/Stream.h" />
+    <ClInclude Include="../../src/noz/IO/StreamReader.h" />
+    <ClInclude Include="../../src/noz/IO/StreamWriter.h" />
+    <ClInclude Include="../../src/noz/IO/StringReader.h" />
+    <ClInclude Include="../../src/noz/IO/TextReader.h" />
+    <ClInclude Include="../../src/noz/IO/TextWriter.h" />
+    <ClInclude Include="../../src/noz/IO/Compression/ZipArchive.h" />
+    <ClInclude Include="../../src/noz/Networking/Dns.h" />
+    <ClInclude Include="../../src/noz/Networking/IPAddress.h" />
+    <ClInclude Include="../../src/noz/Networking/IPHostEntry.h" />
+    <ClInclude Include="../../src/noz/Networking/NetworkStream.h" />
+    <ClInclude Include="../../src/noz/Networking/Socket.h" />
+    <ClInclude Include="../../src/noz/Networking/TcpClient.h" />
+    <ClInclude Include="../../src/noz/Networking/TcpListener.h" />
+    <ClInclude Include="../../src/noz/Nodes/Prefab.h" />
+    <ClInclude Include="../../src/noz/Nodes/PrefabNode.h" />
+    <ClInclude Include="../../src/noz/Nodes/SceneNode.h" />
+    <ClInclude Include="../../src/noz/Nodes/Layout/DockLayout.h" />
+    <ClInclude Include="../../src/noz/Nodes/Layout/GridLayout.h" />
+    <ClInclude Include="../../src/noz/Nodes/Layout/Layout.h" />
+    <ClInclude Include="../../src/noz/Nodes/Layout/StackLayout.h" />
+    <ClInclude Include="../../src/noz/Nodes/Layout/TabLayout.h" />
+    <ClInclude Include="../../src/noz/Nodes/Layout/WrapLayout.h" />
+    <ClInclude Include="../../src/noz/Nodes/Render/BorderNode.h" />
+    <ClInclude Include="../../src/noz/Nodes/Render/EditableTextNode.h" />
+    <ClInclude Include="../../src/noz/Nodes/Render/ImageNode.h" />
+    <ClInclude Include="../../src/noz/Nodes/Render/RectangleNode.h" />
+    <ClInclude Include="../../src/noz/Nodes/Render/RenderNode.h" />
+    <ClInclude Include="../../src/noz/Nodes/Render/SpriteNode.h" />
+    <ClInclude Include="../../src/noz/Nodes/Render/TextNode.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/Button.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/ButtonBase.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/CheckBox.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/ColorPicker.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/ColorPickerPopup.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/ContentControl.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/Control.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/DialogBox.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/DockItem.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/DockManager.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/DockPane.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/DockTabItem.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/Document.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/DocumentManager.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/DocumentTabItem.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/DropDownList.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/DropDownListItem.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/Expander.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/FPSMeter.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/ListView.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/ListViewItem.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/MeasureScaler.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/MessageBox.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/Popup.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/ProgressBar.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/RadioButton.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/RepeatButton.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/ScrollBar.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/ScrollView.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/SearchTextBox.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/SelectionMode.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/Spacer.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/Splitter.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/TabControl.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/TabItem.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/TextBox.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/Thumb.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/ThumbTrack.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/ToggleButton.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/TreeView.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/TreeViewItem.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/UINode.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/ViewBox.h" />
+    <ClInclude Include="../../src/noz/Nodes/UI/WindowNode.h" />
+    <ClInclude Include="../../src/noz/Physics/Body.h" />
+    <ClInclude Include="../../src/noz/Physics/Fixture.h" />
+    <ClInclude Include="../../src/noz/Physics/World.h" />
+    <ClInclude Include="../../src/noz/Reflection/Method.h" />
+    <ClInclude Include="../../src/noz/Reflection/Property.h" />
+    <ClInclude Include="../../src/noz/Reflection/PropertyPath.h" />
+    <ClInclude Include="../../src/noz/Reflection/PropertyProxy.h" />
+    <ClInclude Include="../../src/noz/Reflection/Type.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/BooleanProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/ByteProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/ColorProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/EnumProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/FloatProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/GuidProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/Int32Property.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/LayoutLengthProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/MethodProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/NameProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/NodePathProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/ObjectProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/ObjectPtrProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/ObjectPtrVectorProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/ObjectVectorProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/Properties.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/PropertyPathProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/PropertyProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/RectProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/StringProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/TypeProperty.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/UInt32Property.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/Vector2Property.h" />
+    <ClInclude Include="../../src/noz/Reflection/Properties/VectorProperty.h" />
+    <ClInclude Include="../../src/noz/Remote/RemoteArchive.h" />
+    <ClInclude Include="../../src/noz/Remote/RemoteClientView.h" />
+    <ClInclude Include="../../src/noz/Remote/RemoteFrame.h" />
+    <ClInclude Include="../../src/noz/Remote/RemoteGraphicsContext.h" />
+    <ClInclude Include="../../src/noz/Remote/RemoteMessage.h" />
+    <ClInclude Include="../../src/noz/Remote/RemoteServerView.h" />
+    <ClInclude Include="../../src/noz/Remote/RemoteView.h" />
+    <ClInclude Include="../../src/noz/Serialization/BinaryDeserializer.h" />
+    <ClInclude Include="../../src/noz/Serialization/BinarySerializer.h" />
+    <ClInclude Include="../../src/noz/Serialization/DeSerializer.h" />
+    <ClInclude Include="../../src/noz/Serialization/JsonDeserializer.h" />
+    <ClInclude Include="../../src/noz/Serialization/JsonSerializer.h" />
+    <ClInclude Include="../../src/noz/Serialization/SerializedObject.h" />
+    <ClInclude Include="../../src/noz/Serialization/Serializer.h" />
+    <ClInclude Include="../../src/noz/System/Mutex.h" />
+    <ClInclude Include="../../src/noz/System/Process.h" />
+    <ClInclude Include="../../src/noz/System/Semaphore.h" />
+    <ClInclude Include="../../src/noz/System/Thread.h" />
+    <ClInclude Include="../../src/noz/System/ThreadStart.h" />
+    <ClInclude Include="../../src/noz/Text/String.h" />
+    <ClInclude Include="../../src/noz/Text/StringBuilder.h" />
+    <ClInclude Include="../../src/noz/Text/StringLexer.h" />
+    <ClInclude Include="../../src/noz/Text/StringObject.h" />
+    <ClInclude Include="../../src/noz/Text/Json/JsonArray.h" />
+    <ClInclude Include="../../src/noz/Text/Json/JsonObject.h" />
+    <ClInclude Include="../../src/noz/Text/Json/JsonReader.h" />
+    <ClInclude Include="../../src/noz/Text/Json/JsonString.h" />
+    <ClInclude Include="../../src/noz/Text/Json/JsonValue.h" />
+    <ClInclude Include="../../src/noz/Text/Json/JsonWriter.h" />
+    <ClInclude Include="../../src/noz/Tooling/MakeProject.h" />
+    <ClInclude Include="../../src/noz/UI/Application.h" />
+    <ClInclude Include="../../src/noz/UI/ApplicationSettings.h" />
+    <ClInclude Include="../../src/noz/UI/Cursor.h" />
+    <ClInclude Include="../../src/noz/UI/Cursors.h" />
+    <ClInclude Include="../../src/noz/UI/DragDrop.h" />
+    <ClInclude Include="../../src/noz/UI/ImageCursor.h" />
+    <ClInclude Include="../../src/noz/UI/Input.h" />
+    <ClInclude Include="../../src/noz/UI/Keys.h" />
+    <ClInclude Include="../../src/noz/UI/Screen.h" />
+    <ClInclude Include="../../src/noz/UI/Style.h" />
+    <ClInclude Include="../../src/noz/UI/StyleSheet.h" />
+    <ClInclude Include="../../src/noz/UI/SystemCursor.h" />
+    <ClInclude Include="../../src/noz/UI/UIEvents.h" />
+    <ClInclude Include="../../src/noz/UI/UIStates.h" />
+    <ClInclude Include="../../src/noz/UI/Window.h" />
+    <ClInclude Include="../../src/noz/Boolean.h" />
+    <ClInclude Include="../../src/noz/Byte.h" />
+    <ClInclude Include="../../src/noz/Component.h" />
+    <ClInclude Include="../../src/noz/Console.h" />
+    <ClInclude Include="../../src/noz/DateTime.h" />
+    <ClInclude Include="../../src/noz/Delegate.h" />
+    <ClInclude Include="../../src/noz/Double.h" />
+    <ClInclude Include="../../src/noz/Enum.h" />
+    <ClInclude Include="../../src/noz/Environment.h" />
+    <ClInclude Include="../../src/noz/Event.h" />
+    <ClInclude Include="../../src/noz/Factory.h" />
+    <ClInclude Include="../../src/noz/Float.h" />
+    <ClInclude Include="../../src/noz/Guid.h" />
+    <ClInclude Include="../../src/noz/Int32.h" />
+    <ClInclude Include="../../src/noz/Math.h" />
+    <ClInclude Include="../../src/noz/Matrix3.h" />
+    <ClInclude Include="../../src/noz/Matrix4.h" />
+    <ClInclude Include="../../src/noz/Name.h" />
+    <ClInclude Include="../../src/noz/Node.h" />
+    <ClInclude Include="../../src/noz/NodePath.h" />
+    <ClInclude Include="../../src/noz/noz.h" />
+    <ClInclude Include="../../src/noz/Object.h" />
+    <ClInclude Include="../../src/noz/Prefs.h" />
+    <ClInclude Include="../../src/noz/Rect.h" />
+    <ClInclude Include="../../src/noz/Scene.h" />
+    <ClInclude Include="../../src/noz/SystemEvent.h" />
+    <ClInclude Include="../../src/noz/Time.h" />
+    <ClInclude Include="../../src/noz/UInt32.h" />
+    <ClInclude Include="../../src/noz/Vector2.h" />
+    <ClInclude Include="../../src/noz/Vector3.h" />
+    <ClInclude Include="../../src/noz/Vector4.h" />
+    <ClInclude Include="../../src/noz/Viewport.h" />
+    <ClInclude Include="../../src/noz.pch.h" />
+    <ClInclude Include="../../src/noz/Platform/AudioClipHandle.h" />
+    <ClInclude Include="../../src/noz/Platform/CursorHandle.h" />
+    <ClInclude Include="../../src/noz/Platform/ImageHandle.h" />
+    <ClInclude Include="../../src/noz/Platform/MutexHandle.h" />
+    <ClInclude Include="../../src/noz/Platform/ProcessHandle.h" />
+    <ClInclude Include="../../src/noz/Platform/RenderContextHandle.h" />
+    <ClInclude Include="../../src/noz/Platform/RenderTargetHandle.h" />
+    <ClInclude Include="../../src/noz/Platform/SemaphoreHandle.h" />
+    <ClInclude Include="../../src/noz/Platform/SocketHandle.h" />
+    <ClInclude Include="../../src/noz/Platform/ThreadHandle.h" />
+    <ClInclude Include="../../src/noz/Platform/WindowHandle.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenAL/OpenAL.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenAL/OpenALAudioChannel.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenAL/OpenALAudioClip.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenAL/OpenALManager.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/OpenGL.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/OpenGLBatch.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/OpenGLProgram.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/OpenGLProgram_Color.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/OpenGLProgram_Glyph.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/OpenGLProgram_GlyphSDF.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/OpenGLProgram_Texture.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/OpenGLProgram_TextureA8.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/OpenGLProgram_TextureSDF.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/OpenGLRenderContext.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/OpenGLRenderTarget.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/OpenGLState.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/OpenGLTexture.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/OpenGLVertex.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/shaders/Color.frag.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/shaders/Color.vert.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/shaders/Glyph.frag.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/shaders/Glyph.vert.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/shaders/GlyphSDF.frag.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/shaders/GlyphSDF.vert.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/shaders/Texture.frag.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/shaders/Texture.vert.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/shaders/TextureA8.frag.h" />
+    <ClInclude Include="../../src/noz/Platform/OpenGL/shaders/TextureSDF.frag.h" />
+    <ClInclude Include="../../src/noz/Editor/EditorApplication.h" />
+    <ClInclude Include="../../src/noz/Editor/EditorDocument.h" />
+    <ClInclude Include="../../src/noz/Editor/EditorEvents.h" />
+    <ClInclude Include="../../src/noz/Editor/EditorFactory.h" />
+    <ClInclude Include="../../src/noz/Editor/EditorSettings.h" />
+    <ClInclude Include="../../src/noz/Editor/Actions/Action.h" />
+    <ClInclude Include="../../src/noz/Editor/Actions/AddAnimationTargetAction.h" />
+    <ClInclude Include="../../src/noz/Editor/Actions/AddAnimationTrackAction.h" />
+    <ClInclude Include="../../src/noz/Editor/Actions/GroupAction.h" />
+    <ClInclude Include="../../src/noz/Editor/Actions/RemoveKeyFrameAction.h" />
+    <ClInclude Include="../../src/noz/Editor/Actions/SetAnimatorTargetAction.h" />
+    <ClInclude Include="../../src/noz/Editor/Actions/SetKeyFrameAction.h" />
+    <ClInclude Include="../../src/noz/Editor/Actions/SetKeyFrameTangentsAction.h" />
+    <ClInclude Include="../../src/noz/Editor/Actions/SetPropertyAction.h" />
+    <ClInclude Include="../../src/noz/Editor/Asset/AnimationControllerFile.h" />
+    <ClInclude Include="../../src/noz/Editor/Asset/AnimationFile.h" />
+    <ClInclude Include="../../src/noz/Editor/Asset/AssetDatabase.h" />
+    <ClInclude Include="../../src/noz/Editor/Asset/AssetFile.h" />
+    <ClInclude Include="../../src/noz/Editor/Asset/AssetFolder.h" />
+    <ClInclude Include="../../src/noz/Editor/Asset/AudioClipFile.h" />
+    <ClInclude Include="../../src/noz/Editor/Asset/FactoryFile.h" />
+    <ClInclude Include="../../src/noz/Editor/Asset/FontFile.h" />
+    <ClInclude Include="../../src/noz/Editor/Asset/ImageFile.h" />
+    <ClInclude Include="../../src/noz/Editor/Asset/PrefabFile.h" />
+    <ClInclude Include="../../src/noz/Editor/Asset/SceneFile.h" />
+    <ClInclude Include="../../src/noz/Editor/Asset/SpriteFile.h" />
+    <ClInclude Include="../../src/noz/Editor/Asset/StyleFile.h" />
+    <ClInclude Include="../../src/noz/Editor/Asset/StyleSheetFile.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/Render/GridNode.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AnimationCurveEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AnimationTimeline.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AnimationView.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AnimationViewDopeSheet.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AnimationViewTrack.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AssetBrowser.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AssetBrowserListViewItem.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AssetBrowserTreeViewItem.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AssetPicker.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/ConsoleView.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/DeployDialog.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/Hierarchy.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/HierarchyItem.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/Inspector.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/InspectorExpander.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/InspectorRow.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyPicker.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/TypePicker.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/Workspace.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AssetEditor/AnimationControllerEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AssetEditor/AssetEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AssetEditor/FontEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AssetEditor/ImageEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AssetEditor/PrefabEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AssetEditor/SceneEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AssetEditor/SpriteEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/AssetEditor/StyleEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/Inspector/ComponentInspector.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/Inspector/EventKeyFrameInspector.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/Inspector/LayoutTransformInspector.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/Inspector/NodeInspector.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/Inspector/StyleInspector.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/BoolPropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/ColorPropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/ControlPartPropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/EnumPropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/FloatPropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/Int32PropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/LayoutLengthPropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/NamePropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/ObjectPtrPropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/ObjectPtrVectorPropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/PropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/RectPropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/SpritePropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/StringPropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/TextBoxPropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/TypePropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Nodes/UI/PropertyEditor/Vector2PropertyEditor.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/Makefile.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/PakWriter.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/ProjectGen/ProjectGen.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/ProjectGen/VisualStudioProjectGen.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/ProjectGen/XCodeProjectGen.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueClass.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueEnum.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueFile.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueGen.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueLexer.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueMeta.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueMethod.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueParameter.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueProperty.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueState.h" />
+    <ClInclude Include="../../src/noz/Editor/Tool/GlueGen/GlueType.h" />
+    <ClInclude Include="../../src/noz/Platform/Windows/Windows.pch.h" />
+    <ClInclude Include="../../src/noz/Platform/Windows/WindowsDragDrop.h" />
+    <ClInclude Include="../../src/noz/Platform/Windows/WindowsWindow.h" />
+    <ClInclude Include="../../external/glew-1.10.0/include/GL/glew.h" />
+    <ClInclude Include="../../external/glew-1.10.0/include/GL/glxew.h" />
+    <ClInclude Include="../../external/glew-1.10.0/include/GL/wglew.h" />
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="noz_zlib.vcxproj">
+      <Project>{3E43BBB8-395D-4958-AEEF-C3A0BB06E037}</Project>
+    </ProjectReference>
+    <ProjectReference Include="noz_box2d.vcxproj">
+      <Project>{5E6E834B-FFF8-47E9-8428-EC4E85567DFA}</Project>
+    </ProjectReference>
+    <ProjectReference Include="noz_openal.vcxproj">
+      <Project>{83A98603-B1AF-441D-A88A-916D95DBDA2D}</Project>
+    </ProjectReference>
+    <ProjectReference Include="noz_ft2.vcxproj">
+      <Project>{5BAB1DB8-5976-4334-A47C-DB801D7583DF}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

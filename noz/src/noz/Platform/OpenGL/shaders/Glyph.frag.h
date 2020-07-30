@@ -1,0 +1,111 @@
+STRINGIFY(precision highp float;)
+
+STRINGIFY(
+
+vec3 energy_distribution( vec4 previous, vec4 current, vec4 next )
+{
+    float primary   = 1.0/3.0;
+    float secondary = 1.0/3.0;
+    float tertiary  = 0.0;
+
+    // Energy distribution as explained on:
+    // http://www.grc.com/freeandclear.htm
+    //
+    //  .. v..
+    // RGB RGB RGB
+    // previous.g + previous.b + current.r + current.g + current.b
+    //
+    //   . .v. .
+    // RGB RGB RGB
+    // previous.b + current.r + current.g + current.b + next.r
+    //
+    //     ..v ..
+    // RGB RGB RGB
+    // current.r + current.g + current.b + next.r + next.g
+
+    float r =
+        tertiary  * previous.g +
+        secondary * previous.b +
+        primary   * current.r  +
+        secondary * current.g  +
+        tertiary  * current.b;
+
+    float g =
+        tertiary  * previous.b +
+        secondary * current.r +
+        primary   * current.g  +
+        secondary * current.b  +
+        tertiary  * next.r;
+
+    float b =
+        tertiary  * current.r +
+        secondary * current.g +
+        primary   * current.b +
+        secondary * next.r    +
+        tertiary  * next.g;
+
+    return vec3(r,g,b);
+}
+
+
+uniform sampler2D texture;
+uniform vec3 pixel;
+
+varying vec4 _color;
+varying vec2 _texcoord;
+varying float vgamma;
+varying float vshift;
+
+void main()
+{
+    vec2 uv = _texcoord.xy;
+    float shift = vshift;
+
+    // LCD Off
+    if( pixel.z == 1.0)
+    {
+        float a = texture2D(texture, uv).a;
+        gl_FragColor = _color * pow( a, 1.0/vgamma );
+        return;
+    }
+
+    // LCD On
+    vec4 current = texture2D(texture, uv);
+    vec4 previous= texture2D(texture, uv+vec2(-1.,0.)*pixel.xy);
+    vec4 next    = texture2D(texture, uv+vec2(+1.,0.)*pixel.xy);
+
+    current = pow(current, vec4(1.0/vgamma));
+    previous= pow(previous, vec4(1.0/vgamma));
+
+    float r = current.r;
+    float g = current.g;
+    float b = current.b;
+
+    if( shift <= 0.333 )
+    {
+        float z = shift/0.333;
+        r = mix(current.r, previous.b, z);
+        g = mix(current.g, current.r,  z);
+        b = mix(current.b, current.g,  z);
+    } 
+    else if( shift <= 0.666 )
+    {
+        float z = (shift-0.33)/0.333;
+        r = mix(previous.b, previous.g, z);
+        g = mix(current.r,  previous.b, z);
+        b = mix(current.g,  current.r,  z);
+    }
+   else if( shift < 1.0 )
+    {
+        float z = (shift-0.66)/0.334;
+        r = mix(previous.g, previous.r, z);
+        g = mix(previous.b, previous.g, z);
+        b = mix(current.r,  previous.b, z);
+    }
+
+   float t = max(max(r,g),b);
+   vec4 color = vec4(_color.rgb, (r+g+b)/3.0);
+   color = t*color + (1.0-t)*vec4(r,g,b, min(min(r,g),b));
+   gl_FragColor = vec4(color.rgb, _color.a*color.a);
+}
+)

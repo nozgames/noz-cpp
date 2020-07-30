@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="../../external/lpng163/pngwrite.c"/>
+    <ClCompile Include="../../external/lpng163/png.c"/>
+    <ClCompile Include="../../external/lpng163/pngget.c"/>
+    <ClCompile Include="../../external/lpng163/pngmem.c"/>
+    <ClCompile Include="../../external/lpng163/pngerror.c"/>
+    <ClCompile Include="../../external/lpng163/pngpread.c"/>
+    <ClCompile Include="../../external/lpng163/pngread.c"/>
+    <ClCompile Include="../../external/lpng163/pngrtran.c"/>
+    <ClCompile Include="../../external/lpng163/pngrutil.c"/>
+    <ClCompile Include="../../external/lpng163/pngrio.c"/>
+    <ClCompile Include="../../external/lpng163/pngset.c"/>
+    <ClCompile Include="../../external/lpng163/pngwio.c"/>
+    <ClCompile Include="../../external/lpng163/pngtrans.c"/>
+    <ClCompile Include="../../external/lpng163/pngwtran.c"/>
+    <ClCompile Include="../../external/lpng163/pngwutil.c"/>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alAuxEffectSlot.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alBuffer.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alEffect.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alError.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alExtension.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alFilter.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alListener.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alSource.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alState.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alThunk.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/ALc.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/alcConfig.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/alcDedicated.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/alcEcho.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/alcModulator.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/alcReverb.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/alcRing.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/alcThread.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/ALu.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/bs2b.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/helpers.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/hrtf.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/mixer.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/mixer_c.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/panning.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/backends/dsound.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/backends/loopback.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/backends/mmdevapi.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/backends/null.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/backends/wave.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/backends/winmm.c"/>
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/mixer_sse.c"/>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+</Project>

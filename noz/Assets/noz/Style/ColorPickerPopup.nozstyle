@@ -1,0 +1,1555 @@
+{
+    "Root": 1,
+    "Objects": [        
+        {
+            "_Id": 1,
+            "_Type": "noz::Style::Def",
+            "ControlType": "noz::ColorPickerPopup",
+            "Nodes": [ 2 ],
+            "Parts": [ 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 ]
+        },
+        {
+            "_Id": 2,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#474747ff",
+            "Stretch": "Fill",
+            "Components": [ ],
+            "Children": [ 27 ]
+        },
+        {
+            "_Id": 3,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "ColorSquare",
+            "Object": 28
+        },
+        {
+            "_Id": 4,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "SliderA",
+            "Object": 29
+        },
+        {
+            "_Id": 5,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "SliderR",
+            "Object": 30
+        },
+        {
+            "_Id": 6,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "SliderG",
+            "Object": 31
+        },
+        {
+            "_Id": 7,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "SliderB",
+            "Object": 32
+        },
+        {
+            "_Id": 8,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "SliderH1",
+            "Object": 33
+        },
+        {
+            "_Id": 9,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "SliderH2",
+            "Object": 34
+        },
+        {
+            "_Id": 10,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "SliderS",
+            "Object": 35
+        },
+        {
+            "_Id": 11,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "SliderV",
+            "Object": 36
+        },
+        {
+            "_Id": 12,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "ColorsA",
+            "Object": 37
+        },
+        {
+            "_Id": 13,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "ColorsR",
+            "Object": 38
+        },
+        {
+            "_Id": 14,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "ColorsG",
+            "Object": 39
+        },
+        {
+            "_Id": 15,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "ColorsB",
+            "Object": 40
+        },
+        {
+            "_Id": 16,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "ColorsS",
+            "Object": 41
+        },
+        {
+            "_Id": 17,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "ColorsV",
+            "Object": 42
+        },
+        {
+            "_Id": 18,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "ColorSquareColors",
+            "Object": 43
+        },
+        {
+            "_Id": 19,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "TextR",
+            "Object": 44
+        },
+        {
+            "_Id": 20,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "TextG",
+            "Object": 45
+        },
+        {
+            "_Id": 21,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "TextB",
+            "Object": 46
+        },
+        {
+            "_Id": 22,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "TextA",
+            "Object": 47
+        },
+        {
+            "_Id": 23,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "TextH",
+            "Object": 48
+        },
+        {
+            "_Id": 24,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "TextS",
+            "Object": 49
+        },
+        {
+            "_Id": 25,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "TextV",
+            "Object": 50
+        },
+        {
+            "_Id": 26,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "TextHex",
+            "Object": 51
+        },
+        {
+            "_Id": 27,
+            "_Type": "noz::BorderNode",
+            "Color": "#a36312ff",
+            "Components": [ ],
+            "Transform": 52,
+            "Children": [ 53 ]
+        },
+        {
+            "_Id": 28,
+            "_Type": "noz::ColorPickerSlider",
+            "Components": [ ],
+            "Children": [ 54 ]
+        },
+        {
+            "_Id": 29,
+            "_Type": "noz::ColorPickerSlider",
+            "Vertical": false,
+            "Components": [ ],
+            "Transform": 55,
+            "Children": [ 56 ]
+        },
+        {
+            "_Id": 30,
+            "_Type": "noz::ColorPickerSlider",
+            "Vertical": false,
+            "Components": [ ],
+            "Transform": 57,
+            "Name": "RedSlider",
+            "Children": [ 58 ]
+        },
+        {
+            "_Id": 31,
+            "_Type": "noz::ColorPickerSlider",
+            "Vertical": false,
+            "Components": [ ],
+            "Transform": 59,
+            "Name": "GreenSlider",
+            "Children": [ 60 ]
+        },
+        {
+            "_Id": 32,
+            "_Type": "noz::ColorPickerSlider",
+            "Vertical": false,
+            "Components": [ ],
+            "Transform": 61,
+            "Name": "BlueSlider",
+            "Children": [ 62 ]
+        },
+        {
+            "_Id": 33,
+            "_Type": "noz::ColorPickerSlider",
+            "Horizontal": false,
+            "Components": [ ],
+            "Children": [ 63 ]
+        },
+        {
+            "_Id": 34,
+            "_Type": "noz::ColorPickerSlider",
+            "Vertical": false,
+            "Components": [ ],
+            "Children": [ 64 ]
+        },
+        {
+            "_Id": 35,
+            "_Type": "noz::ColorPickerSlider",
+            "Vertical": false,
+            "Components": [ ],
+            "Children": [ 65 ]
+        },
+        {
+            "_Id": 36,
+            "_Type": "noz::ColorPickerSlider",
+            "Vertical": false,
+            "Components": [ ],
+            "Children": [ 66 ]
+        },
+        {
+            "_Id": 37,
+            "_Type": "noz::SpriteColors",
+            "TopLeft": "#ff0000ff",
+            "TopRight": "#ff0000ff",
+            "BottomLeft": "#ff000000",
+            "BottomRight": "#ff000000"
+        },
+        {
+            "_Id": 38,
+            "_Type": "noz::SpriteColors",
+            "TopLeft": "#ff0000ff",
+            "TopRight": "#ff0000ff",
+            "BottomLeft": "#ff000000",
+            "BottomRight": "#ff000000"
+        },
+        {
+            "_Id": 39,
+            "_Type": "noz::SpriteColors",
+            "TopLeft": "#ff0000ff",
+            "TopRight": "#ff0000ff",
+            "BottomLeft": "#ff000000",
+            "BottomRight": "#ff000000"
+        },
+        {
+            "_Id": 40,
+            "_Type": "noz::SpriteColors",
+            "TopLeft": "#ff0000ff",
+            "TopRight": "#ff0000ff",
+            "BottomLeft": "#ff000000",
+            "BottomRight": "#ff000000"
+        },
+        {
+            "_Id": 41,
+            "_Type": "noz::SpriteColors",
+            "TopLeft": "#ff0000ff",
+            "TopRight": "#ff0000ff",
+            "BottomLeft": "#ff000000",
+            "BottomRight": "#ff000000"
+        },
+        {
+            "_Id": 42,
+            "_Type": "noz::SpriteColors",
+            "TopLeft": "#ff0000ff",
+            "TopRight": "#ff0000ff",
+            "BottomLeft": "#ff000000",
+            "BottomRight": "#ff000000"
+        },
+        {
+            "_Id": 43,
+            "_Type": "noz::SpriteColors",
+            "TopLeft": "#ff000000",
+            "TopRight": "#ff0000ff",
+            "BottomLeft": "#ff000000",
+            "BottomRight": "#ff0000ff"
+        },
+        {
+            "_Id": 44,
+            "_Type": "noz::TextBox",
+            "SelectOnFocus": true,
+            "Components": [ ],
+            "Name": "Red",
+            "Children": [ ]
+        },
+        {
+            "_Id": 45,
+            "_Type": "noz::TextBox",
+            "SelectOnFocus": true,
+            "Components": [ ],
+            "Name": "Green",
+            "Children": [ ]
+        },
+        {
+            "_Id": 46,
+            "_Type": "noz::TextBox",
+            "SelectOnFocus": true,
+            "Components": [ ],
+            "Name": "Blue",
+            "Children": [ ]
+        },
+        {
+            "_Id": 47,
+            "_Type": "noz::TextBox",
+            "SelectOnFocus": true,
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 48,
+            "_Type": "noz::TextBox",
+            "SelectOnFocus": true,
+            "Components": [ ],
+            "Name": "Hue",
+            "Children": [ ]
+        },
+        {
+            "_Id": 49,
+            "_Type": "noz::TextBox",
+            "SelectOnFocus": true,
+            "Components": [ ],
+            "Name": "Saturation",
+            "Children": [ ]
+        },
+        {
+            "_Id": 50,
+            "_Type": "noz::TextBox",
+            "SelectOnFocus": true,
+            "Components": [ ],
+            "Name": "Value",
+            "Children": [ ]
+        },
+        {
+            "_Id": 51,
+            "_Type": "noz::TextBox",
+            "SelectOnFocus": true,
+            "Components": [ ],
+            "Transform": 67,
+            "Children": [ ]
+        },
+        {
+            "_Id": 52,
+            "_Type": "noz::LayoutTransform",
+            "PaddingLeft": 16,
+            "PaddingRight": 16,
+            "PaddingTop": 16,
+            "PaddingBottom": 16
+        },
+        {
+            "_Id": 53,
+            "_Type": "noz::StackLayout",
+            "Spacing": 8,
+            "Components": [ ],
+            "Children": [ 68, 69, 70, 71, 72, 73 ]
+        },
+        {
+            "_Id": 54,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{B24A5087-B128-4868-8149-36583481A691}",
+            "Color": "#808080ff",
+            "Components": [ ],
+            "Transform": 74,
+            "Children": [ ]
+        },
+        {
+            "_Id": 55,
+            "_Type": "noz::LayoutTransform",
+            "Height": 16
+        },
+        {
+            "_Id": 56,
+            "_Type": "noz::Node",
+            "Components": [ ],
+            "Transform": 75,
+            "Children": [ 76, 77 ]
+        },
+        {
+            "_Id": 57,
+            "_Type": "noz::LayoutTransform",
+            "Height": 16
+        },
+        {
+            "_Id": 58,
+            "_Type": "noz::Node",
+            "Components": [ ],
+            "Transform": 78,
+            "Children": [ 79, 80 ]
+        },
+        {
+            "_Id": 59,
+            "_Type": "noz::LayoutTransform",
+            "Height": 16
+        },
+        {
+            "_Id": 60,
+            "_Type": "noz::Node",
+            "Components": [ ],
+            "Transform": 81,
+            "Children": [ 82, 83 ]
+        },
+        {
+            "_Id": 61,
+            "_Type": "noz::LayoutTransform",
+            "Height": 16
+        },
+        {
+            "_Id": 62,
+            "_Type": "noz::Node",
+            "Components": [ ],
+            "Transform": 84,
+            "Children": [ 85, 86 ]
+        },
+        {
+            "_Id": 63,
+            "_Type": "noz::Node",
+            "Components": [ ],
+            "Transform": 87,
+            "Children": [ 88, 89 ]
+        },
+        {
+            "_Id": 64,
+            "_Type": "noz::Node",
+            "Components": [ ],
+            "Transform": 90,
+            "Children": [ 91, 92 ]
+        },
+        {
+            "_Id": 65,
+            "_Type": "noz::Node",
+            "Components": [ ],
+            "Transform": 93,
+            "Children": [ 94, 95 ]
+        },
+        {
+            "_Id": 66,
+            "_Type": "noz::Node",
+            "Components": [ ],
+            "Transform": 96,
+            "Children": [ 97, 98 ]
+        },
+        {
+            "_Id": 67,
+            "_Type": "noz::LayoutTransform",
+            "Width": 90,
+            "Position": {
+                "X": 66,
+                "Y": 0
+            }
+        },
+        {
+            "_Id": 68,
+            "_Type": "noz::StackLayout",
+            "Orientation": "Horizontal",
+            "Spacing": 16,
+            "Components": [ ],
+            "Children": [ 99, 100 ]
+        },
+        {
+            "_Id": 69,
+            "_Type": "noz::GridLayout",
+            "Rows": [ 101 ],
+            "Columns": [ 102, 103, 104 ],
+            "CellPadding": 6,
+            "Components": [ ],
+            "Name": "RBG",
+            "Children": [ 105, 106, 44, 107, 108, 45, 109, 110, 46 ]
+        },
+        {
+            "_Id": 70,
+            "_Type": "noz::GridLayout",
+            "Rows": [ 111 ],
+            "Columns": [ 112, 113, 114 ],
+            "CellPadding": 6,
+            "Components": [ ],
+            "Visibility": "Collapsed",
+            "Name": "HSV",
+            "Children": [ 115, 116, 48, 117, 118, 49, 119, 120, 50 ]
+        },
+        {
+            "_Id": 71,
+            "_Type": "noz::GridLayout",
+            "Rows": [ 121 ],
+            "Columns": [ 122, 123, 124 ],
+            "CellPadding": 6,
+            "Components": [ ],
+            "Transform": 125,
+            "Name": "Alpha",
+            "Children": [ 126, 127, 47 ]
+        },
+        {
+            "_Id": 72,
+            "_Type": "noz::DockLayout",
+            "Dock": "Right",
+            "Spacing": 4,
+            "Components": [ ],
+            "Transform": 128,
+            "Name": "Hex",
+            "Children": [ 51, 129 ]
+        },
+        {
+            "_Id": 73,
+            "_Type": "noz::StackLayout",
+            "Orientation": "Horizontal",
+            "Spacing": 2,
+            "Components": [ ],
+            "Visibility": "Collapsed",
+            "Transform": 130,
+            "Children": [ 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142 ]
+        },
+        {
+            "_Id": 74,
+            "_Type": "noz::LayoutTransform",
+            "MarginRight": "Auto",
+            "Position": -95
+        },
+        {
+            "_Id": 75,
+            "_Type": "noz::LayoutTransform",
+            "MarginRight": 1,
+            "MarginTop": -14,
+            "MarginBottom": -14,
+            "Position": {
+                "X": -64,
+                "Y": 0
+            }
+        },
+        {
+            "_Id": 76,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{F401A9CD-895D-42DD-B11B-90A5DD4E2922}",
+            "Color": "#808080ff",
+            "Components": [ ],
+            "Transform": 143,
+            "Children": [ ]
+        },
+        {
+            "_Id": 77,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{A608AB3B-CC48-40B3-B807-957CCEF067B6}",
+            "Color": "#808080ff",
+            "Components": [ ],
+            "Transform": 144,
+            "Children": [ ]
+        },
+        {
+            "_Id": 78,
+            "_Type": "noz::LayoutTransform",
+            "MarginRight": 1,
+            "MarginTop": -14,
+            "MarginBottom": -14,
+            "Position": {
+                "X": -64.5,
+                "Y": 0
+            }
+        },
+        {
+            "_Id": 79,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{F401A9CD-895D-42DD-B11B-90A5DD4E2922}",
+            "Color": "#808080ff",
+            "Components": [ ],
+            "Transform": 145,
+            "Children": [ ]
+        },
+        {
+            "_Id": 80,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{A608AB3B-CC48-40B3-B807-957CCEF067B6}",
+            "Color": "#808080ff",
+            "Components": [ ],
+            "Transform": 146,
+            "Children": [ ]
+        },
+        {
+            "_Id": 81,
+            "_Type": "noz::LayoutTransform",
+            "MarginRight": 1,
+            "MarginTop": -14,
+            "MarginBottom": -14,
+            "Position": {
+                "X": -64.5,
+                "Y": 0
+            }
+        },
+        {
+            "_Id": 82,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{F401A9CD-895D-42DD-B11B-90A5DD4E2922}",
+            "Color": "#808080ff",
+            "Components": [ ],
+            "Transform": 147,
+            "Children": [ ]
+        },
+        {
+            "_Id": 83,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{A608AB3B-CC48-40B3-B807-957CCEF067B6}",
+            "Color": "#808080ff",
+            "Components": [ ],
+            "Transform": 148,
+            "Children": [ ]
+        },
+        {
+            "_Id": 84,
+            "_Type": "noz::LayoutTransform",
+            "MarginRight": 1,
+            "MarginTop": -14,
+            "MarginBottom": -14,
+            "Position": {
+                "X": -64.5,
+                "Y": 0
+            }
+        },
+        {
+            "_Id": 85,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{F401A9CD-895D-42DD-B11B-90A5DD4E2922}",
+            "Color": "#808080ff",
+            "Components": [ ],
+            "Transform": 149,
+            "Children": [ ]
+        },
+        {
+            "_Id": 86,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{A608AB3B-CC48-40B3-B807-957CCEF067B6}",
+            "Color": "#808080ff",
+            "Components": [ ],
+            "Transform": 150,
+            "Children": [ ]
+        },
+        {
+            "_Id": 87,
+            "_Type": "noz::LayoutTransform",
+            "Width": 28,
+            "Position": {
+                "X": 0,
+                "Y": -74
+            }
+        },
+        {
+            "_Id": 88,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{6A942FCF-68D9-42AF-B6AD-A8D70F232927}",
+            "Color": "#808080ff",
+            "Components": [ ],
+            "Transform": 151,
+            "Children": [ ]
+        },
+        {
+            "_Id": 89,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{30D39B62-A0D0-4DA4-89B1-1025EE519666}",
+            "Color": "#808080ff",
+            "Components": [ ],
+            "Transform": 152,
+            "Children": [ ]
+        },
+        {
+            "_Id": 90,
+            "_Type": "noz::LayoutTransform",
+            "Height": 32
+        },
+        {
+            "_Id": 91,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{353EFF51-8691-4B43-981D-47CA23611000}",
+            "Components": [ ],
+            "Transform": 153,
+            "Children": [ ]
+        },
+        {
+            "_Id": 92,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{A84CAE75-74E9-48AA-A12A-E0CC3DFA9D82}",
+            "Components": [ ],
+            "Transform": 154,
+            "Children": [ ]
+        },
+        {
+            "_Id": 93,
+            "_Type": "noz::LayoutTransform",
+            "Height": 32
+        },
+        {
+            "_Id": 94,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{353EFF51-8691-4B43-981D-47CA23611000}",
+            "Components": [ ],
+            "Transform": 155,
+            "Children": [ ]
+        },
+        {
+            "_Id": 95,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{A84CAE75-74E9-48AA-A12A-E0CC3DFA9D82}",
+            "Components": [ ],
+            "Transform": 156,
+            "Children": [ ]
+        },
+        {
+            "_Id": 96,
+            "_Type": "noz::LayoutTransform",
+            "Height": 32
+        },
+        {
+            "_Id": 97,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{353EFF51-8691-4B43-981D-47CA23611000}",
+            "Components": [ ],
+            "Transform": 157,
+            "Children": [ ]
+        },
+        {
+            "_Id": 98,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{A84CAE75-74E9-48AA-A12A-E0CC3DFA9D82}",
+            "Components": [ ],
+            "Transform": 158,
+            "Children": [ ]
+        },
+        {
+            "_Id": 99,
+            "_Type": "noz::BorderNode",
+            "Color": "#333333ff",
+            "Components": [ ],
+            "Transform": 159,
+            "Name": "ColorSquare",
+            "Children": [ 160, 161, 28 ]
+        },
+        {
+            "_Id": 100,
+            "_Type": "noz::BorderNode",
+            "Color": "#333333ff",
+            "Components": [ ],
+            "Transform": 162,
+            "Name": "HueSlider1",
+            "Children": [ 163, 33 ]
+        },
+        {
+            "_Id": 101,
+            "_Type": "noz::GridRow",
+            "Height": "NaN"
+        },
+        {
+            "_Id": 102,
+            "_Type": "noz::GridColumn",
+            "Width": "NaN"
+        },
+        {
+            "_Id": 103,
+            "_Type": "noz::GridColumn",
+            "Width": 1,
+            "WidthIsRatio": true
+        },
+        {
+            "_Id": 104,
+            "_Type": "noz::GridColumn",
+            "Width": 64
+        },
+        {
+            "_Id": 105,
+            "_Type": "noz::TextNode",
+            "Font": "{43D6EDE8-4F80-4E38-94E3-6941D1E9407E}",
+            "Text": "R",
+            "Color": "#ccccccff",
+            "VerticalAlignment": "Center",
+            "Components": [ ],
+            "Name": "R",
+            "Children": [ ]
+        },
+        {
+            "_Id": 106,
+            "_Type": "noz::BorderNode",
+            "Color": "#333333ff",
+            "Components": [ ],
+            "Transform": 164,
+            "Name": "RedSlider",
+            "Children": [ 165, 30 ]
+        },
+        {
+            "_Id": 107,
+            "_Type": "noz::TextNode",
+            "Font": "{43D6EDE8-4F80-4E38-94E3-6941D1E9407E}",
+            "Text": "G",
+            "Color": "#ccccccff",
+            "VerticalAlignment": "Center",
+            "Components": [ ],
+            "Name": "G",
+            "Children": [ ]
+        },
+        {
+            "_Id": 108,
+            "_Type": "noz::BorderNode",
+            "Color": "#333333ff",
+            "Components": [ ],
+            "Transform": 166,
+            "Name": "GreenSlider",
+            "Children": [ 167, 31 ]
+        },
+        {
+            "_Id": 109,
+            "_Type": "noz::TextNode",
+            "Font": "{43D6EDE8-4F80-4E38-94E3-6941D1E9407E}",
+            "Text": "B",
+            "Color": "#ccccccff",
+            "VerticalAlignment": "Center",
+            "Components": [ ],
+            "Name": "B",
+            "Children": [ ]
+        },
+        {
+            "_Id": 110,
+            "_Type": "noz::BorderNode",
+            "Color": "#333333ff",
+            "Components": [ ],
+            "Transform": 168,
+            "Name": "BlueSlider",
+            "Children": [ 169, 32 ]
+        },
+        {
+            "_Id": 111,
+            "_Type": "noz::GridRow",
+            "Height": "NaN"
+        },
+        {
+            "_Id": 112,
+            "_Type": "noz::GridColumn",
+            "Width": "NaN"
+        },
+        {
+            "_Id": 113,
+            "_Type": "noz::GridColumn",
+            "Width": 1,
+            "WidthIsRatio": true
+        },
+        {
+            "_Id": 114,
+            "_Type": "noz::GridColumn",
+            "Width": 64
+        },
+        {
+            "_Id": 115,
+            "_Type": "noz::TextNode",
+            "Font": "{43D6EDE8-4F80-4E38-94E3-6941D1E9407E}",
+            "Text": "H",
+            "Color": "#ff8888ff",
+            "VerticalAlignment": "Center",
+            "Components": [ ],
+            "Name": "H",
+            "Children": [ ]
+        },
+        {
+            "_Id": 116,
+            "_Type": "noz::BorderNode",
+            "Color": "#333333ff",
+            "Components": [ ],
+            "Transform": 170,
+            "Name": "HueSlider2",
+            "Children": [ 171, 34 ]
+        },
+        {
+            "_Id": 117,
+            "_Type": "noz::TextNode",
+            "Font": "{43D6EDE8-4F80-4E38-94E3-6941D1E9407E}",
+            "Text": "S",
+            "Color": "#88ff88ff",
+            "VerticalAlignment": "Center",
+            "Components": [ ],
+            "Name": "S",
+            "Children": [ ]
+        },
+        {
+            "_Id": 118,
+            "_Type": "noz::BorderNode",
+            "Color": "#333333ff",
+            "Components": [ ],
+            "Transform": 172,
+            "Name": "SaturationSlider",
+            "Children": [ 173, 35 ]
+        },
+        {
+            "_Id": 119,
+            "_Type": "noz::TextNode",
+            "Font": "{43D6EDE8-4F80-4E38-94E3-6941D1E9407E}",
+            "Text": "V",
+            "Color": "#8888ffff",
+            "VerticalAlignment": "Center",
+            "Components": [ ],
+            "Name": "V",
+            "Children": [ ]
+        },
+        {
+            "_Id": 120,
+            "_Type": "noz::BorderNode",
+            "Color": "#333333ff",
+            "Components": [ ],
+            "Transform": 174,
+            "Name": "ValueSlider",
+            "Children": [ 175, 36 ]
+        },
+        {
+            "_Id": 121,
+            "_Type": "noz::GridRow",
+            "Height": "NaN"
+        },
+        {
+            "_Id": 122,
+            "_Type": "noz::GridColumn",
+            "Width": "NaN"
+        },
+        {
+            "_Id": 123,
+            "_Type": "noz::GridColumn",
+            "Width": 1,
+            "WidthIsRatio": true
+        },
+        {
+            "_Id": 124,
+            "_Type": "noz::GridColumn",
+            "Width": 64
+        },
+        {
+            "_Id": 125,
+            "_Type": "noz::LayoutTransform",
+            "MarginTop": -6,
+            "Position": {
+                "X": 0,
+                "Y": 134
+            }
+        },
+        {
+            "_Id": 126,
+            "_Type": "noz::TextNode",
+            "Font": "{43D6EDE8-4F80-4E38-94E3-6941D1E9407E}",
+            "Text": "A",
+            "Color": "#ccccccff",
+            "VerticalAlignment": "Center",
+            "Components": [ ],
+            "Name": "A",
+            "Children": [ ]
+        },
+        {
+            "_Id": 127,
+            "_Type": "noz::BorderNode",
+            "Color": "#333333ff",
+            "Components": [ ],
+            "Transform": 176,
+            "Name": "AlphaSlider",
+            "Children": [ 177, 178, 29 ]
+        },
+        {
+            "_Id": 128,
+            "_Type": "noz::LayoutTransform",
+            "MarginRight": 6,
+            "Position": {
+                "X": -3,
+                "Y": 167
+            }
+        },
+        {
+            "_Id": 129,
+            "_Type": "noz::TextNode",
+            "Font": "{43D6EDE8-4F80-4E38-94E3-6941D1E9407E}",
+            "Text": "Hex    #",
+            "Color": "#ccccccff",
+            "HorizontalAlignment": "Max",
+            "VerticalAlignment": "Center",
+            "Components": [ ],
+            "Name": "Hex",
+            "Children": [ ]
+        },
+        {
+            "_Id": 130,
+            "_Type": "noz::LayoutTransform",
+            "MarginRight": "Auto"
+        },
+        {
+            "_Id": 131,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#282828ff",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 132,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#282828ff",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 133,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#282828ff",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 134,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#282828ff",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 135,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#282828ff",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 136,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#282828ff",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 137,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#282828ff",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 138,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#282828ff",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 139,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#282828ff",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 140,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#282828ff",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 141,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#282828ff",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 142,
+            "_Type": "noz::Button",
+            "Sprite": "{4BC7AB37-787F-4C04-8960-8589BBD70FEE}",
+            "Style": "{9BE99469-D5CB-418E-BA11-333F8212FCAB}",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 143,
+            "_Type": "noz::LayoutTransform",
+            "MarginBottom": "Auto",
+            "Position": {
+                "X": 0,
+                "Y": -9.5
+            }
+        },
+        {
+            "_Id": 144,
+            "_Type": "noz::LayoutTransform",
+            "MarginTop": "Auto",
+            "Position": {
+                "X": 0,
+                "Y": 9.5
+            }
+        },
+        {
+            "_Id": 145,
+            "_Type": "noz::LayoutTransform",
+            "MarginBottom": "Auto",
+            "Position": {
+                "X": 0,
+                "Y": -9.5
+            }
+        },
+        {
+            "_Id": 146,
+            "_Type": "noz::LayoutTransform",
+            "MarginTop": "Auto",
+            "Position": {
+                "X": 0,
+                "Y": 9.5
+            }
+        },
+        {
+            "_Id": 147,
+            "_Type": "noz::LayoutTransform",
+            "MarginBottom": "Auto",
+            "Position": {
+                "X": 0,
+                "Y": -9.5
+            }
+        },
+        {
+            "_Id": 148,
+            "_Type": "noz::LayoutTransform",
+            "MarginTop": "Auto",
+            "Position": {
+                "X": 0,
+                "Y": 9.5
+            }
+        },
+        {
+            "_Id": 149,
+            "_Type": "noz::LayoutTransform",
+            "MarginBottom": "Auto",
+            "Position": {
+                "X": 0,
+                "Y": -9.5
+            }
+        },
+        {
+            "_Id": 150,
+            "_Type": "noz::LayoutTransform",
+            "MarginTop": "Auto",
+            "Position": {
+                "X": 0,
+                "Y": 9.5
+            }
+        },
+        {
+            "_Id": 151,
+            "_Type": "noz::LayoutTransform",
+            "MarginRight": "Auto",
+            "Position": {
+                "X": -9.5,
+                "Y": 0
+            }
+        },
+        {
+            "_Id": 152,
+            "_Type": "noz::LayoutTransform",
+            "MarginLeft": "Auto",
+            "Position": {
+                "X": 9.5,
+                "Y": 0
+            }
+        },
+        {
+            "_Id": 153,
+            "_Type": "noz::LayoutTransform",
+            "MarginBottom": "Auto"
+        },
+        {
+            "_Id": 154,
+            "_Type": "noz::LayoutTransform",
+            "MarginTop": "Auto"
+        },
+        {
+            "_Id": 155,
+            "_Type": "noz::LayoutTransform",
+            "MarginBottom": "Auto"
+        },
+        {
+            "_Id": 156,
+            "_Type": "noz::LayoutTransform",
+            "MarginTop": "Auto"
+        },
+        {
+            "_Id": 157,
+            "_Type": "noz::LayoutTransform",
+            "MarginBottom": "Auto"
+        },
+        {
+            "_Id": 158,
+            "_Type": "noz::LayoutTransform",
+            "MarginTop": "Auto"
+        },
+        {
+            "_Id": 159,
+            "_Type": "noz::LayoutTransform",
+            "Width": 192,
+            "Height": 192,
+            "PaddingLeft": 1,
+            "PaddingRight": 1,
+            "PaddingTop": 1,
+            "PaddingBottom": 1,
+            "Position": {
+                "X": -18,
+                "Y": -80.5
+            }
+        },
+        {
+            "_Id": 160,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Stretch": "Fill",
+            "Components": [ 43 ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 161,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Stretch": "Fill",
+            "Components": [ 179 ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 162,
+            "_Type": "noz::LayoutTransform",
+            "Width": 20,
+            "Height": 150,
+            "PaddingLeft": 1,
+            "PaddingRight": 1,
+            "PaddingTop": 1,
+            "PaddingBottom": 1,
+            "Position": {
+                "X": 104,
+                "Y": -80.5
+            }
+        },
+        {
+            "_Id": 163,
+            "_Type": "noz::GridLayout",
+            "Rows": [ 180, 181, 182, 183, 184, 185 ],
+            "Columns": [ 186 ],
+            "Components": [ ],
+            "Children": [ 187, 188, 189, 190, 191, 192 ]
+        },
+        {
+            "_Id": 164,
+            "_Type": "noz::LayoutTransform",
+            "PaddingLeft": 1,
+            "PaddingRight": 1,
+            "PaddingTop": 1,
+            "PaddingBottom": 1,
+            "Position": {
+                "X": -21,
+                "Y": 39
+            }
+        },
+        {
+            "_Id": 165,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Stretch": "Fill",
+            "Components": [ 38 ],
+            "Name": "RedColors",
+            "Children": [ ]
+        },
+        {
+            "_Id": 166,
+            "_Type": "noz::LayoutTransform",
+            "PaddingLeft": 1,
+            "PaddingRight": 1,
+            "PaddingTop": 1,
+            "PaddingBottom": 1,
+            "Position": {
+                "X": -21,
+                "Y": 70
+            }
+        },
+        {
+            "_Id": 167,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#ff0000ff",
+            "Stretch": "Fill",
+            "Components": [ 39 ],
+            "Name": "GreenColors",
+            "Children": [ ]
+        },
+        {
+            "_Id": 168,
+            "_Type": "noz::LayoutTransform",
+            "PaddingLeft": 1,
+            "PaddingRight": 1,
+            "PaddingTop": 1,
+            "PaddingBottom": 1,
+            "Position": {
+                "X": -21,
+                "Y": 101
+            }
+        },
+        {
+            "_Id": 169,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#292929ff",
+            "Stretch": "Fill",
+            "Components": [ 40 ],
+            "Name": "BlueColors",
+            "Children": [ ]
+        },
+        {
+            "_Id": 170,
+            "_Type": "noz::LayoutTransform",
+            "Height": 16
+        },
+        {
+            "_Id": 171,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#ff0000ff",
+            "Stretch": "Fill",
+            "Components": [ 193 ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 172,
+            "_Type": "noz::LayoutTransform",
+            "Height": 16
+        },
+        {
+            "_Id": 173,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#ff0000ff",
+            "Stretch": "Fill",
+            "Components": [ 41 ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 174,
+            "_Type": "noz::LayoutTransform",
+            "Height": 16
+        },
+        {
+            "_Id": 175,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#ff0000ff",
+            "Stretch": "Fill",
+            "Components": [ 42 ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 176,
+            "_Type": "noz::LayoutTransform",
+            "PaddingLeft": 1,
+            "PaddingRight": 1,
+            "PaddingTop": 1,
+            "PaddingBottom": 1,
+            "Position": {
+                "X": -20.5,
+                "Y": 0
+            }
+        },
+        {
+            "_Id": 177,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{37747AD4-961B-467D-8C50-056D346D424D}",
+            "Stretch": "Fill",
+            "Components": [ ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 178,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Color": "#ff0000ff",
+            "Stretch": "Fill",
+            "Components": [ 37 ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 179,
+            "_Type": "noz::SpriteColors",
+            "TopRight": "#ffffff00",
+            "BottomLeft": "#000000ff",
+            "BottomRight": "#000000ff"
+        },
+        {
+            "_Id": 180,
+            "_Type": "noz::GridRow",
+            "Height": 1,
+            "HeightIsRatio": true
+        },
+        {
+            "_Id": 181,
+            "_Type": "noz::GridRow",
+            "Height": 1,
+            "HeightIsRatio": true
+        },
+        {
+            "_Id": 182,
+            "_Type": "noz::GridRow",
+            "Height": 1,
+            "HeightIsRatio": true
+        },
+        {
+            "_Id": 183,
+            "_Type": "noz::GridRow",
+            "Height": 1,
+            "HeightIsRatio": true
+        },
+        {
+            "_Id": 184,
+            "_Type": "noz::GridRow",
+            "Height": 1,
+            "HeightIsRatio": true
+        },
+        {
+            "_Id": 185,
+            "_Type": "noz::GridRow",
+            "Height": 1,
+            "HeightIsRatio": true
+        },
+        {
+            "_Id": 186,
+            "_Type": "noz::GridColumn",
+            "Width": 1,
+            "WidthIsRatio": true
+        },
+        {
+            "_Id": 187,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Stretch": "Fill",
+            "Components": [ 194 ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 188,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Stretch": "Fill",
+            "Components": [ 195 ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 189,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Stretch": "Fill",
+            "Components": [ 196 ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 190,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Stretch": "Fill",
+            "Components": [ 197 ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 191,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Stretch": "Fill",
+            "Components": [ 198 ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 192,
+            "_Type": "noz::SpriteNode",
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Stretch": "Fill",
+            "Components": [ 199 ],
+            "Children": [ ]
+        },
+        {
+            "_Id": 193,
+            "_Type": "noz::SpriteColors",
+            "TopLeft": "#ff0000ff",
+            "TopRight": "#ff0000ff",
+            "BottomLeft": "#ff000000",
+            "BottomRight": "#ff000000"
+        },
+        {
+            "_Id": 194,
+            "_Type": "noz::SpriteColors",
+            "TopLeft": "#ff0000ff",
+            "TopRight": "#ff0000ff",
+            "BottomLeft": "#ff00ffff",
+            "BottomRight": "#ff00ffff"
+        },
+        {
+            "_Id": 195,
+            "_Type": "noz::SpriteColors",
+            "TopLeft": "#ff00ffff",
+            "TopRight": "#ff00ffff",
+            "BottomLeft": "#0000ffff",
+            "BottomRight": "#0000ffff"
+        },
+        {
+            "_Id": 196,
+            "_Type": "noz::SpriteColors",
+            "TopLeft": "#0000ffff",
+            "TopRight": "#0000ffff",
+            "BottomLeft": "#00ffffff",
+            "BottomRight": "#00ffffff"
+        },
+        {
+            "_Id": 197,
+            "_Type": "noz::SpriteColors",
+            "TopLeft": "#00ffffff",
+            "TopRight": "#00ffffff",
+            "BottomLeft": "#00ff00ff",
+            "BottomRight": "#00ff00ff"
+        },
+        {
+            "_Id": 198,
+            "_Type": "noz::SpriteColors",
+            "TopLeft": "#00ff00ff",
+            "TopRight": "#00ff00ff",
+            "BottomLeft": "#ffff00ff",
+            "BottomRight": "#ffff00ff"
+        },
+        {
+            "_Id": 199,
+            "_Type": "noz::SpriteColors",
+            "TopLeft": "#ffff00ff",
+            "TopRight": "#ffff00ff",
+            "BottomLeft": "#ff0000ff",
+            "BottomRight": "#ff0000ff"
+        }
+    ]
+}

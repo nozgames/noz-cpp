@@ -1,0 +1,30 @@
+{
+    "Root": 1,
+    "Objects": [        
+        {
+            "_Id": 1,
+            "_Type": "noz::Animation",
+            "Tracks": [ 2 ],
+            "Targets": [ 3 ]
+        },
+        {
+            "_Id": 2,
+            "_Type": "noz::AnimationTrack",
+            "KeyFrames": [ 4 ],
+            "Target": 3,
+            "TargetProperty": "Sprite",
+            "TargetComponentType": null
+        },
+        {
+            "_Id": 3,
+            "_Type": "noz::AnimationTarget",
+            "TargetType": "noz::SpriteNode",
+            "Guid": "{3AE87517-9BDF-4F04-90CD-86A0EF68E17B}"
+        },
+        {
+            "_Id": 4,
+            "_Type": "noz::SpriteKeyFrame",
+            "Value": "{F326EAFB-11EC-464E-92C3-A97CAF328618}"
+        }
+    ]
+}

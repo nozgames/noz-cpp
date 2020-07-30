@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="../../tools/noz_glue/GlueClass.cpp"/>
+    <ClCompile Include="../../tools/noz_glue/GlueFile.cpp"/>
+    <ClCompile Include="../../tools/noz_glue/GlueMeta.cpp"/>
+    <ClCompile Include="../../tools/noz_glue/GlueState.cpp"/>
+    <ClCompile Include="../../tools/noz_glue/GlueType.cpp"/>
+    <ClCompile Include="../../tools/noz_glue/Lexer.cpp"/>
+    <ClCompile Include="../../tools/noz_glue/Parse.cpp"/>
+    <ClCompile Include="../../tools/noz_glue/Write.cpp"/>
+    <ClCompile Include="../../tools/noz_glue/main.cpp"/>
+    <ClCompile Include="../../tools/noz_glue/noz_glue.cpp"/>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="../../tools/noz_glue/GlueClass.h"/>
+    <ClInclude Include="../../tools/noz_glue/GlueEnum.h"/>
+    <ClInclude Include="../../tools/noz_glue/GlueFile.h"/>
+    <ClInclude Include="../../tools/noz_glue/GlueMeta.h"/>
+    <ClInclude Include="../../tools/noz_glue/GlueMethod.h"/>
+    <ClInclude Include="../../tools/noz_glue/GlueParameter.h"/>
+    <ClInclude Include="../../tools/noz_glue/GlueProperty.h"/>
+    <ClInclude Include="../../tools/noz_glue/GlueState.h"/>
+    <ClInclude Include="../../tools/noz_glue/GlueType.h"/>
+    <ClInclude Include="../../tools/noz_glue/Lexer.h"/>
+    <ClInclude Include="../../tools/noz_glue/noz_glue.pch"/>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+</Project>

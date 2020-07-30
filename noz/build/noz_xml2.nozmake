@@ -1,0 +1,62 @@
+{
+	"Organization" : "NoZ Games, LLC",
+
+	# GUID to use for Visual Studio project
+	@Windows ( "Guid": "F688F2AD-7F6F-4199-92B5-3B11BDEAE158",)
+
+	# Static-Library project type
+	"TargetType" : "Library",
+
+	# Project level build settings.
+	"DefaultConfiguration" : {
+		# Disable warnings since this is an external library
+		"Warnings" : false,
+		"IncludeDirectories" : [
+			"../src",
+			"../external/libxml2-2.7.2",
+			@WINDOWS("../external/libxml2-2.7.2/config/win32",)
+			@IOS("../external/libxml2-2.7.2/config/ios",)
+			@OSX("../external/libxml2-2.7.2/config/ios",)
+			"../external/libxml2-2.7.2/include"
+		],
+
+		"PreprocessorDefinitions" : [
+			@WINDOWS("_CRT_SECURE_NO_WARNINGS",)
+			"COMPILED_FROM_DSP",
+			"XML_STATIC"
+		],
+	},
+
+	# Configurations
+	"Configurations" : {
+		"Debug" : { },
+		"Release" : { "Optimizations" : true, },
+	},
+
+	"AutoGroupBase" : "src",
+
+	"Files" : [
+		{ "Path" : "../external/libxml2-2.7.2/chvalid.c" },
+		{ "Path" : "../external/libxml2-2.7.2/dict.c" },
+		{ "Path" : "../external/libxml2-2.7.2/encoding.c" },
+		{ "Path" : "../external/libxml2-2.7.2/entities.c" },
+		{ "Path" : "../external/libxml2-2.7.2/error.c" },
+		{ "Path" : "../external/libxml2-2.7.2/globals.c" },
+		{ "Path" : "../external/libxml2-2.7.2/hash.c" },
+		{ "Path" : "../external/libxml2-2.7.2/list.c" },
+		{ "Path" : "../external/libxml2-2.7.2/parser.c" },
+		{ "Path" : "../external/libxml2-2.7.2/parserInternals.c" },
+		{ "Path" : "../external/libxml2-2.7.2/SAX2.c" },
+		{ "Path" : "../external/libxml2-2.7.2/threads.c" },
+		{ "Path" : "../external/libxml2-2.7.2/tree.c" },
+		{ "Path" : "../external/libxml2-2.7.2/uri.c" },
+		{ "Path" : "../external/libxml2-2.7.2/valid.c" },
+		{ "Path" : "../external/libxml2-2.7.2/xmlIO.c" },
+		{ "Path" : "../external/libxml2-2.7.2/xmlmemory.c" },
+		{ "Path" : "../external/libxml2-2.7.2/xmlreader.c" },
+		{ "Path" : "../external/libxml2-2.7.2/xmlregexp.c" },
+		{ "Path" : "../external/libxml2-2.7.2/xmlsave.c" },
+		{ "Path" : "../external/libxml2-2.7.2/xmlstring.c" },
+		{ "Path" : "../external/libxml2-2.7.2/xmlunicode.c" },
+	],
+}

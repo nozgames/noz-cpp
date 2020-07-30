@@ -1,0 +1,23 @@
+{
+    "Root": 1,
+    "Objects": [
+        {
+            "_Id": 1,
+            "_Type": "noz::Style::Def",
+            "ControlType": "noz::EnumPropertyEditor",
+            "Nodes": [ 100 ],
+            "Parts": [ 10 ]
+        },
+        {
+            "_Id": 10,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "DropDownList",
+            "Object": 100
+        },
+
+        {
+            "_Id": 100,
+            "_Type": "noz::DropDownList"
+        }
+    ]
+}

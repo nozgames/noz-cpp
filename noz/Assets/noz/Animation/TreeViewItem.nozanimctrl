@@ -1,0 +1,113 @@
+{
+    "Root": 1,
+    "Objects": [        
+        {
+            "_Id": 1,
+            "_Type": "noz::AnimationController",
+            "Layers": [ 2, 3, 4, 5, 6 ]
+        },
+        {
+            "_Id": 2,
+            "_Type": "noz::AnimationLayer",
+            "Name": "Common",
+            "States": [ 7, 8 ]
+        },
+        {
+            "_Id": 3,
+            "_Type": "noz::AnimationLayer",
+            "Name": "Selection",
+            "States": [ 9, 10, 11 ]
+        },
+        {
+            "_Id": 4,
+            "_Type": "noz::AnimationLayer",
+            "Name": "Drag",
+            "States": [ 12, 13, 14, 15 ]
+        },
+        {
+            "_Id": 5,
+            "_Type": "noz::AnimationLayer",
+            "Name": "Expanded",
+            "States": [ 16, 17 ]
+        },
+        {
+            "_Id": 6,
+            "_Type": "noz::AnimationLayer",
+            "Name": "Focus",
+            "States": [ 18, 19 ]
+        },
+        {
+            "_Id": 7,
+            "_Type": "noz::AnimationState",
+            "Name": "Normal"
+        },
+        {
+            "_Id": 8,
+            "_Type": "noz::AnimationState",
+            "Name": "Hover",
+            "Animation": "{85D68D29-A55B-486B-899F-B805998D24E6}"
+        },
+        {
+            "_Id": 9,
+            "_Type": "noz::AnimationState",
+            "Name": "Selected",
+            "Animation": "{D1D8F524-6A64-44CE-B452-46E9236EEB26}"
+        },
+        {
+            "_Id": 10,
+            "_Type": "noz::AnimationState",
+            "Name": "UnSelected"
+        },
+        {
+            "_Id": 11,
+            "_Type": "noz::AnimationState",
+            "Name": "SelectedUnFocused",
+            "Animation": "{85D68D29-A55B-486B-899F-B805998D24E6}"
+        },
+        {
+            "_Id": 12,
+            "_Type": "noz::AnimationState",
+            "Name": "DragDropNone"
+        },
+        {
+            "_Id": 13,
+            "_Type": "noz::AnimationState",
+            "Name": "DragDropAfter",
+            "Animation": "{8ABF80E4-ABD2-4034-BE29-E25F7043921A}"
+        },
+        {
+            "_Id": 14,
+            "_Type": "noz::AnimationState",
+            "Name": "DragDropBefore",
+            "Animation": "{A4917391-5B68-4810-A164-633304AB33ED}"
+        },
+        {
+            "_Id": 15,
+            "_Type": "noz::AnimationState",
+            "Name": "DragDropInto",
+            "Animation": "{48A51D42-3BD9-4EF8-9A61-97B137975126}"
+        },
+        {
+            "_Id": 16,
+            "_Type": "noz::AnimationState",
+            "Name": "Expanded",
+            "Animation": "{4264F7BC-9ABB-415A-9280-C5638DF6832B}"
+        },
+        {
+            "_Id": 17,
+            "_Type": "noz::AnimationState",
+            "Name": "Collapsed"
+        },
+        {
+            "_Id": 18,
+            "_Type": "noz::AnimationState",
+            "Name": "Focused",
+            "Animation": "{3B826726-16C7-4D39-98FC-B21A4AFBA68F}"
+        },
+        {
+            "_Id": 19,
+            "_Type": "noz::AnimationState",
+            "Name": "UnFocused"
+        }
+    ]
+}

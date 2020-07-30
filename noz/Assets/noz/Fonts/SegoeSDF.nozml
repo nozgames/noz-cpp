@@ -1,0 +1,12 @@
+{
+    "Root": 1,
+    "Objects": [        
+        {
+            "_Id": 1,
+            "_Type": "noz::FontMeta",
+            "Height": 10,
+            "SDFScale": 16,
+            "Source": "Engine\/Fonts\/segoeui.ttf"
+        }
+    ]
+}

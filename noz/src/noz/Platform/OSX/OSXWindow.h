@@ -1,0 +1,13 @@
+///////////////////////////////////////////////////////////////////////////////
+// NoZ Engine Framework
+// Copyright (C) 2015 NoZ Games, LLC
+// http://www.nozgames.com
+///////////////////////////////////////////////////////////////////////////////
+
+#import <Cocoa/Cocoa.h>
+
+@interface AppDelegate : NSObject <NSApplicationDelegate>
+
+@property (strong, nonatomic) NSWindow *window;
+
+@end

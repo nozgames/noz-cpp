@@ -1,0 +1,1 @@
+{"Root": 1,"Objects": [{"_Id": 1,"_Type": "noz::Style::Def","ControlType": "noz::Thumb","Nodes": [2],"Parts": []},{"_Id": 2,"_Type": "noz::Node","Components": [],"Transform": 3,"Children": []},{"_Id": 3,"_Type": "noz::LayoutTransform","Width": 6,"Height": 6}]}

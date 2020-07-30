@@ -1,0 +1,75 @@
+﻿{
+	"Organization" : "NoZ Games, LLC",
+	"BundleId" : "com.nozgames.FarmerZ",
+
+	@Windows (
+		"Guid" : "2A3DE0BF-D297-4100-B9E5-B26BEECA2727",
+		"SolutionGuid" : "7FAE304B-25F8-4B68-82C1-CF1EAA239AE8",
+	)
+
+	"TargetType" : "Application",
+
+	@!Deploy(
+		"Glue" : true,
+		"AssetDirectories" : [ "../noz/Assets", "../Assets" ],
+	)
+
+	# Project level build settings.
+	"DefaultConfiguration" : {
+		"IncludeDirectories" : [
+			"../src",
+			"../noz/src",
+		],
+
+		"PrecompiledHeader" : "Use",
+		"PrecompiledHeaderFile" : "FarmerZ.pch.h"
+	},
+
+	# Configurations
+	"Configurations" : {
+		@!Deploy(
+			"Debug" : { 
+				"PreprocessorDefinitions" : [ "NOZ_DEBUG", "NOZ_EDITOR" ],
+			},
+			"Release" : {
+				"Optimizations" : true,
+				"PreprocessorDefinitions" : [ "NOZ_EDITOR" ],
+			},
+		)
+
+		@Deploy(
+			"Debug" : {
+				"PreprocessorDefinitions" : [ "NOZ_DEPLOY", "NOZ_DEBUG" ]
+			},
+			"Release" : {
+				"Optimizations" : true,
+				"PreprocessorDefinitions" : [ "NOZ_DEPLOY" ]
+			}
+		)
+	},
+
+	"AutoGroupDirectory" : "../src",
+	"AutoGroupBase" : "src",
+
+	"Files" : [
+		{ "Path" : "../src" },
+			
+		{ 
+			"Path" : "../src/FarmerZ.cpp",
+			"PrecompiledHeader" : "Create"
+		},
+
+		@IOS (
+			{ "Path" : "../res/IOS/FarmerZ.xcassets", "Directory": true, "Group" : "res" },
+			{ "Path" : "../Editor.nozsettings", "Group" : "res" },
+			{ "Path" : "../Application.nozsettings", "Group" : "res" },
+		)
+
+		@Windows (
+			{ "Path" : "../res/Windows", "Group" : "res" },
+		)
+	],
+
+	# List of all references
+	"References" : [ "../noz/build/noz.nozmake"	]
+}

@@ -1,0 +1,25 @@
+{
+    "Root": 1,
+    "Objects": [
+        {
+            "_Id": 1,
+            "_Type": "noz::Style::Def",
+            "ControlType": "noz::FPSMeter",
+            "Nodes": [ 100 ],
+            "Parts": [ 2 ]
+        },
+        {
+            "_Id": 2,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "TextNode",
+            "Object": 100
+        },
+
+        {
+            "_Id": 100,
+            "_Type": "noz::TextNode",
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Center"
+        }
+    ]
+}

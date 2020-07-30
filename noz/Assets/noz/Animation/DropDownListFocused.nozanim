@@ -1,0 +1,1 @@
+{"Root": 1,"Objects": [{"_Id": 1,"_Type": "noz::Animation","Tracks": [2]},{"_Id": 2,"_Type": "noz::AnimationTrack","KeyFrames": [3],"Name": "[BorderNode].Color","Guid": "{155511D2-C851-4820-A996-D841382BC840}"},{"_Id": 3,"_Type": "noz::ColorKeyFrame","Value": "#039cf5ff"}]}

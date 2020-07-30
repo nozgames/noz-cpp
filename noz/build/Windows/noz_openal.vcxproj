@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{83A98603-B1AF-441D-A88A-916D95DBDA2D}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>
+    </RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>bin\Debug\Win32\</OutDir>
+    <IntDir>output\Debug\noz_openal\Win32\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>bin\Debug\x64\</OutDir>
+    <IntDir>output\Debug\noz_openal\x64\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>bin\Release\Win32\</OutDir>
+    <IntDir>output\Release\noz_openal\Win32\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>bin\Release\x64\</OutDir>
+    <IntDir>output\Release\noz_openal\x64\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;AL_ALEXT_PROTOTYPES;AL_LIBTYPE_STATIC;NOZ_WINDOWS; WIN32;_WINDOWS;_MBCS; %(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../external/openal-soft-1.15.1/include;../../external/openal-soft-1.15.1/OpenAL32/Include;../../external/openal-soft-1.15.1;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;AL_ALEXT_PROTOTYPES;AL_LIBTYPE_STATIC;NOZ_WINDOWS; WIN32;_WINDOWS;_MBCS; %(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../external/openal-soft-1.15.1/include;../../external/openal-soft-1.15.1/OpenAL32/Include;../../external/openal-soft-1.15.1;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;AL_ALEXT_PROTOTYPES;AL_LIBTYPE_STATIC;NOZ_WINDOWS; WIN32;_WINDOWS;_MBCS; %(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../external/openal-soft-1.15.1/include;../../external/openal-soft-1.15.1/OpenAL32/Include;../../external/openal-soft-1.15.1;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;AL_ALEXT_PROTOTYPES;AL_LIBTYPE_STATIC;NOZ_WINDOWS; WIN32;_WINDOWS;_MBCS; %(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../external/openal-soft-1.15.1/include;../../external/openal-soft-1.15.1/OpenAL32/Include;../../external/openal-soft-1.15.1;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alAuxEffectSlot.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alBuffer.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alEffect.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alError.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alExtension.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alFilter.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alListener.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alSource.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alState.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/OpenAL32/alThunk.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/ALc.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/alcConfig.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/alcDedicated.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/alcEcho.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/alcModulator.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/alcReverb.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/alcRing.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/alcThread.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/ALu.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/bs2b.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/helpers.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/hrtf.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/mixer.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/mixer_c.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/panning.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/backends/dsound.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/backends/loopback.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/backends/mmdevapi.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/backends/null.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/backends/wave.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/backends/winmm.c" />
+    <ClCompile Include="../../external/openal-soft-1.15.1/Alc/mixer_sse.c" />
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

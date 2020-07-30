@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="../../src/Animal.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/FarmerZ.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/FarmerZ.glue.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/GameManager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/Main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="../../src/Animal.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/FarmerZ.pch.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/GameManager.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="../../res/Windows/resource.h">
+      <Filter>res</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="../../res/Windows/icon.ico">
+      <Filter>res</Filter>
+    </None>
+    <None Include="../../res/Windows/Icon16.png">
+      <Filter>res</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="../../res/Windows/FarmerZ.rc">
+      <Filter>res</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="res">
+      <UniqueIdentifier>{00000000-0000-0000-0000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{00000000-0000-0000-0000-000000000002}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

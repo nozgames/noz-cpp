@@ -1,0 +1,135 @@
+{
+    "Root": 1,
+    "Objects": [
+        {
+            "_Id": 1,
+            "_Type": "noz::Style::Def",
+            "ControlType": "noz::Editor::TransformInspector",
+            "Nodes": [ 50 ],
+            "Parts": [ 10, 11, 12, 13 ]
+        },
+        {
+            "_Id": 10,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "StackLayout",
+            "Object": 500
+        },
+
+        {
+            "_Id": 11,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "TypeText",
+            "Object": 800
+        },
+
+        {
+            "_Id": 12,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "NameEditor",
+            "Object": 400
+        },
+        {
+            "_Id": 13,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "TypeIcon",
+            "Object": 200
+        },
+
+        {
+            "_Id": 50,
+            "_Type": "noz::StackLayout",
+            "Spacing": 8,
+            "Children": [ 100, 900, 500 ]
+        },
+
+        {
+            "_Id": 100,
+            "_Type": "noz::GridLayout",
+            "Columns": [ 110, 111, 112 ],
+            "Transform": 101,
+            "Children": [ 200, 300, 400, 600, 700, 800 ],
+            "CellPadding" :  4
+        },
+        {
+            "_Id": 101,
+            "_Type": "noz::LayoutTransform",
+            "MarginBottom": 2
+        },
+        {
+            "_Id": 110,
+            "_Type": "noz::GridColumn",
+            "Width": "NaN"
+        },
+        {
+            "_Id": 111,
+            "_Type": "noz::GridColumn",
+            "Width": "NaN"
+        },
+        {
+            "_Id": 112,
+            "_Type": "noz::GridColumn",
+            "Width": "1",
+            "WidthIsRatio": true
+        },
+
+        {
+            "_Id": 200,
+            "_Type": "noz::SpriteNode"
+        },
+
+        {
+            "_Id": 300,
+            "_Type": "noz::TextNode",
+            "Text": "Name",
+            "VerticalAlignment": "Center"
+        },
+
+        {
+            "_Id": 400,
+            "_Type": "noz::Editor::NamePropertyEditor",
+            "Transform": 401,
+            "SelectOnFocus" :  true,
+            "PlaceholderText" : "<unnamed>"
+        },
+        {
+            "_Id": 401,
+            "_Type": "noz::LayoutTransform",
+            "MarginTop": "NaN",
+            "MarginBottom": "NaN"
+        },
+
+        {
+            "_Id": 500,
+            "_Type": "noz::StackLayout",
+            "Spacing": 4
+        },
+
+        {
+            "_Id": 600,
+            "_Type": "noz::Node"
+        },
+
+        {
+            "_Id": 700,
+            "_Type": "noz::TextNode",
+            "Text": "Type",
+            "VerticalAlignment": "Center"
+        },
+
+        {
+            "_Id": 800,
+            "_Type": "noz::TextNode",
+            "Text": "Unknown",
+            "Color" : "#a1a1a1",
+            "VerticalAlignment": "Center",
+            "HorizontalOverflow" : "Ellipsis"
+        },
+
+        {
+            "_Id": 900,
+            "_Type": "noz::SearchTextBox",
+            "PlaceholderText": "All",
+            "SelectOnFocus": true
+        }
+    ]
+}

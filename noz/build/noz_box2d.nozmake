@@ -1,0 +1,31 @@
+{
+	@Windows ("Guid" : "5E6E834B-FFF8-47E9-8428-EC4E85567DFA",)
+
+	"TargetType" : "Library",
+
+	# Project level build settings.
+	"DefaultConfiguration" : {
+		"Warnings" : false,
+		"IncludeDirectories" : [ "../external/box2d-2.3.0" ],
+		"PreprocessorDefinitions" : [
+			@WINDOWS("_CRT_SECURE_NO_WARNINGS","_HAS_ITERATOR_DEBUGGING=0")			
+		],
+	},
+
+	# Configurations
+	"Configurations" : {
+		"Debug" : {  },
+		"Release" : { "Optimizations" : true },
+	},
+
+	"Files" : [
+		{ "Path" : "../external/box2d-2.3.0/Box2D/Box2D.h" },
+		{ "Path" : "../external/box2d-2.3.0/Box2D/Collision" },
+		{ "Path" : "../external/box2d-2.3.0/Box2D/Collision/Shapes" },
+		{ "Path" : "../external/box2d-2.3.0/Box2D/Common" },
+		{ "Path" : "../external/box2d-2.3.0/Box2D/Dynamics" },
+		{ "Path" : "../external/box2d-2.3.0/Box2D/Dynamics/Contacts" },
+		{ "Path" : "../external/box2d-2.3.0/Box2D/Dynamics/Joints" },
+		{ "Path" : "../external/box2d-2.3.0/Box2D/Rope" },
+	]
+}

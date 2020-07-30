@@ -1,0 +1,584 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		FF000000FF0000000000000C /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000000D /* main.cpp */; };
+		FF000000FF0000000000000E /* noz.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000000F /* noz.cpp */; };
+		FF000000FF00000000000010 /* BinaryReader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000011 /* BinaryReader.cpp */; };
+		FF000000FF00000000000013 /* BinaryWriter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000014 /* BinaryWriter.cpp */; };
+		FF000000FF00000000000016 /* Directory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000017 /* Directory.cpp */; };
+		FF000000FF0000000000001A /* File.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000001B /* File.cpp */; };
+		FF000000FF0000000000001D /* FileStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000001E /* FileStream.cpp */; };
+		FF000000FF00000000000021 /* MemoryStream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000022 /* MemoryStream.cpp */; };
+		FF000000FF00000000000024 /* Path.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000025 /* Path.cpp */; };
+		FF000000FF00000000000027 /* Stream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000028 /* Stream.cpp */; };
+		FF000000FF0000000000002A /* StreamReader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000002B /* StreamReader.cpp */; };
+		FF000000FF0000000000002D /* StreamWriter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000002E /* StreamWriter.cpp */; };
+		FF000000FF00000000000030 /* StringReader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000031 /* StringReader.cpp */; };
+		FF000000FF00000000000033 /* TextReader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000034 /* TextReader.cpp */; };
+		FF000000FF00000000000036 /* TextWriter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000037 /* TextWriter.cpp */; };
+		FF000000FF00000000000039 /* String.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000003A /* String.cpp */; };
+		FF000000FF0000000000003C /* StringBuilder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000003D /* StringBuilder.cpp */; };
+		FF000000FF0000000000003F /* StringLexer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000040 /* StringLexer.cpp */; };
+		FF000000FF00000000000043 /* JsonArray.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000044 /* JsonArray.cpp */; };
+		FF000000FF00000000000046 /* JsonObject.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000047 /* JsonObject.cpp */; };
+		FF000000FF00000000000049 /* JsonReader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000004A /* JsonReader.cpp */; };
+		FF000000FF0000000000004C /* JsonString.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000004D /* JsonString.cpp */; };
+		FF000000FF0000000000004F /* JsonValue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000050 /* JsonValue.cpp */; };
+		FF000000FF00000000000052 /* JsonWriter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000053 /* JsonWriter.cpp */; };
+		FF000000FF00000000000055 /* Makefile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000056 /* Makefile.cpp */; };
+		FF000000FF00000000000058 /* GlueClass.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000059 /* GlueClass.cpp */; };
+		FF000000FF0000000000005C /* GlueFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000005D /* GlueFile.cpp */; };
+		FF000000FF0000000000005F /* GlueGen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000060 /* GlueGen.cpp */; };
+		FF000000FF00000000000062 /* GlueLexer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000063 /* GlueLexer.cpp */; };
+		FF000000FF00000000000065 /* GlueMeta.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000066 /* GlueMeta.cpp */; };
+		FF000000FF0000000000006A /* GlueParse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000006B /* GlueParse.cpp */; };
+		FF000000FF0000000000006D /* GlueState.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000006E /* GlueState.cpp */; };
+		FF000000FF00000000000070 /* GlueType.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000071 /* GlueType.cpp */; };
+		FF000000FF00000000000073 /* GlueWrite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000074 /* GlueWrite.cpp */; };
+		FF000000FF00000000000075 /* ProjectGen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000076 /* ProjectGen.cpp */; };
+		FF000000FF00000000000078 /* VisualStudioProjectGen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000079 /* VisualStudioProjectGen.cpp */; };
+		FF000000FF0000000000007B /* XCodeProjectGen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000007C /* XCodeProjectGen.cpp */; };
+		FF000000FF0000000000007E /* Boolean.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000007F /* Boolean.cpp */; };
+		FF000000FF00000000000080 /* Byte.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000081 /* Byte.cpp */; };
+		FF000000FF00000000000082 /* Console.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000083 /* Console.cpp */; };
+		FF000000FF00000000000084 /* DateTime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000085 /* DateTime.cpp */; };
+		FF000000FF00000000000086 /* Environment.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000087 /* Environment.cpp */; };
+		FF000000FF00000000000088 /* Float.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000089 /* Float.cpp */; };
+		FF000000FF0000000000008A /* Guid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000008B /* Guid.cpp */; };
+		FF000000FF0000000000008C /* Int32.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000008D /* Int32.cpp */; };
+		FF000000FF0000000000008E /* Name.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000008F /* Name.cpp */; };
+		FF000000FF00000000000090 /* Object.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000091 /* Object.cpp */; };
+		FF000000FF00000000000092 /* UInt32.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000093 /* UInt32.cpp */; };
+		FF000000FF00000000000094 /* OSXFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000095 /* OSXFile.cpp */; };
+		FF000000FF00000000000096 /* OSXDirectory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000097 /* OSXDirectory.cpp */; };
+		FF000000FF00000000000098 /* OSXConsole.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FF000000FF00000000000099 /* OSXConsole.cpp */; };
+		FF000000FF0000000000009A /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000009B /* AppKit.framework */; };
+		FF000000FF0000000000009C /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000009D /* Cocoa.framework */; };
+		FF000000FF0000000000009E /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FF000000FF0000000000009F /* CoreVideo.framework */; };
+		FF000000FF000000000000A0 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FF000000FF000000000000A1 /* OpenGL.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		FF000000FF0000000000000D /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = main.cpp; path = ../../tools/noz_make/main.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000000F /* noz.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = noz.cpp; path = ../../tools/noz_make/noz.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000011 /* BinaryReader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = BinaryReader.cpp; path = ../../src/noz/IO/BinaryReader.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000012 /* BinaryReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BinaryReader.h; path = ../../src/noz/IO/BinaryReader.h; sourceTree = "<group>"; };
+		FF000000FF00000000000014 /* BinaryWriter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = BinaryWriter.cpp; path = ../../src/noz/IO/BinaryWriter.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000015 /* BinaryWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BinaryWriter.h; path = ../../src/noz/IO/BinaryWriter.h; sourceTree = "<group>"; };
+		FF000000FF00000000000017 /* Directory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = Directory.cpp; path = ../../src/noz/IO/Directory.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000018 /* Directory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Directory.h; path = ../../src/noz/IO/Directory.h; sourceTree = "<group>"; };
+		FF000000FF00000000000019 /* DirectoryInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DirectoryInfo.h; path = ../../src/noz/IO/DirectoryInfo.h; sourceTree = "<group>"; };
+		FF000000FF0000000000001B /* File.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = File.cpp; path = ../../src/noz/IO/File.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000001C /* File.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = File.h; path = ../../src/noz/IO/File.h; sourceTree = "<group>"; };
+		FF000000FF0000000000001E /* FileStream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = FileStream.cpp; path = ../../src/noz/IO/FileStream.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000001F /* FileStream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FileStream.h; path = ../../src/noz/IO/FileStream.h; sourceTree = "<group>"; };
+		FF000000FF00000000000020 /* IO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IO.h; path = ../../src/noz/IO/IO.h; sourceTree = "<group>"; };
+		FF000000FF00000000000022 /* MemoryStream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = MemoryStream.cpp; path = ../../src/noz/IO/MemoryStream.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000023 /* MemoryStream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MemoryStream.h; path = ../../src/noz/IO/MemoryStream.h; sourceTree = "<group>"; };
+		FF000000FF00000000000025 /* Path.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = Path.cpp; path = ../../src/noz/IO/Path.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000026 /* Path.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Path.h; path = ../../src/noz/IO/Path.h; sourceTree = "<group>"; };
+		FF000000FF00000000000028 /* Stream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = Stream.cpp; path = ../../src/noz/IO/Stream.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000029 /* Stream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Stream.h; path = ../../src/noz/IO/Stream.h; sourceTree = "<group>"; };
+		FF000000FF0000000000002B /* StreamReader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = StreamReader.cpp; path = ../../src/noz/IO/StreamReader.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000002C /* StreamReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = StreamReader.h; path = ../../src/noz/IO/StreamReader.h; sourceTree = "<group>"; };
+		FF000000FF0000000000002E /* StreamWriter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = StreamWriter.cpp; path = ../../src/noz/IO/StreamWriter.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000002F /* StreamWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = StreamWriter.h; path = ../../src/noz/IO/StreamWriter.h; sourceTree = "<group>"; };
+		FF000000FF00000000000031 /* StringReader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = StringReader.cpp; path = ../../src/noz/IO/StringReader.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000032 /* StringReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = StringReader.h; path = ../../src/noz/IO/StringReader.h; sourceTree = "<group>"; };
+		FF000000FF00000000000034 /* TextReader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = TextReader.cpp; path = ../../src/noz/IO/TextReader.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000035 /* TextReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TextReader.h; path = ../../src/noz/IO/TextReader.h; sourceTree = "<group>"; };
+		FF000000FF00000000000037 /* TextWriter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = TextWriter.cpp; path = ../../src/noz/IO/TextWriter.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000038 /* TextWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TextWriter.h; path = ../../src/noz/IO/TextWriter.h; sourceTree = "<group>"; };
+		FF000000FF0000000000003A /* String.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = String.cpp; path = ../../src/noz/Text/String.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000003B /* String.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = String.h; path = ../../src/noz/Text/String.h; sourceTree = "<group>"; };
+		FF000000FF0000000000003D /* StringBuilder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = StringBuilder.cpp; path = ../../src/noz/Text/StringBuilder.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000003E /* StringBuilder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = StringBuilder.h; path = ../../src/noz/Text/StringBuilder.h; sourceTree = "<group>"; };
+		FF000000FF00000000000040 /* StringLexer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = StringLexer.cpp; path = ../../src/noz/Text/StringLexer.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000041 /* StringLexer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = StringLexer.h; path = ../../src/noz/Text/StringLexer.h; sourceTree = "<group>"; };
+		FF000000FF00000000000042 /* StringObject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = StringObject.h; path = ../../src/noz/Text/StringObject.h; sourceTree = "<group>"; };
+		FF000000FF00000000000044 /* JsonArray.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = JsonArray.cpp; path = ../../src/noz/Text/Json/JsonArray.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000045 /* JsonArray.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = JsonArray.h; path = ../../src/noz/Text/Json/JsonArray.h; sourceTree = "<group>"; };
+		FF000000FF00000000000047 /* JsonObject.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = JsonObject.cpp; path = ../../src/noz/Text/Json/JsonObject.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000048 /* JsonObject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = JsonObject.h; path = ../../src/noz/Text/Json/JsonObject.h; sourceTree = "<group>"; };
+		FF000000FF0000000000004A /* JsonReader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = JsonReader.cpp; path = ../../src/noz/Text/Json/JsonReader.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000004B /* JsonReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = JsonReader.h; path = ../../src/noz/Text/Json/JsonReader.h; sourceTree = "<group>"; };
+		FF000000FF0000000000004D /* JsonString.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = JsonString.cpp; path = ../../src/noz/Text/Json/JsonString.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000004E /* JsonString.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = JsonString.h; path = ../../src/noz/Text/Json/JsonString.h; sourceTree = "<group>"; };
+		FF000000FF00000000000050 /* JsonValue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = JsonValue.cpp; path = ../../src/noz/Text/Json/JsonValue.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000051 /* JsonValue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = JsonValue.h; path = ../../src/noz/Text/Json/JsonValue.h; sourceTree = "<group>"; };
+		FF000000FF00000000000053 /* JsonWriter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = JsonWriter.cpp; path = ../../src/noz/Text/Json/JsonWriter.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000054 /* JsonWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = JsonWriter.h; path = ../../src/noz/Text/Json/JsonWriter.h; sourceTree = "<group>"; };
+		FF000000FF00000000000056 /* Makefile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = Makefile.cpp; path = ../../src/noz/Editor/Tool/Makefile.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000057 /* Makefile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Makefile.h; path = ../../src/noz/Editor/Tool/Makefile.h; sourceTree = "<group>"; };
+		FF000000FF00000000000059 /* GlueClass.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = GlueClass.cpp; path = ../../src/noz/Editor/Tool/GlueGen/GlueClass.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000005A /* GlueClass.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueClass.h; path = ../../src/noz/Editor/Tool/GlueGen/GlueClass.h; sourceTree = "<group>"; };
+		FF000000FF0000000000005B /* GlueEnum.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueEnum.h; path = ../../src/noz/Editor/Tool/GlueGen/GlueEnum.h; sourceTree = "<group>"; };
+		FF000000FF0000000000005D /* GlueFile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = GlueFile.cpp; path = ../../src/noz/Editor/Tool/GlueGen/GlueFile.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000005E /* GlueFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueFile.h; path = ../../src/noz/Editor/Tool/GlueGen/GlueFile.h; sourceTree = "<group>"; };
+		FF000000FF00000000000060 /* GlueGen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = GlueGen.cpp; path = ../../src/noz/Editor/Tool/GlueGen/GlueGen.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000061 /* GlueGen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueGen.h; path = ../../src/noz/Editor/Tool/GlueGen/GlueGen.h; sourceTree = "<group>"; };
+		FF000000FF00000000000063 /* GlueLexer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = GlueLexer.cpp; path = ../../src/noz/Editor/Tool/GlueGen/GlueLexer.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000064 /* GlueLexer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueLexer.h; path = ../../src/noz/Editor/Tool/GlueGen/GlueLexer.h; sourceTree = "<group>"; };
+		FF000000FF00000000000066 /* GlueMeta.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = GlueMeta.cpp; path = ../../src/noz/Editor/Tool/GlueGen/GlueMeta.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000067 /* GlueMeta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueMeta.h; path = ../../src/noz/Editor/Tool/GlueGen/GlueMeta.h; sourceTree = "<group>"; };
+		FF000000FF00000000000068 /* GlueMethod.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueMethod.h; path = ../../src/noz/Editor/Tool/GlueGen/GlueMethod.h; sourceTree = "<group>"; };
+		FF000000FF00000000000069 /* GlueParameter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueParameter.h; path = ../../src/noz/Editor/Tool/GlueGen/GlueParameter.h; sourceTree = "<group>"; };
+		FF000000FF0000000000006B /* GlueParse.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = GlueParse.cpp; path = ../../src/noz/Editor/Tool/GlueGen/GlueParse.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000006C /* GlueProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueProperty.h; path = ../../src/noz/Editor/Tool/GlueGen/GlueProperty.h; sourceTree = "<group>"; };
+		FF000000FF0000000000006E /* GlueState.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = GlueState.cpp; path = ../../src/noz/Editor/Tool/GlueGen/GlueState.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000006F /* GlueState.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueState.h; path = ../../src/noz/Editor/Tool/GlueGen/GlueState.h; sourceTree = "<group>"; };
+		FF000000FF00000000000071 /* GlueType.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = GlueType.cpp; path = ../../src/noz/Editor/Tool/GlueGen/GlueType.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000072 /* GlueType.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlueType.h; path = ../../src/noz/Editor/Tool/GlueGen/GlueType.h; sourceTree = "<group>"; };
+		FF000000FF00000000000074 /* GlueWrite.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = GlueWrite.cpp; path = ../../src/noz/Editor/Tool/GlueGen/GlueWrite.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000076 /* ProjectGen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = ProjectGen.cpp; path = ../../src/noz/Editor/Tool/ProjectGen/ProjectGen.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000077 /* ProjectGen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ProjectGen.h; path = ../../src/noz/Editor/Tool/ProjectGen/ProjectGen.h; sourceTree = "<group>"; };
+		FF000000FF00000000000079 /* VisualStudioProjectGen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = VisualStudioProjectGen.cpp; path = ../../src/noz/Editor/Tool/ProjectGen/VisualStudioProjectGen.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000007A /* VisualStudioProjectGen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VisualStudioProjectGen.h; path = ../../src/noz/Editor/Tool/ProjectGen/VisualStudioProjectGen.h; sourceTree = "<group>"; };
+		FF000000FF0000000000007C /* XCodeProjectGen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = XCodeProjectGen.cpp; path = ../../src/noz/Editor/Tool/ProjectGen/XCodeProjectGen.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000007D /* XCodeProjectGen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = XCodeProjectGen.h; path = ../../src/noz/Editor/Tool/ProjectGen/XCodeProjectGen.h; sourceTree = "<group>"; };
+		FF000000FF0000000000007F /* Boolean.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = Boolean.cpp; path = ../../src/noz/Boolean.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000081 /* Byte.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = Byte.cpp; path = ../../src/noz/Byte.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000083 /* Console.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = Console.cpp; path = ../../src/noz/Console.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000085 /* DateTime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = DateTime.cpp; path = ../../src/noz/DateTime.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000087 /* Environment.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = Environment.cpp; path = ../../src/noz/Environment.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000089 /* Float.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = Float.cpp; path = ../../src/noz/Float.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000008B /* Guid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = Guid.cpp; path = ../../src/noz/Guid.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000008D /* Int32.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = Int32.cpp; path = ../../src/noz/Int32.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000008F /* Name.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = Name.cpp; path = ../../src/noz/Name.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000091 /* Object.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = Object.cpp; path = ../../src/noz/Object.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000093 /* UInt32.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = UInt32.cpp; path = ../../src/noz/UInt32.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000095 /* OSXFile.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = OSXFile.cpp; path = ../../src/noz/Platform/OSX/OSXFile.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000097 /* OSXDirectory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = OSXDirectory.cpp; path = ../../src/noz/Platform/OSX/OSXDirectory.cpp; sourceTree = "<group>"; };
+		FF000000FF00000000000099 /* OSXConsole.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.cpp; name = OSXConsole.cpp; path = ../../src/noz/Platform/OSX/OSXConsole.cpp; sourceTree = "<group>"; };
+		FF000000FF0000000000000A /* noz_make */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; name = noz_make; path = noz_make.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FF000000FF0000000000009B /* AppKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		FF000000FF0000000000009D /* Cocoa.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		FF000000FF0000000000009F /* CoreVideo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
+		FF000000FF000000000000A1 /* OpenGL.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FF000000FF00000000000006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF000000FF0000000000009A /* AppKit.framework in Frameworks */,
+				FF000000FF0000000000009C /* Cocoa.framework in Frameworks */,
+				FF000000FF0000000000009E /* CoreVideo.framework in Frameworks */,
+				FF000000FF000000000000A0 /* OpenGL.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		FF000000FF00000000000002 = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF000000000000A2 /* src */,
+				FF000000FF00000000000003 /* Products */,
+				FF000000FF0000000000009B /* AppKit.framework */,
+				FF000000FF0000000000009D /* Cocoa.framework */,
+				FF000000FF0000000000009F /* CoreVideo.framework */,
+				FF000000FF000000000000A1 /* OpenGL.framework */,
+			);
+			name = "";
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000A2 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF000000000000A3 /* noz */,
+				FF000000FF0000000000000D /* main.cpp */,
+				FF000000FF0000000000000F /* noz.cpp */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000A3 /* noz */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF000000000000A4 /* IO */,
+				FF000000FF000000000000A5 /* Text */,
+				FF000000FF000000000000A7 /* Editor */,
+				FF000000FF000000000000AB /* Platform */,
+				FF000000FF0000000000007F /* Boolean.cpp */,
+				FF000000FF00000000000081 /* Byte.cpp */,
+				FF000000FF00000000000083 /* Console.cpp */,
+				FF000000FF00000000000085 /* DateTime.cpp */,
+				FF000000FF00000000000087 /* Environment.cpp */,
+				FF000000FF00000000000089 /* Float.cpp */,
+				FF000000FF0000000000008B /* Guid.cpp */,
+				FF000000FF0000000000008D /* Int32.cpp */,
+				FF000000FF0000000000008F /* Name.cpp */,
+				FF000000FF00000000000091 /* Object.cpp */,
+				FF000000FF00000000000093 /* UInt32.cpp */,
+			);
+			name = noz;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000A4 /* IO */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF00000000000011 /* BinaryReader.cpp */,
+				FF000000FF00000000000012 /* BinaryReader.h */,
+				FF000000FF00000000000014 /* BinaryWriter.cpp */,
+				FF000000FF00000000000015 /* BinaryWriter.h */,
+				FF000000FF00000000000017 /* Directory.cpp */,
+				FF000000FF00000000000018 /* Directory.h */,
+				FF000000FF00000000000019 /* DirectoryInfo.h */,
+				FF000000FF0000000000001B /* File.cpp */,
+				FF000000FF0000000000001C /* File.h */,
+				FF000000FF0000000000001E /* FileStream.cpp */,
+				FF000000FF0000000000001F /* FileStream.h */,
+				FF000000FF00000000000020 /* IO.h */,
+				FF000000FF00000000000022 /* MemoryStream.cpp */,
+				FF000000FF00000000000023 /* MemoryStream.h */,
+				FF000000FF00000000000025 /* Path.cpp */,
+				FF000000FF00000000000026 /* Path.h */,
+				FF000000FF00000000000028 /* Stream.cpp */,
+				FF000000FF00000000000029 /* Stream.h */,
+				FF000000FF0000000000002B /* StreamReader.cpp */,
+				FF000000FF0000000000002C /* StreamReader.h */,
+				FF000000FF0000000000002E /* StreamWriter.cpp */,
+				FF000000FF0000000000002F /* StreamWriter.h */,
+				FF000000FF00000000000031 /* StringReader.cpp */,
+				FF000000FF00000000000032 /* StringReader.h */,
+				FF000000FF00000000000034 /* TextReader.cpp */,
+				FF000000FF00000000000035 /* TextReader.h */,
+				FF000000FF00000000000037 /* TextWriter.cpp */,
+				FF000000FF00000000000038 /* TextWriter.h */,
+			);
+			name = IO;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000A5 /* Text */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF000000000000A6 /* Json */,
+				FF000000FF0000000000003A /* String.cpp */,
+				FF000000FF0000000000003B /* String.h */,
+				FF000000FF0000000000003D /* StringBuilder.cpp */,
+				FF000000FF0000000000003E /* StringBuilder.h */,
+				FF000000FF00000000000040 /* StringLexer.cpp */,
+				FF000000FF00000000000041 /* StringLexer.h */,
+				FF000000FF00000000000042 /* StringObject.h */,
+			);
+			name = Text;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000A6 /* Json */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF00000000000044 /* JsonArray.cpp */,
+				FF000000FF00000000000045 /* JsonArray.h */,
+				FF000000FF00000000000047 /* JsonObject.cpp */,
+				FF000000FF00000000000048 /* JsonObject.h */,
+				FF000000FF0000000000004A /* JsonReader.cpp */,
+				FF000000FF0000000000004B /* JsonReader.h */,
+				FF000000FF0000000000004D /* JsonString.cpp */,
+				FF000000FF0000000000004E /* JsonString.h */,
+				FF000000FF00000000000050 /* JsonValue.cpp */,
+				FF000000FF00000000000051 /* JsonValue.h */,
+				FF000000FF00000000000053 /* JsonWriter.cpp */,
+				FF000000FF00000000000054 /* JsonWriter.h */,
+			);
+			name = Json;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000A7 /* Editor */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF000000000000A8 /* Tool */,
+			);
+			name = Editor;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000A8 /* Tool */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF000000000000A9 /* GlueGen */,
+				FF000000FF000000000000AA /* ProjectGen */,
+				FF000000FF00000000000056 /* Makefile.cpp */,
+				FF000000FF00000000000057 /* Makefile.h */,
+			);
+			name = Tool;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000A9 /* GlueGen */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF00000000000059 /* GlueClass.cpp */,
+				FF000000FF0000000000005A /* GlueClass.h */,
+				FF000000FF0000000000005B /* GlueEnum.h */,
+				FF000000FF0000000000005D /* GlueFile.cpp */,
+				FF000000FF0000000000005E /* GlueFile.h */,
+				FF000000FF00000000000060 /* GlueGen.cpp */,
+				FF000000FF00000000000061 /* GlueGen.h */,
+				FF000000FF00000000000063 /* GlueLexer.cpp */,
+				FF000000FF00000000000064 /* GlueLexer.h */,
+				FF000000FF00000000000066 /* GlueMeta.cpp */,
+				FF000000FF00000000000067 /* GlueMeta.h */,
+				FF000000FF00000000000068 /* GlueMethod.h */,
+				FF000000FF00000000000069 /* GlueParameter.h */,
+				FF000000FF0000000000006B /* GlueParse.cpp */,
+				FF000000FF0000000000006C /* GlueProperty.h */,
+				FF000000FF0000000000006E /* GlueState.cpp */,
+				FF000000FF0000000000006F /* GlueState.h */,
+				FF000000FF00000000000071 /* GlueType.cpp */,
+				FF000000FF00000000000072 /* GlueType.h */,
+				FF000000FF00000000000074 /* GlueWrite.cpp */,
+			);
+			name = GlueGen;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000AA /* ProjectGen */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF00000000000076 /* ProjectGen.cpp */,
+				FF000000FF00000000000077 /* ProjectGen.h */,
+				FF000000FF00000000000079 /* VisualStudioProjectGen.cpp */,
+				FF000000FF0000000000007A /* VisualStudioProjectGen.h */,
+				FF000000FF0000000000007C /* XCodeProjectGen.cpp */,
+				FF000000FF0000000000007D /* XCodeProjectGen.h */,
+			);
+			name = ProjectGen;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000AB /* Platform */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF000000000000AC /* OSX */,
+			);
+			name = Platform;
+			sourceTree = "<group>";
+		};
+		FF000000FF000000000000AC /* OSX */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF00000000000095 /* OSXFile.cpp */,
+				FF000000FF00000000000097 /* OSXDirectory.cpp */,
+				FF000000FF00000000000099 /* OSXConsole.cpp */,
+			);
+			name = OSX;
+			sourceTree = "<group>";
+		};
+		FF000000FF00000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FF000000FF0000000000000A /* noz_make */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FF000000FF00000000000009 /* noz_make */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FF000000FF00000000000005 /* Build configuration list for PBXNativeTarget "noz_make" */;
+			buildPhases = (
+				FF000000FF00000000000007 /* Sources */,
+				FF000000FF00000000000006 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = noz_make;
+			productName = noz_make;
+			productReference = FF000000FF0000000000000A /* noz_make.xcodeproj */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FF000000FF00000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0720;
+				ORGANIZATIONNAME = "NoZ Games, LLC";
+				TargetAttributes = {
+					FF000000FF00000000000009 = {
+						CreatedOnToolsVersion = 6.3.2;
+					};
+				};
+			};
+			buildConfigurationList = FF000000FF0000000000000B /* Build configuration list for PBXProject "noz_make" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = FF000000FF00000000000002;
+			productRefGroup = FF000000FF00000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FF000000FF00000000000009 /* noz_make */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		FF000000FF00000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FF000000FF0000000000000C /* main.cpp in Sources */,
+				FF000000FF0000000000000E /* noz.cpp in Sources */,
+				FF000000FF00000000000010 /* BinaryReader.cpp in Sources */,
+				FF000000FF00000000000013 /* BinaryWriter.cpp in Sources */,
+				FF000000FF00000000000016 /* Directory.cpp in Sources */,
+				FF000000FF0000000000001A /* File.cpp in Sources */,
+				FF000000FF0000000000001D /* FileStream.cpp in Sources */,
+				FF000000FF00000000000021 /* MemoryStream.cpp in Sources */,
+				FF000000FF00000000000024 /* Path.cpp in Sources */,
+				FF000000FF00000000000027 /* Stream.cpp in Sources */,
+				FF000000FF0000000000002A /* StreamReader.cpp in Sources */,
+				FF000000FF0000000000002D /* StreamWriter.cpp in Sources */,
+				FF000000FF00000000000030 /* StringReader.cpp in Sources */,
+				FF000000FF00000000000033 /* TextReader.cpp in Sources */,
+				FF000000FF00000000000036 /* TextWriter.cpp in Sources */,
+				FF000000FF00000000000039 /* String.cpp in Sources */,
+				FF000000FF0000000000003C /* StringBuilder.cpp in Sources */,
+				FF000000FF0000000000003F /* StringLexer.cpp in Sources */,
+				FF000000FF00000000000043 /* JsonArray.cpp in Sources */,
+				FF000000FF00000000000046 /* JsonObject.cpp in Sources */,
+				FF000000FF00000000000049 /* JsonReader.cpp in Sources */,
+				FF000000FF0000000000004C /* JsonString.cpp in Sources */,
+				FF000000FF0000000000004F /* JsonValue.cpp in Sources */,
+				FF000000FF00000000000052 /* JsonWriter.cpp in Sources */,
+				FF000000FF00000000000055 /* Makefile.cpp in Sources */,
+				FF000000FF00000000000058 /* GlueClass.cpp in Sources */,
+				FF000000FF0000000000005C /* GlueFile.cpp in Sources */,
+				FF000000FF0000000000005F /* GlueGen.cpp in Sources */,
+				FF000000FF00000000000062 /* GlueLexer.cpp in Sources */,
+				FF000000FF00000000000065 /* GlueMeta.cpp in Sources */,
+				FF000000FF0000000000006A /* GlueParse.cpp in Sources */,
+				FF000000FF0000000000006D /* GlueState.cpp in Sources */,
+				FF000000FF00000000000070 /* GlueType.cpp in Sources */,
+				FF000000FF00000000000073 /* GlueWrite.cpp in Sources */,
+				FF000000FF00000000000075 /* ProjectGen.cpp in Sources */,
+				FF000000FF00000000000078 /* VisualStudioProjectGen.cpp in Sources */,
+				FF000000FF0000000000007B /* XCodeProjectGen.cpp in Sources */,
+				FF000000FF0000000000007E /* Boolean.cpp in Sources */,
+				FF000000FF00000000000080 /* Byte.cpp in Sources */,
+				FF000000FF00000000000082 /* Console.cpp in Sources */,
+				FF000000FF00000000000084 /* DateTime.cpp in Sources */,
+				FF000000FF00000000000086 /* Environment.cpp in Sources */,
+				FF000000FF00000000000088 /* Float.cpp in Sources */,
+				FF000000FF0000000000008A /* Guid.cpp in Sources */,
+				FF000000FF0000000000008C /* Int32.cpp in Sources */,
+				FF000000FF0000000000008E /* Name.cpp in Sources */,
+				FF000000FF00000000000090 /* Object.cpp in Sources */,
+				FF000000FF00000000000092 /* UInt32.cpp in Sources */,
+				FF000000FF00000000000094 /* OSXFile.cpp in Sources */,
+				FF000000FF00000000000096 /* OSXDirectory.cpp in Sources */,
+				FF000000FF00000000000098 /* OSXConsole.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		FF000000FF000000000000AE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					NOZ_OSX,
+					NOZ_DEBUG,
+					NOZ_LEAN,
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					../../tools/noz_make,
+					../../../noz,
+					../../src,
+				);
+				OBJROOT = output/Debug/noz_make;
+				SDKROOT = macosx;
+				SYMROOT = bin/Debug;
+			};
+			name = Debug;
+		};
+		FF000000FF000000000000AD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USE_HEADERMAP = NO;
+			};
+			name = Debug;
+		};
+		FF000000FF000000000000B0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					NOZ_OSX,
+					NOZ_LEAN,
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					../../tools/noz_make,
+					../../../noz,
+					../../src,
+				);
+				OBJROOT = output/Release/noz_make;
+				SDKROOT = macosx;
+				SYMROOT = bin/Release;
+			};
+			name = Release;
+		};
+		FF000000FF000000000000AF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				USE_HEADERMAP = NO;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FF000000FF0000000000000B /* Build configuration list for PBXProject "noz_make" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF000000FF000000000000AE /* Debug */,
+				FF000000FF000000000000B0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FF000000FF00000000000005 /* Build configuration list for PBXNativeTarget "noz_make" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF000000FF000000000000AD /* Debug */,
+				FF000000FF000000000000AF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = FF000000FF00000000000001 /* Project object */;
+}

@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{57DD300C-ED7A-4A6E-86F9-3BA3876EF9AC}") = "noz_make", "noz_make.vcxproj", "{34B84813-28E3-487D-BADE-FB2E1AD03C2D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{34B84813-28E3-487D-BADE-FB2E1AD03C2D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{34B84813-28E3-487D-BADE-FB2E1AD03C2D}.Debug|Win32.Build.0 = Debug|Win32
+		{34B84813-28E3-487D-BADE-FB2E1AD03C2D}.Release|Win32.ActiveCfg = Release|Win32
+		{34B84813-28E3-487D-BADE-FB2E1AD03C2D}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

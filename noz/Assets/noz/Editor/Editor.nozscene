@@ -1,0 +1,32 @@
+{
+    "Root": 1,
+    "Objects": [        
+        {
+            "_Id": 1,
+            "_Type": "noz::Scene",
+            "RootNode": 2
+        },
+        {
+            "_Id": 2,
+            "_Type": "noz::SceneNode",
+            "Children": [ 4 ]
+        },
+        {
+            "_Id": 4,
+            "_Type": "noz::Editor::Workspace",
+            "Name" : "WORKSPACE"
+        },
+        {
+            "_Id": 10,
+            "_Type": "noz::FPSMeter",
+            "Transform": 11
+        },
+        {
+            "_Id": 11,
+            "_Type": "noz::LayoutTransform",
+            "MarginBottom": "NaN",
+            "MarginLeft": "NaN",
+            "MarginRight": "NaN"
+        }
+    ]
+}

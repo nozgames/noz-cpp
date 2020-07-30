@@ -1,0 +1,36 @@
+{
+    "Root": 1,
+    "Objects": [        
+        {
+            "_Id": 1,
+            "_Type": "noz::Animation",
+            "Tracks": [ 2, 4 ]
+        },
+        {
+            "_Id": 2,
+            "_Type": "noz::AnimationTrack",
+            "TargetProperty": "Color",
+            "TargetName": "FILL",
+            "KeyFrames": [ 3 ]
+        },
+        {
+            "_Id": 3,
+            "_Type": "noz::ColorKeyFrame",
+            "Value": "#3e3e42"
+        },
+
+        {
+            "_Id": 4,
+            "_Type": "noz::AnimationTrack",
+            "TargetProperty": "Color",
+            "TargetName": "BORDER",
+            "KeyFrames": [ 5 ]
+        },
+        {
+            "_Id": 5,
+            "_Type": "noz::ColorKeyFrame",
+            "Value": "#007acc"
+        }
+
+    ]
+}

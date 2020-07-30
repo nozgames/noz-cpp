@@ -1,0 +1,11 @@
+{
+    "Root": 1,
+    "Objects": [
+        {
+            "_Id": 1,
+            "_Type": "noz::ApplicationSettings",
+            "MainScene": "{F5872922-FD47-4DCC-B03E-275E78B71C56}",
+            "Name" : "FarmerZ"
+        }
+    ]
+}

@@ -1,0 +1,127 @@
+{
+	PROJECT_DIR: @WINDOWS("Windows") @IOS("IOS") @OSX("OSX"),
+
+	ORGANIZATION : "NoZ Games, LLC",
+
+	@WINDOWS(GUID : "C17F53EB-1D47-42C0-912D-E3C68D629467",)
+
+	TARGET_TYPE : LIB,
+
+	# Project level build settings.
+	DEFAULT_CONFIGURATION: {
+		TARGET_TYPE: LIB,
+		TARGET_NAME: @WINDOWS(noz_lean.lib) @IOS(libnoz_lean.a) @OSX(libnoz_lean.a),
+
+		@WINDOWS(
+			INT_DIR : "../output/$(Configuration)/noz_xml2",
+			OUT_DIR : "../bin/$(Configuration)/",
+		)
+		@IOS(
+			INT_DIR : "../output/$(PLATFORM_NAME)/$(CONFIGURATION)/noz_lean",
+			OUT_DIR : "../bin/$(PLATFORM_NAME)/$(CONFIGURATION)/",
+		)
+		@OSX(
+			INT_DIR : "../output/$(PLATFORM_NAME)/$(CONFIGURATION)/noz_lean",
+			OUT_DIR : "../bin/$(PLATFORM_NAME)",
+		)	
+
+		INCLUDE_DIRECTORIES : [
+			"../",
+			"../src",
+			"../external/zlib-1.2.8",
+			"../external/libxml2-2.7.2/include"
+		],
+		PREPROCESSOR_DEFINITIONS : [
+			@WINDOWS("NOZ_WIN",)
+			@IOS("NOZ_IOS",)
+			@OSX("NOZ_OSX",)
+		],
+		PRECOMPILED_HEADER : USE,
+		PRECOMPILED_HEADER_FILE : noz.pch,
+	},
+
+	# Configurations
+	CONFIGURATIONS : {
+		Debug : { 
+			PREPROCESSOR_DEFINITIONS : [
+				"NOZ_LEAN",
+				"NOZ_DEBUG",
+			],
+		},
+		Release : {
+			OPTIMIZATIONS: YES,
+			PREPROCESSOR_DEFINITIONS : [
+				"NOZ_LEAN",
+			],
+		},
+	},
+
+	AUTO_GROUP_DIR : "../src",
+
+	FILES : [
+		{ PATH: "../src/noz/IO" },
+		{ PATH: "../src/noz/IO/Compression" },
+		{ PATH: "../src/noz/Json" },
+		{ PATH: "../src/noz/Networking" },
+		{ PATH: "../src/noz/Property" },
+		{ PATH: "../src/noz/Text" },
+		{ PATH: "../src/noz/Threading" },
+		{ PATH: "../src/noz/Tooling" },
+		{ PATH: "../src/noz/Xml" },
+			
+		# Windows specific files
+		@WINDOWS(
+			{ PATH: "../src/noz/Platform/Windows/WindowsDirectory.cpp" },
+			{ PATH: "../src/noz/Platform/Windows/WindowsFile.cpp" },
+			{ PATH: "../src/noz/Platform/Windows/WindowsTime.cpp" },
+		)
+
+		# IOS specific files
+		@IOS(
+			{ PATH: "../src/noz/Platform/IOS/IOSFile.cpp" },
+			{ PATH: "../src/noz/Platform/IOS/IOSDirectory.cpp" },
+		)
+
+		# OSX specific files
+		@OSX(
+			{ PATH: "../src/noz/Platform/OSX/OSXFile.cpp" },
+			{ PATH: "../src/noz/Platform/OSX/OSXDirectory.cpp" },
+			{ PATH: "../src/noz/Platform/OSX/OSXConsole.cpp" },
+		)
+
+		{ PATH: "../src/noz" },
+
+		{ PATH: "../src/noz/Application.cpp", DEFAULT_CONFIGURATION:{EXCLUDED:YES} },
+		{ PATH: "../src/noz/Camera.cpp", DEFAULT_CONFIGURATION:{EXCLUDED:YES} },
+		{ PATH: "../src/noz/Component.cpp", DEFAULT_CONFIGURATION:{EXCLUDED:YES} },
+		{ PATH: "../src/noz/Environment.cpp", DEFAULT_CONFIGURATION:{EXCLUDED:YES} },
+		{ PATH: "../src/noz/Input.cpp", DEFAULT_CONFIGURATION:{EXCLUDED:YES} },
+		{ PATH: "../src/noz/Layer.cpp", DEFAULT_CONFIGURATION:{EXCLUDED:YES} },
+		{ PATH: "../src/noz/Node.cpp", DEFAULT_CONFIGURATION:{EXCLUDED:YES} },
+		{ PATH: "../src/noz/NodePath.cpp", DEFAULT_CONFIGURATION:{EXCLUDED:YES} },
+		{ PATH: "../src/noz/Prefab.cpp", DEFAULT_CONFIGURATION:{EXCLUDED:YES} },
+		{ PATH: "../src/noz/Prefs.cpp", DEFAULT_CONFIGURATION:{EXCLUDED:YES} },
+		{ PATH: "../src/noz/Scene.cpp", DEFAULT_CONFIGURATION:{EXCLUDED:YES} },
+		{ PATH: "../src/noz/Scene.cpp", DEFAULT_CONFIGURATION:{EXCLUDED:YES} },
+		{ PATH: "../src/noz/SystemEvent.cpp", DEFAULT_CONFIGURATION:{EXCLUDED:YES} },
+		{ PATH: "../src/noz/Window.cpp", DEFAULT_CONFIGURATION:{EXCLUDED:YES} },
+			
+		{ 
+			PATH:"../src/noz.cpp",
+			DEFAULT_CONFIGURATION : {
+				PRECOMPILED_HEADER : CREATE
+			}
+		}
+	],
+
+	# List of all references
+	REFERENCES : [
+		{ 
+			PATH: noz_xml2.nozmake,
+			CONFIGURATIONS : {
+				"DebugLean" : "Debug",
+				"ReleaseLean" : "Release"
+			}
+		},
+	]
+}

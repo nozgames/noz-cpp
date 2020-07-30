@@ -1,0 +1,166 @@
+{
+    "Root": 1,
+    "Objects": [
+        {
+            "_Id": 1,
+            "_Type": "noz::Style::Def",
+            "Nodes": [ 100 ],
+            "ControlType": "noz::Editor::AssetBrowserListViewItem",
+            "Parts": [ 2, 3, 4 ]
+        },
+        {
+            "_Id": 2,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "TextNode",
+            "Object": 300
+        },
+        {
+            "_Id": 3,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "SpriteNode",
+            "Object": 200
+        },
+        {
+            "_Id": 4,
+            "_Type": "noz::Style::ControlPart",
+            "Property": "TextBox",
+            "Object": 301
+        },
+
+        {
+            "_Id": 100,
+            "_Type": "noz::SpriteNode",
+            "Name": "SELECTION",
+            "Transform" :  151,
+            "Components": [ 152 ],
+            "Children": [ 110 ],
+            "Sprite": "{13909A95-E15A-4ECD-B7F0-0013376D4AC3}",
+            "Stretch": "Fill",
+            "Color": "#00000000"
+        },
+        {
+            "_Id": 151,
+            "_Type": "noz::LayoutTransform",
+            "Margin": 2,
+            "Width": 96,
+            "Height": 96
+        },
+        {
+            "_Id": 152,
+            "_Type": "noz::Animator",
+            "Layers": [ 160, 170 ]
+        },
+        {
+            "_Id": 160,
+            "_Type": "noz::AnimatorLayer",
+            "States": [ 161, 162, 163 ]
+        },
+        {
+            "_Id": 161,
+            "_Type": "noz::AnimatorState",
+            "Name": "UnSelected"
+        },
+        {
+            "_Id": 162,
+            "_Type": "noz::AnimatorState",
+            "Name": "Selected",
+            "Animation": "{3B3E74AC-5320-4A7F-A58F-E8383677AAEE}"
+        },
+        {
+            "_Id": 163,
+            "_Type": "noz::AnimatorState",
+            "Name": "SelectedUnFocused",
+            "Animation": "{347FFBB1-0A45-426D-BB4A-31755B0765B0}"
+        },
+
+        {
+            "_Id": 170,
+            "_Type": "noz::AnimatorLayer",
+            "States": [ 171, 172 ]
+        },
+        {
+            "_Id": 171,
+            "_Type": "noz::AnimatorState",
+            "Name": "UnFocused"
+        },
+        {
+            "_Id": 172,
+            "_Type": "noz::AnimatorState",
+            "Name": "Focused",
+            "Animation": "{D75E4245-3307-486B-A78E-735B14612F00}"
+        },
+
+
+        {
+            "_Id": 110,
+            "_Type": "noz::BorderNode",
+            "Name": "FOCUS",
+            "Transform": 111,
+            "Children" :  [150],
+            "Color": "#00000000"
+        },
+        {
+            "_Id": 111,
+            "_Type": "noz::LayoutTransform",
+            "Padding": 4,
+            "Width": 96
+        },
+
+        {
+            "_Id": 150,
+            "_Type": "noz::DockLayout",
+            "Children": [ 200, 275 ],
+            "Dock" :  "Top"
+        },
+
+
+
+        {
+            "_Id": 200,
+            "_Type": "noz::SpriteNode",
+            "Transform" : 201
+        },
+        {
+            "_Id": 201,
+            "_Type": "noz::LayoutTransform",
+            "Width": 64,
+            "Height": 64,
+            "MarginLeft": "NaN",
+            "MarginRight" : "NaN",
+            "MarginBottom": 4
+        },
+
+
+        {
+            "_Id": 275,
+            "_Type": "noz::Node",
+            "Children" : [300,301]
+        },
+
+        {
+            "_Id": 300,
+            "_Type": "noz::TextNode",
+            "HorizontalOverflow": "Ellipsis",
+            "HorizontalAlignment" : "Center",
+            "VerticalAlignment": "Center",
+            "Color": "#FFFFFF"
+        },
+        {
+            "_Id": 301,
+            "_Type": "noz::TextBox",
+            "Transform": 302,
+            "Style": "{C09D7820-A405-4B11-8063-83382BE09031}",
+            "SelectOnFocus" : true,
+            "Visibility" : "Collapsed"
+        },
+        {
+            "_Id": 302,
+            "_Type": "noz::LayoutTransform",
+            "MarginLeft": "NaN",
+            "MarginRight": "NaN",
+            "MarginBottom": "NaN",
+            "MarginTop": "NaN",
+            "MaxWidth" : 90
+        }
+    ]
+}

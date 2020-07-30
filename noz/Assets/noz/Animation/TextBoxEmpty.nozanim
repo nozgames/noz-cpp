@@ -1,0 +1,22 @@
+{
+    "Root": 1,
+    "Objects": [
+        {
+            "_Id": 1,
+            "_Type": "noz::Animation",
+            "Tracks": [ 100 ]
+        },
+        {
+            "_Id": 100,
+            "_Type": "noz::AnimationTrack",
+            "TargetProperty": "Visibility",
+            "TargetName": "PLACEHOLDER",
+            "KeyFrames": [ 101 ]
+        },
+        {
+            "_Id": 101,
+            "_Type": "noz::EnumKeyFrame",
+            "Value": "Visible"
+        }
+    ]
+}

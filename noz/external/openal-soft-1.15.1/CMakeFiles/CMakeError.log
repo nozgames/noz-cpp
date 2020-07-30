@@ -1,0 +1,841 @@
+Performing C SOURCE FILE Test HAVE_RESTRICT failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec245713214.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:06 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec245713214.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec245713214.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec245713214.dir\Debug\cmTryCom.6375BA5D.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec245713214.dir\Debug\cmTryCom.6375BA5D.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D HAVE_RESTRICT /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec245713214.dir\Debug\\" /Fd"cmTryCompileExec245713214.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue src.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D HAVE_RESTRICT /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec245713214.dir\Debug\\" /Fd"cmTryCompileExec245713214.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue src.c
+  
+  src.c
+src.c(1): error C2061: syntax error : identifier 'foo' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec245713214.vcxproj]
+src.c(1): error C2059: syntax error : ';' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec245713214.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec245713214.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec245713214.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  src.c(1): error C2061: syntax error : identifier 'foo' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec245713214.vcxproj]
+  src.c(1): error C2059: syntax error : ';' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec245713214.vcxproj]
+
+    0 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:00.34
+
+Source file was:
+int *restrict foo;
+                         int main() {return 0;}
+Performing C SOURCE FILE Test HAVE_GCC_FORMAT failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec1796956971.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:08 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1796956971.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec1796956971.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec1796956971.dir\Debug\cmTryCom.13894AC0.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec1796956971.dir\Debug\cmTryCom.13894AC0.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D HAVE_GCC_FORMAT /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1796956971.dir\Debug\\" /Fd"cmTryCompileExec1796956971.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue src.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D HAVE_GCC_FORMAT /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1796956971.dir\Debug\\" /Fd"cmTryCompileExec1796956971.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue src.c
+  
+  src.c
+src.c(1): error C2061: syntax error : identifier '__attribute__' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1796956971.vcxproj]
+src.c(1): error C2059: syntax error : ';' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1796956971.vcxproj]
+src.c(1): error C2059: syntax error : ',' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1796956971.vcxproj]
+src.c(1): error C2143: syntax error : missing ')' before 'constant' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1796956971.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1796956971.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1796956971.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  src.c(1): error C2061: syntax error : identifier '__attribute__' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1796956971.vcxproj]
+  src.c(1): error C2059: syntax error : ';' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1796956971.vcxproj]
+  src.c(1): error C2059: syntax error : ',' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1796956971.vcxproj]
+  src.c(1): error C2143: syntax error : missing ')' before 'constant' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1796956971.vcxproj]
+
+    0 Warning(s)
+    4 Error(s)
+
+Time Elapsed 00:00:00.34
+
+Source file was:
+int foo(const char *str, ...) __attribute__((format(printf, 1, 2)));
+                         int main() {return 0;}
+Determining if the include file cpuid.h exists failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec1442646037.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:09 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1442646037.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec1442646037.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec1442646037.dir\Debug\cmTryCom.BCF5CB31.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec1442646037.dir\Debug\cmTryCom.BCF5CB31.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1442646037.dir\Debug\\" /Fd"cmTryCompileExec1442646037.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1442646037.dir\Debug\\" /Fd"cmTryCompileExec1442646037.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'cpuid.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1442646037.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1442646037.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1442646037.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'cpuid.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1442646037.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.35
+
+
+Determining if the include file ieeefp.h exists failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec1475534509.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:11 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1475534509.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec1475534509.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec1475534509.dir\Debug\cmTryCom.8C777B87.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec1475534509.dir\Debug\cmTryCom.8C777B87.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1475534509.dir\Debug\\" /Fd"cmTryCompileExec1475534509.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1475534509.dir\Debug\\" /Fd"cmTryCompileExec1475534509.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'ieeefp.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1475534509.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1475534509.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1475534509.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'ieeefp.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1475534509.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.35
+
+
+Determining if the function pow exists in the m failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec957115955.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:13 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec957115955.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec957115955.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec957115955.dir\Debug\cmTryCom.A9A0A84F.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec957115955.dir\Debug\cmTryCom.A9A0A84F.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pow /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec957115955.dir\Debug\\" /Fd"cmTryCompileExec957115955.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pow /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec957115955.dir\Debug\\" /Fd"cmTryCompileExec957115955.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  
+  CheckFunctionExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec957115955.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib m.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec957115955.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec957115955.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec957115955.dir\Debug\CheckFunctionExists.obj
+LINK : fatal error LNK1104: cannot open file 'm.lib' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec957115955.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec957115955.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec957115955.vcxproj" (default target) (1) ->
+(Link target) -> 
+  LINK : fatal error LNK1104: cannot open file 'm.lib' [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec957115955.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.44
+
+
+Determining if the aligned_alloc exist failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec723056776.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:13 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec723056776.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec723056776.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec723056776.dir\Debug\cmTryCom.BF22C28F.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec723056776.dir\Debug\cmTryCom.BF22C28F.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec723056776.dir\Debug\\" /Fd"cmTryCompileExec723056776.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec723056776.dir\Debug\\" /Fd"cmTryCompileExec723056776.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  
+  CheckSymbolExists.c
+CheckSymbolExists.c(8): error C2065: 'aligned_alloc' : undeclared identifier [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec723056776.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec723056776.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec723056776.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  CheckSymbolExists.c(8): error C2065: 'aligned_alloc' : undeclared identifier [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec723056776.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.35
+
+File P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <stdlib.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef aligned_alloc
+  return ((int*)(&aligned_alloc))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the posix_memalign exist failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec2759563627.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:14 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2759563627.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2759563627.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2759563627.dir\Debug\cmTryCom.3BFD38AC.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2759563627.dir\Debug\cmTryCom.3BFD38AC.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2759563627.dir\Debug\\" /Fd"cmTryCompileExec2759563627.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2759563627.dir\Debug\\" /Fd"cmTryCompileExec2759563627.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckSymbolExists.c
+  
+  CheckSymbolExists.c
+CheckSymbolExists.c(8): error C2065: 'posix_memalign' : undeclared identifier [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2759563627.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2759563627.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2759563627.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  CheckSymbolExists.c(8): error C2065: 'posix_memalign' : undeclared identifier [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2759563627.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.35
+
+File P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <stdlib.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef posix_memalign
+  return ((int*)(&posix_memalign))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the function strcasecmp exists failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec3965242786.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:20 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3965242786.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec3965242786.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec3965242786.dir\Debug\cmTryCom.AB744A49.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec3965242786.dir\Debug\cmTryCom.AB744A49.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=strcasecmp /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3965242786.dir\Debug\\" /Fd"cmTryCompileExec3965242786.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=strcasecmp /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3965242786.dir\Debug\\" /Fd"cmTryCompileExec3965242786.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  
+  CheckFunctionExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3965242786.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3965242786.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec3965242786.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec3965242786.dir\Debug\CheckFunctionExists.obj
+CheckFunctionExists.obj : error LNK2019: unresolved external symbol _strcasecmp referenced in function _main [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3965242786.vcxproj]
+P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3965242786.exe : fatal error LNK1120: 1 unresolved externals [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3965242786.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3965242786.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3965242786.vcxproj" (default target) (1) ->
+(Link target) -> 
+  CheckFunctionExists.obj : error LNK2019: unresolved external symbol _strcasecmp referenced in function _main [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3965242786.vcxproj]
+  P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec3965242786.exe : fatal error LNK1120: 1 unresolved externals [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3965242786.vcxproj]
+
+    0 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:00.51
+
+
+Determining if the function strncasecmp exists failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec2029419043.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:21 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2029419043.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2029419043.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2029419043.dir\Debug\cmTryCom.CDB2E0F7.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2029419043.dir\Debug\cmTryCom.CDB2E0F7.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=strncasecmp /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2029419043.dir\Debug\\" /Fd"cmTryCompileExec2029419043.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=strncasecmp /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2029419043.dir\Debug\\" /Fd"cmTryCompileExec2029419043.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  
+  CheckFunctionExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2029419043.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2029419043.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec2029419043.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec2029419043.dir\Debug\CheckFunctionExists.obj
+CheckFunctionExists.obj : error LNK2019: unresolved external symbol _strncasecmp referenced in function _main [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2029419043.vcxproj]
+P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2029419043.exe : fatal error LNK1120: 1 unresolved externals [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2029419043.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2029419043.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2029419043.vcxproj" (default target) (1) ->
+(Link target) -> 
+  CheckFunctionExists.obj : error LNK2019: unresolved external symbol _strncasecmp referenced in function _main [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2029419043.vcxproj]
+  P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec2029419043.exe : fatal error LNK1120: 1 unresolved externals [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2029419043.vcxproj]
+
+    0 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:00.52
+
+
+Determining if the function snprintf exists failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec382200648.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:23 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec382200648.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec382200648.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec382200648.dir\Debug\cmTryCom.907B89B0.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec382200648.dir\Debug\cmTryCom.907B89B0.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=snprintf /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec382200648.dir\Debug\\" /Fd"cmTryCompileExec382200648.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=snprintf /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec382200648.dir\Debug\\" /Fd"cmTryCompileExec382200648.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue "C:\Program Files (x86)\CMake 2.8\share\cmake-2.8\Modules\CheckFunctionExists.c"
+  
+  CheckFunctionExists.c
+Link:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:QUEUE /OUT:"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec382200648.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec382200648.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp/Debug/cmTryCompileExec382200648.lib" /MACHINE:X86 /SAFESEH  /machine:X86 /debug cmTryCompileExec382200648.dir\Debug\CheckFunctionExists.obj
+CheckFunctionExists.obj : error LNK2019: unresolved external symbol _snprintf referenced in function _main [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec382200648.vcxproj]
+P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec382200648.exe : fatal error LNK1120: 1 unresolved externals [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec382200648.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec382200648.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec382200648.vcxproj" (default target) (1) ->
+(Link target) -> 
+  CheckFunctionExists.obj : error LNK2019: unresolved external symbol _snprintf referenced in function _main [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec382200648.vcxproj]
+  P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\cmTryCompileExec382200648.exe : fatal error LNK1120: 1 unresolved externals [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec382200648.vcxproj]
+
+    0 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:00.50
+
+
+Determining if the include file dlfcn.h exists failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec1818997262.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:26 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1818997262.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec1818997262.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec1818997262.dir\Debug\cmTryCom.086BB143.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec1818997262.dir\Debug\cmTryCom.086BB143.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1818997262.dir\Debug\\" /Fd"cmTryCompileExec1818997262.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec1818997262.dir\Debug\\" /Fd"cmTryCompileExec1818997262.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'dlfcn.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1818997262.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1818997262.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1818997262.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'dlfcn.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec1818997262.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.34
+
+
+Determining if the include file arm_neon.h exists failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec3484680798.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:30 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3484680798.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec3484680798.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec3484680798.dir\Debug\cmTryCom.6CC8F4FC.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec3484680798.dir\Debug\cmTryCom.6CC8F4FC.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3484680798.dir\Debug\\" /Fd"cmTryCompileExec3484680798.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3484680798.dir\Debug\\" /Fd"cmTryCompileExec3484680798.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\arm_neon.h(17): fatal error C1189: #error :  This header is specific to ARM targets [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3484680798.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3484680798.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3484680798.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\arm_neon.h(17): fatal error C1189: #error :  This header is specific to ARM targets [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3484680798.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.34
+
+
+Determining if the include file alsa/asoundlib.h exists failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec3595454747.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:30 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3595454747.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec3595454747.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec3595454747.dir\Debug\cmTryCom.0F35E07F.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec3595454747.dir\Debug\cmTryCom.0F35E07F.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3595454747.dir\Debug\\" /Fd"cmTryCompileExec3595454747.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3595454747.dir\Debug\\" /Fd"cmTryCompileExec3595454747.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'alsa/asoundlib.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3595454747.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3595454747.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3595454747.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'alsa/asoundlib.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3595454747.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.34
+
+
+Determining if the include file sys/soundcard.h exists failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec3516521428.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:31 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3516521428.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec3516521428.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec3516521428.dir\Debug\cmTryCom.3DFA439D.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec3516521428.dir\Debug\cmTryCom.3DFA439D.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3516521428.dir\Debug\\" /Fd"cmTryCompileExec3516521428.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3516521428.dir\Debug\\" /Fd"cmTryCompileExec3516521428.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'sys/soundcard.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3516521428.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3516521428.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3516521428.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'sys/soundcard.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3516521428.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.34
+
+
+Determining if the include file sys/audioio.h exists failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec2874904102.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:31 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2874904102.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2874904102.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2874904102.dir\Debug\cmTryCom.FC090AF2.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2874904102.dir\Debug\cmTryCom.FC090AF2.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2874904102.dir\Debug\\" /Fd"cmTryCompileExec2874904102.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2874904102.dir\Debug\\" /Fd"cmTryCompileExec2874904102.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'sys/audioio.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2874904102.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2874904102.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2874904102.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'sys/audioio.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2874904102.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.34
+
+
+Determining if the include file sndio.h exists failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec3659751395.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:32 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3659751395.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec3659751395.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec3659751395.dir\Debug\cmTryCom.E2BBB41A.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec3659751395.dir\Debug\cmTryCom.E2BBB41A.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3659751395.dir\Debug\\" /Fd"cmTryCompileExec3659751395.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec3659751395.dir\Debug\\" /Fd"cmTryCompileExec3659751395.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'sndio.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3659751395.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3659751395.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3659751395.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'sndio.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec3659751395.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.34
+
+
+Determining if the include file portaudio.h exists failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec2834813908.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:37 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2834813908.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2834813908.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2834813908.dir\Debug\cmTryCom.47DD2C70.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2834813908.dir\Debug\cmTryCom.47DD2C70.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2834813908.dir\Debug\\" /Fd"cmTryCompileExec2834813908.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2834813908.dir\Debug\\" /Fd"cmTryCompileExec2834813908.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'portaudio.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2834813908.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2834813908.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2834813908.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'portaudio.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2834813908.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.34
+
+
+Determining if the include file pulse/pulseaudio.h exists failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec869799117.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:37 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec869799117.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec869799117.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec869799117.dir\Debug\cmTryCom.03AAD15E.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec869799117.dir\Debug\cmTryCom.03AAD15E.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec869799117.dir\Debug\\" /Fd"cmTryCompileExec869799117.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec869799117.dir\Debug\\" /Fd"cmTryCompileExec869799117.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'pulse/pulseaudio.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec869799117.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec869799117.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec869799117.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'pulse/pulseaudio.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec869799117.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.34
+
+
+Determining if the include file /System/Library/Frameworks/CoreAudio.framework/Headers/CoreAudio.h exists failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec2504819025.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:37 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2504819025.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2504819025.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2504819025.dir\Debug\cmTryCom.2EC273DB.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2504819025.dir\Debug\cmTryCom.2EC273DB.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2504819025.dir\Debug\\" /Fd"cmTryCompileExec2504819025.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2504819025.dir\Debug\\" /Fd"cmTryCompileExec2504819025.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFile.c
+  
+  CheckIncludeFile.c
+CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: '/System/Library/Frameworks/CoreAudio.framework/Headers/CoreAudio.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2504819025.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2504819025.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2504819025.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: '/System/Library/Frameworks/CoreAudio.framework/Headers/CoreAudio.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2504819025.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.34
+
+
+Determining if files SLES/OpenSLES.h;SLES/OpenSLES_Android.h exist failed with the following output:
+Change Dir: P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CMakeTmp
+
+Run Build Command:C:\PROGRA~2\MSBuild\12.0\Bin\MSBuild.exe cmTryCompileExec2351701930.vcxproj /p:Configuration=Debug /p:VisualStudioVersion=12.0
+Microsoft (R) Build Engine version 12.0.21005.1
+[Microsoft .NET Framework, version 4.0.30319.33440]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 1/13/2014 8:57:38 PM.
+Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2351701930.vcxproj" on node 1 (default targets).
+PrepareForBuild:
+  Creating directory "cmTryCompileExec2351701930.dir\Debug\".
+  Creating directory "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\Debug\".
+  Creating directory "cmTryCompileExec2351701930.dir\Debug\cmTryCom.46ED81C4.tlog\".
+InitializeBuildStatus:
+  Creating "cmTryCompileExec2351701930.dir\Debug\cmTryCom.46ED81C4.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+ClCompile:
+  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2351701930.dir\Debug\\" /Fd"cmTryCompileExec2351701930.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFiles.c
+  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.21005.1 for x86
+  Copyright (C) Microsoft Corporation.  All rights reserved.
+  
+  cl /c /Zi /W3 /WX- /Od /Ob0 /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTryCompileExec2351701930.dir\Debug\\" /Fd"cmTryCompileExec2351701930.dir\Debug\vc120.pdb" /Gd /TC /analyze- /errorReport:queue CheckIncludeFiles.c
+  
+  CheckIncludeFiles.c
+CheckIncludeFiles.c(2): fatal error C1083: Cannot open include file: 'SLES/OpenSLES.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2351701930.vcxproj]
+Done Building Project "P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2351701930.vcxproj" (default targets) -- FAILED.
+
+Build FAILED.
+
+"P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2351701930.vcxproj" (default target) (1) ->
+(ClCompile target) -> 
+  CheckIncludeFiles.c(2): fatal error C1083: Cannot open include file: 'SLES/OpenSLES.h': No such file or directory [P:\noZ\libs\openal-soft-1.15.1\CMakeFiles\CMakeTmp\cmTryCompileExec2351701930.vcxproj]
+
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:00.33
+
+Source:
+/* */
+#include <SLES/OpenSLES.h>
+#include <SLES/OpenSLES_Android.h>
+
+
+int main(){return 0;}
+

@@ -1,0 +1,528 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="../../src/noz/Boolean.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Byte.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Console.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/DateTime.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Double.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Float.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Guid.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/BinaryReader.cpp">
+      <Filter>noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/BinaryWriter.cpp">
+      <Filter>noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/Compression/ZipArchive.cpp">
+      <Filter>noz\IO\Compression</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/Directory.cpp">
+      <Filter>noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/File.cpp">
+      <Filter>noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/FileStream.cpp">
+      <Filter>noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/MemoryStream.cpp">
+      <Filter>noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/Path.cpp">
+      <Filter>noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/Stream.cpp">
+      <Filter>noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/StreamReader.cpp">
+      <Filter>noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/StreamWriter.cpp">
+      <Filter>noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/StringReader.cpp">
+      <Filter>noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/TextReader.cpp">
+      <Filter>noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/IO/TextWriter.cpp">
+      <Filter>noz\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Int32.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Json/JsonArray.cpp">
+      <Filter>noz\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Json/JsonObject.cpp">
+      <Filter>noz\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Json/JsonString.cpp">
+      <Filter>noz\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Json/JsonValue.cpp">
+      <Filter>noz\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Math.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Matrix3.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Matrix4.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Name.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Networking/IPAddress.cpp">
+      <Filter>noz\Networking</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Networking/NetworkStream.cpp">
+      <Filter>noz\Networking</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Networking/Socket.cpp">
+      <Filter>noz\Networking</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Networking/TcpClient.cpp">
+      <Filter>noz\Networking</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Networking/TcpListener.cpp">
+      <Filter>noz\Networking</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Object.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Property/Property.cpp">
+      <Filter>noz\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Property/PropertyPath.cpp">
+      <Filter>noz\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Property/PropertyTracker.cpp">
+      <Filter>noz\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Property/TypeProperty.cpp">
+      <Filter>noz\Property</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Rect.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/String.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/StringBuilder.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/StringLexer.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Text/Regex.cpp">
+      <Filter>noz\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Threading/Thread.cpp">
+      <Filter>noz\Threading</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Time.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Tooling/MakeProject.cpp">
+      <Filter>noz\Tooling</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Tooling/VisualStudioProject.cpp">
+      <Filter>noz\Tooling</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Tooling/VisualStudioSolution.cpp">
+      <Filter>noz\Tooling</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Tooling/XCodeProject.cpp">
+      <Filter>noz\Tooling</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Type.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/UInt32.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Vector2.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Vector3.cpp">
+      <Filter>noz</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Xml/XmlTextReader.cpp">
+      <Filter>noz\Xml</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz.cpp"/>
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsDirectory.cpp">
+      <Filter>noz\Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsFile.cpp">
+      <Filter>noz\Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="../../src/noz/Platform/Windows/WindowsTime.cpp">
+      <Filter>noz\Platform\Windows</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="../../src/noz/Application.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Boolean.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Byte.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Camera.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Component.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Console.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/DateTime.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Delegate.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Double.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Enum.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Environment.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Event.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Float.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Guid.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/BinaryReader.h">
+      <Filter>noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/BinaryWriter.h">
+      <Filter>noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/Compression/ZipArchive.h">
+      <Filter>noz\IO\Compression</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/Directory.h">
+      <Filter>noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/DirectoryInfo.h">
+      <Filter>noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/File.h">
+      <Filter>noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/FileStream.h">
+      <Filter>noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/IO.h">
+      <Filter>noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/MemoryStream.h">
+      <Filter>noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/Path.h">
+      <Filter>noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/Stream.h">
+      <Filter>noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/StreamReader.h">
+      <Filter>noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/StreamWriter.h">
+      <Filter>noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/StringReader.h">
+      <Filter>noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/TextReader.h">
+      <Filter>noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/IO/TextWriter.h">
+      <Filter>noz\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Input.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Int32.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Json/JsonArray.h">
+      <Filter>noz\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Json/JsonObject.h">
+      <Filter>noz\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Json/JsonString.h">
+      <Filter>noz\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Json/JsonValue.h">
+      <Filter>noz\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Keys.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Layer.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Math.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Matrix3.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Matrix4.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Memory.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Module.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Name.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Networking/Dns.h">
+      <Filter>noz\Networking</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Networking/IPAddress.h">
+      <Filter>noz\Networking</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Networking/IPHostEntry.h">
+      <Filter>noz\Networking</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Networking/NetworkStream.h">
+      <Filter>noz\Networking</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Networking/Socket.h">
+      <Filter>noz\Networking</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Networking/TcpClient.h">
+      <Filter>noz\Networking</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Networking/TcpListener.h">
+      <Filter>noz\Networking</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Node.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/NodePath.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Object.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Prefab.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Prefs.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/BoolProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/ColorProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/ComponentProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/FixedArrayProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/IPropertyListener.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/Int32Property.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/NameProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/NodeProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/ObjectProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/ObjectPtrProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/ObjectVectorProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/Property.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/PropertyPath.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/PropertyProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/PropertyTracker.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/RectProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/SharedPtrProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/SharedPtrVectorProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/StringProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/TypeProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Property/VectorProperty.h">
+      <Filter>noz\Property</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Rect.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Scene.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Screen.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/String.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/StringBuilder.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/StringLexer.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/SystemEvent.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Text/Regex.h">
+      <Filter>noz\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Threading/Thread.h">
+      <Filter>noz\Threading</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Threading/ThreadStart.h">
+      <Filter>noz\Threading</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Time.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Tooling/MakeProject.h">
+      <Filter>noz\Tooling</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Tooling/VisualStudioProject.h">
+      <Filter>noz\Tooling</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Tooling/VisualStudioSolution.h">
+      <Filter>noz\Tooling</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Tooling/XCodeProject.h">
+      <Filter>noz\Tooling</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Type.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/UInt32.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Vector2.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Vector3.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Vector4.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Window.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Xml/XmlTextReader.h">
+      <Filter>noz\Xml</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/Xml/XmlWriter.h">
+      <Filter>noz\Xml</Filter>
+    </ClInclude>
+    <ClInclude Include="../../src/noz/noz.h">
+      <Filter>noz</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="noz">
+      <UniqueIdentifier>{74A26781-E60D-4B9A-9BC1-C9B1E80F9F8C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="noz\IO">
+      <UniqueIdentifier>{38544374-D51B-4C45-925D-C47B8BBB1080}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="noz\IO\Compression">
+      <UniqueIdentifier>{00F901BE-A37C-4DD0-9864-9FD8AE95DB70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="noz\Json">
+      <UniqueIdentifier>{0CA4FEEC-D452-4B46-869D-903FC549D09A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="noz\Networking">
+      <UniqueIdentifier>{32794B12-F4A0-432F-8025-2CB2F12DDB78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="noz\Platform">
+      <UniqueIdentifier>{D889D2A1-7E51-4A5D-97FE-25B919098AB5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="noz\Platform\Windows">
+      <UniqueIdentifier>{380C6711-6FD3-428D-BA1C-9628847779A8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="noz\Property">
+      <UniqueIdentifier>{51F7CE0C-697D-408D-82A7-DC774ABFD420}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="noz\Text">
+      <UniqueIdentifier>{E4B1727F-6A60-44A2-9BA5-CFE9A4B357AE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="noz\Threading">
+      <UniqueIdentifier>{1A8B7676-A67A-4AB5-829C-B2E1981BE51A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="noz\Tooling">
+      <UniqueIdentifier>{3AFDBC7C-4E46-412B-A6D8-C4F042B8F9D1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="noz\Xml">
+      <UniqueIdentifier>{69DC8107-4F32-4CC7-95EC-88512D138807}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

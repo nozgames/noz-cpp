@@ -1,0 +1,99 @@
+# CMake generation dependency list for this directory.
+P:/noZ/libs/openal-soft-1.15.1/CMakeLists.txt
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckFunctionExists.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckLibraryExists.cmake
+P:/noZ/libs/openal-soft-1.15.1/cmake/CheckSharedFunctionExists.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFiles.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckSymbolExists.cmake
+P:/noZ/libs/openal-soft-1.15.1/cmake/CheckCCompilerFlag.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckCSourceCompiles.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckTypeSize.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/FindPkgConfig.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/FindPackageHandleStandardArgs.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/FindPackageMessage.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeParseArguments.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeVS12FindMake.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeDetermineSystem.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeSystem.cmake.in
+P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/2.8.12.1/CMakeSystem.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeDetermineCCompiler.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeDetermineCompiler.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeDetermineCompilerId.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CompilerId/VS-10.vcxproj.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeClDeps.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeFindBinUtils.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeCCompiler.cmake.in
+P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/2.8.12.1/CMakeCCompiler.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeSystemSpecificInformation.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeGenericSystem.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/Platform/Windows.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/Platform/WindowsPaths.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeCInformation.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/Platform/Windows-MSVC-C.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/Platform/Windows-MSVC.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeDetermineRCCompiler.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeRCCompiler.cmake.in
+P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/2.8.12.1/CMakeRCCompiler.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeRCInformation.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeTestRCCompiler.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeCommonLanguageInclude.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeTestCCompiler.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeTestCompilerCommon.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeDetermineCompilerABI.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeParseImplicitLinkInfo.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeCCompilerABI.c
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeCCompiler.cmake.in
+P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/2.8.12.1/CMakeCCompiler.cmake
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckTypeSize.c.in
+P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CheckTypeSize/SIZEOF_LONG.c
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckTypeSize.c.in
+P:/noZ/libs/openal-soft-1.15.1/CMakeFiles/CheckTypeSize/SIZEOF_LONG_LONG.c
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckFunctionExists.c
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeConfigurableFile.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeConfigurableFile.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeConfigurableFile.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeConfigurableFile.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeConfigurableFile.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeConfigurableFile.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeConfigurableFile.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckFunctionExists.c
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckFunctionExists.c
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckFunctionExists.c
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckFunctionExists.c
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckFunctionExists.c
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckFunctionExists.c
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckFunctionExists.c
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckFunctionExists.c
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckFunctionExists.c
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeConfigurableFile.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeConfigurableFile.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeConfigurableFile.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeConfigurableFile.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeConfigurableFile.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CheckIncludeFile.c.in
+C:/Program Files (x86)/CMake 2.8/share/cmake-2.8/Modules/CMakeConfigurableFile.in
+P:/noZ/libs/openal-soft-1.15.1/config.h.in
+P:/noZ/libs/openal-soft-1.15.1/openal.pc.in
