@@ -12,9 +12,10 @@ FetchContent_Declare(SDL3
     GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
     GIT_TAG release-3.2.16
 )
-set(SDL3_SHARED OFF)
-set(SDL3_STATIC ON)
-set(SDL3_VENDORED ON)
+set(SDL3_SHARED OFF CACHE BOOL "" FORCE)
+set(SDL3_STATIC ON CACHE BOOL "" FORCE)
+set(SDL3_VENDORED ON CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(SDL3)
 
 # Box2D physics library
@@ -59,10 +60,10 @@ FetchContent_Declare(SDL3_image
     GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
     GIT_TAG release-3.2.4
 )
-set(SDLIMAGE_VENDORED ON)
-set(SDLIMAGE_SHARED OFF)
-set(SDLIMAGE_STATIC ON)
-set(SDLIMAGE_AVIF OFF)  # Avoid NASM dependency
+set(SDLIMAGE_VENDORED ON CACHE BOOL "" FORCE)
+set(SDLIMAGE_SHARED OFF CACHE BOOL "" FORCE)
+set(SDLIMAGE_STATIC ON CACHE BOOL "" FORCE)
+set(SDLIMAGE_AVIF OFF CACHE BOOL "" FORCE)  # Avoid NASM dependency
 FetchContent_MakeAvailable(SDL3_image)
 
 add_library(noz STATIC)
