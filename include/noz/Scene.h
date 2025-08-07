@@ -19,7 +19,6 @@ namespace noz::node
 
 		NOZ_DECLARE_TYPEID(Scene, noz::Object)
 
-        Scene();
         ~Scene();
 
         // Scene management
@@ -48,6 +47,10 @@ namespace noz::node
         std::shared_ptr<DirectionalLight> activeDirectionalLight() const { return _activeDirectionalLight; }
 
     private:
+
+        Scene();
+
+        void initialize() {}
 
 		bool _started;
 		std::string _name;

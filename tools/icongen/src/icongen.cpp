@@ -69,7 +69,7 @@ public:
 		createRenderTarget();
 
 		// Create scene
-		_scene = std::make_shared<Scene>();
+		_scene = Object::create<Scene>();
 		
 		// Create camera with fixed square aspect ratio for icon
 		auto cameraNode = std::make_shared<Camera>();
@@ -502,7 +502,7 @@ private:
 
 	void createUI()
 	{
-		_ui = std::make_shared<noz::node::Scene>();
+		_ui = Object::create<noz::node::Scene>();
 		_canvas = std::make_shared<noz::ui::Canvas>();
 		_canvas->setReferenceSize(vec2(static_cast<float>(_outputSize), static_cast<float>(_outputSize)));
 

@@ -114,4 +114,3 @@
 
 // Event System
 #include <noz/Event.h>
-#include <noz/EventTypes.h>

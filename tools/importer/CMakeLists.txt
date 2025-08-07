@@ -18,28 +18,29 @@ if(NOT TARGET cxxopts::cxxopts)
     FetchContent_MakeAvailable(cxxopts)
 endif()
 
-# SDL3_image (not in parent project)
-FetchContent_Declare(SDL3_image
-    GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
-    GIT_TAG release-3.2.4
-)
-set(SDLIMAGE_VENDORED ON)
-set(SDLIMAGE_SHARED OFF)
-set(SDLIMAGE_STATIC ON)
-set(SDLIMAGE_AVIF OFF)  # Avoid NASM dependency
-FetchContent_MakeAvailable(SDL3_image)
+# Force static builds globally before declaring dependencies
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(SDLSHADERCROSS_SPIRVCROSS_SHARED OFF CACHE BOOL "" FORCE)
 
 # SDL3_shadercross (not in parent project)
 FetchContent_Declare(SDL3_shadercross
     GIT_REPOSITORY https://github.com/libsdl-org/SDL_shadercross.git
     GIT_TAG main
 )
-set(SDLSHADERCROSS_VENDORED ON)
-set(SDLSHADERCROSS_CLI OFF)
-set(SDLSHADERCROSS_SHARED OFF)
-set(SDLSHADERCROSS_STATIC ON)
-set(SDLSHADERCROSS_TOOLS OFF)
-set(SPIRV_TOOLS_SKIP_SYMBOL_EXPORT ON)
+
+set(SDLSHADERCROSS_VENDORED ON CACHE BOOL "" FORCE)
+set(SDLSHADERCROSS_CLI OFF CACHE BOOL "" FORCE)
+set(SDLSHADERCROSS_SHARED OFF CACHE BOOL "" FORCE)
+set(SDLSHADERCROSS_STATIC ON CACHE BOOL "" FORCE)
+set(SDLSHADERCROSS_TOOLS OFF CACHE BOOL "" FORCE)
+set(SPIRV_TOOLS_SKIP_SYMBOL_EXPORT ON CACHE BOOL "" FORCE)
+
+# Force SPIRV-Cross to build statically
+set(SPIRV_CROSS_SHARED OFF CACHE BOOL "" FORCE)
+set(SPIRV_CROSS_STATIC ON CACHE BOOL "" FORCE)
+set(SPIRV_CROSS_CLI OFF CACHE BOOL "" FORCE)
+set(SPIRV_CROSS_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+
 # Keep DXC components needed by SDL3_shadercross
 set(DXC_BUILD_EXE OFF)
 set(DXC_BUILD_CLI OFF)
@@ -108,6 +109,12 @@ target_precompile_headers(importer PRIVATE
     src/importer_pch.h
 )
 
-
-# No DLL copying needed for static builds
-
+# Copy dxcompiler.dll to output directory after build (Windows only)
+if(WIN32)
+    add_custom_command(TARGET importer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:dxcompiler>
+        $<TARGET_FILE_DIR:importer>
+        COMMENT "Copying dxcompiler.dll to output directory"
+    )
+endif()

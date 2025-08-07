@@ -16,6 +16,9 @@ set(SDL3_SHARED OFF CACHE BOOL "" FORCE)
 set(SDL3_STATIC ON CACHE BOOL "" FORCE)
 set(SDL3_VENDORED ON CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(SDL3_TEST OFF CACHE BOOL "" FORCE)
+# Disable shader cross compilation tools
+
 FetchContent_MakeAvailable(SDL3)
 
 # Box2D physics library
@@ -97,3 +100,6 @@ target_link_libraries(noz
         SDL3::SDL3
         glm::glm
 )
+
+add_subdirectory(tools/icongen)
+add_subdirectory(tools/importer)
