@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <noz/IResource.h>
+#include <noz/Asset.h>
 #include <noz/ui/Style.h>
 
 namespace noz
@@ -19,11 +19,11 @@ namespace noz
 
 namespace noz::ui
 {
-    class StyleSheet : public noz::IResource
+    class StyleSheet : public noz::Asset
     {
     public:
 
-		NOZ_DECLARE_TYPEID(StyleSheet, noz::IResource)
+		NOZ_DECLARE_TYPEID(StyleSheet, noz::Asset)
 
         using ReloadCallback = std::function<void()>;
         
@@ -43,7 +43,7 @@ namespace noz::ui
         void serialize(StreamWriter& writer) const;
         void deserialize(StreamReader& reader);
         
-        // IResource interface
+        // Asset interface
         void reload() override;
         
         // Style management

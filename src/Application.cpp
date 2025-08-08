@@ -12,8 +12,6 @@
 
 namespace noz
 {
-    using noz::Resources;
-
     Application::Application() 
         : _window(nullptr)
         , _isRunning(false)
@@ -62,7 +60,7 @@ namespace noz
 
 		noz::Time::initialize();
 
-		ISingleton<Resources>::load();
+		ISingleton<AssetDatabase>::load();
 		EventManager::load();
 		ui::TextEngine::load();
 		InputSystem::load();
@@ -220,7 +218,7 @@ namespace noz
 	{
         InputSystem::unload();
         EventManager::unload();
-        ISingleton<Resources>::unload();
+        ISingleton<AssetDatabase>::unload();
         noz::renderer::Renderer::unload();
 
 		if (_window)

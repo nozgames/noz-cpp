@@ -22,5 +22,5 @@
 
 #include <noz/noz.h>
 #include <noz/MetaFile.h>
-#include "ResourceImporter.h"
+#include "AssetImporter.h"
 #include "ImportConfig.h"

@@ -546,7 +546,7 @@ namespace noz::ui
             return;
 
         // Create basic UI shader
-        s_uiShader = noz::Resources::instance()->load<noz::renderer::Shader>("shaders/ui");
+        s_uiShader = Asset::load<noz::renderer::Shader>("shaders/ui");
         if (!s_uiShader)
         {
             std::cerr << "Failed to load UI shader" << std::endl;
@@ -594,7 +594,7 @@ namespace noz::ui
     void Element::createWhiteTexture()
     {
         // Load palette texture as a fallback for UI rendering
-        s_whiteTexture = noz::Resources::instance()->load<noz::renderer::Texture>("textures/palette");
+        s_whiteTexture = Asset::load<noz::renderer::Texture>("textures/palette");
         if (!s_whiteTexture)
         {
             std::cerr << "Failed to load palette texture for UI rendering" << std::endl;

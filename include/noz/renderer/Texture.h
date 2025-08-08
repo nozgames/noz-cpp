@@ -18,8 +18,7 @@ struct SDL_GPUSampler;
 
 namespace noz::renderer
 {
-
-    class Texture : public noz::IResource
+    class Texture : public noz::Asset
     {
     public:
         

@@ -8,7 +8,6 @@
 
 #include <noz/tools/Hotload.h>
 #include <noz/tools/FileWatcher.h>
-#include <noz/Resources.h>
 #include <noz/ui/StyleSheet.h>
 #include <filesystem>
 #include <iostream>
@@ -51,12 +50,12 @@ namespace noz::tools
             
         _fileWatcher = std::make_unique<noz::tools::FileWatcher>();
         
-        // Watch the entire resources directory
-		std::string resourcesPath = "resources"; // Default resources directory                
-        std::cout << "Hotload: Starting to watch resources directory: " << resourcesPath << std::endl;
+        // Watch the entire assets directory
+		std::string assetsPath = "assets"; // Default assets directory                
+        std::cout << "Hotload: Starting to watch assets directory: " << assetsPath << std::endl;
         
-        // Watch the resources directory for changes
-        bool success = _fileWatcher->watchDirectory(resourcesPath, [this](const std::string& changedFile)
+        // Watch the assets directory for changes
+        bool success = _fileWatcher->watchDirectory(assetsPath, [this](const std::string& changedFile)
         {
             if (_enabled)
             {
@@ -66,7 +65,7 @@ namespace noz::tools
         
         if (!success)
         {
-            std::cerr << "Hotload: Failed to start watching resources directory" << std::endl;
+            std::cerr << "Hotload: Failed to start watching assets directory" << std::endl;
         }
     }
     
@@ -120,14 +119,14 @@ namespace noz::tools
         }
         
         // Convert absolute path to resource name
-		std::string resourcesPath = "resources";
+		std::string assetsPath = "assets";
         std::string resourceName;
         
         // Make paths comparable by normalizing them
         std::filesystem::path normalizedFile = std::filesystem::path(filePath).lexically_normal();
-        std::filesystem::path normalizedResources = std::filesystem::path(resourcesPath).lexically_normal();
+        std::filesystem::path normalizedResources = std::filesystem::path(assetsPath).lexically_normal();
         
-        // Check if the file is within the resources directory
+        // Check if the file is within the assets directory
         auto relative = std::filesystem::relative(normalizedFile, normalizedResources);
         if (!relative.empty() && relative.string().find("..") == std::string::npos)
         {
@@ -136,7 +135,7 @@ namespace noz::tools
         }
         else
         {
-            std::cerr << "Hotload: File is not within resources directory: " << filePath << std::endl;
+            std::cerr << "Hotload: File is not within assets directory: " << filePath << std::endl;
             return;
         }
         

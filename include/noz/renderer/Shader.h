@@ -7,7 +7,7 @@ struct SDL_GPURenderPass;
 
 namespace noz::renderer
 {
-    class Shader : public noz::IResource
+    class Shader : public noz::Asset
     {
     public:
         Shader(const std::string& path);

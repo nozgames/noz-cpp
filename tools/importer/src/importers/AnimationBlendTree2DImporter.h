@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../ResourceImporter.h"
+#include "../AssetImporter.h"
 
 namespace noz::import
 {
-    class AnimationBlendTree2dImporter : public ResourceImporter
+    class AnimationBlendTree2dImporter : public AssetImporter
     {
     public:
 		AnimationBlendTree2dImporter();

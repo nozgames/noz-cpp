@@ -25,7 +25,7 @@ namespace noz::renderer
 		glm::vec2 boneIndex;
 	};
 
-    class Mesh : public noz::IResource
+    class Mesh : public noz::Asset
     {
     public:
 

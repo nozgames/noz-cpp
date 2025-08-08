@@ -53,7 +53,7 @@ namespace noz::renderer
 		if (!instance()->SetWindow(window))
 			return false;
 
-		instance()->_shadowShader = Resources::instance()->load<Shader>("shaders/shadow");
+		instance()->_shadowShader = Asset::load<Shader>("shaders/shadow");
 
 		if (!instance()->_shadowShader)
 		{
@@ -131,7 +131,7 @@ namespace noz::renderer
         }
 
         // Create default texture
-        _defaultTexture = Resources::instance()->load<noz::renderer::Texture>("white");
+        _defaultTexture = Asset::load<noz::renderer::Texture>("white");
         if (!_defaultTexture)
         {
             std::cerr << "Failed to create default texture: " << SDL_GetError() << std::endl;

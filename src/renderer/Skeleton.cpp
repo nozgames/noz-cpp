@@ -9,7 +9,7 @@
 namespace noz::renderer
 {
     Skeleton::Skeleton(const std::string& path)
-        : noz::IResource(path)
+        : noz::Asset(path)
     {
     }
 
@@ -36,7 +36,7 @@ namespace noz::renderer
 
     std::shared_ptr<Skeleton> Skeleton::load(const std::string& name)
     {
-        return loadInternal(noz::Resources::instance()->getFullPath(name, "skeleton"), name);
+        return loadInternal(AssetDatabase::getFullPath(name, "skeleton"), name);
     }
     
     std::shared_ptr<Skeleton> Skeleton::loadInternal(const std::string& filePath, const std::string& resourceName)

@@ -5,7 +5,6 @@
 #include <noz/renderer/CommandBuffer.h>
 #include <noz/renderer/Renderer.h>
 #include <noz/renderer/MeshBuilder.h>
-#include <noz/Resources.h>
 
 namespace noz::renderer
 {
@@ -35,7 +34,7 @@ namespace noz::renderer
 		_referenceHeight = referenceHeight;
 		
 		// Load the pixelation shader
-		_pixelationShader = Resources::instance()->load<Shader>("shaders/pixelation");
+		_pixelationShader = Asset::load<Shader>("shaders/pixelation");
 		if (!_pixelationShader)
 		{
 			std::cerr << "Failed to load pixelation shader" << std::endl;

@@ -11,7 +11,7 @@
 namespace noz::renderer
 {
     Mesh::Mesh(const std::string& path)
-        : noz::IResource(path)
+        : noz::Asset(path)
         , _gpu(nullptr)
         , _vertexBuffer(nullptr)
         , _transferBuffer(nullptr)
@@ -30,7 +30,7 @@ namespace noz::renderer
     std::shared_ptr<Mesh> Mesh::load(const std::string& name)
     {
         // Try to find the file with .mesh extension first (imported format)
-        std::string fullPath = noz::Resources::instance()->getFullPath(name, "mesh");
+        std::string fullPath = AssetDatabase::getFullPath(name, "mesh");
         
         if (std::filesystem::exists(fullPath))
         {

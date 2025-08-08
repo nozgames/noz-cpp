@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "noz/IResource.h"
+#include "noz/Asset.h"
 
 namespace noz::renderer
 {
@@ -20,11 +20,11 @@ namespace noz::renderer
      * @brief Interface for all animation types (single animations, blend trees, etc.)
      * Allows animations to be treated uniformly and loaded as resources
      */
-    class IAnimation : public noz::IResource
+    class IAnimation : public noz::Asset
     {
     public:
-        // Constructor with name (required for IResource)
-        IAnimation(const std::string& name) : IResource(name) {}
+        // Constructor with name (required for Asset)
+        IAnimation(const std::string& name) : Asset(name) {}
         virtual ~IAnimation() = default;
 
         /**

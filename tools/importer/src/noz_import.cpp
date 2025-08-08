@@ -6,7 +6,7 @@
 
 */
 
-#include "ResourceImporter.h"
+#include "AssetImporter.h"
 #include "importers/FontImporter.h"
 #include "importers/TextureImporter.h"
 #include "importers/MeshImporter.h"
@@ -21,7 +21,7 @@ namespace noz::import
 {
     static void registerImporters(const ImportConfig& config)
     {
-        auto& registry = ResourceImporterRegistry::instance();
+        auto& registry = AssetImporterRegistry::instance();
         
         // Clear existing importers to avoid duplicates
         registry.clear();            
@@ -49,7 +49,7 @@ namespace noz::import
         }
 
         // Register importers if needed
-        auto& registry = ResourceImporterRegistry::instance();
+        auto& registry = AssetImporterRegistry::instance();
         if (registry.getImporters(filePath).empty())
         {
             registerImporters(config);
@@ -108,7 +108,7 @@ namespace noz::import
             
         // Register all importers
         registerImporters(config);
-        auto& registry = ResourceImporterRegistry::instance();
+        auto& registry = AssetImporterRegistry::instance();
                         
         std::vector<std::future<bool>> futures;
         int processedFiles = 0;
@@ -181,7 +181,7 @@ namespace noz::import
     {
         // Register importers to determine what output files would have been created
         registerImporters(config);
-        auto& registry = ResourceImporterRegistry::instance();
+        auto& registry = AssetImporterRegistry::instance();
         
         auto importers = registry.getImporters(deletedFilePath);
         if (importers.empty())
@@ -274,7 +274,7 @@ namespace noz::import
         
         // Register importers to understand file mappings
         registerImporters(config);
-        auto& registry = ResourceImporterRegistry::instance();
+        auto& registry = AssetImporterRegistry::instance();
         
         // Build a set of all source files that could produce output
         std::unordered_set<std::string> validSourceFiles;

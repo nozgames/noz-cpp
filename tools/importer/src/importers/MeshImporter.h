@@ -6,7 +6,7 @@ namespace noz
 {
     namespace import
     {
-        class MeshImporter : public ResourceImporter
+        class MeshImporter : public AssetImporter
         {
         public:
             MeshImporter(const ImportConfig::ModelConfig& config);

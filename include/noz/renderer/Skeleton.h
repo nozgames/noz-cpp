@@ -26,7 +26,7 @@ namespace noz::renderer
         glm::vec3 direction;  // World space direction (Y-axis of bone)
     };
 
-    class Skeleton : public noz::IResource
+    class Skeleton : public noz::Asset
     {
     public:
         Skeleton(const std::string& path);

@@ -9,7 +9,7 @@
 namespace noz::renderer
 {
     Shader::Shader(const std::string& path)
-        : noz::IResource(path)
+        : noz::Asset(path)
         , _gpu(nullptr)
         , _vertexShader(nullptr)
         , _fragmentShader(nullptr)
@@ -50,16 +50,8 @@ namespace noz::renderer
         }
 
         _gpu = gpu;
-
-        // Use Resources' GetFullPath method for proper path construction
-        auto* resourceDb = noz::Resources::instance();
-        if (!resourceDb)
-        {
-            std::cerr << "Resources not initialized" << std::endl;
-            return false;
-        }
         
-        auto path = noz::Resources::instance()->getFullPath(name(), "shader");
+        auto path = AssetDatabase::getFullPath(name(), "shader");
 
         if (!loadFromProcessedFile(path))
         {

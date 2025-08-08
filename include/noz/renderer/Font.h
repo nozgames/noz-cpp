@@ -10,7 +10,7 @@
 
 namespace noz::renderer
 {
-    class Font : public noz::IResource
+    class Font : public noz::Asset
     {
     public:
         Font(const std::string& path);

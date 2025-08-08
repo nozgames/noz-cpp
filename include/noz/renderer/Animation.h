@@ -38,7 +38,7 @@ namespace noz::renderer
         void evaluate(int frameIndex, const std::vector<Bone>& meshBones, std::vector<BoneTransform>& outputTransforms) const;
         void evaluateAtTime(float time, const std::vector<Bone>& meshBones, std::vector<BoneTransform>& outputTransforms) const;
         
-        // Get animation name (inherited from IResource)
+        // Get animation name (inherited from Asset)
         
         // Get frame count (legacy method)
         int frameCountLegacy() const { return _frameCount; }

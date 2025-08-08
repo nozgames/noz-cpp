@@ -1,13 +1,12 @@
 #pragma once
 
-#include "../ResourceImporter.h"
 #include "../GLTFLoader.h"
 
 namespace noz::import
 {
     struct Animation;
         
-    class AnimationImporter : public ResourceImporter
+    class AnimationImporter : public AssetImporter
     {
     public:
         AnimationImporter(const ImportConfig::ModelConfig& config);

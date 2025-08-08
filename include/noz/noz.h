@@ -51,9 +51,8 @@
 // core
 #include <noz/math/noz_math.h>
 #include <noz/Object.h>
-#include <noz/IResource.h>
 #include <noz/ISingleton.h>
-#include <noz/Resources.h>
+#include <noz/AssetDatabase.h>
 #include <noz/StreamReader.h>
 #include <noz/StreamWriter.h>
 #include <noz/Time.h>
@@ -81,6 +80,10 @@
 #include <noz/renderer/Animation.h>
 #include <noz/renderer/AnimationBlendTree.h>
 #include <noz/renderer/Shader.h>
+#include <noz/renderer/Skeleton.h>
+#include <noz/renderer/Font.h>
+
+#include <noz/AssetSpecializations.h>
 
 // Render nodes (moved from noz_renderer)
 #include <noz/nodes/Camera.h>
@@ -114,3 +117,4 @@
 
 // Event System
 #include <noz/Event.h>
+

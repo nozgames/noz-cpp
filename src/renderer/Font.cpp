@@ -8,7 +8,7 @@
 
 namespace noz::renderer
 {
-    Font::Font(const std::string& path) : IResource(path)
+    Font::Font(const std::string& path) : Asset(path)
     {
     }
 
@@ -25,7 +25,7 @@ namespace noz::renderer
 
     void Font::loadInternal()
     {
-        std::string fullPath = noz::Resources::getFullPath(name(), "font");
+        std::string fullPath = AssetDatabase::getFullPath(name(), "font");
         
         StreamReader reader;
         if (!reader.loadFromFile(fullPath))

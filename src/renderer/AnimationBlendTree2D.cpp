@@ -148,7 +148,7 @@ namespace noz::renderer
 
     std::shared_ptr<AnimationBlendTree2d> AnimationBlendTree2d::load(const std::string& name)
     {
-        auto fullPath = noz::Resources::instance()->getFullPath(name, "blendtree2d");
+        auto fullPath = AssetDatabase::getFullPath(name, "blendtree2d");
         if (!std::filesystem::exists(fullPath))
         {
             noz::Log::error("AnimationBlendTree2d", "Blend tree file does not exist: " + name + " (tried .blendtree2d)");
@@ -194,7 +194,7 @@ namespace noz::renderer
         // Load the actual animation resources and set them on the blend tree
         if (!centerAnim.empty())
         {
-            auto anim = noz::Resources::instance()->load<IAnimation>(centerAnim);
+            auto anim = Asset::load<IAnimation>(centerAnim);
             if (anim)
                 blendTree->setCenterAnimation(anim);
             else
@@ -203,7 +203,7 @@ namespace noz::renderer
         
         if (!leftAnim.empty())
         {
-            auto anim = noz::Resources::instance()->load<IAnimation>(leftAnim);
+            auto anim = Asset::load<IAnimation>(leftAnim);
             if (anim)
                 blendTree->setLeftAnimation(anim);
             else
@@ -212,7 +212,7 @@ namespace noz::renderer
         
         if (!rightAnim.empty())
         {
-            auto anim = noz::Resources::instance()->load<IAnimation>(rightAnim);
+            auto anim = Asset::load<IAnimation>(rightAnim);
             if (anim)
                 blendTree->setRightAnimation(anim);
             else
@@ -221,7 +221,7 @@ namespace noz::renderer
         
         if (!topAnim.empty())
         {
-            auto anim = noz::Resources::instance()->load<IAnimation>(topAnim);
+            auto anim = Asset::load<IAnimation>(topAnim);
             if (anim)
                 blendTree->setTopAnimation(anim);
             else
@@ -230,7 +230,7 @@ namespace noz::renderer
         
         if (!bottomAnim.empty())
         {
-            auto anim = noz::Resources::instance()->load<IAnimation>(bottomAnim);
+            auto anim = Asset::load<IAnimation>(bottomAnim);
             if (anim)
                 blendTree->setBottomAnimation(anim);
             else
@@ -239,5 +239,4 @@ namespace noz::renderer
         
         return blendTree;
     }
-
-} // namespace noz::renderer
+}

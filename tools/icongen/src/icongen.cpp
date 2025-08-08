@@ -128,7 +128,7 @@ public:
 		}
 
 		// Load the mesh resource first
-		auto mesh = Resources::instance()->load<Mesh>(_meshPath);
+		auto mesh = Asset::load<Mesh>(_meshPath);
 		if (!mesh)
 		{
 			std::cerr << "Failed to load mesh: " << _meshPath << std::endl;
@@ -153,8 +153,8 @@ public:
 		// Create mesh renderer as child
 		_meshRenderer = Object::create<MeshRenderer>();
 		_meshRenderer->setMesh(mesh);
-		_meshRenderer->setShader(Resources::instance()->load<Shader>("shaders/lit"));
-		_meshRenderer->setTexture(Resources::instance()->load<Texture>("textures/palette"));
+		_meshRenderer->setShader(Asset::load<Shader>("shaders/lit"));
+		_meshRenderer->setTexture(Asset::load<Texture>("textures/palette"));
 		_meshObject->add(_meshRenderer);
 
 		// Center the mesh and apply any loaded translation
@@ -755,9 +755,9 @@ std::string generateOutputPath(const std::string& meshPath, const std::string& o
 	std::string relativePath = meshFilePath.string();
 	
 	// Remove common prefixes
-	if (relativePath.find("resources/models/") == 0)
+	if (relativePath.find("assets/models/") == 0)
 	{
-		relativePath = relativePath.substr(17); // length of "resources/models/"
+		relativePath = relativePath.substr(17); // length of "assets/models/"
 	}
 	else if (relativePath.find("models/") == 0)
 	{
@@ -778,7 +778,7 @@ int main(int argc, char* argv[])
 	cxxopts::Options options("icongen", "Generate icon images from 3D models");
 	options.add_options()
 		("m,mesh", "Mesh file path", cxxopts::value<std::string>())
-		("o,output", "Output directory (default: resources/textures/icons)", cxxopts::value<std::string>()->default_value("resources/textures/icons"))
+		("o,output", "Output directory (default: resources/textures/icons)", cxxopts::value<std::string>()->default_value("assets/textures/icons"))
 		("s,size", "Icon size (default: 256)", cxxopts::value<int>()->default_value("256"))
 		("r,rotation", "Initial rotation angle", cxxopts::value<float>()->default_value("0"))
 		("d,distance", "Camera distance multiplier", cxxopts::value<float>()->default_value("2.0"))

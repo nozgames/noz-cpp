@@ -28,7 +28,7 @@ namespace noz::ui
     void Image::setTexture(const std::string& texturePath)
     {
         // Load the texture using the resource system
-        auto texture = noz::Resources::instance()->load<noz::renderer::Texture>(texturePath);
+        auto texture = Asset::load<noz::renderer::Texture>(texturePath);
         if (!texture)
         {
             std::cerr << "Failed to load texture: " << texturePath << std::endl;

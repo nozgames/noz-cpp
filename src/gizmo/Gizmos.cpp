@@ -1,7 +1,7 @@
 #include <noz/gizmo/Gizmos.h>
 #include <noz/gizmo/IGizmo.h>
 #include <noz/nodes/Camera.h>
-#include <noz/Resources.h>
+#include <noz/AssetDatabase.h>
 #include <noz/renderer/CommandBuffer.h>
 #include <noz/renderer/Shader.h>
 #include <noz/renderer/Texture.h>
@@ -34,10 +34,10 @@ namespace noz::debug
 	void Gizmos::loadInternal()
 	{
         // Load shared gizmo shader
-        _gizmoShader = noz::Resources::instance()->load<noz::renderer::Shader>("shaders/gizmo");
+        _gizmoShader = Asset::load<noz::renderer::Shader>("shaders/gizmo");
 		assert(_gizmoShader);
 
-		_paletteTexture = noz::Resources::instance()->load<noz::renderer::Texture>("textures/palette");
+		_paletteTexture = Asset::load<noz::renderer::Texture>("textures/palette");
 		assert(_paletteTexture);
     }
 

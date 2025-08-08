@@ -124,7 +124,7 @@ namespace noz::ui
             return;
             
         // Create text shader for glyph rendering (includes SDF support)
-        s_textShader = noz::Resources::instance()->load<noz::renderer::Shader>("shaders/text");
+        s_textShader = Asset::load<noz::renderer::Shader>("shaders/text");
         if (!s_textShader)
         {
             std::cerr << "Failed to load text shader for Label" << std::endl;
@@ -159,7 +159,7 @@ namespace noz::ui
         // For now, use a simple font loading approach
         // TODO: Implement proper font management similar to original UI system
         const std::string defaultFontPath = "fonts/Roboto-Black";
-        return noz::Resources::instance()->load<noz::renderer::Font>(defaultFontPath);
+        return Asset::load<noz::renderer::Font>(defaultFontPath);
     }
 
     void Label::applyStyle(const std::string& styleName)

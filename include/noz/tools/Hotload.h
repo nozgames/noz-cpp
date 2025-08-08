@@ -9,7 +9,6 @@
 #pragma once
 
 #include <noz/ISingleton.h>
-#include <noz/Resources.h>
 #include <noz/TypeId.h>
 #include <unordered_map>
 #include <functional>
@@ -25,9 +24,9 @@ namespace noz::tools
     class Hotload : public ISingleton<Hotload>
     {
     public:
-        // Callback when a resource is reloaded
+        // Callback when a asset is reloaded
         template<typename T>
-        using ReloadCallback = std::function<void(const std::string& resourceName, std::shared_ptr<T> resource)>;
+        using ReloadCallback = std::function<void(const std::string& assetName, std::shared_ptr<T> asset)>;
         
         Hotload();
         ~Hotload();
@@ -40,18 +39,18 @@ namespace noz::tools
         void setEnabled(bool enabled);
         bool isEnabled() const { return _enabled; }
         
-        // Register a resource type for hot reloading with a callback
+        // Register a asset type for hot reloading with a callback
         template<typename T>
         void registerType(ReloadCallback<T> callback)
         {
             TypeId typeId = TypeId::of<T>();
-            _reloadCallbacks[typeId] = [callback](const std::string& name, void* resource) 
+            _reloadCallbacks[typeId] = [callback](const std::string& name, void* asset) 
             {
-                callback(name, *static_cast<std::shared_ptr<T>*>(resource));
+                callback(name, *static_cast<std::shared_ptr<T>*>(asset));
             };
         }
         
-        // Unregister a resource type
+        // Unregister a asset type
         template<typename T>
         void unregisterType()
         {
@@ -73,39 +72,39 @@ namespace noz::tools
         // File changed callback
         void onFileChanged(const std::string& filePath);
         
-        // Reload a specific resource
+        // Reload a specific asset
         template<typename T>
-        void reloadResource(const std::string& resourceName)
+        void reloadResource(const std::string& assetName)
         {
-            // Get the existing resource from cache
-            auto resource = ResourceCache<T>::get(resourceName);
-            if (resource)
+            // Get the existing asset from cache
+            auto asset = AssetCache<T>::get(assetName);
+            if (asset)
             {
-                // Call the resource's reload method
-                resource->reload();
+                // Call the asset's reload method
+                asset->reload();
                 
                 // Call the registered callback
                 TypeId typeId = TypeId::of<T>();
                 auto it = _reloadCallbacks.find(typeId);
                 if (it != _reloadCallbacks.end())
                 {
-                    it->second(resourceName, &resource);
+                    it->second(assetName, &asset);
                 }
             }
             else
             {
-                std::cerr << "Hotload: Resource not found in cache: " << resourceName << std::endl;
+                std::cerr << "Hotload: Resource not found in cache: " << assetName << std::endl;
             }
         }
         
-        // Try to reload a file as different resource types
+        // Try to reload a file as different asset types
         void tryReloadFile(const std::string& filePath);
         
         bool _enabled = true;
         std::unique_ptr<noz::tools::FileWatcher> _fileWatcher;
         std::unordered_map<TypeId, std::function<void(const std::string&, void*)>> _reloadCallbacks;
         
-        // Track which extensions map to which resource types
+        // Track which extensions map to which asset types
         static const std::unordered_map<std::string, std::vector<TypeId>> _extensionToTypes;
     };
 }

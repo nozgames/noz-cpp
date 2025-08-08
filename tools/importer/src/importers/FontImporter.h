@@ -17,7 +17,7 @@ namespace noz::import
 		class TrueTypeFont;
 	}	
 
-    class FontImporter : public ResourceImporter
+    class FontImporter : public AssetImporter
     {
     public:
         FontImporter(const ImportConfig::FontConfig& config);

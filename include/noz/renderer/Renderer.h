@@ -145,6 +145,5 @@ namespace noz::renderer
 		return _viewProjectionMatrix;
 	}
 
-} // namespace noz::renderer
+}
 
-#include "ResourceSpecializations.h"

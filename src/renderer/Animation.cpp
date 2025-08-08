@@ -146,7 +146,7 @@ namespace noz::renderer
 
     std::shared_ptr<Animation> Animation::load(const std::string& name)
     {
-        auto fullPath = noz::Resources::instance()->getFullPath(name, "animation");
+        auto fullPath = AssetDatabase::getFullPath(name, "animation");
         if (!std::filesystem::exists(fullPath))
         {
             noz::Log::error("Animation", "Animation file does not exist: " + name + " (tried .animation)");

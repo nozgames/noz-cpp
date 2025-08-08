@@ -14,7 +14,7 @@
 namespace noz::renderer
 {
     Texture::Texture(const std::string& path)
-        : noz::IResource(path)
+        : noz::Asset(path)
         , _texture(nullptr)
         , _device(nullptr)
         , _width(0)
@@ -44,7 +44,7 @@ namespace noz::renderer
             return createWhite(gpu);
         
         auto* texture = new Texture(name);
-		auto texturePath = noz::Resources::instance()->getFullPath(name, "texture");
+		auto texturePath = noz::AssetDatabase::getFullPath(name, "texture");
 		if (!texture->loadFromFile(gpu, texturePath))
         {
             std::cerr << "Failed to load texture: " << texturePath << std::endl;

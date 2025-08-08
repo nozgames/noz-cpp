@@ -14,7 +14,7 @@ namespace noz::ui
 	NOZ_DEFINE_TYPEID(StyleSheet)
 
     StyleSheet::StyleSheet(const std::string& path)
-        : IResource(path)
+        : Asset(path)
     {
     }
     
@@ -23,7 +23,7 @@ namespace noz::ui
     std::shared_ptr<StyleSheet> StyleSheet::load(const std::string& name)
     {
         // Build the full path using Resources system
-        std::string fullPath = Resources::getFullPath(name, "styles");
+        std::string fullPath = AssetDatabase::getFullPath(name, "styles");
         
         auto styleSheet = std::make_shared<StyleSheet>(name);        
         if (!styleSheet->loadFromFile(fullPath))
@@ -72,7 +72,7 @@ namespace noz::ui
     
     void StyleSheet::reload()
     {
-		loadFromFile(Resources::getFullPath(name(), "styles"));
+		loadFromFile(AssetDatabase::getFullPath(name(), "styles"));
     }
     
     void StyleSheet::serialize(StreamWriter& writer) const

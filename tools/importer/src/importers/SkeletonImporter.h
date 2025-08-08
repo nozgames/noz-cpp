@@ -8,12 +8,11 @@
 
 #pragma once
 
-#include "../ResourceImporter.h"
 #include "../GLTFLoader.h"
 
 namespace noz::import
 {
-	class SkeletonImporter : public ResourceImporter
+	class SkeletonImporter : public AssetImporter
 	{
 	public:
 		SkeletonImporter(const ImportConfig::ModelConfig& config);

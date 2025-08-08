@@ -13,8 +13,8 @@ int main(int argc, char* argv[])
 	cxxopts::Options options("importer", "Import assets and watch for changes");
 	options.add_options()
 		("h,help", "Print usage")
-		("s,source", "Source directory (default: resources)", cxxopts::value<std::string>()->default_value("resources"))
-		("o,output", "Output directory (default: resources)", cxxopts::value<std::string>()->default_value("resources"))
+		("s,source", "Source directory (default: resources)", cxxopts::value<std::string>()->default_value("assets"))
+		("o,output", "Output directory (default: resources)", cxxopts::value<std::string>()->default_value("assets"))
 		("w,watch", "Watch for file changes", cxxopts::value<bool>()->default_value("true"))
 		("p,parallel", "Enable parallel processing", cxxopts::value<bool>()->default_value("false"));
 
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
 	importConfig.font.sdfPadding = 4;
 	importConfig.shader.preprocessShaders = true;
 	importConfig.shader.validateShaders = true;
-	importConfig.shader.includePaths.push_back("resources/shaders");
+	importConfig.shader.includePaths.push_back("assets/shaders");
 
 	std::cout << "Resource Importer" << std::endl;
 	std::cout << "=================" << std::endl;
