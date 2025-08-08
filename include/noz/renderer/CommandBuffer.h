@@ -29,7 +29,8 @@ namespace noz::renderer
         BindLight,
         SetColor,
         SetTextOptions,
-        SetGridData
+        SetGridData,
+        SetBufferData
     };
 
     // Resource handle for thread-safe resource references
@@ -142,6 +143,13 @@ namespace noz::renderer
         glm::vec2 gridOffset;
     };
     
+    struct SetBufferDataData
+    {
+        uint32_t bufferIndex;  // Which buffer slot (b0, b1, b2, etc.)
+        uint32_t size;         // Size of data in bytes
+        uint32_t dataOffset;   // Offset into buffer data storage
+    };
+    
     // Empty struct for commands with no data
     struct EmptyData {};
 
@@ -168,7 +176,8 @@ namespace noz::renderer
             BindLightData,
             SetColorData,
             SetTextOptionsData,
-            SetGridDataData
+            SetGridDataData,
+            SetBufferDataData
         > data;
 
         // Default constructor for simple commands with no data
@@ -205,6 +214,7 @@ namespace noz::renderer
         void setTextOptions(const glm::vec4& textColor, const glm::vec4& outlineColor = glm::vec4(0.0f), 
                            float outlineWidth = 0.0f, float smoothing = 0.1f);
         void setGridData(const glm::vec2& gridScale, const glm::vec2& gridOffset);
+        void setBufferData(uint32_t bufferIndex, const void* data, uint32_t size);
         
         // Drawing commands
         void drawMesh(const std::shared_ptr<Mesh>& mesh);
@@ -228,6 +238,7 @@ namespace noz::renderer
         std::shared_ptr<Shader> getShader(ResourceHandle handle) const;
         std::shared_ptr<Mesh> getMesh(ResourceHandle handle) const;
         const glm::mat4* getBones(uint32_t offset, uint32_t count) const;
+        const uint8_t* getBufferData(uint32_t offset, uint32_t size) const;
         
         // Reset for next frame
         void reset();
@@ -247,6 +258,7 @@ namespace noz::renderer
         std::vector<std::shared_ptr<Shader>> _shaders;
         std::vector<std::shared_ptr<Mesh>> _meshes;
         std::vector<glm::mat4> _boneData;
+        std::vector<uint8_t> _bufferData;  // Generic buffer data storage
 
 		int _lastTextureIndex = -1;
         

@@ -432,6 +432,22 @@ namespace noz::renderer
                         sizeof(SetGridDataData));
                     break;
                 }
+                
+                case CommandType::SetBufferData:
+                {
+                    const auto& data = std::get<SetBufferDataData>(command.data);
+                    const uint8_t* bufferData = commandBuffer.getBufferData(data.dataOffset, data.size);
+                    if (bufferData)
+                    {
+                        // Push custom buffer data to fragment shader uniform buffer
+                        SDL_PushGPUFragmentUniformData(
+                            _currentCommandBuffer,
+                            data.bufferIndex, // Buffer register index (b0, b1, b2, etc.)
+                            bufferData,
+                            data.size);
+                    }
+                    break;
+                }
                                 
                 case CommandType::DrawMesh:
                 {

@@ -27,6 +27,10 @@ namespace noz::node
         _children.clear();
     }
 
+    void Node::initialize()
+    {
+    }
+
     void Node::addChild(std::shared_ptr<Node> parent, std::shared_ptr<Node> child)
     {
         if (!parent || !child)

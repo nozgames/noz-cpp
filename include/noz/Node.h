@@ -34,7 +34,6 @@ namespace noz::node
 
 		NOZ_DECLARE_TYPEID(Node, Object)
 
-			Node();
 		virtual ~Node();
 
 		// Node hierarchy management  
@@ -114,6 +113,10 @@ namespace noz::node
 
 		friend class Node2d;
 		friend class Node3d;
+
+		Node();
+
+		virtual void initialize();
 
 		// Called when this node is added to a parent
 		virtual void onAttachedToParent();

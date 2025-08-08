@@ -230,6 +230,36 @@ namespace noz::renderer
         return &_boneData[offset];
     }
 
+    void CommandBuffer::setBufferData(uint32_t bufferIndex, const void* data, uint32_t size)
+    {
+        if (!data || size == 0) return;
+        
+        uint32_t offset = static_cast<uint32_t>(_bufferData.size());
+        
+        // Align to 16-byte boundary for GPU constant buffers
+        uint32_t alignedOffset = (offset + 15) & ~15;
+        uint32_t padding = alignedOffset - offset;
+        
+        // Add padding if needed
+        if (padding > 0) {
+            _bufferData.resize(_bufferData.size() + padding, 0);
+        }
+        
+        // Copy the data
+        size_t currentSize = _bufferData.size();
+        _bufferData.resize(currentSize + size);
+        memcpy(_bufferData.data() + currentSize, data, size);
+        
+        // Add command
+        _commands.emplace_back(CommandType::SetBufferData, SetBufferDataData{bufferIndex, size, alignedOffset});
+    }
+
+    const uint8_t* CommandBuffer::getBufferData(uint32_t offset, uint32_t size) const
+    {
+        if (offset + size > _bufferData.size()) return nullptr;
+        return &_bufferData[offset];
+    }
+
     void CommandBuffer::reset()
     {
         _commands.clear();
@@ -237,6 +267,7 @@ namespace noz::renderer
         _shaders.clear();
         _meshes.clear();
         _boneData.clear();
+        _bufferData.clear();
 		_lastTextureIndex = -1;
     }
 }
