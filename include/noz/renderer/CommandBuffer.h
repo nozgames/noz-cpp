@@ -28,7 +28,8 @@ namespace noz::renderer
         SetScissor,
         BindLight,
         SetColor,
-        SetTextOptions
+        SetTextOptions,
+        SetGridData
     };
 
     // Resource handle for thread-safe resource references
@@ -135,6 +136,12 @@ namespace noz::renderer
         float smoothing;
     };
     
+    struct SetGridDataData
+    {
+        glm::vec2 gridScale;
+        glm::vec2 gridOffset;
+    };
+    
     // Empty struct for commands with no data
     struct EmptyData {};
 
@@ -160,7 +167,8 @@ namespace noz::renderer
             SetScissorData,
             BindLightData,
             SetColorData,
-            SetTextOptionsData
+            SetTextOptionsData,
+            SetGridDataData
         > data;
 
         // Default constructor for simple commands with no data
@@ -196,6 +204,7 @@ namespace noz::renderer
         void setColor(const glm::vec4& color);
         void setTextOptions(const glm::vec4& textColor, const glm::vec4& outlineColor = glm::vec4(0.0f), 
                            float outlineWidth = 0.0f, float smoothing = 0.1f);
+        void setGridData(const glm::vec2& gridScale, const glm::vec2& gridOffset);
         
         // Drawing commands
         void drawMesh(const std::shared_ptr<Mesh>& mesh);

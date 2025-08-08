@@ -12,6 +12,7 @@ namespace noz::renderer
 	class Mesh;
 	class Texture;
 	class CommandBuffer;
+	class SamplerFactory;
 
 	class Renderer : public noz::ISingleton<Renderer>
 	{
@@ -24,6 +25,7 @@ namespace noz::renderer
 		std::shared_ptr<Texture> defaultTexture() const { return _defaultTexture; }
 		SDL_GPUSampler* pointSampler() const { return _pointSampler; }
 		SDL_GPUSampler* linearSampler() const { return _defaultSampler; }
+		SamplerFactory* samplerFactory() const { return _samplerFactory.get(); }
 
 		// New CommandBuffer-based rendering
 		CommandBuffer* beginFrame();
@@ -128,6 +130,9 @@ namespace noz::renderer
 
 		// CommandBuffer support
 		std::unique_ptr<CommandBuffer> _commandBuffer;
+		
+		// Sampler factory for texture-specific samplers
+		std::unique_ptr<SamplerFactory> _samplerFactory;
 		
 		// State tracking to avoid redundant bindings
 		SDL_GPUGraphicsPipeline* _currentPipeline;

@@ -138,6 +138,14 @@ namespace noz::renderer
         data.smoothing = smoothing;
         _commands.emplace_back(CommandType::SetTextOptions, data);
     }
+    
+    void CommandBuffer::setGridData(const glm::vec2& gridScale, const glm::vec2& gridOffset)
+    {
+        SetGridDataData data;
+        data.gridScale = gridScale;
+        data.gridOffset = gridOffset;
+        _commands.emplace_back(CommandType::SetGridData, data);
+    }
 
     void CommandBuffer::drawMesh(const std::shared_ptr<Mesh>& mesh)
     {

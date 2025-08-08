@@ -36,10 +36,17 @@ namespace noz::node
         const mat4& viewMatrix() const;
         const mat4& viewProjection() const;
         
+        // Projection type
+        bool isOrthographic() const { return _isOrthographic; }
+        
         void forceMatrixUpdate();
 
         // Frustum corners for top-down view
         std::array<vec3, 4> frustumCornersWorldSpace() const;
+        
+        // Screen/World coordinate conversion
+        vec3 screenToWorld(const vec2& screenPos) const;
+        vec2 worldToScreen(const vec3& worldPos) const;
 
         // Node lifecycle
         void update() override;
@@ -63,6 +70,9 @@ namespace noz::node
         mutable mat4 _viewProjectionMatrix;
         mutable bool _viewMatrixDirty;
         mutable bool _viewProjectionDirty;
+        
+        // Projection type flag
+        bool _isOrthographic;
         
         // Static main camera
         static Camera* _mainCamera;

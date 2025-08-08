@@ -28,7 +28,12 @@ namespace noz
 				size_t size, 
                 int width,
 				int height,
-				int channels);
+				int channels,
+                const std::string& minFilter = "linear",
+                const std::string& magFilter = "linear",
+                const std::string& clampU = "clamp_to_edge",
+                const std::string& clampV = "clamp_to_edge",
+                const std::string& clampW = "clamp_to_edge");
         };
     }
 } 

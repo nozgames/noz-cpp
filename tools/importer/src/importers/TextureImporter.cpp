@@ -80,11 +80,24 @@ namespace noz
             SDL_DestroySurface(surface);
             surface = convertedSurface;
 
+            // Parse meta file for sampler options
+            auto meta = noz::MetaFile::parse(sourcePath + ".meta");
+            
+            // Parse filter options
+            auto minFilter = meta.getString("Texture", "min_filter", "linear");
+            auto magFilter = meta.getString("Texture", "mag_filter", "linear");
+            
+            // Parse clamp options
+            auto clampU = meta.getString("Texture", "clamp_u", "clamp_to_edge");
+            auto clampV = meta.getString("Texture", "clamp_v", "clamp_to_edge");
+            auto clampW = meta.getString("Texture", "clamp_w", "clamp_to_edge");
+
             // Write texture data - always use 4 channels (RGBA)
             int channels = 4;
             size_t dataSize = surface->w * surface->h * channels;
             bool success = writeTexture(outputPath, surface->pixels, dataSize, 
-                                       surface->w, surface->h, channels);
+                                       surface->w, surface->h, channels,
+                                       minFilter, magFilter, clampU, clampV, clampW);
 
             SDL_DestroySurface(surface);
             return success;
@@ -96,7 +109,12 @@ namespace noz
 			size_t size,
             int width,
 			int height,
-			int channels)
+			int channels,
+            const std::string& minFilter,
+            const std::string& magFilter,
+            const std::string& clampU,
+            const std::string& clampV,
+            const std::string& clampW)
         {
             std::ofstream file(outputPath, std::ios::binary);
             if (!file.is_open())
@@ -105,10 +123,32 @@ namespace noz
                 return false;
             }
 
+            // Convert string options to enum values
+            uint8_t minFilterValue = (minFilter == "nearest") ? 0 : 1; // 0=Nearest, 1=Linear
+            uint8_t magFilterValue = (magFilter == "nearest") ? 0 : 1; // 0=Nearest, 1=Linear
+            
+            uint8_t clampUValue = 1; // Default to ClampToEdge
+            if (clampU == "repeat") clampUValue = 0;
+            else if (clampU == "clamp_to_edge") clampUValue = 1;
+            else if (clampU == "mirrored_repeat") clampUValue = 2;
+            else if (clampU == "clamp_to_border") clampUValue = 3;
+            
+            uint8_t clampVValue = 1; // Default to ClampToEdge
+            if (clampV == "repeat") clampVValue = 0;
+            else if (clampV == "clamp_to_edge") clampVValue = 1;
+            else if (clampV == "mirrored_repeat") clampVValue = 2;
+            else if (clampV == "clamp_to_border") clampVValue = 3;
+            
+            uint8_t clampWValue = 1; // Default to ClampToEdge
+            if (clampW == "repeat") clampWValue = 0;
+            else if (clampW == "clamp_to_edge") clampWValue = 1;
+            else if (clampW == "mirrored_repeat") clampWValue = 2;
+            else if (clampW == "clamp_to_border") clampWValue = 3;
+
             // Write header
-            // Format: [magic:4][version:4][format:4][width:4][height:4][data...]
+            // Format: [magic:4][version:4][format:4][width:4][height:4][samplerOptions:5][data...]
             const uint32_t magic = 0x5A4F4E54; // "NZXT" in hex (NoZ TeXture)
-            const uint32_t version = 1;
+            const uint32_t version = 2; // Version 2 includes sampler options
             const uint32_t format = (channels == 4) ? 1 : 0; // 0=RGB, 1=RGBA
             
             file.write(reinterpret_cast<const char*>(&magic), sizeof(uint32_t));
@@ -116,6 +156,13 @@ namespace noz
             file.write(reinterpret_cast<const char*>(&format), sizeof(uint32_t));
             file.write(reinterpret_cast<const char*>(&width), sizeof(uint32_t));
             file.write(reinterpret_cast<const char*>(&height), sizeof(uint32_t));
+            
+            // Write sampler options (5 bytes)
+            file.write(reinterpret_cast<const char*>(&minFilterValue), sizeof(uint8_t));
+            file.write(reinterpret_cast<const char*>(&magFilterValue), sizeof(uint8_t));
+            file.write(reinterpret_cast<const char*>(&clampUValue), sizeof(uint8_t));
+            file.write(reinterpret_cast<const char*>(&clampVValue), sizeof(uint8_t));
+            file.write(reinterpret_cast<const char*>(&clampWValue), sizeof(uint8_t));
             
             // Write pixel data
             file.write(reinterpret_cast<const char*>(data), size);
@@ -129,7 +176,9 @@ namespace noz
             file.close();
             std::cout << "Wrote texture: " << outputPath 
                       << " (" << width << "x" << height << ", " 
-                      << (format == 1 ? "RGBA" : "RGB") << ")" << std::endl;
+                      << (format == 1 ? "RGBA" : "RGB") << ")" 
+                      << " [Filter: " << minFilter << "/" << magFilter 
+                      << ", Clamp: " << clampU << "/" << clampV << "/" << clampW << "]" << std::endl;
             return true;
         }
     }

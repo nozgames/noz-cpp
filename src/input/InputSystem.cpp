@@ -119,6 +119,9 @@ namespace noz
             inputEvent.type = InputEventType::MouseWheel;
             inputEvent.mouseWheelX = static_cast<float>(event.wheel.x);
             inputEvent.mouseWheelY = static_cast<float>(event.wheel.y);
+            // Include current mouse position in wheel events
+            inputEvent.mouseX = _mouseX;
+            inputEvent.mouseY = _mouseY;
             break;
 
         default:

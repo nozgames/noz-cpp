@@ -7,6 +7,7 @@
 */
 
 #include "PipelineFactory.h"
+#include "noz/Renderer/SamplerFactory.h"
 
 namespace noz::renderer
 {
@@ -30,6 +31,7 @@ namespace noz::renderer
         , _shadowPassActive(false)
         , _msaaActive(false)
         , _commandBuffer(std::make_unique<CommandBuffer>())
+        , _samplerFactory(nullptr)
         , _currentPipeline(nullptr)
         , _currentTexture(nullptr)
         , _currentTransform(1.0f)
@@ -85,6 +87,9 @@ namespace noz::renderer
             _gpu = nullptr;
             return false;
         }
+
+        // Create sampler factory
+        _samplerFactory = std::make_unique<SamplerFactory>(_gpu);
 
         // Create default sampler
         SDL_GPUSamplerCreateInfo samplerInfo = {};
@@ -238,6 +243,13 @@ namespace noz::renderer
 
 		// Release default texture
 		_defaultTexture.reset();
+
+		// Cleanup sampler factory
+		if (_samplerFactory)
+		{
+			_samplerFactory->cleanup();
+			_samplerFactory.reset();
+		}
 
 		// Release samplers before destroying GPU device
 		if (_pointSampler)
@@ -406,6 +418,18 @@ namespace noz::renderer
                         0, // space3
                         &data,
                         sizeof(SetTextOptionsData));
+                    break;
+                }
+                
+                case CommandType::SetGridData:
+                {
+                    const auto& data = std::get<SetGridDataData>(command.data);
+                    // Push grid data to vertex shader uniform buffer (register vs_b2, space1)
+                    SDL_PushGPUVertexUniformData(
+                        _currentCommandBuffer,
+                        2, // vs_b2, space1
+                        &data,
+                        sizeof(SetGridDataData));
                     break;
                 }
                                 
@@ -747,12 +771,21 @@ namespace noz::renderer
 		if (_currentTexture == actualTexture)
 			return;
 
+		// Get the appropriate sampler for this texture from the factory
+		SDL_GPUSampler* sampler = _defaultSampler;
+		if (_samplerFactory && actualTexture)
+		{
+			SDL_GPUSampler* textureSampler = _samplerFactory->getSampler(actualTexture->samplerOptions());
+			if (textureSampler)
+				sampler = textureSampler;
+		}
+
 		// Main pass: bind diffuse texture and shadow map
 		SDL_GPUTextureSamplerBinding bindings[2] { 0 };
 		int bindingCount = 0;
 		
 		// Bind diffuse texture to slot 0
-		bindings[bindingCount].sampler = _defaultSampler;
+		bindings[bindingCount].sampler = sampler;
 		bindings[bindingCount].texture = actualTexture->handle();
 		bindingCount++;
 			

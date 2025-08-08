@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "noz/Renderer/SamplerFactory.h"
+
 struct SDL_GPUTexture;
 struct SDL_GPUDevice;
 struct SDL_GPUCommandBuffer;
@@ -62,6 +64,18 @@ namespace noz::renderer
             return m_height;
         }
 
+        // Get sampler options for this texture
+        const SamplerOptions& samplerOptions() const
+        {
+            return m_samplerOptions;
+        }
+
+        // Set sampler options for this texture
+        void setSamplerOptions(const SamplerOptions& options)
+        {
+            m_samplerOptions = options;
+        }
+
         // Clear the texture
         void clear();
 
@@ -71,5 +85,6 @@ namespace noz::renderer
         SDL_GPUDevice* m_device;
         int m_width;
         int m_height;
+        SamplerOptions m_samplerOptions;
     };
 }

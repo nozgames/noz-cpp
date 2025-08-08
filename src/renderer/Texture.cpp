@@ -623,7 +623,7 @@ namespace noz::renderer
 		}
 
 		// Validate version
-		if (header.version != 1)
+		if (header.version != 1 && header.version != 2)
 		{
 			std::cerr << "Unsupported texture file version " << header.version << " in: " << filepath << std::endl;
 			return false;
@@ -634,6 +634,45 @@ namespace noz::renderer
 		{
 			std::cerr << "Unsupported texture format " << header.format << " in: " << filepath << std::endl;
 			return false;
+		}
+
+		// Read sampler options if version 2
+		if (header.version == 2)
+		{
+			uint8_t minFilterValue, magFilterValue, clampUValue, clampVValue, clampWValue;
+			file.read(reinterpret_cast<char*>(&minFilterValue), sizeof(uint8_t));
+			file.read(reinterpret_cast<char*>(&magFilterValue), sizeof(uint8_t));
+			file.read(reinterpret_cast<char*>(&clampUValue), sizeof(uint8_t));
+			file.read(reinterpret_cast<char*>(&clampVValue), sizeof(uint8_t));
+			file.read(reinterpret_cast<char*>(&clampWValue), sizeof(uint8_t));
+			
+			// Convert values to enums
+			m_samplerOptions.minFilter = (minFilterValue == 0) ? TextureFilter::Nearest : TextureFilter::Linear;
+			m_samplerOptions.magFilter = (magFilterValue == 0) ? TextureFilter::Nearest : TextureFilter::Linear;
+			
+			switch(clampUValue)
+			{
+				case 0: m_samplerOptions.clampU = TextureClampMode::Repeat; break;
+				case 1: m_samplerOptions.clampU = TextureClampMode::ClampToEdge; break;
+				case 2: m_samplerOptions.clampU = TextureClampMode::MirroredRepeat; break;
+				default: m_samplerOptions.clampU = TextureClampMode::ClampToEdge; break;
+			}
+			
+			switch(clampVValue)
+			{
+				case 0: m_samplerOptions.clampV = TextureClampMode::Repeat; break;
+				case 1: m_samplerOptions.clampV = TextureClampMode::ClampToEdge; break;
+				case 2: m_samplerOptions.clampV = TextureClampMode::MirroredRepeat; break;
+				default: m_samplerOptions.clampV = TextureClampMode::ClampToEdge; break;
+			}
+			
+			switch(clampWValue)
+			{
+				case 0: m_samplerOptions.clampW = TextureClampMode::Repeat; break;
+				case 1: m_samplerOptions.clampW = TextureClampMode::ClampToEdge; break;
+				case 2: m_samplerOptions.clampW = TextureClampMode::MirroredRepeat; break;
+				default: m_samplerOptions.clampW = TextureClampMode::ClampToEdge; break;
+			}
 		}
 
 		// Calculate data size
