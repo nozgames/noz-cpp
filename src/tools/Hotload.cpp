@@ -13,15 +13,7 @@
 #include <iostream>
 
 namespace noz::tools
-{
-    // Define static member for extension mappings
-    const std::unordered_map<std::string, std::vector<TypeId>> Hotload::_extensionToTypes = {
-        { ".styles", { TypeId::of<noz::ui::StyleSheet>() } },
-        // Add more mappings as needed
-        // { ".texture", { TypeId::of<noz::renderer::Texture>() } },
-        // { ".mesh", { TypeId::of<noz::renderer::Mesh>() } },
-    };
-    
+{   
     Hotload::Hotload()
         : _enabled(true)
     {
@@ -48,6 +40,11 @@ namespace noz::tools
         if (_fileWatcher)
             return; // Already loaded
             
+        _extensionToTypes =
+        {
+            { ".styles", { TypeId::of<noz::ui::StyleSheet>() } },
+        };
+
         _fileWatcher = std::make_unique<noz::tools::FileWatcher>();
         
         // Watch the entire assets directory

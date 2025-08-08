@@ -105,6 +105,6 @@ namespace noz::tools
         std::unordered_map<TypeId, std::function<void(const std::string&, void*)>> _reloadCallbacks;
         
         // Track which extensions map to which asset types
-        static const std::unordered_map<std::string, std::vector<TypeId>> _extensionToTypes;
+        std::unordered_map<std::string, std::vector<TypeId>> _extensionToTypes;
     };
 }
