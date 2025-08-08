@@ -473,7 +473,7 @@ namespace noz::renderer
                     const auto& data = std::get<BeginOpaquePassWithTargetData>(command.data);
                     auto renderTarget = commandBuffer.getTexture(data.renderTargetHandle);
 					assert(renderTarget);
-                    beginOpaquePass(renderTarget, data.clear, data.color);
+                    beginOpaquePass(renderTarget, data.clear, data.color, data.useMSAA);
                     break;
                 }
                 
@@ -613,10 +613,10 @@ namespace noz::renderer
                 _msaaDepthTexture = nullptr;
             }
 
-            // Create MSAA color texture
+            // Create MSAA color texture - use 16-bit float to match render target format
             SDL_GPUTextureCreateInfo msaaColorInfo = {};
             msaaColorInfo.type = SDL_GPU_TEXTURETYPE_2D;
-            msaaColorInfo.format = SDL_GetGPUSwapchainTextureFormat(_gpu, _window);
+            msaaColorInfo.format = SDL_GPU_TEXTUREFORMAT_R16G16B16A16_FLOAT;
             msaaColorInfo.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET;
             msaaColorInfo.width = width;
             msaaColorInfo.height = height;
@@ -737,24 +737,48 @@ namespace noz::renderer
         return true;
     }
 
-    bool Renderer::beginOpaquePass(const std::shared_ptr<Texture>& renderTarget, bool clear, Color clearColor)
+    bool Renderer::beginOpaquePass(const std::shared_ptr<Texture>& renderTarget, bool clear, Color clearColor, bool useMSAA)
     {
         assert(!_currentRenderPass);
 		assert(renderTarget);
         
         // Set up render pass to render to the provided texture
         SDL_GPUColorTargetInfo colorTargetInfo = {};
-        colorTargetInfo.texture = renderTarget->handle();
-        colorTargetInfo.clear_color = clearColor; // Transparent background for icon
-        colorTargetInfo.load_op = clear ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD;
-        colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
-        
         SDL_GPUDepthStencilTargetInfo depthTargetInfo = {};
-        depthTargetInfo.texture = _depthTexture;
-        depthTargetInfo.clear_depth = 1.0f;
-        depthTargetInfo.clear_stencil = 0;
-        depthTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
-        depthTargetInfo.store_op = SDL_GPU_STOREOP_DONT_CARE; // Don't need to store depth for render target
+        
+        if (useMSAA && _msaaColorTexture && _msaaDepthTexture)
+        {
+            // Use MSAA textures for scene rendering with resolve to render target
+            _msaaActive = true;
+            colorTargetInfo.texture = _msaaColorTexture;
+            colorTargetInfo.clear_color = clearColor;
+            colorTargetInfo.load_op = clear ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD;
+            colorTargetInfo.store_op = SDL_GPU_STOREOP_RESOLVE; // Resolve MSAA to render target
+            colorTargetInfo.resolve_texture = renderTarget->handle(); // Resolve to provided render target
+            colorTargetInfo.resolve_mip_level = 0;
+            colorTargetInfo.resolve_layer = 0;
+
+            depthTargetInfo.texture = _msaaDepthTexture;
+            depthTargetInfo.clear_depth = 1.0f;
+            depthTargetInfo.clear_stencil = 0;
+            depthTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
+            depthTargetInfo.store_op = SDL_GPU_STOREOP_DONT_CARE; // Don't need to store MSAA depth
+        }
+        else
+        {
+            // Standard rendering without MSAA
+            _msaaActive = false;
+            colorTargetInfo.texture = renderTarget->handle();
+            colorTargetInfo.clear_color = clearColor;
+            colorTargetInfo.load_op = clear ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD;
+            colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
+            
+            depthTargetInfo.texture = _depthTexture;
+            depthTargetInfo.clear_depth = 1.0f;
+            depthTargetInfo.clear_stencil = 0;
+            depthTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
+            depthTargetInfo.store_op = SDL_GPU_STOREOP_DONT_CARE; // Don't need to store depth for render target
+        }
         
         _currentRenderPass = SDL_BeginGPURenderPass(_currentCommandBuffer, &colorTargetInfo, 1, &depthTargetInfo);
         if (!_currentRenderPass)

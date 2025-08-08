@@ -98,6 +98,7 @@ namespace noz::renderer
         bool clear;
         ResourceHandle renderTargetHandle;
 		Color color;
+        bool useMSAA;
     };
 
     struct BeginShadowPassData
@@ -221,7 +222,7 @@ namespace noz::renderer
         
         // Render pass commands
         void beginOpaquePass(bool clear = true, Color clearColor=Color::Black, bool useMSAA = false);
-        void beginOpaquePass(const std::shared_ptr<Texture>& renderTarget, bool clear = true, Color clearColor = Color::Black);
+        void beginOpaquePass(const std::shared_ptr<Texture>& renderTarget, bool clear = true, Color clearColor = Color::Black, bool useMSAA = false);
         void endOpaquePass();
         void beginShadowPass(const glm::mat4& lightViewMatrix, const glm::mat4& lightProjectionMatrix);
         void endShadowPass();

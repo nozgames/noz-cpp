@@ -14,6 +14,32 @@ namespace noz
 {
     namespace import
     {
+        // Convert sRGB color value to linear space
+        float sRGBToLinear(float srgb)
+        {
+            if (srgb <= 0.04045f)
+                return srgb / 12.92f;
+            else
+                return std::pow((srgb + 0.055f) / 1.055f, 2.4f);
+        }
+        
+        // Convert pixel data from sRGB to linear space
+        void convertPixelsToLinear(uint8_t* pixels, int width, int height, int channels)
+        {
+            int totalPixels = width * height;
+            for (int i = 0; i < totalPixels; ++i)
+            {
+                // Convert RGB channels (skip alpha)
+                for (int c = 0; c < std::min(3, channels); ++c)
+                {
+                    uint8_t srgbValue = pixels[i * channels + c];
+                    float srgbFloat = srgbValue / 255.0f;
+                    float linearFloat = sRGBToLinear(srgbFloat);
+                    pixels[i * channels + c] = static_cast<uint8_t>(std::round(linearFloat * 255.0f));
+                }
+                // Alpha channel (if present) stays unchanged
+            }
+        }
         TextureImporter::TextureImporter(const ImportConfig::TextureConfig& config)
             : _config(config)
         {
@@ -94,6 +120,16 @@ namespace noz
             
             // Parse mipmap option
             auto generateMipmaps = meta.getBool("Texture", "mipmaps", false);
+            
+            // Parse sRGB option
+            auto convertFromSRGB = meta.getBool("Texture", "srgb", false);
+            
+            // Convert from sRGB to linear space if requested
+            if (convertFromSRGB)
+            {
+                convertPixelsToLinear(static_cast<uint8_t*>(surface->pixels), surface->w, surface->h, 4);
+                std::cout << "Converted texture from sRGB to linear space: " << sourcePath << std::endl;
+            }
 
             // Generate mipmaps if requested
             std::vector<std::vector<uint8_t>> mipLevels;

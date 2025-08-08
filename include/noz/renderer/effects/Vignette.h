@@ -48,14 +48,14 @@ namespace noz::renderer::effects
         glm::vec3 getColor() const { return _color; }
     
     protected:
-        Vignette();
     
-        virtual void setupShader() override;
-        
+        Vignette();
+           
         virtual void render(CommandBuffer* commandBuffer) override;
     
     private:
-        void initialize();
+        
+        void initialize() override;
     
         float _intensity = 0.8f;
         float _radius = 0.8f;

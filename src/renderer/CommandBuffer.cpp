@@ -161,7 +161,7 @@ namespace noz::renderer
         _commands.emplace_back(CommandType::BeginOpaquePass, BeginOpaquePassData{clear, clearColor, useMSAA });
     }
 
-    void CommandBuffer::beginOpaquePass(const std::shared_ptr<Texture>& renderTarget, bool clear, Color clearColor)
+    void CommandBuffer::beginOpaquePass(const std::shared_ptr<Texture>& renderTarget, bool clear, Color clearColor, bool useMSAA)
     {
 		assert(renderTarget);
 
@@ -172,7 +172,8 @@ namespace noz::renderer
 			{
 				clear,
 				static_cast<ResourceHandle>(_textures.size()),
-				clearColor
+				clearColor,
+                useMSAA
 			});
     }
 

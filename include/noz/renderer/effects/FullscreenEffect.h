@@ -39,8 +39,7 @@ namespace noz::renderer::effects
 
         FullscreenEffect();
         
-        void initialize();
-        virtual void setupShader() = 0;
+        void initialize() override;
         void createFullscreenQuad();
     
         std::shared_ptr<Mesh> _mesh;

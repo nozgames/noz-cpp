@@ -78,7 +78,7 @@ namespace noz::renderer
 		void endFrameImmediate();
 		bool beginOpaquePass(bool clear, Color clearColor);
 		bool beginOpaquePass(bool clear, Color clearColor, bool useMSAA);
-		bool beginOpaquePass(const std::shared_ptr<Texture>& renderTarget, bool clear, Color clearColor);
+		bool beginOpaquePass(const std::shared_ptr<Texture>& renderTarget, bool clear, Color clearColor, bool useMSAA);
 		void endOpaquePass();
 
 		// Bind default texture and sampler for rendering

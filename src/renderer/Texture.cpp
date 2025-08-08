@@ -476,6 +476,45 @@ namespace noz::renderer
         return texture;
     }
 
+    Texture* Texture::createRenderTarget(SDL_GPUDevice* device, int width, int height, SDL_GPUTextureFormat format, const std::string& name)
+    {
+        if (!device || width <= 0 || height <= 0)
+        {
+            std::cerr << "Invalid parameters for createRenderTarget" << std::endl;
+            return nullptr;
+        }
+
+        auto* texture = new Texture(name);
+        texture->_device = device;
+        texture->_width = width;
+        texture->_height = height;
+
+        // Create render target texture with specified format
+        SDL_GPUTextureCreateInfo textureInfo = {};
+        textureInfo.type = SDL_GPU_TEXTURETYPE_2D;
+        textureInfo.format = format;
+        textureInfo.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER;
+        textureInfo.width = width;
+        textureInfo.height = height;
+        textureInfo.layer_count_or_depth = 1;
+        textureInfo.num_levels = 1;
+        textureInfo.sample_count = SDL_GPU_SAMPLECOUNT_1;
+        textureInfo.props = SDL_CreateProperties();
+        SDL_SetStringProperty(textureInfo.props, SDL_PROP_GPU_TEXTURE_CREATE_NAME_STRING, name.c_str());
+
+        texture->_texture = SDL_CreateGPUTexture(device, &textureInfo);
+        if (!texture->_texture)
+        {
+            std::cerr << "Failed to create render target texture: " << SDL_GetError() << std::endl;
+            SDL_DestroyProperties(textureInfo.props);
+            delete texture;
+            return nullptr;
+        }
+
+        SDL_DestroyProperties(textureInfo.props);
+        return texture;
+    }
+
     Texture* Texture::createFromImage(SDL_GPUDevice* device, const noz::Image& image, const std::string& name)
     {
         if (!device || image.empty())

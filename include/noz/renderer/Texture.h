@@ -38,6 +38,7 @@ namespace noz::renderer
 
         // Create render target texture
         static Texture* createRenderTarget(SDL_GPUDevice* device, int width, int height, const std::string& name = "RenderTarget");
+        static Texture* createRenderTarget(SDL_GPUDevice* device, int width, int height, SDL_GPUTextureFormat format, const std::string& name = "RenderTarget");
         
         // Create texture from Image
         static Texture* createFromImage(SDL_GPUDevice* device, const noz::Image& image, const std::string& name = "ImageTexture");

@@ -15,11 +15,6 @@ namespace noz::renderer::effects
     void Vignette::initialize() 
     {
         FullscreenEffect::initialize();
-        setupShader();
-    }
-
-    void Vignette::setupShader() 
-    {
         _shader = Asset::load<Shader>("shaders/vignette");
     }
 
