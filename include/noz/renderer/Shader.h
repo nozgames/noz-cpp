@@ -12,7 +12,6 @@ namespace noz::renderer
     public:
         Shader(const std::string& path);
         ~Shader();
-        static std::shared_ptr<Shader> load(const std::string& path);
         void destroy();
         SDL_GPUShader* getVertexShader() const { return _vertexShader; }
         SDL_GPUShader* getFragmentShader() const { return _fragmentShader; }
@@ -31,7 +30,10 @@ namespace noz::renderer
         
     private:
 
-		bool loadInternal(SDL_GPUDevice* gpu, const std::string& name);
+        friend class AssetDatabase;
+
+        static std::shared_ptr<Shader> load(const std::string& path);
+        bool loadInternal(SDL_GPUDevice* gpu, const std::string& name);
         bool loadFromProcessedFile(const std::string& path);
 
         SDL_GPUDevice* _gpu;

@@ -73,10 +73,6 @@ namespace noz::renderer
 
         void updateBounds();
                 
-        // Static methods
-        static std::shared_ptr<Mesh> load(const std::string& name);
-        static std::shared_ptr<Mesh> loadMeshFile(const std::string& filePath, const std::string& resourceName);
-        
     protected:
         
         // Protected members for inheritance
@@ -98,6 +94,13 @@ namespace noz::renderer
         // Bounds (lazy-loaded)
         mutable noz::bounds3 _bounds;
         mutable bool _boundsCalculated = false;
+
+    private:
+
+        friend class AssetDatabase;
+
+        static std::shared_ptr<Mesh> load(const std::string& name);
+
     };
 
     inline bool Mesh::hasIndices() const 

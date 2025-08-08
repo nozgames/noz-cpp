@@ -46,11 +46,13 @@ namespace noz::node
         void setActiveDirectionalLight(std::shared_ptr<DirectionalLight> light);
         std::shared_ptr<DirectionalLight> activeDirectionalLight() const { return _activeDirectionalLight; }
 
-    private:
+    protected:
 
         Scene();
 
-        void initialize() {}
+        virtual void initialize() {}
+
+    private:
 
 		bool _started;
 		std::string _name;

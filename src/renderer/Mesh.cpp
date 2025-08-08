@@ -29,29 +29,16 @@ namespace noz::renderer
 
     std::shared_ptr<Mesh> Mesh::load(const std::string& name)
     {
-        // Try to find the file with .mesh extension first (imported format)
-        std::string fullPath = AssetDatabase::getFullPath(name, "mesh");
-        
-        if (std::filesystem::exists(fullPath))
-        {
-            return loadMeshFile(fullPath, name);
-        }
-        
-        std::cerr << "Mesh file does not exist: " << name << " (tried .mesh)" << std::endl;
-        return nullptr;
-    }
-
-    std::shared_ptr<Mesh> Mesh::loadMeshFile(const std::string& filePath, const std::string& resourceName)
-    {
+        auto fullPath = AssetDatabase::getFullPath(name, "mesh");
         noz::StreamReader reader;
-        if (!reader.loadFromFile(filePath))
-        {
-            std::cerr << "Failed to open mesh file: " << filePath << std::endl;
+        if (!reader.loadFromFile(fullPath))
             return nullptr;
-        }
 
 		if (reader.readFileSignature("MESH") == false)
 			return nullptr;
+
+        auto gpu = reader.readBool();
+        auto cpu = reader.readBool();
 
         // Read model data header
         noz::renderer::ModelData modelData;
@@ -65,7 +52,7 @@ namespace noz::renderer
         reader.readUInt8(); // Skip padding[1]
         
         // Create mesh
-        auto mesh = std::make_shared<Mesh>(resourceName);
+        auto mesh = std::make_shared<Mesh>(name);
         
         // Read vertex data
         if (modelData.vertexCount > 0)
@@ -116,6 +103,10 @@ namespace noz::renderer
                 mesh->indices()[i] = reader.readUInt16();
             }
         }
+
+        // Optionally upload the mesh
+        if (gpu)
+            mesh->upload(!cpu);
 
         return mesh;
     }
@@ -330,14 +321,8 @@ namespace noz::renderer
     {
 		assert(renderPass);
 
-        // Auto-upload if not already uploaded
         if (!isUploaded())
-        {
-            // Cast away const to allow upload (lazy loading pattern)
-            auto mutableThis = const_cast<Mesh*>(this);
-            if (!mutableThis->upload())
-                return;
-        }
+            return;
 
         SDL_GPUBufferBinding vertexBinding = {};
         vertexBinding.buffer = _vertexBuffer;
@@ -385,5 +370,5 @@ namespace noz::renderer
 
         _boundsCalculated = true;
     }
+}
 
-} // namespace noz::renderer

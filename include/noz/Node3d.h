@@ -27,13 +27,16 @@ namespace noz::node
 		const vec3& localScale() const;
 
 		void setLocalPosition(const vec3& position);
+		void setLocalPosition(float x, float y, float z);
 		void setLocalEulerAngles(const vec3& rotation);
 		void setLocalRotation(const quat& rotation);
 		void setLocalScale(const vec3& scale);
 		void setLocalScale(float scale);
 		void setPosition(const vec3& position);
+		void setPosition(float x, float y, float z);
 		void setRotation(const quat& rotation);
 		void setEulerAngles(const vec3& angles);
+        void setEulerAngles(float x, float y, float z);
 
         void translate(const vec3& offset);
 
@@ -110,4 +113,19 @@ namespace noz::node
 
 	inline const quat& Node3d::localRotation() const { return _localRotation; }
 	inline const vec3& Node3d::localScale() const { return _localScale; }
+
+    inline void Node3d::setLocalPosition(float x, float y, float z)
+    {
+        setLocalPosition(vec3(x, y, z));
+    }
+
+    inline void Node3d::setPosition(float x, float y, float z)
+    {
+		setPosition(vec3(x, y, z));
+    }
+
+    inline void Node3d::setEulerAngles(float x, float y, float z)
+    {
+        setEulerAngles(vec3(x, y, z));
+    }
 } 

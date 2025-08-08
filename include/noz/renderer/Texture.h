@@ -26,8 +26,6 @@ namespace noz::renderer
 
         ~Texture();
 
-        static Texture* load(const std::string& name);
-
         static Texture* createWhite(SDL_GPUDevice* device);
 
         // Create texture from existing SDL_GPUTexture (for GPU text rendering)
@@ -79,6 +77,10 @@ namespace noz::renderer
         void clear();
 
     private:
+
+        friend class AssetDatabase;
+
+        static Texture* load(const std::string& name);
 
         SDL_GPUTexture* _texture;
         SDL_GPUDevice* _device;

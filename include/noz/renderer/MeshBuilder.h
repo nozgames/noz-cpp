@@ -12,7 +12,7 @@ namespace noz::renderer
     class MeshBuilder
     {
     public:
-        MeshBuilder() = default;
+        MeshBuilder(int initialSize=1024);
         ~MeshBuilder() = default;
 
         // Clear all data
@@ -31,6 +31,8 @@ namespace noz::renderer
         void addLine(const glm::vec3& start, const glm::vec3& end, float thickness = 0.01f, uint32_t boneIndex = 0);
         void addCylinder(const glm::vec3& start, const glm::vec3& end, float radius, const glm::vec2& colorUV, int segments = 8, uint32_t boneIndex = 0);
         void addCone(const glm::vec3& base, const glm::vec3& tip, float baseRadius, const glm::vec2& colorUV, int segments = 8, uint32_t boneIndex = 0);
+
+        void addMesh(const std::shared_ptr<Mesh>& mesh, const vec3& offset = VEC3_ZERO);
 
         // Get the built mesh data
         const std::vector<glm::vec3>& positions() const { return _positions; }

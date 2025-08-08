@@ -79,7 +79,7 @@ bool MeshImporter::processMesh(const std::string& sourcePath, const std::string&
 		flatten(meshData);
     
     // Save mesh data
-    return saveMeshData(outputPath, meshData);
+    return saveMeshData(outputPath, meshData, meta);
 }
 
 void MeshImporter::flatten(GLTFLoader::MeshData& meshData)
@@ -135,8 +135,11 @@ void MeshImporter::flatten(GLTFLoader::MeshData& meshData)
 	//	position.z = 0.0f;
 }
 
-bool MeshImporter::saveMeshData(const std::string& outputPath, const GLTFLoader::MeshData& meshData)
+bool MeshImporter::saveMeshData(const std::string& outputPath, const GLTFLoader::MeshData& meshData, const MetaFile& meta)
 {
+	auto gpu = meta.getBool("Mesh", "gpu", true);
+    auto cpu = meta.getBool("Mesh", "cpu", false);
+
     try
     {
         // Ensure output directory exists
@@ -148,7 +151,9 @@ bool MeshImporter::saveMeshData(const std::string& outputPath, const GLTFLoader:
         
         // Write file signature (no version - reader doesn't expect it)
         writer.writeFileSignature("MESH");
-        
+        writer.writeBool(gpu);
+        writer.writeBool(cpu);
+
         // Write ModelData header
         writer.writeUInt16(static_cast<uint16_t>(meshData.positions.size())); // vertexCount
         writer.writeUInt16(static_cast<uint16_t>(meshData.indices.size()));   // indexCount

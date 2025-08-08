@@ -20,6 +20,9 @@ namespace noz
 
     bool StreamReader::loadFromFile(const std::string& filePath)
     {
+        if (!std::filesystem::exists(filePath))
+            return false;
+
         std::ifstream file(filePath, std::ios::binary);
         if (!file.is_open())
             return false;

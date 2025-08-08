@@ -22,7 +22,7 @@ namespace noz
             
             bool processMesh(const std::string& sourcePath, const std::string& outputPath);
             
-            bool saveMeshData(const std::string& outputPath, const GLTFLoader::MeshData& meshData);
+            bool saveMeshData(const std::string& outputPath, const GLTFLoader::MeshData& meshData, const MetaFile& meta);
 
 			void flatten(GLTFLoader::MeshData& meshData);
         };

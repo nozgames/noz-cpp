@@ -10,6 +10,15 @@
 
 namespace noz::renderer
 {
+    MeshBuilder::MeshBuilder(int initialSize)
+    {
+        _positions.reserve(initialSize);
+        _normals.reserve(initialSize);
+        _uv0.reserve(initialSize);
+        _boneIndices.reserve(initialSize);
+        _indices.reserve(initialSize * 3);
+	}
+
     void MeshBuilder::clear()
     {
         _positions.clear();
@@ -501,4 +510,22 @@ namespace noz::renderer
         
         return mesh;
     }
+
+    void MeshBuilder::addMesh(const std::shared_ptr<Mesh>& mesh, const vec3& offset)
+    {
+        assert(mesh);
+
+		_positions.reserve(_positions.size() + mesh->positions().size());
+		for (const auto& pos : mesh->positions())
+			_positions.push_back(pos + offset);
+
+        _normals.insert(_normals.end(), mesh->normals().begin(), mesh->normals().end());
+        _uv0.insert(_uv0.end(), mesh->uv0().begin(), mesh->uv0().end());
+        _boneIndices.insert(_boneIndices.end(), mesh->boneIndices().begin(), mesh->boneIndices().end());
+
+		// Adjust indices to account for existing vertices
+		uint32_t baseIndex = static_cast<uint32_t>(_positions.size() - mesh->positions().size());
+		for (const auto& index : mesh->indices())
+			_indices.push_back(static_cast<uint16_t>(index + baseIndex));
+	}
 }
