@@ -37,7 +37,7 @@ namespace noz::renderer
         bool createFromSurface(SDL_Surface* surface);
 
         // Create texture from raw pixel data
-        bool createFromMemory(SDL_GPUDevice* device, const void* data, int width, int height, int channels);
+        bool createFromMemory(SDL_GPUDevice* device, const void* data, int width, int height, int channels, bool generateMipmaps = false);
 
         // Create render target texture
         static Texture* createRenderTarget(SDL_GPUDevice* device, int width, int height, const std::string& name = "RenderTarget");
@@ -50,30 +50,30 @@ namespace noz::renderer
         
         SDL_GPUTexture* handle() const
         {
-            return m_texture;
+            return _texture;
         }
 
         // Get texture dimensions
         int width() const
         {
-            return m_width;
+            return _width;
         }
 
         int height() const
         {
-            return m_height;
+            return _height;
         }
 
         // Get sampler options for this texture
         const SamplerOptions& samplerOptions() const
         {
-            return m_samplerOptions;
+            return _samplerOptions;
         }
 
         // Set sampler options for this texture
         void setSamplerOptions(const SamplerOptions& options)
         {
-            m_samplerOptions = options;
+            _samplerOptions = options;
         }
 
         // Clear the texture
@@ -81,10 +81,10 @@ namespace noz::renderer
 
     private:
 
-        SDL_GPUTexture* m_texture;
-        SDL_GPUDevice* m_device;
-        int m_width;
-        int m_height;
-        SamplerOptions m_samplerOptions;
+        SDL_GPUTexture* _texture;
+        SDL_GPUDevice* _device;
+        int _width;
+        int _height;
+        SamplerOptions _samplerOptions;
     };
 }

@@ -6,31 +6,32 @@
 
 */
 
-#include <fstream>
 #include <filesystem>
 #include <algorithm>
+#include <cmath>
+#include "noz/StreamReader.h"
 
 namespace noz::renderer
 {
     Texture::Texture(const std::string& path)
         : noz::IResource(path)
-        , m_texture(nullptr)
-        , m_device(nullptr)
-        , m_width(0)
-        , m_height(0)
+        , _texture(nullptr)
+        , _device(nullptr)
+        , _width(0)
+        , _height(0)
     {
     }
 
     Texture::~Texture()
     {
-		if (m_texture && m_device)
+		if (_texture && _device)
 		{
-			SDL_ReleaseGPUTexture(m_device, m_texture);
+			SDL_ReleaseGPUTexture(_device, _texture);
 		}
-		m_texture = nullptr;
-		m_device = nullptr;
-		m_width = 0;
-		m_height = 0;
+		_texture = nullptr;
+		_device = nullptr;
+		_width = 0;
+		_height = 0;
     }
 
     Texture* Texture::load(const std::string& name)
@@ -64,14 +65,14 @@ namespace noz::renderer
 
         // Create a new texture instance
         auto* texture = new Texture(name);
-        texture->m_device = device;
-        texture->m_texture = gpuTexture;
+        texture->_device = device;
+        texture->_texture = gpuTexture;
 
         // Note: We don't own the SDL_GPUTexture, so we don't destroy it
         // The texture dimensions would need to be retrieved from the GPU texture
         // For now, we'll use placeholder dimensions
-        texture->m_width = 256;  // Placeholder - would need to get from GPU texture
-        texture->m_height = 256; // Placeholder - would need to get from GPU texture
+        texture->_width = 256;  // Placeholder - would need to get from GPU texture
+        texture->_height = 256; // Placeholder - would need to get from GPU texture
 
         return texture;
     }
@@ -92,8 +93,8 @@ namespace noz::renderer
             return false;
         }
 
-        m_device = renderer->GetGPUDevice();
-        if (!m_device)
+        _device = renderer->GetGPUDevice();
+        if (!_device)
         {
             std::cerr << "GPU device not available for texture creation" << std::endl;
             return false;
@@ -117,7 +118,7 @@ namespace noz::renderer
         transferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
         transferInfo.size = surface->pitch * surface->h;
         transferInfo.props = 0;
-        SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(m_device, &transferInfo);
+        SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(_device, &transferInfo);
         if (!transferBuffer)
         {
             std::cerr << "Failed to create transfer buffer: " << SDL_GetError() << std::endl;
@@ -126,16 +127,16 @@ namespace noz::renderer
         }
 
         // Map transfer buffer and copy pixel data
-        void* mapped = SDL_MapGPUTransferBuffer(m_device, transferBuffer, false);
+        void* mapped = SDL_MapGPUTransferBuffer(_device, transferBuffer, false);
         if (!mapped)
         {
             std::cerr << "Failed to map transfer buffer: " << SDL_GetError() << std::endl;
             if (convertedSurface) SDL_DestroySurface(convertedSurface);
-            SDL_ReleaseGPUTransferBuffer(m_device, transferBuffer);
+            SDL_ReleaseGPUTransferBuffer(_device, transferBuffer);
             return false;
         }
         SDL_memcpy(mapped, surface->pixels, transferInfo.size);
-        SDL_UnmapGPUTransferBuffer(m_device, transferBuffer);
+        SDL_UnmapGPUTransferBuffer(_device, transferBuffer);
 
         // Create GPU texture
         SDL_GPUTextureCreateInfo textureInfo = {};
@@ -148,21 +149,21 @@ namespace noz::renderer
         textureInfo.num_levels = 1;
         textureInfo.sample_count = SDL_GPU_SAMPLECOUNT_1;
 
-        m_texture = SDL_CreateGPUTexture(m_device, &textureInfo);
-        if (!m_texture)
+        _texture = SDL_CreateGPUTexture(_device, &textureInfo);
+        if (!_texture)
         {
             std::cerr << "Failed to create GPU texture: " << SDL_GetError() << std::endl;
             if (convertedSurface) SDL_DestroySurface(convertedSurface);
-            SDL_ReleaseGPUTransferBuffer(m_device, transferBuffer);
+            SDL_ReleaseGPUTransferBuffer(_device, transferBuffer);
             return false;
         }
 
         // Acquire a command buffer for texture loading
-        SDL_GPUCommandBuffer* commandBuffer = SDL_AcquireGPUCommandBuffer(m_device);
+        SDL_GPUCommandBuffer* commandBuffer = SDL_AcquireGPUCommandBuffer(_device);
         if (!commandBuffer)
         {
             if (convertedSurface) SDL_DestroySurface(convertedSurface);
-            SDL_ReleaseGPUTransferBuffer(m_device, transferBuffer);
+            SDL_ReleaseGPUTransferBuffer(_device, transferBuffer);
             return false;
         }
 
@@ -170,7 +171,7 @@ namespace noz::renderer
         SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(commandBuffer);
         SDL_GPUTextureTransferInfo source = { transferBuffer, 0, static_cast<Uint32>(surface->w), static_cast<Uint32>(surface->h) };
         SDL_GPUTextureRegion destination = {};
-        destination.texture = m_texture;
+        destination.texture = _texture;
         destination.w = static_cast<Uint32>(surface->w);
         destination.h = static_cast<Uint32>(surface->h);
         destination.d = 1;
@@ -185,15 +186,15 @@ namespace noz::renderer
         }
         else
         {
-            SDL_WaitForGPUIdle(m_device);
+            SDL_WaitForGPUIdle(_device);
         }
 
         // Store dimensions
-        m_width = surface->w;
-        m_height = surface->h;
+        _width = surface->w;
+        _height = surface->h;
 
         // Clean up
-        SDL_ReleaseGPUTransferBuffer(m_device, transferBuffer);
+        SDL_ReleaseGPUTransferBuffer(_device, transferBuffer);
         if (convertedSurface) SDL_DestroySurface(convertedSurface);
 
         return true;
@@ -209,7 +210,7 @@ namespace noz::renderer
 
         // Create a new texture instance
         auto* texture = new Texture("white");
-        texture->m_device = device;
+        texture->_device = device;
 
         // Create a 16x16 white texture
         const int width = 16;
@@ -255,8 +256,8 @@ namespace noz::renderer
         textureInfo.num_levels = 1;
         textureInfo.sample_count = SDL_GPU_SAMPLECOUNT_1;
 
-        texture->m_texture = SDL_CreateGPUTexture(device, &textureInfo);
-        if (!texture->m_texture)
+        texture->_texture = SDL_CreateGPUTexture(device, &textureInfo);
+        if (!texture->_texture)
         {
             std::cerr << "Failed to create white GPU texture: " << SDL_GetError() << std::endl;
             SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
@@ -275,7 +276,7 @@ namespace noz::renderer
         SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(commandBuffer);
         SDL_GPUTextureTransferInfo source = { transferBuffer, 0, static_cast<Uint32>(width), static_cast<Uint32>(height) };
         SDL_GPUTextureRegion destination = {};
-        destination.texture = texture->m_texture;
+        destination.texture = texture->_texture;
         destination.w = static_cast<Uint32>(width);
         destination.h = static_cast<Uint32>(height);
         destination.d = 1;
@@ -288,8 +289,8 @@ namespace noz::renderer
         SDL_WaitForGPUIdle(device);
 
         // Store dimensions
-        texture->m_width = width;
-        texture->m_height = height;
+        texture->_width = width;
+        texture->_height = height;
 
         // Clean up
         SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
@@ -297,7 +298,7 @@ namespace noz::renderer
         return texture;
     }
 
-    bool Texture::createFromMemory(SDL_GPUDevice* device, const void* data, int width, int height, int channels)
+    bool Texture::createFromMemory(SDL_GPUDevice* device, const void* data, int width, int height, int channels, bool generateMipmaps)
     {
         if (!device || !data || width <= 0 || height <= 0 || channels <= 0)
         {
@@ -305,7 +306,7 @@ namespace noz::renderer
             return false;
         }
 
-        m_device = device;
+        _device = device;
 
         // Handle different channel formats
         std::vector<uint8_t> rgbaData;
@@ -365,6 +366,15 @@ namespace noz::renderer
         SDL_memcpy(mapped, data, size);
         SDL_UnmapGPUTransferBuffer(device, transferBuffer);
 
+        // Calculate number of mipmap levels if requested
+        uint32_t numLevels = 1;
+        if (generateMipmaps)
+        {
+            // Calculate maximum number of mipmap levels
+            int maxDim = std::max(width, height);
+            numLevels = 1 + static_cast<uint32_t>(std::floor(std::log2(maxDim)));
+        }
+
         // Create GPU texture with appropriate format based on channel count
         SDL_GPUTextureCreateInfo textureInfo = {};
         textureInfo.type = SDL_GPU_TEXTURETYPE_2D;
@@ -373,14 +383,14 @@ namespace noz::renderer
         textureInfo.width = width;
         textureInfo.height = height;
         textureInfo.layer_count_or_depth = 1;
-        textureInfo.num_levels = 1;
+        textureInfo.num_levels = numLevels;
         textureInfo.sample_count = SDL_GPU_SAMPLECOUNT_1;
         textureInfo.props = SDL_CreateProperties();
         SDL_SetStringProperty(textureInfo.props, SDL_PROP_GPU_TEXTURE_CREATE_NAME_STRING, "FontAtlas");
 
-        m_texture = SDL_CreateGPUTexture(device, &textureInfo);
+        _texture = SDL_CreateGPUTexture(device, &textureInfo);
         SDL_DestroyProperties(textureInfo.props);
-        if (!m_texture)
+        if (!_texture)
         {
             std::cerr << "Failed to create GPU texture: " << SDL_GetError() << std::endl;
             SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
@@ -399,7 +409,7 @@ namespace noz::renderer
         SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(commandBuffer);
         SDL_GPUTextureTransferInfo source = { transferBuffer, 0, static_cast<Uint32>(width), static_cast<Uint32>(height) };
         SDL_GPUTextureRegion destination = {};
-        destination.texture = m_texture;
+        destination.texture = _texture;
         destination.w = static_cast<Uint32>(width);
         destination.h = static_cast<Uint32>(height);
         destination.d = 1;
@@ -418,8 +428,8 @@ namespace noz::renderer
         }
 
         // Store dimensions
-        m_width = width;
-        m_height = height;
+        _width = width;
+        _height = height;
 
         // Clean up
         SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
@@ -436,9 +446,9 @@ namespace noz::renderer
         }
 
         auto* texture = new Texture(name);
-        texture->m_device = device;
-        texture->m_width = width;
-        texture->m_height = height;
+        texture->_device = device;
+        texture->_width = width;
+        texture->_height = height;
 
         // Create render target texture
         SDL_GPUTextureCreateInfo textureInfo = {};
@@ -453,10 +463,10 @@ namespace noz::renderer
         textureInfo.props = SDL_CreateProperties();
         SDL_SetStringProperty(textureInfo.props, SDL_PROP_GPU_TEXTURE_CREATE_NAME_STRING, name.c_str());
 
-        texture->m_texture = SDL_CreateGPUTexture(device, &textureInfo);
+        texture->_texture = SDL_CreateGPUTexture(device, &textureInfo);
         SDL_DestroyProperties(textureInfo.props);
         
-        if (!texture->m_texture)
+        if (!texture->_texture)
         {
             std::cerr << "Failed to create render target texture: " << SDL_GetError() << std::endl;
             delete texture;
@@ -475,9 +485,9 @@ namespace noz::renderer
         }
 
         auto* texture = new Texture(name);
-        texture->m_device = device;
-        texture->m_width = image.width();
-        texture->m_height = image.height();
+        texture->_device = device;
+        texture->_width = image.width();
+        texture->_height = image.height();
 
         // Convert Image format to appropriate GPU format
         SDL_GPUTextureFormat format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM; // Default to RGBA
@@ -535,18 +545,18 @@ namespace noz::renderer
         textureInfo.type = SDL_GPU_TEXTURETYPE_2D;
         textureInfo.format = format;
         textureInfo.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
-        textureInfo.width = texture->m_width;
-        textureInfo.height = texture->m_height;
+        textureInfo.width = texture->_width;
+        textureInfo.height = texture->_height;
         textureInfo.layer_count_or_depth = 1;
         textureInfo.num_levels = 1;
         textureInfo.sample_count = SDL_GPU_SAMPLECOUNT_1;
         textureInfo.props = SDL_CreateProperties();
         SDL_SetStringProperty(textureInfo.props, SDL_PROP_GPU_TEXTURE_CREATE_NAME_STRING, name.c_str());
 
-        texture->m_texture = SDL_CreateGPUTexture(device, &textureInfo);
+        texture->_texture = SDL_CreateGPUTexture(device, &textureInfo);
         SDL_DestroyProperties(textureInfo.props);
         
-        if (!texture->m_texture)
+        if (!texture->_texture)
         {
             std::cerr << "Failed to create GPU texture from image: " << SDL_GetError() << std::endl;
             SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
@@ -565,11 +575,11 @@ namespace noz::renderer
         }
 
         SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmd);
-        SDL_GPUTextureTransferInfo source = {transferBuffer, 0, static_cast<Uint32>(texture->m_width), static_cast<Uint32>(texture->m_height)};
+        SDL_GPUTextureTransferInfo source = {transferBuffer, 0, static_cast<Uint32>(texture->_width), static_cast<Uint32>(texture->_height)};
         SDL_GPUTextureRegion destination = {};
-        destination.texture = texture->m_texture;
-        destination.w = static_cast<Uint32>(texture->m_width);
-        destination.h = static_cast<Uint32>(texture->m_height);
+        destination.texture = texture->_texture;
+        destination.w = static_cast<Uint32>(texture->_width);
+        destination.h = static_cast<Uint32>(texture->_height);
         destination.d = 1;
 
         SDL_UploadToGPUTexture(copyPass, &source, &destination, false);
@@ -587,111 +597,119 @@ namespace noz::renderer
     
     bool Texture::loadFromFile(SDL_GPUDevice* device, const std::string& filepath)
     {
-        m_device = device;
+        _device = device;
         
-		std::ifstream file(filepath, std::ios::binary);
-		if (!file.is_open())
-		{
-			std::cerr << "Failed to open texture file: " << filepath << std::endl;
-			return false;
-		}
+        noz::StreamReader reader;
+        if (!reader.loadFromFile(filepath))
+        {
+            std::cerr << "Failed to open texture file: " << filepath << std::endl;
+            return false;
+        }
 
-		// Read header
-		struct TextureHeader
-		{
-			uint32_t magic;    // "NZXT" (0x5A4F4E54)
-			uint32_t version;  // Version number
-			uint32_t format;   // 0=RGB, 1=RGBA
-			uint32_t width;    // Texture width
-			uint32_t height;   // Texture height
-		};
+        // Validate file signature
+        if (!reader.readFileSignature("NZXT"))
+        {
+            std::cerr << "Invalid texture file signature in: " << filepath << std::endl;
+            return false;
+        }
 
-		TextureHeader header;
-		file.read(reinterpret_cast<char*>(&header), sizeof(TextureHeader));
+        // Read version
+        uint32_t version = reader.readUInt32();
+        if (version != 1)
+        {
+            std::cerr << "Unsupported texture version " << version << " in: " << filepath << std::endl;
+            return false;
+        }
 
-		if (!file.good())
-		{
-			std::cerr << "Failed to read texture header from: " << filepath << std::endl;
-			return false;
-		}
+        // Read texture data
+        uint32_t format = reader.readUInt32();
+        uint32_t width = reader.readUInt32();
+        uint32_t height = reader.readUInt32();
+        
+        // Validate format
+        if (format > 1)
+        {
+            std::cerr << "Unsupported texture format " << format << " in: " << filepath << std::endl;
+            return false;
+        }
 
-		// Validate magic number
-		if (header.magic != 0x5A4F4E54)
-		{
-			std::cerr << "Invalid texture file magic number in: " << filepath << std::endl;
-			return false;
-		}
+        // Read sampler options
+        uint8_t minFilterValue = reader.readUInt8();
+        uint8_t magFilterValue = reader.readUInt8();
+        uint8_t clampUValue = reader.readUInt8();
+        uint8_t clampVValue = reader.readUInt8();
+        uint8_t clampWValue = reader.readUInt8();
+        bool hasMipmaps = reader.readBool();
+        
+        // Convert values to enums
+        _samplerOptions.minFilter = (minFilterValue == 0) ? TextureFilter::Nearest : TextureFilter::Linear;
+        _samplerOptions.magFilter = (magFilterValue == 0) ? TextureFilter::Nearest : TextureFilter::Linear;
+        
+        switch(clampUValue)
+        {
+            case 0: _samplerOptions.clampU = TextureClampMode::Repeat; break;
+            case 1: _samplerOptions.clampU = TextureClampMode::ClampToEdge; break;
+            case 2: _samplerOptions.clampU = TextureClampMode::MirroredRepeat; break;
+            default: _samplerOptions.clampU = TextureClampMode::ClampToEdge; break;
+        }
+        
+        switch(clampVValue)
+        {
+            case 0: _samplerOptions.clampV = TextureClampMode::Repeat; break;
+            case 1: _samplerOptions.clampV = TextureClampMode::ClampToEdge; break;
+            case 2: _samplerOptions.clampV = TextureClampMode::MirroredRepeat; break;
+            default: _samplerOptions.clampV = TextureClampMode::ClampToEdge; break;
+        }
+        
+        switch(clampWValue)
+        {
+            case 0: _samplerOptions.clampW = TextureClampMode::Repeat; break;
+            case 1: _samplerOptions.clampW = TextureClampMode::ClampToEdge; break;
+            case 2: _samplerOptions.clampW = TextureClampMode::MirroredRepeat; break;
+            default: _samplerOptions.clampW = TextureClampMode::ClampToEdge; break;
+        }
 
-		// Validate version
-		if (header.version != 1 && header.version != 2)
-		{
-			std::cerr << "Unsupported texture file version " << header.version << " in: " << filepath << std::endl;
-			return false;
-		}
+        // Handle texture with multiple mip levels
+        if (hasMipmaps)
+        {
+            // Read number of mip levels
+            uint32_t numMipLevels = reader.readUInt32();
+            
+            // For now, just read the base level and let GPU handle mipmaps
+            // TODO: Upload all mip levels to GPU
+            for (uint32_t level = 0; level < numMipLevels; ++level)
+            {
+                uint32_t mipWidth = reader.readUInt32();
+                uint32_t mipHeight = reader.readUInt32();
+                uint32_t mipDataSize = reader.readUInt32();
+                
+                if (level == 0)
+                {
+                    // Read base level
+                    std::vector<uint8_t> pixelData = reader.readBytes(mipDataSize);
+                    
+                    // Create texture with mipmaps
+                    int channels = (format == 1) ? 4 : 3;
+                    return createFromMemory(device, pixelData.data(), width, height, channels, true);
+                }
+                else
+                {
+                    // Skip other mip levels for now
+                    reader.readBytes(mipDataSize);
+                }
+            }
+        }
+        else
+        {
+            // Calculate data size
+            int channels = (format == 1) ? 4 : 3; // RGBA or RGB
+            size_t dataSize = width * height * channels;
 
-		// Validate format
-		if (header.format > 1)
-		{
-			std::cerr << "Unsupported texture format " << header.format << " in: " << filepath << std::endl;
-			return false;
-		}
-
-		// Read sampler options if version 2
-		if (header.version == 2)
-		{
-			uint8_t minFilterValue, magFilterValue, clampUValue, clampVValue, clampWValue;
-			file.read(reinterpret_cast<char*>(&minFilterValue), sizeof(uint8_t));
-			file.read(reinterpret_cast<char*>(&magFilterValue), sizeof(uint8_t));
-			file.read(reinterpret_cast<char*>(&clampUValue), sizeof(uint8_t));
-			file.read(reinterpret_cast<char*>(&clampVValue), sizeof(uint8_t));
-			file.read(reinterpret_cast<char*>(&clampWValue), sizeof(uint8_t));
-			
-			// Convert values to enums
-			m_samplerOptions.minFilter = (minFilterValue == 0) ? TextureFilter::Nearest : TextureFilter::Linear;
-			m_samplerOptions.magFilter = (magFilterValue == 0) ? TextureFilter::Nearest : TextureFilter::Linear;
-			
-			switch(clampUValue)
-			{
-				case 0: m_samplerOptions.clampU = TextureClampMode::Repeat; break;
-				case 1: m_samplerOptions.clampU = TextureClampMode::ClampToEdge; break;
-				case 2: m_samplerOptions.clampU = TextureClampMode::MirroredRepeat; break;
-				default: m_samplerOptions.clampU = TextureClampMode::ClampToEdge; break;
-			}
-			
-			switch(clampVValue)
-			{
-				case 0: m_samplerOptions.clampV = TextureClampMode::Repeat; break;
-				case 1: m_samplerOptions.clampV = TextureClampMode::ClampToEdge; break;
-				case 2: m_samplerOptions.clampV = TextureClampMode::MirroredRepeat; break;
-				default: m_samplerOptions.clampV = TextureClampMode::ClampToEdge; break;
-			}
-			
-			switch(clampWValue)
-			{
-				case 0: m_samplerOptions.clampW = TextureClampMode::Repeat; break;
-				case 1: m_samplerOptions.clampW = TextureClampMode::ClampToEdge; break;
-				case 2: m_samplerOptions.clampW = TextureClampMode::MirroredRepeat; break;
-				default: m_samplerOptions.clampW = TextureClampMode::ClampToEdge; break;
-			}
-		}
-
-		// Calculate data size
-		int channels = (header.format == 1) ? 4 : 3; // RGBA or RGB
-		size_t dataSize = header.width * header.height * channels;
-
-		// Read pixel data
-		std::vector<uint8_t> pixelData(dataSize);
-		file.read(reinterpret_cast<char*>(pixelData.data()), dataSize);
-
-		if (!file.good())
-		{
-			std::cerr << "Failed to read pixel data from: " << filepath << std::endl;
-			return false;
-		}
-
-		file.close();
-
-		// Create texture from memory
-		return createFromMemory(device, pixelData.data(), header.width, header.height, channels);
+            // Read pixel data
+            std::vector<uint8_t> pixelData = reader.readBytes(dataSize);
+            return createFromMemory(device, pixelData.data(), width, height, channels, false);
+        }
+        
+        return false; // Should not reach here
     }
 }

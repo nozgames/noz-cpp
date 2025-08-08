@@ -31,7 +31,7 @@ namespace noz::renderer
 
         SDL_GPUSamplerCreateInfo samplerInfo = {};
         samplerInfo.min_filter = toSDLFilter(options.minFilter);
-        samplerInfo.mag_filter = toSDLFilter(options.magFilter);
+        samplerInfo.mag_filter = toSDLFilter(options.magFilter); 
         samplerInfo.mipmap_mode = (options.minFilter == TextureFilter::Nearest) ? 
             SDL_GPU_SAMPLERMIPMAPMODE_NEAREST : SDL_GPU_SAMPLERMIPMAPMODE_LINEAR;
         samplerInfo.address_mode_u = toSDLAddressMode(options.clampU);

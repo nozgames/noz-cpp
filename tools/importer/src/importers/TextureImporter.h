@@ -33,7 +33,18 @@ namespace noz
                 const std::string& magFilter = "linear",
                 const std::string& clampU = "clamp_to_edge",
                 const std::string& clampV = "clamp_to_edge",
-                const std::string& clampW = "clamp_to_edge");
+                const std::string& clampW = "clamp_to_edge",
+                bool generateMipmaps = false);
+                
+            bool writeTextureWithMips(
+                const std::string& outputPath,
+                const std::vector<std::vector<uint8_t>>& mipLevels,
+                const std::vector<std::pair<int, int>>& mipDimensions,
+                const std::string& minFilter,
+                const std::string& magFilter,
+                const std::string& clampU,
+                const std::string& clampV,
+                const std::string& clampW);
         };
     }
 } 

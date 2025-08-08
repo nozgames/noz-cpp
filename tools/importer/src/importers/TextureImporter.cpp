@@ -8,7 +8,7 @@
 
 #include "TextureImporter.h"
 #include <SDL3_image/SDL_image.h>
-#include <fstream>
+#include "noz/StreamWriter.h"
 
 namespace noz
 {
@@ -91,16 +91,118 @@ namespace noz
             auto clampU = meta.getString("Texture", "clamp_u", "clamp_to_edge");
             auto clampV = meta.getString("Texture", "clamp_v", "clamp_to_edge");
             auto clampW = meta.getString("Texture", "clamp_w", "clamp_to_edge");
+            
+            // Parse mipmap option
+            auto generateMipmaps = meta.getBool("Texture", "mipmaps", false);
 
-            // Write texture data - always use 4 channels (RGBA)
-            int channels = 4;
-            size_t dataSize = surface->w * surface->h * channels;
-            bool success = writeTexture(outputPath, surface->pixels, dataSize, 
-                                       surface->w, surface->h, channels,
-                                       minFilter, magFilter, clampU, clampV, clampW);
-
-            SDL_DestroySurface(surface);
-            return success;
+            // Generate mipmaps if requested
+            std::vector<std::vector<uint8_t>> mipLevels;
+            std::vector<std::pair<int, int>> mipDimensions;
+            
+            if (generateMipmaps)
+            {
+                // Add base level
+                int channels = 4;
+                std::vector<uint8_t> baseData;
+                baseData.reserve(surface->w * surface->h * channels);
+                
+                // Copy base level pixel data row by row to ensure proper RGBA format
+                uint8_t* srcPixels = (uint8_t*)surface->pixels;
+                for (int y = 0; y < surface->h; ++y)
+                {
+                    uint8_t* rowStart = srcPixels + (y * surface->pitch);
+                    for (int x = 0; x < surface->w; ++x)
+                    {
+                        uint8_t* pixel = rowStart + (x * 4); // 4 bytes per RGBA pixel
+                        baseData.push_back(pixel[0]); // R
+                        baseData.push_back(pixel[1]); // G
+                        baseData.push_back(pixel[2]); // B
+                        baseData.push_back(pixel[3]); // A
+                    }
+                }
+                
+                mipLevels.push_back(std::move(baseData));
+                mipDimensions.push_back({surface->w, surface->h});
+                
+                // Generate additional mip levels
+                SDL_Surface* currentSurface = surface;
+                int currentWidth = surface->w;
+                int currentHeight = surface->h;
+                
+                while (currentWidth > 1 || currentHeight > 1)
+                {
+                    int nextWidth = std::max(1, currentWidth / 2);
+                    int nextHeight = std::max(1, currentHeight / 2);
+                    
+                    // Create scaled surface for this mip level
+                    SDL_Surface* scaledSurface = SDL_CreateSurface(nextWidth, nextHeight, SDL_PIXELFORMAT_RGBA32);
+                    if (!scaledSurface)
+                    {
+                        std::cerr << "Failed to create mip level surface" << std::endl;
+                        break;
+                    }
+                    
+                    // Scale from the previous level (not always the original)
+                    SDL_BlitSurfaceScaled(currentSurface, nullptr, scaledSurface, nullptr, SDL_SCALEMODE_LINEAR);
+                    
+                    // Store this mip level - use the surface's actual pitch
+                    size_t mipSize = scaledSurface->pitch * nextHeight;
+                    std::vector<uint8_t> mipData;
+                    mipData.reserve(nextWidth * nextHeight * channels);
+                    
+                    // Copy pixel data row by row to ensure proper RGBA format
+                    uint8_t* srcPixels = (uint8_t*)scaledSurface->pixels;
+                    for (int y = 0; y < nextHeight; ++y)
+                    {
+                        uint8_t* rowStart = srcPixels + (y * scaledSurface->pitch);
+                        for (int x = 0; x < nextWidth; ++x)
+                        {
+                            uint8_t* pixel = rowStart + (x * 4); // 4 bytes per RGBA pixel
+                            mipData.push_back(pixel[0]); // R
+                            mipData.push_back(pixel[1]); // G
+                            mipData.push_back(pixel[2]); // B
+                            mipData.push_back(pixel[3]); // A
+                        }
+                    }
+                    
+                    mipLevels.push_back(std::move(mipData));
+                    mipDimensions.push_back({nextWidth, nextHeight});
+                    
+                    // Clean up the previous level if it's not the original
+                    if (currentSurface != surface)
+                    {
+                        SDL_DestroySurface(currentSurface);
+                    }
+                    
+                    currentSurface = scaledSurface;
+                    currentWidth = nextWidth;
+                    currentHeight = nextHeight;
+                }
+                
+                // Clean up the last mip surface if it's not the original
+                if (currentSurface != surface)
+                {
+                    SDL_DestroySurface(currentSurface);
+                }
+                
+                // Write texture with all mip levels
+                bool success = writeTextureWithMips(outputPath, mipLevels, mipDimensions,
+                                                   minFilter, magFilter, clampU, clampV, clampW);
+                SDL_DestroySurface(surface);
+                return success;
+            }
+            else
+            {
+                // Write texture data without mipmaps - always use 4 channels (RGBA)
+                int channels = 4;
+                size_t dataSize = surface->w * surface->h * channels;
+                bool success = writeTexture(outputPath, surface->pixels, dataSize, 
+                                           surface->w, surface->h, channels,
+                                           minFilter, magFilter, clampU, clampV, clampW,
+                                           false);
+                SDL_DestroySurface(surface);
+                return success;
+            }
         }
         
         bool TextureImporter::writeTexture(
@@ -114,18 +216,20 @@ namespace noz
             const std::string& magFilter,
             const std::string& clampU,
             const std::string& clampV,
-            const std::string& clampW)
+            const std::string& clampW,
+            bool generateMipmaps)
         {
-            std::ofstream file(outputPath, std::ios::binary);
-            if (!file.is_open())
-            {
-                std::cerr << "Failed to create output file: " << outputPath << std::endl;
-                return false;
-            }
+            noz::StreamWriter writer;
 
+            // Write file signature
+            writer.writeFileSignature("NZXT");
+            
+            // Write version
+            writer.writeUInt32(1); // Version 1
+            
             // Convert string options to enum values
-            uint8_t minFilterValue = (minFilter == "nearest") ? 0 : 1; // 0=Nearest, 1=Linear
-            uint8_t magFilterValue = (magFilter == "nearest") ? 0 : 1; // 0=Nearest, 1=Linear
+            uint8_t minFilterValue = (minFilter == "nearest" || minFilter == "point") ? 0 : 1; // 0=Nearest, 1=Linear
+            uint8_t magFilterValue = (magFilter == "nearest" || magFilter == "point") ? 0 : 1; // 0=Nearest, 1=Linear
             
             uint8_t clampUValue = 1; // Default to ClampToEdge
             if (clampU == "repeat") clampUValue = 0;
@@ -145,38 +249,127 @@ namespace noz
             else if (clampW == "mirrored_repeat") clampWValue = 2;
             else if (clampW == "clamp_to_border") clampWValue = 3;
 
-            // Write header
-            // Format: [magic:4][version:4][format:4][width:4][height:4][samplerOptions:5][data...]
-            const uint32_t magic = 0x5A4F4E54; // "NZXT" in hex (NoZ TeXture)
-            const uint32_t version = 2; // Version 2 includes sampler options
-            const uint32_t format = (channels == 4) ? 1 : 0; // 0=RGB, 1=RGBA
+            // Write texture data
+            uint32_t format = (channels == 4) ? 1 : 0; // 0=RGB, 1=RGBA
+            writer.writeUInt32(format);
+            writer.writeUInt32(width);
+            writer.writeUInt32(height);
             
-            file.write(reinterpret_cast<const char*>(&magic), sizeof(uint32_t));
-            file.write(reinterpret_cast<const char*>(&version), sizeof(uint32_t));
-            file.write(reinterpret_cast<const char*>(&format), sizeof(uint32_t));
-            file.write(reinterpret_cast<const char*>(&width), sizeof(uint32_t));
-            file.write(reinterpret_cast<const char*>(&height), sizeof(uint32_t));
-            
-            // Write sampler options (5 bytes)
-            file.write(reinterpret_cast<const char*>(&minFilterValue), sizeof(uint8_t));
-            file.write(reinterpret_cast<const char*>(&magFilterValue), sizeof(uint8_t));
-            file.write(reinterpret_cast<const char*>(&clampUValue), sizeof(uint8_t));
-            file.write(reinterpret_cast<const char*>(&clampVValue), sizeof(uint8_t));
-            file.write(reinterpret_cast<const char*>(&clampWValue), sizeof(uint8_t));
+            // Write sampler options
+            writer.writeUInt8(minFilterValue);
+            writer.writeUInt8(magFilterValue);
+            writer.writeUInt8(clampUValue);
+            writer.writeUInt8(clampVValue);
+            writer.writeUInt8(clampWValue);
+            writer.writeBool(generateMipmaps);
             
             // Write pixel data
-            file.write(reinterpret_cast<const char*>(data), size);
+            writer.write(data, size);
             
-            if (!file.good())
+            // Write to file
+            if (!writer.writeToFile(outputPath))
             {
                 std::cerr << "Failed to write texture data to: " << outputPath << std::endl;
                 return false;
             }
             
-            file.close();
             std::cout << "Wrote texture: " << outputPath 
                       << " (" << width << "x" << height << ", " 
                       << (format == 1 ? "RGBA" : "RGB") << ")" 
+                      << " [Filter: " << minFilter << "/" << magFilter 
+                      << ", Clamp: " << clampU << "/" << clampV << "/" << clampW << "]" << std::endl;
+            return true;
+        }
+        
+        bool TextureImporter::writeTextureWithMips(
+            const std::string& outputPath,
+            const std::vector<std::vector<uint8_t>>& mipLevels,
+            const std::vector<std::pair<int, int>>& mipDimensions,
+            const std::string& minFilter,
+            const std::string& magFilter,
+            const std::string& clampU,
+            const std::string& clampV,
+            const std::string& clampW)
+        {
+            if (mipLevels.empty() || mipDimensions.empty())
+            {
+                std::cerr << "No mip levels to write" << std::endl;
+                return false;
+            }
+            
+            noz::StreamWriter writer;
+            
+            // Write file signature
+            writer.writeFileSignature("NZXT");
+            
+            // Write version
+            writer.writeUInt32(1); // Version 1
+
+            // Convert string options to enum values
+            uint8_t minFilterValue = (minFilter == "nearest" || minFilter == "point") ? 0 : 1;
+            uint8_t magFilterValue = (magFilter == "nearest" || magFilter == "point") ? 0 : 1;
+            
+            uint8_t clampUValue = 1;
+            if (clampU == "repeat") clampUValue = 0;
+            else if (clampU == "clamp_to_edge") clampUValue = 1;
+            else if (clampU == "mirrored_repeat") clampUValue = 2;
+            else if (clampU == "clamp_to_border") clampUValue = 3;
+            
+            uint8_t clampVValue = 1;
+            if (clampV == "repeat") clampVValue = 0;
+            else if (clampV == "clamp_to_edge") clampVValue = 1;
+            else if (clampV == "mirrored_repeat") clampVValue = 2;
+            else if (clampV == "clamp_to_border") clampVValue = 3;
+            
+            uint8_t clampWValue = 1;
+            if (clampW == "repeat") clampWValue = 0;
+            else if (clampW == "clamp_to_edge") clampWValue = 1;
+            else if (clampW == "mirrored_repeat") clampWValue = 2;
+            else if (clampW == "clamp_to_border") clampWValue = 3;
+
+            // Write texture data
+            uint32_t format = 1; // RGBA
+            uint32_t width = mipDimensions[0].first;
+            uint32_t height = mipDimensions[0].second;
+            uint32_t numMipLevels = static_cast<uint32_t>(mipLevels.size());
+            
+            writer.writeUInt32(format);
+            writer.writeUInt32(width);
+            writer.writeUInt32(height);
+            
+            // Write sampler options
+            writer.writeUInt8(minFilterValue);
+            writer.writeUInt8(magFilterValue);
+            writer.writeUInt8(clampUValue);
+            writer.writeUInt8(clampVValue);
+            writer.writeUInt8(clampWValue);
+            writer.writeBool(true); // Has mipmaps
+            
+            // Write number of mip levels
+            writer.writeUInt32(numMipLevels);
+            
+            // Write each mip level
+            for (size_t i = 0; i < mipLevels.size(); ++i)
+            {
+                // Write mip level dimensions
+                writer.writeUInt32(mipDimensions[i].first);
+                writer.writeUInt32(mipDimensions[i].second);
+                
+                // Write mip level data
+                writer.writeUInt32(static_cast<uint32_t>(mipLevels[i].size()));
+                writer.write(mipLevels[i].data(), mipLevels[i].size());
+            }
+            
+            // Write to file
+            if (!writer.writeToFile(outputPath))
+            {
+                std::cerr << "Failed to write texture data to: " << outputPath << std::endl;
+                return false;
+            }
+            
+            std::cout << "Wrote texture with mipmaps: " << outputPath 
+                      << " (" << width << "x" << height << ", RGBA, " 
+                      << numMipLevels << " mip levels)" 
                       << " [Filter: " << minFilter << "/" << magFilter 
                       << ", Clamp: " << clampU << "/" << clampV << "/" << clampW << "]" << std::endl;
             return true;
