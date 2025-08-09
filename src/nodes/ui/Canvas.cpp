@@ -145,7 +145,13 @@ namespace noz::ui
         else
             _styleDirtyRoot = findCommonAncestor(_styleDirtyRoot, element);
 
-		markLayoutDirty(_styleDirtyRoot);
+        if (!_styleDirtyRoot)
+            _styleDirtyRoot = this;
+        
+        if (_styleDirtyRoot == this)
+			markLayoutDirty(this);
+        else
+            _styleDirtyRoot->markLayoutDirty();
     }
     
     vec2 Canvas::measureContent(const vec2& availableSize)
