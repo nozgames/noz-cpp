@@ -84,8 +84,6 @@ namespace noz::node
 
     private:
 		
-		void initialize() {} // for create pattern
-
 		vec3 _localPosition;
         vec3 _localScale;
         quat _localRotation;
