@@ -151,7 +151,7 @@ namespace noz::node
         }
 
         // Get screen dimensions from Application
-        auto* app = noz::Application::instance();
+        auto app = noz::Application::instance();
         float screenWidth = static_cast<float>(app->screenWidth());
         float screenHeight = static_cast<float>(app->screenHeight());
 
@@ -186,7 +186,7 @@ namespace noz::node
         clipPos /= clipPos.w; // Perspective divide
 
         // Convert NDC to screen coordinates
-        auto* app = noz::Application::instance();
+        auto app = noz::Application::instance();
         float screenWidth = static_cast<float>(app->screenWidth());
         float screenHeight = static_cast<float>(app->screenHeight());
 

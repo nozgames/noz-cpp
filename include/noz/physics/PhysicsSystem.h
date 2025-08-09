@@ -23,9 +23,6 @@ namespace noz::physics
     public:
         PhysicsSystem();
         ~PhysicsSystem();
-
-        // Get singleton instance
-        static PhysicsSystem* instance() { return ISingleton<PhysicsSystem>::instance(); }
         
         // Initialize the physics system
         bool initialize(const glm::vec2& gravity = glm::vec2(0.0f, -9.81f));

@@ -80,9 +80,11 @@ namespace icongen
 	}
 }
 
-class IconGenerator
+class IconGenerator : public Object
 {
 public:
+	NOZ_DECLARE_TYPEID(IconGenerator, Object);
+	
 	IconGenerator()
 		: _rotationX(0.0f)
 		, _rotationY(0.0f)
@@ -102,6 +104,12 @@ public:
 	{
 	}
 	
+	// Event handler for screen size changes
+	void handle(const ScreenSizeChanged& event, std::shared_ptr<Object> sender)
+	{
+		onScreenSizeChanged(event.width, event.height);
+	}
+	
 	void requestCapture() { _captureRequested = true; }
 	bool shouldExit() const { return _shouldExit; }
 
@@ -111,8 +119,6 @@ public:
 		bool autoCapture = false)
 	{
 		Application::load(_outputSize, _outputSize, "Icon Generator - " + meshPath);
-
-		createRenderTarget();
 		
 		// Camera
 		auto halfSize = icongen::config::cameraDistance * 0.5f;
@@ -137,41 +143,16 @@ public:
 		_borderScene = Object::create<Scene>();
 		_borderScene->setRoot(Object::create<Node>());
 		_borderEffect = Object::create<BorderEffect>();
-		_borderEffect->setInputTexture(_iconRenderTarget);
 		_borderScene->root()->add(_borderEffect);
-		
-		noz::renderer::effects::BorderParams params;
-		params.width = icongen::config::borderWidth;
-		params.color = noz::Color(icongen::config::borderColor.x, icongen::config::borderColor.y,
-			icongen::config::borderColor.z, icongen::config::borderAlpha);
-		params.textureWidth = static_cast<float>(_outputSize);
-		params.textureHeight = static_cast<float>(_outputSize);
-		_borderEffect->setBorderParams(params);
-
-		// Create intermediate render target for border effect
-		_borderRenderTarget = std::shared_ptr<Texture>(
-			Texture::createRenderTarget(
-				Renderer::instance()->GetGPUDevice(),
-				_outputSize,
-				_outputSize,
-				SDL_GPU_TEXTUREFORMAT_R16G16B16A16_FLOAT,
-				"BorderRenderTarget"));
-		
-		// Create final render target for gamma correction output (8-bit for readTexturePixels compatibility)
-		_finalRenderTarget = std::shared_ptr<Texture>(
-			Texture::createRenderTarget(
-				Renderer::instance()->GetGPUDevice(),
-				_outputSize,
-				_outputSize,
-				SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
-				"FinalRenderTarget"));
 		
 		// Create gamma correction scene
 		_gammaScene = Object::create<Scene>();
 		_gammaScene->setRoot(Object::create<Node>());
 		_gammaCorrectionEffect = Object::create<GammaCorrection>();
-		_gammaCorrectionEffect->setInputTexture(_borderRenderTarget);
 		_gammaScene->root()->add(_gammaCorrectionEffect);
+		
+		// Create all render targets and wire up effects
+		createRenderTargets();
 
 		// Load mesh
 		_meshPath = meshPath;
@@ -471,7 +452,7 @@ public:
 			std::filesystem::create_directories(outputDir);
 
 		// Read pixels from the appropriate texture (bordered if available and visible)
-		auto* renderer = Renderer::instance();
+		auto renderer = Renderer::instance();
 		if (!renderer || !_iconRenderTarget)
 		{
 			std::cerr << "Renderer or icon render target not available" << std::endl;
@@ -526,14 +507,15 @@ public:
 
 private:
 
-	void createRenderTarget()
+	void createRenderTargets()
 	{
-		auto* renderer = Renderer::instance();
+		auto renderer = Renderer::instance();
 		assert(renderer);
 
 		auto* gpu = renderer->GetGPUDevice();
 		assert(gpu);
 		
+		// Create/recreate all render targets at current size
 		_iconRenderTarget = std::shared_ptr<Texture>(
 			Texture::createRenderTarget(
 				gpu,
@@ -541,6 +523,79 @@ private:
 				_outputSize,
 				SDL_GPU_TEXTUREFORMAT_R16G16B16A16_FLOAT,
 				"IconRenderTarget"));
+				
+		_borderRenderTarget = std::shared_ptr<Texture>(
+			Texture::createRenderTarget(
+				gpu,
+				_outputSize,
+				_outputSize,
+				SDL_GPU_TEXTUREFORMAT_R16G16B16A16_FLOAT,
+				"BorderRenderTarget"));
+				
+		_finalRenderTarget = std::shared_ptr<Texture>(
+			Texture::createRenderTarget(
+				gpu,
+				_outputSize,
+				_outputSize,
+				SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
+				"FinalRenderTarget"));
+				
+		// Update textures in effects
+		if (_borderEffect)
+		{
+			_borderEffect->setInputTexture(_iconRenderTarget);
+			
+			// Update border params with new texture size
+			noz::renderer::effects::BorderParams params;
+			params.width = icongen::config::borderWidth;
+			params.color = noz::Color(icongen::config::borderColor.x, icongen::config::borderColor.y,
+				icongen::config::borderColor.z, icongen::config::borderAlpha);
+			params.textureWidth = static_cast<float>(_outputSize);
+			params.textureHeight = static_cast<float>(_outputSize);
+			_borderEffect->setBorderParams(params);
+		}
+		
+		if (_gammaCorrectionEffect)
+		{
+			_gammaCorrectionEffect->setInputTexture(_borderRenderTarget);
+		}
+		
+		if (_iconImage)
+		{
+			_iconImage->setTexture(_finalRenderTarget);
+			
+			// Update UI image size
+			noz::ui::Style iconStyle = _iconImage->style();
+			iconStyle.width = noz::ui::StyleLength::fixed(static_cast<float>(_outputSize));
+			iconStyle.height = noz::ui::StyleLength::fixed(static_cast<float>(_outputSize));
+			_iconImage->setStyle(iconStyle);
+		}
+		
+		// Update canvas reference size
+		if (_canvas)
+		{
+			_canvas->setReferenceSize(vec2(static_cast<float>(_outputSize), static_cast<float>(_outputSize)));
+		}
+		
+		// Mark for re-render
+		_sceneNeedsRender = true;
+		_borderNeedsUpdate = true;
+	}
+	
+	void onScreenSizeChanged(int width, int height)
+	{
+		// Update output size to match smaller dimension to maintain square aspect
+		_outputSize = std::min(width, height);
+		
+		// Recreate all render targets with new size
+		createRenderTargets();
+		
+		// Update camera aspect ratio
+		if (_camera)
+		{
+			auto halfSize = icongen::config::cameraDistance * 0.5f;
+			_camera->setOrthographic(-halfSize, halfSize, -halfSize, halfSize, 0.1f, 100.0f);
+		}
 	}
 
 	void createUI()
@@ -657,39 +712,49 @@ private:
 				std::cout << "Creating new meta file" << std::endl;
 			}
 			
-			// Update icongen-specific fields
-			metaData["icongen.meshPath"] = _meshPath;
-			metaData["icongen.iconSize"] = std::to_string(_outputSize);
-			metaData["icongen.distance"] = std::to_string(_distance);
-			
-			// Save translation
-			metaData["icongen.translationX"] = std::to_string(_translation.x);
-			metaData["icongen.translationY"] = std::to_string(_translation.y);
-			metaData["icongen.translationZ"] = std::to_string(_translation.z);
-			
-			// Save current rotation as quaternion components
-			if (_meshObject)
-			{
-				quat rot = _meshObject->localRotation();
-				metaData["icongen.rotationW"] = std::to_string(rot.w);
-				metaData["icongen.rotationX"] = std::to_string(rot.x);
-				metaData["icongen.rotationY"] = std::to_string(rot.y);
-				metaData["icongen.rotationZ"] = std::to_string(rot.z);
-			}
-			
-			// Write meta file in the correct format
+			// Write meta file in INI format
 			std::ofstream file(metaPath);
 			if (file.is_open())
 			{
-				file << "# Icon generation settings\n";
+				file << "# Icon generation settings\n\n";
 				
-				// Write all entries, sorted by key for consistency
-				std::vector<std::pair<std::string, std::string>> sortedData(metaData.begin(), metaData.end());
-				std::sort(sortedData.begin(), sortedData.end());
+				// Write Icongen section
+				file << "[Icongen]\n";
+				file << "meshPath: " << _meshPath << "\n";
+				file << "iconSize: " << _outputSize << "\n";
+				file << "distance: " << _distance << "\n";
+				file << "translationX: " << _translation.x << "\n";
+				file << "translationY: " << _translation.y << "\n";
+				file << "translationZ: " << _translation.z << "\n";
 				
-				for (const auto& [key, value] : sortedData)
+				// Save current rotation as quaternion components
+				if (_meshObject)
 				{
-					file << key << ": " << value << "\n";
+					quat rot = _meshObject->localRotation();
+					file << "rotationW: " << rot.w << "\n";
+					file << "rotationX: " << rot.x << "\n";
+					file << "rotationY: " << rot.y << "\n";
+					file << "rotationZ: " << rot.z << "\n";
+				}
+				
+				// Write any other existing sections from the original meta file
+				if (std::filesystem::exists(metaPath))
+				{
+					auto existingMeta = noz::MetaFile::parse(metaPath);
+					auto allGroups = existingMeta.groups();
+					for (const auto& group : allGroups)
+					{
+						if (group != "Icongen" && !group.empty()) // Skip Icongen section as we already wrote it
+						{
+							file << "\n[" << group << "]\n";
+							auto groupKeys = existingMeta.keys(group);
+							for (const auto& key : groupKeys)
+							{
+								std::string value = existingMeta.getString(group, key, "");
+								file << key << ": " << value << "\n";
+							}
+						}
+					}
 				}
 				
 				return true;
@@ -716,23 +781,23 @@ private:
 			auto meta = noz::MetaFile::parse(metaPath);
 			
 			// Load icongen settings
-			_distance = meta.getFloat("Icon", "distance", _distance);
+			_distance = meta.getFloat("Icongen", "distance", _distance);
 			
 			// Load translation
-			_translation.x = meta.getFloat("Icon", "translationX", 0.0f);
-			_translation.y = meta.getFloat("Icon", "translationY", 0.0f);
-			_translation.z = meta.getFloat("Icon", "translationZ", 0.0f);
+			_translation.x = meta.getFloat("Icongen", "translationX", 0.0f);
+			_translation.y = meta.getFloat("Icongen", "translationY", 0.0f);
+			_translation.z = meta.getFloat("Icongen", "translationZ", 0.0f);
 					
 			// Load rotation if all components are present
-			if (meta.hasKey("Icon", "rotationW") && 
-			    meta.hasKey("Icon", "rotationX") && 
-			    meta.hasKey("Icon", "rotationY") && 
-			    meta.hasKey("Icon", "rotationZ"))
+			if (meta.hasKey("Icongen", "rotationW") && 
+			    meta.hasKey("Icongen", "rotationX") && 
+			    meta.hasKey("Icongen", "rotationY") && 
+			    meta.hasKey("Icongen", "rotationZ"))
 			{
-				float w = meta.getFloat("Icon", "rotationW");
-				float x = meta.getFloat("Icon", "rotationX");
-				float y = meta.getFloat("Icon", "rotationY");
-				float z = meta.getFloat("Icon", "rotationZ");
+				float w = meta.getFloat("Icongen", "rotationW");
+				float x = meta.getFloat("Icongen", "rotationX");
+				float y = meta.getFloat("Icongen", "rotationY");
+				float z = meta.getFloat("Icongen", "rotationZ");
 				_loadedRotation = quat(w, x, y, z);
 				_hasLoadedRotation = true;
 			}
@@ -771,6 +836,9 @@ std::string generateOutputPath(const std::string& meshPath, const std::string& o
 	// Combine with output directory
 	return (std::filesystem::path(outputDir) / outputPath).string();
 }
+
+NOZ_DEFINE_TYPEID(IconGenerator)
+
 
 int main(int argc, char* argv[])
 {

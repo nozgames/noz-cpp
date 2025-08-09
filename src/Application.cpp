@@ -29,7 +29,7 @@ namespace noz
         // OnUnload will be called by ISingleton::Unload()
     }
 
-	Application* Application::load(int width, int height, const std::string& title)
+	std::shared_ptr<Application> Application::load(int width, int height, const std::string& title)
 	{
 		ISingleton<Application>::load();
 		instance()->loadInternal(width, height, title);

@@ -129,7 +129,7 @@ namespace noz::renderer
     bool Mesh::upload(bool clearCpuMemory)
     {
         // Get GPU device from renderer singleton
-        auto* renderer = Renderer::instance();
+        auto renderer = Renderer::instance();
         if (!renderer || !renderer->IsInitialized())
         {
             std::cerr << "Renderer not initialized, cannot upload mesh" << std::endl;

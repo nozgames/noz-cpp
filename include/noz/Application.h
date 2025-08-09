@@ -47,7 +47,7 @@ namespace noz
 		noz::renderer::CommandBuffer* beginRender();
 		void endRender();
 
-		static Application* load(int width, int height, const std::string& title);
+		static std::shared_ptr<Application> load(int width, int height, const std::string& title);
 		static void unload();
 
     private:

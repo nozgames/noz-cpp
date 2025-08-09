@@ -51,7 +51,7 @@ namespace noz::renderer
         std::hash<const void*> hasher;
         std::hash<bool> boolHasher;
         
-        auto* renderer = Renderer::instance();
+        auto renderer = Renderer::instance();
         bool useMSAA = renderer ? renderer->isMSAAActive() : false;
         
         // Combine shader pointer and MSAA flag
@@ -85,7 +85,7 @@ namespace noz::renderer
         vertexInputState.num_vertex_attributes = static_cast<Uint32>(attributes.size());
 
         // Get the window from the renderer to determine the color target format
-        auto* renderer = Renderer::instance();
+        auto renderer = Renderer::instance();
         if (!renderer || !renderer->IsInitialized())
         {
             std::cerr << "[PipelineFactory] Renderer not available or not initialized" << std::endl;

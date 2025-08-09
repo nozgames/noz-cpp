@@ -23,7 +23,7 @@ namespace noz::renderer
 
     std::shared_ptr<Shader> Shader::load(const std::string& name)
     {
-        auto* renderer = Renderer::instance();
+        auto renderer = Renderer::instance();
         if (!renderer)
             return nullptr;
 

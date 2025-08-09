@@ -20,11 +20,7 @@ namespace noz
         // Unregister from the AssetDatabase singleton if we were registered
         if (_index != SIZE_MAX)
         {
-            auto* resources = AssetDatabase::instance();
-            if (resources)
-            {
-                resources->unregisterAsset(this);
-            }
+            AssetDatabase::instance()->unregisterAsset(this);
         }
     }
 
@@ -33,10 +29,6 @@ namespace noz
         if (_index != SIZE_MAX)
             return;
 
-        auto* resources = AssetDatabase::instance();
-        if (resources)
-        {
-            resources->registerAsset(this);
-        }
+        AssetDatabase::instance()->registerAsset(this);
     }
 }

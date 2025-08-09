@@ -43,7 +43,7 @@ namespace noz::tools
         template<typename T>
         void registerType(ReloadCallback<T> callback)
         {
-            TypeId typeId = TypeId::of<T>();
+            auto typeId = noz::TypeId::of<T>();
             _reloadCallbacks[typeId] = [callback](const std::string& name, void* asset) 
             {
                 callback(name, *static_cast<std::shared_ptr<T>*>(asset));
@@ -84,7 +84,7 @@ namespace noz::tools
                 asset->reload();
                 
                 // Call the registered callback
-                TypeId typeId = TypeId::of<T>();
+                auto typeId = noz::TypeId::of<T>();
                 auto it = _reloadCallbacks.find(typeId);
                 if (it != _reloadCallbacks.end())
                 {
@@ -102,9 +102,9 @@ namespace noz::tools
         
         bool _enabled = true;
         std::unique_ptr<noz::tools::FileWatcher> _fileWatcher;
-        std::unordered_map<TypeId, std::function<void(const std::string&, void*)>> _reloadCallbacks;
+        std::unordered_map<noz::TypeId, std::function<void(const std::string&, void*)>> _reloadCallbacks;
         
         // Track which extensions map to which asset types
-        std::unordered_map<std::string, std::vector<TypeId>> _extensionToTypes;
+        std::unordered_map<std::string, std::vector<noz::TypeId>> _extensionToTypes;
     };
 }

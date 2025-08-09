@@ -36,7 +36,7 @@ namespace noz::renderer
 
     Texture* Texture::load(const std::string& name)
     {
-        auto* renderer = Renderer::instance();
+        auto renderer = Renderer::instance();
         auto* gpu = renderer->GetGPUDevice();
         
         // Check if this should be a white texture
@@ -86,7 +86,7 @@ namespace noz::renderer
         }
 
         // Get GPU device from renderer
-        auto* renderer = Renderer::instance();
+        auto renderer = Renderer::instance();
         if (!renderer)
         {
             std::cerr << "Renderer not available for texture creation" << std::endl;

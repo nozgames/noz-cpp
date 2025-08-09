@@ -134,7 +134,7 @@ namespace noz::renderer
 
 	void PixelationEffect::createRenderTarget()
 	{
-		auto* renderer = Renderer::instance();
+		auto renderer = Renderer::instance();
 		if (!renderer || !renderer->GetGPUDevice())
 		{
 			std::cerr << "Renderer not initialized for pixelation render target" << std::endl;
