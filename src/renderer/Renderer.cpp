@@ -285,10 +285,7 @@ namespace noz::renderer
     CommandBuffer* Renderer::beginFrame()
     {
         if (!beginFrameImmediate())
-        {
-            std::cout << "beginFrameImmediate failed" << std::endl;
             return nullptr;
-        }
         
         // Reset command buffer for new frame
         _commandBuffer->reset();
@@ -537,10 +534,7 @@ namespace noz::renderer
         Uint32 width, height;
         SDL_WaitAndAcquireGPUSwapchainTexture(cmd, _window, &_backBuffer, &width, &height);
         if (!_backBuffer)
-        {
-            SDL_CancelGPUCommandBuffer(cmd);
             return false;
-        }
         
         // Ensure we have valid dimensions
         if (width == 0 || height == 0)

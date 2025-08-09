@@ -154,6 +154,15 @@ bool MeshImporter::saveMeshData(const std::string& outputPath, const GLTFLoader:
         writer.writeBool(gpu);
         writer.writeBool(cpu);
 
+        // Calculate and write bounds
+        noz::bounds3 bounds = noz::bounds3::from_vertices(meshData.positions);
+        writer.writeFloat(bounds.min().x);
+        writer.writeFloat(bounds.min().y);
+        writer.writeFloat(bounds.min().z);
+        writer.writeFloat(bounds.max().x);
+        writer.writeFloat(bounds.max().y);
+        writer.writeFloat(bounds.max().z);
+
         // Write ModelData header
         writer.writeUInt16(static_cast<uint16_t>(meshData.positions.size())); // vertexCount
         writer.writeUInt16(static_cast<uint16_t>(meshData.indices.size()));   // indexCount

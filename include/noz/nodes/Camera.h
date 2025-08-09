@@ -20,7 +20,6 @@ namespace noz::node
 
 		NOZ_DECLARE_TYPEID(Camera, Node3d)
 
-        Camera();
         virtual ~Camera() = default;
 
         // Static main camera access
@@ -58,6 +57,9 @@ namespace noz::node
         void onDetachedFromParent() override;
 
     private:
+
+        Camera();
+
         // Matrix update methods
         void updateMatrices() const;
         

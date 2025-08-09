@@ -232,7 +232,6 @@ namespace noz::ui
     {
 		_flags &= ~ElementFlags::LayoutDirty;
 
-		auto parentElement = parent()->as<Element>();
         float hmin = 0.0f;
         float hmax = 0.0f;
         float hsize = 0.0f;

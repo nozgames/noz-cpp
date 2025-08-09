@@ -33,7 +33,6 @@ namespace noz::ui
 
 		NOZ_DECLARE_TYPEID(Canvas, Element);
 
-        Canvas();
         virtual ~Canvas() = default;
 
         // Canvas properties
@@ -65,6 +64,11 @@ namespace noz::ui
         void start() override;
 
     protected:
+
+        Canvas();
+
+		void initialize() override;
+
         void onAttachedToParent() override;
         void onDetachedFromParent() override;
 		void onAttachToScene() override;
@@ -78,7 +82,7 @@ namespace noz::ui
         vec2 _referenceSize = vec2(1920.0f, 1080.0f);
         vec2 _canvasSize;
         std::shared_ptr<noz::ui::StyleSheet> _styleSheet;        
-        std::unique_ptr<noz::node::Camera> _camera;
+        std::shared_ptr<noz::node::Camera> _camera;
         
         // Layout invalidation tracking
         Element* _layoutDirtyRoot = nullptr;

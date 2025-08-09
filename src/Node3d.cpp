@@ -131,7 +131,7 @@ namespace noz::node
 
     vec3 Node3d::forward() const
     {
-        return -localToWorld()[2];
+        return localToWorld()[2];
     }
 
     vec3 Node3d::right() const

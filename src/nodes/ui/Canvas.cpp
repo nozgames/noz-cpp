@@ -17,12 +17,16 @@ namespace noz::ui
         , _sortOrder(0)
         , _referenceSize(1920.0f, 1080.0f)
         , _canvasSize(1920.0f, 1080.0f)
-        , _camera(std::make_unique<noz::node::Camera>())
         , _layoutDirtyRoot(nullptr)
         , _styleDirtyRoot(nullptr)
     {
         // Canvas starts clean, will be marked dirty when attached to scene
         _flags = ElementFlags::None;
+    }
+
+    void Canvas::initialize()
+    {
+		_camera = Object::create<noz::node::Camera>();
     }
 
     void Canvas::start()

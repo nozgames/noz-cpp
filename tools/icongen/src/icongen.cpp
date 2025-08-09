@@ -8,23 +8,64 @@
 
 #include "icongen_pch.h"
 #include "border.h"
+#include <noz/renderer/effects/GammaCorrection.h>
+#include <noz/MetaFile.h>
 
 using namespace noz;
 using namespace noz::renderer;
 using namespace noz::node;
+using noz::renderer::effects::GammaCorrection;
 
 namespace icongen
 {
 	namespace config
 	{
-		// Default model orientation (camera now faces down -Z)
-		constexpr float DefaultModelPitch = -30.0f; // degrees, tilt model backward
-		constexpr float DefaultModelYaw = 45.0f;    // degrees, rotate model to show 3/4 view
-		constexpr float DefaultDistanceMultiplier = 2.5f; // multiplier for auto-calculated distance
+		vec3 cameraEulerAngles = vec3(-90.0f, 0.0f, 0.0f);
+		float cameraDistance = 2.5f;
+		float lightPitch = 10.0f;
+		float lightYaw = 10.0f;
+		std::string shader = "shaders/default";
+		std::string texture = "textures/palette";
 		
-		// Default light settings - behind camera, slightly to the right
-		constexpr float DefaultLightPitch = 10.0f;  // degrees
-		constexpr float DefaultLightYaw = 10.0f;    // degrees (negative = to the right)
+		// Output defaults
+		int defaultSize = 256;
+		std::string outputDir = "assets/textures/icons";
+		
+		void loadFromFile(const std::string& configPath)
+		{
+			if (!std::filesystem::exists(configPath))
+			{
+				std::cout << "No config file found at: " << configPath << " - using defaults" << std::endl;
+				return;
+			}
+			
+			try
+			{
+				auto meta = MetaFile::parse(configPath);
+				
+				// Camera settings
+				cameraDistance = meta.getFloat("Camera", "distance", cameraDistance);
+				cameraEulerAngles = meta.getVec3("Camera", "eulerAngles", cameraEulerAngles);
+				
+				// Model defaults
+				shader = meta.getString("Mesh", "shader", icongen::config::shader);
+				texture = meta.getString("Mesh", "texture", icongen::config::texture);
+
+				// Light settings
+				lightPitch = meta.getFloat("Light", "pitch", lightPitch);
+				lightYaw = meta.getFloat("Light", "yaw", lightYaw);
+				
+				// Output settings
+				defaultSize = meta.getInt("Output", "size", defaultSize);
+				outputDir = meta.getString("Output", "path", outputDir);
+				
+				std::cout << "Loaded config from: " << configPath << std::endl;
+			}
+			catch (const std::exception& e)
+			{
+				std::cerr << "Failed to load config file: " << e.what() << std::endl;
+			}
+		}
 	}
 }
 
@@ -36,11 +77,11 @@ public:
 		, _rotationY(0.0f)
 		, _rotationZ(0.0f)
 		, _distance(5.0f)
-		, _lightPitch(icongen::config::DefaultLightPitch)
-		, _lightYaw(icongen::config::DefaultLightYaw)
+		, _lightPitch(icongen::config::lightPitch)
+		, _lightYaw(icongen::config::lightYaw)
 		, _translation(0.0f, 0.0f, 0.0f)
 		, _captureRequested(false)
-		, _outputSize(256)
+		, _outputSize(icongen::config::defaultSize)
 		, _autoCapture(false)
 		, _shouldExit(false)
 		, _showBorderedPreview(true)
@@ -52,58 +93,52 @@ public:
 	{
 	}
 	
-	void setOutputSize(int size) { _outputSize = size; }
-	void setRotation(float rotation) { _rotationY = rotation; }
-	void setDistanceMultiplier(float multiplier) { _distance *= multiplier; }
 	void requestCapture() { _captureRequested = true; }
 	bool shouldExit() const { return _shouldExit; }
 
-	bool initialize(const std::string& meshPath, const std::string& outputPath, bool autoCapture = false)
+	bool initialize(
+		const std::string& meshPath,
+		const std::string& outputPath,
+		bool autoCapture = false)
 	{
-		// Set up window with a reasonable initial size (can be resized)
-		Application::instance()->setScreenSize(_outputSize, _outputSize);
-		Application::instance()->setScreenTitle("Icon Generator - " + meshPath);
-		Application::instance()->setVSync(true);
+		Application::load(_outputSize, _outputSize, "Icon Generator - " + meshPath);
 
-		// Create render target texture (always render to square icon size)
 		createRenderTarget();
-
-		// Create scene
-		_scene = Object::create<Scene>();
 		
-		// Create camera with fixed square aspect ratio for icon
-		auto cameraNode = std::make_shared<Camera>();
-		cameraNode->setName("Camera");
-		cameraNode->setPerspective(60.0f, 1.0f, 0.1f, 100.0f); // Square aspect for icon
-		// Camera faces down -Z axis from the start
-		cameraNode->setPosition(vec3(0, 0, _distance));
-		cameraNode->lookAt(vec3(0, 0, 0), vec3(0, 1, 0));
-		_camera = cameraNode;
+		// Camera
+		auto halfSize = icongen::config::cameraDistance * 0.5f;
+		_camera = Object::create<Camera>();
+		_camera->setOrthographic(-halfSize, halfSize, -halfSize, halfSize, 0.1f, 100.0f);
+		_camera->setLocalEulerAngles(icongen::config::cameraEulerAngles);
+		_camera->setLocalPosition(_camera->forward() * -icongen::config::cameraDistance);
 		
-		// Add camera to scene
-		if (!_scene->root())
-		{
-			auto root = Object::create<Node3d>();
-			root->setName("Root");
-			_scene->setRoot(root);
-		}
-		_scene->root()->add(cameraNode);
-
-		// Create directional light
+		// Light
 		_light = std::make_shared<DirectionalLight>();
 		_light->setName("Light");
-		_light->setEulerAngles(vec3(_lightPitch, _lightYaw, 0));
-		_scene->root()->add(_light);
+		_light->setEulerAngles(vec3(icongen::config::lightPitch, icongen::config::lightYaw, 0));
+
+		// Scene
+		auto root = Object::create<Node3d>();
+		root->add(_camera);
+		root->add(_light);
+		_scene = Object::create<Scene>();
+		_scene->setRoot(root);
+
+		// Create gamma correction effect (for linear->sRGB conversion)
+		_gamma = Object::create<Scene>();
+		_gamma->setRoot(Object::create<Node>());
+		_gammaCorrectionEffect = Object::create<GammaCorrection>();
+		_gammaCorrectionEffect->setInputTexture(_iconRenderTarget);
+		_gamma->root()->add(_gammaCorrectionEffect);
 
 		// Load mesh
 		_meshPath = meshPath;
 		_outputPath = outputPath;
 		_autoCapture = autoCapture;
+
 		if (!loadMesh())
-		{
 			return false;
-		}
-		
+	
 		// Create UI system
 		createUI();
 
@@ -138,14 +173,6 @@ public:
 		// Try to load existing meta file for this icon
 		bool hasMetaFile = loadMetaFile();
 
-		// Remove old mesh object if exists
-		if (_meshObject)
-		{
-			_meshObject->destroy();
-			_meshObject.reset();
-			_meshRenderer.reset();
-		}
-
 		// Create mesh object node (Node3d for transform)
 		_meshObject = Object::create<Node3d>();
 		_scene->root()->add(_meshObject);
@@ -153,8 +180,8 @@ public:
 		// Create mesh renderer as child
 		_meshRenderer = Object::create<MeshRenderer>();
 		_meshRenderer->setMesh(mesh);
-		_meshRenderer->setShader(Asset::load<Shader>("shaders/lit"));
-		_meshRenderer->setTexture(Asset::load<Texture>("textures/palette"));
+		_meshRenderer->setShader(Asset::load<Shader>(icongen::config::shader));
+		_meshRenderer->setTexture(Asset::load<Texture>(icongen::config::texture));
 		_meshObject->add(_meshRenderer);
 
 		// Center the mesh and apply any loaded translation
@@ -169,12 +196,7 @@ public:
 			float maxExtent = noz::math::max(bounds.max().x - bounds.min().x, 
 			                   noz::math::max(bounds.max().y - bounds.min().y, 
 			                           bounds.max().z - bounds.min().z));
-			_distance = maxExtent * icongen::config::DefaultDistanceMultiplier;
-			
-			// Apply default rotation to show model at a nice angle
-			quat pitchRotation = noz::math::angleAxis(noz::math::radians(icongen::config::DefaultModelPitch), vec3(1, 0, 0));
-			quat yawRotation = noz::math::angleAxis(noz::math::radians(icongen::config::DefaultModelYaw), vec3(0, 1, 0));
-			_meshObject->setLocalRotation(yawRotation * pitchRotation);
+			_distance = maxExtent * icongen::config::cameraDistance;
 			
 			// Reset translation for new models
 			_translation = vec3(0.0f, 0.0f, 0.0f);
@@ -230,6 +252,7 @@ public:
 		// Update scene
 		_scene->update();
 		_ui->update();
+		_gamma->update();
 	}
 
 	bool handleInput(float deltaTime)  // Returns true if any input was detected
@@ -357,49 +380,51 @@ public:
 
 	void render()
 	{
-		auto* commandBuffer = Renderer::instance()->beginFrame();
-		assert(commandBuffer);
+		auto* cb = Renderer::instance()->beginFrame();
+		if (!cb)
+			return;
 
-		// Only render scene to texture if something changed
-		if (_sceneNeedsRender)
-		{
-			renderSceneToTexture(commandBuffer);
-			_sceneNeedsRender = false;
-			_borderNeedsUpdate = true; // Scene changed, so border needs update
-		}
-		
+		assert(cb);
+		assert(_scene);
+		assert(_camera);
+		assert(_iconRenderTarget);
+
+		cb->beginOpaquePass(_iconRenderTarget, true, Color::Transparent, false);
+		_scene->render(cb);
+		cb->endOpaquePass();
+
 		// Update border if needed and we're showing bordered preview
 		if (_borderNeedsUpdate && _showBorderedPreview)
 		{
 			updateBorderedPreview();
 			_borderNeedsUpdate = false;
 		}
-		
-		// Then render the UI showing the texture scaled appropriately
-		commandBuffer->beginOpaquePass(true);
-		_ui->render(commandBuffer);
-		commandBuffer->endOpaquePass();
+
+		cb->beginOpaquePass(true, Color::Black, false);
+		_gamma->render(cb);
+		_ui->render(cb);
+		cb->endOpaquePass();
 
 		// Handle capture after rendering
-		if (_captureRequested)
-		{
-			// Force render scene for capture if needed
-			if (_sceneNeedsRender)
-			{
-				renderSceneToTexture(commandBuffer);
-				_sceneNeedsRender = false;
-			}
-			
-			if (captureIcon())
-			{
-				if (_autoCapture)
-				{
-					// Exit after successful capture in auto mode
-					_shouldExit = true;
-				}
-			}
-			_captureRequested = false;
-		}
+		//if (_captureRequested)
+		//{
+		//	// Force render scene for capture if needed
+		//	if (_sceneNeedsRender)
+		//	{
+		//		renderSceneToTexture(commandBuffer);
+		//		_sceneNeedsRender = false;
+		//	}
+		//	
+		//	if (captureIcon())
+		//	{
+		//		if (_autoCapture)
+		//		{
+		//			// Exit after successful capture in auto mode
+		//			_shouldExit = true;
+		//		}
+		//	}
+		//	_captureRequested = false;
+		//}
 
 		// End frame to execute the commands
 		Renderer::instance()->endFrame();
@@ -482,28 +507,24 @@ private:
 	void createRenderTarget()
 	{
 		auto* renderer = Renderer::instance();
+		assert(renderer);
+
 		auto* gpu = renderer->GetGPUDevice();
+		assert(gpu);
 		
-		if (!gpu)
-		{
-			std::cerr << "No GPU device available for render target creation" << std::endl;
-			return;
-		}
-		
-		// Create square render target for icon
 		_iconRenderTarget = std::shared_ptr<Texture>(
-			Texture::createRenderTarget(gpu, _outputSize, _outputSize, "IconRenderTarget"));
-		
-		if (!_iconRenderTarget)
-		{
-			std::cerr << "Failed to create icon render target" << std::endl;
-		}
+			Texture::createRenderTarget(
+				gpu,
+				_outputSize,
+				_outputSize,
+				SDL_GPU_TEXTUREFORMAT_R16G16B16A16_FLOAT,
+				"IconRenderTarget"));
 	}
 
 	void createUI()
 	{
 		_ui = Object::create<noz::node::Scene>();
-		_canvas = std::make_shared<noz::ui::Canvas>();
+		_canvas = Object::create<noz::ui::Canvas>();
 		_canvas->setReferenceSize(vec2(static_cast<float>(_outputSize), static_cast<float>(_outputSize)));
 
 		noz::ui::Style canvasStyle = noz::ui::Style::defaultStyle();
@@ -529,23 +550,21 @@ private:
 		_ui->setRoot(_canvas);
 	}
 	
-	void renderSceneToTexture(noz::renderer::CommandBuffer* commandBuffer)
+	void renderSceneToTexture(noz::renderer::CommandBuffer* cb)
 	{
-		assert(commandBuffer);
+		assert(cb);
 		assert(_scene);
 		assert(_camera);
 		assert(_iconRenderTarget);
-
-		if (!_scene || !_camera || !_iconRenderTarget)
-			return;
 				
-		commandBuffer->beginOpaquePass(_iconRenderTarget, true, Color::Transparent);
-		_scene->render(commandBuffer);
-		commandBuffer->endOpaquePass();
+		cb->beginOpaquePass(_iconRenderTarget, true, Color::Transparent, false);
+		_scene->render(cb);
+		cb->endOpaquePass();
 	}
 
 	void updateBorderedPreview()
 	{
+#if 0
 		if (!_iconRenderTarget || !_iconImage)
 			return;
 			
@@ -575,17 +594,13 @@ private:
 		}
 		
 		std::cout << "Applied border effects to preview" << std::endl;
+#endif
 	}
 
 	void updateCameraPosition()
 	{
-		if (_camera)
-		{
-			// Camera faces straight down the -Z axis
-			_camera->setPosition(vec3(0, 0, _distance));
-			_camera->lookAt(vec3(0, 0, 0), vec3(0, 1, 0));
-			_camera->forceMatrixUpdate();
-		}
+		//_camera->setPosition(_camera->forward() * -_distance);
+		//_camera->forceMatrixUpdate();
 	}
 
 
@@ -594,6 +609,8 @@ private:
 	std::shared_ptr<MeshRenderer> _meshRenderer;
 	std::shared_ptr<Camera> _camera;
 	std::shared_ptr<DirectionalLight> _light;
+	std::shared_ptr<Scene> _gamma;
+	std::shared_ptr<GammaCorrection> _gammaCorrectionEffect;
 
 	std::shared_ptr<Scene> _ui;
 	std::shared_ptr<noz::ui::Canvas> _canvas;
@@ -778,11 +795,7 @@ int main(int argc, char* argv[])
 	cxxopts::Options options("icongen", "Generate icon images from 3D models");
 	options.add_options()
 		("m,mesh", "Mesh file path", cxxopts::value<std::string>())
-		("o,output", "Output directory (default: resources/textures/icons)", cxxopts::value<std::string>()->default_value("assets/textures/icons"))
-		("s,size", "Icon size (default: 256)", cxxopts::value<int>()->default_value("256"))
-		("r,rotation", "Initial rotation angle", cxxopts::value<float>()->default_value("0"))
-		("d,distance", "Camera distance multiplier", cxxopts::value<float>()->default_value("2.0"))
-		("a,auto", "Auto-capture and exit")
+		("c,config", "Config file path (default: icongen.cfg)", cxxopts::value<std::string>()->default_value("icongen.cfg"))
 		("h,help", "Print usage");
 	
 	options.parse_positional({"mesh"});
@@ -796,19 +809,20 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 	
+	// Load config file first
+	std::string configPath = result["config"].as<std::string>();
+	icongen::config::loadFromFile(configPath);
+	
+	// Get mesh path from command line
 	std::string meshPath = result["mesh"].as<std::string>();
-	std::string outputDir = result["output"].as<std::string>();
-	int iconSize = result["size"].as<int>();
-	float rotation = result["rotation"].as<float>();
-	float distanceMultiplier = result["distance"].as<float>();
-	bool autoCapture = result.count("auto") > 0;
 	
-	// Generate output path based on mesh path
-	std::string outputPath = generateOutputPath(meshPath, outputDir);
+	// Generate output path based on mesh path and config
+	std::string outputPath = generateOutputPath(meshPath, icongen::config::outputDir);
 	
+	std::cout << "Config: " << configPath << std::endl;
 	std::cout << "Mesh: " << meshPath << std::endl;
 	std::cout << "Output: " << outputPath << std::endl;
-	std::cout << "Size: " << iconSize << "x" << iconSize << std::endl;
+	std::cout << "Size: " << icongen::config::defaultSize << "x" << icongen::config::defaultSize << std::endl;
 	
 	// Get the binary directory using SDL
 	const char* basePath = SDL_GetBasePath();
@@ -818,37 +832,23 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 	
-	// Initialize application and core systems
-	Application::load(iconSize, iconSize, "icongen");
-
 	// Initialize icon generator
 	IconGenerator generator;
-	generator.setOutputSize(iconSize);
-	generator.setRotation(rotation);
-	generator.setDistanceMultiplier(distanceMultiplier);
 	
-	if (!generator.initialize(meshPath, outputPath, autoCapture))
+	if (!generator.initialize(meshPath, outputPath, false))
 	{
 		std::cerr << "Failed to initialize icon generator" << std::endl;
 		Application::unload();
 		return 1;
 	}
 
-	if (!autoCapture)
-	{
-		std::cout << "\nIcon Generator Controls:" << std::endl;
-		std::cout << "  W/S: Pitch up/down" << std::endl;
-		std::cout << "  A/D: Yaw left/right" << std::endl;
-		std::cout << "  Shift+WASD: Translate mesh" << std::endl;
-		std::cout << "  Q/E or +/-: Zoom in/out" << std::endl;
-		std::cout << "  Space: Save icon to " << outputPath << std::endl;
-		std::cout << "  ESC: Exit" << std::endl;
-	}
-	else
-	{
-		// In auto mode, capture immediately after first render
-		generator.requestCapture();
-	}
+	std::cout << "\nIcon Generator Controls:" << std::endl;
+	std::cout << "  W/S: Pitch up/down" << std::endl;
+	std::cout << "  A/D: Yaw left/right" << std::endl;
+	std::cout << "  Shift+WASD: Translate mesh" << std::endl;
+	std::cout << "  Q/E or +/-: Zoom in/out" << std::endl;
+	std::cout << "  Space: Save icon to " << outputPath << std::endl;
+	std::cout << "  ESC: Exit" << std::endl;
 
 	// Main loop
 	float lastTime = SDL_GetTicks() / 1000.0f;

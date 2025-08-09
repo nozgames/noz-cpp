@@ -27,7 +27,6 @@ namespace noz::ui
         
 		NOZ_DECLARE_TYPEID(Element, noz::node::Node2d)
         
-        Element();
         virtual ~Element() = default;
 
         // Style management
@@ -70,6 +69,8 @@ namespace noz::ui
         void start() override;
 
     protected:
+
+        Element();
 
 		virtual vec2 measureContent(const vec2& availableSize);
         void measure(const vec2& availableSize);

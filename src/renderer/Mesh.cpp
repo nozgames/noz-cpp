@@ -40,6 +40,15 @@ namespace noz::renderer
         auto gpu = reader.readBool();
         auto cpu = reader.readBool();
 
+        // Read pre-calculated bounds
+        glm::vec3 boundsMin, boundsMax;
+        boundsMin.x = reader.readFloat();
+        boundsMin.y = reader.readFloat();
+        boundsMin.z = reader.readFloat();
+        boundsMax.x = reader.readFloat();
+        boundsMax.y = reader.readFloat();
+        boundsMax.z = reader.readFloat();
+
         // Read model data header
         noz::renderer::ModelData modelData;
         modelData.vertexCount = reader.readUInt16();
@@ -103,6 +112,12 @@ namespace noz::renderer
                 mesh->indices()[i] = reader.readUInt16();
             }
         }
+
+        // Set the pre-calculated bounds
+        mesh->_bounds = noz::bounds3();
+        mesh->_bounds.min() = boundsMin;
+        mesh->_bounds.max() = boundsMax;
+        mesh->_boundsCalculated = true;
 
         // Optionally upload the mesh
         if (gpu)
