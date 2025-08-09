@@ -7,14 +7,15 @@
 */
 
 #include "icongen_pch.h"
-#include "border.h"
 #include <noz/renderer/effects/GammaCorrection.h>
+#include <noz/renderer/effects/BorderEffect.h>
 #include <noz/MetaFile.h>
 
 using namespace noz;
 using namespace noz::renderer;
 using namespace noz::node;
 using noz::renderer::effects::GammaCorrection;
+using noz::renderer::effects::BorderEffect;
 
 namespace icongen
 {
@@ -26,6 +27,11 @@ namespace icongen
 		float lightYaw = 10.0f;
 		std::string shader = "shaders/default";
 		std::string texture = "textures/palette";
+		
+		// Border settings
+		float borderWidth = 4.0f;
+		vec3 borderColor = vec3(0.0f, 0.0f, 0.0f); // Black
+		float borderAlpha = 1.0f;
 		
 		// Output defaults
 		int defaultSize = 256;
@@ -54,6 +60,11 @@ namespace icongen
 				// Light settings
 				lightPitch = meta.getFloat("Light", "pitch", lightPitch);
 				lightYaw = meta.getFloat("Light", "yaw", lightYaw);
+				
+				// Border settings
+				borderWidth = meta.getFloat("Border", "width", borderWidth);
+				borderColor = meta.getVec3("Border", "color", borderColor);
+				borderAlpha = meta.getFloat("Border", "alpha", borderAlpha);
 				
 				// Output settings
 				defaultSize = meta.getInt("Output", "size", defaultSize);
@@ -86,8 +97,6 @@ public:
 		, _shouldExit(false)
 		, _showBorderedPreview(true)
 		, _lastInputTime(0.0f)
-		, _borderWidth(4.0f)
-		, _borderColor{0, 0, 0, 255}  // Black border by default
 		, _sceneNeedsRender(true)  // Initial render needed
 		, _borderNeedsUpdate(true)
 	{
@@ -124,12 +133,45 @@ public:
 		_scene = Object::create<Scene>();
 		_scene->setRoot(root);
 
-		// Create gamma correction effect (for linear->sRGB conversion)
-		_gamma = Object::create<Scene>();
-		_gamma->setRoot(Object::create<Node>());
+		// Create border effect scene
+		_borderScene = Object::create<Scene>();
+		_borderScene->setRoot(Object::create<Node>());
+		_borderEffect = Object::create<BorderEffect>();
+		_borderEffect->setInputTexture(_iconRenderTarget);
+		_borderScene->root()->add(_borderEffect);
+		
+		noz::renderer::effects::BorderParams params;
+		params.width = icongen::config::borderWidth;
+		params.color = noz::Color(icongen::config::borderColor.x, icongen::config::borderColor.y,
+			icongen::config::borderColor.z, icongen::config::borderAlpha);
+		params.textureWidth = static_cast<float>(_outputSize);
+		params.textureHeight = static_cast<float>(_outputSize);
+		_borderEffect->setBorderParams(params);
+
+		// Create intermediate render target for border effect
+		_borderRenderTarget = std::shared_ptr<Texture>(
+			Texture::createRenderTarget(
+				Renderer::instance()->GetGPUDevice(),
+				_outputSize,
+				_outputSize,
+				SDL_GPU_TEXTUREFORMAT_R16G16B16A16_FLOAT,
+				"BorderRenderTarget"));
+		
+		// Create final render target for gamma correction output (8-bit for readTexturePixels compatibility)
+		_finalRenderTarget = std::shared_ptr<Texture>(
+			Texture::createRenderTarget(
+				Renderer::instance()->GetGPUDevice(),
+				_outputSize,
+				_outputSize,
+				SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,
+				"FinalRenderTarget"));
+		
+		// Create gamma correction scene
+		_gammaScene = Object::create<Scene>();
+		_gammaScene->setRoot(Object::create<Node>());
 		_gammaCorrectionEffect = Object::create<GammaCorrection>();
-		_gammaCorrectionEffect->setInputTexture(_iconRenderTarget);
-		_gamma->root()->add(_gammaCorrectionEffect);
+		_gammaCorrectionEffect->setInputTexture(_borderRenderTarget);
+		_gammaScene->root()->add(_gammaCorrectionEffect);
 
 		// Load mesh
 		_meshPath = meshPath;
@@ -210,8 +252,6 @@ public:
 			}
 		}
 
-		updateCameraPosition();
-		
 		// Mark for initial render
 		_sceneNeedsRender = true;
 		_borderNeedsUpdate = true;
@@ -233,8 +273,8 @@ public:
 			if (_showBorderedPreview)
 			{
 				_showBorderedPreview = false;  // Hide bordered preview during interaction
-				// Switch back to showing original texture
-				_iconImage->setTexture(_iconRenderTarget);
+				// Switch back to showing processed texture
+				_iconImage->setTexture(_finalRenderTarget);
 			}
 		}
 		else if (!_showBorderedPreview && currentTime - _lastInputTime > 0.5f)  // 0.5 second delay
@@ -246,13 +286,11 @@ public:
 
 		// Rotation is now handled directly in handleInput() for camera-relative control
 
-		// Update camera position (fixed position for square icon)
-		updateCameraPosition();
-
-		// Update scene
+		// Update scenes
 		_scene->update();
+		_borderScene->update();
+		_gammaScene->update();
 		_ui->update();
-		_gamma->update();
 	}
 
 	bool handleInput(float deltaTime)  // Returns true if any input was detected
@@ -304,7 +342,6 @@ public:
 						_meshObject->setPosition(-center + _translation);
 					}
 					_sceneNeedsRender = true;
-					_borderNeedsUpdate = true;
 				}
 			}
 			else
@@ -341,7 +378,6 @@ public:
 					// This ensures rotations are always relative to the camera's orientation
 					_meshObject->setLocalRotation(deltaRotation * currentRotation);
 					_sceneNeedsRender = true;
-					_borderNeedsUpdate = true;
 				}
 			}
 			// Q/E now control zoom instead of rotation
@@ -355,7 +391,6 @@ public:
 			_distance = noz::math::max(1.0f, _distance - 5.0f * deltaTime);
 			hadInput = true;
 			_sceneNeedsRender = true;
-			_borderNeedsUpdate = true;
 		}
 		if (InputSystem::instance()->IsKeyPressed(SDL_SCANCODE_MINUS) || 
 		    InputSystem::instance()->IsKeyPressed(SDL_SCANCODE_Q))
@@ -363,7 +398,6 @@ public:
 			_distance = noz::math::min(20.0f, _distance + 5.0f * deltaTime);
 			hadInput = true;
 			_sceneNeedsRender = true;
-			_borderNeedsUpdate = true;
 		}
 			
 		// Handle capture (one-shot, so check for key press event)
@@ -389,45 +423,42 @@ public:
 		assert(_camera);
 		assert(_iconRenderTarget);
 
+		// Render scene to icon render target
 		cb->beginOpaquePass(_iconRenderTarget, true, Color::Transparent, false);
 		_scene->render(cb);
 		cb->endOpaquePass();
 
-		// Update border if needed and we're showing bordered preview
-		if (_borderNeedsUpdate && _showBorderedPreview)
-		{
-			updateBorderedPreview();
-			_borderNeedsUpdate = false;
-		}
+		// Render border effect to intermediate target
+		cb->beginOpaquePass(_borderRenderTarget, true, Color::Transparent, false);
+		_borderScene->render(cb);
+		cb->endOpaquePass();
 
+		// Render gamma correction to final target
+		cb->beginOpaquePass(_finalRenderTarget, true, Color::Transparent, false);
+		_gammaScene->render(cb);
+		cb->endOpaquePass();
+
+		// Render UI to screen (displaying final texture)
 		cb->beginOpaquePass(true, Color::Black, false);
-		_gamma->render(cb);
 		_ui->render(cb);
 		cb->endOpaquePass();
 
-		// Handle capture after rendering
-		//if (_captureRequested)
-		//{
-		//	// Force render scene for capture if needed
-		//	if (_sceneNeedsRender)
-		//	{
-		//		renderSceneToTexture(commandBuffer);
-		//		_sceneNeedsRender = false;
-		//	}
-		//	
-		//	if (captureIcon())
-		//	{
-		//		if (_autoCapture)
-		//		{
-		//			// Exit after successful capture in auto mode
-		//			_shouldExit = true;
-		//		}
-		//	}
-		//	_captureRequested = false;
-		//}
-
 		// End frame to execute the commands
 		Renderer::instance()->endFrame();
+
+		// Handle capture after rendering
+		if (_captureRequested)
+		{
+			if (captureIcon())
+			{
+				if (_autoCapture)
+				{
+					// Exit after successful capture in auto mode
+					_shouldExit = true;
+				}
+			}
+			_captureRequested = false;
+		}
 	}
 
 	bool captureIcon()
@@ -437,9 +468,7 @@ public:
 		// Create output directory if it doesn't exist
 		std::filesystem::path outputDir = std::filesystem::path(_outputPath).parent_path();
 		if (!outputDir.empty())
-		{
 			std::filesystem::create_directories(outputDir);
-		}
 
 		// Read pixels from the appropriate texture (bordered if available and visible)
 		auto* renderer = Renderer::instance();
@@ -450,19 +479,7 @@ public:
 		}
 
 		noz::Image capturedImage;
-		
-		// Use bordered texture if it exists and we're showing borders
-		if (_borderedTexture && _showBorderedPreview)
-		{
-			capturedImage = renderer->readTexturePixels(_borderedTexture);
-			std::cout << "Capturing bordered version" << std::endl;
-		}
-		else
-		{
-			capturedImage = renderer->readTexturePixels(_iconRenderTarget);
-			std::cout << "Capturing original version" << std::endl;
-		}
-		
+		capturedImage = renderer->readTexturePixels(_finalRenderTarget);
 		if (capturedImage.empty())
 		{
 			std::cerr << "Failed to read pixels from render target" << std::endl;
@@ -496,10 +513,15 @@ public:
 		_meshObject.reset();
 		_camera.reset();
 		_light.reset();
+		_borderScene.reset();
+		_gammaScene.reset();
+		_borderEffect.reset();
+		_gammaCorrectionEffect.reset();
 		_ui.reset();
 		_iconImage.reset();
 		_iconRenderTarget.reset();
-		_borderedTexture.reset();
+		_borderRenderTarget.reset();
+		_finalRenderTarget.reset();
 	}
 
 private:
@@ -534,7 +556,7 @@ private:
 		_canvas->setStyle(canvasStyle);
 
 		_iconImage = std::make_shared<noz::ui::Image>();
-		_iconImage->setTexture(_iconRenderTarget);
+		_iconImage->setTexture(_finalRenderTarget);
 
 		noz::ui::Style iconStyle = noz::ui::Style::defaultStyle();
 		iconStyle.width = noz::ui::StyleLength::fixed(static_cast<float>(_outputSize));
@@ -562,63 +584,26 @@ private:
 		cb->endOpaquePass();
 	}
 
-	void updateBorderedPreview()
-	{
-#if 0
-		if (!_iconRenderTarget || !_iconImage)
-			return;
-			
-		auto* renderer = Renderer::instance();
-		auto* gpu = renderer->GetGPUDevice();
-		
-		// Read back pixels from the render target
-		noz::Image capturedImage = renderer->readTexturePixels(_iconRenderTarget);
-		if (capturedImage.empty())
-		{
-			std::cerr << "Failed to read pixels from render target for border processing" << std::endl;
-			return;
-		}
-		
-		// Apply border effect to the captured image
-		noz::Color32 borderColor(_borderColor.r, _borderColor.g, _borderColor.b, _borderColor.a);
-		noz::Image borderedImage = icongen::addAntiAliasedBorder(capturedImage, _borderWidth, borderColor);
-		
-		// Create texture from the bordered image
-		_borderedTexture = std::shared_ptr<Texture>(
-			Texture::createFromImage(gpu, borderedImage, "IconBordered"));
-		
-		if (_borderedTexture)
-		{
-			// Swap to bordered texture
-			_iconImage->setTexture(_borderedTexture);
-		}
-		
-		std::cout << "Applied border effects to preview" << std::endl;
-#endif
-	}
-
-	void updateCameraPosition()
-	{
-		//_camera->setPosition(_camera->forward() * -_distance);
-		//_camera->forceMatrixUpdate();
-	}
-
-
 	std::shared_ptr<Scene> _scene;
 	std::shared_ptr<Node3d> _meshObject;
 	std::shared_ptr<MeshRenderer> _meshRenderer;
 	std::shared_ptr<Camera> _camera;
 	std::shared_ptr<DirectionalLight> _light;
-	std::shared_ptr<Scene> _gamma;
+	
+	// Effects
+	std::shared_ptr<Scene> _borderScene;
+	std::shared_ptr<Scene> _gammaScene;
+	std::shared_ptr<BorderEffect> _borderEffect;
 	std::shared_ptr<GammaCorrection> _gammaCorrectionEffect;
 
 	std::shared_ptr<Scene> _ui;
 	std::shared_ptr<noz::ui::Canvas> _canvas;
 	std::shared_ptr<noz::ui::Image> _iconImage;
 
-	// Render target and UI
+	// Render targets
 	std::shared_ptr<noz::renderer::Texture> _iconRenderTarget;
-	std::shared_ptr<noz::renderer::Texture> _borderedTexture;
+	std::shared_ptr<noz::renderer::Texture> _borderRenderTarget;
+	std::shared_ptr<noz::renderer::Texture> _finalRenderTarget;
 	std::string _meshPath;
 	std::string _outputPath;
 	
@@ -634,11 +619,9 @@ private:
 	bool _shouldExit;
 	int _outputSize;
 	
-	// Border preview system
+	// Preview system
 	bool _showBorderedPreview;
 	float _lastInputTime;
-	float _borderWidth;
-	icongen::RGBA _borderColor;
 	
 	// Dirty flags for efficient rendering
 	bool _sceneNeedsRender;

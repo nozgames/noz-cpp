@@ -43,7 +43,7 @@ namespace noz::renderer
         _textures.push_back(texture);
         ResourceHandle handle = static_cast<ResourceHandle>(_textures.size());
         _commands.emplace_back(CommandType::BindTextureWithSampler, BindTextureWithSamplerData{handle, sampler});
-		_lastTextureIndex = static_cast<int>(_textures.size()) - 1;
+		_lastTextureIndex = -1;
     }
 
 	void CommandBuffer::bindDefaultTexture()
