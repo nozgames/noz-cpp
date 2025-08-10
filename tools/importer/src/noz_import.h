@@ -13,8 +13,8 @@
 
 namespace noz::import
 {
-	bool import(const std::string& sourceDir, const std::string& outputDir, const ImportConfig& config);
-	bool importFile(const std::string& filePath, const std::string& sourceDir, const std::string& outputDir, const ImportConfig& config);
-	bool deleteOutputFile(const std::string& deletedFilePath, const std::string& sourceDir, const std::string& outputDir, const ImportConfig& config);
-	void cleanupOrphanedFiles(const std::string& sourceDir, const std::string& outputDir, const ImportConfig& config);
+	bool import(const std::vector<std::string>& sourceDirs, const std::string& outputDir, const ImportConfig& config);
+	bool importFile(const std::string& filePath, const std::vector<std::string>& sourceDirs, const std::string& outputDir, const ImportConfig& config);
+	bool deleteOutputFile(const std::string& deletedFilePath, const std::vector<std::string>& sourceDirs, const std::string& outputDir, const ImportConfig& config);
+	void cleanupOrphanedFiles(const std::vector<std::string>& sourceDirs, const std::string& outputDir, const ImportConfig& config);
 }

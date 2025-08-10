@@ -19,6 +19,55 @@
 
 namespace noz::import
 {
+    // Helper function to find a file across multiple source directories with priority
+    // Returns the highest priority file path (first source directory has highest priority)
+    static std::string findFileWithPriority(const std::string& relativePath, const std::vector<std::string>& sourceDirs)
+    {
+        for (const std::string& sourceDir : sourceDirs)
+        {
+            std::filesystem::path fullPath = std::filesystem::path(sourceDir) / relativePath;
+            if (std::filesystem::exists(fullPath))
+            {
+                return fullPath.string();
+            }
+        }
+        return ""; // File not found in any source directory
+    }
+    
+    // Helper function to collect all files from multiple source directories with deduplication
+    // Files from earlier directories override files from later directories (same relative path)
+    static std::map<std::string, std::string> collectAllFilesWithPriority(const std::vector<std::string>& sourceDirs)
+    {
+        std::map<std::string, std::string> fileMap; // relative path -> absolute path
+        
+        // Process directories in reverse order so earlier directories can override later ones
+        for (auto it = sourceDirs.rbegin(); it != sourceDirs.rend(); ++it)
+        {
+            const std::string& sourceDir = *it;
+            
+            if (!std::filesystem::exists(sourceDir))
+                continue;
+                
+            for (const auto& entry : std::filesystem::recursive_directory_iterator(sourceDir))
+            {
+                if (!entry.is_regular_file())
+                    continue;
+                    
+                std::string absolutePath = entry.path().string();
+                std::filesystem::path relativePath = std::filesystem::relative(entry.path(), sourceDir);
+                
+                // Skip .meta files
+                if (relativePath.extension() == ".meta")
+                    continue;
+                    
+                // Store the mapping (this will override any existing entry with same relative path)
+                fileMap[relativePath.string()] = absolutePath;
+            }
+        }
+        
+        return fileMap;
+    }
+
     static void registerImporters(const ImportConfig& config)
     {
         auto& registry = AssetImporterRegistry::instance();
@@ -35,7 +84,7 @@ namespace noz::import
 		registry.registerImporter(std::make_shared<AnimationBlendTree2dImporter>());
     }
 
-    bool importFile(const std::string& filePath, const std::string& sourceDir, const std::string& outputDir, const ImportConfig& config)
+    bool importFile(const std::string& filePath, const std::vector<std::string>& sourceDirs, const std::string& outputDir, const ImportConfig& config)
     {
         // Skip .meta files
         if (filePath.find(".meta") != std::string::npos)
@@ -65,8 +114,28 @@ namespace noz::import
         }
 
         // Calculate relative path and output directory
+        // Find which source directory this file belongs to
         std::filesystem::path sourcePath(filePath);
-        std::filesystem::path relativePath = std::filesystem::relative(sourcePath, sourceDir);
+        std::filesystem::path relativePath;
+        std::string matchingSourceDir;
+        
+        for (const std::string& sourceDir : sourceDirs)
+        {
+            std::filesystem::path srcDirPath(sourceDir);
+            if (sourcePath.string().find(srcDirPath.string()) == 0)
+            {
+                relativePath = std::filesystem::relative(sourcePath, sourceDir);
+                matchingSourceDir = sourceDir;
+                break;
+            }
+        }
+        
+        if (matchingSourceDir.empty())
+        {
+            std::cerr << "File does not belong to any source directory: " << filePath << std::endl;
+            return false;
+        }
+        
         std::filesystem::path outputPath = std::filesystem::path(outputDir) / relativePath.parent_path();
 
         // Create output directory if needed
@@ -90,15 +159,29 @@ namespace noz::import
         return anySucceeded;
     }
 
-    bool import(const std::string& sourceDir, const std::string& outputDir, const ImportConfig& config)
+    bool import(const std::vector<std::string>& sourceDirs, const std::string& outputDir, const ImportConfig& config)
     {
         std::cout << "Starting import process..." << std::endl;
-        std::cout << "Source directory: " << sourceDir << std::endl;
+        for (size_t i = 0; i < sourceDirs.size(); ++i)
+        {
+            std::cout << "Source directory " << i << ": " << sourceDirs[i] << std::endl;
+        }
         std::cout << "Output directory: " << outputDir << std::endl;
             
-        if (!std::filesystem::exists(sourceDir))
+        // Check that at least one source directory exists
+        bool hasValidSourceDir = false;
+        for (const std::string& sourceDir : sourceDirs)
         {
-            std::cerr << "Source directory does not exist: " << sourceDir << std::endl;
+            if (std::filesystem::exists(sourceDir))
+            {
+                hasValidSourceDir = true;
+                break;
+            }
+        }
+        
+        if (!hasValidSourceDir)
+        {
+            std::cerr << "No valid source directories found" << std::endl;
             return false;
         }
             
@@ -114,31 +197,21 @@ namespace noz::import
         int processedFiles = 0;
         int failedFiles = 0;
             
-        // Recursively scan source directory
-        std::cout << "Scanning source directory for files..." << std::endl;
+        // Collect all files from all source directories with priority override
+        std::cout << "Scanning source directories for files..." << std::endl;
+        auto fileMap = collectAllFilesWithPriority(sourceDirs);
+        
         int totalFiles = 0;
-        for (const auto& entry : std::filesystem::recursive_directory_iterator(sourceDir))
+        for (const auto& [relativePath, absolutePath] : fileMap)
         {
-			if (!entry.is_regular_file())
-				continue;
-
-			std::string filePath = entry.path().string();
-				
-			// Skip .meta files - they are only used during import, not as assets
-			std::filesystem::path path(filePath);
-			if (path.extension() == ".meta")
-				continue;
-				
-			auto importers = registry.getImporters(filePath);
-			if (importers.empty())
-				continue;
+            auto importers = registry.getImporters(absolutePath);
+            if (importers.empty())
+                continue;
 
             totalFiles++;
-                    
-            // Calculate relative path from source directory
-            std::filesystem::path sourcePath(filePath);
-            std::filesystem::path relativePath = std::filesystem::relative(sourcePath, sourceDir);
-            std::filesystem::path outputPath = std::filesystem::path(outputDir) / relativePath.parent_path();
+            
+            // Calculate output path
+            std::filesystem::path outputPath = std::filesystem::path(outputDir) / std::filesystem::path(relativePath).parent_path();
                         
             // Create output directory if it doesn't exist
             std::filesystem::create_directories(outputPath);
@@ -147,14 +220,14 @@ namespace noz::import
             bool anySucceeded = false;
             for (const auto& importer : importers)
             {
-                if (importer->import(filePath, outputPath.string()))
+                if (importer->import(absolutePath, outputPath.string()))
                 {
-					std::cout << "imported '" + filePath + "'" << std::endl;
+					std::cout << "imported '" + absolutePath + "'" << std::endl;
                     anySucceeded = true;
                 }
                 else
                 {
-                    std::cerr << "Failed to import " << filePath << " with " << importer->getName() << std::endl;
+                    std::cerr << "Failed to import " << absolutePath << " with " << importer->getName() << std::endl;
                 }
             }
                 
@@ -164,7 +237,7 @@ namespace noz::import
             }
             else
             {
-                std::cerr << "All importers failed for: " << filePath << std::endl;
+                std::cerr << "All importers failed for: " << absolutePath << std::endl;
                 failedFiles++;
             }
         }
@@ -177,7 +250,7 @@ namespace noz::import
         return (processedFiles > 0) && (failedFiles <= processedFiles / 2);
     }
 
-    bool deleteOutputFile(const std::string& deletedFilePath, const std::string& sourceDir, const std::string& outputDir, const ImportConfig& config)
+    bool deleteOutputFile(const std::string& deletedFilePath, const std::vector<std::string>& sourceDirs, const std::string& outputDir, const ImportConfig& config)
     {
         // Register importers to determine what output files would have been created
         registerImporters(config);
@@ -190,9 +263,28 @@ namespace noz::import
             return true; // Nothing to delete
         }
 
-        // Calculate relative path and output directory
+        // Find which source directory this file belonged to
         std::filesystem::path sourcePath(deletedFilePath);
-        std::filesystem::path relativePath = std::filesystem::relative(sourcePath, sourceDir);
+        std::filesystem::path relativePath;
+        std::string matchingSourceDir;
+        
+        for (const std::string& sourceDir : sourceDirs)
+        {
+            std::filesystem::path srcDirPath(sourceDir);
+            if (sourcePath.string().find(srcDirPath.string()) == 0)
+            {
+                relativePath = std::filesystem::relative(sourcePath, sourceDir);
+                matchingSourceDir = sourceDir;
+                break;
+            }
+        }
+        
+        if (matchingSourceDir.empty())
+        {
+            std::cerr << "Deleted file does not belong to any source directory: " << deletedFilePath << std::endl;
+            return false;
+        }
+        
         std::filesystem::path outputPath = std::filesystem::path(outputDir) / relativePath.parent_path();
 
         bool anyDeleted = false;
@@ -268,7 +360,7 @@ namespace noz::import
         return anyDeleted;
     }
 
-    void cleanupOrphanedFiles(const std::string& sourceDir, const std::string& outputDir, const ImportConfig& config)
+    void cleanupOrphanedFiles(const std::vector<std::string>& sourceDirs, const std::string& outputDir, const ImportConfig& config)
     {
         std::cout << "Checking for orphaned output files..." << std::endl;
         
@@ -276,18 +368,16 @@ namespace noz::import
         registerImporters(config);
         auto& registry = AssetImporterRegistry::instance();
         
-        // Build a set of all source files that could produce output
+        // Build a set of all source files that could produce output (with priority override)
+        auto fileMap = collectAllFilesWithPriority(sourceDirs);
         std::unordered_set<std::string> validSourceFiles;
-        for (const auto& entry : std::filesystem::recursive_directory_iterator(sourceDir))
+        
+        for (const auto& [relativePath, absolutePath] : fileMap)
         {
-            if (!entry.is_regular_file() || entry.path().extension() == ".meta")
-                continue;
-                
-            std::string filePath = entry.path().string();
-            auto importers = registry.getImporters(filePath);
+            auto importers = registry.getImporters(absolutePath);
             if (!importers.empty())
             {
-                validSourceFiles.insert(filePath);
+                validSourceFiles.insert(absolutePath);
             }
         }
         
@@ -324,20 +414,26 @@ namespace noz::import
 				if (outputExt == ".mesh" || outputExt == ".skeleton" || outputExt == ".animation" ||
 					outputExt == ".font" || outputExt == ".shader")
 				{
-					// These are generated files, check for corresponding source
-					std::filesystem::path baseSourcePath = std::filesystem::path(sourceDir) / relativePath;
-					baseSourcePath.replace_extension(""); // Remove the output extension
-					
-					for (const std::string& srcExt : possibleSourceExtensions)
+					// These are generated files, check for corresponding source in any source directory
+					for (const std::string& sourceDir : sourceDirs)
 					{
-						std::filesystem::path possibleSource = baseSourcePath;
-						possibleSource += srcExt;
+						std::filesystem::path baseSourcePath = std::filesystem::path(sourceDir) / relativePath;
+						baseSourcePath.replace_extension(""); // Remove the output extension
 						
-						if (validSourceFiles.find(possibleSource.string()) != validSourceFiles.end())
+						for (const std::string& srcExt : possibleSourceExtensions)
 						{
-							hasCorrespondingSource = true;
-							break;
+							std::filesystem::path possibleSource = baseSourcePath;
+							possibleSource += srcExt;
+							
+							if (validSourceFiles.find(possibleSource.string()) != validSourceFiles.end())
+							{
+								hasCorrespondingSource = true;
+								break;
+							}
 						}
+						
+						if (hasCorrespondingSource)
+							break;
 					}
 				}
 				else if (outputExt == ".meta")
@@ -353,9 +449,16 @@ namespace noz::import
 				}
 				else
 				{
-					// For direct copies (like textures), check if source still exists
-					std::filesystem::path sourceFile = std::filesystem::path(sourceDir) / relativePath;
-					hasCorrespondingSource = validSourceFiles.find(sourceFile.string()) != validSourceFiles.end();
+					// For direct copies (like textures), check if source still exists in any source directory
+					for (const std::string& sourceDir : sourceDirs)
+					{
+						std::filesystem::path sourceFile = std::filesystem::path(sourceDir) / relativePath;
+						if (validSourceFiles.find(sourceFile.string()) != validSourceFiles.end())
+						{
+							hasCorrespondingSource = true;
+							break;
+						}
+					}
 				}
 				
 				if (!hasCorrespondingSource)

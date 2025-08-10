@@ -13,8 +13,9 @@ int main(int argc, char* argv[])
 	cxxopts::Options options("importer", "Import assets and watch for changes");
 	options.add_options()
 		("h,help", "Print usage")
-		("s,source", "Source directory (default: resources)", cxxopts::value<std::string>()->default_value("assets"))
-		("o,output", "Output directory (default: resources)", cxxopts::value<std::string>()->default_value("assets"))
+		("s,source", "Source directory (default: assets)", cxxopts::value<std::string>()->default_value("assets"))
+		("n,noz-source", "NoZ engine source directory (default: libs/noz/assets)", cxxopts::value<std::string>()->default_value("libs/noz/assets"))
+		("o,output", "Output directory (default: assets)", cxxopts::value<std::string>()->default_value("assets"))
 		("w,watch", "Watch for file changes", cxxopts::value<bool>()->default_value("true"))
 		("p,parallel", "Enable parallel processing", cxxopts::value<bool>()->default_value("false"));
 
@@ -28,6 +29,7 @@ int main(int argc, char* argv[])
 
 	// Get directories from command line
 	std::string sourceDir = result["source"].as<std::string>();
+	std::string nozSourceDir = result["noz-source"].as<std::string>();
 	std::string outputDir = result["output"].as<std::string>();
 	bool watchMode = result["watch"].as<bool>();
 
@@ -44,19 +46,23 @@ int main(int argc, char* argv[])
 
 	std::cout << "Resource Importer" << std::endl;
 	std::cout << "=================" << std::endl;
-	std::cout << "Source: " << sourceDir << std::endl;
+	std::cout << "Game Source: " << sourceDir << std::endl;
+	std::cout << "NoZ Source: " << nozSourceDir << std::endl;
 	std::cout << "Output: " << outputDir << std::endl;
 	std::cout << "Watch mode: " << (watchMode ? "enabled" : "disabled") << std::endl;
 	std::cout << std::endl;
 
+	// Build list of source directories (game assets override noz assets)
+	std::vector<std::string> sourceDirs = { sourceDir, nozSourceDir };
+	
 	// Clean up orphaned files first
 	std::cout << "Cleaning up orphaned files..." << std::endl;
-	noz::import::cleanupOrphanedFiles(sourceDir, outputDir, importConfig);
+	noz::import::cleanupOrphanedFiles(sourceDirs, outputDir, importConfig);
 	std::cout << std::endl;
 
 	// Do initial import pass
 	std::cout << "Performing initial import pass..." << std::endl;
-	if (!noz::import::import(sourceDir, outputDir, importConfig))
+	if (!noz::import::import(sourceDirs, outputDir, importConfig))
 	{
 		std::cerr << "Initial import failed" << std::endl;
 		return 1;
@@ -76,26 +82,36 @@ int main(int argc, char* argv[])
 	std::unordered_map<std::string, std::filesystem::file_time_type> fileModTimes;
 	std::unordered_map<std::string, std::filesystem::file_time_type> metaFileModTimes;
 
-	// Initialize modification times for all files
-	for (const auto& entry : std::filesystem::recursive_directory_iterator(sourceDir))
+	// Initialize modification times for all files in all source directories
+	for (const std::string& srcDir : sourceDirs)
 	{
-		if (entry.is_regular_file())
-		{
-			std::string filePath = entry.path().string();
-			auto lastWriteTime = entry.last_write_time();
+		if (!std::filesystem::exists(srcDir))
+			continue;
 			
-			if (entry.path().extension() == ".meta")
+		for (const auto& entry : std::filesystem::recursive_directory_iterator(srcDir))
+		{
+			if (entry.is_regular_file())
 			{
-				metaFileModTimes[filePath] = lastWriteTime;
-			}
-			else
-			{
-				fileModTimes[filePath] = lastWriteTime;
+				std::string filePath = entry.path().string();
+				auto lastWriteTime = entry.last_write_time();
+				
+				if (entry.path().extension() == ".meta")
+				{
+					metaFileModTimes[filePath] = lastWriteTime;
+				}
+				else
+				{
+					fileModTimes[filePath] = lastWriteTime;
+				}
 			}
 		}
 	}
 
-	std::cout << "Monitoring: " << sourceDir << " (polling mode)" << std::endl;
+	std::cout << "Monitoring directories (polling mode):" << std::endl;
+	for (const std::string& srcDir : sourceDirs)
+	{
+		std::cout << "  - " << srcDir << std::endl;
+	}
 
 	// Watch loop
 	while (true)
@@ -107,8 +123,13 @@ int main(int argc, char* argv[])
 			// Collect all files that need to be imported
 			std::vector<std::string> filesToImport;
 			
-			// Check for modified files
-			for (const auto& entry : std::filesystem::recursive_directory_iterator(sourceDir))
+			// Check for modified files in all source directories
+			for (const std::string& srcDir : sourceDirs)
+			{
+				if (!std::filesystem::exists(srcDir))
+					continue;
+					
+				for (const auto& entry : std::filesystem::recursive_directory_iterator(srcDir))
 			{
 				if (!entry.is_regular_file())
 					continue;
@@ -154,6 +175,7 @@ int main(int argc, char* argv[])
 					}
 				}
 			}
+			} // End source directory loop
 			
 			// Process all collected files
 			if (!filesToImport.empty())
@@ -166,7 +188,7 @@ int main(int argc, char* argv[])
 				for (const auto& filePath : filesToImport)
 				{
 					std::cout << "Importing: " << filePath << std::endl;
-					if (!noz::import::importFile(filePath, sourceDir, outputDir, importConfig))
+					if (!noz::import::importFile(filePath, sourceDirs, outputDir, importConfig))
 					{
 						std::cerr << "Import failed for: " << filePath << std::endl;
 					}
@@ -202,7 +224,7 @@ int main(int argc, char* argv[])
 				fileModTimes.erase(filePath);
 				
 				// Delete corresponding output files
-				if (!noz::import::deleteOutputFile(filePath, sourceDir, outputDir, importConfig))
+				if (!noz::import::deleteOutputFile(filePath, sourceDirs, outputDir, importConfig))
 				{
 					std::cerr << "Failed to clean up output files for: " << filePath << std::endl;
 				}
