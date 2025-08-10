@@ -38,6 +38,8 @@ namespace noz
         void setScreenTitle(const std::string& title);
         void setFullscreen(bool fullscreen);
         void setVSync(bool vsync);
+
+        void showCursor(bool show);
         
         void setResizeHandler(std::function<void(int width, int height)> handler);
         

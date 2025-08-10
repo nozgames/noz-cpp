@@ -23,7 +23,7 @@ namespace noz::node
         virtual ~Camera() = default;
 
         // Static main camera access
-        static Camera* main() { return _mainCamera; }
+        static std::shared_ptr<Camera> main() { return std::shared_ptr<Camera>(_mainCamera.lock()); }
 
         // Projection settings
         void setPerspective(float fov, float aspectRatio, float nearPlane, float farPlane);
@@ -77,6 +77,6 @@ namespace noz::node
         bool _isOrthographic;
         
         // Static main camera
-        static Camera* _mainCamera;
+        static std::weak_ptr<Camera> _mainCamera;
     };
 } 

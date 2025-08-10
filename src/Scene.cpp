@@ -41,6 +41,8 @@ namespace noz::node
 
     void Scene::update()
     {        
+        _camera.reset();
+
         // Call start() on first update if not already started
         if (!_started)
         {
@@ -65,6 +67,8 @@ namespace noz::node
         
         // Process destroy list at the end of the frame
         processDestroyList();
+
+        _camera = Camera::main();
     }
 
     void Scene::lateUpdate()
@@ -88,11 +92,10 @@ namespace noz::node
             return;
 
         // Set the main camera if we have one
-        auto mainCamera = Camera::main();
-        if (mainCamera && !commandBuffer->isShadowPass())
+        if (_camera && !commandBuffer->isShadowPass())
         {
-			mainCamera->forceMatrixUpdate();
-            commandBuffer->setViewProjection(mainCamera->viewMatrix(), mainCamera->projectionMatrix());
+            _camera->forceMatrixUpdate();
+            commandBuffer->setViewProjection(_camera->viewMatrix(), _camera->projectionMatrix());
         }
 
         // Bind the active directional light if we have one

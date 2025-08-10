@@ -11,7 +11,7 @@ namespace noz::node
 	NOZ_DEFINE_TYPEID(Camera)
 
     // Static member definition
-    Camera* Camera::_mainCamera = nullptr;
+    std::weak_ptr<Camera> Camera::_mainCamera;
 
     Camera::Camera()
         : _viewMatrix(1.0f)
@@ -139,7 +139,7 @@ namespace noz::node
 
     void Camera::setAsMainCamera()
     {
-        _mainCamera = this;
+        _mainCamera = as<Camera>();
     }
 
     vec3 Camera::screenToWorld(const vec2& screenPos) const
