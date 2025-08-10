@@ -12,6 +12,7 @@ namespace noz::node
 {
 	class Node;
     class DirectionalLight;
+    class Camera;
 
     class Scene : public Object
     {
@@ -58,6 +59,7 @@ namespace noz::node
 		std::string _name;
 		std::shared_ptr<Node> _root;
         std::shared_ptr<Node> _startRoot;
+        std::shared_ptr<Camera> _camera;
         std::vector<std::shared_ptr<Node>> _destroyList;
         std::shared_ptr<DirectionalLight> _activeDirectionalLight;
     };

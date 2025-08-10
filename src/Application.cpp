@@ -234,4 +234,12 @@ namespace noz
     {
         _focusHandler = handler;
     }
+
+    void Application::showCursor(bool show)
+    {
+        if (show)
+            SDL_ShowCursor();
+        else
+            SDL_HideCursor();
+	}
 }
