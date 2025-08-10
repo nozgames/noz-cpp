@@ -87,6 +87,10 @@ target_include_directories(noz
 target_compile_definitions(noz
     PRIVATE
         _CRT_SECURE_NO_WARNINGS
+    PUBLIC
+        # Force GLM to use left-handed coordinate system
+        GLM_FORCE_LEFT_HANDED
+        GLM_FORCE_DEPTH_ZERO_TO_ONE
 )
 
 # Link dependencies for noz
