@@ -32,9 +32,8 @@ namespace noz::node
     
     void Billboard::updateBillboard()
     {
-		auto camera = noz::node::Camera::main();
-		if (!camera)
-			return;
+        auto camera = scene()->camera();
+        assert(camera);
 
 #if 1
 		setRotation(glm::quatLookAt(-camera->forward(), VEC3_UP));

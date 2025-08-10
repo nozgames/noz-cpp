@@ -10,9 +10,6 @@ namespace noz::node
 {
 	NOZ_DEFINE_TYPEID(Camera)
 
-    // Static member definition
-    std::weak_ptr<Camera> Camera::_mainCamera;
-
     Camera::Camera()
         : _viewMatrix(1.0f)
         , _projectionMatrix(1.0f)
@@ -112,9 +109,6 @@ namespace noz::node
         _viewMatrixDirty = true;
         _viewProjectionDirty = true;
         
-        // Set this camera as the main camera
-        setAsMainCamera();
-
 		forceMatrixUpdate();
     }
 
@@ -137,9 +131,20 @@ namespace noz::node
         _viewProjectionDirty = true;
     }
 
-    void Camera::setAsMainCamera()
+    void Camera::onAttachToScene()
     {
-        _mainCamera = as<Camera>();
+        Node3d::onAttachToScene();
+
+        assert(!scene()->_camera);
+		scene()->_camera = as<Camera>();
+    }
+
+    void Camera::onDetachFromScene()
+    {
+        Node3d::onDetachFromScene();
+
+        assert(scene()->_camera == as<Camera>());
+        scene()->_camera = nullptr;
     }
 
     vec3 Camera::screenToWorld(const vec2& screenPos) const
