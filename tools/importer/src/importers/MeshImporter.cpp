@@ -101,9 +101,9 @@ void MeshImporter::flatten(GLTFLoader::MeshData& meshData)
 		
 		// Find the maximum z value in this triangle
 		float maxZ = std::max({
-			-meshData.positions[idx0].z,
-			-meshData.positions[idx1].z,
-			-meshData.positions[idx2].z
+			-meshData.positions[idx0].y,
+			-meshData.positions[idx1].y,
+			-meshData.positions[idx2].y
 		});
 		
 		triangles.push_back({maxZ, idx0, idx1, idx2});
@@ -125,14 +125,14 @@ void MeshImporter::flatten(GLTFLoader::MeshData& meshData)
 		meshData.indices.push_back(tri.i1);
 		meshData.indices.push_back(tri.i2);
 
-		meshData.positions[tri.i0].z = ii * 0.001f;
-		meshData.positions[tri.i1].z = ii * 0.001f;
-		meshData.positions[tri.i2].z = ii * 0.001f;
+		meshData.positions[tri.i0].y = ii * 0.001f;
+		meshData.positions[tri.i1].y = ii * 0.001f;
+		meshData.positions[tri.i2].y = ii * 0.001f;
 	}
 	
-	// Now flatten all z values to zero
-	//for (auto& position : meshData.positions)
-	//	position.z = 0.0f;
+	// Now flatten all y values to zero
+	for (auto& position : meshData.positions)
+	    position.y = 0.0f;
 }
 
 bool MeshImporter::saveMeshData(const std::string& outputPath, const GLTFLoader::MeshData& meshData, const MetaFile& meta)

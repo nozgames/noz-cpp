@@ -6,17 +6,23 @@
 
 */
 
+#include <noz/ui/elements/UIImage.h>
+#include <noz/renderer/Texture.h>
+#include <noz/renderer/CommandBuffer.h>
+#include <noz/Asset.h>
+#include <iostream>
+
 namespace noz::ui
 {
-    Image::Image()
+    UIImage::UIImage()
         : Element()
         , _texture(nullptr)
         , _sourceRect(0, 0, 0, 0) // Empty rect means use full texture
     {
-        setName("Image");
+        setName("UIImage");
     }
 
-    void Image::setTexture(const std::shared_ptr<noz::renderer::Texture>& texture)
+    void UIImage::setTexture(const std::shared_ptr<noz::renderer::Texture>& texture)
     {
         if (_texture != texture)
         {
@@ -25,7 +31,7 @@ namespace noz::ui
         }
     }
 
-    void Image::setTexture(const std::string& texturePath)
+    void UIImage::setTexture(const std::string& texturePath)
     {
         // Load the texture using the resource system
         auto texture = Asset::load<noz::renderer::Texture>(texturePath);
@@ -38,7 +44,7 @@ namespace noz::ui
         setTexture(texture);
     }
 
-    vec2 Image::measureContent(const vec2& availableSize)
+    vec2 UIImage::measureContent(const vec2& availableSize)
     {
         if (!_texture)
             return vec2(0.0f, 0.0f);
@@ -53,7 +59,7 @@ namespace noz::ui
         return vec2(static_cast<float>(_texture->width()), static_cast<float>(_texture->height()));
     }
 
-    void Image::renderElement(noz::renderer::CommandBuffer* commandBuffer)
+    void UIImage::renderElement(noz::renderer::CommandBuffer* commandBuffer)
     {
         // Render background first
         Element::renderElement(commandBuffer);
@@ -65,7 +71,7 @@ namespace noz::ui
         }
     }
 
-    void Image::renderImage(noz::renderer::CommandBuffer* commandBuffer, const noz::Rect& rect)
+    void UIImage::renderImage(noz::renderer::CommandBuffer* commandBuffer, const noz::Rect& rect)
     {
         if (!_texture)
             return;
@@ -92,7 +98,7 @@ namespace noz::ui
         renderQuad(commandBuffer, dest.x, dest.y, dest.width, dest.height, _texture);
     }
 
-    noz::Rect Image::calculateDestinationRect(const noz::Rect& bounds, const noz::Rect& sourceRect) const
+    noz::Rect UIImage::calculateDestinationRect(const noz::Rect& bounds, const noz::Rect& sourceRect) const
     {
         noz::Rect dest = bounds;
         
@@ -129,7 +135,7 @@ namespace noz::ui
         return dest;
     }
 
-	void Image::setSourceRect(const noz::Rect& sourceRect)
+	void UIImage::setSourceRect(const noz::Rect& sourceRect)
 	{
 		_sourceRect = sourceRect;
 		markLayoutDirty();

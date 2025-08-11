@@ -607,7 +607,7 @@ namespace noz::import
         if (!vector)
             return glm::vec3(0.0f);
                 
-        return glm::vec3(vector[0], vector[1], vector[2]);
+        return glm::vec3(vector[0], vector[2], vector[1]);
     }
                 
     glm::vec2 GLTFLoader::convertVector2(const float* vector2)

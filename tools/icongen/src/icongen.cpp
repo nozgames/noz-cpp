@@ -610,7 +610,7 @@ private:
 		canvasStyle.height = noz::ui::StyleLength::percent(1);
 		_canvas->setStyle(canvasStyle);
 
-		_iconImage = std::make_shared<noz::ui::Image>();
+		_iconImage = Object::create<noz::ui::UIImage>();
 		_iconImage->setTexture(_finalRenderTarget);
 
 		noz::ui::Style iconStyle = noz::ui::Style::defaultStyle();
@@ -653,7 +653,7 @@ private:
 
 	std::shared_ptr<Scene> _ui;
 	std::shared_ptr<noz::ui::Canvas> _canvas;
-	std::shared_ptr<noz::ui::Image> _iconImage;
+	std::shared_ptr<noz::ui::UIImage> _iconImage;
 
 	// Render targets
 	std::shared_ptr<noz::renderer::Texture> _iconRenderTarget;

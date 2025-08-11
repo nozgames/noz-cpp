@@ -41,7 +41,7 @@ namespace noz::node
 		
 		// Create orthographic projection for shadow mapping
 		auto lightProjection =
-			glm::orthoLH_ZO(
+			glm::ortho(
 				-shadowMapSize, shadowMapSize,
 				-shadowMapSize, shadowMapSize,
 				shadowNear, shadowFar);
@@ -102,7 +102,7 @@ namespace noz::node
 			}
 		}
 		
-		auto lightView = glm::lookAtLH(
+		auto lightView = glm::lookAt(
 			shadowCameraPosition,
 			focusTarget,
 			glm::vec3(0.0f, 1.0f, 0.0f)

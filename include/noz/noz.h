@@ -109,14 +109,12 @@
 // UI
 #include <noz/ui/Style.h>
 #include <noz/ui/ElementFlags.h>
-#include <noz/nodes/ui/Element.h>
-#include <noz/nodes/ui/Canvas.h>
-#include <noz/nodes/ui/Image.h>
-#include <noz/nodes/ui/Label.h>
-#include <noz/nodes/ui/Button.h>
+#include <noz/ui/elements/Element.h>
+#include <noz/ui/elements/Canvas.h>
+#include <noz/ui/elements/UIImage.h>
+#include <noz/ui/elements/UIMesh.h>
+#include <noz/ui/elements/Label.h>
+#include <noz/ui/elements/Button.h>
 
 // Event System
 #include <noz/Event.h>
-
-
-using namespace std;

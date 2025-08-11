@@ -8,6 +8,10 @@
 
 #pragma once
 
+#include <noz/ui/elements/Element.h>
+#include <noz/Rect.h>
+#include <memory>
+
 namespace noz::renderer
 {
     class Texture;
@@ -16,14 +20,14 @@ namespace noz::renderer
 namespace noz::ui
 {
     /**
-     * @brief Image node for texture/sprite rendering
+     * @brief UIImage node for texture/sprite rendering
      * Supports different scale modes and texture regions
      */
-    class Image : public Element
+    class UIImage : public Element
     {
     public:
-        Image();
-        virtual ~Image() = default;
+        UIImage();
+        virtual ~UIImage() = default;
 
         // Texture management
         void setTexture(const std::shared_ptr<noz::renderer::Texture>& texture);

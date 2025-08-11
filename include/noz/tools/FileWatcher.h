@@ -8,16 +8,6 @@
 
 #pragma once
 
-#include <string>
-#include <functional>
-#include <thread>
-#include <atomic>
-#include <filesystem>
-#include <unordered_map>
-#include <queue>
-#include <mutex>
-#include <chrono>
-
 namespace noz::tools
 {
 	class FileWatcher
