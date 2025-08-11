@@ -147,5 +147,8 @@ namespace noz::node
         NodeState _state;
         
         static uint64_t _nextId;
+        
+        // Static vector used as a stack for safe iteration during updates
+        static std::vector<std::shared_ptr<Node>> s_updateStack;
     };
 } 

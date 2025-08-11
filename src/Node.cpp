@@ -10,6 +10,7 @@ namespace noz::node
 {
     NOZ_DEFINE_TYPEID(Node)
     uint64_t Node::_nextId = 1;
+    std::vector<std::shared_ptr<Node>> Node::s_updateStack;
 
     Node::Node()
         : _name("Node")
@@ -239,14 +240,26 @@ namespace noz::node
         // Call user-defined update method
         update();
 
-        // Update all active children
+        // Save start index and push children to static stack
+        size_t startIndex = s_updateStack.size();
+        size_t count = 0;
+        
         for (const auto& child : _children)
         {
-            if (child->isActive())
-            {
-                child->updateInternal();
-            }
+            s_updateStack.push_back(child);
+            count++;
         }
+
+        // Update children from the stack
+        for (size_t i = startIndex; i < startIndex + count; ++i)
+        {
+            auto& child = s_updateStack[i];
+            if (child && child->isActive())
+                child->updateInternal();
+        }
+
+        // Pop children from stack (restore original size)
+        s_updateStack.resize(startIndex);
     }
 
     void Node::lateUpdateInternal()
@@ -259,14 +272,26 @@ namespace noz::node
         // Call user-defined lateUpdate method
         lateUpdate();
 
-        // LateUpdate all active children
+        // Save start index and push children to static stack
+        size_t startIndex = s_updateStack.size();
+        size_t count = 0;
+        
         for (const auto& child : _children)
         {
-            if (child->isActive())
-            {
-                child->lateUpdateInternal();
-            }
+            s_updateStack.push_back(child);
+            count++;
         }
+
+        // LateUpdate children from the stack
+        for (size_t i = startIndex; i < startIndex + count; ++i)
+        {
+            auto& child = s_updateStack[i];
+            if (child && child->isActive())
+                child->lateUpdateInternal();
+        }
+
+        // Pop children from stack (restore original size)
+        s_updateStack.resize(startIndex);
     }
 
     void Node::startInternal()
@@ -305,14 +330,31 @@ namespace noz::node
         // Call user-defined render method
         render(commandBuffer);
 
-        // Render all active children
+        // Save start index and push children to static stack
+        size_t startIndex = s_updateStack.size();
+        size_t count = 0;
+        
         for (const auto& child : _children)
         {
             if (child->isActive())
             {
+                s_updateStack.push_back(child);
+                count++;
+            }
+        }
+
+        // Render children from the stack
+        for (size_t i = startIndex; i < startIndex + count; ++i)
+        {
+            auto& child = s_updateStack[i];
+            if (child && child->isActive() && child->_parent.lock() == shared_from_this())
+            {
                 child->renderInternal(commandBuffer);
             }
         }
+
+        // Pop children from stack (restore original size)
+        s_updateStack.resize(startIndex);
     }
     
     void Node::destroyInternal()
