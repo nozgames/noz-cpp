@@ -39,11 +39,23 @@ namespace noz
 			return EventRegistry<EventType>::addListener(listener, sender);
 		}
 
+		template<typename EventType, typename ListenerType>
+		static EventListenerHandle listen(ListenerType* listener, std::weak_ptr<Object> sender)
+		{
+			return EventRegistry<EventType>::addListener(std::weak_ptr<ListenerType>(listener->as<ListenerType>()), sender);
+		}
+
 		// Scoped listening - calls handle() method on the listener object
 		template<typename EventType, typename ListenerType>
 		static ScopedEventListener scopedListen(std::weak_ptr<ListenerType> listener)
 		{
 			return ScopedEventListener(listen<EventType>(listener));
+		}
+
+		template<typename EventType, typename ListenerType>
+		static ScopedEventListener scopedListen(ListenerType* listener, std::weak_ptr<Object> sender)
+		{
+			return ScopedEventListener(listen<EventType>(std::weak_ptr<ListenerType>(listener->as<ListenerType>()), sender));
 		}
 
 		// Scoped listening with sender filter - calls handle() method on the listener object
@@ -60,9 +72,21 @@ namespace noz
 		}
 
 		template<typename EventType>
+		static void send(Object* sender, const EventType& event)
+		{
+			EventRegistry<EventType>::sendEvent(event, std::weak_ptr<Object>(sender->as<Object>()));
+		}
+
+		template<typename EventType>
 		static void send(const EventType& event)
 		{
 			EventRegistry<EventType>::sendEvent(event, std::weak_ptr<Object>());
+		}
+
+		template<typename EventType>
+		static void queue(Object* sender, EventType&& event)
+		{
+			EventManager::instance()->queue<EventType>(std::weak_ptr<Object>(sender->as<Object>()), std::move(event));
 		}
 
 		template<typename EventType>

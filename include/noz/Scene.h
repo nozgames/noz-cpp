@@ -47,6 +47,8 @@ namespace noz::node
         void setActiveDirectionalLight(std::shared_ptr<DirectionalLight> light);
         std::shared_ptr<DirectionalLight> activeDirectionalLight() const { return _activeDirectionalLight; }
 
+		std::shared_ptr<Camera> camera() const { return _camera; }  
+
     protected:
 
         Scene();
@@ -54,6 +56,8 @@ namespace noz::node
         virtual void initialize() {}
 
     private:
+
+        friend class Camera;
 
 		bool _started;
 		std::string _name;

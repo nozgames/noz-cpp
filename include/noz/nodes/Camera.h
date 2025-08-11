@@ -22,9 +22,6 @@ namespace noz::node
 
         virtual ~Camera() = default;
 
-        // Static main camera access
-        static std::shared_ptr<Camera> main() { return std::shared_ptr<Camera>(_mainCamera.lock()); }
-
         // Projection settings
         void setPerspective(float fov, float aspectRatio, float nearPlane, float farPlane);
         void setOrthographic(float left, float right, float bottom, float top, float nearPlane, float farPlane);
@@ -55,6 +52,8 @@ namespace noz::node
         // Node attachment callbacks
         void onAttachedToParent() override;
         void onDetachedFromParent() override;
+		void onAttachToScene() override;
+        void onDetachFromScene() override;
 
     private:
 
@@ -62,10 +61,7 @@ namespace noz::node
 
         // Matrix update methods
         void updateMatrices() const;
-        
-        // Camera activation
-        void setAsMainCamera();
-        
+                
         // Cached matrices
         mutable mat4 _viewMatrix;
         mutable mat4 _projectionMatrix;
@@ -75,8 +71,5 @@ namespace noz::node
         
         // Projection type flag
         bool _isOrthographic;
-        
-        // Static main camera
-        static std::weak_ptr<Camera> _mainCamera;
     };
 } 

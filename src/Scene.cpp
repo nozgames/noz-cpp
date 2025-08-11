@@ -41,8 +41,6 @@ namespace noz::node
 
     void Scene::update()
     {        
-        _camera.reset();
-
         // Call start() on first update if not already started
         if (!_started)
         {
@@ -67,8 +65,6 @@ namespace noz::node
         
         // Process destroy list at the end of the frame
         processDestroyList();
-
-        _camera = Camera::main();
     }
 
     void Scene::lateUpdate()

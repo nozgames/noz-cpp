@@ -50,7 +50,7 @@ namespace noz::node
 		// Position shadow camera to cover area around the main camera/player
 		glm::vec3 shadowCameraPosition = glm::vec3(0.0f); // Default fallback
 		
-		if (auto mainCamera = noz::node::Camera::main())
+		if (auto mainCamera = scene()->camera())
 		{
 			// Get main camera's world position and forward direction
 			glm::vec3 cameraPos = mainCamera->position();
@@ -82,7 +82,7 @@ namespace noz::node
 		
 		// Create view matrix for shadow camera looking towards the focus area
 		glm::vec3 focusTarget = shadowCameraPosition + direction();
-		if (auto mainCamera = noz::node::Camera::main())
+		if (auto mainCamera = scene()->camera())
 		{
 			// Get main camera's world position and forward direction
 			glm::vec3 cameraPos = mainCamera->position();
