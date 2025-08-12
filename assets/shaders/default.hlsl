@@ -14,7 +14,7 @@ VertexOutput vs(VertexInput input)
 {
     VertexOutput output;
     output.position = mul(vp, mul(m, float4(input.position, 1.0)));
-    output.uv0 = float2(input.uv0.x, 1.0 - input.uv0.y);
+    output.uv0 = float2(input.uv0.x, input.uv0.y);
     return output;
 }
 

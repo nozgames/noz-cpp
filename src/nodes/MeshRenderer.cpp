@@ -16,9 +16,7 @@ namespace noz::node
     MeshRenderer::MeshRenderer()
         : _castShadow(true)
         , _material(nullptr)
-        , _shader(nullptr)
         , _mesh(nullptr)
-        , _texture(nullptr)
     {
     }
 
