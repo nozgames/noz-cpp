@@ -105,7 +105,7 @@ namespace noz::ui
         // Record commands for drawing the mesh using the Material system
         commandBuffer->bind(_material);
         commandBuffer->setTransform(transform);
-        commandBuffer->setColor(glm::vec4(1.0f)); // Default white color
+        commandBuffer->bindColor(Color::White);
         commandBuffer->drawMesh(_mesh);
     }
 

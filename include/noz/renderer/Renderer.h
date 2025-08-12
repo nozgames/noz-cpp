@@ -120,6 +120,8 @@ namespace noz::renderer
 		void bindPipeline(const std::shared_ptr<Shader>& shader);
 		void bindMaterial(const std::shared_ptr<Material>& material);
 		void bindTransform(const glm::float4x4& transform);
+		void bindLight(const BindLightData& data);
+		void bindColor(const BindColorData& color);
 
 		void bindBones(const glm::mat4* bones, int boneCount);
 

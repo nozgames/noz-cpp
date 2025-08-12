@@ -20,7 +20,7 @@ VertexOutput vs(VertexInput input)
 
 //@ FRAGMENT
 
-#include "../../shaders/color.hlsl"
+#include "../../shaders/light.hlsl"
 
 Texture2D<float4> Texture : register(t1, space2);
 SamplerState Sampler : register(s1, space2);

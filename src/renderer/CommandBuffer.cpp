@@ -81,9 +81,9 @@ namespace noz::renderer
         _commands.emplace_back(CommandType::BindLight, data);
     }
 
-    void CommandBuffer::setColor(const glm::vec4& color)
+    void CommandBuffer::bindColor(const glm::vec4& color)
     {
-        _commands.emplace_back(CommandType::SetColor, SetColorData{color});
+        _commands.emplace_back(CommandType::BindColor, BindColorData{color});
     }
 
     void CommandBuffer::setTextOptions(const glm::vec4& textColor, const glm::vec4& outlineColor, 

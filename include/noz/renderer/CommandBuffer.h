@@ -34,7 +34,7 @@ namespace noz::renderer
         SetViewport,
         SetScissor,
         BindLight,
-        SetColor,
+        BindColor,
         SetTextOptions
     };
 
@@ -114,7 +114,7 @@ namespace noz::renderer
 		float shadowBias;
     };
     
-    struct SetColorData
+    struct BindColorData
     {
         glm::vec4 color;
     };
@@ -150,7 +150,7 @@ namespace noz::renderer
             SetViewportData,
             SetScissorData,
             BindLightData,
-            SetColorData,
+            BindColorData,
             SetTextOptionsData
         > data;
 
@@ -178,7 +178,7 @@ namespace noz::renderer
         void setBones(const std::vector<glm::mat4>& bones);
         void bindLight(const glm::vec3& lightDirection, float ambientIntensity, const glm::vec3& ambientColor, 
                       float diffuseIntensity, const glm::vec3& diffuseColor, float shadowBias = 0.001f);
-        void setColor(const glm::vec4& color);
+        void bindColor(const glm::vec4& color);
         void setTextOptions(const glm::vec4& textColor, const glm::vec4& outlineColor = glm::vec4(0.0f), 
                            float outlineWidth = 0.0f, float smoothing = 0.1f);
         

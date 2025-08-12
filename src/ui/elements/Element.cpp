@@ -511,7 +511,7 @@ namespace noz::ui
 
         commandBuffer->bind(s_uiMaterial);
         commandBuffer->setTransform(transform);
-        commandBuffer->setColor(color);
+        commandBuffer->bindColor(color);
         commandBuffer->drawMesh(s_uiMesh);
     }
 
@@ -532,7 +532,7 @@ namespace noz::ui
 
         commandBuffer->bind(s_uiMaterial);
         commandBuffer->setTransform(transform);
-        commandBuffer->setColor(glm::vec4(1.0f)); // White color for no tinting
+        commandBuffer->bindColor(glm::vec4(1.0f)); // White color for no tinting
         commandBuffer->drawMesh(s_uiMesh);
     }
 

@@ -372,22 +372,14 @@ namespace noz::renderer
                 case CommandType::BindLight:
                 {
                     const auto& data = std::get<BindLightData>(command.data);
-                    SDL_PushGPUFragmentUniformData(
-                        _currentCommandBuffer,
-                        static_cast<uint32_t>(registers::Fragment::Light),
-                        &data,
-                        sizeof(BindLightData));
+                    bindLight(data);
                     break;
                 }
                 
-                case CommandType::SetColor:
+                case CommandType::BindColor:
                 {
-                    const auto& data = std::get<SetColorData>(command.data);
-                    SDL_PushGPUFragmentUniformData(
-                        _currentCommandBuffer,
-                        static_cast<uint32_t>(registers::Fragment::Color),
-                        &data,
-                        sizeof(SetColorData));
+                    const auto& data = std::get<BindColorData>(command.data);
+                    bindColor(data);
                     break;
                 }
                 
@@ -395,11 +387,11 @@ namespace noz::renderer
                 case CommandType::SetTextOptions:
                 {
                     const auto& data = std::get<SetTextOptionsData>(command.data);
-                    //SDL_PushGPUFragmentUniformData(
-                    //    _currentCommandBuffer,
-                    //    0,
-                    //    &data,
-                    //    sizeof(SetTextOptionsData));
+                    SDL_PushGPUFragmentUniformData(
+                        _currentCommandBuffer,
+                        static_cast<int>(registers::Fragment::User0),
+                        &data,
+                        sizeof(SetTextOptionsData));
                     break;
                 }
                                                
@@ -836,7 +828,7 @@ namespace noz::renderer
         {
             SDL_PushGPUVertexUniformData(
                 _currentCommandBuffer,
-                0,
+                static_cast<int>(registers::Vertex::User0),
                 material->vertexUniformData(),
                 material->vertexUniformDataSize());
         }
@@ -846,7 +838,7 @@ namespace noz::renderer
         {
             SDL_PushGPUFragmentUniformData(
                 _currentCommandBuffer,
-                0,
+                static_cast<int>(registers::Fragment::User0),
                 material->fragmentUniformData(),
                 material->fragmentUniformDataSize());
         }
@@ -1000,6 +992,24 @@ namespace noz::renderer
 		return result;
 	}
 
+    void Renderer::bindLight(const BindLightData& data)
+    {
+        SDL_PushGPUFragmentUniformData(
+            _currentCommandBuffer,
+            static_cast<uint32_t>(registers::Fragment::Light),
+            &data,
+            sizeof(BindLightData));
+    }
+
+    void Renderer::bindColor(const BindColorData& data)
+    {
+        SDL_PushGPUFragmentUniformData(
+            _currentCommandBuffer,
+            static_cast<uint32_t>(registers::Fragment::Color),
+            &data,
+            sizeof(BindColorData));
+	}
+
 	void Renderer::resetState()
 	{
 		// Reset all state tracking variables to force rebinding
@@ -1008,6 +1018,9 @@ namespace noz::renderer
 
         for (int i = 0; i < static_cast<int>(registers::Sampler::Count); i++)
             bindTexture(_defaultTexture, i);
+
+		bindLight(BindLightData{});
+        bindColor(BindColorData{ Color::White });
 	}
 }
 

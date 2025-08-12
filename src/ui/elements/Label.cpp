@@ -107,7 +107,7 @@ namespace noz::ui
         auto y = rect.y;
 
         commandBuffer->bind(textMesh->fontMaterial);
-		commandBuffer->setColor(color);
+		commandBuffer->bindColor(color);
         commandBuffer->setTransform(glm::translate(glm::vec3(x, y, 0.0f)));
         commandBuffer->setTextOptions(color, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), 0.0f, 0.1f);
         commandBuffer->drawMesh(textMesh->mesh);
