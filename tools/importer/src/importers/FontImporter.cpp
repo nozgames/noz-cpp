@@ -68,26 +68,16 @@ namespace noz::import
         return extension == ".ttf" || extension == ".otf";
     }
         
-    bool FontImporter::import(const std::string& sourcePath, const std::string& outputDir)
+    void FontImporter::import(const std::string& sourcePath, const std::string& outputDir)
     {
-        try
-        {
-            std::filesystem::path source(sourcePath);
-            std::filesystem::path output(outputDir);
+        std::filesystem::path source(sourcePath);
+        std::filesystem::path output(outputDir);
                 
-            // Create output filename
-            std::string outputName = source.stem().string() + ".font";
-            std::filesystem::path outputPath = output / outputName;
+        // Create output filename
+        std::string outputName = source.stem().string() + ".font";
+        std::filesystem::path outputPath = output / outputName;
                 
-            std::cout << "Processing font: " << sourcePath << std::endl;
-                
-            return importFont(sourcePath, outputPath.string());
-        }
-        catch (const std::exception& e)
-        {
-            std::cerr << "Font import error: " << e.what() << std::endl;
-            return false;
-        }
+        importFont(sourcePath, outputPath.string());
     }
         
     std::vector<std::string> FontImporter::getSupportedExtensions() const

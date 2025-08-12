@@ -25,19 +25,6 @@ bool AnimationImporter::canImport(const std::string& filePath) const
     return MetaFile::parse(filePath + ".meta").getBool("Mesh", "importAnimation", false);
 }
 
-bool AnimationImporter::import(const std::string& sourcePath, const std::string& outputDir)
-{
-    try
-    {
-        return importAnimation(sourcePath, outputDir);
-    }
-    catch (const std::exception& e)
-    {
-        noz::Log::error("AnimationImporter", sourcePath + ": " + e.what());
-        return false;
-    }
-}
-
 std::vector<std::string> AnimationImporter::getSupportedExtensions() const
 {
     return { ".glb" };
@@ -48,7 +35,7 @@ std::string AnimationImporter::getName() const
     return "AnimationImporter";
 }
 
-bool AnimationImporter::importAnimation(const std::string& sourcePath, const std::string& outputDir)
+void AnimationImporter::import(const std::string& sourcePath, const std::string& outputDir)
 {
 	std::filesystem::path sourceFile(sourcePath);
 	std::string fileName = sourceFile.stem().string();
@@ -63,7 +50,7 @@ bool AnimationImporter::importAnimation(const std::string& sourcePath, const std
     if (!animation)
 		throw std::runtime_error("no animations found in GLB file");
             
-    return writeAnimation(outputDir + "/" + fileName + ".animation", animation, sourcePath);
+    writeAnimation(outputDir + "/" + fileName + ".animation", animation, sourcePath);
 }
 
 bool AnimationImporter::writeAnimation(

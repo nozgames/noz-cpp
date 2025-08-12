@@ -23,15 +23,9 @@ namespace noz::import
         return "AnimationBlendTree2D Importer";
     }
 
-    bool AnimationBlendTree2dImporter::import(const std::string& sourcePath, const std::string& outputDir)
+    void AnimationBlendTree2dImporter::import(const std::string& sourcePath, const std::string& outputDir)
     {
-        if (!canImport(sourcePath))
-        {
-            std::cerr << "Cannot import file: " << sourcePath << std::endl;
-            return false;
-        }
-
-        return importBlendTree(sourcePath, outputDir);
+        importBlendTree(sourcePath, outputDir);
     }
 
     bool AnimationBlendTree2dImporter::importBlendTree(const std::string& sourcePath, const std::string& outputDir)

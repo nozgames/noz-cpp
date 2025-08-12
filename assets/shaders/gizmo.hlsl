@@ -40,8 +40,8 @@ VertexOutput vs(VertexInput input)
 
 #include "../../shaders/light.hlsl"
 
-Texture2D diffuseTexture : register(t0, space2);
-SamplerState diffuseSampler : register(s0, space2);
+Texture2D diffuseTexture : register(t1, space2);
+SamplerState diffuseSampler : register(s1, space2);
 
 struct PixelInput
 {

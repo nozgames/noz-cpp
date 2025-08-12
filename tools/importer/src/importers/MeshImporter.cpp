@@ -22,24 +22,16 @@ bool MeshImporter::canImport(const std::string& filePath) const
     return MetaFile::parse(filePath + ".meta").getBool("Mesh", "importMesh", true);
 }
 
-bool MeshImporter::import(const std::string& sourcePath, const std::string& outputDir)
+void MeshImporter::import(const std::string& sourcePath, const std::string& outputDir)
 {
-    try
-    {
-        std::filesystem::path source(sourcePath);
-        std::filesystem::path output(outputDir);
+    std::filesystem::path source(sourcePath);
+    std::filesystem::path output(outputDir);
         
-        // Create output filename
-        std::string outputName = source.stem().string() + ".mesh";
-        std::filesystem::path outputPath = output / outputName;
+    // Create output filename
+    std::string outputName = source.stem().string() + ".mesh";
+    std::filesystem::path outputPath = output / outputName;
         
-        return processMesh(sourcePath, outputPath.string());
-    }
-    catch (const std::exception& e)
-    {
-        noz::Log::error("MeshImporter", std::string("Failed to import ") + sourcePath + ": " + e.what());
-        return false;
-    }
+    processMesh(sourcePath, outputPath.string());
 }
 
 std::vector<std::string> MeshImporter::getSupportedExtensions() const

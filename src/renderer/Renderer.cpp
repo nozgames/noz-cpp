@@ -852,7 +852,7 @@ namespace noz::renderer
         }
 
 		for (size_t i = 0, c = material->textureCount(); i < c; ++i)
-			bindTexture(material->texture(i), static_cast<int>(i));
+			bindTexture(material->texture(i), static_cast<int>(i) + static_cast<int>(registers::Sampler::User0));
     }
 
     void Renderer::bindTransform(const glm::float4x4& transform)
@@ -1006,7 +1006,7 @@ namespace noz::renderer
 		_currentPipeline = nullptr;
 		_currentTransform = glm::float4x4(0.0f); // Use identity matrix as default
 
-        for (int i = 0; i < static_cast<int>(registers::Fragment::Count); i++)
+        for (int i = 0; i < static_cast<int>(registers::Sampler::Count); i++)
             bindTexture(_defaultTexture, i);
 	}
 }

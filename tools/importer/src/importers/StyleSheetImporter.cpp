@@ -33,15 +33,13 @@ namespace noz::import
         return "StyleSheet Importer";
     }
     
-    bool StyleSheetImporter::import(const std::string& sourcePath, const std::string& outputDir)
+    void StyleSheetImporter::import(const std::string& sourcePath, const std::string& outputDir)
     {
         std::filesystem::path srcPath(sourcePath);
         std::filesystem::path outputPath = std::filesystem::path(outputDir) / srcPath.stem();
         outputPath.replace_extension(".styles");
         
-        std::cout << "Importing stylesheet: " << sourcePath << " -> " << outputPath << std::endl;
-        
-        return processStyleSheet(sourcePath, outputPath.string());
+        processStyleSheet(sourcePath, outputPath.string());
     }
     
     bool StyleSheetImporter::processStyleSheet(const std::string& sourcePath, const std::string& outputPath)

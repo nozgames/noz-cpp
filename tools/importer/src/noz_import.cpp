@@ -84,34 +84,25 @@ namespace noz::import
 		registry.registerImporter(std::make_shared<AnimationBlendTree2dImporter>());
     }
 
-    bool importFile(const std::string& filePath, const std::vector<std::string>& sourceDirs, const std::string& outputDir, const ImportConfig& config)
+    void importFile(const std::string& filePath, const std::vector<std::string>& sourceDirs, const std::string& outputDir, const ImportConfig& config)
     {
         // Skip .meta files
         if (filePath.find(".meta") != std::string::npos)
-            return true;
+            return;
 
         // Make sure file exists
         if (!std::filesystem::exists(filePath))
-        {
-            std::cerr << "File does not exist: " << filePath << std::endl;
-            return false;
-        }
+			throw std::runtime_error("file does not exist");
 
         // Register importers if needed
         auto& registry = AssetImporterRegistry::instance();
         if (registry.getImporters(filePath).empty())
-        {
             registerImporters(config);
-        }
 
         // Get importers for this file
         auto importers = registry.getImporters(filePath);
         if (importers.empty())
-        {
-            // No importer for this file type
-            std::cout << "No importer found for: " << filePath << std::endl;
-            return true;
-        }
+            return;
 
         // Calculate relative path and output directory
         // Find which source directory this file belongs to
@@ -131,10 +122,7 @@ namespace noz::import
         }
         
         if (matchingSourceDir.empty())
-        {
-            std::cerr << "File does not belong to any source directory: " << filePath << std::endl;
-            return false;
-        }
+			throw std::runtime_error("file does not belong to any source directory");
         
         std::filesystem::path outputPath = std::filesystem::path(outputDir) / relativePath.parent_path();
 
@@ -142,30 +130,16 @@ namespace noz::import
         std::filesystem::create_directories(outputPath);
 
         // Import with all applicable importers
-        bool anySucceeded = false;
         for (const auto& importer : importers)
-        {
-            if (importer->import(filePath, outputPath.string()))
-            {
-				std::cout << "imported '" + filePath + "'" << std::endl;
-				anySucceeded = true;
-            }
-            else
-            {
-                std::cerr << "Failed to import " << relativePath.string() << " with " << importer->getName() << std::endl;
-            }
-        }
-
-        return anySucceeded;
+            importer->import(filePath, outputPath.string());
     }
 
-    bool import(const std::vector<std::string>& sourceDirs, const std::string& outputDir, const ImportConfig& config)
+    void import(const std::vector<std::string>& sourceDirs, const std::string& outputDir, const ImportConfig& config)
     {
         std::cout << "Starting import process..." << std::endl;
         for (size_t i = 0; i < sourceDirs.size(); ++i)
-        {
             std::cout << "Source directory " << i << ": " << sourceDirs[i] << std::endl;
-        }
+
         std::cout << "Output directory: " << outputDir << std::endl;
             
         // Check that at least one source directory exists
@@ -182,7 +156,7 @@ namespace noz::import
         if (!hasValidSourceDir)
         {
             std::cerr << "No valid source directories found" << std::endl;
-            return false;
+            return;            
         }
             
         // Create output directory if it doesn't exist
@@ -201,53 +175,33 @@ namespace noz::import
         std::cout << "Scanning source directories for files..." << std::endl;
         auto fileMap = collectAllFilesWithPriority(sourceDirs);
         
-        int totalFiles = 0;
         for (const auto& [relativePath, absolutePath] : fileMap)
         {
             auto importers = registry.getImporters(absolutePath);
             if (importers.empty())
                 continue;
-
-            totalFiles++;
             
-            // Calculate output path
-            std::filesystem::path outputPath = std::filesystem::path(outputDir) / std::filesystem::path(relativePath).parent_path();
-                        
-            // Create output directory if it doesn't exist
+            // Create output directory
+            auto outputPath = std::filesystem::path(outputDir) / std::filesystem::path(relativePath).parent_path();
             std::filesystem::create_directories(outputPath);
-                
-            // Process file with all applicable importers
-            bool anySucceeded = false;
+             
+			std::string printablePath = absolutePath;
+            std::replace(printablePath.begin(), printablePath.end(), '\\', '/');
+
+            // Run all importers
             for (const auto& importer : importers)
             {
-                if (importer->import(absolutePath, outputPath.string()))
+                try
                 {
-					std::cout << "imported '" + absolutePath + "'" << std::endl;
-                    anySucceeded = true;
+                    importer->import(absolutePath, outputPath.string());
+                    std::cout << "imported '" + printablePath + "'" << std::endl;
                 }
-                else
+                catch (const std::exception& e)
                 {
-                    std::cerr << "Failed to import " << absolutePath << " with " << importer->getName() << std::endl;
-                }
-            }
-                
-            if (anySucceeded)
-            {
-                processedFiles++;
-            }
-            else
-            {
-                std::cerr << "All importers failed for: " << absolutePath << std::endl;
-                failedFiles++;
-            }
+                    std::cerr << "error: " << printablePath << ": " << e.what() << std::endl;
+				}
+            }                
         }
-            
-        if (totalFiles == 0)
-            return true;
-            
-
-        // Consider it a success if we processed at least some files and failures are minimal
-        return (processedFiles > 0) && (failedFiles <= processedFiles / 2);
     }
 
     bool deleteOutputFile(const std::string& deletedFilePath, const std::vector<std::string>& sourceDirs, const std::string& outputDir, const ImportConfig& config)

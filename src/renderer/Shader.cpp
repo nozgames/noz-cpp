@@ -17,9 +17,9 @@ namespace noz::renderer
         , _dstBlendFactor(SDL_GPU_BLENDFACTOR_ZERO)
         , _cullMode(SDL_GPU_CULLMODE_NONE)
 		, _flags(Flags::None),
-        _vertexUniformBuffers(0),
-        _fragmentUniformBuffers(0),
-        _samplers(0)
+        _vertexUniformBufferCount(0),
+        _fragmentUniformBufferCount(0),
+        _samplerCount(0)
     {
     }
 
@@ -61,13 +61,13 @@ namespace noz::renderer
         std::vector<uint8_t> fragmentBytecode = reader.readBytes();
         
         // Read resource counts
-        int vertexUniformBuffers = reader.readInt32();
-        int fragmentUniformBuffers = reader.readInt32();
+        auto vertexUniformBuffers = reader.readInt32();
+        auto fragmentUniformBuffers = reader.readInt32();
         
         // Store uniform buffer counts for Material system
-        _vertexUniformBuffers = vertexUniformBuffers;
-        _fragmentUniformBuffers = fragmentUniformBuffers;
-		_samplers = reader.readInt32();
+        _vertexUniformBufferCount = vertexUniformBuffers;
+        _fragmentUniformBufferCount = fragmentUniformBuffers;
+        _samplerCount = reader.readInt32();
         
         // Read pipeline properties
         _flags = static_cast<Flags>(reader.readUInt8());
@@ -82,10 +82,10 @@ namespace noz::renderer
         fragmentShaderCreateInfo.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
         fragmentShaderCreateInfo.format = SDL_GPU_SHADERFORMAT_SPIRV;
         fragmentShaderCreateInfo.entrypoint = "ps";
-        fragmentShaderCreateInfo.num_samplers = static_cast<uint32_t>(registers::Sampler::Count);
+        fragmentShaderCreateInfo.num_samplers = _samplerCount + static_cast<uint32_t>(registers::Sampler::User0);
         fragmentShaderCreateInfo.num_storage_textures = 0;
         fragmentShaderCreateInfo.num_storage_buffers = 0;
-        fragmentShaderCreateInfo.num_uniform_buffers = static_cast<uint32_t>(registers::Fragment::Count);
+        fragmentShaderCreateInfo.num_uniform_buffers = _fragmentUniformBufferCount + static_cast<uint32_t>(renderer::registers::Fragment::User0);
         fragmentShaderCreateInfo.props = 0;
 
         _fragmentShader = SDL_CreateGPUShader(device, &fragmentShaderCreateInfo);
@@ -99,7 +99,7 @@ namespace noz::renderer
         vertexShaderCreateInfo.num_samplers = 0;
         vertexShaderCreateInfo.num_storage_textures = 0;
         vertexShaderCreateInfo.num_storage_buffers = 0;
-        vertexShaderCreateInfo.num_uniform_buffers = static_cast<uint32_t>(noz::renderer::registers::Vertex::Count);
+        vertexShaderCreateInfo.num_uniform_buffers = _vertexUniformBufferCount + static_cast<uint32_t>(renderer::registers::Vertex::User0);
         vertexShaderCreateInfo.props = 0;
 
         _vertexShader = SDL_CreateGPUShader(device, &vertexShaderCreateInfo);

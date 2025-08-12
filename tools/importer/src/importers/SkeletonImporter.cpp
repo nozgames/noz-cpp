@@ -32,19 +32,11 @@ bool SkeletonImporter::canImport(const std::string& filePath) const
     return MetaFile::parse(metaPath).getBool("Mesh", "importSkeleton", false);
 }
 
-bool SkeletonImporter::import(const std::string& sourcePath, const std::string& outputDir)
+void SkeletonImporter::import(const std::string& sourcePath, const std::string& outputDir)
 {
-    try
-    {
-        std::filesystem::path sourceFile(sourcePath);
-        std::string outputPath = outputDir + "/" + sourceFile.stem().string() + ".skeleton";
-        return processSkeleton(sourcePath, outputPath);
-    }
-    catch (const std::exception& e)
-    {
-        noz::Log::error("SkeletonImporter", sourcePath, e.what());
-        return false;
-    }
+    std::filesystem::path sourceFile(sourcePath);
+    std::string outputPath = outputDir + "/" + sourceFile.stem().string() + ".skeleton";
+    processSkeleton(sourcePath, outputPath);
 }
 
 std::vector<std::string> SkeletonImporter::getSupportedExtensions() const

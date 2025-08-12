@@ -23,7 +23,7 @@ namespace noz::import
         FontImporter(const ImportConfig::FontConfig& config);
             
         bool canImport(const std::string& filePath) const override;
-        bool import(const std::string& sourcePath, const std::string& outputDir) override;
+        void import(const std::string& sourcePath, const std::string& outputDir) override;
         std::vector<std::string> getSupportedExtensions() const override;
         std::string getName() const override;
             

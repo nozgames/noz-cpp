@@ -18,32 +18,32 @@ namespace noz::renderer
 	{
 		enum class Vertex : uint32_t
 		{
-			User0 = 0,
-			User1 = 1,
-			User2 = 2,
-			Camera = 3,
-			Object = 4,
-			Bone = 5,
+			Camera = 0,
+			Object = 1,
+			Bone = 2,
+			User0 = 3,
+			User1 = 4,
+			User2 = 5,
 
 			Count
 		};
 
 		enum class Fragment : uint32_t
 		{
-			User0 = 0,
-			User1 = 1,
-			User2 = 2,
-			Light = 3,
-			Color = 4,
+			Color = 0,
+			Light = 1,
+			User0 = 2,
+			User1 = 3,
+			User2 = 4,
 			Count
 		};
 
 		enum class Sampler : uint32_t
 		{
-			User0 = 0,
-			User1 = 1,
-			User2 = 2,
-			ShadowMap = 3,
+			ShadowMap = 0,
+			User0 = 1,
+			User1 = 2,
+			User2 = 3,
 			Count
 		};
 	}

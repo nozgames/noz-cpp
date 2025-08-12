@@ -53,25 +53,17 @@ namespace noz
             return extension == ".png";
         }
         
-        bool TextureImporter::import(const std::string& sourcePath, const std::string& outputDir)
+        void TextureImporter::import(const std::string& sourcePath, const std::string& outputDir)
         {
-            try
-            {
-                std::filesystem::path source(sourcePath);
-                std::filesystem::path output(outputDir);
+            std::filesystem::path source(sourcePath);
+            std::filesystem::path output(outputDir);
                 
-                // Create output filename with .texture extension
-                std::string outputName = source.stem().string() + ".texture";
-                std::filesystem::path outputPath = output / outputName;
+            // Create output filename with .texture extension
+            std::string outputName = source.stem().string() + ".texture";
+            std::filesystem::path outputPath = output / outputName;
                 
-                // Process the texture
-                return processTexture(sourcePath, outputPath.string());
-            }
-            catch (const std::exception& e)
-            {
-                std::cerr << "Texture import error: " << e.what() << std::endl;
-                return false;
-            }
+            // Process the texture
+            processTexture(sourcePath, outputPath.string());
         }
         
         std::vector<std::string> TextureImporter::getSupportedExtensions() const
@@ -126,10 +118,7 @@ namespace noz
             
             // Convert from sRGB to linear space if requested
             if (convertFromSRGB)
-            {
                 convertPixelsToLinear(static_cast<uint8_t*>(surface->pixels), surface->w, surface->h, 4);
-                std::cout << "Converted texture from sRGB to linear space: " << sourcePath << std::endl;
-            }
 
             // Generate mipmaps if requested
             std::vector<std::vector<uint8_t>> mipLevels;
@@ -222,26 +211,40 @@ namespace noz
                 }
                 
                 // Write texture with all mip levels
-                bool success = writeTextureWithMips(outputPath, mipLevels, mipDimensions,
-                                                   minFilter, magFilter, clampU, clampV, clampW);
+                writeTextureWithMips(
+                    outputPath,
+                    mipLevels,
+                    mipDimensions,
+                    minFilter,
+                    magFilter,
+                    clampU,
+                    clampV,
+                    clampW);
                 SDL_DestroySurface(surface);
-                return success;
             }
             else
             {
                 // Write texture data without mipmaps - always use 4 channels (RGBA)
                 int channels = 4;
                 size_t dataSize = surface->w * surface->h * channels;
-                bool success = writeTexture(outputPath, surface->pixels, dataSize, 
-                                           surface->w, surface->h, channels,
-                                           minFilter, magFilter, clampU, clampV, clampW,
-                                           false);
+                writeTexture(
+                    outputPath,
+                    surface->pixels,
+                    dataSize, 
+                    surface->w,
+                    surface->h,
+                    channels,
+                    minFilter,
+                    magFilter,
+                    clampU,
+                    clampV,
+                    clampW,
+                    false);
                 SDL_DestroySurface(surface);
-                return success;
             }
         }
         
-        bool TextureImporter::writeTexture(
+        void TextureImporter::writeTexture(
 			const std::string& outputPath,
 			const void* data,
 			size_t size,
@@ -304,20 +307,10 @@ namespace noz
             
             // Write to file
             if (!writer.writeToFile(outputPath))
-            {
-                std::cerr << "Failed to write texture data to: " << outputPath << std::endl;
-                return false;
-            }
-            
-            std::cout << "Wrote texture: " << outputPath 
-                      << " (" << width << "x" << height << ", " 
-                      << (format == 1 ? "RGBA" : "RGB") << ")" 
-                      << " [Filter: " << minFilter << "/" << magFilter 
-                      << ", Clamp: " << clampU << "/" << clampV << "/" << clampW << "]" << std::endl;
-            return true;
+				throw std::runtime_error("failed to write");
         }
         
-        bool TextureImporter::writeTextureWithMips(
+        void TextureImporter::writeTextureWithMips(
             const std::string& outputPath,
             const std::vector<std::vector<uint8_t>>& mipLevels,
             const std::vector<std::pair<int, int>>& mipDimensions,
@@ -328,10 +321,7 @@ namespace noz
             const std::string& clampW)
         {
             if (mipLevels.empty() || mipDimensions.empty())
-            {
-                std::cerr << "No mip levels to write" << std::endl;
-                return false;
-            }
+                throw std::runtime_error("no mip levels to write");
             
             noz::StreamWriter writer;
             
@@ -398,17 +388,7 @@ namespace noz
             
             // Write to file
             if (!writer.writeToFile(outputPath))
-            {
-                std::cerr << "Failed to write texture data to: " << outputPath << std::endl;
-                return false;
-            }
-            
-            std::cout << "Wrote texture with mipmaps: " << outputPath 
-                      << " (" << width << "x" << height << ", RGBA, " 
-                      << numMipLevels << " mip levels)" 
-                      << " [Filter: " << minFilter << "/" << magFilter 
-                      << ", Clamp: " << clampU << "/" << clampV << "/" << clampW << "]" << std::endl;
-            return true;
+                throw std::runtime_error("failed to write");;            
         }
     }
 }

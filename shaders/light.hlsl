@@ -1,4 +1,4 @@
-cbuffer LightBuffer : register(b4, space3)
+cbuffer LightBuffer : register(b1, space3)
 {
     float3 ambientColor;
     float ambientIntensity;

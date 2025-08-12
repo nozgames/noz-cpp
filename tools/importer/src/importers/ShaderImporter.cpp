@@ -24,81 +24,81 @@ namespace noz::import
         return extension == ".hlsl";
     }
         
-    bool ShaderImporter::import(const std::string& sourcePath, const std::string& outputDir)
+    void ShaderImporter::import(const std::string& sourcePath, const std::string& outputDir)
     {
-        try
-        {
-            std::filesystem::path source(sourcePath);
-            std::filesystem::path output(outputDir);
-                
-            // Create output filename
-            std::string outputName = source.stem().string() + ".shader";
-            std::filesystem::path outputPath = output / outputName;
-                
-            return processShader(sourcePath, outputPath.string());
-        }
-        catch (const std::exception& e)
-        {
-            std::cerr << "Shader import error: " << e.what() << std::endl;
-        return false;
-        }
-    }
+        std::filesystem::path source(sourcePath);
+        std::filesystem::path output(outputDir);
+        auto outputName = source.stem().string() + ".shader";
+        auto outputPath = output / outputName;
+
+        auto meta = MetaFile::parse(sourcePath + ".meta");
         
-    std::vector<std::string> ShaderImporter::getSupportedExtensions() const
-    {
-        return {".hlsl" };
-    }
-        
-    std::string ShaderImporter::getName() const
-    {
-        return "ShaderImporter";
-    }
-        
-    bool ShaderImporter::processShader(const std::string& sourcePath, const std::string& outputPath)
-    {
         // Read source shader file
-        std::ifstream sourceFile(sourcePath);
+        std::ifstream sourceFile(source);
         if (!sourceFile.is_open())
-            return false;
+			throw std::runtime_error("failed to open source file");
             
         std::stringstream sourceStream;
         sourceStream << sourceFile.rdbuf();
         std::string shaderSource = sourceStream.str();
         sourceFile.close();
             
-        // Preprocess shader for vertex stage (with VERTEX_SHADER define)
-        std::string processedVertexShader = preprocessShader(shaderSource, sourcePath, "VERTEX_SHADER");
+        // Parse vertex shader
+        auto vertexShader = parseShader(shaderSource, sourcePath, "VERTEX_SHADER");
+		validateVertexShader(vertexShader);
+
+		// Parse fragment shader
+        auto fragmentShader = parseShader(shaderSource, sourcePath, "FRAGMENT_SHADER");
+		validateFragmentShader(fragmentShader);
             
-        // Preprocess shader for fragment stage (with FRAGMENT_SHADER define)
-        std::string processedFragmentShader = preprocessShader(shaderSource, sourcePath, "FRAGMENT_SHADER");
-            
-        // Validate shader if enabled
-        if (_config.validateShaders)
-        {
-            if (!validateShader(processedVertexShader) || !validateShader(processedFragmentShader))
-            {
-                std::cerr << "Shader validation failed: " << sourcePath << std::endl;
-                return false;
-            }
-        }
-            
-        return writeShader(outputPath, processedVertexShader, processedFragmentShader, sourcePath);
+        // Write the shader
+        auto includeDir = std::filesystem::path(sourcePath).parent_path().string();
+        noz::StreamWriter writer;
+        writeShader(vertexShader, fragmentShader, meta, includeDir, writer);
+        writer.writeToFile(outputPath.string());
     }
         
-    std::string ShaderImporter::preprocessShader(const std::string& source, const std::string& sourcePath, const std::string& stage)
+    ShaderImporter::ShaderInfo ShaderImporter::parseShader(const std::string& source, const std::string& sourcePath, const std::string& stage)
     {
-        std::string processed = source;
-            
-        // Handle #include directives
-        //processed = processIncludes(processed, sourcePath);
-            
-        // Handle custom stage directives and convert to #ifdef blocks
-        processed = processStageDirectives(processed, stage);
-                                    
-        return processed;
+		ShaderInfo info = {};
+        info.source = preprocessIncludes(preprocessStageDirectives(source, stage), sourcePath);
+
+        // Convert to lowercase for case-insensitive matching
+		std::string code = info.source;
+        std::transform(code.begin(), code.end(), code.begin(), [](unsigned char c) { return std::tolower(c); });
+
+        // Regex patterns for different resource types
+        static std::regex cbufferPattern(R"(cbuffer.*?register\s*\(\s*b(\d+))");
+        static std::regex samplerPattern(R"(sampler.*?register\s*\(\s*s(\d+))");
+
+        // Count cbuffers and categorize by binding type
+        std::sregex_iterator cbufferIter(code.begin(), code.end(), cbufferPattern);
+        std::sregex_iterator cbufferEnd;
+        for (; cbufferIter != cbufferEnd; ++cbufferIter)
+        {
+            auto index = std::stoi((*cbufferIter)[1].str());
+            if (index > 15)
+                throw std::runtime_error("Invalid vertex uniform buffer index: " + std::to_string(index));
+
+            info.uniformBuffers[index] = true;
+        }
+
+        // Count samplers
+        std::sregex_iterator samplerIter(code.begin(), code.end(), samplerPattern);
+        std::sregex_iterator samplerEnd;
+        for (; samplerIter != samplerEnd; ++samplerIter)
+        {
+            auto index = std::stoi((*samplerIter)[1].str());
+            if (index > 15)
+                throw std::runtime_error("Invalid sampler buffer index: " + std::to_string(index));
+
+            info.samplers[index] = true;
+        }
+
+        return info;
     }
         
-    std::string ShaderImporter::processIncludes(const std::string& source, const std::string& sourcePath)
+    std::string ShaderImporter::preprocessIncludes(const std::string& source, const std::string& sourcePath)
     {
         std::string result = source;
         std::regex includePattern("#include\\s*[\"<]([^\">]+)[\">]");
@@ -133,7 +133,7 @@ namespace noz::import
         return result;
     }
         
-    std::string ShaderImporter::processStageDirectives(const std::string& source, const std::string& stage)
+    std::string ShaderImporter::preprocessStageDirectives(const std::string& source, const std::string& stage)
     {
         std::string result = source;
             
@@ -201,78 +201,31 @@ namespace noz::import
         return content.str();
     }
         
-              
-    bool ShaderImporter::validateShader(const std::string& shaderSource)
+    void ShaderImporter::validateVertexShader(const ShaderInfo& shader) const
     {
-        // Basic validation - check for common HLSL syntax
-        std::string lowerSource = shaderSource;
-        std::transform(lowerSource.begin(), lowerSource.end(), lowerSource.begin(), [](unsigned char c) { return std::tolower(c); });
-            
-        // Check for basic HLSL structure
-        bool hasVertexShader = lowerSource.find("vs(") != std::string::npos || 
-                                lowerSource.find("vertexshader") != std::string::npos;
-        bool hasPixelShader = lowerSource.find("ps(") != std::string::npos || 
-                                lowerSource.find("pixelshader") != std::string::npos;
-            
-        // For now, just check if it looks like a valid HLSL file
-        bool hasValidStructure = hasVertexShader || hasPixelShader;
-            
-        if (!hasValidStructure)
-        {
-            std::cerr << "Shader validation failed: No valid vertex or pixel shader found" << std::endl;
-        return false;
-        }
-            
-        return true;
-    }
-        
-    // Helper function to count shader resources in HLSL code
-    struct ShaderResourceCounts
-    {
-        int uniformBuffers = 0;
-        int samplers = 0;
-    };
-
-    ShaderResourceCounts calcResourceCounts(const std::string& hlslCode)
-    {
-        ShaderResourceCounts counts = {};
-        std::string code = hlslCode;
-            
-        // Convert to lowercase for case-insensitive matching
+		auto code = shader.source;
         std::transform(code.begin(), code.end(), code.begin(), [](unsigned char c) { return std::tolower(c); });
-            
-        // Regex patterns for different resource types
-        static std::regex cbufferPattern(R"(cbuffer.*?register\s*\(\s*b(\d+))");
-        static std::regex samplerPattern(R"(sampler.*?register\s*\(\s*s(\d+))");
-            
-        // Count cbuffers and categorize by binding type
-        std::sregex_iterator cbufferIter(code.begin(), code.end(), cbufferPattern);
-        std::sregex_iterator cbufferEnd;
-        for (; cbufferIter != cbufferEnd; ++cbufferIter)
-        {
-            std::string index = (*cbufferIter)[1].str();
-            counts.uniformBuffers = std::max(counts.uniformBuffers, std::stoi(index) + 1);
-        }
-            
-        // Count samplers
-        std::sregex_iterator samplerIter(code.begin(), code.end(), samplerPattern);
-        std::sregex_iterator samplerEnd;
-        for (; samplerIter != samplerEnd; ++samplerIter)
-        {
-            std::string index = (*samplerIter)[1].str();
-            counts.samplers = std::max(counts.samplers, std::stoi(index) + 1);
-        }
-            
-        return counts;
+
+        if (code.find("vs(") == std::string::npos)
+			throw std::runtime_error("Vertex shader must contain a 'vs' entry point");
     }
 
-    bool ShaderImporter::writeShader(const std::string& outputPath, const std::string& vertexShader, const std::string& fragmentShader, const std::string& sourcePath)
+    void ShaderImporter::validateFragmentShader(const ShaderInfo& shader) const
     {
-        // Calculate resource counts from both shaders
-        auto vertexResourceCounts = calcResourceCounts(vertexShader);
-        auto fragmentResourceCounts = calcResourceCounts(fragmentShader);            
-            
-		auto meta = noz::MetaFile::parse(sourcePath + ".meta");
+        auto code = shader.source;
+        std::transform(code.begin(), code.end(), code.begin(), [](unsigned char c) { return std::tolower(c); });
+
+        if (code.find("ps(") == std::string::npos)
+            throw std::runtime_error("Fragment shader must contain a 'ps' entry point");
+    }
+
+    void ShaderImporter::writeShader(
+        const ShaderInfo& vs,
+        const ShaderInfo& fs,
+        const MetaFile& meta,
+        const std::string& includeDir,
+        StreamWriter& writer)
+    {
         auto flags = noz::renderer::Shader::Flags::None;
 
         if (meta.getBool("Pipeline", "depth_test", true))
@@ -284,6 +237,7 @@ namespace noz::import
         if (meta.getBool("Pipeline", "blend_enabled", true))
             flags = static_cast<noz::renderer::Shader::Flags>(static_cast<uint8_t>(flags) | static_cast<uint8_t>(noz::renderer::Shader::Flags::Blend));
             
+        // src_blend_factor
 		auto srcBlend = meta.getString("Pipeline", "src_blend_factor", "one");
 		SDL_GPUBlendFactor srcBlendFactor = SDL_GPU_BLENDFACTOR_ONE;
 		if (srcBlend == "one") srcBlendFactor = SDL_GPU_BLENDFACTOR_ONE;
@@ -291,6 +245,7 @@ namespace noz::import
 		else if (srcBlend == "src_alpha") srcBlendFactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA;
 		else if (srcBlend == "one_minus_src_alpha") srcBlendFactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
             
+        // dst_blend_factor
 		auto dstBlend = meta.getString("Pipeline", "dst_blend_factor", "zero");
 		SDL_GPUBlendFactor dstBlendFactor = SDL_GPU_BLENDFACTOR_ZERO;
 		if (dstBlend == "one") dstBlendFactor = SDL_GPU_BLENDFACTOR_ONE;
@@ -298,6 +253,7 @@ namespace noz::import
 		else if (dstBlend == "src_alpha") dstBlendFactor = SDL_GPU_BLENDFACTOR_SRC_ALPHA;
 		else if (dstBlend == "one_minus_src_alpha") dstBlendFactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
             
+        // cull_mode
         auto cullMode = meta.getString("Pipeline", "cull_mode", "none");
 		SDL_GPUCullMode cullModeValue = SDL_GPU_CULLMODE_NONE;
 		if (cullMode == "none") cullModeValue = SDL_GPU_CULLMODE_NONE;
@@ -310,48 +266,47 @@ namespace noz::import
         void* fragmentBytecode = nullptr;
         size_t fragmentBytecodeSize = 0;
 
-		auto includeDir = std::filesystem::path(sourcePath).parent_path().string();
-
         // Compile vertex shader
         SDL_ShaderCross_HLSL_Info vertexInfo = {};
-        vertexInfo.source = vertexShader.c_str();
+        vertexInfo.source = vs.source.c_str();
         vertexInfo.entrypoint = "vs";
 		vertexInfo.include_dir = includeDir.c_str();
         vertexInfo.shader_stage = SDL_SHADERCROSS_SHADERSTAGE_VERTEX;
 
         vertexBytecode = SDL_ShaderCross_CompileSPIRVFromHLSL(&vertexInfo, &vertexBytecodeSize);
         if (!vertexBytecode)
-        {
-            std::cerr << "Failed to compile vertex shader: " << SDL_GetError() << std::endl;
-            return false;
-        }
+            throw std::runtime_error(SDL_GetError());
 
         // Compile fragment shader
         SDL_ShaderCross_HLSL_Info fragmentInfo = {};
-        fragmentInfo.source = fragmentShader.c_str();
+        fragmentInfo.source = fs.source.c_str();
         fragmentInfo.entrypoint = "ps";
         fragmentInfo.include_dir = includeDir.c_str();
         fragmentInfo.shader_stage = SDL_SHADERCROSS_SHADERSTAGE_FRAGMENT;
 
         fragmentBytecode = SDL_ShaderCross_CompileSPIRVFromHLSL(&fragmentInfo, &fragmentBytecodeSize);
         if (!fragmentBytecode)
-        {
-            std::cerr << "Failed to compile fragment shader: " << SDL_GetError() << std::endl;
-            SDL_free(vertexBytecode);
-            return false;
-        }
+            throw std::runtime_error(SDL_GetError());
 
-        noz::StreamWriter writer;
         writer.writeFileSignature("SHDR");
         writer.writeUInt32(1);
         writer.writeBytes((uint8_t*)vertexBytecode, (uint16_t)vertexBytecodeSize);
 		writer.writeBytes((uint8_t*)fragmentBytecode, (uint16_t)fragmentBytecodeSize);
             
         // Write resource counts
-        writer.writeInt32(vertexResourceCounts.uniformBuffers);
-        writer.writeInt32(fragmentResourceCounts.uniformBuffers);
-        writer.writeInt32(fragmentResourceCounts.samplers);
-            
+        writer.writeInt32(
+            vs.uniformBuffers[static_cast<int>(renderer::registers::Vertex::User0)] +
+            vs.uniformBuffers[static_cast<int>(renderer::registers::Vertex::User1)] +
+            vs.uniformBuffers[static_cast<int>(renderer::registers::Vertex::User2)]);
+        writer.writeInt32(
+            fs.uniformBuffers[static_cast<int>(renderer::registers::Fragment::User0)] +
+            fs.uniformBuffers[static_cast<int>(renderer::registers::Fragment::User1)] +
+            fs.uniformBuffers[static_cast<int>(renderer::registers::Fragment::User2)]);
+        writer.writeInt32(
+            fs.samplers[static_cast<int>(renderer::registers::Sampler::User0)] +
+            fs.samplers[static_cast<int>(renderer::registers::Sampler::User1)] +
+            fs.samplers[static_cast<int>(renderer::registers::Sampler::User2)]);
+
         // Write pipeline properties
         writer.writeUInt8(static_cast<uint8_t>(flags));
         writer.writeUInt32(srcBlendFactor);
@@ -360,13 +315,15 @@ namespace noz::import
 
 		SDL_free(vertexBytecode);
 		SDL_free(fragmentBytecode);
+    }
 
-        if (!writer.writeToFile(outputPath))
-        {
-            std::cerr << "Failed to write shader file: " << outputPath << std::endl;
-			return false;
-        }
-            
-        return true;
+    std::vector<std::string> ShaderImporter::getSupportedExtensions() const
+    {
+        return { ".hlsl" };
+    }
+
+    std::string ShaderImporter::getName() const
+    {
+        return "ShaderImporter";
     }
 }

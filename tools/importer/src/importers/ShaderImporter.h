@@ -5,32 +5,41 @@ namespace noz::import
     class ShaderImporter : public AssetImporter
     {
     public:
+        
         ShaderImporter(const ImportConfig::ShaderConfig& config);
             
         bool canImport(const std::string& filePath) const override;
-        bool import(const std::string& sourcePath, const std::string& outputDir) override;
+        void import(const std::string& sourcePath, const std::string& outputDir) override;
         std::vector<std::string> getSupportedExtensions() const override;
         std::string getName() const override;
             
     private:
+
+        struct ShaderInfo
+        {
+            std::string source;
+            bool uniformBuffers[16];
+            bool samplers[16];
+        };
+
         ImportConfig::ShaderConfig _config;
             
-        // Process shader (preprocess, validate)
-        bool processShader(const std::string& sourcePath, const std::string& outputPath);
+        void import(const std::string& sourcePath, const std::string& outputPath, const MetaFile& meta);
             
-        // Save processed shader
-        bool writeShader(const std::string& outputPath, const std::string& vertexShader, const std::string& fragmentShader, const std::string& sourcePath);
+        void writeShader(
+            const ShaderInfo& vertexShader,
+            const ShaderInfo& fragmentShader,
+            const MetaFile& meta,
+            const std::string& includeDir,
+            StreamWriter& writer);
             
-        // Preprocessing methods
-        std::string preprocessShader(const std::string& source, const std::string& sourcePath, const std::string& stage = "");
-        std::string processIncludes(const std::string& source, const std::string& sourcePath);
-        std::string processStageDirectives(const std::string& source, const std::string& stage);
+        ShaderInfo parseShader(const std::string& source, const std::string& sourcePath, const std::string& stage = "");
+        std::string preprocessIncludes(const std::string& source, const std::string& sourcePath);
+        std::string preprocessStageDirectives(const std::string& source, const std::string& stage);
         std::string resolveIncludePath(const std::string& includePath, const std::string& sourcePath);
         std::string loadIncludeFile(const std::string& includePath);
-        std::string processDefines(const std::string& source, const std::string& additionalDefines = "");
-        std::string removeComments(const std::string& source);
             
-        // Validation
-        bool validateShader(const std::string& shaderSource);
+        void validateVertexShader(const ShaderInfo& shader) const;
+        void validateFragmentShader(const ShaderInfo& shader) const;
     };
 } 
