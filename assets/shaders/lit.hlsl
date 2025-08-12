@@ -1,30 +1,6 @@
-
 //@ VERTEX
 
-cbuffer CameraBuffer : register(b0, space1)
-{
-    float4x4 vp;
-    float4x4 v;
-    float4x4 lightViewProjection;
-};
-
-cbuffer ObjectBuffer : register(b1, space1)
-{
-    float4x4 m;
-};
-
-cbuffer BoneBuffer : register(b2, space1)
-{
-    float4x4 boneTransforms[32];  // Increased for 30 bones + padding
-};
-
-struct VertexInput
-{
-    float3 position : POSITION;
-    float2 uv0 : TEXCOORD0;
-    float3 normal : TEXCOORD1;
-    float2 boneIndex : TEXCOORD2;  // Single bone index per vertex
-};
+#include "../../shaders/mesh.hlsl"
 
 struct VertexOutput
 {
@@ -60,21 +36,11 @@ VertexOutput vs(VertexInput input)
 //@ END
 //@ FRAGMENT
 
-Texture2D<float4> Texture : register(t0, space2);
-Texture2D<float> shadowTexture : register(t1, space2);
+#include "../../shaders/light.hlsl"
+#include "../../shaders/shadow.hlsl"
 
-SamplerState Sampler : register(s0, space2);
-SamplerComparisonState shadowSampler : register(s1, space2);
-
-cbuffer LightBuffer : register(b0, space3)
-{
-    float3 ambientColor;
-    float ambientIntensity;
-    float3 diffuseColor;
-    float diffuseIntensity;
-    float3 lightDirection;
-    float shadowBias;  // Configurable shadow bias
-};
+Texture2D<float4> Texture : register(t1, space2);
+SamplerState Sampler : register(s1, space2);
 
 float calculateShadow(float4 lightSpacePos, float3 normal)
 {
@@ -107,7 +73,7 @@ float calculateShadow(float4 lightSpacePos, float3 normal)
     
     // Use hardware shadow comparison
     // Returns 1.0 if currentDepth < shadowMap depth (lit), 0.0 otherwise (shadowed)
-    return shadowTexture.SampleCmp(shadowSampler, projCoords.xy, currentDepth);
+    return NOZ_SHADOW_TEXTURE.SampleCmp(NOZ_SHADOW_SAMPLER, projCoords.xy, currentDepth);
 }
 
 struct PixelInput

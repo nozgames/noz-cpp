@@ -1,3 +1,11 @@
+/*
+
+    NoZ Game Engine
+
+    Copyright(c) 2025 NoZ Games, LLC
+
+*/
+
 #include <noz/renderer/effects/BorderEffect.h>
 #include <noz/renderer/Shader.h>
 #include <noz/renderer/CommandBuffer.h>
@@ -12,10 +20,11 @@ namespace noz::renderer::effects
     {
     }
     
-    void BorderEffect::initialize() 
+    void BorderEffect::initialize(const std::shared_ptr<Texture>& texture) 
     {
-        FullscreenEffect::initialize();
-        _shader = Asset::load<Shader>("shaders/border_effect");
+		auto material = Object::create<Material>("shaders/border_effect");
+		material->setTexture(texture);
+        FullscreenEffect::initialize(material);
     }
     
     void BorderEffect::setBorderParams(const BorderParams& params)
@@ -26,14 +35,8 @@ namespace noz::renderer::effects
     
     void BorderEffect::render(CommandBuffer* commandBuffer)
     {
-        assert(_mesh);
-        assert(_shader);
-        assert(_inputTexture);
-
-        commandBuffer->setCamera(glm::mat4(1.0f), glm::mat4(1.0f), glm::mat4(1.0f));
-        commandBuffer->setTransform(glm::mat4(1.0f));
-        commandBuffer->bindShader(_shader);
-        commandBuffer->bindTextureWithSampler(_inputTexture, Renderer::instance()->linearSampler());
+        assert(commandBuffer);
+        assert(material());
         
         struct alignas(16) BorderBuffer
         {
@@ -45,7 +48,7 @@ namespace noz::renderer::effects
             float textureWidth;
             float textureHeight;
             float padding;
-        };
+        };        
         
         BorderBuffer bufferData;
         bufferData.borderWidth = _params.width;
@@ -57,10 +60,8 @@ namespace noz::renderer::effects
         bufferData.textureHeight = _params.textureHeight;
         bufferData.padding = 0.0f;
         
-        // Set the buffer data for b0 register in space3 (BorderBuffer)
-        commandBuffer->setBufferData(0, &bufferData, sizeof(BorderBuffer));
-        
-        // Draw the fullscreen quad
-        commandBuffer->drawMesh(_mesh);
+		material()->setFragmentUniformData(0, &bufferData, sizeof(BorderBuffer));
+
+		FullscreenEffect::render(commandBuffer);
     }
 }

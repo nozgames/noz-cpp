@@ -12,10 +12,6 @@ namespace noz::ui
 {
 	NOZ_DEFINE_TYPEID(Label)
 
-    // Static member definitions
-    std::shared_ptr<noz::renderer::Shader> Label::s_textShader;
-    bool Label::s_textResourcesInitialized = false;
-
     Label::Label()
         : Element()
         , _text("")
@@ -34,31 +30,14 @@ namespace noz::ui
         markLayoutDirty();
     }
 
-
-    void Label::start()
-    {
-        Element::start();
-        
-        // Initialize text resources if needed
-        if (!s_textResourcesInitialized)
-        {
-            initializeTextResources();
-        }
-        
-        // Text mesh will be created lazily when needed
-    }
-
     vec2 Label::measureContent(const vec2& availableSize)
     {
         if (_text.empty())
             return vec2(0.0f, 0.0f);
             
-        auto font = getFont();
-        if (!font || !font->isLoaded())
-            return vec2(0.0f, 0.0f);
-        
-        float fontSize = style().fontSize.value;
-        return TextEngine::instance()->measureText(_text, font, fontSize);
+        assert(font());
+
+        return TextEngine::instance()->measureText(_text, font(), style().fontSize.value);
     }
 
     void Label::renderElement(noz::renderer::CommandBuffer* commandBuffer)
@@ -85,17 +64,12 @@ namespace noz::ui
             return;
         }
         
-        auto font = getFont();
-        if (!font || !font->isLoaded())
-        {
-            _textMesh.reset();
-            return;
-        }
-        
+        assert(font());
+
         // Create text request
         noz::ui::TextRequest request;
         request.text = _text;
-        request.font = font;
+        request.font = font();
         request.fontSize = style().fontSize;
         request.color = style().color.value;
         request.outlineColor = style().textOutlineColor.value;
@@ -118,43 +92,28 @@ namespace noz::ui
         _textMeshDirty = true;
     }
 
-    void Label::initializeTextResources()
+    void Label::renderTextMesh(
+        noz::renderer::CommandBuffer* commandBuffer,
+        std::shared_ptr<noz::ui::TextMesh> textMesh,
+        const noz::Rect& rect,
+        const glm::vec4& color)
     {
-        if (s_textResourcesInitialized)
-            return;
-            
-        // Create text shader for glyph rendering (includes SDF support)
-        s_textShader = Asset::load<noz::renderer::Shader>("shaders/text");
-        if (!s_textShader)
-        {
-            std::cerr << "Failed to load text shader for Label" << std::endl;
-            return;
-        }
-        
-        s_textResourcesInitialized = true;
-    }
-
-    void Label::renderTextMesh(noz::renderer::CommandBuffer* commandBuffer,
-                              std::shared_ptr<noz::ui::TextMesh> textMesh,
-                              const noz::Rect& rect,
-                              const glm::vec4& color)
-    {
-        if (!commandBuffer || !textMesh || !s_textShader)
-            return;
+        assert(commandBuffer);
+        assert(textMesh);
 
         auto w = textMesh->size.x;
         auto h = textMesh->size.y;
         auto x = rect.x;
         auto y = rect.y;
 
-        commandBuffer->bind(s_textShader);
+        commandBuffer->bind(textMesh->fontMaterial);
+		commandBuffer->setColor(color);
         commandBuffer->setTransform(glm::translate(glm::vec3(x, y, 0.0f)));
         commandBuffer->setTextOptions(color, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), 0.0f, 0.1f);
-        commandBuffer->bind(textMesh->fontTexture);
         commandBuffer->drawMesh(textMesh->mesh);
     }
 
-    std::shared_ptr<noz::renderer::Font> Label::getFont() const
+    std::shared_ptr<noz::renderer::Font> Label::font() const
     {
         // For now, use a simple font loading approach
         // TODO: Implement proper font management similar to original UI system

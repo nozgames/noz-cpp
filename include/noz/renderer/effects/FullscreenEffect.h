@@ -27,11 +27,9 @@ namespace noz::renderer::effects
         NOZ_DECLARE_TYPEID(FullscreenEffect, Node);
         
         virtual ~FullscreenEffect() = default;
-    
-        void setInputTexture(std::shared_ptr<Texture> texture);
-        std::shared_ptr<Texture> getInputTexture() const { return _inputTexture; }
-    
-        std::shared_ptr<Mesh> getMesh() const { return _mesh; }
+        
+        std::shared_ptr<Mesh> mesh() const;
+        std::shared_ptr<Material> material() const;
     
         virtual void render(CommandBuffer* commandBuffer);
     
@@ -39,11 +37,14 @@ namespace noz::renderer::effects
 
         FullscreenEffect();
         
-        void initialize() override;
+        void initialize(const std::shared_ptr<Material>& material);
         void createFullscreenQuad();
     
         std::shared_ptr<Mesh> _mesh;
-        std::shared_ptr<Shader> _shader;
-        std::shared_ptr<Texture> _inputTexture;
+        std::shared_ptr<Material> _material;
     };
+
+    inline std::shared_ptr<Mesh> FullscreenEffect::mesh() const { return _mesh; }
+    inline std::shared_ptr<Material> FullscreenEffect::material() const { return _material; }
+
 }

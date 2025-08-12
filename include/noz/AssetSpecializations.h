@@ -43,7 +43,7 @@ inline std::shared_ptr<noz::renderer::Mesh> noz::AssetDatabase::loadInternal<noz
 template<>
 inline std::shared_ptr<noz::renderer::Texture> noz::AssetDatabase::loadInternal<noz::renderer::Texture>(const std::string& name)
 {
-    auto texture = std::shared_ptr<noz::renderer::Texture>(noz::renderer::Texture::load(name));
+    auto texture = noz::renderer::Texture::load(name);
     if (!texture)
         return nullptr;
 

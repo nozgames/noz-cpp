@@ -24,7 +24,7 @@ namespace noz::renderer
 	PixelationEffect::~PixelationEffect()
 	{
 		_renderTarget.reset();
-		_pixelationShader.reset();
+		_material.reset();
 		_fullscreenQuad.reset();
 	}
 
@@ -34,12 +34,9 @@ namespace noz::renderer
 		_referenceHeight = referenceHeight;
 		
 		// Load the pixelation shader
-		_pixelationShader = Asset::load<Shader>("shaders/pixelation");
-		if (!_pixelationShader)
-		{
-			std::cerr << "Failed to load pixelation shader" << std::endl;
+		_material = Object::create<Material>("shaders/pixelation");
+		if (!_material)
 			return false;
-		}
 		
 		// Create fullscreen quad for rendering the effect
 		createFullscreenQuad();
@@ -135,22 +132,15 @@ namespace noz::renderer
 	void PixelationEffect::createRenderTarget()
 	{
 		auto renderer = Renderer::instance();
-		if (!renderer || !renderer->GetGPUDevice())
-		{
-			std::cerr << "Renderer not initialized for pixelation render target" << std::endl;
-			return;
-		}
+		assert(renderer);
 		
 		// Only create if we have valid dimensions
 		if (_renderTargetWidth <= 0 || _renderTargetHeight <= 0)
-		{
 			return;
-		}
 		
 		// Create render target at calculated resolution
 		_renderTarget = std::shared_ptr<Texture>(
 			Texture::createRenderTarget(
-				renderer->GetGPUDevice(),
 				_renderTargetWidth,
 				_renderTargetHeight,
 				"PixelationRenderTarget"
@@ -187,6 +177,7 @@ namespace noz::renderer
 
 	void PixelationEffect::endRender(CommandBuffer* commandBuffer)
 	{
+#if 0
 		if (!_initialized || !_enabled || !_renderTarget || !_pixelationShader || !_fullscreenQuad)
 			return;
 		
@@ -221,5 +212,7 @@ namespace noz::renderer
 		
 		// End the screen pass
 		commandBuffer->endOpaquePass();
+
+#endif
 	}
 }

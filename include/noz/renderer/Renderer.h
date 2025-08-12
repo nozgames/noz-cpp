@@ -1,6 +1,5 @@
 #pragma once
 
-// Forward declarations
 namespace noz::node
 {
 	class Camera;
@@ -9,10 +8,45 @@ namespace noz::node
 namespace noz::renderer
 {
 	class Shader;
+	class Material;
 	class Mesh;
 	class Texture;
 	class CommandBuffer;
 	class SamplerFactory;
+
+	namespace registers
+	{
+		enum class Vertex : uint32_t
+		{
+			User0 = 0,
+			User1 = 1,
+			User2 = 2,
+			Camera = 3,
+			Object = 4,
+			Bone = 5,
+
+			Count
+		};
+
+		enum class Fragment : uint32_t
+		{
+			User0 = 0,
+			User1 = 1,
+			User2 = 2,
+			Light = 3,
+			Color = 4,
+			Count
+		};
+
+		enum class Sampler : uint32_t
+		{
+			User0 = 0,
+			User1 = 1,
+			User2 = 2,
+			ShadowMap = 3,
+			Count
+		};
+	}
 
 	class Renderer : public noz::ISingleton<Renderer>
 	{
@@ -54,9 +88,8 @@ namespace noz::renderer
 
 		// Texture readback
 		noz::Image readTexturePixels(const std::shared_ptr<Texture>& texture);
-
 		
-		SDL_GPUDevice* GetGPUDevice() const { return _gpu; }
+		SDL_GPUDevice* device() const;
 		SDL_GPUCommandBuffer* GetCommandBuffer() const { return static_cast<SDL_GPUCommandBuffer*>(_currentCommandBuffer); }
 		SDL_GPURenderPass* GetCurrentRenderPass() const { return _currentRenderPass; }
 		bool IsInitialized() const { return _initialized; }
@@ -82,12 +115,14 @@ namespace noz::renderer
 		void endOpaquePass();
 
 		// Bind default texture and sampler for rendering
-		void bindTexture(const std::shared_ptr<Texture>& texture);
+		void bindTexture(const std::shared_ptr<Texture>& texture, int index = 0);
 		void bindTextureWithSampler(const std::shared_ptr<Texture>& texture, SDL_GPUSampler* sampler);
 		void bindPipeline(const std::shared_ptr<Shader>& shader);
+		void bindMaterial(const std::shared_ptr<Material>& material);
 		void bindTransform(const glm::float4x4& transform);
 
 		void bindBones(const glm::mat4* bones, int boneCount);
+
 
 		SDL_Window* _window;
 		SDL_GPUDevice* _gpu;
@@ -136,7 +171,6 @@ namespace noz::renderer
 		
 		// State tracking to avoid redundant bindings
 		SDL_GPUGraphicsPipeline* _currentPipeline;
-		std::shared_ptr<Texture> _currentTexture;
 		glm::float4x4 _currentTransform;
 	};
 
@@ -145,5 +179,9 @@ namespace noz::renderer
 		return _viewProjectionMatrix;
 	}
 
+	inline SDL_GPUDevice* Renderer::device() const
+	{
+		return _gpu;
+	}
 }
 

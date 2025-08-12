@@ -10,10 +10,10 @@
 
 namespace noz::renderer
 {
-    Mesh::Mesh(const std::string& path)
-        : noz::Asset(path)
-        , _gpu(nullptr)
-        , _vertexBuffer(nullptr)
+    NOZ_DEFINE_TYPEID(Mesh);
+
+    Mesh::Mesh()
+        : _vertexBuffer(nullptr)
         , _transferBuffer(nullptr)
         , _indexBuffer(nullptr)
         , _indexTransferBuffer(nullptr)
@@ -29,13 +29,19 @@ namespace noz::renderer
 
     std::shared_ptr<Mesh> Mesh::load(const std::string& name)
     {
-        auto fullPath = AssetDatabase::getFullPath(name, "mesh");
+        auto mesh = Object::create<Mesh>(name);
+        mesh->loadInternal();
+        return mesh;
+    }
+
+    void Mesh::loadInternal()
+    {
         noz::StreamReader reader;
-        if (!reader.loadFromFile(fullPath))
-            return nullptr;
+        if (!reader.loadFromFile(AssetDatabase::getFullPath(name(), "mesh")))
+            throw std::runtime_error("Invalid stream");
 
 		if (reader.readFileSignature("MESH") == false)
-			return nullptr;
+			throw std::runtime_error("Invalid mesh file signature");
 
         auto gpu = reader.readBool();
         auto cpu = reader.readBool();
@@ -59,107 +65,89 @@ namespace noz::renderer
         modelData.hasAnimations = reader.readBool();
         reader.readUInt8(); // Skip padding[0]
         reader.readUInt8(); // Skip padding[1]
-        
-        // Create mesh
-        auto mesh = std::make_shared<Mesh>(name);
-        
+                
         // Read vertex data
         if (modelData.vertexCount > 0)
         {
-            mesh->positions().resize(modelData.vertexCount);
+            positions().resize(modelData.vertexCount);
             for (uint16_t i = 0; i < modelData.vertexCount; ++i)
             {
-                mesh->positions()[i].x = reader.readFloat();
-                mesh->positions()[i].y = reader.readFloat();
-                mesh->positions()[i].z = reader.readFloat();
+                positions()[i].x = reader.readFloat();
+                positions()[i].y = reader.readFloat();
+                positions()[i].z = reader.readFloat();
             }
             
             if (modelData.hasNormals)
             {
-                mesh->normals().resize(modelData.vertexCount);
+                normals().resize(modelData.vertexCount);
                 for (uint16_t i = 0; i < modelData.vertexCount; ++i)
                 {
-                    mesh->normals()[i].x = reader.readFloat();
-                    mesh->normals()[i].y = reader.readFloat();
-                    mesh->normals()[i].z = reader.readFloat();
+                    normals()[i].x = reader.readFloat();
+                    normals()[i].y = reader.readFloat();
+                    normals()[i].z = reader.readFloat();
                 }
             }
             
             if (modelData.hasUVs)
             {
-                mesh->uv0().resize(modelData.vertexCount);
+                uv0().resize(modelData.vertexCount);
                 for (uint16_t i = 0; i < modelData.vertexCount; ++i)
                 {
-                    mesh->uv0()[i].x = reader.readFloat();
-                    mesh->uv0()[i].y = reader.readFloat();
+                    uv0()[i].x = reader.readFloat();
+                    uv0()[i].y = reader.readFloat();
                 }
             }
             
             if (modelData.hasBoneIndices)
             {
-                mesh->boneIndices().resize(modelData.vertexCount);
+                boneIndices().resize(modelData.vertexCount);
                 for (uint16_t i = 0; i < modelData.vertexCount; ++i)
-                    mesh->boneIndices()[i] = reader.readUInt32();
+                    boneIndices()[i] = reader.readUInt32();
             }
         }
         
         // Read index data
         if (modelData.indexCount > 0)
         {
-            mesh->indices().resize(modelData.indexCount);
+            indices().resize(modelData.indexCount);
             for (uint16_t i = 0; i < modelData.indexCount; ++i)
             {
-                mesh->indices()[i] = reader.readUInt16();
+                indices()[i] = reader.readUInt16();
             }
         }
 
         // Set the pre-calculated bounds
-        mesh->_bounds = noz::bounds3();
-        mesh->_bounds.min() = boundsMin;
-        mesh->_bounds.max() = boundsMax;
-        mesh->_boundsCalculated = true;
+        _bounds = noz::bounds3();
+        _bounds.min() = boundsMin;
+        _bounds.max() = boundsMax;
+        _boundsCalculated = true;
 
         // Optionally upload the mesh
         if (gpu)
-            mesh->upload(!cpu);
-
-        return mesh;
+            upload(!cpu);
     }
 
     bool Mesh::upload(bool clearCpuMemory)
     {
-        // Get GPU device from renderer singleton
-        auto renderer = Renderer::instance();
-        if (!renderer || !renderer->IsInitialized())
-        {
-            std::cerr << "Renderer not initialized, cannot upload mesh" << std::endl;
-            return false;
-        }
-        
-        auto* gpu = renderer->GetGPUDevice();
-        if (!gpu)
-        {
-            std::cerr << "GPU device not available, cannot upload mesh" << std::endl;
-            return false;
-        }
-        
+        assert(Renderer::instance());
+        assert(Renderer::instance()->device());
+
         if (_vertexBuffer)
         {
             std::cerr << "Mesh already uploaded" << std::endl;
             return false;
         }
 
-        _gpu = gpu;
-
-        size_t vertexCount = _positions.size();
-        size_t indexCount = _indices.size();
+        auto device = Renderer::instance()->device();
+        auto vertexCount = _positions.size();
+        auto indexCount = _indices.size();
 
         // Create vertex buffer
         SDL_GPUBufferCreateInfo vbinfo = {};
         vbinfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
         vbinfo.size = static_cast<Uint32>(sizeof(Vertex) * vertexCount);
         vbinfo.props = 0;
-        _vertexBuffer = SDL_CreateGPUBuffer(gpu, &vbinfo);
+        _vertexBuffer = SDL_CreateGPUBuffer(device, &vbinfo);
 
         if (!_vertexBuffer)
         {
@@ -172,12 +160,12 @@ namespace noz::renderer
         tbinfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
         tbinfo.size = vbinfo.size;
         tbinfo.props = 0;
-        _transferBuffer = SDL_CreateGPUTransferBuffer(gpu, &tbinfo);
+        _transferBuffer = SDL_CreateGPUTransferBuffer(device, &tbinfo);
 
         if (!_transferBuffer)
         {
             std::cerr << "Failed to create transfer buffer: " << SDL_GetError() << std::endl;
-            SDL_ReleaseGPUBuffer(gpu, _vertexBuffer);
+            SDL_ReleaseGPUBuffer(device, _vertexBuffer);
             _vertexBuffer = nullptr;
             return false;
         }
@@ -185,7 +173,7 @@ namespace noz::renderer
         // Upload vertex data
         SDL_GPUTransferBufferLocation source = { _transferBuffer, 0 };
         SDL_GPUBufferRegion destination = {_vertexBuffer, 0, vbinfo.size};
-        void* mappedData = SDL_MapGPUTransferBuffer(gpu, _transferBuffer, false);
+        void* mappedData = SDL_MapGPUTransferBuffer(device, _transferBuffer, false);
         
         if (!mappedData)
         {
@@ -206,10 +194,10 @@ namespace noz::renderer
 		}
 
 		SDL_memcpy(mappedData, vertices.data(), vbinfo.size);        
-        SDL_UnmapGPUTransferBuffer(gpu, _transferBuffer);
+        SDL_UnmapGPUTransferBuffer(device, _transferBuffer);
         
         // Upload vertex data to GPU using command buffer
-        SDL_GPUCommandBuffer* uploadCmd = SDL_AcquireGPUCommandBuffer(gpu);
+        SDL_GPUCommandBuffer* uploadCmd = SDL_AcquireGPUCommandBuffer(device);
         SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(uploadCmd);
         SDL_UploadToGPUBuffer(copyPass, &source, &destination, false);
         SDL_EndGPUCopyPass(copyPass);
@@ -222,7 +210,7 @@ namespace noz::renderer
             ibinfo.usage = SDL_GPU_BUFFERUSAGE_INDEX;
             ibinfo.size = static_cast<Uint32>(sizeof(uint16_t) * indexCount);
             ibinfo.props = 0;
-            _indexBuffer = SDL_CreateGPUBuffer(gpu, &ibinfo);
+            _indexBuffer = SDL_CreateGPUBuffer(device, &ibinfo);
 
             if (!_indexBuffer)
             {
@@ -235,12 +223,12 @@ namespace noz::renderer
             itbinfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
             itbinfo.size = ibinfo.size;
             itbinfo.props = 0;
-            _indexTransferBuffer = SDL_CreateGPUTransferBuffer(gpu, &itbinfo);
+            _indexTransferBuffer = SDL_CreateGPUTransferBuffer(device, &itbinfo);
 
             if (!_indexTransferBuffer)
             {
                 std::cerr << "Failed to create index transfer buffer: " << SDL_GetError() << std::endl;
-                SDL_ReleaseGPUBuffer(gpu, _indexBuffer);
+                SDL_ReleaseGPUBuffer(device, _indexBuffer);
                 _indexBuffer = nullptr;
                 return false;
             }
@@ -248,7 +236,7 @@ namespace noz::renderer
             // Upload index data
             SDL_GPUTransferBufferLocation indexSource = { _indexTransferBuffer, 0 };
             SDL_GPUBufferRegion indexDestination = {_indexBuffer, 0, ibinfo.size};
-            void* indexMappedData = SDL_MapGPUTransferBuffer(gpu, _indexTransferBuffer, false);
+            void* indexMappedData = SDL_MapGPUTransferBuffer(device, _indexTransferBuffer, false);
             
             if (!indexMappedData)
             {
@@ -257,10 +245,10 @@ namespace noz::renderer
             }
             
             SDL_memcpy(indexMappedData, _indices.data(), ibinfo.size);
-            SDL_UnmapGPUTransferBuffer(gpu, _indexTransferBuffer);
+            SDL_UnmapGPUTransferBuffer(device, _indexTransferBuffer);
             
             // Upload index data to GPU using command buffer
-            SDL_GPUCommandBuffer* indexUploadCmd = SDL_AcquireGPUCommandBuffer(gpu);
+            SDL_GPUCommandBuffer* indexUploadCmd = SDL_AcquireGPUCommandBuffer(device);
             SDL_GPUCopyPass* indexCopyPass = SDL_BeginGPUCopyPass(indexUploadCmd);
             SDL_UploadToGPUBuffer(indexCopyPass, &indexSource, &indexDestination, false);
             SDL_EndGPUCopyPass(indexCopyPass);
@@ -287,9 +275,9 @@ namespace noz::renderer
 
     void Mesh::destroy()
     {
-        if (!_gpu)
+        // GPU device not set, just clear member variables
+        if (!_vertexBuffer)
         {
-            // GPU device not set, just clear member variables
             _vertexBuffer = nullptr;
             _transferBuffer = nullptr;
             _indexBuffer = nullptr;
@@ -299,28 +287,31 @@ namespace noz::renderer
             return;
         }
 
+        assert(Renderer::instance());
+        assert(Renderer::instance()->device());
+        auto device = Renderer::instance()->device();
+
         if (_indexTransferBuffer)
         {
-            SDL_ReleaseGPUTransferBuffer(_gpu, _indexTransferBuffer);
+            SDL_ReleaseGPUTransferBuffer(device, _indexTransferBuffer);
             _indexTransferBuffer = nullptr;
         }
         if (_indexBuffer)
         {
-            SDL_ReleaseGPUBuffer(_gpu, _indexBuffer);
+            SDL_ReleaseGPUBuffer(device, _indexBuffer);
             _indexBuffer = nullptr;
         }
         if (_transferBuffer)
         {
-            SDL_ReleaseGPUTransferBuffer(_gpu, _transferBuffer);
+            SDL_ReleaseGPUTransferBuffer(device, _transferBuffer);
             _transferBuffer = nullptr;
         }
         if (_vertexBuffer)
         {
-            SDL_ReleaseGPUBuffer(_gpu, _vertexBuffer);
+            SDL_ReleaseGPUBuffer(device, _vertexBuffer);
             _vertexBuffer = nullptr;
         }
 
-        _gpu = nullptr;
         _vertexCount = 0;
         _indexCount = 0;
         
@@ -344,13 +335,9 @@ namespace noz::renderer
         vertexBinding.offset = 0;
         SDL_BindGPUVertexBuffers(renderPass, 0, &vertexBinding, 1);
 
-        // Bind index buffer if available
-        if (hasIndices() && _indexBuffer)
-        {
-            SDL_GPUBufferBinding indexBinding = {};
-            indexBinding.buffer = _indexBuffer;
-            SDL_BindGPUIndexBuffer(renderPass, &indexBinding, SDL_GPU_INDEXELEMENTSIZE_16BIT);
-        }
+        SDL_GPUBufferBinding indexBinding = {};
+        indexBinding.buffer = _indexBuffer;
+        SDL_BindGPUIndexBuffer(renderPass, &indexBinding, SDL_GPU_INDEXELEMENTSIZE_16BIT);
     }
 
     void Mesh::draw(SDL_GPURenderPass* renderPass) const 
@@ -358,14 +345,7 @@ namespace noz::renderer
         if (!isUploaded() || !renderPass)
             return;
 
-        if (hasIndices())
-        {
-            SDL_DrawGPUIndexedPrimitives(renderPass, static_cast<Uint32>(indexCount()), 1, 0, 0, 0);
-        }
-        else
-        {
-            SDL_DrawGPUPrimitives(renderPass, static_cast<Uint32>(vertexCount()), 1, 0, 0);
-        }
+        SDL_DrawGPUIndexedPrimitives(renderPass, static_cast<Uint32>(indexCount()), 1, 0, 0, 0);
     }
 
     const noz::bounds3& Mesh::bounds()

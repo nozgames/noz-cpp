@@ -37,11 +37,10 @@ namespace noz::ui
         void setMesh(const std::string& meshPath);
         const std::shared_ptr<noz::renderer::Mesh>& mesh() const { return _mesh; }
         
-        // Shader management - allows custom shaders for lighting effects
-        void setShader(const std::shared_ptr<noz::renderer::Shader>& shader);
-        void setShader(const std::string& shaderPath);
-        const std::shared_ptr<noz::renderer::Shader>& shader() const { return _shader; }
-        
+        void setMaterial(const std::shared_ptr<noz::renderer::Material>& material);
+
+        const std::shared_ptr<noz::renderer::Material>& material() const;
+                
         // Transform settings for the mesh within UI space
         void setMeshScale(const glm::vec3& scale) { _meshScale = scale; markLayoutDirty(); }
         const glm::vec3& meshScale() const { return _meshScale; }
@@ -65,7 +64,7 @@ namespace noz::ui
     private:
 
         std::shared_ptr<noz::renderer::Mesh> _mesh;
-        std::shared_ptr<noz::renderer::Shader> _shader;
+        std::shared_ptr<noz::renderer::Material> _material;
         
         // Transform properties for the mesh
         glm::vec3 _meshScale;
@@ -78,6 +77,11 @@ namespace noz::ui
         void renderMesh(noz::renderer::CommandBuffer* commandBuffer, const noz::Rect& rect);
         glm::mat4 calculateMeshTransform(const noz::Rect& bounds) const;
         
-        friend class Object; // For Object::create<UIMesh>() pattern
+        friend class Object;
     };
+
+    inline const std::shared_ptr<noz::renderer::Material>& UIMesh::material() const 
+    {
+        return _material;
+    }
 }

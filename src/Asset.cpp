@@ -10,8 +10,7 @@ namespace noz
 {
 	NOZ_DEFINE_TYPEID(Asset)
 
-    Asset::Asset(const std::string& name)
-        : _name(name)
+    Asset::Asset()
     {
     }
 
@@ -22,6 +21,11 @@ namespace noz
         {
             AssetDatabase::instance()->unregisterAsset(this);
         }
+    }
+
+    void Asset::initialize(const std::string& name)
+    {
+        _name = name;
     }
 
     void Asset::autoUnload()

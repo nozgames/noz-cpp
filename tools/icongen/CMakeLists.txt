@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Add executable
-add_executable(icongen
+add_executable(icongen EXCLUDE_FROM_ALL
     src/icongen.cpp
     src/border.cpp
     src/border.h

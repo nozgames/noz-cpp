@@ -14,10 +14,8 @@ namespace noz::ui
     
     NOZ_DEFINE_TYPEID(Element)
     
-    // Static member definitions
-    std::shared_ptr<noz::renderer::Shader> Element::s_uiShader;
-    std::shared_ptr<noz::renderer::Mesh> Element::s_quadMesh;
-    std::shared_ptr<noz::renderer::Texture> Element::s_whiteTexture;
+    std::shared_ptr<noz::renderer::Material> Element::s_uiMaterial;
+    std::shared_ptr<noz::renderer::Mesh> Element::s_uiMesh;
     bool Element::s_resourcesInitialized = false;
 
     Element::Element()
@@ -503,40 +501,39 @@ namespace noz::ui
                             float x, float y, float width, float height,
                             const glm::vec4& color)
     {
-        if (!s_uiShader || !s_quadMesh)
-            return;
+        assert(s_uiMaterial);
+        assert(s_uiMesh);
 
         // Create transform matrix for quad positioning and scaling
         glm::mat4 transform = glm::mat4(1.0f);
         transform = glm::translate(transform, glm::vec3(x, y, 0.0f));
         transform = glm::scale(transform, glm::vec3(width, height, 1.0f));
 
-        // Record commands for drawing a colored quad
-        commandBuffer->bind(s_uiShader);
+        commandBuffer->bind(s_uiMaterial);
         commandBuffer->setTransform(transform);
         commandBuffer->setColor(color);
-        commandBuffer->bindDefaultTexture();
-        commandBuffer->drawMesh(s_quadMesh);
+        commandBuffer->drawMesh(s_uiMesh);
     }
 
-    void Element::renderQuad(noz::renderer::CommandBuffer* commandBuffer,
-                            float x, float y, float width, float height,
-                            const std::shared_ptr<noz::renderer::Texture>& texture)
+    void Element::renderQuad(
+        noz::renderer::CommandBuffer* commandBuffer,
+        float x,
+        float y,
+        float width,
+        float height,
+        const std::shared_ptr<noz::renderer::Texture>& texture)
     {
-        if (!s_uiShader || !s_quadMesh || !texture)
-            return;
+        assert(s_uiMaterial);
+		assert(s_uiMesh);
 
-        // Create transform matrix for quad positioning and scaling
         glm::mat4 transform = glm::mat4(1.0f);
         transform = glm::translate(transform, glm::vec3(x, y, 0.0f));
         transform = glm::scale(transform, glm::vec3(width, height, 1.0f));
 
-        // Record commands for drawing a textured quad
-        commandBuffer->bind(s_uiShader);
+        commandBuffer->bind(s_uiMaterial);
         commandBuffer->setTransform(transform);
         commandBuffer->setColor(glm::vec4(1.0f)); // White color for no tinting
-        commandBuffer->bind(texture);
-        commandBuffer->drawMesh(s_quadMesh);
+        commandBuffer->drawMesh(s_uiMesh);
     }
 
     void Element::initializeUIResources()
@@ -545,19 +542,12 @@ namespace noz::ui
             return;
 
         // Create basic UI shader
-        s_uiShader = Asset::load<noz::renderer::Shader>("shaders/ui");
-        if (!s_uiShader)
-        {
-            std::cerr << "Failed to load UI shader" << std::endl;
-            return;
-        }
+		s_uiMaterial = Object::create<noz::renderer::Material>("shaders/ui");
+        assert(s_uiMaterial);
 
         // Create quad mesh for UI elements
         createQuadMesh();
         
-        // Create white texture for solid color rendering
-        createWhiteTexture();
-
         s_resourcesInitialized = true;
     }
 
@@ -577,27 +567,8 @@ namespace noz::ui
         builder.addTriangle(0, 2, 3);
         
         // Create mesh from builder data
-        s_quadMesh = std::make_shared<noz::renderer::Mesh>("ui_quad");
-        s_quadMesh->positions() = builder.positions();
-        s_quadMesh->normals() = builder.normals();
-        s_quadMesh->uv0() = builder.uv0();
-        s_quadMesh->boneIndices() = builder.boneIndices();
-        s_quadMesh->indices() = builder.indices();
-        
-        if (s_quadMesh)
-        {
-            s_quadMesh->upload(true); // Upload to GPU and clear CPU memory
-        }
-    }
-
-    void Element::createWhiteTexture()
-    {
-        // Load palette texture as a fallback for UI rendering
-        s_whiteTexture = Asset::load<noz::renderer::Texture>("textures/palette");
-        if (!s_whiteTexture)
-        {
-            std::cerr << "Failed to load palette texture for UI rendering" << std::endl;
-        }
+		s_uiMesh = builder.toMesh("UI");
+        s_uiMesh->upload(true);
     }
 
 	void Element::onAttachToScene()

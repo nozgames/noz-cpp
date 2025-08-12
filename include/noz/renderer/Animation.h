@@ -25,8 +25,6 @@ namespace noz::renderer
     class Animation : public IAnimation
     {
     public:
-        // Constructor with name
-        Animation(const std::string& name) : IAnimation(name) {}
         
         // IAnimation interface implementation
         void evaluate(float time, float deltaTime, const std::vector<Bone>& bones, std::vector<BoneTransform>& outTransforms) override;

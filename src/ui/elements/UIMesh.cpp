@@ -23,7 +23,7 @@ namespace noz::ui
     UIMesh::UIMesh()
         : Element()
         , _mesh(nullptr)
-        , _shader(nullptr)
+        , _material(nullptr)
         , _meshScale(1.0f, 1.0f, 1.0f)
         , _meshRotation(0.0f, 0.0f, 0.0f)
         , _meshOffset(0.0f, 0.0f, 0.0f)
@@ -58,22 +58,9 @@ namespace noz::ui
         setMesh(mesh);
     }
     
-    void UIMesh::setShader(const std::shared_ptr<noz::renderer::Shader>& shader)
+    void UIMesh::setMaterial(const std::shared_ptr<noz::renderer::Material>& material)
     {
-        _shader = shader;
-    }
-
-    void UIMesh::setShader(const std::string& shaderPath)
-    {
-        // Load the shader using the resource system
-        auto shader = Asset::load<noz::renderer::Shader>(shaderPath);
-        if (!shader)
-        {
-            Log::error("UIMesh", "Failed to load shader: " + shaderPath);
-            return;
-        }
-        
-        setShader(shader);
+        _material = material;
     }
 
     vec2 UIMesh::measureContent(const vec2& availableSize)
@@ -109,36 +96,16 @@ namespace noz::ui
 
     void UIMesh::renderMesh(noz::renderer::CommandBuffer* commandBuffer, const noz::Rect& rect)
     {
-        if (!_mesh)
+        if (!_mesh || !_material)
             return;
-
-        // Use custom shader if provided, otherwise fall back to a default 3D shader
-        auto shaderToUse = _shader;
-        if (!shaderToUse)
-        {
-            // Try to load a default mesh shader for UI use
-            shaderToUse = Asset::load<noz::renderer::Shader>("shaders/ui_mesh");
-            if (!shaderToUse)
-            {
-                // Fall back to the basic UI shader (may not look right for 3D meshes)
-                shaderToUse = Asset::load<noz::renderer::Shader>("shaders/ui");
-            }
-        }
-        
-        if (!shaderToUse)
-        {
-            Log::error("UIMesh", "No shader available for mesh rendering");
-            return;
-        }
 
         // Calculate transform matrix for the mesh
         glm::mat4 transform = calculateMeshTransform(rect);
 
-        // Record commands for drawing the mesh
-        commandBuffer->bind(shaderToUse);
+        // Record commands for drawing the mesh using the Material system
+        commandBuffer->bind(_material);
         commandBuffer->setTransform(transform);
         commandBuffer->setColor(glm::vec4(1.0f)); // Default white color
-        commandBuffer->bindDefaultTexture(); // Default texture for now
         commandBuffer->drawMesh(_mesh);
     }
 

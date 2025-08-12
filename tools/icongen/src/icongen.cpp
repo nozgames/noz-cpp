@@ -512,13 +512,9 @@ private:
 		auto renderer = Renderer::instance();
 		assert(renderer);
 
-		auto* gpu = renderer->GetGPUDevice();
-		assert(gpu);
-		
 		// Create/recreate all render targets at current size
 		_iconRenderTarget = std::shared_ptr<Texture>(
 			Texture::createRenderTarget(
-				gpu,
 				_outputSize,
 				_outputSize,
 				SDL_GPU_TEXTUREFORMAT_R16G16B16A16_FLOAT,
@@ -526,7 +522,6 @@ private:
 				
 		_borderRenderTarget = std::shared_ptr<Texture>(
 			Texture::createRenderTarget(
-				gpu,
 				_outputSize,
 				_outputSize,
 				SDL_GPU_TEXTUREFORMAT_R16G16B16A16_FLOAT,
@@ -534,7 +529,6 @@ private:
 				
 		_finalRenderTarget = std::shared_ptr<Texture>(
 			Texture::createRenderTarget(
-				gpu,
 				_outputSize,
 				_outputSize,
 				SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM,

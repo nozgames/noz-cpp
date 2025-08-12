@@ -23,8 +23,7 @@ namespace noz::renderer
     class IAnimation : public noz::Asset
     {
     public:
-        // Constructor with name (required for Asset)
-        IAnimation(const std::string& name) : Asset(name) {}
+
         virtual ~IAnimation() = default;
 
         /**
@@ -54,5 +53,4 @@ namespace noz::renderer
          */
         virtual uint32_t frameCount() const { return 0; }
     };
-
-} // namespace noz::renderer
+}

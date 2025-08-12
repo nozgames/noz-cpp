@@ -8,8 +8,9 @@
 
 namespace noz::renderer
 {
-    Skeleton::Skeleton(const std::string& path)
-        : noz::Asset(path)
+	NOZ_DEFINE_TYPEID(Skeleton)
+
+    Skeleton::Skeleton()
     {
     }
 
@@ -36,15 +37,15 @@ namespace noz::renderer
 
     std::shared_ptr<Skeleton> Skeleton::load(const std::string& name)
     {
-        return loadInternal(AssetDatabase::getFullPath(name, "skeleton"), name);
+		auto skeleton = Object::create<Skeleton>(name);
+        skeleton->loadInternal();
+        return skeleton;
     }
     
-    std::shared_ptr<Skeleton> Skeleton::loadInternal(const std::string& filePath, const std::string& resourceName)
+    void Skeleton::loadInternal()
     {
-        auto skeleton = std::make_shared<Skeleton>(resourceName);
-        
         noz::StreamReader reader;
-        if (!reader.loadFromFile(filePath))
+        if (!reader.loadFromFile(AssetDatabase::getFullPath(name(), "skeleton")))
 			throw std::runtime_error("file not found");
         
         if (!reader.readFileSignature("SKEL"))
@@ -56,7 +57,7 @@ namespace noz::renderer
                 
 		// Bones
         auto boneCount = reader.readUInt32();
-        skeleton->_bones.reserve(boneCount);
+        _bones.reserve(boneCount);
         
         for (uint32_t i = 0; i < boneCount; ++i)
         {
@@ -72,10 +73,8 @@ namespace noz::renderer
             bone.length = reader.readFloat();
 			bone.direction = reader.read<glm::vec3>();
             
-            skeleton->_bones.push_back(bone);
+            _bones.push_back(bone);
         }
-        
-        return skeleton;
     }
 
 	int Skeleton::boneIndex(const std::string& name) const

@@ -13,7 +13,7 @@ namespace noz::ui
     struct TextMesh
     {
         std::shared_ptr<noz::renderer::Mesh> mesh;
-        std::shared_ptr<noz::renderer::Texture> fontTexture;
+        std::shared_ptr<noz::renderer::Material> fontMaterial;
         glm::vec2 size;
         int vertexCount;
         int indexCount;

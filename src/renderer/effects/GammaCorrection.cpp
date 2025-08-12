@@ -1,7 +1,12 @@
+/*
+
+    NoZ Game Engine
+
+    Copyright(c) 2025 NoZ Games, LLC
+
+*/
+
 #include <noz/renderer/effects/GammaCorrection.h>
-#include <noz/renderer/Shader.h>
-#include <noz/renderer/CommandBuffer.h>
-#include <noz/Asset.h>
 
 namespace noz::renderer::effects
 {
@@ -13,7 +18,6 @@ namespace noz::renderer::effects
     
     void GammaCorrection::initialize() 
     {
-        FullscreenEffect::initialize();
-        _shader = Asset::load<Shader>("shaders/gamma_correction");
+        FullscreenEffect::initialize(Object::create<Material>("shaders/gamma_correction"));
     }
 }

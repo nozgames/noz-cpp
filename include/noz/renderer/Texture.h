@@ -22,71 +22,65 @@ namespace noz::renderer
     {
     public:
         
-        Texture(const std::string& name);
+        NOZ_DECLARE_TYPEID(Texture, Asset);
 
         ~Texture();
 
-        static Texture* createWhite(SDL_GPUDevice* device);
+        static std::shared_ptr<Texture> createWhite();
 
-        // Create texture from existing SDL_GPUTexture (for GPU text rendering)
-        static Texture* createFromGPUTexture(SDL_GPUDevice* device, SDL_GPUTexture* gpuTexture, const std::string& name);
 
-        bool createFromSurface(SDL_Surface* surface);
+        static std::shared_ptr<Texture> createFromMemory(const void* data, int width, int height, int channels, bool generateMipmaps = false, const std::string& name="Memory");
+        static std::shared_ptr<Texture> createRenderTarget(int width, int height, const std::string& name = "RenderTarget");
+        static std::shared_ptr<Texture> createRenderTarget(int width, int height, SDL_GPUTextureFormat format, const std::string& name = "RenderTarget");
+        static std::shared_ptr<Texture> createFromImage(const noz::Image& image, const std::string& name = "Image");
+                
+        SDL_GPUTexture* handle() const;
 
-        // Create texture from raw pixel data
-        bool createFromMemory(SDL_GPUDevice* device, const void* data, int width, int height, int channels, bool generateMipmaps = false);
+        int width() const;
 
-        // Create render target texture
-        static Texture* createRenderTarget(SDL_GPUDevice* device, int width, int height, const std::string& name = "RenderTarget");
-        static Texture* createRenderTarget(SDL_GPUDevice* device, int width, int height, SDL_GPUTextureFormat format, const std::string& name = "RenderTarget");
-        
-        // Create texture from Image
-        static Texture* createFromImage(SDL_GPUDevice* device, const noz::Image& image, const std::string& name = "ImageTexture");
-        
-        // Load texture from file
-        bool loadFromFile(SDL_GPUDevice* device, const std::string& filepath);
-        
-        SDL_GPUTexture* handle() const
-        {
-            return _texture;
-        }
+        int height() const;
 
-        // Get texture dimensions
-        int width() const
-        {
-            return _width;
-        }
+        const SamplerOptions& samplerOptions() const;
 
-        int height() const
-        {
-            return _height;
-        }
+        void setSamplerOptions(const SamplerOptions& options);
 
-        // Get sampler options for this texture
-        const SamplerOptions& samplerOptions() const
-        {
-            return _samplerOptions;
-        }
-
-        // Set sampler options for this texture
-        void setSamplerOptions(const SamplerOptions& options)
-        {
-            _samplerOptions = options;
-        }
-
-        // Clear the texture
         void clear();
 
     private:
 
         friend class AssetDatabase;
 
-        static Texture* load(const std::string& name);
+        Texture();
+
+        static std::shared_ptr<Texture> load(const std::string& name);
+
+        void loadInternal();
+        void createFromMemoryInternal(const void* data, int width, int height, int channels, bool generateMipmaps);
 
         SDL_GPUTexture* _texture;
-        SDL_GPUDevice* _device;
+        SamplerOptions _samplerOptions;
         int _width;
         int _height;
-        SamplerOptions _samplerOptions;
     };
+
+    inline SDL_GPUTexture* Texture::handle() const
+    {
+        return _texture;
+    }
+
+    inline int Texture::width() const
+    {
+        return _width;
+    }
+
+    inline int Texture::height() const
+    {
+        return _height;
+    }
+
+    // Get sampler options for this texture
+    inline const SamplerOptions& Texture::samplerOptions() const
+    {
+        return _samplerOptions;
+    }
 }

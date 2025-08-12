@@ -8,61 +8,19 @@
 
 namespace noz::renderer
 {
-    // CommandBuffer implementation
     CommandBuffer::CommandBuffer() : _shadowPass(false)
     {
         _commands.reserve(INITIAL_COMMAND_CAPACITY);
         _boneData.reserve(INITIAL_BONE_CAPACITY);
     }
 
-    void CommandBuffer::bind(const std::shared_ptr<Texture>& texture)
+    void CommandBuffer::bind(const std::shared_ptr<Material>& material)
     {
-		if (!texture)
-		{
-			bindDefaultTexture();
-			return;
-		}
-
-		if (_lastTextureIndex > 0 && _textures[_lastTextureIndex].get() == texture.get())
-			return;
+        if (!material) return;
         
-        _textures.push_back(texture);
-        ResourceHandle handle = static_cast<ResourceHandle>(_textures.size());
-        _commands.emplace_back(CommandType::BindTexture, BindTextureData{handle});
-		_lastTextureIndex = static_cast<int>(_textures.size()) - 1;
-    }
-
-    void CommandBuffer::bindTextureWithSampler(const std::shared_ptr<Texture>& texture, SDL_GPUSampler* sampler)
-    {
-		if (!texture || !sampler)
-		{
-			bindDefaultTexture();
-			return;
-		}
-        
-        _textures.push_back(texture);
-        ResourceHandle handle = static_cast<ResourceHandle>(_textures.size());
-        _commands.emplace_back(CommandType::BindTextureWithSampler, BindTextureWithSamplerData{handle, sampler});
-		_lastTextureIndex = -1;
-    }
-
-	void CommandBuffer::bindDefaultTexture()
-	{
-		bind(Renderer::instance()->defaultTexture());
-	}
-
-    void CommandBuffer::bindShader(const std::shared_ptr<Shader>& shader)
-    {
-        bind(shader);
-    }
-
-    void CommandBuffer::bind(const std::shared_ptr<Shader>& shader)
-    {
-        if (!shader) return;
-        
-        _shaders.push_back(shader);
-        ResourceHandle handle = static_cast<ResourceHandle>(_shaders.size());
-        _commands.emplace_back(CommandType::BindShader, BindShaderData{handle});
+        _materials.push_back(material);
+        ResourceHandle handle = static_cast<ResourceHandle>(_materials.size());
+        _commands.emplace_back(CommandType::BindMaterial, BindMaterialData{handle});
     }
 
     void CommandBuffer::bind(const std::shared_ptr<Mesh>& mesh)
@@ -139,14 +97,6 @@ namespace noz::renderer
         _commands.emplace_back(CommandType::SetTextOptions, data);
     }
     
-    void CommandBuffer::setGridData(const glm::vec2& gridScale, const glm::vec2& gridOffset)
-    {
-        SetGridDataData data;
-        data.gridScale = gridScale;
-        data.gridOffset = gridOffset;
-        _commands.emplace_back(CommandType::SetGridData, data);
-    }
-
     void CommandBuffer::drawMesh(const std::shared_ptr<Mesh>& mesh)
     {
         if (!mesh) return;
@@ -166,6 +116,8 @@ namespace noz::renderer
 		assert(renderTarget);
 
         _textures.push_back(renderTarget);
+		_renderTargetTexture = static_cast<ResourceHandle>(_textures.size());
+
         _commands.emplace_back(
 			CommandType::BeginOpaquePassWithTarget,
 			BeginOpaquePassWithTargetData
@@ -177,10 +129,12 @@ namespace noz::renderer
 			});
     }
 
-    void CommandBuffer::endOpaquePass()
+    void CommandBuffer::endOpaquePass(bool setOpaqueTexture)
     {
         _commands.emplace_back(CommandType::EndOpaquePass, EmptyData{});
-		_lastTextureIndex = -1;
+
+        if (setOpaqueTexture)
+            _opaqueTexture = _renderTargetTexture;
     }
 
     void CommandBuffer::beginShadowPass(const glm::mat4& lightViewMatrix, const glm::mat4& lightProjectionMatrix)
@@ -193,7 +147,6 @@ namespace noz::renderer
     void CommandBuffer::endShadowPass()
     {
         _commands.emplace_back(CommandType::EndShadowPass, EmptyData{});
-		_lastTextureIndex = -1;
 		_shadowPass = false;
     }
 
@@ -207,68 +160,14 @@ namespace noz::renderer
         _commands.emplace_back(CommandType::SetScissor, SetScissorData{x, y, width, height});
     }
 
-    std::shared_ptr<Texture> CommandBuffer::getTexture(ResourceHandle handle) const
-    {
-        if (handle == INVALID_HANDLE || handle > _textures.size()) return nullptr;
-        return _textures[handle - 1]; // Handle is 1-based
-    }
-
-    std::shared_ptr<Shader> CommandBuffer::getShader(ResourceHandle handle) const
-    {
-        if (handle == INVALID_HANDLE || handle > _shaders.size()) return nullptr;
-        return _shaders[handle - 1]; // Handle is 1-based
-    }
-
-    std::shared_ptr<Mesh> CommandBuffer::getMesh(ResourceHandle handle) const
-    {
-        if (handle == INVALID_HANDLE || handle > _meshes.size()) return nullptr;
-        return _meshes[handle - 1]; // Handle is 1-based
-    }
-
-    const glm::mat4* CommandBuffer::getBones(uint32_t offset, uint32_t count) const
-    {
-        if (offset + count > _boneData.size()) return nullptr;
-        return &_boneData[offset];
-    }
-
-    void CommandBuffer::setBufferData(uint32_t bufferIndex, const void* data, uint32_t size)
-    {
-        if (!data || size == 0) return;
-        
-        uint32_t offset = static_cast<uint32_t>(_bufferData.size());
-        
-        // Align to 16-byte boundary for GPU constant buffers
-        uint32_t alignedOffset = (offset + 15) & ~15;
-        uint32_t padding = alignedOffset - offset;
-        
-        // Add padding if needed
-        if (padding > 0) {
-            _bufferData.resize(_bufferData.size() + padding, 0);
-        }
-        
-        // Copy the data
-        size_t currentSize = _bufferData.size();
-        _bufferData.resize(currentSize + size);
-        memcpy(_bufferData.data() + currentSize, data, size);
-        
-        // Add command
-        _commands.emplace_back(CommandType::SetBufferData, SetBufferDataData{bufferIndex, size, alignedOffset});
-    }
-
-    const uint8_t* CommandBuffer::getBufferData(uint32_t offset, uint32_t size) const
-    {
-        if (offset + size > _bufferData.size()) return nullptr;
-        return &_bufferData[offset];
-    }
-
     void CommandBuffer::reset()
     {
         _commands.clear();
         _textures.clear();
-        _shaders.clear();
+        _materials.clear();
         _meshes.clear();
         _boneData.clear();
-        _bufferData.clear();
-		_lastTextureIndex = -1;
+		_opaqueTexture = INVALID_HANDLE;
+        _renderTargetTexture = INVALID_HANDLE;
     }
 }

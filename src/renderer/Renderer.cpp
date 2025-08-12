@@ -33,7 +33,6 @@ namespace noz::renderer
         , _commandBuffer(std::make_unique<CommandBuffer>())
         , _samplerFactory(nullptr)
         , _currentPipeline(nullptr)
-        , _currentTexture(nullptr)
         , _currentTransform(1.0f)
         , _lightViewProjectionMatrix(1.0f)
     {
@@ -53,13 +52,13 @@ namespace noz::renderer
 		if (!instance()->SetWindow(window))
 			return false;
 
-		instance()->_shadowShader = Asset::load<Shader>("shaders/shadow");
-
-		if (!instance()->_shadowShader)
-		{
-			std::cerr << "Failed to load shadow shader!" << std::endl;
-			return false;
-		}
+        try
+        {
+            instance()->_shadowShader = Asset::load<Shader>("shaders/shadow");
+        }
+        catch(...)
+        {
+        }		
 
 		return true;
     }
@@ -294,7 +293,6 @@ namespace noz::renderer
 
     void Renderer::endFrame()
     {
-        // Execute the command buffer and then end the frame
         executeCommandBuffer(*_commandBuffer);
         endFrameImmediate();
     }
@@ -306,35 +304,19 @@ namespace noz::renderer
         for (const auto& command : commands)
         {
             switch (command.type)
-            {
-                case CommandType::BindTexture:
+            {               
+                case CommandType::BindMaterial:
                 {
-                    const auto& data = std::get<BindTextureData>(command.data);
-                    auto texture = commandBuffer.getTexture(data.textureHandle);
-                    if (texture) bindTexture(texture);
-                    break;
-                }
-
-                case CommandType::BindTextureWithSampler:
-                {
-                    const auto& data = std::get<BindTextureWithSamplerData>(command.data);
-                    auto texture = commandBuffer.getTexture(data.textureHandle);
-                    if (texture && data.sampler) bindTextureWithSampler(texture, data.sampler);
-                    break;
-                }
-                
-                case CommandType::BindShader:
-                {
-                    const auto& data = std::get<BindShaderData>(command.data);
-                    auto shader = commandBuffer.getShader(data.shaderHandle);
-                    if (shader) bindPipeline(shader);
+                    const auto& data = std::get<BindMaterialData>(command.data);
+                    auto material = commandBuffer.material(data.material);
+                    if (material) bindMaterial(material);
                     break;
                 }
                 
                 case CommandType::BindMesh:
                 {
                     const auto& data = std::get<BindMeshData>(command.data);
-                    auto mesh = commandBuffer.getMesh(data.meshHandle);
+                    auto mesh = commandBuffer.mesh(data.mesh);
                     if (mesh && _currentRenderPass) mesh->bind(_currentRenderPass);
                     break;
                 }
@@ -357,13 +339,18 @@ namespace noz::renderer
                         glm::mat4 lightViewProjection;
                     };
                     
-                    CameraBufferData cameraData = {
+                    CameraBufferData cameraData = 
+                    {
                         data.viewProjectionMatrix,
                         data.viewMatrix,
                         _lightViewProjectionMatrix
                     };
                     
-                    SDL_PushGPUVertexUniformData(_currentCommandBuffer, 0, &cameraData, sizeof(CameraBufferData));
+                    SDL_PushGPUVertexUniformData(
+                        _currentCommandBuffer,
+                        static_cast<uint32_t>(registers::Vertex::Camera),
+                        &cameraData,
+                        sizeof(CameraBufferData));
                     
                     // Store for legacy compatibility (still needed by bindTransform for ObjectBuffer)
                     _viewMatrix = data.viewMatrix;
@@ -378,17 +365,16 @@ namespace noz::renderer
                 case CommandType::SetBones:
                 {
                     const auto& data = std::get<SetBonesData>(command.data);
-					bindBones(commandBuffer.getBones(data.boneDataOffset, data.boneCount), data.boneCount);
+					bindBones(commandBuffer.bones(data.boneDataOffset, data.boneCount), data.boneCount);
                     break;
                 }
                 
                 case CommandType::BindLight:
                 {
                     const auto& data = std::get<BindLightData>(command.data);
-                    // Push light data to fragment shader uniform buffer
                     SDL_PushGPUFragmentUniformData(
                         _currentCommandBuffer,
-                        0,
+                        static_cast<uint32_t>(registers::Fragment::Light),
                         &data,
                         sizeof(BindLightData));
                     break;
@@ -397,59 +383,30 @@ namespace noz::renderer
                 case CommandType::SetColor:
                 {
                     const auto& data = std::get<SetColorData>(command.data);
-                    // Push color data to fragment shader uniform buffer (register ps_b0, space3)
                     SDL_PushGPUFragmentUniformData(
                         _currentCommandBuffer,
-                        0, // space3
+                        static_cast<uint32_t>(registers::Fragment::Color),
                         &data,
                         sizeof(SetColorData));
                     break;
                 }
                 
+                // TODO: part of material
                 case CommandType::SetTextOptions:
                 {
                     const auto& data = std::get<SetTextOptionsData>(command.data);
-                    // Push text options data to fragment shader uniform buffer (register ps_b0, space3)
-                    SDL_PushGPUFragmentUniformData(
-                        _currentCommandBuffer,
-                        0, // space3
-                        &data,
-                        sizeof(SetTextOptionsData));
+                    //SDL_PushGPUFragmentUniformData(
+                    //    _currentCommandBuffer,
+                    //    0,
+                    //    &data,
+                    //    sizeof(SetTextOptionsData));
                     break;
                 }
-                
-                case CommandType::SetGridData:
-                {
-                    const auto& data = std::get<SetGridDataData>(command.data);
-                    // Push grid data to vertex shader uniform buffer (register vs_b2, space1)
-                    SDL_PushGPUVertexUniformData(
-                        _currentCommandBuffer,
-                        2, // vs_b2, space1
-                        &data,
-                        sizeof(SetGridDataData));
-                    break;
-                }
-                
-                case CommandType::SetBufferData:
-                {
-                    const auto& data = std::get<SetBufferDataData>(command.data);
-                    const uint8_t* bufferData = commandBuffer.getBufferData(data.dataOffset, data.size);
-                    if (bufferData)
-                    {
-                        // Push custom buffer data to fragment shader uniform buffer
-                        SDL_PushGPUFragmentUniformData(
-                            _currentCommandBuffer,
-                            data.bufferIndex, // Buffer register index (b0, b1, b2, etc.)
-                            bufferData,
-                            data.size);
-                    }
-                    break;
-                }
-                                
+                                               
                 case CommandType::DrawMesh:
                 {
                     const auto& data = std::get<DrawMeshData>(command.data);
-                    auto mesh = commandBuffer.getMesh(data.meshHandle);
+                    auto mesh = commandBuffer.mesh(data.mesh);
                     if (mesh && _currentRenderPass)
                     {
                         mesh->bind(_currentRenderPass);
@@ -468,7 +425,7 @@ namespace noz::renderer
                 case CommandType::BeginOpaquePassWithTarget:
                 {
                     const auto& data = std::get<BeginOpaquePassWithTargetData>(command.data);
-                    auto renderTarget = commandBuffer.getTexture(data.renderTargetHandle);
+                    auto renderTarget = commandBuffer.texture(data.renderTarget);
 					assert(renderTarget);
                     beginOpaquePass(renderTarget, data.clear, data.color, data.useMSAA);
                     break;
@@ -792,7 +749,7 @@ namespace noz::renderer
         _msaaActive = false;
     }
 
-    void Renderer::bindTexture(const std::shared_ptr<Texture>& texture)
+    void Renderer::bindTexture(const std::shared_ptr<Texture>& texture, int index)
     {
 		// Shadow pass: no texture samplers needed (depth-only rendering)
 		if (_shadowPassActive)
@@ -800,10 +757,6 @@ namespace noz::renderer
 
 		// Get the actual texture to bind (use default if none provided)
 		auto actualTexture = texture ? texture : _defaultTexture;
-		
-		// Only bind if texture changed
-		if (_currentTexture == actualTexture)
-			return;
 
 		// Get the appropriate sampler for this texture from the factory
 		SDL_GPUSampler* sampler = _defaultSampler;
@@ -815,24 +768,11 @@ namespace noz::renderer
 		}
 
 		// Main pass: bind diffuse texture and shadow map
-		SDL_GPUTextureSamplerBinding bindings[2] { 0 };
-		int bindingCount = 0;
-		
-		// Bind diffuse texture to slot 0
-		bindings[bindingCount].sampler = sampler;
-		bindings[bindingCount].texture = actualTexture->handle();
-		bindingCount++;
-			
-		// Bind shadow map to slot 1 (comparison sampler)
-		if (_shadowMap && _shadowSampler)
-		{
-			bindings[bindingCount].sampler = _shadowSampler;
-			bindings[bindingCount].texture = _shadowMap;
-			bindingCount++;
-		}
+		SDL_GPUTextureSamplerBinding binding{ };
+        binding.sampler = sampler;
+        binding.texture = actualTexture->handle();
 				
-		SDL_BindGPUFragmentSamplers(_currentRenderPass, 0, bindings, bindingCount);
-		_currentTexture = actualTexture;
+		SDL_BindGPUFragmentSamplers(_currentRenderPass, index, &binding, 1);
     }
 
     void Renderer::bindTextureWithSampler(const std::shared_ptr<Texture>& texture, SDL_GPUSampler* sampler)
@@ -863,7 +803,6 @@ namespace noz::renderer
 		}
 				
 		SDL_BindGPUFragmentSamplers(_currentRenderPass, 0, bindings, bindingCount);
-		_currentTexture = actualTexture;
     }
     
     void Renderer::bindPipeline(const std::shared_ptr<Shader>& shader)
@@ -882,6 +821,40 @@ namespace noz::renderer
         _currentPipeline = pipeline;
     }
 
+    void Renderer::bindMaterial(const std::shared_ptr<Material>& material)
+    {
+        assert(material);
+
+        auto shader = material->shader();
+        assert(shader);
+
+        // First bind the shader/pipeline
+        bindPipeline(shader);
+
+        // Then push uniform buffer data for vertex shader (additional buffers beyond default 0,1,2)
+        if (material->vertexUniformBufferCount() > 0 && material->vertexUniformDataSize() > 0)
+        {
+            SDL_PushGPUVertexUniformData(
+                _currentCommandBuffer,
+                0,
+                material->vertexUniformData(),
+                material->vertexUniformDataSize());
+        }
+
+        // Push uniform buffer data for fragment shader (starts at slot 0, no defaults)
+        if (material->fragmentUniformBufferCount() > 0 && material->fragmentUniformDataSize() > 0)
+        {
+            SDL_PushGPUFragmentUniformData(
+                _currentCommandBuffer,
+                0,
+                material->fragmentUniformData(),
+                material->fragmentUniformDataSize());
+        }
+
+		for (size_t i = 0, c = material->textureCount(); i < c; ++i)
+			bindTexture(material->texture(i), static_cast<int>(i));
+    }
+
     void Renderer::bindTransform(const glm::float4x4& transform)
     {
         struct ObjectBufferData
@@ -894,7 +867,11 @@ namespace noz::renderer
             transform
         };
 
-        SDL_PushGPUVertexUniformData(_currentCommandBuffer, 1, &objectData, sizeof(ObjectBufferData));
+        SDL_PushGPUVertexUniformData(
+            _currentCommandBuffer,
+            static_cast<uint32_t>(registers::Vertex::Object),
+            &objectData,
+            sizeof(ObjectBufferData));
         _currentTransform = transform;
     }
 
@@ -905,7 +882,7 @@ namespace noz::renderer
 
 		SDL_PushGPUVertexUniformData(
 			_currentCommandBuffer,
-			2,
+			static_cast<uint32_t>(registers::Vertex::Bone),
 			bones,
 			static_cast<Uint32>(boneCount * sizeof(glm::mat4)));
 	}
@@ -1027,9 +1004,10 @@ namespace noz::renderer
 	{
 		// Reset all state tracking variables to force rebinding
 		_currentPipeline = nullptr;
-		_currentTexture = nullptr;
 		_currentTransform = glm::float4x4(0.0f); // Use identity matrix as default
+
+        for (int i = 0; i < static_cast<int>(registers::Fragment::Count); i++)
+            bindTexture(_defaultTexture, i);
 	}
+}
 
-
-} // namespace noz::renderer

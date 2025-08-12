@@ -39,9 +39,8 @@ namespace noz
 		template<typename T>
 		std::shared_ptr<T> as()
 		{
-			return isA<T>() ? 
-				std::static_pointer_cast<T>(this->shared_from_this()) : 
-				nullptr;
+			assert(isA<T>());
+			return std::static_pointer_cast<T>(this->shared_from_this());
 		}
 
 		// Factory method template for creating objects with initialization

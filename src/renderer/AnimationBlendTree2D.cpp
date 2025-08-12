@@ -8,9 +8,10 @@
 
 namespace noz::renderer
 {
-    AnimationBlendTree2d::AnimationBlendTree2d(const std::string& name)
-        : IAnimation(name)
-        , _blendX(0.0f)
+    NOZ_DEFINE_TYPEID(AnimationBlendTree2d)
+
+    AnimationBlendTree2d::AnimationBlendTree2d()
+        : _blendX(0.0f)
         , _blendY(0.0f)
     {
     }
@@ -18,6 +19,18 @@ namespace noz::renderer
     AnimationBlendTree2d::~AnimationBlendTree2d()
     {
     }
+
+    void AnimationBlendTree2d::initialize(const std::string& name)
+    {
+        Asset::initialize(name);
+	}
+
+    void AnimationBlendTree2d::initialize(const std::shared_ptr<Skeleton>& skeleton)
+    {
+        // Initialize with the skeleton if needed
+        // This can be used to set up any internal state based on the skeleton structure
+        // For now, we don't need to do anything specific here
+	}
 
     void AnimationBlendTree2d::setBlendParameters(float x, float y)
     {
@@ -148,43 +161,28 @@ namespace noz::renderer
 
     std::shared_ptr<AnimationBlendTree2d> AnimationBlendTree2d::load(const std::string& name)
     {
-        auto fullPath = AssetDatabase::getFullPath(name, "blendtree2d");
-        if (!std::filesystem::exists(fullPath))
-        {
-            noz::Log::error("AnimationBlendTree2d", "Blend tree file does not exist: " + name + " (tried .blendtree2d)");
-            return nullptr;
-        }
-        
-        return loadInternal(fullPath, name);
+		auto blendTree = Object::create<AnimationBlendTree2d>(name);        
+        blendTree->loadInternal();
+        return blendTree;
     }
 
-    std::shared_ptr<AnimationBlendTree2d> AnimationBlendTree2d::loadInternal(const std::string& filePath, const std::string& resourceName)
+    void AnimationBlendTree2d::loadInternal()
     {
         noz::StreamReader reader;
-        if (!reader.loadFromFile(filePath))
-        {
-            noz::Log::error("AnimationBlendTree2d", resourceName + ": failed to load file");
-            return nullptr;
-        }
+        if (!reader.loadFromFile(AssetDatabase::getFullPath(name(), "blend2d")))
+            throw std::runtime_error("Failed to load AnimationBlendTree2d resource: " + name());
 
         // Read and verify signature
         if (!reader.readFileSignature("BT2D"))
-        {
-            noz::Log::error("AnimationBlendTree2d", resourceName + ": invalid signature");
-            return nullptr;
-        }
+			throw std::runtime_error("Invalid AnimationBlendTree2d signature in resource: " + name());
 
         // Read version
         auto version = reader.readUInt32();
         if (version != 1)
-        {
-            noz::Log::error("AnimationBlendTree2d", resourceName + ": unsupported version");
-            return nullptr;
-        }
+			throw std::runtime_error("Unsupported AnimationBlendTree2d version in resource: " + name());
 
-        auto blendTree = std::make_shared<AnimationBlendTree2d>(resourceName);
-        
         // Read animation references
+        std::string skeleton = reader.readString();
         std::string centerAnim = reader.readString();
         std::string leftAnim = reader.readString();
         std::string rightAnim = reader.readString();
@@ -196,7 +194,7 @@ namespace noz::renderer
         {
             auto anim = Asset::load<IAnimation>(centerAnim);
             if (anim)
-                blendTree->setCenterAnimation(anim);
+                setCenterAnimation(anim);
             else
                 noz::Log::warning("AnimationBlendTree2d", "Failed to load center animation: " + centerAnim);
         }
@@ -205,7 +203,7 @@ namespace noz::renderer
         {
             auto anim = Asset::load<IAnimation>(leftAnim);
             if (anim)
-                blendTree->setLeftAnimation(anim);
+                setLeftAnimation(anim);
             else
                 noz::Log::warning("AnimationBlendTree2d", "Failed to load left animation: " + leftAnim);
         }
@@ -214,7 +212,7 @@ namespace noz::renderer
         {
             auto anim = Asset::load<IAnimation>(rightAnim);
             if (anim)
-                blendTree->setRightAnimation(anim);
+                setRightAnimation(anim);
             else
                 noz::Log::warning("AnimationBlendTree2d", "Failed to load right animation: " + rightAnim);
         }
@@ -223,7 +221,7 @@ namespace noz::renderer
         {
             auto anim = Asset::load<IAnimation>(topAnim);
             if (anim)
-                blendTree->setTopAnimation(anim);
+                setTopAnimation(anim);
             else
                 noz::Log::warning("AnimationBlendTree2d", "Failed to load top animation: " + topAnim);
         }
@@ -232,11 +230,9 @@ namespace noz::renderer
         {
             auto anim = Asset::load<IAnimation>(bottomAnim);
             if (anim)
-                blendTree->setBottomAnimation(anim);
+                setBottomAnimation(anim);
             else
                 noz::Log::warning("AnimationBlendTree2d", "Failed to load bottom animation: " + bottomAnim);
         }
-        
-        return blendTree;
     }
 }

@@ -74,7 +74,7 @@ namespace noz::debug
         auto skeleton = animator->skeleton();
 
         // Create a single mesh containing all bone shapes and joints
-        _mesh = std::make_shared<noz::renderer::Mesh>("skeleton_gizmo_mesh");
+        _mesh = Object::create<noz::renderer::Mesh>("SkeletonGizmo");
         
         // Use MeshBuilder to create the skeleton mesh
         noz::renderer::MeshBuilder builder;

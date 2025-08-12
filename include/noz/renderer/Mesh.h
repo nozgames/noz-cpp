@@ -29,7 +29,7 @@ namespace noz::renderer
     {
     public:
 
-        Mesh(const std::string& path);
+        NOZ_DECLARE_TYPEID(Mesh, Asset);
 
         ~Mesh();
         
@@ -73,10 +73,17 @@ namespace noz::renderer
 
         void updateBounds();
                 
-    protected:
-        
+    private:
+
+        friend class AssetDatabase;
+
+        Mesh();
+
+        static std::shared_ptr<Mesh> load(const std::string& name);
+
+        void loadInternal();
+
         // Protected members for inheritance
-        SDL_GPUDevice* _gpu;
         SDL_GPUBuffer* _vertexBuffer;
         SDL_GPUTransferBuffer* _transferBuffer;
         SDL_GPUBuffer* _indexBuffer;
@@ -94,13 +101,6 @@ namespace noz::renderer
         // Bounds (lazy-loaded)
         mutable noz::bounds3 _bounds;
         mutable bool _boundsCalculated = false;
-
-    private:
-
-        friend class AssetDatabase;
-
-        static std::shared_ptr<Mesh> load(const std::string& name);
-
     };
 
     inline bool Mesh::hasIndices() const 

@@ -48,7 +48,7 @@ namespace noz::renderer
 		void createFullscreenQuad();
 		
 		std::shared_ptr<Texture> _renderTarget;
-		std::shared_ptr<Shader> _pixelationShader;
+		std::shared_ptr<Material> _material;
 		std::shared_ptr<Mesh> _fullscreenQuad;
 		
 		// Reference resolution (the "pixel perfect" resolution we want)

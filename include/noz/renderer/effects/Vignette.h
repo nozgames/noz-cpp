@@ -55,7 +55,7 @@ namespace noz::renderer::effects
     
     private:
         
-        void initialize() override;
+        void initialize();
     
         float _intensity = 0.8f;
         float _radius = 0.8f;

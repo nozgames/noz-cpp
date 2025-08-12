@@ -37,7 +37,7 @@ namespace noz::renderer::effects
 
         BorderEffect();
 
-        void initialize() override;
+        void initialize(const std::shared_ptr<Texture>& texture);
         
         BorderParams _params;
         bool _needsUniformUpdate = true;

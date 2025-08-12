@@ -13,8 +13,7 @@ namespace noz::ui
 {
 	NOZ_DEFINE_TYPEID(StyleSheet)
 
-    StyleSheet::StyleSheet(const std::string& path)
-        : Asset(path)
+    StyleSheet::StyleSheet()
     {
     }
     
@@ -22,37 +21,22 @@ namespace noz::ui
     
     std::shared_ptr<StyleSheet> StyleSheet::load(const std::string& name)
     {
-        // Build the full path using Resources system
-        std::string fullPath = AssetDatabase::getFullPath(name, "styles");
-        
-        auto styleSheet = std::make_shared<StyleSheet>(name);        
-        if (!styleSheet->loadFromFile(fullPath))
-        {
-            return nullptr;
-        }
-        
+        auto styleSheet = Object::create<StyleSheet>(name);
+        styleSheet->loadInternal();
         return styleSheet;
     }
     
-    bool StyleSheet::loadFromFile(const std::string& filePath)
+    void StyleSheet::loadInternal()
     {
         StreamReader reader;
-        if (!reader.loadFromFile(filePath))
-        {
-            std::cerr << "Failed to load stylesheet from: " << filePath << std::endl;
-            return false;
-        }
+        if (!reader.loadFromFile(AssetDatabase::getFullPath(name(), "styles")))
+			throw std::runtime_error("Failed to load stylesheet: " + name());
         
         // Verify file signature
         if (!reader.readFileSignature("STYL"))
-        {
-            std::cerr << "Invalid stylesheet file signature: " << filePath << std::endl;
-            return false;
-        }
+			throw std::runtime_error("Invalid stylesheet file signature: " + name());
         
         deserialize(reader);
-        
-        return true;
     }
     
     bool StyleSheet::saveToFile(const std::string& filePath) const
@@ -72,7 +56,7 @@ namespace noz::ui
     
     void StyleSheet::reload()
     {
-		loadFromFile(AssetDatabase::getFullPath(name(), "styles"));
+		loadInternal();
     }
     
     void StyleSheet::serialize(StreamWriter& writer) const

@@ -180,7 +180,7 @@ namespace noz::renderer
             return nullptr;
         }
 
-        auto animation = std::make_shared<Animation>(resourceName);
+        auto animation = Object::create<Animation>(resourceName);
         animation->_frameCount = reader.readUInt16();
 		animation->_frameStride = reader.readUInt16();
 		animation->_animationTracks = reader.readVector<AnimationTrack>();

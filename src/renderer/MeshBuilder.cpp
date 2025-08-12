@@ -479,7 +479,7 @@ namespace noz::renderer
 		if (!hasData())
 			return nullptr;
 
-		auto mesh = std::make_shared<Mesh>(name);
+		auto mesh = Object::create<Mesh>(name);
 		mesh->positions() = _positions;
 		mesh->normals() = _normals;
 		mesh->uv0() = _uv0;
@@ -491,23 +491,15 @@ namespace noz::renderer
     std::shared_ptr<Mesh> MeshBuilder::build(const std::string& name)
     {
         if (!hasData())
-        {
             return nullptr;
-        }
 
-        // Create a new mesh
-        auto mesh = std::make_shared<Mesh>(name);
-        
-        // Copy data from builder to mesh
+        auto mesh = Object::create<Mesh>(name);
         mesh->positions() = _positions;
         mesh->normals() = _normals;
         mesh->uv0() = _uv0;
         mesh->boneIndices() = _boneIndices;
         mesh->indices() = _indices;
-        
-        // Upload mesh data to GPU
         mesh->upload();
-        
         return mesh;
     }
 

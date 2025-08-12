@@ -26,16 +26,9 @@ namespace noz::ui
 		NOZ_DECLARE_TYPEID(StyleSheet, noz::Asset)
 
         using ReloadCallback = std::function<void()>;
-        
-        StyleSheet(const std::string& path = "");
+                
         ~StyleSheet();
-
-        // Load from file
-        bool loadFromFile(const std::string& filePath);
-        
-        // Static load method for resource system
-        static std::shared_ptr<StyleSheet> load(const std::string& name);
-        
+       
         // Save to file
         bool saveToFile(const std::string& filePath) const;
         
@@ -63,6 +56,15 @@ namespace noz::ui
         void clear();
         
     private:
+
+        friend class AssetDatabase;
+
+        static std::shared_ptr<StyleSheet> load(const std::string& name);
+
+        StyleSheet();
+
+        void loadInternal();
+
         std::unordered_map<std::string, Style> _styles;
         std::vector<std::shared_ptr<StyleSheet>> _inheritedStyleSheets;
         

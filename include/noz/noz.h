@@ -80,6 +80,7 @@
 #include <noz/renderer/Animation.h>
 #include <noz/renderer/AnimationBlendTree.h>
 #include <noz/renderer/Shader.h>
+#include <noz/renderer/Material.h>
 #include <noz/renderer/Skeleton.h>
 #include <noz/renderer/Font.h>
 

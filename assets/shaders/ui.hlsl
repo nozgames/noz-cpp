@@ -1,25 +1,6 @@
-// SDL3 requires space1 for all cbuffer declarations
-
 //@ VERTEX
 
-cbuffer CameraBuffer : register(vs_b0, space1)
-{
-    float4x4 vp;
-    float4x4 v;
-    float4x4 lightViewProjection;
-};
-
-cbuffer ObjectBuffer : register(vs_b1, space1)
-{
-    float4x4 m;
-};
-
-struct VertexInput
-{
-    float3 position : POSITION;
-    float2 uv0 : TEXCOORD0;
-    float3 normal : TEXCOORD1;
-};
+#include "../../shaders/mesh.hlsl"
 
 struct VertexOutput
 {
@@ -39,13 +20,10 @@ VertexOutput vs(VertexInput input)
 
 //@ FRAGMENT
 
+#include "../../shaders/color.hlsl"
+
 Texture2D<float4> Texture : register(t0, space2);
 SamplerState Sampler : register(s0, space2);
-
-cbuffer ColorBuffer : register(ps_b0, space3)
-{
-    float4 color;  // Tint color for the UI element
-};
 
 struct PixelInput
 {

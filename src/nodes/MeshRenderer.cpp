@@ -6,11 +6,19 @@
 
 */
 
+#include <noz/renderer/Material.h>
+#include <noz/renderer/Shader.h>
+
 namespace noz::node
 {
 	NOZ_DEFINE_TYPEID(MeshRenderer);
 
     MeshRenderer::MeshRenderer()
+        : _castShadow(true)
+        , _material(nullptr)
+        , _shader(nullptr)
+        , _mesh(nullptr)
+        , _texture(nullptr)
     {
     }
 
@@ -24,12 +32,9 @@ namespace noz::node
         if (!isValid())
             return;
 
-        // Get transform from parent Node3d (guaranteed to be Node3d by assert in start())
-        auto parent3d = std::static_pointer_cast<Node3d>(parent());
+        auto parent3d = parent()->as<Node3d>();
 
-        // Record commands to the command buffer
-        commandBuffer->bind(_shader);
-        commandBuffer->bind(_texture);
+        commandBuffer->bind(_material);
         commandBuffer->setTransform(parent3d->localToWorld());
         
         // Use bone transforms if available, otherwise use identity bone
@@ -67,5 +72,5 @@ namespace noz::node
     void MeshRenderer::onDetachedFromParent()
     {
         Node::onDetachedFromParent();
-    }
+    }            
 } 

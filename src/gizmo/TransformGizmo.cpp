@@ -71,7 +71,7 @@ namespace noz::debug
     std::shared_ptr<noz::renderer::Mesh> TransformGizmo::createSharedMesh()
     {
         // Create a single mesh containing all transform gizmo shapes
-        auto mesh = std::make_shared<noz::renderer::Mesh>("transform_gizmo_shared_mesh");
+        auto mesh = Object::create<noz::renderer::Mesh>("TransformGizmo");
         
         // Use MeshBuilder to create the transform gizmo mesh
         noz::renderer::MeshBuilder builder;

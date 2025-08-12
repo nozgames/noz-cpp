@@ -1,3 +1,11 @@
+/*
+
+    NoZ Game Engine
+
+    Copyright(c) 2025 NoZ Games, LLC
+
+*/
+
 #pragma once
 
 struct SDL_GPUDevice;
@@ -10,43 +18,75 @@ namespace noz::renderer
     class Shader : public noz::Asset
     {
     public:
-        Shader(const std::string& path);
+
+        enum class Flags : uint8_t 
+        {
+            None = 0,
+            DepthTest = 1 << 0,
+            DepthWrite = 1 << 1,
+            Blend = 1 << 2,
+            Light = 1 << 3,
+			Shadows = 1 << 4,
+		};
+
+		NOZ_DECLARE_TYPEID(Shader, noz::Asset)
+
         ~Shader();
         void destroy();
         SDL_GPUShader* getVertexShader() const { return _vertexShader; }
         SDL_GPUShader* getFragmentShader() const { return _fragmentShader; }
         bool isValid() const { return _vertexShader != nullptr && _fragmentShader != nullptr; }
         
-        // Pipeline properties
-        bool depthTest() const { return _depthTest; }
-        bool depthWrite() const { return _depthWrite; }
-        bool isBlendEnabled() const { return _blendEnabled; }
+        bool depthTest() const;
+        bool depthWrite() const;
+        bool blendEnabled() const;
         SDL_GPUBlendFactor srcBlendFactor() const { return _srcBlendFactor; }
         SDL_GPUBlendFactor dstBlendFactor() const { return _dstBlendFactor; }
         SDL_GPUCullMode cullMode() const { return _cullMode; }
         
-        // Binding (will be handled by PipelineFactory)
+        int vertexUniformBufferCount() const;
+        int fragmentUniformBufferCount() const;
+        int samplerCount() const;
+        
         void bind(SDL_GPURenderPass* renderPass) const;
         
     private:
 
         friend class AssetDatabase;
 
-        static std::shared_ptr<Shader> load(const std::string& path);
-        bool loadInternal(SDL_GPUDevice* gpu, const std::string& name);
-        bool loadFromProcessedFile(const std::string& path);
+        Shader();
 
-        SDL_GPUDevice* _gpu;
+        static std::shared_ptr<Shader> load(const std::string& path);
+        void loadInternal();
+
         SDL_GPUShader* _vertexShader;
-        SDL_GPUShader* _fragmentShader;
-        
-        // Pipeline properties loaded from meta file
-        bool _depthTest = true;
-        bool _depthWrite = true;
-        bool _blendEnabled = false;
-        SDL_GPUBlendFactor _srcBlendFactor = SDL_GPU_BLENDFACTOR_ONE;
-        SDL_GPUBlendFactor _dstBlendFactor = SDL_GPU_BLENDFACTOR_ZERO;
-        SDL_GPUCullMode _cullMode = SDL_GPU_CULLMODE_NONE;
+        SDL_GPUShader* _fragmentShader;        
+        int _vertexUniformBuffers;
+        int _fragmentUniformBuffers;
+        int _samplers;        
+		Flags _flags;
+        SDL_GPUBlendFactor _srcBlendFactor;
+        SDL_GPUBlendFactor _dstBlendFactor;
+        SDL_GPUCullMode _cullMode;
     };
 
-} // namespace noz::renderer
+    inline int Shader::vertexUniformBufferCount() const { return _vertexUniformBuffers; }
+    inline int Shader::fragmentUniformBufferCount() const { return _fragmentUniformBuffers; }
+    inline int Shader::samplerCount() const { return _samplers; }
+
+    inline bool Shader::depthTest() const
+    {
+        return (static_cast<uint8_t>(_flags) & static_cast<uint8_t>(Flags::DepthTest)) == static_cast<uint8_t>(Flags::DepthTest);
+    }
+
+    inline bool Shader::depthWrite() const
+    {
+        return (static_cast<uint8_t>(_flags) & static_cast<uint8_t>(Flags::DepthWrite)) == static_cast<uint8_t>(Flags::DepthWrite);
+    }
+
+    inline bool Shader::blendEnabled() const
+    {
+        return (static_cast<uint8_t>(_flags) & static_cast<uint8_t>(Flags::Blend)) == static_cast<uint8_t>(Flags::Blend);
+    }
+
+}

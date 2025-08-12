@@ -24,6 +24,6 @@ namespace noz::renderer::effects
 
         GammaCorrection();
 
-        void initialize() override;
+        void initialize();
     };
 }

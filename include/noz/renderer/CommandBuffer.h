@@ -1,3 +1,11 @@
+/*
+
+    NoZ Game Engine
+
+    Copyright(c) 2025 NoZ Games, LLC
+
+*/
+
 #pragma once
 
 struct SDL_GPURenderPass;
@@ -6,14 +14,13 @@ namespace noz::renderer
 {
     class Texture;
     class Shader;
+    class Material;
     class Mesh;
 
     // Command type enumeration
     enum class CommandType : uint8_t
     {
-        BindTexture,
-        BindTextureWithSampler,
-        BindShader,
+        BindMaterial,
         BindMesh,
         SetTransform,
         SetCamera,
@@ -28,39 +35,21 @@ namespace noz::renderer
         SetScissor,
         BindLight,
         SetColor,
-        SetTextOptions,
-        SetGridData,
-        SetBufferData
+        SetTextOptions
     };
 
     // Resource handle for thread-safe resource references
-    using ResourceHandle = uint32_t;
-    constexpr ResourceHandle INVALID_HANDLE = 0;
+    using ResourceHandle = int;
+    constexpr ResourceHandle INVALID_HANDLE = -1;
 
-    // Command data structures
-    struct BindTextureData
+    struct BindMaterialData
     {
-        ResourceHandle textureHandle;
-    };
-
-    struct BindTextureWithSamplerData
-    {
-        ResourceHandle textureHandle;
-        SDL_GPUSampler* sampler;
-    };
-
-	struct BindDefaultTexture
-	{
-	};
-
-    struct BindShaderData
-    {
-        ResourceHandle shaderHandle;
+        ResourceHandle material;
     };
 
     struct BindMeshData
     {
-        ResourceHandle meshHandle;
+        ResourceHandle mesh;
     };
 
     struct SetTransformData
@@ -83,7 +72,7 @@ namespace noz::renderer
 
     struct DrawMeshData
     {
-        ResourceHandle meshHandle;
+        ResourceHandle mesh;
     };
 
     struct BeginOpaquePassData
@@ -96,7 +85,7 @@ namespace noz::renderer
     struct BeginOpaquePassWithTargetData
     {
         bool clear;
-        ResourceHandle renderTargetHandle;
+        ResourceHandle renderTarget;
 		Color color;
         bool useMSAA;
     };
@@ -136,21 +125,10 @@ namespace noz::renderer
         glm::vec4 outlineColor;
         float outlineWidth;
         float smoothing;
+        float padding1;
+        float padding2;
     };
-    
-    struct SetGridDataData
-    {
-        glm::vec2 gridScale;
-        glm::vec2 gridOffset;
-    };
-    
-    struct SetBufferDataData
-    {
-        uint32_t bufferIndex;  // Which buffer slot (b0, b1, b2, etc.)
-        uint32_t size;         // Size of data in bytes
-        uint32_t dataOffset;   // Offset into buffer data storage
-    };
-    
+        
     // Empty struct for commands with no data
     struct EmptyData {};
 
@@ -160,10 +138,7 @@ namespace noz::renderer
         CommandType type;
         std::variant<
             EmptyData,              // For commands with no data
-            BindTextureData,
-            BindTextureWithSamplerData,
-			BindDefaultTexture,
-            BindShaderData,
+            BindMaterialData,
             BindMeshData,
             SetTransformData,
             SetCameraData,
@@ -176,9 +151,7 @@ namespace noz::renderer
             SetScissorData,
             BindLightData,
             SetColorData,
-            SetTextOptionsData,
-            SetGridDataData,
-            SetBufferDataData
+            SetTextOptionsData
         > data;
 
         // Default constructor for simple commands with no data
@@ -195,14 +168,8 @@ namespace noz::renderer
         CommandBuffer();
         ~CommandBuffer() = default;
 
-        // Resource binding commands
-        void bind(const std::shared_ptr<Texture>& texture);
-        void bindTextureWithSampler(const std::shared_ptr<Texture>& texture, SDL_GPUSampler* sampler);
-        void bindShader(const std::shared_ptr<Shader>& shader);
-        void bind(const std::shared_ptr<Shader>& shader);
+        void bind(const std::shared_ptr<Material>& material);
         void bind(const std::shared_ptr<Mesh>& mesh);
-
-		void bindDefaultTexture();
         
         // State setting commands
         void setTransform(const glm::mat4& transform);
@@ -214,8 +181,6 @@ namespace noz::renderer
         void setColor(const glm::vec4& color);
         void setTextOptions(const glm::vec4& textColor, const glm::vec4& outlineColor = glm::vec4(0.0f), 
                            float outlineWidth = 0.0f, float smoothing = 0.1f);
-        void setGridData(const glm::vec2& gridScale, const glm::vec2& gridOffset);
-        void setBufferData(uint32_t bufferIndex, const void* data, uint32_t size);
         
         // Drawing commands
         void drawMesh(const std::shared_ptr<Mesh>& mesh);
@@ -223,7 +188,7 @@ namespace noz::renderer
         // Render pass commands
         void beginOpaquePass(bool clear = true, Color clearColor=Color::Black, bool useMSAA = false);
         void beginOpaquePass(const std::shared_ptr<Texture>& renderTarget, bool clear = true, Color clearColor = Color::Black, bool useMSAA = false);
-        void endOpaquePass();
+        void endOpaquePass(bool setOpaqueTexture = false);
         void beginShadowPass(const glm::mat4& lightViewMatrix, const glm::mat4& lightProjectionMatrix);
         void endShadowPass();
         
@@ -235,11 +200,11 @@ namespace noz::renderer
         const std::vector<Command>& getCommands() const { return _commands; }
         
         // Resource access methods for renderer execution
-        std::shared_ptr<Texture> getTexture(ResourceHandle handle) const;
-        std::shared_ptr<Shader> getShader(ResourceHandle handle) const;
-        std::shared_ptr<Mesh> getMesh(ResourceHandle handle) const;
-        const glm::mat4* getBones(uint32_t offset, uint32_t count) const;
-        const uint8_t* getBufferData(uint32_t offset, uint32_t size) const;
+        std::shared_ptr<Texture> texture(ResourceHandle handle) const;
+        std::shared_ptr<Shader> shader(ResourceHandle handle) const;
+        std::shared_ptr<Material> material(ResourceHandle handle) const;
+        std::shared_ptr<Mesh> mesh(ResourceHandle handle) const;
+        const glm::mat4* bones(uint32_t offset, uint32_t count) const;
         
         // Reset for next frame
         void reset();
@@ -249,23 +214,56 @@ namespace noz::renderer
 
 		bool isShadowPass() const { return _shadowPass; }
 
+		std::shared_ptr<Texture> opaqueTexture() const; 
+
     private:
 
 		std::vector<Command> _commands;
 		bool _shadowPass;
         
-        // Resource storage
         std::vector<std::shared_ptr<Texture>> _textures;
-        std::vector<std::shared_ptr<Shader>> _shaders;
+        std::vector<std::shared_ptr<Material>> _materials;
         std::vector<std::shared_ptr<Mesh>> _meshes;
         std::vector<glm::mat4> _boneData;
-        std::vector<uint8_t> _bufferData;  // Generic buffer data storage
 
 		int _lastTextureIndex = -1;
+        ResourceHandle _opaqueTexture;
+        ResourceHandle _renderTargetTexture;
         
         // Reserve initial capacity to avoid frequent reallocations
         static constexpr size_t INITIAL_COMMAND_CAPACITY = 1024;
         static constexpr size_t INITIAL_BONE_CAPACITY = 256;
     };
 
-} // namespace noz::renderer
+    inline std::shared_ptr<Texture> CommandBuffer::opaqueTexture() const
+    {
+        if (_opaqueTexture == INVALID_HANDLE) return nullptr;
+		return texture(_opaqueTexture);
+    }
+
+    inline std::shared_ptr<Texture> CommandBuffer::texture(ResourceHandle handle) const
+    {
+        if (handle == INVALID_HANDLE || handle > _textures.size()) return nullptr;
+        return _textures[handle - 1]; // Handle is 1-based
+    }
+
+    inline std::shared_ptr<Material> CommandBuffer::material(ResourceHandle handle) const
+    {
+        if (handle == INVALID_HANDLE || handle > _materials.size()) return nullptr;
+        return _materials[handle - 1]; // Handle is 1-based
+    }
+
+    inline std::shared_ptr<Mesh> CommandBuffer::mesh(ResourceHandle handle) const
+    {
+        if (handle == INVALID_HANDLE || handle > _meshes.size()) return nullptr;
+        return _meshes[handle - 1]; // Handle is 1-based
+    }
+
+    inline const glm::mat4* CommandBuffer::bones(uint32_t offset, uint32_t count) const
+    {
+        if (offset + count > _boneData.size()) return nullptr;
+        return &_boneData[offset];
+    }
+
+
+}

@@ -147,7 +147,7 @@ namespace noz::renderer
         if (!isShadowShader)
         {
             SDL_GPUColorTargetBlendState blendState = {};
-            if (shader->isBlendEnabled())
+            if (shader->blendEnabled())
             {
                 blendState.enable_blend = true;
                 blendState.src_color_blendfactor = shader->srcBlendFactor();

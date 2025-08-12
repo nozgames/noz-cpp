@@ -1,25 +1,6 @@
-// SDL3 requires space1 for all cbuffer declarations
-
 //@ VERTEX
 
-cbuffer CameraBuffer : register(b0, space1)
-{
-    float4x4 vp;
-    float4x4 v;
-    float4x4 lightViewProjection;
-};
-
-cbuffer ObjectBuffer : register(b1, space1)
-{
-    float4x4 m;
-};
-
-struct VertexInput
-{
-    float3 position : POSITION;
-    float2 uv0 : TEXCOORD0;
-    float3 normal : TEXCOORD1;
-};
+#include "../../shaders/mesh.hlsl"
 
 struct VertexOutput
 {

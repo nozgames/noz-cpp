@@ -174,7 +174,7 @@ namespace noz::ui
         }
         
         // Create mesh from builder data
-        auto mesh = std::make_shared<noz::renderer::Mesh>("text_mesh");
+        auto mesh = Object::create<noz::renderer::Mesh>(text);
         mesh->positions() = builder.positions();
         mesh->normals() = builder.normals();
         mesh->uv0() = builder.uv0();
@@ -189,7 +189,7 @@ namespace noz::ui
         // Create TextMesh result
         auto textMesh = std::make_shared<TextMesh>();
         textMesh->mesh = mesh;
-        textMesh->fontTexture = request.font->texture();
+        textMesh->fontMaterial = request.font->material();
         textMesh->size = glm::vec2(totalWidth, totalHeight);
         textMesh->vertexCount = static_cast<int>(builder.positions().size());
         textMesh->indexCount = static_cast<int>(builder.indices().size());

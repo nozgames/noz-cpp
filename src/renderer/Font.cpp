@@ -8,8 +8,11 @@
 
 namespace noz::renderer
 {
-    Font::Font(const std::string& path) : Asset(path)
+    NOZ_DEFINE_TYPEID(Font);
+
+    Font::Font()
     {
+
     }
 
     Font::~Font()
@@ -18,7 +21,7 @@ namespace noz::renderer
 
     std::shared_ptr<Font> Font::load(const std::string& path)
     {
-        auto font = std::make_shared<Font>(path);
+        auto font = Object::create<Font>(path);
 		font->loadInternal();
         return font;
     }
@@ -88,17 +91,11 @@ namespace noz::renderer
 			_kerning.insert({ key, amount });
         }
 
-        // Read atlas texture data
-        std::vector<uint8_t> atlasData = reader.readBytes();
+        auto atlasData = reader.readBytes();
+        _texture = Texture::createFromMemory(atlasData.data(), atlasWidth, atlasHeight, 1, "Font");
 
-        // Get GPU device from renderer
-		assert(Renderer::instance());
-		assert(Renderer::instance()->GetGPUDevice());
-
-        // Create texture from atlas data using actual dimensions
-        _texture = std::make_shared<Texture>("font_atlas");
-        if (!_texture->createFromMemory(Renderer::instance()->GetGPUDevice(), atlasData.data(), atlasWidth, atlasHeight, 1))
-			throw std::runtime_error("Failed to create font texture from atlas data");
+		_material = Object::create<Material>("shaders/text", "Font");
+        _material->setTexture(_texture);
     }
 
     Font::Glyph Font::glyph(char ch) const

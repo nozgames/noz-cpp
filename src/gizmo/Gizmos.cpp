@@ -1,10 +1,13 @@
+/*
+
+    NoZ Game Engine
+
+    Copyright(c) 2025 NoZ Games, LLC
+
+*/
+
 #include <noz/gizmo/Gizmos.h>
 #include <noz/gizmo/IGizmo.h>
-#include <noz/nodes/Camera.h>
-#include <noz/AssetDatabase.h>
-#include <noz/renderer/CommandBuffer.h>
-#include <noz/renderer/Shader.h>
-#include <noz/renderer/Texture.h>
 
 namespace noz::debug
 {
@@ -33,12 +36,10 @@ namespace noz::debug
 
 	void Gizmos::loadInternal()
 	{
-        // Load shared gizmo shader
-        _gizmoShader = Asset::load<noz::renderer::Shader>("shaders/gizmo");
-		assert(_gizmoShader);
+		_gizmoMaterial = Object::create<noz::renderer::Material>("shaders/gizmo");
+		assert(_gizmoMaterial);
 
-		_paletteTexture = Asset::load<noz::renderer::Texture>("textures/palette");
-		assert(_paletteTexture);
+        _gizmoMaterial->setTexture(Asset::load<noz::renderer::Texture>("textures/palette"));
     }
 
 	void Gizmos::unload()
@@ -70,35 +71,21 @@ namespace noz::debug
 
     void Gizmos::render(noz::renderer::CommandBuffer* commandBuffer, const noz::node::Camera& camera)
     {
-        if (!commandBuffer || !_gizmoShader || !_paletteTexture)
-            return;
+        assert(commandBuffer);
+        assert(_gizmoMaterial);
 
-        // Start opaque pass for gizmos
         commandBuffer->beginOpaquePass(false); // false = don't clear depth buffer since we want gizmos on top
-
-        // Set camera for gizmos
         commandBuffer->setViewProjection(camera.viewMatrix(), camera.projectionMatrix());
+        commandBuffer->bind(_gizmoMaterial);
 
-        // Bind shared shader and texture once for all gizmos
-        commandBuffer->bind(_paletteTexture);
-        commandBuffer->bind(_gizmoShader);
-
-        // Render all gizmos that updated this frame
         for (const auto& weakGizmo : _frameGizmos)
         {
             auto gizmo = weakGizmo.lock();
             if (gizmo)
-            {
                 gizmo->renderGizmo(commandBuffer);
-            }
         }
 
-        // End opaque pass
         commandBuffer->endOpaquePass();
-
-        // Clear frame gizmos after rendering
         _frameGizmos.clear();
     }
-
-
-} // namespace noz::debug
+}

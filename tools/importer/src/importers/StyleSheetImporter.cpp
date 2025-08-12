@@ -47,11 +47,13 @@ namespace noz::import
     bool StyleSheetImporter::processStyleSheet(const std::string& sourcePath, const std::string& outputPath)
     {
         // Parse the source file using MetaFile format
-        noz::MetaFile metaFile = noz::MetaFile::parse(sourcePath);
+        auto meta = noz::MetaFile::parse(sourcePath);
         
+        
+        auto styleSheet = Object::create<noz::ui::StyleSheet>("styles");
+#if 0
         // Create a new stylesheet
-        auto styleSheet = std::make_shared<noz::ui::StyleSheet>();
-        
+
         // Load inheritance from meta file if it exists
         std::string metaPath = sourcePath + ".meta";
         if (std::filesystem::exists(metaPath))
@@ -88,11 +90,12 @@ namespace noz::import
                 }
             }
         }
+#endif
         
         // Parse styles using INI format (each section is a style class)
         std::unordered_map<std::string, noz::ui::Style> styles;
         
-        for (const std::string& group : metaFile.groups())
+        for (const std::string& group : meta.groups())
         {
             // Skip empty group (legacy compatibility)
             if (group.empty())
@@ -102,9 +105,9 @@ namespace noz::import
             styles[group] = noz::ui::Style::defaultStyle();
             
             // Parse all properties in this group/style
-            for (const std::string& propertyName : metaFile.keys(group))
+            for (const std::string& propertyName : meta.keys(group))
             {
-                parseProperty(group, propertyName, metaFile, &styles[group]);
+                parseProperty(group, propertyName, meta, &styles[group]);
             }
         }
         

@@ -50,8 +50,6 @@ namespace noz
 
 		NOZ_DECLARE_TYPEID(Asset, Object)
 
-        Asset(const std::string& path);
-
         virtual ~Asset();
 
         const std::string& name() const;
@@ -63,6 +61,12 @@ namespace noz
         size_t _index = SIZE_MAX;
 
         template<typename TAsset> static std::shared_ptr<TAsset> load(const std::string& name);
+
+    protected:
+
+        virtual void initialize(const std::string& name);
+
+        Asset();
 
     private:
 

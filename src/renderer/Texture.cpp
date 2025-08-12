@@ -13,10 +13,10 @@
 
 namespace noz::renderer
 {
-    Texture::Texture(const std::string& path)
-        : noz::Asset(path)
-        , _texture(nullptr)
-        , _device(nullptr)
+	NOZ_DEFINE_TYPEID(Texture)
+
+    Texture::Texture()
+        : _texture(nullptr)
         , _width(0)
         , _height(0)
     {
@@ -24,289 +24,41 @@ namespace noz::renderer
 
     Texture::~Texture()
     {
-		if (_texture && _device)
-		{
-			SDL_ReleaseGPUTexture(_device, _texture);
-		}
-		_texture = nullptr;
-		_device = nullptr;
-		_width = 0;
-		_height = 0;
+		if (_texture)
+            SDL_ReleaseGPUTexture(Renderer::instance()->device(), _texture);
     }
 
-    Texture* Texture::load(const std::string& name)
+    std::shared_ptr<Texture> Texture::load(const std::string& name)
     {
-        auto renderer = Renderer::instance();
-        auto* gpu = renderer->GetGPUDevice();
-        
         // Check if this should be a white texture
+		auto texture = Object::create<Texture>(name);
         if (name == "white")
-            return createWhite(gpu);
-        
-        auto* texture = new Texture(name);
-		auto texturePath = noz::AssetDatabase::getFullPath(name, "texture");
-		if (!texture->loadFromFile(gpu, texturePath))
         {
-            std::cerr << "Failed to load texture: " << texturePath << std::endl;
-            delete texture;
-            return nullptr;
+			uint8_t whitePixel[4] = { 255, 255, 255, 255 };
+            texture->createFromMemoryInternal(&whitePixel, 1, 1, 4, false);
+            return texture;
         }
-        
+            
+        texture->loadInternal();
         return texture;
     }
 
-    Texture* Texture::createFromGPUTexture(SDL_GPUDevice* device, SDL_GPUTexture* gpuTexture, const std::string& name)
+    std::shared_ptr<Texture> Texture::createFromMemory(const void* data, int width, int height, int channels, bool generateMipmaps, const std::string& name)
     {
-        if (!device || !gpuTexture)
-        {
-            std::cerr << "Invalid GPU device or texture for creating texture from GPU texture" << std::endl;
-            return nullptr;
-        }
-
-        // Create a new texture instance
-        auto* texture = new Texture(name);
-        texture->_device = device;
-        texture->_texture = gpuTexture;
-
-        // Note: We don't own the SDL_GPUTexture, so we don't destroy it
-        // The texture dimensions would need to be retrieved from the GPU texture
-        // For now, we'll use placeholder dimensions
-        texture->_width = 256;  // Placeholder - would need to get from GPU texture
-        texture->_height = 256; // Placeholder - would need to get from GPU texture
-
+		auto texture = Object::create<Texture>(name);
+		texture->createFromMemoryInternal(data, width, height, channels, generateMipmaps);
         return texture;
     }
 
-    bool Texture::createFromSurface(SDL_Surface* surface)
+    void Texture::createFromMemoryInternal(const void* data, int width, int height, int channels, bool generateMipmaps)
     {
-        if (!surface)
-        {
-            std::cerr << "Invalid surface for texture creation" << std::endl;
-            return false;
-        }
+        assert(data);
+        assert(width > 0);
+        assert(height > 0);
+        assert(channels > 0);
 
-        // Get GPU device from renderer
-        auto renderer = Renderer::instance();
-        if (!renderer)
-        {
-            std::cerr << "Renderer not available for texture creation" << std::endl;
-            return false;
-        }
-
-        _device = renderer->GetGPUDevice();
-        if (!_device)
-        {
-            std::cerr << "GPU device not available for texture creation" << std::endl;
-            return false;
-        }
-
-        // Convert surface to RGBA32 if needed
-        SDL_Surface* convertedSurface = nullptr;
-        if (SDL_BYTESPERPIXEL(surface->format) != 4)
-        {
-            convertedSurface = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32);
-            if (!convertedSurface)
-            {
-                std::cerr << "Failed to convert surface to RGBA32: " << SDL_GetError() << std::endl;
-                return false;
-            }
-            surface = convertedSurface;
-        }
-
-        // Create transfer buffer for pixel data
-        SDL_GPUTransferBufferCreateInfo transferInfo = {};
-        transferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
-        transferInfo.size = surface->pitch * surface->h;
-        transferInfo.props = 0;
-        SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(_device, &transferInfo);
-        if (!transferBuffer)
-        {
-            std::cerr << "Failed to create transfer buffer: " << SDL_GetError() << std::endl;
-            if (convertedSurface) SDL_DestroySurface(convertedSurface);
-            return false;
-        }
-
-        // Map transfer buffer and copy pixel data
-        void* mapped = SDL_MapGPUTransferBuffer(_device, transferBuffer, false);
-        if (!mapped)
-        {
-            std::cerr << "Failed to map transfer buffer: " << SDL_GetError() << std::endl;
-            if (convertedSurface) SDL_DestroySurface(convertedSurface);
-            SDL_ReleaseGPUTransferBuffer(_device, transferBuffer);
-            return false;
-        }
-        SDL_memcpy(mapped, surface->pixels, transferInfo.size);
-        SDL_UnmapGPUTransferBuffer(_device, transferBuffer);
-
-        // Create GPU texture
-        SDL_GPUTextureCreateInfo textureInfo = {};
-        textureInfo.type = SDL_GPU_TEXTURETYPE_2D;
-        textureInfo.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
-        textureInfo.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
-        textureInfo.width = surface->w;
-        textureInfo.height = surface->h;
-        textureInfo.layer_count_or_depth = 1;
-        textureInfo.num_levels = 1;
-        textureInfo.sample_count = SDL_GPU_SAMPLECOUNT_1;
-
-        _texture = SDL_CreateGPUTexture(_device, &textureInfo);
-        if (!_texture)
-        {
-            std::cerr << "Failed to create GPU texture: " << SDL_GetError() << std::endl;
-            if (convertedSurface) SDL_DestroySurface(convertedSurface);
-            SDL_ReleaseGPUTransferBuffer(_device, transferBuffer);
-            return false;
-        }
-
-        // Acquire a command buffer for texture loading
-        SDL_GPUCommandBuffer* commandBuffer = SDL_AcquireGPUCommandBuffer(_device);
-        if (!commandBuffer)
-        {
-            if (convertedSurface) SDL_DestroySurface(convertedSurface);
-            SDL_ReleaseGPUTransferBuffer(_device, transferBuffer);
-            return false;
-        }
-
-        // Upload pixel data to GPU texture
-        SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(commandBuffer);
-        SDL_GPUTextureTransferInfo source = { transferBuffer, 0, static_cast<Uint32>(surface->w), static_cast<Uint32>(surface->h) };
-        SDL_GPUTextureRegion destination = {};
-        destination.texture = _texture;
-        destination.w = static_cast<Uint32>(surface->w);
-        destination.h = static_cast<Uint32>(surface->h);
-        destination.d = 1;
-
-        SDL_UploadToGPUTexture(copyPass, &source, &destination, false);
-        SDL_EndGPUCopyPass(copyPass);
-
-        // Submit and wait for command buffer
-        if (!SDL_SubmitGPUCommandBuffer(commandBuffer))
-        {
-            std::cerr << "Failed to submit command buffer for texture upload: " << SDL_GetError() << std::endl;
-        }
-        else
-        {
-            SDL_WaitForGPUIdle(_device);
-        }
-
-        // Store dimensions
-        _width = surface->w;
-        _height = surface->h;
-
-        // Clean up
-        SDL_ReleaseGPUTransferBuffer(_device, transferBuffer);
-        if (convertedSurface) SDL_DestroySurface(convertedSurface);
-
-        return true;
-    }
-
-    Texture* Texture::createWhite(SDL_GPUDevice* device)
-    {
-        if (!device)
-        {
-            std::cerr << "Invalid GPU device for creating white texture" << std::endl;
-            return nullptr;
-        }
-
-        // Create a new texture instance
-        auto* texture = new Texture("white");
-        texture->_device = device;
-
-        // Create a 16x16 white texture
-        const int width = 16;
-        const int height = 16;
-        const int pitch = width * 4; // 4 bytes per pixel (RGBA)
-        const int size = pitch * height;
-
-        // Create pixel data: all white pixels
-        std::vector<Uint8> pixels(size);
-        memset(&pixels[0], 255, size);
-
-        // Create transfer buffer
-        SDL_GPUTransferBufferCreateInfo transferInfo = {};
-        transferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
-        transferInfo.size = size;
-        transferInfo.props = 0;
-        SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(device, &transferInfo);
-        if (!transferBuffer)
-        {
-            std::cerr << "Failed to create transfer buffer for test texture: " << SDL_GetError() << std::endl;
-            return false;
-        }
-
-        // Copy pixel data to transfer buffer
-        void* mapped = SDL_MapGPUTransferBuffer(device, transferBuffer, false);
-        if (!mapped)
-        {
-            std::cerr << "Failed to map transfer buffer for test texture: " << SDL_GetError() << std::endl;
-            SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
-            return false;
-        }
-        SDL_memcpy(mapped, pixels.data(), size);
-        SDL_UnmapGPUTransferBuffer(device, transferBuffer);
-
-        // Create GPU texture
-        SDL_GPUTextureCreateInfo textureInfo = {};
-        textureInfo.type = SDL_GPU_TEXTURETYPE_2D;
-        textureInfo.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
-        textureInfo.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
-        textureInfo.width = width;
-        textureInfo.height = height;
-        textureInfo.layer_count_or_depth = 1;
-        textureInfo.num_levels = 1;
-        textureInfo.sample_count = SDL_GPU_SAMPLECOUNT_1;
-
-        texture->_texture = SDL_CreateGPUTexture(device, &textureInfo);
-        if (!texture->_texture)
-        {
-            std::cerr << "Failed to create white GPU texture: " << SDL_GetError() << std::endl;
-            SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
-            delete texture;
-            return nullptr;
-        }
-
-        // Upload pixel data
-        SDL_GPUCommandBuffer* commandBuffer = SDL_AcquireGPUCommandBuffer(device);
-        if (!commandBuffer)
-        {
-            SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
-            return false;
-        }
-
-        SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(commandBuffer);
-        SDL_GPUTextureTransferInfo source = { transferBuffer, 0, static_cast<Uint32>(width), static_cast<Uint32>(height) };
-        SDL_GPUTextureRegion destination = {};
-        destination.texture = texture->_texture;
-        destination.w = static_cast<Uint32>(width);
-        destination.h = static_cast<Uint32>(height);
-        destination.d = 1;
-
-        SDL_UploadToGPUTexture(copyPass, &source, &destination, false);
-        SDL_EndGPUCopyPass(copyPass);
-
-        // Submit and wait
-        SDL_SubmitGPUCommandBuffer(commandBuffer);
-        SDL_WaitForGPUIdle(device);
-
-        // Store dimensions
-        texture->_width = width;
-        texture->_height = height;
-
-        // Clean up
-        SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
-
-        return texture;
-    }
-
-    bool Texture::createFromMemory(SDL_GPUDevice* device, const void* data, int width, int height, int channels, bool generateMipmaps)
-    {
-        if (!device || !data || width <= 0 || height <= 0 || channels <= 0)
-        {
-            std::cerr << "Invalid parameters for createFromMemory" << std::endl;
-            return false;
-        }
-
-        _device = device;
+        auto device = Renderer::instance()->device();
+        assert(device);
 
         // Handle different channel formats
         std::vector<uint8_t> rgbaData;
@@ -333,8 +85,7 @@ namespace noz::renderer
         }
         else if (channels != 4)
         {
-            std::cerr << "Unsupported channel count: " << channels << std::endl;
-            return false;
+            return;
         }
 
         // Create transfer buffer for pixel data
@@ -350,10 +101,7 @@ namespace noz::renderer
         transferInfo.props = 0;
         SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(device, &transferInfo);
         if (!transferBuffer)
-        {
-            std::cerr << "Failed to create transfer buffer: " << SDL_GetError() << std::endl;
-            return false;
-        }
+            return;
 
         // Map transfer buffer and copy pixel data
         void* mapped = SDL_MapGPUTransferBuffer(device, transferBuffer, false);
@@ -361,7 +109,7 @@ namespace noz::renderer
         {
             std::cerr << "Failed to map transfer buffer: " << SDL_GetError() << std::endl;
             SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
-            return false;
+            return;
         }
         SDL_memcpy(mapped, data, size);
         SDL_UnmapGPUTransferBuffer(device, transferBuffer);
@@ -394,7 +142,7 @@ namespace noz::renderer
         {
             std::cerr << "Failed to create GPU texture: " << SDL_GetError() << std::endl;
             SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
-            return false;
+            return;
         }
 
         // Acquire a command buffer for texture loading
@@ -402,7 +150,7 @@ namespace noz::renderer
         if (!commandBuffer)
         {
             SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
-            return false;
+            return;
         }
 
         // Upload pixel data to GPU texture
@@ -433,28 +181,23 @@ namespace noz::renderer
 
         // Clean up
         SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
-
-        return true;
     }
 
-    Texture* Texture::createRenderTarget(SDL_GPUDevice* device, int width, int height, const std::string& name)
+    std::shared_ptr<Texture> Texture::createRenderTarget(int width, int height, const std::string& name)
     {
-        return createRenderTarget(device, width, height, SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, name);
+        return createRenderTarget(width, height, SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, name);
     }
 
-    Texture* Texture::createRenderTarget(
-        SDL_GPUDevice* device,
+    std::shared_ptr<Texture> Texture::createRenderTarget(
         int width,
         int height,
         SDL_GPUTextureFormat format,
         const std::string& name)
     {
-        assert(device);
         assert(width > 0);
         assert(height > 0);
 
-        auto* texture = new Texture(name);
-        texture->_device = device;
+        auto texture = Object::create<Texture>(name);
         texture->_width = width;
         texture->_height = height;
 
@@ -470,28 +213,23 @@ namespace noz::renderer
         textureInfo.props = SDL_CreateProperties();
 
         SDL_SetStringProperty(textureInfo.props, SDL_PROP_GPU_TEXTURE_CREATE_NAME_STRING, name.c_str());
-        texture->_texture = SDL_CreateGPUTexture(device, &textureInfo);
+        texture->_texture = SDL_CreateGPUTexture(Renderer::instance()->device(), &textureInfo);
         SDL_DestroyProperties(textureInfo.props);
 
         if (!texture->_texture)
-        {
-            delete texture;
             return nullptr;
-        }
 
         return texture;
     }
 
-    Texture* Texture::createFromImage(SDL_GPUDevice* device, const noz::Image& image, const std::string& name)
+    std::shared_ptr<Texture> Texture::createFromImage(const noz::Image& image, const std::string& name)
     {
-        if (!device || image.empty())
-        {
-            std::cerr << "Invalid parameters for createFromImage" << std::endl;
-            return nullptr;
-        }
+        assert(!image.empty());
 
-        auto* texture = new Texture(name);
-        texture->_device = device;
+		auto device = Renderer::instance()->device();
+        assert(device);
+
+        auto texture = Object::create<Texture>(name);
         texture->_width = image.width();
         texture->_height = image.height();
 
@@ -527,19 +265,13 @@ namespace noz::renderer
 
         SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(device, &transferInfo);
         if (!transferBuffer)
-        {
-            std::cerr << "Failed to create transfer buffer for image texture: " << SDL_GetError() << std::endl;
-            delete texture;
             return nullptr;
-        }
 
         // Copy pixel data to transfer buffer
         void* mappedData = SDL_MapGPUTransferBuffer(device, transferBuffer, false);
         if (!mappedData)
         {
-            std::cerr << "Failed to map transfer buffer for image texture: " << SDL_GetError() << std::endl;
             SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
-            delete texture;
             return nullptr;
         }
 
@@ -564,9 +296,7 @@ namespace noz::renderer
         
         if (!texture->_texture)
         {
-            std::cerr << "Failed to create GPU texture from image: " << SDL_GetError() << std::endl;
             SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
-            delete texture;
             return nullptr;
         }
 
@@ -574,9 +304,7 @@ namespace noz::renderer
         SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(device);
         if (!cmd)
         {
-            std::cerr << "Failed to acquire command buffer for image texture upload" << std::endl;
             SDL_ReleaseGPUTransferBuffer(device, transferBuffer);
-            delete texture;
             return nullptr;
         }
 
@@ -601,31 +329,20 @@ namespace noz::renderer
         return texture;
     }
     
-    bool Texture::loadFromFile(SDL_GPUDevice* device, const std::string& filepath)
+    void Texture::loadInternal()
     {
-        _device = device;
-        
         noz::StreamReader reader;
-        if (!reader.loadFromFile(filepath))
-        {
-            std::cerr << "Failed to open texture file: " << filepath << std::endl;
-            return false;
-        }
+        if (!reader.loadFromFile(AssetDatabase::getFullPath(name(), "texture")))
+            throw std::runtime_error("Failed to load texture file: " + name());
 
         // Validate file signature
         if (!reader.readFileSignature("NZXT"))
-        {
-            std::cerr << "Invalid texture file signature in: " << filepath << std::endl;
-            return false;
-        }
+			throw std::runtime_error("Invalid texture file signature: " + name());
 
         // Read version
         uint32_t version = reader.readUInt32();
         if (version != 1)
-        {
-            std::cerr << "Unsupported texture version " << version << " in: " << filepath << std::endl;
-            return false;
-        }
+			throw std::runtime_error("Unsupported texture file version: " + std::to_string(version));
 
         // Read texture data
         uint32_t format = reader.readUInt32();
@@ -634,10 +351,7 @@ namespace noz::renderer
         
         // Validate format
         if (format > 1)
-        {
-            std::cerr << "Unsupported texture format " << format << " in: " << filepath << std::endl;
-            return false;
-        }
+			throw std::runtime_error("Unsupported texture format: " + std::to_string(format));
 
         // Read sampler options
         uint8_t minFilterValue = reader.readUInt8();
@@ -696,7 +410,7 @@ namespace noz::renderer
                     
                     // Create texture with mipmaps
                     int channels = (format == 1) ? 4 : 3;
-                    return createFromMemory(device, pixelData.data(), width, height, channels, true);
+                    createFromMemoryInternal(pixelData.data(), width, height, channels, true);
                 }
                 else
                 {
@@ -713,9 +427,12 @@ namespace noz::renderer
 
             // Read pixel data
             std::vector<uint8_t> pixelData = reader.readBytes(dataSize);
-            return createFromMemory(device, pixelData.data(), width, height, channels, false);
+            createFromMemoryInternal(pixelData.data(), width, height, channels, false);
         }
-        
-        return false; // Should not reach here
+    }
+
+    void Texture::setSamplerOptions(const SamplerOptions& options)
+    {
+        _samplerOptions = options;
     }
 }

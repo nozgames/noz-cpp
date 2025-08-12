@@ -2,30 +2,7 @@
 
 //@ VERTEX
 
-cbuffer CameraBuffer : register(vs_b0, space1)
-{
-    float4x4 vp;
-    float4x4 v;
-    float4x4 lightViewProjection;
-};
-
-cbuffer ObjectBuffer : register(vs_b1, space1)
-{
-    float4x4 m;
-};
-
-cbuffer BoneBuffer : register(vs_b2, space1)
-{
-    float4x4 boneTransforms[16]; // Bone skinning matrices (world transform * inverse bind pose)
-};
-
-struct VertexInput
-{
-    float3 position : POSITION;
-    float2 uv0 : TEXCOORD0;
-    float3 normal : TEXCOORD1;
-    float2 boneIndex : TEXCOORD2; // Single bone index per vertex
-};
+#include "../../shaders/mesh.hlsl"
 
 struct VertexOutput
 {
@@ -61,18 +38,10 @@ VertexOutput vs(VertexInput input)
 
 //@ FRAGMENT
 
+#include "../../shaders/light.hlsl"
+
 Texture2D diffuseTexture : register(t0, space2);
 SamplerState diffuseSampler : register(s0, space2);
-
-cbuffer LightBuffer : register(b0, space3)
-{
-    float3 lightDirection;
-    float ambientIntensity;
-    float3 ambientColor;
-    float diffuseIntensity;
-    float3 diffuseColor;
-    float padding; // Padding to align to 16-byte boundary
-};
 
 struct PixelInput
 {

@@ -29,7 +29,9 @@ namespace noz::renderer
     class Skeleton : public noz::Asset
     {
     public:
-        Skeleton(const std::string& path);
+
+		NOZ_DECLARE_TYPEID(Skeleton, Asset)
+
         ~Skeleton();
 
         // Bone accessors
@@ -64,16 +66,17 @@ namespace noz::renderer
 		int boneIndex(const std::string& name) const;
 
         // Static factory methods  
-        static std::shared_ptr<Skeleton> load(const std::string& name);
-
-    protected:
-
-		static std::shared_ptr<Skeleton> loadInternal(const std::string& filePath, const std::string& resourceName);
 
     private:
         
+        friend class AssetDatabase;
+
+		Skeleton();
+
+        static std::shared_ptr<Skeleton> load(const std::string& name);
+        void loadInternal();
+
 		std::vector<Bone> _bones;
         std::vector<std::shared_ptr<Animation>> _animations;
     };
-
-} // namespace noz::renderer 
+}

@@ -118,9 +118,8 @@ namespace noz::ui
         int _controlId;
         bool _visible;
         
-        static std::shared_ptr<noz::renderer::Shader> s_uiShader;
-        static std::shared_ptr<noz::renderer::Mesh> s_quadMesh;
-        static std::shared_ptr<noz::renderer::Texture> s_whiteTexture;
+        static std::shared_ptr<noz::renderer::Material> s_uiMaterial;
+        static std::shared_ptr<noz::renderer::Mesh> s_uiMesh;
         static bool s_resourcesInitialized;
         
         static void initializeUIResources();

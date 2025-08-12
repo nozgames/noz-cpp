@@ -1,39 +1,44 @@
+/*
+
+    NoZ Game Engine
+
+    Copyright(c) 2025 NoZ Games, LLC
+
+*/
+
 #pragma once
 
 #include "renderer/effects/FullscreenEffect.h"
 
-namespace noz 
+namespace noz::renderer::effects
 {
+    class Vignette : public FullscreenEffect 
+    {
+    public:
 
-class Vignette : public FullscreenEffect 
-{
-public:
-    NOZ_DECLARE_TYPEID(Vignette, FullscreenEffect);
+        NOZ_DECLARE_TYPEID(Vignette, FullscreenEffect);
     
-    virtual ~Vignette() = default;
+        virtual ~Vignette() = default;
     
-    void setIntensity(float intensity);
-    float getIntensity() const { return _intensity; }
+        void setIntensity(float intensity);
+        float intensity() const { return _intensity; }
     
-    void setRadius(float radius);
-    float getRadius() const { return _radius; }
+        void setRadius(float radius);
+        float radius() const { return _radius; }
     
-    void setSoftness(float softness);
-    float getSoftness() const { return _softness; }
+        void setSoftness(float softness);
+        float softness() const { return _softness; }
     
-    virtual void render(renderer::CommandBuffer* commandBuffer) override;
+        virtual void render(renderer::CommandBuffer* commandBuffer) override;   
     
-protected:
-    Vignette();
-    
-    virtual void setupShader() override;
-    
-private:
-    void initialize();
-    
-    float _intensity = 0.8f;
-    float _radius = 0.8f;
-    float _softness = 0.5f;
-};
+    private:
 
-} // namespace noz
+        Vignette();
+
+        void initialize(const std::shared_ptr<Texture>& texture);
+        
+        float _intensity = 0.8f;
+        float _radius = 0.8f;
+        float _softness = 0.5f;
+    };
+}

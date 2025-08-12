@@ -12,6 +12,7 @@ namespace noz::renderer
 {
 	class Mesh;
 	class Shader;
+	class Material;
 	class Texture;
 	class CommandBuffer;
 }
@@ -33,20 +34,18 @@ namespace noz::node
 
         // Resource management
         void setMesh(const std::shared_ptr<noz::renderer::Mesh>& mesh) { _mesh = mesh; }
-        void setShader(const std::shared_ptr<noz::renderer::Shader>& shader) { _shader = shader; }
+        void setMaterial(const std::shared_ptr<noz::renderer::Material>& material) { _material = material; }
         void setTexture(const std::shared_ptr<noz::renderer::Texture>& texture) { _texture = texture; }
 		void enableShadowCasting(bool enable) { _castShadow = enable; }
 		void disableShadowCasting() { _castShadow = false; }
         
-        // Getters
-        const std::shared_ptr<noz::renderer::Mesh>& mesh() const { return _mesh; }
-        const std::shared_ptr<noz::renderer::Shader>& shader() const { return _shader; }
-        const std::shared_ptr<noz::renderer::Texture>& texture() const { return _texture; }
+        const std::shared_ptr<noz::renderer::Mesh>& mesh() const;
+        const std::shared_ptr<noz::renderer::Material>& material() const;
+        const std::shared_ptr<noz::renderer::Texture>& texture() const;
         
-        // Node render override
         void render(noz::renderer::CommandBuffer* commandBuffer) override;
         
-        bool isValid() const { return _mesh && _shader; }
+        bool isValid() const { return _mesh && (_material || _shader); }
 
 		bool shouldCastShadow() const { return _castShadow; }
 
@@ -71,8 +70,14 @@ namespace noz::node
 
 		std::vector<glm::mat4> _boneTransforms;
         std::shared_ptr<noz::renderer::Mesh> _mesh;
-        std::shared_ptr<noz::renderer::Shader> _shader;
+        std::shared_ptr<noz::renderer::Material> _material;
+        std::shared_ptr<noz::renderer::Shader> _shader; // Kept for backward compatibility
         std::shared_ptr<noz::renderer::Texture> _texture;
 		bool _castShadow;
     };
+
+    inline const std::shared_ptr<noz::renderer::Mesh>& MeshRenderer::mesh() const { return _mesh; }
+    inline const std::shared_ptr<noz::renderer::Material>& MeshRenderer::material() const { return _material; }
+    inline const std::shared_ptr<noz::renderer::Texture>& MeshRenderer::texture() const { return _texture; }
+
 } 

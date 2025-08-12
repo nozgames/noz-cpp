@@ -13,15 +13,14 @@ namespace noz::renderer
     class Font : public noz::Asset
     {
     public:
-        Font(const std::string& path);
+
+        NOZ_DECLARE_TYPEID(Font, Asset)
+
         ~Font();
         
-        // Load font
-        static std::shared_ptr<Font> load(const std::string& path);
-        
-        // Get the SDF texture for this font
-        std::shared_ptr<Texture> texture() const { return _texture; }
-        
+        std::shared_ptr<Texture> texture() const;
+        std::shared_ptr<Material> material() const;
+
         // Utility methods
         bool isLoaded() const { return _texture != nullptr; }
         int size() const { return 16; } // Default size, could be stored if needed
@@ -47,12 +46,22 @@ namespace noz::renderer
         float kerning(char first, char second) const;
 
     private:
-        
+
+		friend class AssetDatabase;
+
+        static std::shared_ptr<Font> load(const std::string& name);
+
+        Font();
+
 		void loadInternal();
 
+		std::shared_ptr<Material> _material;
 		std::shared_ptr<Texture> _texture;
         float _baseline = 0.0f;
         std::unordered_map<char, Glyph> _glyphs;
 		std::unordered_map<uint64_t, float> _kerning;
     };
-} 
+
+    inline std::shared_ptr<Texture> Font::texture() const { return _texture; }
+    inline std::shared_ptr<Material> Font::material() const { return _material; }
+}

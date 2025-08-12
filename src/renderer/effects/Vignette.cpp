@@ -1,8 +1,12 @@
+/*
+
+    NoZ Game Engine
+
+    Copyright(c) 2025 NoZ Games, LLC
+
+*/
+
 #include <noz/renderer/effects/Vignette.h>
-#include <noz/renderer/Shader.h>
-#include <noz/renderer/CommandBuffer.h>
-#include <noz/Asset.h>
-#include <glm/glm.hpp>
 
 namespace noz::renderer::effects
 {
@@ -12,10 +16,9 @@ namespace noz::renderer::effects
     {
     }
     
-    void Vignette::initialize() 
+    void Vignette::initialize()
     {
-        FullscreenEffect::initialize();
-        _shader = Asset::load<Shader>("shaders/vignette");
+        FullscreenEffect::initialize(Object::create<Material>("shaders/vignette"));
     }
 
     void Vignette::setIntensity(float intensity) 
@@ -40,17 +43,8 @@ namespace noz::renderer::effects
 
     void Vignette::render(CommandBuffer* commandBuffer) 
     {
-        if (!_mesh || !_shader) 
-        {
-            return;
-        }
-        
-        // Set up for fullscreen rendering
-        commandBuffer->setCamera(glm::mat4(1.0f), glm::mat4(1.0f), glm::mat4(1.0f));
-        commandBuffer->setTransform(glm::mat4(1.0f));
-        
-        // Bind shader
-        commandBuffer->bindShader(_shader);
+        assert(commandBuffer);
+        assert(material());
         
         // Create and set vignette buffer data
         VignetteBuffer bufferData;
@@ -62,11 +56,9 @@ namespace noz::renderer::effects
         bufferData.softness = _softness;
         bufferData.padding1 = 0.0f;
         bufferData.padding2 = 0.0f;
-        
-        // Set the buffer data for b1 register (VignetteBuffer)
-        commandBuffer->setBufferData(0, &bufferData, sizeof(VignetteBuffer));
-        
-        // Draw the fullscreen quad
-        commandBuffer->drawMesh(_mesh);
+
+		material()->setFragmentUniformData(0, &bufferData, sizeof(VignetteBuffer));
+
+		FullscreenEffect::render(commandBuffer);
     }
 }
