@@ -15,8 +15,7 @@ namespace noz::import
     private:
         ImportConfig::TextureConfig _config;
 
-        // Load and process texture
-        bool processTexture(const std::string& sourcePath, const std::string& outputPath);
+        void processTexture(const std::string& sourcePath, const std::string& outputPath);
 
         void writeTexture(
             const std::string& outputPath,

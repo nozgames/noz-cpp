@@ -623,7 +623,7 @@ namespace noz::import
         if (!vector2)
             return glm::vec2(0.0f);
                 
-        return glm::vec2(vector2[0], 1.0f - vector2[1]); // Flip Y for OpenGL
+        return glm::vec2(vector2[0], vector2[1]);
     }
         
     glm::quat GLTFLoader::convertQuaternion(const float* quaternion)

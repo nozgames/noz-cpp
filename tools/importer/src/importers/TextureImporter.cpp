@@ -76,23 +76,19 @@ namespace noz
             return "TextureImporter";
         }
         
-        bool TextureImporter::processTexture(const std::string& sourcePath, const std::string& outputPath)
+        void TextureImporter::processTexture(const std::string& sourcePath, const std::string& outputPath)
         {
             // Load image using SDL_image
             SDL_Surface* surface = IMG_Load(sourcePath.c_str());
             if (!surface)
-            {
-                std::cerr << "Failed to load image: " << sourcePath << " - " << SDL_GetError() << std::endl;
-                return false;
-            }
+                throw std::runtime_error(SDL_GetError());
 
             // Always convert to RGBA32 for simplicity - we can optimize later
             SDL_Surface* convertedSurface = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_RGBA32);
             if (!convertedSurface)
             {
-                std::cerr << "Failed to convert surface to RGBA32: " << SDL_GetError() << std::endl;
                 SDL_DestroySurface(surface);
-                return false;
+                throw std::runtime_error(SDL_GetError());
             }
             
             SDL_DestroySurface(surface);
@@ -162,10 +158,7 @@ namespace noz
                     // Create scaled surface for this mip level
                     SDL_Surface* scaledSurface = SDL_CreateSurface(nextWidth, nextHeight, SDL_PIXELFORMAT_RGBA32);
                     if (!scaledSurface)
-                    {
-                        std::cerr << "Failed to create mip level surface" << std::endl;
                         break;
-                    }
                     
                     // Scale from the previous level (not always the original)
                     SDL_BlitSurfaceScaled(currentSurface, nullptr, scaledSurface, nullptr, SDL_SCALEMODE_LINEAR);

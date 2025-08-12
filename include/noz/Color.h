@@ -109,6 +109,7 @@ namespace noz
         }
 
         operator vec4() const { return vec4(r, g, b, a); }
+        operator vec3() const { return vec3(r, g, b); }
 		operator SDL_FColor() const { return SDL_FColor{ r, g, b, a }; }
 
         // Common colors

@@ -22,6 +22,7 @@ namespace noz::node
         // Light properties
         const vec3& ambientColor() const { return _ambientColor; }
         void setAmbientColor(const vec3& color) { _ambientColor = color; }
+        void setAmbientColor(const Color& color) { _ambientColor = color; }
 
         const vec3& diffuseColor() const { return _diffuseColor; }
         void setDiffuseColor(const vec3& color) { _diffuseColor = color; }
