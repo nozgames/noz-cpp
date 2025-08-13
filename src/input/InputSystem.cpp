@@ -417,8 +417,41 @@ namespace noz
             if (!action->isEnabled())
                 continue;
                 
-            // For now, we'll implement this when needed
-            // This would check all bindings for this action and update with current input states
+            // Check all input codes to see if any are bound to this action
+            bool isPressed = false;
+            
+            // Check keyboard keys
+            for (const auto& [keyCode, pressed] : _keyStates)
+            {
+                InputCode inputCode = sdlScancodeToInputCode(keyCode);
+                auto boundAction = _activeActionMap->getAction(inputCode);
+                if (boundAction == action && pressed)
+                {
+                    isPressed = true;
+                    break;
+                }
+            }
+            
+            // Check mouse buttons if not already pressed
+            if (!isPressed)
+            {
+                for (const auto& [mouseButton, pressed] : _mouseButtonStates)
+                {
+                    InputCode inputCode = sdlMouseButtonToInputCode(mouseButton);
+                    auto boundAction = _activeActionMap->getAction(inputCode);
+                    if (boundAction == action && pressed)
+                    {
+                        isPressed = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Update the action with the current state
+            if (action->getType() == InputActionType::Button)
+            {
+                action->update(isPressed ? 1.0f : 0.0f, deltaTime);
+            }
         }
     }
 }
