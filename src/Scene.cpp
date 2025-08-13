@@ -62,9 +62,6 @@ namespace noz::node
         
         // Call lateUpdate after all updates are complete
         lateUpdate();
-        
-        // Process destroy list at the end of the frame
-        processDestroyList();
     }
 
     void Scene::lateUpdate()
@@ -165,27 +162,6 @@ namespace noz::node
         }
     }
     
-    void Scene::processDestroyList()
-    {
-        for (auto& node : _destroyList)
-        {
-            if (node && node->state() == NodeState::PendingDestroy)
-            {
-                // Remove from parent
-                node->removeFromParent();
-                
-                // Mark as destroyed
-                node->_state = NodeState::Destroyed;
-                
-                // Remove from scene
-                node->setScene(nullptr);
-            }
-        }
-        
-        // Clear the destroy list
-        _destroyList.clear();
-    }
-
     void Scene::setActiveDirectionalLight(std::shared_ptr<DirectionalLight> light)
     {
         _activeDirectionalLight = light;

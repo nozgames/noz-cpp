@@ -21,10 +21,6 @@ namespace noz::node
 
     Node::~Node()
     {
-        // Mark as destroyed
-        _state = NodeState::Destroyed;
-        
-        // Remove all children
         _children.clear();
     }
 
@@ -362,31 +358,6 @@ namespace noz::node
         s_updateStack.resize(startIndex);
     }
     
-    void Node::destroyInternal()
-    {
-        if (_state == NodeState::PendingDestroy || _state == NodeState::Destroyed)
-        {
-            return;
-        }
-        
-        _state = NodeState::PendingDestroy;
-        
-        // Call user-defined destroy method
-        destroy();
-        
-        // Mark all children for destruction
-        for (const auto& child : _children)
-        {
-            child->destroyInternal();
-        }
-        
-        // Add to scene's destroy list if we have a scene
-        if (_scene)
-        {
-            _scene->markForDestroy(as<Node>());
-        }
-    }
-
     void Node::onAttachedToParent()
     {
         // Override in derived classes if needed

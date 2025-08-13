@@ -22,8 +22,6 @@ namespace noz::node
         None,           // Not in a scene, not started
         InScene,        // In a scene but not started yet
         Active,         // In a scene, started and active
-        PendingDestroy, // Marked for destruction at end of frame
-        Destroyed       // Fully destroyed
     };
 
 	class Node : public Object
@@ -85,14 +83,12 @@ namespace noz::node
 		void lateUpdateInternal();
 		void startInternal();
 		void renderInternal(noz::renderer::CommandBuffer* commandBuffer);
-		void destroyInternal();
 
 		// Virtual lifecycle methods (override in derived classes)
 		virtual void update() {}
 		virtual void lateUpdate() {}
 		virtual void start() {}
 		virtual void render(noz::renderer::CommandBuffer* commandBuffer) {}
-		virtual void destroy() {}
 
 		// State management
 		NodeState state() const { return _state; }
