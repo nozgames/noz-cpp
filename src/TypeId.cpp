@@ -8,4 +8,4 @@
 
 #include "noz/TypeId.h"
 
-// TypeId now uses compile-time hashing, no static variables needed
+// TypeId now uses function-local static for name registry to ensure proper initialization order

@@ -11,12 +11,12 @@
 
 namespace noz::ui
 {
-    Style Style::defaultStyle()
+    static Style defaultStyle()
     {
         Style style;
-		style.flexDirection = FlexDirection::Row;
-        style.width = StyleLength::fixed(0.0f);
-        style.height = StyleLength::fixed(0.0f);
+        style.flexDirection = FlexDirection::Row;
+        style.width = StyleLength::Auto;
+        style.height = StyleLength::Auto;
         style.backgroundColor = Color::Transparent;
         style.color = Color::White;
         style.fontSize = 16.0f;
@@ -38,8 +38,38 @@ namespace noz::ui
         style.paddingLeft = StyleLength::fixed(0.0f);
         style.paddingBottom = StyleLength::fixed(0.0f);
         style.paddingRight = StyleLength::fixed(0.0f);
+        
+        // Reset all style parameters to Inherit for the default style
+        // This ensures that the default style doesn't force overwrite behavior
+        style.flexDirection.keyword = StyleKeyword::Inherit;
+        style.width.keyword = StyleKeyword::Inherit;
+        style.height.keyword = StyleKeyword::Inherit;
+        style.backgroundColor.keyword = StyleKeyword::Inherit;
+        style.color.keyword = StyleKeyword::Inherit;
+        style.fontSize.keyword = StyleKeyword::Inherit;
+        style.borderRadius.keyword = StyleKeyword::Inherit;
+        style.borderWidth.keyword = StyleKeyword::Inherit;
+        style.borderColor.keyword = StyleKeyword::Inherit;
+        style.font.keyword = StyleKeyword::Inherit;
+        style.imageTint.keyword = StyleKeyword::Inherit;
+        style.imageScaleMode.keyword = StyleKeyword::Inherit;
+        style.imageFlip.keyword = StyleKeyword::Inherit;
+        style.textAlignment.keyword = StyleKeyword::Inherit;
+        style.textOutlineWidth.keyword = StyleKeyword::Inherit;
+        style.textOutlineColor.keyword = StyleKeyword::Inherit;
+        style.marginTop.keyword = StyleKeyword::Inherit;
+        style.marginLeft.keyword = StyleKeyword::Inherit;
+        style.marginBottom.keyword = StyleKeyword::Inherit;
+        style.marginRight.keyword = StyleKeyword::Inherit;
+        style.paddingTop.keyword = StyleKeyword::Inherit;
+        style.paddingLeft.keyword = StyleKeyword::Inherit;
+        style.paddingBottom.keyword = StyleKeyword::Inherit;
+        style.paddingRight.keyword = StyleKeyword::Inherit;
+        
         return style;
     }
+
+    Style Style::s_default = defaultStyle();
 
     void Style::apply(const Style* style)
     {

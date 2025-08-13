@@ -20,13 +20,15 @@ namespace noz::ui
 
     Element::Element()
         : noz::node::Node2d()
-        , _style(Style::defaultStyle())
+        , _style(Style::default())
         , _bounds(0, 0, 0, 0)
         , _measuredSize(0.0f, 0.0f)
         , _layoutOffset(0.0f, 0.0f, 0.0f)
         , _flags(ElementFlags::LayoutDirty)
         , _controlId(0)
         , _visible(true)
+        , _pseudoState(PseudoState::None)
+        , _hasExplicitPseudoState(false)
     {
         setName("Element");
     }
@@ -591,7 +593,19 @@ namespace noz::ui
 		if (!styleSheet)
 			return;
 
-		// TODO: apply only overwrites
+		// Try to get pseudo state style first (e.g., "button:hover")
+		PseudoState effectiveState = effectivePseudoState();
+		if (effectiveState != PseudoState::None)
+		{
+			std::string pseudoStyleName = styleName + ":" + pseudoStateToString(effectiveState);
+			if (styleSheet->hasStyle(pseudoStyleName))
+			{
+				_style = styleSheet->resolveStyle(pseudoStyleName);
+				return;
+			}
+		}
+		
+		// Fall back to base style
 		_style = styleSheet->resolveStyle(styleName);
 	}
 
@@ -609,5 +623,49 @@ namespace noz::ui
 				continue;
 			child->applyStyle();
 		}
+	}
+	
+	void Element::setPseudoState(PseudoState state, bool cascade)
+	{
+		if (_pseudoState == state)
+			return;
+			
+		_pseudoState = state;
+		_hasExplicitPseudoState = (state != PseudoState::None);
+		
+		// Reapply style to pick up the pseudo state
+		markStyleDirty();
+		
+		// Cascade to children if requested
+		if (cascade)
+		{
+			for (size_t i = 0; i < childCount(); ++i)
+			{
+				auto child = this->child(i)->as<Element>();
+				if (!child)
+					continue;
+					
+				// Only cascade to children that don't have their own explicit pseudo state
+				if (!child->_hasExplicitPseudoState)
+				{
+					child->markStyleDirty(); // Trigger style refresh to pick up new effective state
+				}
+			}
+		}
+	}
+	
+	PseudoState Element::effectivePseudoState() const
+	{
+		// If this element has an explicit pseudo state, use it
+		if (_hasExplicitPseudoState)
+			return _pseudoState;
+		
+		// Otherwise, inherit from parent Element
+		auto parentElem = parent<Element>();
+		if (parentElem)
+			return parentElem->effectivePseudoState();
+		
+		// No parent or parent pseudo state, use None
+		return PseudoState::None;
 	}
 }

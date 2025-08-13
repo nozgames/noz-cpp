@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <noz/ui/PseudoState.h>
+
 namespace noz::renderer
 {
     class CommandBuffer;
@@ -63,6 +65,13 @@ namespace noz::ui
         void setVisible(bool visible) { _visible = visible; }
         bool visible() const { return _visible; }
         
+        // Pseudo state management
+        void setPseudoState(PseudoState state, bool cascade = true);
+        PseudoState pseudoState() const { return _pseudoState; }
+        
+        // Get the effective pseudo state (considering parent cascading)
+        PseudoState effectivePseudoState() const;
+        
         // Node lifecycle
         void update() override;
         void render(noz::renderer::CommandBuffer* commandBuffer) override;
@@ -117,6 +126,8 @@ namespace noz::ui
         ElementFlags _flags;
         int _controlId;
         bool _visible;
+        PseudoState _pseudoState;
+        bool _hasExplicitPseudoState;
         
         static std::shared_ptr<noz::renderer::Material> s_uiMaterial;
         static std::shared_ptr<noz::renderer::Mesh> s_uiMesh;
