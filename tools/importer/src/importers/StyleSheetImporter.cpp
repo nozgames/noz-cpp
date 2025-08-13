@@ -9,6 +9,7 @@
 #include "StyleSheetImporter.h"
 #include <noz/ui/StyleSheet.h>
 #include <noz/ui/Style.h>
+#include <noz/ui/PseudoState.h>
 #include <noz/MetaFile.h>
 #include <filesystem>
 #include <sstream>
@@ -94,7 +95,7 @@ namespace noz::import
                 continue;
 
             // Create style for this class
-            styles[group] = noz::ui::Style::defaultStyle();
+            styles[group] = noz::ui::Style::default();
 
             // Parse all properties in this group/style
             for (const std::string& propertyName : meta.keys(group))
@@ -103,8 +104,30 @@ namespace noz::import
             }
         }
 
-        // Add all styles to the stylesheet
-        for (const auto& [className, style] : styles)
+        // Resolve pseudo states by merging base styles with pseudo state styles
+        std::unordered_map<std::string, noz::ui::Style> resolvedStyles = styles;
+        
+        for (const auto& [fullClassName, style] : styles)
+        {
+            auto [baseName, pseudoState] = noz::ui::parseStyleName(fullClassName);
+            
+            // If this is a pseudo state style, merge it with the base style
+            if (pseudoState != noz::ui::PseudoState::None)
+            {
+                // Find the base style
+                auto baseIt = styles.find(baseName);
+                if (baseIt != styles.end())
+                {
+                    // Create the resolved pseudo style by merging base + pseudo
+                    noz::ui::Style resolvedStyle = baseIt->second; // Start with base
+                    resolvedStyle.apply(style); // Apply pseudo state overrides
+                    resolvedStyles[fullClassName] = resolvedStyle;
+                }
+            }
+        }
+        
+        // Add all resolved styles to the stylesheet
+        for (const auto& [className, style] : resolvedStyles)
             styleSheet->mergeStyle(className, style);
 	}
     

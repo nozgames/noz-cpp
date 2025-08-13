@@ -8,6 +8,9 @@
 
 #pragma once
 
+#include <unordered_map>
+#include <string>
+
 namespace noz
 {
     class TypeId 
@@ -19,11 +22,28 @@ namespace noz
     private:
         IdType _id;
         
+        static std::unordered_map<IdType, std::string>& registry()
+        {
+            static std::unordered_map<IdType, std::string> registry;
+            return registry;
+        }
+        
     public:
 
-        explicit TypeId(const char* typeName) : _id(hash(typeName)) {}
+        explicit TypeId(const char* typeName) : _id(hash(typeName)) 
+        {
+            registry()[_id] = std::string(typeName);
+        }
 
         IdType id() const { return _id; }
+        
+        // Get the type name from the registry
+        std::string name() const 
+        {
+            auto& r = registry();
+            auto it = r.find(_id);
+            return it != r.end() ? it->second : "Unknown";
+        }
         
         bool operator==(const TypeId& other) const { return _id == other._id; }
         bool operator!=(const TypeId& other) const { return _id != other._id; }

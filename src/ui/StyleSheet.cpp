@@ -120,7 +120,7 @@ namespace noz::ui
        
     Style StyleSheet::resolveStyle(const std::string& className) const
     {
-        auto resolvedStyle = Style::defaultStyle();
+        auto resolvedStyle = Style::default();
         resolvedStyle.apply(style(className));
         return resolvedStyle;
     }

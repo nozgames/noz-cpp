@@ -39,6 +39,12 @@ namespace noz::ui
 
     struct Style
     {
+    private:
+
+        static Style s_default;
+
+    public:
+
 		StyleEnum<FlexDirection> flexDirection;
         StyleLength width;
         StyleLength height;
@@ -64,7 +70,7 @@ namespace noz::ui
         StyleLength paddingBottom;
         StyleLength paddingRight;
 
-        static Style defaultStyle();
+        static Style default() { return s_default; }
 
         void apply(const Style& style);
         void apply(const Style* style);
