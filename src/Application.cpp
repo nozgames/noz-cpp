@@ -123,6 +123,12 @@ namespace noz
                 InputSystem::instance()->ProcessEvents(event);
             }
         }
+        
+        // Update controller state after processing events
+        if (InputSystem::instance())
+        {
+            InputSystem::instance()->updateControllers();
+        }
 
 		return true;
     }

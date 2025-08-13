@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "InputBinding.h"
+#include "InputCode.h"
 
 namespace noz
 {
@@ -23,34 +23,38 @@ namespace noz
         // Get the action map name
         const std::string& getName() const { return _name; }
 
-        // Add a binding to an action
-        void addBinding(const InputBinding& binding, std::shared_ptr<InputAction> action);
-        void addKeyboardBinding(SDL_Scancode keyCode, std::shared_ptr<InputAction> action);
-        void addMouseBinding(int mouseButton, std::shared_ptr<InputAction> action);
-        void addGamepadBinding(int gamepadButton, std::shared_ptr<InputAction> action);
-
-        // Remove a binding
-        void removeBinding(const InputBinding& binding);
-        void removeKeyboardBinding(SDL_Scancode keyCode);
-        void removeMouseBinding(int mouseButton);
-        void removeGamepadBinding(int gamepadButton);
+        // Unified binding system - much simpler!
+        void bindAction(InputCode inputCode, std::shared_ptr<InputAction> action);
+        void unbindAction(InputCode inputCode);
+        
+        // Convenience methods for creating actions
+        std::shared_ptr<InputAction> createAction(const std::string& actionName, InputActionType type = InputActionType::Button);
+        std::shared_ptr<InputAction> createButtonAction(const std::string& actionName);
+        std::shared_ptr<InputAction> createValueAction(const std::string& actionName);
 
         // Clear all bindings
         void clearBindings();
 
-        // Get action for a specific binding
-        std::shared_ptr<InputAction> getActionForKey(SDL_Scancode keyCode) const;
-        std::shared_ptr<InputAction> getActionForMouseButton(int mouseButton) const;
-        std::shared_ptr<InputAction> getActionForGamepadButton(int gamepadButton) const;
+        // Get action bound to input code
+        std::shared_ptr<InputAction> getAction(InputCode inputCode) const;
+        
+        // Get action by name
+        std::shared_ptr<InputAction> getActionByName(const std::string& name) const;
 
         // Get all actions in this map
         const std::vector<std::shared_ptr<InputAction>>& getActions() const { return _actions; }
+        
+        // Enable/disable all actions in this map
+        void enable();
+        void disable();
+        bool isEnabled() const { return _enabled; }
 
     private:
         std::string _name;
-        std::unordered_map<SDL_Scancode, std::shared_ptr<InputAction>> _keyboardBindings;
-        std::unordered_map<int, std::shared_ptr<InputAction>> _mouseBindings;
-        std::unordered_map<int, std::shared_ptr<InputAction>> _gamepadBindings;
+        bool _enabled;
+        
+        // Single binding map - much cleaner!
+        std::unordered_map<InputCode, std::shared_ptr<InputAction>> _bindings;
         std::vector<std::shared_ptr<InputAction>> _actions;
 
         // Helper to add action to the actions list if not already present

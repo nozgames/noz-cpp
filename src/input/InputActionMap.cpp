@@ -6,132 +6,104 @@
 
 */
 
+#include "noz/input/InputActionMap.h"
+#include "noz/input/InputAction.h"
+
 namespace noz
 {
-    InputActionMap::InputActionMap(const std::string& name)
-        : _name(name)
-    {
-    }
 
-    InputActionMap::~InputActionMap()
-    {
-        clearBindings();
-    }
+InputActionMap::InputActionMap(const std::string& name)
+	: _name(name)
+	, _enabled(true)
+{
+}
 
-    void InputActionMap::addBinding(const InputBinding& binding, std::shared_ptr<InputAction> action)
-    {
-        if (!action)
-            return;
+InputActionMap::~InputActionMap()
+{
+	clearBindings();
+}
 
-        switch (binding.type)
-        {
-        case InputBindingType::Keyboard:
-            addKeyboardBinding(binding.keyCode, action);
-            break;
-        case InputBindingType::MouseButton:
-            addMouseBinding(binding.mouseButton, action);
-            break;
-        case InputBindingType::GamepadButton:
-            addGamepadBinding(binding.gamepadButton, action);
-            break;
-        }
-    }
+void InputActionMap::bindAction(InputCode inputCode, std::shared_ptr<InputAction> action)
+{
+	if (!action)
+		return;
 
-    void InputActionMap::addKeyboardBinding(SDL_Scancode keyCode, std::shared_ptr<InputAction> action)
-    {
-        if (!action)
-            return;
+	_bindings[inputCode] = action;
+	addActionToList(action);
+}
 
-        _keyboardBindings[keyCode] = action;
-        addActionToList(action);
-    }
+void InputActionMap::unbindAction(InputCode inputCode)
+{
+	_bindings.erase(inputCode);
+}
 
-    void InputActionMap::addMouseBinding(int mouseButton, std::shared_ptr<InputAction> action)
-    {
-        if (!action)
-            return;
+std::shared_ptr<InputAction> InputActionMap::createAction(const std::string& actionName, InputActionType type)
+{
+	auto action = std::make_shared<InputAction>(actionName, type);
+	addActionToList(action);
+	return action;
+}
 
-        _mouseBindings[mouseButton] = action;
-        addActionToList(action);
-    }
+std::shared_ptr<InputAction> InputActionMap::createButtonAction(const std::string& actionName)
+{
+	return createAction(actionName, InputActionType::Button);
+}
 
-    void InputActionMap::addGamepadBinding(int gamepadButton, std::shared_ptr<InputAction> action)
-    {
-        if (!action)
-            return;
+std::shared_ptr<InputAction> InputActionMap::createValueAction(const std::string& actionName)
+{
+	return createAction(actionName, InputActionType::Value);
+}
 
-        _gamepadBindings[gamepadButton] = action;
-        addActionToList(action);
-    }
+void InputActionMap::clearBindings()
+{
+	_bindings.clear();
+	_actions.clear();
+}
 
-    void InputActionMap::removeBinding(const InputBinding& binding)
-    {
-        switch (binding.type)
-        {
-        case InputBindingType::Keyboard:
-            removeKeyboardBinding(binding.keyCode);
-            break;
-        case InputBindingType::MouseButton:
-            removeMouseBinding(binding.mouseButton);
-            break;
-        case InputBindingType::GamepadButton:
-            removeGamepadBinding(binding.gamepadButton);
-            break;
-        }
-    }
+std::shared_ptr<InputAction> InputActionMap::getAction(InputCode inputCode) const
+{
+	auto it = _bindings.find(inputCode);
+	return (it != _bindings.end()) ? it->second : nullptr;
+}
 
-    void InputActionMap::removeKeyboardBinding(SDL_Scancode keyCode)
-    {
-        _keyboardBindings.erase(keyCode);
-    }
+std::shared_ptr<InputAction> InputActionMap::getActionByName(const std::string& name) const
+{
+	for (const auto& action : _actions)
+	{
+		if (action->getName() == name)
+			return action;
+	}
+	return nullptr;
+}
 
-    void InputActionMap::removeMouseBinding(int mouseButton)
-    {
-        _mouseBindings.erase(mouseButton);
-    }
+void InputActionMap::enable()
+{
+	_enabled = true;
+	for (auto& action : _actions)
+	{
+		action->enable();
+	}
+}
 
-    void InputActionMap::removeGamepadBinding(int gamepadButton)
-    {
-        _gamepadBindings.erase(gamepadButton);
-    }
+void InputActionMap::disable()
+{
+	_enabled = false;
+	for (auto& action : _actions)
+	{
+		action->disable();
+	}
+}
 
-    void InputActionMap::clearBindings()
-    {
-        _keyboardBindings.clear();
-        _mouseBindings.clear();
-        _gamepadBindings.clear();
-        _actions.clear();
-    }
+void InputActionMap::addActionToList(std::shared_ptr<InputAction> action)
+{
+	// Check if already in list
+	for (const auto& existing : _actions)
+	{
+		if (existing == action)
+			return;
+	}
+	
+	_actions.push_back(action);
+}
 
-    std::shared_ptr<InputAction> InputActionMap::getActionForKey(SDL_Scancode keyCode) const
-    {
-        auto it = _keyboardBindings.find(keyCode);
-        return (it != _keyboardBindings.end()) ? it->second : nullptr;
-    }
-
-    std::shared_ptr<InputAction> InputActionMap::getActionForMouseButton(int mouseButton) const
-    {
-        auto it = _mouseBindings.find(mouseButton);
-        return (it != _mouseBindings.end()) ? it->second : nullptr;
-    }
-
-    std::shared_ptr<InputAction> InputActionMap::getActionForGamepadButton(int gamepadButton) const
-    {
-        auto it = _gamepadBindings.find(gamepadButton);
-        return (it != _gamepadBindings.end()) ? it->second : nullptr;
-    }
-
-    void InputActionMap::addActionToList(std::shared_ptr<InputAction> action)
-    {
-        if (!action)
-            return;
-
-        // Check if action is already in the list
-        auto it = std::find(_actions.begin(), _actions.end(), action);
-        if (it == _actions.end())
-        {
-            _actions.push_back(action);
-        }
-    }
-
-} // namespace noz 
+} // namespace noz
