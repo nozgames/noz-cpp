@@ -32,6 +32,11 @@ namespace noz::node
     {
     }
 
+    void Node::initialize(const std::string& name)
+    {
+        _name = name;
+    }
+
     void Node::addChild(std::shared_ptr<Node> parent, std::shared_ptr<Node> child)
     {
         if (!parent || !child)

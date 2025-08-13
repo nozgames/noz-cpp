@@ -58,6 +58,14 @@ if(TARGET enet)
     endif()
 endif()
 
+# efsw File Watcher
+FetchContent_Declare(efsw
+    GIT_REPOSITORY https://github.com/SpartanJ/efsw.git
+    GIT_TAG 1.4.0
+)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(efsw)
+
 # SDL3_image
 FetchContent_Declare(SDL3_image
     GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
@@ -98,6 +106,7 @@ target_link_libraries(noz
     PUBLIC
         box2d
         enet
+        efsw-static
         ws2_32
         winmm
         SDL3_image::SDL3_image

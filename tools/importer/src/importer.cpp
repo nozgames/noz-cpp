@@ -1,11 +1,12 @@
 #include "noz_import.h"
-#include "FileWatcher.h"
+#include <noz/tools/FileWatcher.h>
 #include <filesystem>
 #include <thread>
 #include <chrono>
 #include <unordered_map>
 #include <mutex>
 #include <condition_variable>
+#include <memory>
 
 int main(int argc, char* argv[])
 {
@@ -64,158 +65,54 @@ int main(int argc, char* argv[])
 	// Enter watch mode
 	std::cout << std::endl << "Entering watch mode. Press Ctrl+C to exit." << std::endl;
 	
-	// Store file modification times
-	std::unordered_map<std::string, std::filesystem::file_time_type> fileModTimes;
-	std::unordered_map<std::string, std::filesystem::file_time_type> metaFileModTimes;
-
-	// Initialize modification times for all files in all source directories
+	// Set up file watchers for each source directory
+	std::vector<std::unique_ptr<noz::tools::FileWatcher>> watchers;
+	std::mutex importMutex;
+	
 	for (const std::string& srcDir : sourceDirs)
 	{
 		if (!std::filesystem::exists(srcDir))
-			continue;
-			
-		for (const auto& entry : std::filesystem::recursive_directory_iterator(srcDir))
 		{
-			if (entry.is_regular_file())
+			std::cout << "Skipping non-existent directory: " << srcDir << std::endl;
+			continue;
+		}
+		
+		auto watcher = std::make_unique<noz::tools::FileWatcher>();
+		bool success = watcher->watchDirectory(srcDir, [&sourceDirs, &outputDir, &importConfig, &importMutex](const std::string& filePath) {
+			std::lock_guard<std::mutex> lock(importMutex);
+			try
 			{
-				std::string filePath = entry.path().string();
-				auto lastWriteTime = entry.last_write_time();
-				
-				if (entry.path().extension() == ".meta")
-				{
-					metaFileModTimes[filePath] = lastWriteTime;
-				}
-				else
-				{
-					fileModTimes[filePath] = lastWriteTime;
-				}
+				noz::import::importFileWithDependencies(filePath, sourceDirs, outputDir, importConfig);
 			}
+			catch (const std::exception& e)
+			{
+				std::cerr << filePath << ": " << e.what() << std::endl;
+			}
+		});
+		
+		if (success)
+		{
+			std::cout << "Watching directory: " << srcDir << std::endl;
+			watchers.push_back(std::move(watcher));
+		}
+		else
+		{
+			std::cerr << "Failed to watch directory: " << srcDir << std::endl;
 		}
 	}
 
-	std::cout << "Monitoring directories (polling mode):" << std::endl;
-	for (const std::string& srcDir : sourceDirs)
-	{
-		std::cout << "  - " << srcDir << std::endl;
-	}
-
-	// Watch loop
+	// Main loop - process file watcher callbacks
 	while (true)
 	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Poll every 500ms
-
-		try
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		
+		// Update all file watchers to process queued callbacks
+		for (auto& watcher : watchers)
 		{
-			// Collect all files that need to be imported
-			std::vector<std::string> filesToImport;
-			
-			// Check for modified files in all source directories
-			for (const std::string& srcDir : sourceDirs)
+			if (watcher && watcher->isWatching())
 			{
-				if (!std::filesystem::exists(srcDir))
-					continue;
-					
-				for (const auto& entry : std::filesystem::recursive_directory_iterator(srcDir))
-			{
-				if (!entry.is_regular_file())
-					continue;
-
-				std::string filePath = entry.path().string();
-				auto lastWriteTime = entry.last_write_time();
-
-				if (entry.path().extension() == ".meta")
-				{
-					// Check if meta file is new or modified
-					auto it = metaFileModTimes.find(filePath);
-					if (it == metaFileModTimes.end() || it->second != lastWriteTime)
-					{
-						// Update modification time
-						metaFileModTimes[filePath] = lastWriteTime;
-						
-						// Find the associated resource file (remove .meta extension)
-						std::filesystem::path metaPath(filePath);
-						std::string resourcePath = metaPath.replace_extension("").string();
-						
-						// Only add to import list if the resource file exists
-						if (std::filesystem::exists(resourcePath))
-						{
-							// Check if we haven't already added this file
-							if (std::find(filesToImport.begin(), filesToImport.end(), resourcePath) == filesToImport.end())
-							{
-								filesToImport.push_back(resourcePath);
-							}
-						}
-					}
-				}
-				else
-				{
-					// Check if regular file is new or modified
-					auto it = fileModTimes.find(filePath);
-					if (it == fileModTimes.end() || it->second != lastWriteTime)
-					{
-						// Update modification time
-						fileModTimes[filePath] = lastWriteTime;
-						
-						// Add to import list
-						filesToImport.push_back(filePath);
-					}
-				}
+				watcher->update();
 			}
-			} // End source directory loop
-			
-			// Process all collected files
-			if (!filesToImport.empty())
-			{
-				for (const auto& filePath : filesToImport)
-				{
-					try
-					{
-						noz::import::importFile(filePath, sourceDirs, outputDir, importConfig);
-						std::cout << "imported: " << filePath << std::endl;
-					}
-					catch (const std::exception& e)
-					{
-						std::cerr << filePath << ": " << e.what() << std::endl;
-					}
-				}
-			}
-
-			// Check for deleted files
-			std::vector<std::string> deletedFiles;
-			for (const auto& [filePath, modTime] : fileModTimes)
-				if (!std::filesystem::exists(filePath))
-					deletedFiles.push_back(filePath);
-			
-			// Check for deleted meta files
-			std::vector<std::string> deletedMetaFiles;
-			for (const auto& [filePath, modTime] : metaFileModTimes)
-				if (!std::filesystem::exists(filePath))
-					deletedMetaFiles.push_back(filePath);
-
-			// Remove deleted files from tracking and clean up output files
-			for (const auto& filePath : deletedFiles)
-			{
-				fileModTimes.erase(filePath);
-				
-				// Delete corresponding output files
-				try
-				{
-					noz::import::deleteOutputFile(filePath, sourceDirs, outputDir, importConfig);
-					std::cout << "deleted '" << filePath << "'" << std::endl;
-				}
-				catch (const std::exception& e)
-				{
-					std::cerr << filePath << ": " << e.what() << std::endl;
-				}
-			}
-			
-			// Remove deleted meta files from tracking
-			for (const auto& filePath : deletedMetaFiles)
-				metaFileModTimes.erase(filePath);
-		}
-		catch (const std::exception& e)
-		{
-			std::cerr << "Error during file watch: " << e.what() << std::endl;
 		}
 	}
 

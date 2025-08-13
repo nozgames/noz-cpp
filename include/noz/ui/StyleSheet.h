@@ -39,15 +39,14 @@ namespace noz::ui
         // Asset interface
         void reload() override;
         
-        // Style management
-        void addStyle(const std::string& className, const Style& style);
-        const Style* getStyle(const std::string& className) const;
+        void setStyle(const std::string& className, const Style& style);
+		void mergeStyle(const std::string& className, const Style& style);
+        const Style* style(const std::string& className) const;
         bool hasStyle(const std::string& className) const;
         
         // Inheritance management
         void addInheritedStyleSheet(std::shared_ptr<StyleSheet> stylesheet);
         void clearInheritedStyleSheets();
-        const std::vector<std::shared_ptr<StyleSheet>>& inheritedStyleSheets() const { return _inheritedStyleSheets; }
         
         // Style resolution with inheritance fallback
         Style resolveStyle(const std::string& className) const;
@@ -66,9 +65,5 @@ namespace noz::ui
         void loadInternal();
 
         std::unordered_map<std::string, Style> _styles;
-        std::vector<std::shared_ptr<StyleSheet>> _inheritedStyleSheets;
-        
-        // Helper to find style in inheritance chain
-        const Style* findStyleInChain(const std::string& className) const;
     };
 }

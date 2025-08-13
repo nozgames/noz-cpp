@@ -41,6 +41,14 @@ namespace noz::ui
         return style;
     }
 
+    void Style::apply(const Style* style)
+    {
+        if (!style)
+            return;
+
+        apply(*style);
+    }
+
     void Style::apply(const Style& style)
     {
         // Apply all style properties that have Overwrite keyword

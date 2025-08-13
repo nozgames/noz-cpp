@@ -10,6 +10,8 @@
 #include <noz/ui/StyleSheet.h>
 #include <noz/ui/Style.h>
 #include <noz/MetaFile.h>
+#include <filesystem>
+#include <sstream>
 
 namespace noz::import
 {
@@ -38,86 +40,73 @@ namespace noz::import
         std::filesystem::path srcPath(sourcePath);
         std::filesystem::path outputPath = std::filesystem::path(outputDir) / srcPath.stem();
         outputPath.replace_extension(".styles");
-        
-        processStyleSheet(sourcePath, outputPath.string());
+
+        auto styleSheet = Object::create<noz::ui::StyleSheet>("styles");
+        parseStyles(sourcePath, styleSheet);
+        styleSheet->saveToFile(outputPath.string());
     }
     
-    bool StyleSheetImporter::processStyleSheet(const std::string& sourcePath, const std::string& outputPath)
+    std::vector<std::string> StyleSheetImporter::parseInheritList(const std::string& path) const
     {
-        // Parse the source file using MetaFile format
-        auto meta = noz::MetaFile::parse(sourcePath);
+        std::vector<std::string> inheritedFiles;
         
+        auto meta = noz::MetaFile::parse(path);
+        auto inherit = meta.getString("StyleSheet", "inherit", "");
         
-        auto styleSheet = Object::create<noz::ui::StyleSheet>("styles");
-#if 0
-        // Create a new stylesheet
-
-        // Load inheritance from meta file if it exists
-        std::string metaPath = sourcePath + ".meta";
-        if (std::filesystem::exists(metaPath))
+        if (!inherit.empty())
         {
-            noz::MetaFile styleMetaFile = noz::MetaFile::parse(metaPath);
-            
-            // Parse inherited stylesheets
-            std::string inheritValue = styleMetaFile.getString("StyleSheet", "inherit", ""); // Legacy API for inherit setting
-            if (!inheritValue.empty())
+            std::istringstream inheritStream(inherit);
+            std::string inheritedStyleSheet;
+
+            while (std::getline(inheritStream, inheritedStyleSheet, ';'))
             {
-                std::istringstream inheritStream(inheritValue);
-                std::string inheritedStyleSheet;
-                
-                while (std::getline(inheritStream, inheritedStyleSheet, ','))
+                // Trim whitespace
+                inheritedStyleSheet.erase(0, inheritedStyleSheet.find_first_not_of(" \t"));
+                inheritedStyleSheet.erase(inheritedStyleSheet.find_last_not_of(" \t") + 1);
+
+                if (!inheritedStyleSheet.empty())
                 {
-                    // Trim whitespace
-                    inheritedStyleSheet.erase(0, inheritedStyleSheet.find_first_not_of(" \t"));
-                    inheritedStyleSheet.erase(inheritedStyleSheet.find_last_not_of(" \t") + 1);
-                    
-                    if (!inheritedStyleSheet.empty())
-                    {
-                        // Load inherited stylesheet
-                        std::string inheritedPath = (std::filesystem::path(sourcePath).parent_path() / (inheritedStyleSheet + ".styles")).string();
-                        auto inherited = std::make_shared<noz::ui::StyleSheet>();
-                        if (inherited->loadFromFile(inheritedPath))
-                        {
-                            styleSheet->addInheritedStyleSheet(inherited);
-                        }
-                        else
-                        {
-                            std::cerr << "Warning: Failed to load inherited stylesheet: " << inheritedPath << std::endl;
-                        }
-                    }
+                    std::string inheritedPath = (std::filesystem::path(path).parent_path() / (inheritedStyleSheet + ".styles")).string();
+                    inheritedFiles.push_back(inheritedPath);
                 }
             }
         }
-#endif
         
-        // Parse styles using INI format (each section is a style class)
+        return inheritedFiles;
+    }
+
+    void StyleSheetImporter::parseStyles(const std::string& path, std::shared_ptr<noz::ui::StyleSheet> styleSheet)
+    {
+        auto meta = noz::MetaFile::parse(path);
+
+        // Inherit styles first
+        auto inheritedFiles = parseInheritList(path);
+        for (const auto& inheritedPath : inheritedFiles)
+        {
+            parseStyles(inheritedPath, styleSheet);
+        }
+
         std::unordered_map<std::string, noz::ui::Style> styles;
-        
         for (const std::string& group : meta.groups())
         {
             // Skip empty group (legacy compatibility)
             if (group.empty())
                 continue;
-                
+
             // Create style for this class
             styles[group] = noz::ui::Style::defaultStyle();
-            
+
             // Parse all properties in this group/style
             for (const std::string& propertyName : meta.keys(group))
             {
                 parseProperty(group, propertyName, meta, &styles[group]);
             }
         }
-        
+
         // Add all styles to the stylesheet
         for (const auto& [className, style] : styles)
-        {
-            styleSheet->addStyle(className, style);
-        }
-        
-        // Save the stylesheet
-        return styleSheet->saveToFile(outputPath);
-    }
+            styleSheet->mergeStyle(className, style);
+	}
     
     bool StyleSheetImporter::parseProperty(const std::string& group, const std::string& propertyName, const noz::MetaFile& metaFile, void* stylePtr)
     {
@@ -221,5 +210,46 @@ namespace noz::import
 		}
         
         return true;
+    }
+
+    bool StyleSheetImporter::doesDependOn(const std::string& sourcePath, const std::string& dependencyPath)
+    {
+        std::filesystem::path path(sourcePath);
+        if (path.extension() != ".styles")
+            return false;
+
+        try
+        {
+            auto inheritedFiles = parseInheritList(sourcePath);
+            
+            for (const auto& inheritedPath : inheritedFiles)
+            {
+                // Check if this file directly depends on the dependency
+                bool filesEqual = false;
+                try 
+                {
+                    filesEqual = std::filesystem::equivalent(inheritedPath, dependencyPath);
+                }
+                catch (const std::exception&)
+                {
+                    // Fallback to string comparison if filesystem::equivalent fails
+                    filesEqual = (inheritedPath == dependencyPath);
+                }
+                
+                if (filesEqual)
+                    return true;
+                
+                // Check recursively if any inherited file depends on the dependency
+                if (doesDependOn(inheritedPath, dependencyPath))
+                    return true;
+            }
+        }
+        catch (const std::exception&)
+        {
+            // If we can't parse the file or it doesn't exist, assume no dependency
+            return false;
+        }
+
+        return false;
     }
 }

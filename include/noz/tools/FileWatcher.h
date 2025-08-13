@@ -8,9 +8,21 @@
 
 #pragma once
 
+#include <functional>
+#include <string>
+#include <thread>
+#include <atomic>
+#include <unordered_map>
+#include <filesystem>
+#include <queue>
+#include <mutex>
+#include <chrono>
+#include <iostream>
+#include <efsw/efsw.hpp>
+
 namespace noz::tools
 {
-	class FileWatcher
+	class FileWatcher : public efsw::FileWatchListener
 	{
 	public:
 		using ChangeCallback = std::function<void()>;
@@ -18,6 +30,12 @@ namespace noz::tools
 
 		FileWatcher();
 		~FileWatcher();
+		
+		// Make the class non-copyable but moveable
+		FileWatcher(const FileWatcher&) = delete;
+		FileWatcher& operator=(const FileWatcher&) = delete;
+		FileWatcher(FileWatcher&& other) noexcept;
+		FileWatcher& operator=(FileWatcher&& other) noexcept;
 
 		// Start watching a single file (legacy interface)
 		bool watchFile(const std::string& filePath, ChangeCallback callback);
@@ -37,10 +55,10 @@ namespace noz::tools
 		// Process queued callbacks on main thread
 		void update();
 
+		// efsw::FileWatchListener implementation
+		void handleFileAction(efsw::WatchID watchid, const std::string& dir, const std::string& filename, efsw::Action action, std::string oldFilename) override;
+
 	private:
-		void watchThread();
-		void pollDirectoryChanges();
-		
 		// Queue callback for main thread execution
 		void queueCallback(std::function<void()> callback);
 
@@ -48,13 +66,12 @@ namespace noz::tools
 		std::string _watchedFile; // For single file watching compatibility
 		ChangeCallback _callback;
 		DirectoryChangeCallback _directoryCallback;
-		std::thread _thread;
 		std::atomic<bool> _watching;
-		std::atomic<bool> _shouldStop;
 		bool _watchingDirectory;
 		
-		// For polling-based directory watching
-		std::unordered_map<std::string, std::filesystem::file_time_type> _fileModTimes;
+		// efsw objects
+		efsw::FileWatcher* _efsw;
+		efsw::WatchID _watchID;
 		
 		// Main thread callback queue with delay support
 		struct DelayedCallback {
@@ -63,11 +80,5 @@ namespace noz::tools
 		};
 		std::queue<DelayedCallback> _callbackQueue;
 		std::mutex _callbackMutex;
-
-#ifdef _WIN32
-		void* _directoryHandle; // HANDLE
-		std::string _watchDirectory;
-		std::string _filename;
-#endif
 	};
 }

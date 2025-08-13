@@ -14,6 +14,8 @@ namespace noz
             
             virtual void import(const std::string& sourcePath, const std::string& outputDir) = 0;
             
+            virtual bool doesDependOn(const std::string& sourcePath, const std::string& outputDir) { return false; }
+
             virtual std::vector<std::string> getSupportedExtensions() const = 0;
             
             virtual std::string getName() const = 0;

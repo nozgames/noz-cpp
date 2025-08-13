@@ -90,18 +90,26 @@ namespace noz::ui
         }
     }
     
-    void StyleSheet::addStyle(const std::string& className, const Style& style)
+    void StyleSheet::setStyle(const std::string& className, const Style& style)
     {
         _styles[className] = style;
     }
+
+    void StyleSheet::mergeStyle(const std::string& className, const Style& style)
+    {
+        auto& it = _styles.find(className);
+        if (it != _styles.end())
+			it->second.apply(style);
+        else
+            _styles[className] = style;
+	}
     
-    const Style* StyleSheet::getStyle(const std::string& className) const
+    const Style* StyleSheet::style(const std::string& className) const
     {
         auto it = _styles.find(className);
         if (it != _styles.end())
-        {
             return &it->second;
-        }
+
         return nullptr;
     }
     
@@ -109,78 +117,16 @@ namespace noz::ui
     {
         return _styles.find(className) != _styles.end();
     }
-    
-    void StyleSheet::addInheritedStyleSheet(std::shared_ptr<StyleSheet> stylesheet)
-    {
-        if (stylesheet)
-        {
-            _inheritedStyleSheets.push_back(stylesheet);
-        }
-    }
-    
-    void StyleSheet::clearInheritedStyleSheets()
-    {
-        _inheritedStyleSheets.clear();
-    }
-    
+       
     Style StyleSheet::resolveStyle(const std::string& className) const
     {
-        // Start with default style
-        Style resolvedStyle = Style::defaultStyle();
-        
-        // Apply styles from inheritance chain (from most inherited to least)
-        std::vector<const Style*> stylesToApply;
-        
-        // Collect styles from inheritance chain
-        for (const auto& inherited : _inheritedStyleSheets)
-        {
-            const Style* inheritedStyle = inherited->findStyleInChain(className);
-            if (inheritedStyle)
-            {
-                stylesToApply.push_back(inheritedStyle);
-            }
-        }
-        
-        // Add local style last (highest priority)
-        const Style* localStyle = getStyle(className);
-        if (localStyle)
-        {
-            stylesToApply.push_back(localStyle);
-        }
-        
-        // Apply all styles in order
-        for (const Style* style : stylesToApply)
-        {
-            resolvedStyle.apply(*style);
-        }
-        
+        auto resolvedStyle = Style::defaultStyle();
+        resolvedStyle.apply(style(className));
         return resolvedStyle;
     }
         
     void StyleSheet::clear()
     {
         _styles.clear();
-    }
-    
-    const Style* StyleSheet::findStyleInChain(const std::string& className) const
-    {
-        // Check local styles first
-        const Style* style = getStyle(className);
-        if (style)
-        {
-            return style;
-        }
-        
-        // Check inherited stylesheets
-        for (const auto& inherited : _inheritedStyleSheets)
-        {
-            style = inherited->findStyleInChain(className);
-            if (style)
-            {
-                return style;
-            }
-        }
-        
-        return nullptr;
     }
 }

@@ -15,7 +15,8 @@
 #include "importers/ShaderImporter.h"
 #include "importers/StyleSheetImporter.h"
 #include "importers/AnimationBlendTree2DImporter.h"
-#include <unordered_set>
+#include <thread>
+#include <chrono>
 
 namespace noz::import
 {
@@ -132,6 +133,81 @@ namespace noz::import
         // Import with all applicable importers
         for (const auto& importer : importers)
             importer->import(filePath, outputPath.string());
+
+        std::cout << "imported: " << filePath << std::endl;
+    }
+
+    std::vector<std::string> findDependentFiles(const std::string& changedFilePath, const std::vector<std::string>& sourceDirs, const ImportConfig& config)
+    {
+        std::vector<std::string> dependentFiles;
+        
+        // Register importers if needed
+        auto& registry = AssetImporterRegistry::instance();
+        if (registry.getAllImporters().empty())
+            registerImporters(config);
+        
+        // Collect all files from all source directories
+        auto fileMap = collectAllFilesWithPriority(sourceDirs);
+        
+        // Check each file to see if it depends on the changed file
+        for (const auto& [relativePath, absolutePath] : fileMap)
+        {
+            auto importers = registry.getImporters(absolutePath);
+            
+            for (const auto& importer : importers)
+            {
+                if (importer->doesDependOn(absolutePath, changedFilePath))
+                {
+                    dependentFiles.push_back(absolutePath);
+                    break; // No need to check other importers for this file
+                }
+            }
+        }
+        
+        return dependentFiles;
+    }
+
+    void importFileWithDependencies(const std::string& filePath, const std::vector<std::string>& sourceDirs, const std::string& outputDir, const ImportConfig& config)
+    {
+        // Import the original file
+        importFile(filePath, sourceDirs, outputDir, config);
+        
+        // Find and import all dependent files recursively
+        std::vector<std::string> processedFiles = { filePath };
+        std::vector<std::string> toProcess = { filePath };
+        
+        while (!toProcess.empty())
+        {
+            std::string currentFile = toProcess.back();
+            toProcess.pop_back();
+            
+            auto dependentFiles = findDependentFiles(currentFile, sourceDirs, config);
+            
+            for (const auto& dependentFile : dependentFiles)
+            {
+                // Avoid processing the same file twice
+                if (std::find(processedFiles.begin(), processedFiles.end(), dependentFile) == processedFiles.end())
+                {
+                    importFile(dependentFile, sourceDirs, outputDir, config);
+                    
+                    // Touch the output file to ensure HotLoad detects the change
+                    std::filesystem::path srcPath(dependentFile);
+                    std::filesystem::path relativePath;
+                    for (const std::string& sourceDir : sourceDirs)
+                    {
+                        std::filesystem::path srcDirPath(sourceDir);
+                        if (dependentFile.find(srcDirPath.string()) == 0)
+                        {
+                            relativePath = std::filesystem::relative(srcPath, sourceDir);
+                            break;
+                        }
+                    }
+                    
+                    processedFiles.push_back(dependentFile);
+                    toProcess.push_back(dependentFile); // Check for files that depend on this dependent file
+                }
+            }
+        }
     }
 
     void import(const std::vector<std::string>& sourceDirs, const std::string& outputDir, const ImportConfig& config)

@@ -71,6 +71,9 @@ namespace noz::ui
     {
         if (!commandBuffer || !isActive())
             return;
+
+        if (!visible())
+			return;
             
         // Setup UI camera for this canvas
         setupCamera(commandBuffer);

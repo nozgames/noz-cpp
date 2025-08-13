@@ -67,6 +67,7 @@ namespace noz::ui
         static Style defaultStyle();
 
         void apply(const Style& style);
+        void apply(const Style* style);
         
         // Serialization
         void serialize(StreamWriter& writer) const;

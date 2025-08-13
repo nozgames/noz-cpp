@@ -117,6 +117,7 @@ namespace noz::node
 		Node();
 
 		virtual void initialize();
+		virtual void initialize(const std::string& name);
 
 		// Called when this node is added to a parent
 		virtual void onAttachedToParent();
