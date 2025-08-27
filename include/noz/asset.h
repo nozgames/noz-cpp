@@ -4,9 +4,6 @@
 
 #pragma once
 
-#include <filesystem>
-
-
 typedef u32 asset_signature_t;
 
 constexpr asset_signature_t ASSET_SIGNATURE_TEXTURE     = 0x4E5A5458;  // 'NZTX'
