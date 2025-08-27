@@ -68,7 +68,7 @@ int FindListener(event_t event, EventCallback callback)
 
 void Listen(event_t event, EventCallback callback)
 {
-    assert(!FindListener(event, callback));
+    assert(-1 == FindListener(event, callback));
     auto registry = GetRegistry(event);
     if (registry->listener_count >= g_max_listeners)
     {

@@ -89,6 +89,20 @@ void SetLocalPosition(Entity* entity, const vec3& pos)
     MarkDirty(impl, false);
 }
 
+void SetLocalScale(Entity* entity, const vec3& scale)
+{
+    auto impl = Impl(entity);
+    impl->local_scale = scale;
+    MarkDirty(impl, false);
+}
+
+void SetLocalScale(Entity* entity, float scale)
+{
+    auto impl = Impl(entity);
+    impl->local_scale = vec3(scale, scale, scale);
+    MarkDirty(impl, false);
+}
+
 void SetWorldPosition(Entity* e, float x, float y, float z)
 {
     SetWorldPosition(e, vec3(x,y,z));

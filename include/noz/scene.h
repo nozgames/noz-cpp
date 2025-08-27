@@ -52,6 +52,8 @@ const mat4& GetLocalToWorld(Entity* entity);
 vec3 InverseTransformPoint(Entity* entity, const vec3& point);
 void SetLocalPosition(Entity* entity, const vec3& pos);
 inline void SetLocalPosition(Entity* entity, float x, float y, float z) { SetLocalPosition(entity, vec3(x,y,z));}
+void SetLocalScale(Entity* entity, const vec3& scale);
+void SetLocalScale(Entity* entity, float scale);
 void SetWorldPosition(Entity* e, float x, float y, float z);
 void SetWorldPosition(Entity* e, const vec3& world_position);
 void SetLocalEulerAngles(Entity* entity, const vec3& angles_in_degrees);
