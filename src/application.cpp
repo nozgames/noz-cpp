@@ -2,10 +2,12 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-void InitTypes();
 void LoadRendererAssets(Allocator* allocator);
+void InitTypes();
 void InitUI();
+void InitEvent(ApplicationTraits* traits);
 void InitName(ApplicationTraits* traits);
+void ShutdownEvent();
 void ShutdownUI();
 void ShutdownName();
 
@@ -19,6 +21,9 @@ static ApplicationTraits g_default_traits =
     .scratch_memory_size = 8 * noz::MB,
     .max_names = 1024,
     .name_memory_size = 1 * noz::MB,
+    .max_events = 128,
+    .max_event_listeners = 4,
+    .max_event_stack = 32,
     .renderer = 
     {
         .max_textures = 32,
@@ -113,6 +118,7 @@ void InitApplication(ApplicationTraits* traits)
     InitAllocator(traits);
     InitName(traits);
     InitTypes();
+    InitEvent(traits);
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD) != 1)
         return;
@@ -184,6 +190,7 @@ void ShutdownApplication()
     ShutdownTime();
     ShutdownRenderer();
     ShutdownInput();
+    ShutdownEvent();
     ShutdownName();
     ShutdownAllocator();
 }

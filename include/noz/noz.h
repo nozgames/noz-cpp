@@ -48,6 +48,7 @@ inline int i32_min(i32 a, i32 b) { return (a < b) ? a : b; }
 #include "linked_list.h"
 #include "bounds3.h"
 #include "rect.h"
+#include "event.h"
 #include "map.h"
 #include "name.h"
 #include "color.h"
