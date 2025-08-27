@@ -4,11 +4,12 @@
 
 #pragma once
 
+struct Scene : Object {};
 struct Entity : Object { };
 struct Camera : Entity { };
 struct MeshRenderer : Entity { };
 
-#define ENTITY_BASE_SIZE 256
+#define ENTITY_BASE_SIZE 264
 #define ENTITY_BASE EntityBase __entity;
 
 struct EntityBase { u8 __entity[ENTITY_BASE_SIZE]; };
@@ -39,15 +40,20 @@ inline const EntityTraits* GetEntityTraits(Entity* entity)
 }
 
 // @scene
-Entity* GetSceneRoot();
-void RenderScene(Camera* camera);
+Scene* CreateScene(Allocator* allocator);
+Entity* GetRoot(Scene* scene);
+void Render(Scene* scene);
+void SetCamera(Scene* scene, Camera* camera);
 
 // @entity
 Entity* CreateEntity(Allocator* allocator, size_t entity_size, type_t type_id);
 Entity* CreateEntity(Allocator* allocator);
+Scene* GetScene(Entity* entity);
+bool IsInScene(Entity* entity);
 void SetEnabled(Entity* entity, bool enabled);
 bool IsEnabled(Entity* entity);
 void SetParent(Entity* entity, Entity* parent);
+inline void SetParent(Entity* entity, Scene* parent) { SetParent(entity, GetRoot(parent)); }
 void RemoveFromParent(Entity* entity);
 Entity* GetFirstChild(Entity* entity);
 Entity* GetNextChild(Entity* entity, Entity* child);

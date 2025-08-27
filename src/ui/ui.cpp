@@ -47,6 +47,11 @@ static Mesh* CreateElementQuad(Allocator* allocator)
     return mesh;
 }
 
+void RenderUI()
+{
+    // TODO: render all screen canvases based on sort
+}
+
 void InitUI()
 {
     g_ui.element_quad = CreateElementQuad(ALLOCATOR_DEFAULT);

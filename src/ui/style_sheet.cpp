@@ -106,7 +106,8 @@ void ReloadStyleSheet(Object* asset, Stream* stream, const AssetHeader* header, 
     impl->hotload_styles = (Style*)Alloc(ALLOCATOR_DEFAULT, style_count * sizeof(Style));
     LoadStyles(impl, stream, style_count, impl->hotload_keys, impl->hotload_styles);
 
-    MarkAllCanvasesDirty(GetSceneRoot());
+    // todo: we need to find all the canvases, maybe we track all canvases in canvas.cpp when _HOTLOAD
+    //MarkAllCanvasesDirty(  GetSceneRoot());
 }
 
 #endif

@@ -2,9 +2,13 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+void UpdateRenderNode(Scene* scene, Entity* entity);
+void RemoveRenderNode(Scene* scene, Entity* entity);
+
 struct EntityImpl
 {
     OBJECT_BASE;
+    Scene* scene;
     Entity* parent;
     vec3 local_position;
     vec3 local_scale;
@@ -27,7 +31,6 @@ struct EntityImpl
 static_assert(ENTITY_BASE_SIZE == sizeof(EntityImpl));
 
 const EntityTraits* g_entity_traits[TYPE_COUNT] = {};
-static LinkedList g_render_entities = {};
 
 void SetEntityTraits(type_t id, const EntityTraits* traits)
 {
@@ -38,15 +41,11 @@ static EntityImpl* Impl(Entity* e) { return (EntityImpl*)CastToBase(e, TYPE_ENTI
 
 static void UpdateRenderEntity(Entity* entity)
 {
-    auto traits = GetEntityTraits(entity);
-    if (traits->render == nullptr)
+    if (auto traits = GetEntityTraits(entity); traits->render == nullptr)
         return;
-    auto should_render = IsEnabled(entity);
-    auto is_rendering = IsInList(g_render_entities, entity);
-    if (should_render && !is_rendering)
-        PushBack(g_render_entities, entity);
-    else if (!should_render && is_rendering)
-        Remove(g_render_entities, entity);
+
+    if (auto scene = Impl(entity)->scene)
+        UpdateRenderNode(scene, entity);
 }
 
 static void MarkDirty(EntityImpl* impl, bool force)
@@ -221,7 +220,13 @@ void RemoveFromParent(EntityImpl* impl, bool should_mark_dirty)
     assert(impl);
 
     if (!impl->parent)
+    {
+        assert(!impl->scene);
         return;
+    }
+
+    if (impl->scene)
+        RemoveRenderNode(impl->scene, (Entity*)impl);
 
     auto parent_impl = Impl(impl->parent);
     impl->parent = nullptr;
@@ -254,7 +259,6 @@ void SetParent(Entity* entity, Entity* parent)
         PushBack(parent_impl->children, impl);
     }
 
-    UpdateRenderEntity(entity);
     MarkDirty(impl, true);
 }
 
@@ -316,17 +320,12 @@ void BindTransform(Entity* entity)
     BindTransform(GetLocalToWorld(entity));
 }
 
-void RenderEntities(Camera* camera)
-{
-    for (auto entity = (Entity*)GetFront(g_render_entities); entity; entity = (Entity*)GetNext(g_render_entities, entity))
-        GetEntityTraits(GetType(entity))->render(entity, camera);
-}
-
-Entity* CreateRootEntity(Allocator* allocator)
+Entity* CreateRootEntity(Allocator* allocator, Scene* scene)
 {
     auto entity = CreateEntity(allocator);
     auto impl = Impl(entity);
     impl->enabled_in_hierarchy = true;
+    impl->scene = scene;
     return entity;
 }
 
@@ -340,9 +339,7 @@ Entity* CreateEntity(Allocator* allocator, size_t entity_size, type_t type_id)
     impl->version = 1;
     Init(impl->children, offsetof(EntityImpl, node_child));
     MarkDirty(impl, false);
-    SetParent(entity, GetSceneRoot());
     UpdateRenderEntity(entity);
-
     return entity;
 }
 
@@ -351,14 +348,25 @@ Entity* CreateEntity(Allocator* allocator)
     return CreateEntity(allocator, sizeof(EntityImpl), TYPE_ENTITY);
 }
 
+Scene* GetScene(Entity* entity)
+{
+    return Impl(entity)->scene;
+}
+
+bool IsInScene(Entity* entity)
+{
+    return Impl(entity)->scene != nullptr;
+}
+
 void EntityDestructor(Object* o)
 {
-    auto entity = Impl((Entity*)o);
-    auto traits = GetEntityTraits(GetType(o));
-    if (traits->render)
-        Remove(g_render_entities, o);
+    auto impl = Impl((Entity*)o);
+    RemoveFromParent(impl, false);
+}
 
-    RemoveFromParent(entity, false);
+void InitRenderEntityList(LinkedList& list)
+{
+    Init(list, offsetof(EntityImpl, node_render));
 }
 
 void InitEntity()
@@ -372,6 +380,4 @@ void InitEntity()
     static EntityTraits default_entity_traits = {};
     for (int i=0; i<TYPE_COUNT; i++)
         g_entity_traits[i] = &default_entity_traits;
-
-    Init(g_render_entities, offsetof(EntityImpl, node_render));
 }
