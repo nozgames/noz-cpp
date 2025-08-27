@@ -1,0 +1,34 @@
+# Build directories
+build/
+out/
+
+# Visual Studio generated files
+.idea
+.vs/
+*.vcxproj.user
+*.vcxproj.filters
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Compiled binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Object files
+*.o
+*.obj
+
+# Debug files
+*.pdb
+*.ilk
+
+# Temporary files
+*.tmp
+*.temp
+*~

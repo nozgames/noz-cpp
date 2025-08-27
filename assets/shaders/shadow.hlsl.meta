@@ -1,0 +1,5 @@
+[Pipeline]
+depth_test=true
+depth_write=true
+blend_enabled=false
+cull_mode=none
