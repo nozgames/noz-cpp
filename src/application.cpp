@@ -3,6 +3,7 @@
 //
 
 void LoadRendererAssets(Allocator* allocator);
+void InitRandom();
 void InitTypes();
 void InitUI();
 void InitEvent(ApplicationTraits* traits);
@@ -118,6 +119,7 @@ void InitApplication(ApplicationTraits* traits)
     InitAllocator(traits);
     InitName(traits);
     InitTypes();
+    InitRandom();
     InitEvent(traits);
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD) != 1)

@@ -41,8 +41,7 @@ static void UpdateRenderEntity(Entity* entity)
     auto traits = GetEntityTraits(entity);
     if (traits->render == nullptr)
         return;
-    auto impl = Impl(entity);
-    auto should_render = impl->enabled;
+    auto should_render = IsEnabled(entity);
     auto is_rendering = IsInList(g_render_entities, entity);
     if (should_render && !is_rendering)
         PushBack(g_render_entities, entity);
@@ -251,9 +250,11 @@ void SetParent(Entity* entity, Entity* parent)
     if (parent)
     {
         auto parent_impl = Impl(parent);
+        impl->enabled_in_hierarchy = IsEnabled(parent);
         PushBack(parent_impl->children, impl);
     }
 
+    UpdateRenderEntity(entity);
     MarkDirty(impl, true);
 }
 
@@ -284,6 +285,8 @@ static void SetEnabledInHierarchy(Entity* entity, bool enabled)
         return;
 
     impl->enabled_in_hierarchy = enabled;
+
+    UpdateRenderEntity(entity);
 
     // Recursively propagate the enabled state.
     enabled &= impl->enabled;
@@ -317,6 +320,14 @@ void RenderEntities(Camera* camera)
 {
     for (auto entity = (Entity*)GetFront(g_render_entities); entity; entity = (Entity*)GetNext(g_render_entities, entity))
         GetEntityTraits(GetType(entity))->render(entity, camera);
+}
+
+Entity* CreateRootEntity(Allocator* allocator)
+{
+    auto entity = CreateEntity(allocator);
+    auto impl = Impl(entity);
+    impl->enabled_in_hierarchy = true;
+    return entity;
 }
 
 Entity* CreateEntity(Allocator* allocator, size_t entity_size, type_t type_id)

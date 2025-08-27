@@ -58,3 +58,9 @@ namespace noz
         return glm::ivec2((int)(v.x + 0.5f), (int)(v.y + 0.5f));
     }
 }
+
+float RandomFloat();
+float RandomFloat(float min, float max);
+int RandomInt(int min, int max);
+bool RandomBool();
+bool RandomBool(float probability);

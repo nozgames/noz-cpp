@@ -8,13 +8,14 @@ void InitEntity();
 void InitMeshRenderer();
 void RenderEntities(Camera* camera);
 void RenderScreenCanvases();
+Entity* CreateRootEntity(Allocator* allocator);
 
 void InitScene()
 {
     InitEntity();
     InitMeshRenderer();
 
-    g_root_entity = CreateEntity(ALLOCATOR_DEFAULT);
+    g_root_entity = CreateRootEntity(ALLOCATOR_DEFAULT);
 }
 
 void ShutdownScene()
