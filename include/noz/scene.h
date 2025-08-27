@@ -54,6 +54,7 @@ Entity* GetNextChild(Entity* entity, Entity* child);
 Entity* GetPrevChild(Entity* entity, Entity* child);
 int GetChildCount(Entity* entity);
 vec3 GetWorldPosition(Entity* entity);
+vec3 GetLocalPosition(Entity* entity);
 const mat4& GetWorldToLocal(Entity* entity);
 const mat4& GetLocalToWorld(Entity* entity);
 vec3 InverseTransformPoint(Entity* entity, const vec3& point);

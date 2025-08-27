@@ -92,6 +92,11 @@ static void UpdateWorldToLocal(EntityImpl* impl)
     impl->world_to_local_dirty = false;
 }
 
+vec3 GetLocalPosition(Entity* entity)
+{
+    return Impl(entity)->local_position;
+}
+
 vec3 GetWorldPosition(Entity* entity)
 {
     return GetLocalToWorld(entity)[3];
