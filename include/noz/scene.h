@@ -33,6 +33,11 @@ inline const EntityTraits* GetEntityTraits(type_t id)
     return g_entity_traits[id];
 }
 
+inline const EntityTraits* GetEntityTraits(Entity* entity)
+{
+    return g_entity_traits[GetType(entity)];
+}
+
 // @scene
 Entity* GetSceneRoot();
 void RenderScene(Camera* camera);
@@ -40,6 +45,8 @@ void RenderScene(Camera* camera);
 // @entity
 Entity* CreateEntity(Allocator* allocator, size_t entity_size, type_t type_id);
 Entity* CreateEntity(Allocator* allocator);
+void SetEnabled(Entity* entity, bool enabled);
+bool IsEnabled(Entity* entity);
 void SetParent(Entity* entity, Entity* parent);
 void RemoveFromParent(Entity* entity);
 Entity* GetFirstChild(Entity* entity);

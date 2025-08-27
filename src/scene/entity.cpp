@@ -35,6 +35,20 @@ void SetEntityTraits(type_t id, const EntityTraits* traits)
 
 static EntityImpl* Impl(Entity* e) { return (EntityImpl*)CastToBase(e, TYPE_ENTITY); }
 
+static void UpdateRenderEntity(Entity* entity)
+{
+    auto traits = GetEntityTraits(entity);
+    if (traits->render == nullptr)
+        return;
+    auto impl = Impl(entity);
+    auto should_render = impl->enabled;
+    auto is_rendering = IsInList(g_render_entities, entity);
+    if (should_render && !is_rendering)
+        PushBack(g_render_entities, entity);
+    else if (!should_render && is_rendering)
+        Remove(g_render_entities, entity);
+}
+
 static void MarkDirty(EntityImpl* impl, bool force)
 {
     assert(impl);
@@ -257,6 +271,17 @@ Entity* GetPrevChild(Entity* entity, Entity* child)
     return (Entity*)GetPrev(Impl(entity)->children, child);
 }
 
+void SetEnabled(Entity* entity, bool enabled)
+{
+    Impl(entity)->enabled = enabled;
+    UpdateRenderEntity(entity);
+}
+
+bool IsEnabled(Entity* entity)
+{
+    return Impl(entity)->enabled;
+}
+
 void BindTransform(Entity* entity)
 {
     BindTransform(GetLocalToWorld(entity));
@@ -279,10 +304,7 @@ Entity* CreateEntity(Allocator* allocator, size_t entity_size, type_t type_id)
     Init(impl->children, offsetof(EntityImpl, node_child));
     MarkDirty(impl, false);
     SetParent(entity, GetSceneRoot());
-
-    auto traits = GetEntityTraits(type_id);
-    if (traits->render)
-        PushBack(g_render_entities, entity);
+    UpdateRenderEntity(entity);
 
     return entity;
 }
