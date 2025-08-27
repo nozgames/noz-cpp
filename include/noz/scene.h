@@ -75,6 +75,8 @@ const mat4& GetProjection(Camera* camera);
 void SetOrthographic(Camera* camera, float left, float right, float top, float bottom, float near, float far);
 void SetOrthographic(Camera* camera, float view_height, float near, float far);
 bool IsOrthographic(Camera* camera);
+vec3 ScreenToWorld(Camera* camera, const vec2& screen_pos);
+vec2 WorldToScreen(Camera* camera, const vec3& world_pos);
 
 // @mesh_renderer
 MeshRenderer* CreateMeshRenderer(Allocator* allocator);
