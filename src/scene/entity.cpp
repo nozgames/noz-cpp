@@ -19,6 +19,7 @@ struct EntityImpl
     bool local_to_world_dirty;
     bool world_to_local_dirty;
     bool enabled;
+    bool enabled_in_hierarchy;
     u32 version;
     // const entity_traits* traits = nullptr;
 };
@@ -271,15 +272,35 @@ Entity* GetPrevChild(Entity* entity, Entity* child)
     return (Entity*)GetPrev(Impl(entity)->children, child);
 }
 
+static void SetEnabledInHierarchy(Entity* entity, bool enabled)
+{
+    auto impl = Impl(entity);
+    if (enabled == impl->enabled_in_hierarchy)
+        return;
+
+    impl->enabled_in_hierarchy = enabled;
+
+    // Recursively propagate the enabled state.
+    enabled &= impl->enabled;
+    for (auto child=GetFirstChild(entity); child; child=GetNextChild(entity, child))
+        SetEnabledInHierarchy(child, enabled);
+}
+
 void SetEnabled(Entity* entity, bool enabled)
 {
-    Impl(entity)->enabled = enabled;
+    auto impl = Impl(entity);
+    impl->enabled = enabled;
     UpdateRenderEntity(entity);
+
+    bool enabled_in_hierarchy = enabled && impl->enabled_in_hierarchy;
+    for (auto child=GetFirstChild(entity); child; child=GetNextChild(entity, child))
+        SetEnabledInHierarchy(child, enabled_in_hierarchy);
 }
 
 bool IsEnabled(Entity* entity)
 {
-    return Impl(entity)->enabled;
+    auto impl = Impl(entity);
+    return impl->enabled_in_hierarchy && impl->enabled;
 }
 
 void BindTransform(Entity* entity)
