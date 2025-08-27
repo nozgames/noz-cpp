@@ -123,7 +123,7 @@ void AddVertex(
 
 // @render_buffer
 void ClearRenderCommands();
-void BeginRenderPass(bool clear, color_t clear_color, bool msaa, Texture* target);
+void BeginRenderPass(bool clear, color_t clear_color, bool msaa, Texture* target=nullptr);
 void BeginShadowPass(mat4 light_view, mat4 light_projection);
 void BindDefaultTexture(int texture_index);
 void BindColor(color_t color);

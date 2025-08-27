@@ -15,10 +15,10 @@ bool Intersects(const rect_t& rect, const rect_t& other)
 
 rect_t Intersection(const rect_t& rect, const rect_t& other)
 {
-    float left = std::max(rect.x, other.x);
-    float top = std::max(rect.y, other.y);
-    float right = std::min(rect.x + rect.width, other.x + other.width);
-    float bottom = std::min(rect.y + rect.height, other.y + other.height);
+    float left = max(rect.x, other.x);
+    float top = max(rect.y, other.y);
+    float right = min(rect.x + rect.width, other.x + other.width);
+    float bottom = min(rect.y + rect.height, other.y + other.height);
 
     if (left < right && top < bottom)
         return {left, top, right - left, bottom - top };

@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include <cctype>
+
 void SetValue(text_t& dst, const text_t& src)
 {
     dst.length = src.length;

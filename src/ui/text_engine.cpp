@@ -36,8 +36,8 @@ vec2 MeasureText(const text_t& text, Font* font, float font_size)
         float glyph_bottom = -glyph->bearing.y * font_size;
         float glyph_top = (glyph->size.y - glyph->bearing.y) * font_size;
 
-        max_ascent = std::max(max_ascent, glyph_top);
-        max_descent = std::min(max_descent, glyph_bottom);
+        max_ascent = max(max_ascent, glyph_top);
+        max_descent = min(max_descent, glyph_bottom);
     }
 
     return vec2(total_width, max_ascent - max_descent);
@@ -102,8 +102,8 @@ static void CreateTextMesh(Allocator* allocator, TextMeshImpl* impl, const TextR
         float glyph_bottom = -glyph->bearing.y * font_size;
         float glyph_top = (glyph->size.y - glyph->bearing.y) * font_size;
 
-        max_ascent = std::max(max_ascent, glyph_top);
-        max_descent = std::min(max_descent, glyph_bottom);
+        max_ascent = max(max_ascent, glyph_top);
+        max_descent = min(max_descent, glyph_bottom);
     }
 
     float total_height = max_ascent - max_descent;

@@ -63,4 +63,7 @@ void ClearToken(Token* token);
 bool IsTokenType(Token* token, TokenType type);
 bool IsValue(const Token& token, const char* value);
 
+
+#if defined(_STRING_)
 std::string ToString(const Token& token);
+#endif

@@ -5,9 +5,7 @@
 // @STL - This file uses STL since it's tools-only
 
 #include <cstdio>
-#include <cstring>
 #include <iostream>
-#include <noz/noz.h>
 #include <props.h>
 #include <tokenizer.h>
 

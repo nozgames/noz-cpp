@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <string>
+
 #include <noz/noz.h>
 #include <tokenizer.h>
 #include <glm/gtc/matrix_transform.hpp>

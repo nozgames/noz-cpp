@@ -262,7 +262,7 @@ void Measure(ElementImpl* impl, const vec2& available_size)
 
     if (IsAuto(style.width))
     {
-        measured_size.x = std::max(content_measured_size.x, child_measured_size.x);
+        measured_size.x = max(content_measured_size.x, child_measured_size.x);
         // Add padding to the measured size
         if (IsFixed(style.padding_left))
             measured_size.x += Evaluate(style.padding_left, available_size.x);
@@ -274,7 +274,7 @@ void Measure(ElementImpl* impl, const vec2& available_size)
 
     if (IsAuto(style.height))
     {
-        measured_size.y = std::max(content_measured_size.y, child_measured_size.y);
+        measured_size.y = max(content_measured_size.y, child_measured_size.y);
         // Add padding to the measured size
         if (IsFixed(style.padding_top))
             measured_size.y += Evaluate(style.padding_top, available_size.y);
