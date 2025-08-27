@@ -22,6 +22,8 @@ static size_t g_event_max_stack_size = 0;
 
 static int GetEventIndex(event_t event)
 {
+    assert(event + MAX_CORE_EVENTS >= 0);
+    assert(event + MAX_CORE_EVENTS < g_max_events);
     return event + MAX_CORE_EVENTS;
 }
 
@@ -32,7 +34,8 @@ static EventRegistry* GetRegistry(event_t event)
 
 static EventListener* GetListener(event_t event, size_t index)
 {
-    return (EventListener*)(GetRegistry(event) + 1) + GetEventIndex(event);
+    assert(index < g_max_listeners);
+    return (EventListener*)(GetRegistry(event) + 1) + index;
 }
 
 void InitEvent(ApplicationTraits* traits)
