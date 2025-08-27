@@ -28,7 +28,7 @@ const mat4& GetProjection(Camera* camera)
 const mat4& GetViewProjection(Camera* camera)
 {
     auto impl = Impl(camera);
-    impl->view_projection = GetProjection(camera) * GetLocalToWorld(camera);
+    impl->view_projection = GetProjection(camera) * inverse(GetLocalToWorld(camera));
     return Impl(camera)->view_projection;
 }
 
