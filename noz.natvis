@@ -121,4 +121,19 @@ Place this file in your project directory or Visual Studio's natvis folder.
     </Expand>
   </Type>
 
+  <!-- EntityFlags visualization -->
+  <Type Name="EntityFlags">
+    <DisplayString>{value,x}</DisplayString>
+    <Expand>
+      <Item Name="ENABLED">(value &amp; 0x1) != 0</Item>
+      <Item Name="ENABLED_SELF">(value &amp; 0x2) != 0</Item>
+      <Item Name="ENABLED_HIERARCHY">(value &amp; 0x4) != 0</Item>
+      <Item Name="LOCAL_DIRTY">(value &amp; 0x8) != 0</Item>
+      <Item Name="WORLD_DIRTY">(value &amp; 0x10) != 0</Item>
+      <Item Name="Raw Value">value</Item>
+    </Expand>
+  </Type>
+
+
+
 </AutoVisualizer>

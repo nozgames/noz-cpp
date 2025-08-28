@@ -6,6 +6,17 @@ void InitMeshRenderer();
 void InitComponentList(LinkedList& list);
 void SetEntity(Component* component, Entity* entity);
 
+struct EntityFlags
+{
+    u32 value;
+} __attribute__((packed));
+
+constexpr u32 ENTITY_FLAG_ENABLED = 1 << 0;
+constexpr u32 ENTITY_FLAG_ENABLED_SELF = 1 << 1;
+constexpr u32 ENTITY_FLAG_ENABLED_HIERARCHY = 1 << 2;
+constexpr u32 ENTITY_FLAG_LOCAL_DIRTY = 1 << 3;
+constexpr u32 ENTITY_FLAG_WORLD_DIRTY = 1 << 4;
+
 struct EntityImpl
 {
     OBJECT_BASE;
@@ -18,12 +29,7 @@ struct EntityImpl
     LinkedList children;
     LinkedList components;
     LinkedListNode node_child;
-
-    // todo: remove booleans?
-    bool local_to_world_dirty;
-    bool world_to_local_dirty;
-    bool enabled;
-    bool enabled_in_hierarchy;
+    EntityFlags flags;
     u32 version;
     // const entity_traits* traits = nullptr;
 };
@@ -38,17 +44,79 @@ void SetEntityTraits(type_t id, const EntityTraits* traits)
     g_entity_traits[id] = traits;
 }
 
+static bool IsEnabledInHierarchy(const EntityImpl* impl) { return !!(impl->flags.value & ENTITY_FLAG_ENABLED_HIERARCHY); }
+static bool IsEnabledSelf(const EntityImpl* impl) { return !!(impl->flags.value & ENTITY_FLAG_ENABLED_SELF); }
+static bool IsEnabled(const EntityImpl* impl) { return !!(impl->flags.value & ENTITY_FLAG_ENABLED); }
+static bool IsLocalDirty(const EntityImpl* impl) { return !!(impl->flags.value & ENTITY_FLAG_LOCAL_DIRTY); }
+static bool IsWorldDirty(const EntityImpl* impl) { return !!(impl->flags.value & ENTITY_FLAG_WORLD_DIRTY); }
+
 static EntityImpl* Impl(Entity* e) { return (EntityImpl*)CastToBase(e, TYPE_ENTITY); }
+
+static void UpdateComponentEnabled(EntityImpl* impl)
+{
+    if (IsEnabled(impl))
+    {
+        for (auto component=(Component*)GetFront(impl->components); component; component=(Component*)GetNext(impl->components, component))
+            if (auto func = GetComponentTraits(GetType(component))->on_enabled)
+                func(component);
+    }
+    else
+    {
+        for (auto component=(Component*)GetFront(impl->components); component; component=(Component*)GetNext(impl->components, component))
+            if (auto func = GetComponentTraits(GetType(component))->on_disabled)
+                func(component);
+    }
+}
+
+
+static void UpdateEnabled(Entity* entity)
+{
+    auto impl = Impl(entity);
+    auto was_enabled = IsEnabled(impl);
+    auto is_enabled = IsEnabledInHierarchy(impl) && IsEnabledSelf(impl);
+    if (was_enabled == is_enabled)
+        return;
+
+    if (is_enabled)
+        impl->flags.value |= ENTITY_FLAG_ENABLED;
+    else
+        impl->flags.value &= ~ENTITY_FLAG_ENABLED;
+
+    auto traits = GetEntityTraits(entity);
+    if (is_enabled)
+    {
+        if (traits->on_enabled)
+            traits->on_enabled(entity);
+
+        UpdateComponentEnabled(impl);
+    }
+    else
+    {
+        UpdateComponentEnabled(impl);
+
+        if (traits->on_disabled)
+            traits->on_disabled(entity);
+    }
+
+    for (auto child=GetFirstChild(entity); child; child=GetNextChild(entity, child))
+    {
+        if (is_enabled)
+            Impl(child)->flags.value |= ENTITY_FLAG_ENABLED_HIERARCHY;
+        else
+            Impl(child)->flags.value &~ ENTITY_FLAG_ENABLED_HIERARCHY;
+
+        UpdateEnabled(child);
+    }
+}
 
 static void MarkDirty(EntityImpl* impl, bool force)
 {
     assert(impl);
 
-    if (!force && impl->local_to_world_dirty)
+    if (!force && IsLocalDirty(impl))
         return;
 
-    impl->local_to_world_dirty = true;
-    impl->world_to_local_dirty = true;
+    impl->flags.value |= (ENTITY_FLAG_LOCAL_DIRTY | ENTITY_FLAG_WORLD_DIRTY);
     impl->version++;
 
     for (auto child=GetFront(impl->children); child; child=GetNext(impl->children, child))
@@ -69,17 +137,17 @@ static void UpdateLocalToWorld(EntityImpl* impl)
     else
         impl->local_to_world = local_to_world;
 
-    impl->local_to_world_dirty = false;
-    impl->world_to_local_dirty = true;
+    impl->flags.value &= ~ENTITY_FLAG_LOCAL_DIRTY;
+    impl->flags.value |= ENTITY_FLAG_WORLD_DIRTY;
 }
 
 static void UpdateWorldToLocal(EntityImpl* impl)
 {
-    if (impl->local_to_world_dirty)
+    if (IsLocalDirty(impl))
         UpdateLocalToWorld(impl);
 
     impl->world_to_local = inverse(impl->local_to_world);
-    impl->world_to_local_dirty = false;
+    impl->flags.value &= ~ENTITY_FLAG_WORLD_DIRTY;
 }
 
 vec3 GetLocalPosition(Entity* entity)
@@ -132,7 +200,7 @@ void SetWorldPosition(Entity* e, const vec3& world_position)
 const mat4& GetWorldToLocal(Entity* entity)
 {
     auto impl = Impl(entity);
-    if (impl->world_to_local_dirty)
+    if (IsWorldDirty(impl))
         UpdateWorldToLocal(impl);
 
     return impl->world_to_local;
@@ -141,7 +209,7 @@ const mat4& GetWorldToLocal(Entity* entity)
 const mat4& GetLocalToWorld(Entity* entity)
 {
     EntityImpl* impl = Impl(entity);
-    if (impl->local_to_world_dirty)
+    if (IsWorldDirty(impl))
         UpdateLocalToWorld(impl);
 
     return impl->local_to_world;
@@ -218,6 +286,9 @@ void RemoveFromParent(EntityImpl* impl, bool should_mark_dirty)
     impl->parent = nullptr;
     Remove(parent_impl->children, impl);
 
+    impl->flags.value &= ~ENTITY_FLAG_ENABLED_HIERARCHY;
+    UpdateEnabled((Entity*)impl);
+
     if (should_mark_dirty)
         MarkDirty(impl, true);
 }
@@ -240,9 +311,13 @@ void SetParent(Entity* entity, Entity* parent)
 
     if (parent)
     {
-        auto parent_impl = Impl(parent);
-        impl->enabled_in_hierarchy = IsEnabled(parent);
-        PushBack(parent_impl->children, impl);
+        if (IsEnabled(parent))
+        {
+            impl->flags.value |= ENTITY_FLAG_ENABLED_HIERARCHY;
+            UpdateEnabled(entity);
+        }
+
+        PushBack(Impl(parent)->children, impl);
     }
 
     MarkDirty(impl, true);
@@ -268,62 +343,24 @@ Entity* GetPrevChild(Entity* entity, Entity* child)
     return (Entity*)GetPrev(Impl(entity)->children, child);
 }
 
-static void UpdateComponentEnabled(Entity* entity)
-{
-    auto impl = Impl(entity);
-    if (impl->enabled_in_hierarchy && impl->enabled)
-    {
-        for (auto component=(Component*)GetFront(impl->components); component; component=(Component*)GetNext(impl->components, component))
-            if (auto func = GetComponentTraits(GetType(component))->on_enabled)
-                func(component);
-    }
-    else
-    {
-        for (auto component=(Component*)GetFront(impl->components); component; component=(Component*)GetNext(impl->components, component))
-            if (auto func = GetComponentTraits(GetType(component))->on_disabled)
-                func(component);
-    }
-}
-
-static void SetEnabledInHierarchy(Entity* entity, bool enabled)
-{
-    auto impl = Impl(entity);
-    if (enabled == impl->enabled_in_hierarchy)
-        return;
-
-    bool was_enabled = impl->enabled_in_hierarchy && impl->enabled;
-    impl->enabled_in_hierarchy = enabled;
-    bool is_enabled = impl->enabled_in_hierarchy && impl->enabled;
-
-    if (was_enabled != is_enabled)
-        UpdateComponentEnabled(entity);
-
-    // Recursively propagate the enabled state.
-    enabled &= impl->enabled;
-    for (auto child=GetFirstChild(entity); child; child=GetNextChild(entity, child))
-        SetEnabledInHierarchy(child, enabled);
-}
-
 void SetEnabled(Entity* entity, bool enabled)
 {
     auto impl = Impl(entity);
 
-    bool was_enabled = impl->enabled_in_hierarchy && impl->enabled;
-    impl->enabled = enabled;
-    bool is_enabled = impl->enabled_in_hierarchy && impl->enabled;
+    if (enabled == IsEnabledSelf(impl))
+        return;
 
-    if (was_enabled != is_enabled)
-        UpdateComponentEnabled(entity);
+    if (!enabled)
+        impl->flags.value &= ~ENTITY_FLAG_ENABLED_SELF;
+    else
+        impl->flags.value |= ENTITY_FLAG_ENABLED_SELF;
 
-    bool enabled_in_hierarchy = enabled && impl->enabled_in_hierarchy;
-    for (auto child=GetFirstChild(entity); child; child=GetNextChild(entity, child))
-        SetEnabledInHierarchy(child, enabled_in_hierarchy);
+    UpdateEnabled(entity);
 }
 
 bool IsEnabled(Entity* entity)
 {
-    auto impl = Impl(entity);
-    return impl->enabled_in_hierarchy && impl->enabled;
+    return IsEnabled(Impl(entity));
 }
 
 void BindTransform(Entity* entity)
@@ -340,8 +377,7 @@ void AddComponent(Entity* entity, Component* component)
 
     // If the entity is enabled, then call the component on_enabled
     if (IsEnabled(entity))
-        if (auto func = GetComponentTraits(GetType(component))->on_enabled)
-            func(component);
+        UpdateComponentEnabled(impl);
 }
 
 void RemoveComponent(Entity* entity, Component* component)
@@ -350,8 +386,9 @@ void RemoveComponent(Entity* entity, Component* component)
     assert(IsInList(impl->components, component));
 
     // Call the disabled func always when removed
-    if (auto func = GetComponentTraits(GetType(component))->on_disabled)
-        func(component);
+    if (IsEnabled(entity))
+        if (auto func = GetComponentTraits(GetType(component))->on_disabled)
+            func(component);
 
     Remove(impl->components, component);
     SetEntity(component, nullptr);
@@ -376,7 +413,12 @@ static Entity* CreateRootEntity(Allocator* allocator)
 {
     auto entity = CreateEntity(allocator);
     auto impl = Impl(entity);
-    impl->enabled_in_hierarchy = true;
+    impl->flags.value =
+        ENTITY_FLAG_LOCAL_DIRTY |
+        ENTITY_FLAG_WORLD_DIRTY |
+        ENTITY_FLAG_ENABLED |
+        ENTITY_FLAG_ENABLED_SELF |
+        ENTITY_FLAG_ENABLED_HIERARCHY;
     return entity;
 }
 
@@ -386,7 +428,10 @@ Entity* CreateEntity(Allocator* allocator, size_t entity_size, type_t type_id)
     auto impl = Impl(entity);
     impl->local_scale = VEC3_ONE;
     impl->local_rotation = identity<quat>();
-    impl->enabled = true;
+    impl->flags.value =
+        ENTITY_FLAG_LOCAL_DIRTY |
+        ENTITY_FLAG_WORLD_DIRTY |
+        ENTITY_FLAG_ENABLED_SELF;
     impl->version = 1;
     Init(impl->children, offsetof(EntityImpl, node_child));
     InitComponentList(impl->components);

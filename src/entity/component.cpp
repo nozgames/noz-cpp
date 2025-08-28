@@ -40,7 +40,5 @@ void InitComponentList(LinkedList& list)
 void SetEntity(Component* component, Entity* entity)
 {
     auto impl = Impl(component);
-    assert(entity);
-    assert(!impl->entity);
     impl->entity = entity;
 }
