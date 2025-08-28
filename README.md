@@ -10,8 +10,9 @@ NoZ provides a complete set of tools for game development including rendering, p
 
 ### Core Systems
 - **Object System**: Reference-counted object management with automatic cleanup
-- **Scene Graph**: Hierarchical entity system with transform management
-- **Component Architecture**: Modular, trait-based component system
+- **Entity-Component System**: Hierarchical entities with component-based architecture
+- **Component Architecture**: Trait-based component system with lifecycle management
+- **Scene Management**: Scene objects with hierarchical transform system
 - **Asset Pipeline**: Hot-reloadable asset system with build tools
 - **Memory Management**: Custom allocators (arena, pool) for performance
 
@@ -28,10 +29,11 @@ NoZ provides a complete set of tools for game development including rendering, p
 - **Raycasting**: Spatial queries for gameplay mechanics
 
 ### User Interface
-- **Flexbox Layout**: CSS-like layout system
-- **Style Sheets**: External styling with pseudo-state support
-- **UI Components**: Canvas, elements, labels, buttons
-- **Screen/World Space**: Support for both overlay and 3D UI
+- **Flexbox Layout**: CSS-like layout system with flexible positioning
+- **Style Sheets**: External styling with pseudo-state support (hover, active, focused, etc.)
+- **UI Components**: Canvas, elements, labels with trait-based extensibility
+- **Screen/World Space**: Support for both overlay and 3D world-space UI
+- **Element Hierarchy**: Parent-child relationships with automatic layout management
 
 ### Input & Platform
 - **Action Maps**: Configurable input binding system
@@ -54,13 +56,27 @@ if (auto mesh_renderer = Cast<MeshRenderer>(entity)) {
 }
 ```
 
-### Component-Based Entities
-Entities are composed of components using trait-based dispatch:
+### Entity-Component System
+Entities support hierarchical relationships and component attachment with trait-based lifecycle management:
 
 ```cpp
+// Create entities with hierarchical relationships
+Entity* parent = CreateEntity(allocator);
+Entity* child = CreateEntity(allocator);
+SetParent(child, parent);
+
+// Add components to entities
+MeshRenderer* renderer = CreateMeshRenderer(allocator);
+AddComponent(parent, renderer);
+
+// Enable/disable entities (affects children)
+SetEnabled(parent, false); // Disables entire hierarchy
+
+// Define custom entity behavior with traits
 struct MyEntityTraits : EntityTraits {
-    void render(Entity* entity, Camera* camera) override;
-    void update(Entity* entity) override;
+    void(*on_destroy)(Entity*);
+    void(*on_enabled)(Entity*);
+    void(*on_disabled)(Entity*);
 };
 
 SetEntityTraits(MY_ENTITY_TYPE, &my_traits);
@@ -130,30 +146,52 @@ int main() {
 }
 ```
 
-### Creating Entities
+### Creating Entities and Components
 
 ```cpp
 // Create scene hierarchy
-Entity* root = GetSceneRoot();
+Entity* root = GetRootEntity();
 Entity* player = CreateEntity(allocator);
 SetParent(player, root);
 SetLocalPosition(player, 0, 0, 0);
 
 // Add renderable component
 MeshRenderer* renderer = CreateMeshRenderer(allocator);
+AddComponent(player, renderer);
 SetMesh(renderer, my_mesh);
 SetMaterial(renderer, my_material);
+
+// Transform management
+SetWorldPosition(player, 10, 0, 5);
+SetLocalScale(player, 2.0f);
+SetLocalEulerAngles(player, 0, 45, 0);
+
+// Enable/disable entities
+SetEnabled(player, true); // Affects all child entities
 ```
 
 ### UI System
 
 ```cpp
-// Create UI canvas
+// Create UI canvas (screen or world space)
 Canvas* canvas = CreateCanvas(allocator, CANVAS_TYPE_SCREEN, 1920, 1080);
 
-// Create UI elements
+// Create UI elements with styling support
 Label* label = CreateLabel(allocator, "Hello World", MakeName("title"));
 SetParent(label, GetRootElement(canvas));
+
+// Apply styles and pseudo-states
+SetPseudoState(label, PSEUDO_STATE_HOVER, true);
+SetVisible(label, true);
+
+// Custom element traits for advanced behavior
+struct MyElementTraits : ElementTraits {
+    vec2(*measure_content)(Element*, const vec2& available_size, const Style& style);
+    void(*render_content)(Element*, const Style& style);
+    void(*on_apply_style)(Element*, const Style&);
+};
+
+SetElementTraits(MY_ELEMENT_TYPE, &my_traits);
 ```
 
 ## Directory Structure
