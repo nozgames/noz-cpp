@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+void DrawScreenCanvases();
+
 static void ResetRenderState();
 static void UpdateBackBuffer();
 static void InitGammaPass();
@@ -206,6 +208,7 @@ void EndRenderFrame()
         return;
 
     RenderGammaPass();
+    DrawScreenCanvases();
     ExecuteRenderCommands(g_renderer.command_buffer);
     SDL_SubmitGPUCommandBuffer(g_renderer.command_buffer);
 
@@ -368,6 +371,14 @@ void BindBoneTransformsGPU(const mat4* bones, int count)
         (Uint32)(count * sizeof(mat4)));
 }
 
+SDL_GPURenderPass* BeginUIPassGPU()
+{
+    assert(!g_renderer.render_pass);
+    assert(g_renderer.command_buffer);
+
+    return BeginPassGPU(g_renderer.swap_chain_texture, false, color_black);
+}
+
 SDL_GPURenderPass* BeginShadowPassGPU()
 {
     assert(!g_renderer.render_pass);
@@ -430,7 +441,7 @@ SDL_GPURenderPass* BeginGammaPassGPU()
     if (!g_renderer.gamma_material)
         Exit("missing gamma shader");
 
-    return BeginPassGPU(g_renderer.swap_chain_texture, true, color_red);
+    return BeginPassGPU(g_renderer.swap_chain_texture, false, color_black);
 }
 
 static void RenderGammaPass()

@@ -4,6 +4,7 @@
 
 Element* CreateRootElement(Allocator* allocator, Canvas* canvas, const name_t* id);
 void RenderElements(Element* element, const mat4& canvas_transform, const vec2& canvas_size, bool is_dirty);
+void BeginUIPass();
 
 struct CanvasImpl
 {
@@ -14,11 +15,12 @@ struct CanvasImpl
     ivec2 screen_size;
     vec2 reference_size;
     CanvasType type;
-    LinkedListNode node_screen_render;
+    LinkedListNode node_render;
     bool dirty;
 };
 
 static LinkedList g_screen_render = {};
+static LinkedList g_world_render = {};
 
 static CanvasImpl* Impl(Canvas* c) { return (CanvasImpl*)Cast(c, TYPE_CANVAS);}
 
@@ -61,9 +63,11 @@ void AddChild(Canvas* canvas, Element* child)
     AddChild(GetRootElement(canvas), child);
 }
 
-void RenderScreenCanvases()
+void DrawScreenCanvases()
 {
     auto screen_size = GetScreenSize();
+
+    BeginUIPass();
 
     for (auto canvas = (Canvas*)GetFront(g_screen_render); canvas; canvas = (Canvas*)GetNext(g_screen_render, canvas))
     {
@@ -98,35 +102,44 @@ void RenderScreenCanvases()
 
         // Render the screen canvas with UI camera
         static const mat4 identity = glm::identity<mat4>();
-        auto p = glm::ortho(0.0f, impl->size.x, impl->size.y, 0.0f, -1.0f, 1.0f);
+        auto p = ortho(0.0f, impl->size.x, impl->size.y, 0.0f, -1.0f, 1.0f);
         BindCamera(identity, p);
         RenderElements(impl->root, identity, impl->size, impl->dirty);
         impl->dirty = false;
     }
 
-    Clear(g_screen_render);
+    EndRenderPass();
 }
 
-static void RenderWorldCanvas(CanvasImpl* impl, const mat4& transform, Camera* camera)
+void DrawWorldCanvases(Camera* camera)
 {
-    auto dirty = impl->dirty;
-    impl->dirty = false;
-    RenderElements(impl->root, transform, impl->size, dirty);
+    auto transform = GetLocalToWorld(camera);
+    for (auto canvas = (Canvas*)GetFront(g_world_render); canvas; canvas = (Canvas*)GetNext(g_world_render, canvas))
+    {
+        auto impl = Impl(canvas);
+        auto dirty = impl->dirty;
+        impl->dirty = false;
+        RenderElements(impl->root, transform, impl->size, dirty);
+    }
 }
 
-static void CanvasRender(Entity* entity, Camera* camera)
+void CanvasOnEnabled(Entity* entity)
+{
+    auto canvas = (Canvas*)entity;
+    auto impl = Impl(canvas);
+    if (impl->type == CANVAS_TYPE_WORLD)
+        PushBack(g_world_render, entity);
+    else
+        PushBack(g_screen_render, entity);
+}
+
+void CanvasOnDisabled(Entity* entity)
 {
     auto impl = Impl((Canvas*)entity);
-    switch (impl->type)
-    {
-    case CANVAS_TYPE_SCREEN:
-        PushBack(g_screen_render, entity);
-        break;
-
-    case CANVAS_TYPE_WORLD:
-        RenderWorldCanvas(impl, GetLocalToWorld(entity), camera);
-        break;
-    }
+    if (impl->type == CANVAS_TYPE_WORLD)
+        Remove(g_world_render, entity);
+    else
+        Remove(g_screen_render, entity);
 }
 
 Canvas* CreateCanvas(Allocator* allocator, CanvasType type, float reference_width, float reference_height, const name_t* id)
@@ -143,5 +156,13 @@ Canvas* CreateCanvas(Allocator* allocator, CanvasType type, float reference_widt
 
 void InitCanvas()
 {
-    Init(g_screen_render, offsetof(CanvasImpl, node_screen_render));
+    static EntityTraits traits = {
+        .on_enabled = CanvasOnEnabled,
+        .on_disabled = CanvasOnDisabled
+    };
+
+    SetEntityTraits(TYPE_CANVAS, &traits);
+
+    Init(g_screen_render, offsetof(CanvasImpl, node_render));
+    Init(g_world_render, offsetof(CanvasImpl, node_render));
 }

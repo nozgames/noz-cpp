@@ -1,4 +1,4 @@
-[Pipeline]
+[shader]
 depth_test=false
 depth_write=false
 blend_enabled=true

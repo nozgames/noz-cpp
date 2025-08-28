@@ -5,6 +5,7 @@
 void InitMeshRenderer();
 void InitComponentList(LinkedList& list);
 void SetEntity(Component* component, Entity* entity);
+void RenderWorldCanvases(Camera* camera);
 
 struct EntityFlags
 {
@@ -38,6 +39,7 @@ static_assert(ENTITY_BASE_SIZE == sizeof(EntityImpl));
 
 const EntityTraits* g_entity_traits[TYPE_COUNT] = {};
 static Entity* g_root_entity = nullptr;
+static Camera* g_screen_camera = nullptr;
 
 void SetEntityTraits(type_t id, const EntityTraits* traits)
 {

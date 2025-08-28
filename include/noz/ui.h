@@ -151,6 +151,7 @@ Element* GetRootElement(Canvas* canvas);
 void SetStyleSheet(Canvas* canvas, StyleSheet* sheet);
 StyleSheet* GetStyleSheet(Canvas* canvas);
 void MarkDirty(Canvas* canvas);
+void SetVisible(Canvas* element, bool visible);
 
 // @element
 

@@ -43,9 +43,16 @@ static void LabelRenderContent(Element* element, const Style& style)
     if (!impl->mesh)
         CreateTextMesh(impl, style);
 
+    if (!impl->mesh)
+        return;
+
+    auto mesh = GetMesh(impl->mesh);
+    if (!mesh)
+        return;
+
     BindColor(style.color.value);
     BindMaterial(GetMaterial(impl->mesh));
-    DrawMesh(GetMesh(impl->mesh));
+    DrawMesh(mesh);
 }
 
 static void MarkDirty(LabelImpl* impl)

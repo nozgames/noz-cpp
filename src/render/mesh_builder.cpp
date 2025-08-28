@@ -667,7 +667,6 @@ void mesh_builder::add_cone(
 Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const name_t* name)
 {
     assert(builder);
-    assert(name);
     MeshBuilderImpl* impl = Impl(builder);
     return CreateMesh(
         allocator,

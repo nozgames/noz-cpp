@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+SDL_GPURenderPass* BeginUIPassGPU();
+
 // todo: we can build a single bone buffer to upload and just add bone_offset to the model buffer for each mesh
 
 enum RenderCommandType
@@ -17,6 +19,7 @@ enum RenderCommandType
     command_type_set_scissor,
     command_type_draw_mesh,
     command_type_begin_pass,
+    command_type_begin_ui_pass,
     command_type_begin_shadow_pass,
     command_type_begin_gamma_pass,
     command_type_end_pass,
@@ -154,6 +157,12 @@ void BeginRenderPass(bool clear, color_t clear_color, bool msaa, Texture* target
                 .color = clear_color,
                 .msaa = msaa,
                 .target = target}}};
+    AddRenderCommand(&cmd);
+}
+
+void BeginUIPass()
+{
+    RenderCommand cmd = { .type = command_type_begin_ui_pass };
     AddRenderCommand(&cmd);
 }
 
@@ -348,6 +357,10 @@ void ExecuteRenderCommands(SDL_GPUCommandBuffer* cb)
         case command_type_end_pass:
             EndRenderPassGPU();
             pass = nullptr;
+            break;
+
+        case command_type_begin_ui_pass:
+            pass = BeginUIPassGPU();
             break;
 
         case command_type_begin_shadow_pass:

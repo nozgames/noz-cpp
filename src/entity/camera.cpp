@@ -3,6 +3,7 @@
 //
 
 void DrawMeshRenderers(Camera* camera);
+void DrawWorldCanvases(Camera* camera);
 
 struct CameraImpl
 {
@@ -120,4 +121,5 @@ void Render(Camera* camera)
 {
     BindCamera(camera);
     DrawMeshRenderers(camera);
+    DrawWorldCanvases(camera);
 }

@@ -492,41 +492,6 @@ bool ExpectColor(Tokenizer& tok, Token* token, color_t* result)
 
     char c = PeekChar(tok);
 
-    if (IsIdentifier(c, true))
-    {
-        if (!ExpectIdentifier(tok, token))
-            return false;
-
-        struct ColorName { const char* name; color_t color; };
-        static const ColorName predefined_colors[] = {
-            {"black", {0.0f, 0.0f, 0.0f, 1.0f}},
-            {"white", {1.0f, 1.0f, 1.0f, 1.0f}},
-            {"red", {1.0f, 0.0f, 0.0f, 1.0f}},
-            {"green", {0.0f, 0.5f, 0.0f, 1.0f}},
-            {"blue", {0.0f, 0.0f, 1.0f, 1.0f}},
-            {"yellow", {1.0f, 1.0f, 0.0f, 1.0f}},
-            {"cyan", {0.0f, 1.0f, 1.0f, 1.0f}},
-            {"magenta", {1.0f, 0.0f, 1.0f, 1.0f}},
-            {"gray", {0.5f, 0.5f, 0.5f, 1.0f}},
-            {"grey", {0.5f, 0.5f, 0.5f, 1.0f}},
-            {"orange", {1.0f, 0.65f, 0.0f, 1.0f}},
-            {"pink", {1.0f, 0.75f, 0.8f, 1.0f}},
-            {"purple", {0.5f, 0.0f, 0.5f, 1.0f}},
-            {"brown", {0.65f, 0.16f, 0.16f, 1.0f}},
-            {"transparent", {0.0f, 0.0f, 0.0f, 0.0f}},
-            {nullptr, {0.0f, 0.0f, 0.0f, 0.0f}}
-        };
-
-        for (const ColorName* color = predefined_colors; color->name != nullptr; color++)
-            if (strnicmp(color->name, token->value, token->length) != 0)
-            {
-                *result = color->color;
-                return true;
-            }
-
-        return false;
-    }
-
     // Handle hex colors: #RRGGBB or #RRGGBBAA
     if (PeekChar(tok) == '#')
     {
@@ -589,9 +554,9 @@ bool ExpectColor(Tokenizer& tok, Token* token, color_t* result)
 
         EndToken(tok, &temp, TOKEN_TYPE_COLOR);
 
-        result->r = color.r;
-        result->g = color.g;
-        result->b = color.b;
+        result->r = color.r / 255.0f;
+        result->g = color.g / 255.0f;
+        result->b = color.b / 255.0f;
         result->a = color.a;
         return true;
     }
@@ -603,12 +568,39 @@ bool ExpectColor(Tokenizer& tok, Token* token, color_t* result)
             return false;
 
         EndToken(tok, &temp, TOKEN_TYPE_COLOR);
-        result->r = color.r;
-        result->g = color.g;
-        result->b = color.b;
+        result->r = color.r / 255.0f;
+        result->g = color.g / 255.0f;
+        result->b = color.b / 255.0f;
         result->a = 1.0f;
         return true;
     }
+
+    struct ColorName { const char* name; color_t color; };
+    static const ColorName predefined_colors[] = {
+        {"black", {0.0f, 0.0f, 0.0f, 1.0f}},
+        {"white", {1.0f, 1.0f, 1.0f, 1.0f}},
+        {"red", {1.0f, 0.0f, 0.0f, 1.0f}},
+        {"green", {0.0f, 0.5f, 0.0f, 1.0f}},
+        {"blue", {0.0f, 0.0f, 1.0f, 1.0f}},
+        {"yellow", {1.0f, 1.0f, 0.0f, 1.0f}},
+        {"cyan", {0.0f, 1.0f, 1.0f, 1.0f}},
+        {"magenta", {1.0f, 0.0f, 1.0f, 1.0f}},
+        {"gray", {0.5f, 0.5f, 0.5f, 1.0f}},
+        {"grey", {0.5f, 0.5f, 0.5f, 1.0f}},
+        {"orange", {1.0f, 0.65f, 0.0f, 1.0f}},
+        {"pink", {1.0f, 0.75f, 0.8f, 1.0f}},
+        {"purple", {0.5f, 0.0f, 0.5f, 1.0f}},
+        {"brown", {0.65f, 0.16f, 0.16f, 1.0f}},
+        {"transparent", {0.0f, 0.0f, 0.0f, 0.0f}},
+        {nullptr, {0.0f, 0.0f, 0.0f, 0.0f}}
+    };
+
+    for (const ColorName* color = predefined_colors; color->name != nullptr; color++)
+        if (IsValue(temp, color->name))
+        {
+            *result = color->color;
+            return true;
+        }
 
     return false;
 }

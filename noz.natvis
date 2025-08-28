@@ -82,6 +82,13 @@ Place this file in your project directory or Visual Studio's natvis folder.
     </Expand>
   </Type>
 
+  <Type Name="TextMesh">
+    <DisplayString>TextMesh</DisplayString>
+    <Expand>
+      <ExpandedItem>(TextMeshImpl*)this</ExpandedItem>
+    </Expand>
+  </Type>
+
   <!-- Font visualizer -->
   <Type Name="Font">
     <DisplayString>Font</DisplayString>

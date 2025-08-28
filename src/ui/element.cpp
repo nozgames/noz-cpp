@@ -5,7 +5,12 @@
 void MarkDirty(Canvas* canvas);
 void RenderElementQuad(const color_t& color, Texture* texture);
 
-typedef u32 ElementFlags;
+
+struct ElementFlags
+{
+    u32 value;
+} __attribute__((packed));
+
 constexpr u32 ELEMENT_FLAG_VISIBLE = 1 << 0;
 
 struct ElementImpl
@@ -58,7 +63,7 @@ Element* CreateRootElement(Allocator* allocator, Canvas* canvas, const name_t* i
     auto element = CreateElement(allocator, id);
     auto impl = Impl(element);
     impl->canvas = canvas;
-    impl->flags = ELEMENT_FLAG_VISIBLE;
+    impl->flags.value = ELEMENT_FLAG_VISIBLE;
     impl->style = GetDefaultStyle();
     impl->style.width = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_PERCENT, 1.0f };
     impl->style.height = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_PERCENT, 1.0f };
@@ -72,7 +77,7 @@ Element* CreateElement(Allocator* allocator, size_t element_size, type_t element
     auto impl = Impl(element);
     impl->id = id;
     impl->style = GetDefaultStyle();
-    impl->flags = ELEMENT_FLAG_VISIBLE;
+    impl->flags.value = ELEMENT_FLAG_VISIBLE;
     Init(impl->children, offsetof(ElementImpl, node_child));
     return element;
 }
@@ -119,29 +124,21 @@ void RemoveFromParent(Element* element)
     impl->parent = nullptr;
 }
 
-bool IsInCanvas(Element* element)
-{
-    return Impl(element)->canvas;
-}
-
-Canvas* GetCanvas(Element* element)
-{
-    return Impl(element)->canvas;
-}
-
-bool IsVisible(Element* element)
-{
-    return (Impl(element)->flags & ELEMENT_FLAG_VISIBLE) != 0;
-}
+bool IsInCanvas(Element* element) { return Impl(element)->canvas; }
+Canvas* GetCanvas(Element* element) { return Impl(element)->canvas; }
+bool IsVisible(Element* element) { return (Impl(element)->flags.value & ELEMENT_FLAG_VISIBLE) != 0; }
 
 void SetVisible(Element* element, bool value)
 {
     auto impl = Impl(element);
 
+    if (IsVisible(element) == value)
+        return;
+
     if (value)
-        impl->flags |= ELEMENT_FLAG_VISIBLE;
+        impl->flags.value |= ELEMENT_FLAG_VISIBLE;
     else
-        impl->flags &= ~ELEMENT_FLAG_VISIBLE;
+        impl->flags.value &= ~ELEMENT_FLAG_VISIBLE;
 }
 
 void MarkDirty(Element* element)
@@ -661,7 +658,7 @@ static PseudoState GetEffectivePseudoState(ElementImpl* impl)
     return PSEUDO_STATE_NONE;
 }
 
-static bool has_background(ElementImpl* impl)
+static bool HasBackground(ElementImpl* impl)
 {
     return impl->style.background_color.value.a > 0;
 }
@@ -673,7 +670,7 @@ void RenderElement(Element* element, const mat4& canvas_transform)
 
     auto impl = Impl(element);
     auto traits = GetElementTraits(GetType(element));
-    auto should_render_background = has_background(impl);
+    auto should_render_background = HasBackground(impl);
     auto should_render_content = traits->render_content;
 
     if (should_render_background)

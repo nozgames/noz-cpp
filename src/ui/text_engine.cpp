@@ -122,7 +122,7 @@ static void CreateTextMesh(Allocator* allocator, TextMeshImpl* impl, const TextR
     if (!IsEmpty(text))
         current_x = -GetGlyph(request.font, text.value[0])->bearing.x * font_size;
 
-    MeshBuilder* builder = CreateMeshBuilder(allocator, (int)text.length * 4, (int)text.length * 6);
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, (int)text.length * 4, (int)text.length * 6);
     for (size_t i = 0; i < text.length; ++i)
     {
         char ch = text.value[i];
@@ -140,7 +140,7 @@ static void CreateTextMesh(Allocator* allocator, TextMeshImpl* impl, const TextR
     }
 
     // Create mesh from builder data
-    auto mesh = CreateMesh(allocator, builder, GetName(text.value));
+    auto mesh = CreateMesh(allocator, builder, nullptr);
 
     impl->mesh = mesh;
     impl->material = GetMaterial(request.font);
@@ -162,20 +162,13 @@ Material* GetMaterial(TextMesh* tm)
     return Impl(tm)->material;
 }
 
-void RenderTextMesh(TextMesh* tm)
-{
-    auto impl = Impl(tm);
-    BindMaterial(impl->material);
-    DrawMesh(impl->mesh);
-}
-
 TextMesh* CreateTextMesh(Allocator* allocator, const TextRequest& request)
 {
     auto tm = (TextMesh*)CreateObject(allocator, sizeof(TextMeshImpl), TYPE_TEXT_MESH);
     auto impl = Impl(tm);
 
     PushScratch();
-    CreateTextMesh(ALLOCATOR_SCRATCH, impl, request);
+    CreateTextMesh(allocator, impl, request);
     PopScratch();
     return tm;
 }

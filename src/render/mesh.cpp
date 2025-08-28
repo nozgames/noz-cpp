@@ -5,7 +5,7 @@
 struct MeshImpl 
 {
     OBJECT_BASE;
-    const name_t* mesh;
+    const name_t* name;
     size_t vertex_count;
     size_t index_count;
     SDL_GPUBuffer* vertex_buffer;
@@ -61,6 +61,9 @@ Mesh* CreateMesh(
     assert(normals);
     assert(uvs);
     assert(indices);
+
+    if (vertex_count == 0 || index_count == 0)
+        return nullptr;
 
     auto mesh = CreateMesh(allocator, vertex_count, index_count);
     auto impl = Impl(mesh);
@@ -165,7 +168,7 @@ static void UploadMesh(MeshImpl* impl, const name_t* name)
     vertex_info.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
     vertex_info.size = (uint32_t)(sizeof(mesh_vertex) * vertex_count);
     vertex_info.props = SDL_CreateProperties();
-    SDL_SetStringProperty(vertex_info.props, SDL_PROP_GPU_BUFFER_CREATE_NAME_STRING, name->value);
+    SDL_SetStringProperty(vertex_info.props, SDL_PROP_GPU_BUFFER_CREATE_NAME_STRING, name ? name->value : "mesh");
     impl->vertex_buffer = SDL_CreateGPUBuffer(g_device, &vertex_info);
     SDL_DestroyProperties(vertex_info.props);
 
@@ -193,7 +196,7 @@ static void UploadMesh(MeshImpl* impl, const name_t* name)
     index_info.usage = SDL_GPU_BUFFERUSAGE_INDEX;
     index_info.size = (uint32_t)(sizeof(uint16_t) * index_count);
     index_info.props = SDL_CreateProperties();
-    SDL_SetStringProperty(vertex_info.props, SDL_PROP_GPU_BUFFER_CREATE_NAME_STRING, name->value);
+    SDL_SetStringProperty(vertex_info.props, SDL_PROP_GPU_BUFFER_CREATE_NAME_STRING, name ? name->value : "mesh");
     impl->index_buffer = SDL_CreateGPUBuffer(g_device, &index_info);
     SDL_DestroyProperties(index_info.props);
 
