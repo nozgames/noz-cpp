@@ -8,8 +8,8 @@ typedef u16 type_t;
 
 enum Type : type_t
 {
-    TYPE_INVALID = (u16)-1,
-    TYPE_UNKNOWN = (u16)-1000,
+    TYPE_INVALID = (u16)0,
+    TYPE_UNKNOWN = (u16)256,
     TYPE_STREAM,
     TYPE_LIST,
     TYPE_MAP,
@@ -26,16 +26,16 @@ enum Type : type_t
     TYPE_TEXTURE,
     TYPE_STYLE_SHEET,
     TYPE_ENTITY,
+    TYPE_COMPONENT,
     TYPE_CAMERA,
     TYPE_MESH_RENDERER,
     TYPE_CANVAS,
     TYPE_ELEMENT,
     TYPE_TEXT_MESH,
-    TYPE_LABEL,
-    TYPE_SCENE,
+    TYPE_LABEL
 };
 
-constexpr int TYPE_COUNT = 0xFFFF + 1;
+constexpr int TYPE_COUNT = 512;
 
 struct Object;
 

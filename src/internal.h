@@ -110,10 +110,6 @@ typedef struct animation_track
 void InitAllocator(ApplicationTraits* traits);
 void ShutdownAllocator();
 
-// @scene
-void InitScene();
-void ShutdownScene();
-
 // @time
 void InitTime();
 void ShutdownTime();

@@ -144,9 +144,4 @@ Canvas* CreateCanvas(Allocator* allocator, CanvasType type, float reference_widt
 void InitCanvas()
 {
     Init(g_screen_render, offsetof(CanvasImpl, node_screen_render));
-
-    static EntityTraits traits = {
-        .render = CanvasRender
-    };
-    SetEntityTraits(TYPE_CANVAS, &traits);
 }

@@ -38,6 +38,8 @@ void ExitOutOfMemory(const char* message=nullptr);
 ivec2 GetScreenSize();
 float GetScreenAspectRatio();
 
+void ShowCursor(bool show);
+
 // @time
 float GetDeltaTime();
 float GetFixedTime();

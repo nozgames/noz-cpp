@@ -10,6 +10,8 @@ void InitTypes();
 void InitUI();
 void InitEvent(ApplicationTraits* traits);
 void InitName(ApplicationTraits* traits);
+void InitEntity();
+void ShutdownEntity();
 void ShutdownEvent();
 void ShutdownUI();
 void ShutdownName();
@@ -167,7 +169,7 @@ void InitApplication(ApplicationTraits* traits)
     }
 #endif // _HOTLOAD
 
-    InitScene();
+    InitEntity();
     InitUI();
 }
 
@@ -188,7 +190,7 @@ void ShutdownApplication()
         g_application.asset_allocator = nullptr;
     }
 
-    ShutdownScene();
+    ShutdownEntity();
     ShutdownUI();
     ShutdownPhysics();
     ShutdownTime();
@@ -231,4 +233,13 @@ ivec2 GetScreenSize()
 float GetScreenAspectRatio()
 {
     return g_application.screen_aspect_ratio;
+}
+
+
+void ShowCursor(bool cursor)
+{
+    if (cursor)
+        SDL_ShowCursor();
+    else
+        SDL_HideCursor();
 }

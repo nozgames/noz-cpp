@@ -88,3 +88,12 @@ target_link_libraries(noz
 )
 
 add_subdirectory(tools/importer)
+
+
+
+if(CMAKE_GENERATOR STREQUAL "Ninja")
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+    # This makes ninja show shorter status messages
+    set(ENV{NINJA_STATUS} "[%f/%t] ")
+endif()
+

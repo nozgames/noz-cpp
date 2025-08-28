@@ -98,4 +98,27 @@ Place this file in your project directory or Visual Studio's natvis folder.
     </Expand>
   </Type>
 
+  <!-- Component -->
+  <Type Name="Component">
+    <DisplayString>Component</DisplayString>
+    <Expand>
+      <ExpandedItem>(ComponentImpl*)this</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="ComponentBase">
+    <DisplayString>Component</DisplayString>
+    <Expand>
+      <ExpandedItem>(ComponentImpl*)this</ExpandedItem>
+    </Expand>
+  </Type>
+
+
+  <Type Name="Camera">
+    <DisplayString>Camera</DisplayString>
+    <Expand>
+      <ExpandedItem>(CameraImpl*)this</ExpandedItem>
+    </Expand>
+  </Type>
+
 </AutoVisualizer>

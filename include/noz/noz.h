@@ -62,7 +62,7 @@ inline int i32_min(i32 a, i32 b) { return (a < b) ? a : b; }
 #include "platform.h"
 #include "renderer.h"
 #include "application.h"
-#include "scene.h"
+#include "entity.h"
 #include "types.h"
 #include "ui.h"
 #include "input.h"

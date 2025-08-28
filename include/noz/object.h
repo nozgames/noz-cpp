@@ -16,7 +16,7 @@
 
 struct ObjectBase
 {
-    u8 data[OBJECT_BASE_SIZE];
+    u8 _object[OBJECT_BASE_SIZE];
 };
 
 
