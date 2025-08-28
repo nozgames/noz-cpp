@@ -18,7 +18,7 @@ MeshRenderer* CreateMeshRenderer(Allocator* allocator)
 {
     auto renderer = (MeshRenderer*)CreateComponent(allocator, sizeof(MeshRendererImpl), TYPE_MESH_RENDERER);
     auto impl = Impl(renderer);
-    impl->render_layer = 1;
+    impl->render_layer = RENDER_MASK_DEFAULT;
     return renderer;
 }
 
