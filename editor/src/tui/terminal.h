@@ -4,6 +4,14 @@
 
 #pragma once
 
+// Special key codes (using values that don't conflict with ASCII)
+#define KEY_LEFT    260
+#define KEY_RIGHT   261
+#define KEY_UP      262
+#define KEY_DOWN    263
+#define KEY_HOME    264
+#define KEY_END     265
+
 using TerminalRenderCallback = std::function<void(int width, int height)>;
 using TerminalResizeCallback = std::function<void(int new_width, int new_height)>;
 

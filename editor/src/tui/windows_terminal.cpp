@@ -9,10 +9,10 @@
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
-#include <windows.h>
-#include <string>
-#include <sstream>
 #include <algorithm>
+#include <sstream>
+#include <string>
+#include <windows.h>
 
 static HANDLE g_console_input = INVALID_HANDLE_VALUE;
 static HANDLE g_console_output = INVALID_HANDLE_VALUE;
@@ -31,12 +31,12 @@ static std::atomic<bool> g_needs_redraw = false;
 
 // VT sequence color codes for different terminal colors
 static const char* g_color_sequences[] = {
-    "\033[0m",           // Default (reset)
-    "\033[30;47m",       // STATUS_BAR (black on white)
-    "\033[37;40m",       // COMMAND_LINE (white on black)  
-    "\033[92m",          // SUCCESS (bright green)
-    "\033[91m",          // ERROR (bright red)
-    "\033[93m"           // WARNING (bright yellow)
+    "\033[0m",     // Default (reset)
+    "\033[30;47m", // STATUS_BAR (black on white)
+    "\033[37;40m", // COMMAND_LINE (white on black)
+    "\033[92m",    // SUCCESS (bright green)
+    "\033[91m",    // ERROR (bright red)
+    "\033[93m"     // WARNING (bright yellow)
 };
 
 static int g_current_color = 0;
@@ -66,8 +66,8 @@ void UpdateScreenSize()
     // Debug every 100 calls to see if we're polling
     if (debug_counter % 100 == 0)
     {
-        LogDebug("UpdateScreenSize poll #%d: current=%dx%d, detected=%dx%d",
-                 debug_counter, g_screen_width, g_screen_height, new_width, new_height);
+        LogDebug("UpdateScreenSize poll #%d: current=%dx%d, detected=%dx%d", debug_counter, g_screen_width,
+                 g_screen_height, new_width, new_height);
     }
 
     if (new_width != g_screen_width || new_height != g_screen_height)
@@ -102,27 +102,26 @@ void RenderTerminal()
 
     // Clear the output buffer
     g_output_buffer.clear();
-    
+
     // Reset cursor position for rendering
     g_cursor_x = 0;
     g_cursor_y = 0;
 
     // Always call the render callback to populate the output buffer
     g_render_callback(g_screen_width, g_screen_height);
-        
+
     // Write the entire output buffer at once for maximum performance
     if (!g_output_buffer.empty())
     {
         DWORD written;
-        WriteConsoleA(g_console_output, g_output_buffer.c_str(), 
-                      (DWORD)g_output_buffer.length(), &written, nullptr);
-        FlushFileBuffers(g_console_output);  // Force immediate output
+        WriteConsoleA(g_console_output, g_output_buffer.c_str(), (DWORD)g_output_buffer.length(), &written, nullptr);
+        FlushFileBuffers(g_console_output); // Force immediate output
     }
     else
     {
         LogDebug("Output buffer is empty!");
     }
-    
+
     // Clear the redraw flag
     g_needs_redraw = false;
 }
@@ -137,26 +136,49 @@ int GetTerminalKey()
 {
     INPUT_RECORD input_record;
     DWORD events_read;
-    
+
     // Check if input is available without blocking
     DWORD events_available;
     if (!GetNumberOfConsoleInputEvents(g_console_input, &events_available) || events_available == 0)
     {
         return ERR; // No input available
     }
-    
+
     while (ReadConsoleInput(g_console_input, &input_record, 1, &events_read) && events_read > 0)
     {
         if (input_record.EventType == KEY_EVENT && input_record.Event.KeyEvent.bKeyDown)
         {
-            // Handle special keys
-            if (input_record.Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE)
-            {
-                return 27; // ESC
-            }
-            
-            // Return the ASCII character
+            // Handle special keys first
+            WORD vk = input_record.Event.KeyEvent.wVirtualKeyCode;
             char ch = input_record.Event.KeyEvent.uChar.AsciiChar;
+            LogDebug("Key event: VK=%d, ASCII=%d", vk, (int)ch);
+
+            switch (vk)
+            {
+            case VK_ESCAPE:
+                LogDebug("Matched VK_ESCAPE");
+                return 27; // ESC
+            case VK_LEFT:
+                LogDebug("Matched VK_LEFT");
+                return KEY_LEFT;
+            case VK_RIGHT:
+                LogDebug("Matched VK_RIGHT");
+                return KEY_RIGHT;
+            case VK_UP:
+                LogDebug("Matched VK_UP");
+                return KEY_UP;
+            case VK_DOWN:
+                LogDebug("Matched VK_DOWN");
+                return KEY_DOWN;
+            case VK_HOME:
+                LogDebug("Matched VK_HOME");
+                return KEY_HOME;
+            case VK_END:
+                LogDebug("Matched VK_END");
+                return KEY_END;
+            }
+
+            // Return the ASCII character for regular keys
             if (ch != 0)
             {
                 return ch;
@@ -179,7 +201,7 @@ int GetTerminalKey()
             UpdateScreenSize();
         }
     }
-    
+
     return ERR; // No input available
 }
 
@@ -200,7 +222,7 @@ void ClearScreen()
     g_output_buffer += "\033[0m\033[2J\033[H";
     g_cursor_x = 0;
     g_cursor_y = 0;
-    g_current_color = 0;  // Reset current color tracking
+    g_current_color = 0; // Reset current color tracking
 }
 
 void MoveCursor(int y, int x)
@@ -215,12 +237,11 @@ void MoveCursor(int y, int x)
 void AddChar(char ch)
 {
     // Only add character if within screen bounds
-    if (g_cursor_y >= 0 && g_cursor_y < g_screen_height && 
-        g_cursor_x >= 0 && g_cursor_x < g_screen_width)
+    if (g_cursor_y >= 0 && g_cursor_y < g_screen_height && g_cursor_x >= 0 && g_cursor_x < g_screen_width)
     {
         g_output_buffer += ch;
     }
-    
+
     // Advance cursor position tracking
     g_cursor_x++;
     if (g_cursor_x >= g_screen_width)
@@ -238,12 +259,12 @@ void AddString(const char* str)
         // Calculate how much of the string fits on current line
         int remaining_on_line = g_screen_width - g_cursor_x;
         int str_len = static_cast<int>(strlen(str));
-        
+
         if (remaining_on_line > 0)
         {
             int chars_to_add = std::min(str_len, remaining_on_line);
             g_output_buffer.append(str, chars_to_add);
-            
+
             // Update cursor position
             g_cursor_x += chars_to_add;
             if (g_cursor_x >= g_screen_width)
@@ -280,7 +301,7 @@ void UnsetColor(int pair)
 void SetColor256(int fg, int bg)
 {
     std::string color_seq = "\033[";
-    
+
     if (fg >= 0 && fg <= 255)
     {
         color_seq += "38;5;" + std::to_string(fg);
@@ -293,7 +314,7 @@ void SetColor256(int fg, int bg)
     {
         color_seq += "48;5;" + std::to_string(bg);
     }
-    
+
     color_seq += "m";
     g_output_buffer += color_seq;
 }
@@ -301,15 +322,15 @@ void SetColor256(int fg, int bg)
 void SetColorRGB(int r, int g, int b, int bg_r, int bg_g, int bg_b)
 {
     std::string color_seq = "\033[";
-    
+
     // Clamp RGB values to 0-255
     r = std::max(0, std::min(255, r));
     g = std::max(0, std::min(255, g));
     b = std::max(0, std::min(255, b));
-    
+
     // Set foreground RGB color
     color_seq += "38;2;" + std::to_string(r) + ";" + std::to_string(g) + ";" + std::to_string(b);
-    
+
     // Set background RGB color if provided
     if (bg_r >= 0 && bg_g >= 0 && bg_b >= 0)
     {
@@ -318,7 +339,7 @@ void SetColorRGB(int r, int g, int b, int bg_r, int bg_g, int bg_b)
         bg_b = std::max(0, std::min(255, bg_b));
         color_seq += ";48;2;" + std::to_string(bg_r) + ";" + std::to_string(bg_g) + ";" + std::to_string(bg_b);
     }
-    
+
     color_seq += "m";
     g_output_buffer += color_seq;
 }
@@ -331,7 +352,7 @@ void SetBold(bool enabled)
     }
     else
     {
-        g_output_buffer += "\033[22m";  // Reset bold/dim
+        g_output_buffer += "\033[22m"; // Reset bold/dim
     }
 }
 
@@ -343,7 +364,7 @@ void SetUnderline(bool enabled)
     }
     else
     {
-        g_output_buffer += "\033[24m";  // Reset underline
+        g_output_buffer += "\033[24m"; // Reset underline
     }
 }
 
@@ -355,7 +376,7 @@ void SetItalic(bool enabled)
     }
     else
     {
-        g_output_buffer += "\033[23m";  // Reset italic
+        g_output_buffer += "\033[23m"; // Reset italic
     }
 }
 
@@ -365,7 +386,7 @@ void SetScrollRegion(int top, int bottom)
     // Clamp values to valid screen range
     top = std::max(1, std::min(g_screen_height, top));
     bottom = std::max(top, std::min(g_screen_height, bottom));
-    
+
     g_output_buffer += "\033[" + std::to_string(top) + ";" + std::to_string(bottom) + "r";
 }
 
@@ -405,72 +426,81 @@ void InitTerminal()
     // Get console handles
     g_console_input = GetStdHandle(STD_INPUT_HANDLE);
     g_console_output = GetStdHandle(STD_OUTPUT_HANDLE);
-    
+
     if (g_console_input == INVALID_HANDLE_VALUE || g_console_output == INVALID_HANDLE_VALUE)
         return;
 
-    // Set input mode to capture mouse and window events
+    // Set input mode to capture mouse, window, and key events
     DWORD input_mode;
     GetConsoleMode(g_console_input, &input_mode);
+    LogDebug("Original console input mode: 0x%08x", input_mode);
+
+    // Disable line input, echo, and processed input to get raw key events
     input_mode &= ~ENABLE_LINE_INPUT;
     input_mode &= ~ENABLE_ECHO_INPUT;
     input_mode &= ~ENABLE_PROCESSED_INPUT;
     input_mode &= ~ENABLE_AUTO_POSITION;
+    // Disable VT input to get virtual key codes instead of escape sequences
+    input_mode &= ~ENABLE_VIRTUAL_TERMINAL_INPUT;
+    // Disable quick edit to prevent interfering with key capture
+    input_mode &= ~ENABLE_QUICK_EDIT_MODE;
+
+    // Enable mouse and window input
     input_mode |= ENABLE_MOUSE_INPUT;
     input_mode |= ENABLE_WINDOW_INPUT;
-    input_mode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
-    input_mode |= ENABLE_QUICK_EDIT_MODE;
     input_mode |= ENABLE_EXTENDED_FLAGS;
+
     SetConsoleMode(g_console_input, input_mode);
-    
+    LogDebug("New console input mode: 0x%08x", input_mode);
+
     // Set output mode - this is the key change for VT sequences
     DWORD output_mode;
     GetConsoleMode(g_console_output, &output_mode);
     LogDebug("Original console output mode: 0x%08x", output_mode);
-    
+
     output_mode |= ENABLE_PROCESSED_OUTPUT;
-    output_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;  // Enable VT sequence processing
+    output_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING; // Enable VT sequence processing
     output_mode &= ~ENABLE_WRAP_AT_EOL_OUTPUT;
-    
+
     BOOL result = SetConsoleMode(g_console_output, output_mode);
     LogDebug("SetConsoleMode result: %s, new mode: 0x%08x", result ? "SUCCESS" : "FAILED", output_mode);
-    
-    if (!result) {
+
+    if (!result)
+    {
         LogDebug("Failed to enable VT processing, error: %d", GetLastError());
         // Fall back to legacy console API if VT sequences aren't supported
     }
-    
+
     // Verify VT processing is actually enabled
     DWORD final_mode;
     GetConsoleMode(g_console_output, &final_mode);
     LogDebug("Final console output mode: 0x%08x", final_mode);
     LogDebug("VT processing enabled: %s", (final_mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? "YES" : "NO");
-    
+
     // Initialize screen size
     UpdateScreenSize();
-    
+
     // Force remove scrollbar by setting buffer size aggressively
     COORD buffer_size = {(SHORT)g_screen_width, (SHORT)g_screen_height};
     SetConsoleScreenBufferSize(g_console_output, buffer_size);
 
     // Initialize output buffer and cursor position
-    g_output_buffer.reserve(g_screen_width * g_screen_height * 2);  // Reserve space for efficiency
+    g_output_buffer.reserve(g_screen_width * g_screen_height * 2); // Reserve space for efficiency
     g_cursor_x = 0;
     g_cursor_y = 0;
     g_current_color = 0;
 
     // Switch to alternate screen buffer and hide cursor
     g_output_buffer.clear();
-    g_output_buffer += "\033[?1049h";    // Enable alternate screen buffer
-    g_output_buffer += "\033[2J";        // Clear screen
-    g_output_buffer += "\033[H";         // Move to home position
-    g_output_buffer += "\033[?25l";      // Hide cursor
-    
+    g_output_buffer += "\033[?1049h"; // Enable alternate screen buffer
+    g_output_buffer += "\033[2J";     // Clear screen
+    g_output_buffer += "\033[H";      // Move to home position
+    g_output_buffer += "\033[?25l";   // Hide cursor
+
     // Write initial setup sequences
     DWORD written;
-    WriteConsoleA(g_console_output, g_output_buffer.c_str(), 
-                  (DWORD)g_output_buffer.length(), &written, nullptr);
-    
+    WriteConsoleA(g_console_output, g_output_buffer.c_str(), (DWORD)g_output_buffer.length(), &written, nullptr);
+
     g_output_buffer.clear();
 }
 
@@ -478,18 +508,17 @@ void ShutdownTerminal()
 {
     // Reset to default colors, show cursor, and exit alternate screen
     g_output_buffer.clear();
-    g_output_buffer += "\033[0m";        // Reset all attributes
-    g_output_buffer += "\033[?25h";      // Show cursor
-    g_output_buffer += "\033[?1049l";    // Disable alternate screen buffer (restore original screen)
-    
+    g_output_buffer += "\033[0m";     // Reset all attributes
+    g_output_buffer += "\033[?25h";   // Show cursor
+    g_output_buffer += "\033[?1049l"; // Disable alternate screen buffer (restore original screen)
+
     // Write final reset sequences
     if (!g_output_buffer.empty())
     {
         DWORD written;
-        WriteConsoleA(g_console_output, g_output_buffer.c_str(), 
-                      (DWORD)g_output_buffer.length(), &written, nullptr);
+        WriteConsoleA(g_console_output, g_output_buffer.c_str(), (DWORD)g_output_buffer.length(), &written, nullptr);
     }
-    
+
     // Reset console modes to default
     if (g_console_input != INVALID_HANDLE_VALUE)
     {

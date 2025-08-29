@@ -38,12 +38,28 @@ void Draw(TextInput* input)
     assert(input);
     TextInputImpl* impl = static_cast<TextInputImpl*>(input);
     
-    // Always add the text (even if empty) and show cursor position if active
-    AddString(impl->buffer.c_str());
-    
-    // Add cursor indicator if active  
     if (impl->active) {
-        AddChar('\xDB');  // Solid block character (█)
+        // Render text with cursor at correct position
+        for (size_t i = 0; i <= impl->buffer.length(); ++i) {
+            if (i == impl->cursor_pos) {
+                // Show cursor at this position
+                if (i < impl->buffer.length()) {
+                    // Cursor is over a character - show character with inverse video
+                    AddString("\033[7m");  // Enable reverse video (inverse)
+                    AddChar(impl->buffer[i]);
+                    AddString("\033[27m"); // Disable reverse video
+                } else {
+                    // Cursor is after the last character - show cursor block
+                    AddChar('\xDB');  // Solid block character (█)
+                }
+            } else if (i < impl->buffer.length()) {
+                // Regular character
+                AddChar(impl->buffer[i]);
+            }
+        }
+    } else {
+        // Just render the text without cursor when inactive
+        AddString(impl->buffer.c_str());
     }
 }
 
@@ -72,6 +88,26 @@ bool HandleKey(TextInput* input, int key)
                 impl->buffer.erase(impl->cursor_pos - 1, 1);
                 impl->cursor_pos--;
             }
+            return true;
+            
+        case KEY_LEFT:
+            if (impl->cursor_pos > 0) {
+                impl->cursor_pos--;
+            }
+            return true;
+            
+        case KEY_RIGHT:
+            if (impl->cursor_pos < impl->buffer.length()) {
+                impl->cursor_pos++;
+            }
+            return true;
+            
+        case KEY_HOME:
+            impl->cursor_pos = 0;
+            return true;
+            
+        case KEY_END:
+            impl->cursor_pos = impl->buffer.length();
             return true;
             
         default:
