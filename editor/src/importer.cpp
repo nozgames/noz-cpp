@@ -11,6 +11,7 @@
 #include <noz/noz.h>
 #include <noz/asset.h>
 #include <noz/platform.h>
+#include <noz/log.h>
 #include <string>
 #include <vector>
 #include "asset_manifest.h"
@@ -37,6 +38,8 @@ static std::vector<ImportJob> g_import_queue;
 static Props* g_config = nullptr;
 static volatile bool g_running = true;
 
+// Importer uses NoZ logging system
+
 void ProcessFileChange(const fs::path& file_path, FileChangeType change_type, std::vector<AssetImporterTraits*>& importers);
 bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers);
 
@@ -48,7 +51,7 @@ void signal_handler(int sig)
     if (sig != SIGINT)
         return;
 
-    printf("\nShutting down...\n");
+    Log("Shutting down...");
     g_running = false;
 }
 
@@ -62,12 +65,12 @@ static bool LoadConfig()
 
         if (g_config != nullptr)
         {
-            printf("loaded configuration '%s'\n", config_path.string().c_str());
+            Log("loaded configuration '%s'", config_path.string().c_str());
             return true;
         }
     }
 
-    printf("missing configuration '%s'\n", config_path.string().c_str());
+    LogError("missing configuration '%s'", config_path.string().c_str());
     return false;
 }
 
@@ -255,7 +258,7 @@ bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers)
                         asset_path.replace_extension("");
                         std::string asset_name = asset_path.string();
                         std::replace(asset_name.begin(), asset_name.end(), '\\', '/');
-                        std::cout << "Imported '" << asset_name << "'" << std::endl;
+                        Log("Imported '%s'", asset_name.c_str());
 
                         // Broadcast hotload message
                         BroadcastAssetChange(asset_name);
@@ -304,22 +307,22 @@ int InitImporter()
     // Get source directories from config
     if (!g_config->HasGroup("source"))
     {
-        printf("No [source] section found in config\n");
+        LogError("No [source] section found in config");
         ShutdownFileWatcher();
         return 1;
     }
 
     // Add directories to watch (file watcher will auto-start when first directory is added)
-    printf("Adding directories to watch:\n");
+    Log("Adding directories to watch:");
     auto source = g_config->GetKeys("source");
     for (const auto& source_dir_str : source)
     {
-        printf("  - %s\n", source_dir_str.c_str());
+        Log("  - %s", source_dir_str.c_str());
         if (!WatchDirectory(fs::path(source_dir_str)))
-            printf("    WARNING: Failed to add directory '%s'\n", source_dir_str.c_str());
+            LogWarning("Failed to add directory '%s'", source_dir_str.c_str());
     }
 
-    printf("\nWatching for file changes... Press Ctrl-C to exit\n\n");
+    Log("Watching for file changes... Press Ctrl-C to exit");
 
     while (g_running)
     {
@@ -350,11 +353,11 @@ int InitImporter()
             int hotload_port = g_config->GetInt("hotload", "port", 8080);
             if (InitHotloadServer(hotload_port))
             {
-                printf("Hotload server initialized on port %d\n", hotload_port);
+                Log("Hotload server initialized on port %d", hotload_port);
             }
             else
             {
-                printf("WARNING: Failed to initialize hotload server on port %d\n", hotload_port);
+                LogWarning("Failed to initialize hotload server on port %d", hotload_port);
             }
             hotload_initialized = true;
         }
@@ -365,4 +368,10 @@ int InitImporter()
     ShutdownHotloadServer();
     g_import_queue.clear();
     return 0;
+}
+
+void ShutdownImporter()
+{
+    Log("Shutting down importer...");
+    g_running = false;
 }

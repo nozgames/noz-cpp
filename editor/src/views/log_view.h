@@ -7,17 +7,18 @@
 #include <string>
 #include <vector>
 
-class log_view {
+// Forward declaration
+class Window;
+
+class LogView {
 private:
     std::vector<std::string> messages_;
     size_t max_messages_ = 1000;
     
 public:
-    void add_message(const std::string& message);
-    void clear();
-    const std::vector<std::string>& get_messages() const;
-    size_t message_count() const;
-    
-    // For future FTXUI integration
-    void set_max_messages(size_t max_messages);
+    void AddMessage(const std::string& message);
+    void Clear();
+    void Render(Window* window, int width, int height);
+    size_t MessageCount() const;
+    void SetMaxMessages(size_t max_messages);
 };

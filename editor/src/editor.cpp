@@ -1,248 +1,353 @@
-#ifdef _WIN32
-#include <curses.h>
-#else
-#include <ncurses.h>
-#endif
-
+#include <atomic>
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <string>
-#include <vector>
 #include <thread>
-#include <atomic>
+#include <vector>
 
-#include "controls/log_view_control.h"
 #include "controls/text_input.h"
+#include "views/log_view.h"
+#include "window.h"
+#include <noz/log.h>
 
+// Forward declarations for importer functions
 int InitImporter();
+void ShutdownImporter();
 
-class noz_editor {
+// Forward declaration of editor class
+class Editor;
+
+// Global pointer to editor for log callback
+static Editor* g_editor_instance = nullptr;
+
+// Log callback function that routes NoZ logging to editor
+void editor_log_callback(const char* message);
+
+class Editor
+{
 private:
-    std::unique_ptr<log_view_control> log_view_;
-    std::unique_ptr<text_input> command_input_;
-    bool command_mode_ = false;
-    std::atomic<bool> running_ = true;
-    WINDOW* main_window_;
-    int screen_width_, screen_height_;
-    
+    // Views (data/logic)
+    LogView _log_view;
+
+    // Controls (UI rendering)
+    std::unique_ptr<text_input> _command_input;
+
+    // Window management
+    std::unique_ptr<Window> _window;
+
+    // Editor state
+    bool _command_mode = false;
+    std::atomic<bool> _running = true;
+
+    // Importer management
+    std::unique_ptr<std::thread> _importer_thread;
+    std::atomic<bool> _importer_running = false;
+
 public:
-    noz_editor() : main_window_(nullptr) {}
-    
-    ~noz_editor() {
-        cleanup();
+    Editor()
+    {
     }
-    
-    bool initialize() {
-        // Initialize ncurses
-        main_window_ = initscr();
-        if (!main_window_) {
+
+    ~Editor()
+    {
+        Cleanup();
+    }
+
+    bool Initialize()
+    {
+        _window = std::make_unique<Window>();
+        if (!_window->Initialize())
+        {
             return false;
         }
-        
-        // Get screen dimensions
-        getmaxyx(stdscr, screen_height_, screen_width_);
-        
-        // Setup ncurses options
-        cbreak();        // Disable line buffering
-        noecho();        // Don't echo keys
-        keypad(stdscr, TRUE);  // Enable function keys
-        curs_set(0);     // Hide cursor initially
-        
-        // Initialize colors if available
-        if (has_colors()) {
-            start_color();
-            init_pair(1, COLOR_BLACK, COLOR_WHITE);  // For status bar
-            init_pair(2, COLOR_WHITE, COLOR_BLACK);  // For command line
-        }
-        
-        // Create controls
-        // Log view takes most of the screen, leaving 2 rows at bottom
-        log_view_ = std::make_unique<log_view_control>(0, 0, screen_width_, screen_height_ - 2);
-        
-        // Command input on the bottom row
-        command_input_ = std::make_unique<text_input>(1, screen_height_ - 1, screen_width_ - 1);
-        
+
+        _window->SetRenderCallback([this](int width, int height) { this->RenderContent(width, height); });
+
+        _window->SetResizeCallback([this](int new_width, int new_height) { this->OnResize(new_width, new_height); });
+
+        _command_input = std::make_unique<text_input>(1, _window->GetHeight() - 1, _window->GetWidth() - 1);
+
         return true;
     }
-    
-    void cleanup() {
-        if (main_window_) {
-            endwin();
-            main_window_ = nullptr;
+
+    void Cleanup()
+    {
+        if (_importer_running)
+        {
+            StopImporter();
         }
+
+        _window.reset();
+        g_editor_instance = nullptr;
     }
-    
-    void add_log_message(const std::string& message) {
-        if (log_view_) {
-            log_view_->add_message(message);
-        }
+
+    void HandleLogMessage(const std::string& message)
+    {
+        _log_view.AddMessage(message);
+        _window->RequestRedraw();
     }
-    
-    void draw() {
-        // Save current cursor position
-        int cur_y, cur_x;
-        getyx(stdscr, cur_y, cur_x);
-        
-        // Draw everything without refreshing
-        erase(); // Clear screen buffer
-        
-        // Draw log view
-        if (log_view_) {
-            log_view_->draw(stdscr);
-        }
-        
-        // Draw status bar (second to last row)
-        if (has_colors()) {
-            attron(COLOR_PAIR(1));
-        }
-        
+
+    void OnResize(int new_width, int new_height)
+    {
+        _command_input = std::make_unique<text_input>(1, new_height - 1, new_width - 1);
+    }
+
+    void RenderContent(int width, int height)
+    {
+        _window->ClearScreen();
+        _log_view.Render(_window.get(), width, height);
+        DrawStatusBar(width, height);
+        DrawCommandLine(width, height);
+    }
+
+    void DrawStatusBar(int width, int height)
+    {
+        _window->SetColor(Window::COLOR_STATUS_BAR);
+
         std::string status = "NoZ Editor";
-        if (command_mode_) {
+        if (_command_mode)
+        {
             status += " - Command Mode";
         }
-        
-        // Fill entire status bar width
-        move(screen_height_ - 2, 0);
-        for (int i = 0; i < screen_width_; i++) {
+
+        _window->MoveCursor(height - 2, 0);
+        for (int i = 0; i < width; i++)
+        {
             char ch = (i < static_cast<int>(status.length())) ? status[i] : ' ';
-            addch(ch);
+            _window->AddChar(ch);
         }
-        
-        if (has_colors()) {
-            attroff(COLOR_PAIR(1));
-        }
-        
-        // Draw command line (bottom row)
-        if (has_colors()) {
-            attron(COLOR_PAIR(2));
-        }
-        
-        move(screen_height_ - 1, 0);
-        if (command_mode_) {
-            addch(':');
-            
-            // Draw command input text manually
-            std::string input_text = command_input_->get_text();
-            size_t cursor_pos = command_input_->get_cursor_pos();
-            int available_width = screen_width_ - 1;
-            
+
+        _window->UnsetColor(Window::COLOR_STATUS_BAR);
+    }
+
+    void DrawCommandLine(int width, int height)
+    {
+        _window->SetColor(Window::COLOR_COMMAND_LINE);
+
+        _window->MoveCursor(height - 1, 0);
+        if (_command_mode)
+        {
+            _window->AddChar(':');
+
+            std::string input_text = _command_input->get_text();
+            size_t cursor_pos = _command_input->get_cursor_pos();
+            int available_width = width - 1;
+
             // Handle scrolling for long text
             std::string display_text = input_text;
             size_t display_cursor_pos = cursor_pos;
-            
-            if (input_text.length() > static_cast<size_t>(available_width)) {
-                if (cursor_pos >= static_cast<size_t>(available_width)) {
+
+            if (input_text.length() > static_cast<size_t>(available_width))
+            {
+                if (cursor_pos >= static_cast<size_t>(available_width))
+                {
                     // Scroll text to keep cursor visible
                     size_t start = cursor_pos - available_width + 1;
                     display_text = input_text.substr(start);
                     display_cursor_pos = available_width - 1;
-                } else {
+                }
+                else
+                {
                     display_text = input_text.substr(0, available_width);
                 }
             }
-            
-            // Draw the text
-            addstr(display_text.c_str());
-            
-            // Fill remaining space
+
+            _window->AddString(display_text.c_str());
+
             int remaining = available_width - static_cast<int>(display_text.length());
-            for (int i = 0; i < remaining; i++) {
-                addch(' ');
+            for (int i = 0; i < remaining; i++)
+            {
+                _window->AddChar(' ');
             }
-            
-            // Set final cursor position
+
             int final_cursor_x = 1 + static_cast<int>(display_cursor_pos);
-            move(screen_height_ - 1, final_cursor_x);
-            
-        } else {
-            // Clear command line
-            for (int i = 0; i < screen_width_; i++) {
-                addch(' ');
+            _window->MoveCursor(height - 1, final_cursor_x);
+        }
+        else
+        {
+            for (int i = 0; i < width; i++)
+            {
+                _window->AddChar(' ');
             }
-            // Move cursor off screen when not in command mode
-            move(0, 0);
+            _window->MoveCursor(0, 0);
         }
-        
-        if (has_colors()) {
-            attroff(COLOR_PAIR(2));
-        }
-        
-        // Only now refresh everything at once
-        refresh();
+
+        _window->UnsetColor(Window::COLOR_COMMAND_LINE);
     }
-    
-    void handle_command(const std::string& command) {
-        if (command == "q" || command == "quit") {
-            running_ = false;
-        } else if (command == "import") {
-            // Run importer in background thread
-            std::thread([this]() {
-                add_log_message("Starting asset importer...");
+
+    void StartImporter()
+    {
+        if (_importer_running)
+        {
+            Log("Importer is already running");
+            return;
+        }
+
+        Log("Starting asset importer...");
+        _importer_running = true;
+
+        _importer_thread = std::make_unique<std::thread>(
+            [this]()
+            {
                 int result = InitImporter();
-                add_log_message("Importer finished with code: " + std::to_string(result));
-            }).detach();
-        } else if (command == "clear") {
-            if (log_view_) {
-                log_view_->clear();
+                _importer_running = false;
+                Log("Importer stopped with code: %d", result);
+            });
+    }
+
+    void StopImporter()
+    {
+        if (!_importer_running)
+        {
+            Log("Importer is not running");
+            return;
+        }
+
+        Log("Stopping importer...");
+        ShutdownImporter();
+
+        if (_importer_thread && _importer_thread->joinable())
+        {
+            _importer_thread->join();
+        }
+        _importer_thread.reset();
+    }
+
+    void HandleCommand(const std::string& command)
+    {
+        if (command == "q" || command == "quit")
+        {
+            _running = false;
+        }
+        else if (command == "start" || command == "import")
+        {
+            StartImporter();
+        }
+        else if (command == "stop")
+        {
+            StopImporter();
+        }
+        else if (command == "restart")
+        {
+            StopImporter();
+            std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Small delay to ensure clean shutdown
+            StartImporter();
+        }
+        else if (command == "clear")
+        {
+            _log_view.Clear();
+        }
+        else if (command == "status")
+        {
+            if (_importer_running)
+            {
+                Log("Importer is running");
             }
-        } else if (!command.empty()) {
-            add_log_message("Unknown command: " + command);
+            else
+            {
+                Log("Importer is stopped");
+            }
+        }
+        else if (!command.empty())
+        {
+            Log("Unknown command: %s", command.c_str());
+            Log("Available commands: start, stop, restart, status, clear, quit");
         }
     }
-    
-    void run() {
-        if (!initialize()) {
+
+    void Run()
+    {
+        if (!Initialize())
+        {
             std::cerr << "Failed to initialize ncurses\n";
             return;
         }
-        
-        add_log_message("NoZ Editor starting...");
-        add_log_message("Type ':import' to run asset importer");
-        add_log_message("Type ':q' to quit");
-        
-        while (running_) {
-            draw();
-            
-            int key = getch();
-            
-            if (command_mode_) {
-                // In command mode
-                if (key == '\n' || key == '\r') {
-                    // Execute command
-                    std::string command = command_input_->get_text();
-                    handle_command(command);
-                    command_mode_ = false;
-                    command_input_->set_active(false);
-                    command_input_->clear();
-                    curs_set(0);  // Hide cursor when leaving command mode
-                } else if (key == 27) { // Escape
-                    command_mode_ = false;
-                    command_input_->set_active(false);
-                    command_input_->clear();
-                    curs_set(0);  // Hide cursor when leaving command mode
-                } else {
-                    // Forward to command input
-                    command_input_->handle_key(key);
+
+        g_editor_instance = this;
+        LogInit(editor_log_callback);
+
+        Log("NoZ Editor starting...");
+        Log("Auto-starting asset importer...");
+
+        StartImporter();
+        _window->Render();
+
+        while (_running)
+        {
+            // Handle resize with highest priority
+            if (_window->ShouldResize())
+            {
+                _window->HandleResize();
+            }
+
+            _window->CheckResize();
+            int key = _window->GetKey();
+
+            if (key == ERR)
+            {
+                if (_window->NeedsRedraw())
+                {
+                    _window->Render();
                 }
-            } else {
-                // Not in command mode
-                if (key == ':') {
-                    command_mode_ = true;
-                    command_input_->set_active(true);
-                    command_input_->clear();
-                    curs_set(1);  // Show cursor in command mode
-                } else if (key == 'q') {
-                    // Quick quit with 'q' key
-                    running_ = false;
+                std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                continue;
+            }
+
+            if (_command_mode)
+            {
+                if (key == '\n' || key == '\r')
+                {
+                    std::string command = _command_input->get_text();
+                    HandleCommand(command);
+                    _command_mode = false;
+                    _command_input->set_active(false);
+                    _command_input->clear();
+                    _window->SetCursorVisible(false);
+                }
+                else if (key == 27)
+                { // Escape
+                    _command_mode = false;
+                    _command_input->set_active(false);
+                    _command_input->clear();
+                    _window->SetCursorVisible(false);
+                }
+                else
+                {
+                    _command_input->handle_key(key);
                 }
             }
+            else
+            {
+                if (key == ':')
+                {
+                    _command_mode = true;
+                    _command_input->set_active(true);
+                    _command_input->clear();
+                    _window->SetCursorVisible(true);
+                }
+                else if (key == 'q')
+                {
+                    _running = false;
+                }
+            }
+
+            _window->Render();
         }
     }
 };
 
+void editor_log_callback(const char* message)
+{
+    if (g_editor_instance)
+    {
+        g_editor_instance->HandleLogMessage(std::string(message));
+    }
+}
+
 int main(int argc, char* argv[])
 {
-    noz_editor editor;
-    editor.run();
+    Editor editor;
+    editor.Run();
     return 0;
 }
