@@ -87,8 +87,7 @@ target_link_libraries(noz
         SDL3::SDL3
 )
 
-add_subdirectory(tools/importer)
-
+add_subdirectory(editor)
 
 
 if(CMAKE_GENERATOR STREQUAL "Ninja")
