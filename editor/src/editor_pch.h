@@ -32,6 +32,8 @@
 #include <functional>
 #include <atomic>
 #include <memory>
+#include <mutex>
+#include <queue>
 
 #include <noz/noz.h>
 #include "tokenizer.h"

@@ -5,9 +5,6 @@
 #include "tui/terminal.h"
 #include "tui/text_input.h"
 #include "views/log_view.h"
-#include <thread>
-#include <mutex>
-#include <queue>
 
 bool InitImporter();
 void ShutdownImporter();
@@ -74,13 +71,23 @@ static void HandleLog(LogType type, const char* message)
         return;
     }
 
-    // Add type prefix for display
+    // Add type prefix with color for display
     std::string formatted_message;
     switch(type) {
-    case LOG_TYPE_INFO: formatted_message = "[INFO] " + std::string(message); break;
-    case LOG_TYPE_WARNING: formatted_message = "[WARNING] " + std::string(message); break;
-    case LOG_TYPE_ERROR: formatted_message = "[ERROR] " + std::string(message); break;
-    default: formatted_message = std::string(message); break;
+    case LOG_TYPE_INFO: 
+        formatted_message = std::string(message); 
+        break;
+    case LOG_TYPE_WARNING: 
+        // Nice yellow (not fully saturated) - RGB(200, 180, 0)
+        formatted_message = "\033[38;2;200;180;0m[WARNING]\033[0m " + std::string(message); 
+        break;
+    case LOG_TYPE_ERROR: 
+        // Nice red (not fully saturated) - RGB(200, 80, 80)
+        formatted_message = "\033[38;2;200;80;80m[ERROR]\033[0m " + std::string(message); 
+        break;
+    default: 
+        formatted_message = std::string(message); 
+        break;
     }
 
     // Check if we're on the main thread
@@ -104,28 +111,32 @@ static void ProcessQueuedLogMessages()
 {
     LogQueue& log_queue = GetLogQueue();
     std::lock_guard<std::mutex> lock(log_queue.mutex);
+    bool render = false;
     while (!log_queue.queue.empty())
     {
         std::string message = log_queue.queue.front();
         log_queue.queue.pop();
         g_editor.log_view.AddMessage(message);
+        render = true;
     }
+
+    if (render)
+        RequestRender();
 }
 
 static void DrawStatusBar(int width, int height)
 {
     SetColor(TERM_COLOR_STATUS_BAR);
 
-    std::string status = "NoZ Editor";
-    if (g_editor.command_mode)
-        status += " - Command Mode";
+    static std::string title = "NoZ Editor";
+    static std::string cmd_mode = " - Command Mode";
 
     MoveCursor(height - 2, 0);
-    for (int i = 0; i < width - 1; i++)  // Leave last column to avoid line wrap
-    {
-        char ch = (i < static_cast<int>(status.length())) ? status[i] : ' ';
-        AddChar(ch);
-    }
+    AddString(title.c_str());
+    if (g_editor.command_mode)
+        AddString(cmd_mode.c_str());
+
+    AddChar(' ', width - GetCursorX() + 1);
 
     UnsetColor(TERM_COLOR_STATUS_BAR);
 }
@@ -197,7 +208,6 @@ static void RunEditor()
         // Handle mouse events (including scroll) to prevent terminal scrolling
         if (key == KEY_MOUSE)
         {
-            LogDebug("Mouse event intercepted");
             // Just consume the mouse event to prevent terminal scrolling
             // TODO: Implement proper mouse/scroll handling later
             continue; // Don't process mouse events as regular keys
@@ -230,7 +240,6 @@ static void RunEditor()
         {
             if (key == ':')
             {
-                LogDebug("Entering command mode");
                 g_editor.command_mode = true;
                 SetActive(g_editor.command_input, true);
                 Clear(g_editor.command_input);
@@ -249,8 +258,6 @@ static void RunEditor()
 
 void RenderEditor(int width, int height)
 {
-    LogDebug("RenderEditor %d, %d", width, height);
-
     ClearScreen();
     g_editor.log_view.Render(width, height);
     DrawStatusBar(width, height);
@@ -260,20 +267,20 @@ void RenderEditor(int width, int height)
 void InitEditor()
 {
     InitLog(HandleLog);
-    LogDebug("InitEditor");
     InitTerminal();
     SetRenderCallback([](int width, int height) { RenderEditor(width, height); });
     SetResizeCallback([](int new_width, int new_height) { HandleResize(new_width, new_height); });
     int term_height = GetTerminalHeight();
     int term_width = GetTerminalWidth();
-    LogDebug("Creating TextInput at position (1, %d) with width %d", term_height - 1, term_width - 1);
     g_editor.command_input = CreateTextInput(1, term_height - 1, term_width - 1);
+
+
+    LogWarning("test warning");
+    LogError("test error");
 }
 
 void ShutdownEditor()
 {
-    LogDebug("ShutdownEditor");
-
     Destroy(g_editor.command_input);
     ShutdownImporter();
     ShutdownTerminal();

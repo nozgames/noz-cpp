@@ -66,18 +66,15 @@ void Draw(TextInput* input)
 void SetActive(TextInput* input, bool active)
 {
     assert(input);
-    TextInputImpl* impl = static_cast<TextInputImpl*>(input);
+    auto impl = static_cast<TextInputImpl*>(input);
     impl->active = active;
 }
 
 bool HandleKey(TextInput* input, int key)
 {
     assert(input);
-    TextInputImpl* impl = static_cast<TextInputImpl*>(input);
-    
-    LogDebug("HandleKey: key=%d, active=%s, buffer_len=%zu, cursor_pos=%zu", 
-             key, impl->active ? "true" : "false", impl->buffer.length(), impl->cursor_pos);
-    
+    auto* impl = static_cast<TextInputImpl*>(input);
+
     if (!impl->active)
         return false;
     

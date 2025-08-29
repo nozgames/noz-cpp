@@ -26,6 +26,7 @@ void SetResizeCallback(TerminalResizeCallback callback);
 void ClearScreen();
 void MoveCursor(int y, int x);
 void AddChar(char ch);
+void AddChar(char ch, int count);
 void AddString(const char* str);
 void SetColor(int pair);
 void UnsetColor(int pair);
@@ -38,6 +39,7 @@ void SetScrollRegion(int top, int bottom);               // Set scrolling region
 void ResetScrollRegion();                                // Reset to full screen scrolling
 void SetCursorVisible(bool visible);
 bool HasColorSupport();
+int GetCursorX();
 int GetTerminalKey();
 int GetTerminalWidth();
 int GetTerminalHeight();

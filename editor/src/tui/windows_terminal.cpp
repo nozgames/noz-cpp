@@ -63,17 +63,8 @@ void UpdateScreenSize()
     static int debug_counter = 0;
     debug_counter++;
 
-    // Debug every 100 calls to see if we're polling
-    if (debug_counter % 100 == 0)
-    {
-        LogDebug("UpdateScreenSize poll #%d: current=%dx%d, detected=%dx%d", debug_counter, g_screen_width,
-                 g_screen_height, new_width, new_height);
-    }
-
     if (new_width != g_screen_width || new_height != g_screen_height)
     {
-        LogDebug("Console size changed: %dx%d -> %dx%d", g_screen_width, g_screen_height, new_width, new_height);
-
         // Update to new dimensions
         g_screen_width = new_width;
         g_screen_height = new_height;
@@ -81,12 +72,9 @@ void UpdateScreenSize()
         // Set buffer size to match window size (removes scrollbar)
         COORD buffer_size = {(SHORT)new_width, (SHORT)new_height};
         SetConsoleScreenBufferSize(g_console_output, buffer_size);
-        LogDebug("Set buffer size to %dx%d", new_width, new_height);
 
         if (g_resize_callback)
-        {
             g_resize_callback(g_screen_width, g_screen_height);
-        }
 
         // Force immediate redraw after resize
         RequestRender();
@@ -96,7 +84,6 @@ void UpdateScreenSize()
 
 void RenderTerminal()
 {
-    LogDebug("RenderTerminal() called");
     if (!g_render_callback)
         return;
 
@@ -117,10 +104,6 @@ void RenderTerminal()
         WriteConsoleA(g_console_output, g_output_buffer.c_str(), (DWORD)g_output_buffer.length(), &written, nullptr);
         FlushFileBuffers(g_console_output); // Force immediate output
     }
-    else
-    {
-        LogDebug("Output buffer is empty!");
-    }
 
     // Clear the redraw flag
     g_needs_redraw = false;
@@ -128,78 +111,63 @@ void RenderTerminal()
 
 void RequestRender()
 {
-    LogDebug("RequestRender() called");
     g_needs_redraw = true;
 }
 
 int GetTerminalKey()
 {
     INPUT_RECORD input_record;
-    DWORD events_read;
+    DWORD event_count;
 
-    // Check if input is available without blocking
-    DWORD events_available;
-    if (!GetNumberOfConsoleInputEvents(g_console_input, &events_available) || events_available == 0)
-    {
+    // Use PeekConsoleInput to safely check for events without consuming them
+    if (!PeekConsoleInput(g_console_input, &input_record, 1, &event_count) || event_count == 0)
         return ERR; // No input available
-    }
 
-    while (ReadConsoleInput(g_console_input, &input_record, 1, &events_read) && events_read > 0)
+    // Now we know there's at least one event, so ReadConsoleInput won't block
+    while (event_count > 0 && ReadConsoleInput(g_console_input, &input_record, 1, &event_count))
     {
         if (input_record.EventType == KEY_EVENT && input_record.Event.KeyEvent.bKeyDown)
         {
             // Handle special keys first
             WORD vk = input_record.Event.KeyEvent.wVirtualKeyCode;
             char ch = input_record.Event.KeyEvent.uChar.AsciiChar;
-            LogDebug("Key event: VK=%d, ASCII=%d", vk, (int)ch);
 
             switch (vk)
             {
             case VK_ESCAPE:
-                LogDebug("Matched VK_ESCAPE");
                 return 27; // ESC
             case VK_LEFT:
-                LogDebug("Matched VK_LEFT");
                 return KEY_LEFT;
             case VK_RIGHT:
-                LogDebug("Matched VK_RIGHT");
                 return KEY_RIGHT;
             case VK_UP:
-                LogDebug("Matched VK_UP");
                 return KEY_UP;
             case VK_DOWN:
-                LogDebug("Matched VK_DOWN");
                 return KEY_DOWN;
             case VK_HOME:
-                LogDebug("Matched VK_HOME");
                 return KEY_HOME;
             case VK_END:
-                LogDebug("Matched VK_END");
                 return KEY_END;
             }
 
             // Return the ASCII character for regular keys
             if (ch != 0)
-            {
                 return ch;
-            }
         }
         else if (input_record.EventType == MOUSE_EVENT)
         {
             // Handle mouse events (including scroll wheel)
             MOUSE_EVENT_RECORD& mouse = input_record.Event.MouseEvent;
             if (mouse.dwEventFlags == MOUSE_WHEELED)
-            {
-                LogDebug("Mouse wheel event intercepted");
                 return KEY_MOUSE; // Return special mouse key
-            }
         }
         else if (input_record.EventType == WINDOW_BUFFER_SIZE_EVENT)
         {
             // Handle resize events immediately
-            LogDebug("WINDOW_BUFFER_SIZE_EVENT received");
             UpdateScreenSize();
         }
+
+        event_count--;
     }
 
     return ERR; // No input available
@@ -232,6 +200,12 @@ void MoveCursor(int y, int x)
     g_output_buffer += "\033[" + std::to_string(y + 1) + ";" + std::to_string(x + 1) + "H";
     g_cursor_x = x;
     g_cursor_y = y;
+}
+
+void AddChar(char ch, int count)
+{
+    for (int i=0; i<count; i++)
+        AddChar(ch);
 }
 
 void AddChar(char ch)
@@ -398,7 +372,6 @@ void ResetScrollRegion()
 
 void SetCursorVisible(bool visible)
 {
-    LogDebug("SetCursorVisible: %s", visible ? "true" : "false");
     // Use VT sequence to show/hide cursor: \033[?25h (show) or \033[?25l (hide)
     if (visible)
     {
@@ -421,6 +394,11 @@ void UpdateTerminal()
     UpdateScreenSize();
 }
 
+int GetCursorX()
+{
+    return g_cursor_x;
+}
+
 void InitTerminal()
 {
     // Get console handles
@@ -433,7 +411,6 @@ void InitTerminal()
     // Set input mode to capture mouse, window, and key events
     DWORD input_mode;
     GetConsoleMode(g_console_input, &input_mode);
-    LogDebug("Original console input mode: 0x%08x", input_mode);
 
     // Disable line input, echo, and processed input to get raw key events
     input_mode &= ~ENABLE_LINE_INPUT;
@@ -451,31 +428,18 @@ void InitTerminal()
     input_mode |= ENABLE_EXTENDED_FLAGS;
 
     SetConsoleMode(g_console_input, input_mode);
-    LogDebug("New console input mode: 0x%08x", input_mode);
 
     // Set output mode - this is the key change for VT sequences
     DWORD output_mode;
     GetConsoleMode(g_console_output, &output_mode);
-    LogDebug("Original console output mode: 0x%08x", output_mode);
-
     output_mode |= ENABLE_PROCESSED_OUTPUT;
     output_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING; // Enable VT sequence processing
     output_mode &= ~ENABLE_WRAP_AT_EOL_OUTPUT;
-
-    BOOL result = SetConsoleMode(g_console_output, output_mode);
-    LogDebug("SetConsoleMode result: %s, new mode: 0x%08x", result ? "SUCCESS" : "FAILED", output_mode);
-
-    if (!result)
-    {
-        LogDebug("Failed to enable VT processing, error: %d", GetLastError());
-        // Fall back to legacy console API if VT sequences aren't supported
-    }
+    SetConsoleMode(g_console_output, output_mode);
 
     // Verify VT processing is actually enabled
     DWORD final_mode;
     GetConsoleMode(g_console_output, &final_mode);
-    LogDebug("Final console output mode: 0x%08x", final_mode);
-    LogDebug("VT processing enabled: %s", (final_mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? "YES" : "NO");
 
     // Initialize screen size
     UpdateScreenSize();
@@ -492,6 +456,7 @@ void InitTerminal()
 
     // Switch to alternate screen buffer and hide cursor
     g_output_buffer.clear();
+    g_output_buffer += "\033]0;NoZ Editor\007"; // Set window title
     g_output_buffer += "\033[?1049h"; // Enable alternate screen buffer
     g_output_buffer += "\033[2J";     // Clear screen
     g_output_buffer += "\033[H";      // Move to home position
