@@ -148,6 +148,10 @@ int GetTerminalKey()
                 return KEY_HOME;
             case VK_END:
                 return KEY_END;
+            case VK_PRIOR:
+                return KEY_PPAGE;
+            case VK_NEXT:
+                return KEY_NPAGE;
             }
 
             // Return the ASCII character for regular keys

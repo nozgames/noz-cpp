@@ -5,6 +5,8 @@
 #include "tui/terminal.h"
 #include "tui/text_input.h"
 #include "views/log_view.h"
+#include "views/view_interface.h"
+#include <stack>
 
 bool InitImporter();
 void ShutdownImporter();
@@ -13,12 +15,39 @@ bool IsImporterRunning();
 struct Editor
 {
     LogView log_view;
+    std::stack<IView*> view_stack;
     TextInput* command_input;
     bool command_mode = false;
     std::atomic<bool> is_running = true;
 };
 
 static Editor g_editor = {};
+
+// View stack management functions
+static IView* GetCurrentView()
+{
+    if (g_editor.view_stack.empty())
+        return &g_editor.log_view;  // Log view is always the base
+    return g_editor.view_stack.top();
+}
+
+static void PushView(IView* view)
+{
+    if (view && view != &g_editor.log_view)  // Never push log view as it's always the base
+        g_editor.view_stack.push(view);
+}
+
+static void PopView()
+{
+    if (!g_editor.view_stack.empty())
+    {
+        IView* current = g_editor.view_stack.top();
+        if (current->CanPopFromStack())
+        {
+            g_editor.view_stack.pop();
+        }
+    }
+}
 
 struct DebugLog
 {
@@ -222,14 +251,20 @@ static void RunEditor()
                 g_editor.command_mode = false;
                 SetActive(g_editor.command_input, false);
                 Clear(g_editor.command_input);
-                SetCursorVisible(false);
+                
+                // Show cursor in current view when exiting command mode
+                IView* current_view = GetCurrentView();
+                current_view->SetCursorVisible(true);
             }
             else if (key == 27)
             { // Escape
                 g_editor.command_mode = false;
                 SetActive(g_editor.command_input, false);
                 Clear(g_editor.command_input);
-                SetCursorVisible(false);
+                
+                // Show cursor in current view when exiting command mode
+                IView* current_view = GetCurrentView();
+                current_view->SetCursorVisible(true);
             }
             else
             {
@@ -238,16 +273,33 @@ static void RunEditor()
         }
         else
         {
+            IView* current_view = GetCurrentView();
+            
             if (key == ':')
             {
                 g_editor.command_mode = true;
                 SetActive(g_editor.command_input, true);
                 Clear(g_editor.command_input);
                 SetCursorVisible(true);
+                
+                // Hide cursor in current view when entering command mode
+                current_view->SetCursorVisible(false);
             }
             else if (key == 'q')
             {
                 g_editor.is_running = false;
+            }
+            else if (key == 27)  // Escape - try to pop view from stack
+            {
+                PopView();
+            }
+            else
+            {
+                // Route input to current view
+                if (!current_view->HandleKey(key))
+                {
+                    // View didn't handle the key, could add default handling here
+                }
             }
         }
 
@@ -259,9 +311,25 @@ static void RunEditor()
 void RenderEditor(int width, int height)
 {
     ClearScreen();
-    g_editor.log_view.Render(width, height);
+    
     DrawStatusBar(width, height);
     DrawCommandLine(width, height);
+    
+    // Always render the log view as the base layer
+    g_editor.log_view.Render(width, height);
+    
+    // If there are views on the stack, render the top one instead
+    if (!g_editor.view_stack.empty())
+    {
+        IView* current_view = g_editor.view_stack.top();
+        current_view->Render(width, height);
+    }
+    
+    // Hide the terminal cursor when not in command mode since views handle their own cursor display
+    if (!g_editor.command_mode)
+    {
+        SetCursorVisible(false);
+    }
 }
 
 void InitEditor()
@@ -274,6 +342,8 @@ void InitEditor()
     int term_width = GetTerminalWidth();
     g_editor.command_input = CreateTextInput(1, term_height - 1, term_width - 1);
 
+    // Initialize log view cursor visibility (show cursor when not in command mode)
+    g_editor.log_view.SetCursorVisible(true);
 
     LogWarning("test warning");
     LogError("test error");
