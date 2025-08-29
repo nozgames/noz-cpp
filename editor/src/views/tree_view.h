@@ -6,6 +6,7 @@
 #include "view_interface.h"
 #include <vector>
 #include <string>
+#include <regex>
 
 struct TreeNode
 {
@@ -35,9 +36,17 @@ protected:
     int cursor_row_ = 0;     // Current cursor position in visible list
     bool show_cursor_ = false;
     
+    // Search functionality
+    bool search_active_ = false;
+    std::string search_pattern_;
+    std::regex search_regex_;
+    bool search_regex_valid_ = false;
+    
     void RebuildVisibleList();
     void ToggleExpansion(size_t node_index);
     int CountVisibleChildren(size_t node_index) const;
+    bool MatchesSearch(size_t node_index) const;
+    bool ShouldShowInSearch(size_t node_index) const;
     
 public:
     void AddLine(const std::string& line);
@@ -66,4 +75,9 @@ public:
     void CollapseAll();
     void ExpandCurrent();
     void CollapseCurrent();
+    
+    // IView search interface
+    void SetSearchPattern(const std::string& pattern) override;
+    void ClearSearch() override;
+    bool SupportsSearch() const override;
 };

@@ -77,38 +77,53 @@ void TreeView::RebuildVisibleList()
 {
     visible_indices_.clear();
     
-    for (size_t i = 0; i < nodes_.size(); i++)
+    if (search_active_ && search_regex_valid_)
     {
-        const TreeNode& node = nodes_[i];
-        
-        // Always add root level nodes
-        if (node.indent_level == 0)
+        // Search mode: only show matching nodes and their parents
+        for (size_t i = 0; i < nodes_.size(); i++)
         {
-            visible_indices_.push_back(i);
-            continue;
-        }
-        
-        // For child nodes, check if all parents are expanded
-        bool should_be_visible = true;
-        for (int j = static_cast<int>(i) - 1; j >= 0; j--)
-        {
-            if (nodes_[j].indent_level < node.indent_level)
+            if (ShouldShowInSearch(i))
             {
-                // This is a parent node
-                if (nodes_[j].has_children && !nodes_[j].is_expanded)
-                {
-                    should_be_visible = false;
-                    break;
-                }
-                // Continue checking higher level parents
-                if (nodes_[j].indent_level == 0)
-                    break;
+                visible_indices_.push_back(i);
             }
         }
-        
-        if (should_be_visible)
+    }
+    else
+    {
+        // Normal mode: show nodes based on expansion state
+        for (size_t i = 0; i < nodes_.size(); i++)
         {
-            visible_indices_.push_back(i);
+            const TreeNode& node = nodes_[i];
+            
+            // Always add root level nodes
+            if (node.indent_level == 0)
+            {
+                visible_indices_.push_back(i);
+                continue;
+            }
+            
+            // For child nodes, check if all parents are expanded
+            bool should_be_visible = true;
+            for (int j = static_cast<int>(i) - 1; j >= 0; j--)
+            {
+                if (nodes_[j].indent_level < node.indent_level)
+                {
+                    // This is a parent node
+                    if (nodes_[j].has_children && !nodes_[j].is_expanded)
+                    {
+                        should_be_visible = false;
+                        break;
+                    }
+                    // Continue checking higher level parents
+                    if (nodes_[j].indent_level == 0)
+                        break;
+                }
+            }
+            
+            if (should_be_visible)
+            {
+                visible_indices_.push_back(i);
+            }
         }
     }
 }
@@ -426,4 +441,99 @@ void TreeView::CollapseCurrent()
             RebuildVisibleList();
         }
     }
+}
+
+bool TreeView::MatchesSearch(size_t node_index) const
+{
+    if (!search_regex_valid_ || node_index >= nodes_.size())
+        return false;
+    
+    try
+    {
+        return std::regex_search(nodes_[node_index].content, search_regex_);
+    }
+    catch (const std::exception&)
+    {
+        return false;
+    }
+}
+
+bool TreeView::ShouldShowInSearch(size_t node_index) const
+{
+    if (node_index >= nodes_.size())
+        return false;
+        
+    const TreeNode& node = nodes_[node_index];
+    
+    // If this node matches, show it
+    if (MatchesSearch(node_index))
+        return true;
+    
+    // If any child matches, show this parent
+    for (size_t i = node_index + 1; i < nodes_.size(); i++)
+    {
+        if (nodes_[i].indent_level <= node.indent_level)
+            break; // No more children
+            
+        if (MatchesSearch(i))
+            return true;
+    }
+    
+    // If this node is a child and its parent should be shown, show it too
+    if (node.indent_level > 0)
+    {
+        for (int i = static_cast<int>(node_index) - 1; i >= 0; i--)
+        {
+            if (nodes_[i].indent_level < node.indent_level)
+            {
+                // This is a parent - if it should be shown and matches, show this child
+                if (ShouldShowInSearch(i) && MatchesSearch(i))
+                    return true;
+                break;
+            }
+        }
+    }
+    
+    return false;
+}
+
+void TreeView::SetSearchPattern(const std::string& pattern)
+{
+    search_pattern_ = pattern;
+    search_regex_valid_ = false;
+    
+    if (!pattern.empty())
+    {
+        search_active_ = true;
+        try
+        {
+            search_regex_ = std::regex(pattern, std::regex_constants::icase);
+            search_regex_valid_ = true;
+        }
+        catch (const std::exception&)
+        {
+            // Invalid regex, keep search_regex_valid_ as false
+        }
+    }
+    else
+    {
+        search_active_ = false;
+    }
+    
+    RebuildVisibleList();
+    cursor_row_ = 0; // Reset cursor to top when search changes
+}
+
+void TreeView::ClearSearch()
+{
+    search_active_ = false;
+    search_pattern_.clear();
+    search_regex_valid_ = false;
+    RebuildVisibleList();
+    cursor_row_ = 0;
+}
+
+bool TreeView::SupportsSearch() const
+{
+    return true;
 }

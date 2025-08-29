@@ -6,6 +6,7 @@
 #include "tui/text_input.h"
 #include "views/log_view.h"
 #include "views/test_tree_view.h"
+#include "views/tree_view.h"
 #include "views/view_interface.h"
 #include <stack>
 
@@ -18,7 +19,9 @@ struct Editor
     LogView log_view;
     std::stack<IView*> view_stack;
     TextInput* command_input;
+    TextInput* search_input;
     bool command_mode = false;
+    bool search_mode = false;
     std::atomic<bool> is_running = true;
 };
 
@@ -181,14 +184,30 @@ static void DrawCommandLine(int width, int height)
     SetColor(TERM_COLOR_COMMAND_LINE);
 
     MoveCursor(height - 1, 0);
-    if (g_editor.command_mode)
+    if (g_editor.search_mode)
+    {
+        AddChar('/');
+        Draw(g_editor.search_input);
+    }
+    else if (g_editor.command_mode)
     {
         AddChar(':');
         Draw(g_editor.command_input);
     }
     else
     {
-        for (int i = 0; i < width; i++)
+        // Check if there's an active search to display
+        std::string search_text = GetText(g_editor.search_input);
+        if (!search_text.empty())
+        {
+            AddChar('/');
+            AddString(search_text.c_str());
+            AddString(" (filtered - ESC to clear)");
+        }
+        
+        // Fill remaining space
+        int used_chars = GetCursorX();
+        for (int i = used_chars; i < width; i++)
             AddChar(' ');
     }
 
@@ -262,7 +281,40 @@ static void RunEditor()
             continue; // Don't process mouse events as regular keys
         }
 
-        if (g_editor.command_mode)
+        if (g_editor.search_mode)
+        {
+            if (key == '\n' || key == '\r')
+            {
+                // Finish search input but keep the filtered view
+                g_editor.search_mode = false;
+                SetActive(g_editor.search_input, false);
+                
+                // Show cursor in current view when exiting search mode
+                IView* current_view = GetCurrentView();
+                current_view->SetCursorVisible(true);
+            }
+            else if (key == 27)
+            { // Escape
+                // Cancel search and return to full unfiltered view
+                g_editor.search_mode = false;
+                SetActive(g_editor.search_input, false);
+                Clear(g_editor.search_input);
+                
+                IView* current_view = GetCurrentView();
+                current_view->ClearSearch();
+                current_view->SetCursorVisible(true);
+            }
+            else
+            {
+                HandleKey(g_editor.search_input, key);
+                
+                // Update search in real-time
+                std::string pattern = GetText(g_editor.search_input);
+                IView* current_view = GetCurrentView();
+                current_view->SetSearchPattern(pattern);
+            }
+        }
+        else if (g_editor.command_mode)
         {
             if (key == '\n' || key == '\r')
             {
@@ -295,7 +347,21 @@ static void RunEditor()
         {
             IView* current_view = GetCurrentView();
             
-            if (key == ':')
+            if (key == '/')
+            {
+                // Start search mode if current view supports it
+                if (current_view->SupportsSearch())
+                {
+                    g_editor.search_mode = true;
+                    SetActive(g_editor.search_input, true);
+                    Clear(g_editor.search_input);
+                    SetCursorVisible(true);
+                    
+                    // Hide cursor in current view when entering search mode
+                    current_view->SetCursorVisible(false);
+                }
+            }
+            else if (key == ':')
             {
                 g_editor.command_mode = true;
                 SetActive(g_editor.command_input, true);
@@ -309,9 +375,22 @@ static void RunEditor()
             {
                 g_editor.is_running = false;
             }
-            else if (key == 27)  // Escape - try to pop view from stack
+            else if (key == 27)  // Escape - clear search or pop view from stack
             {
-                PopView();
+                // Check if there's an active search to clear
+                std::string search_text = GetText(g_editor.search_input);
+                if (!search_text.empty())
+                {
+                    // Clear active search
+                    Clear(g_editor.search_input);
+                    IView* current_view = GetCurrentView();
+                    current_view->ClearSearch();
+                }
+                else
+                {
+                    // No search to clear, pop view from stack
+                    PopView();
+                }
             }
             else
             {
@@ -345,8 +424,8 @@ void RenderEditor(int width, int height)
         current_view->Render(width, height);
     }
     
-    // Hide the terminal cursor when not in command mode since views handle their own cursor display
-    if (!g_editor.command_mode)
+    // Hide the terminal cursor when not in command/search mode since views handle their own cursor display
+    if (!g_editor.command_mode && !g_editor.search_mode)
     {
         SetCursorVisible(false);
     }
@@ -361,6 +440,7 @@ void InitEditor()
     int term_height = GetTerminalHeight();
     int term_width = GetTerminalWidth();
     g_editor.command_input = CreateTextInput(1, term_height - 1, term_width - 1);
+    g_editor.search_input = CreateTextInput(1, term_height - 1, term_width - 1);
 
     // Initialize log view cursor visibility (show cursor when not in command mode)
     g_editor.log_view.SetCursorVisible(true);
@@ -372,6 +452,7 @@ void InitEditor()
 void ShutdownEditor()
 {
     Destroy(g_editor.command_input);
+    Destroy(g_editor.search_input);
     ShutdownImporter();
     ShutdownTerminal();
 
