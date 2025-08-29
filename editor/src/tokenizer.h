@@ -13,6 +13,7 @@ enum TokenType
     TOKEN_TYPE_NONE,
     TOKEN_TYPE_NUMBER,
     TOKEN_TYPE_STRING,
+    TOKEN_TYPE_VEC2,
     TOKEN_TYPE_VEC3,
     TOKEN_TYPE_VEC4,
     TOKEN_TYPE_OPERATOR,       // Operators (+, -, *, /, =, etc.)
@@ -48,6 +49,7 @@ bool ExpectIdentifier(Tokenizer& tok, Token* result);
 bool ExpectNumber(Tokenizer& tok, Token* result);
 bool ExpectFloat(Tokenizer& tok, Token* token, float* result);
 bool ExpectInt(Tokenizer& tok, Token* token, int* result);
+bool ExpectVec2(Tokenizer& tok, Token* token, vec2* result);
 bool ExpectVec3(Tokenizer& tok, Token* token, vec3* result);
 bool ExpectVec4(Tokenizer& tok, Token* token, vec4* result);
 bool ExpectColor(Tokenizer& tok, Token* token, color_t* result);

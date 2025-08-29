@@ -244,6 +244,37 @@ bool ExpectInt(Tokenizer& tok, Token* token, int* result)
     return false;
 }
 
+bool ExpectVec2(Tokenizer& tok, Token* token, vec2* result)
+{
+    assert(token);
+    assert(result);
+
+    SkipWhitespace(tok);
+
+    BeginToken(tok, token);
+
+    if (!ExpectChar(tok, '('))
+        return false;
+
+    Token temp = {};
+    if (!ExpectFloat(tok, &temp, &result->x))
+        return false;
+
+    if (!ExpectChar(tok, ','))
+        return false;
+
+    if (!ExpectFloat(tok, &temp, &result->y))
+        return false;
+
+    if (!ExpectChar(tok, ')'))
+        return false;
+
+    EndToken(tok, token, TOKEN_TYPE_VEC2);
+
+    return true;
+}
+
+
 bool ExpectVec3(Tokenizer& tok, Token* token, vec3* result)
 {
     assert(token);

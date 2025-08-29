@@ -24,6 +24,7 @@ void TestTreeView::PopulateTestData()
             BeginObject("Input Component");
                 AddProperty("Active Actions", "[MOVE_LEFT, AIM]");
                 AddProperty("Mouse Position", "(512, 384)");
+                AddProperty("Color", "#668811");
             EndObject();
             
             BeginObject("Bow Component");

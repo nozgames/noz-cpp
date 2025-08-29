@@ -4,7 +4,10 @@
 
 #include "tree_view.h"
 #include "../tui/terminal.h"
+#include "../tokenizer.h"
 #include <algorithm>
+#include <string>
+#include <cstdio>
 
 static int CountLeadingTabs(const std::string& line)
 {
@@ -25,6 +28,124 @@ static std::string RemoveLeadingTabs(const std::string& line)
     while (first_non_tab < line.length() && line[first_non_tab] == '\t')
         first_non_tab++;
     return line.substr(first_non_tab);
+}
+
+
+static size_t CalculateVisualLength(const std::string& str)
+{
+    size_t visual_length = 0;
+    size_t i = 0;
+    
+    while (i < str.length())
+    {
+        if (str[i] == '\033' && i + 1 < str.length() && str[i + 1] == '[')
+        {
+            // Skip ANSI escape sequence
+            i += 2;
+            while (i < str.length() && str[i] != 'm')
+                i++;
+            if (i < str.length())
+                i++; // Skip the 'm'
+        }
+        else
+        {
+            visual_length++;
+            i++;
+        }
+    }
+    
+    return visual_length;
+}
+
+static void FormatValue(TStringBuilder& builder, const std::string& value)
+{
+    if (value.empty())
+    {
+        builder.Add(value);
+        return;
+    }
+    
+    Tokenizer tok;
+    Token token;
+    
+    // Check for color patterns using tokenizer
+    color_t color_result;
+    Init(tok, value.c_str());
+    if (ExpectColor(tok, &token, &color_result))
+    {
+        builder.Add(color_result);
+        return;
+    }
+    
+    // Check for vector patterns using tokenizer: (x,y), (x,y,z), or (x,y,z,w)
+    if (value.size() >= 5 && value.front() == '(' && value.back() == ')')
+    {
+        vec2 vec2_result;
+        vec3 vec3_result;
+        vec4 vec4_result;
+        
+        // Try parsing as vec2 first
+        Init(tok, value.c_str());
+        if (ExpectVec2(tok, &token, &vec2_result))
+        {
+            builder.Add(vec2_result);
+            return;
+        }
+        
+        // Reset tokenizer and try vec3
+        Init(tok, value.c_str());
+        if (ExpectVec3(tok, &token, &vec3_result))
+        {
+            builder.Add(vec3_result);
+            return;
+        }
+        
+        // Reset tokenizer and try vec4
+        Init(tok, value.c_str());
+        if (ExpectVec4(tok, &token, &vec4_result))
+        {
+            builder.Add(vec4_result);
+            return;
+        }
+    }
+    
+    // Check for boolean values
+    if (value == "true" || value == "false")
+    {
+        builder.Add(value == "true");
+        return;
+    }
+    
+    // Check for number (integer or float)
+    std::regex number_regex("^[-+]?([0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)$");
+    if (std::regex_match(value, number_regex))
+    {
+        // Try parsing as int first, then float
+        char* end;
+        long int_val = strtol(value.c_str(), &end, 10);
+        if (*end == '\0')
+            builder.Add(static_cast<int>(int_val));
+        else
+            builder.Add(static_cast<float>(strtof(value.c_str(), nullptr)));
+        return;
+    }
+    
+    // Everything else is treated as a string
+    if (!value.empty() && value.front() == '"' && value.back() == '"')
+        builder.Add(value, TCOLOR_GREEN); // Already has quotes
+    else
+        builder.Add("\"" + value + "\"", TCOLOR_GREEN); // Add quotes
+}
+
+
+static std::string GetArraySizeIndicator(const TreeNode* node)
+{
+    if (node && node->has_children())
+    {
+        size_t child_count = node->children.size();
+        return "\033[97m[" + std::to_string(child_count) + "]\033[0m"; // Bright white
+    }
+    return "";
 }
 
 void TreeView::AddLine(const std::string& line)
@@ -87,16 +208,37 @@ void TreeView::AddObject(const std::string& name)
 
 void TreeView::AddProperty(const std::string& name, const std::string& value)
 {
-    std::string content = name;
+    std::string raw_content = name;
+    TString formatted_content;
+    
     if (!value.empty())
     {
-        content += ": " + value;
+        raw_content += ": " + value;
+        
+        // Format the content immediately with proper colors
+        auto builder = TStringBuilder::Build();
+        builder.Add(name + ": ");
+        FormatValue(builder, value);
+        formatted_content = builder.ToString();
+    }
+    else
+    {
+        // No value, just plain name
+        formatted_content = TString(name, name.length());
     }
     
+    TreeNode* new_node = nullptr;
     if (!_node_stack.empty())
     {
         TreeNode* parent = _node_stack.back();
-        parent->AddChild(content, false);
+        new_node = parent->AddChild(raw_content, false);
+    }
+    
+    // Update the node with formatted content
+    if (new_node)
+    {
+        new_node->formatted_content = formatted_content;
+        new_node->raw_content = raw_content;
     }
     
     RebuildVisibleList();
@@ -331,17 +473,52 @@ void TreeView::Render(int width, int height)
             if (_search_active && node->is_search_parent && !node->matches_search)
             {
                 // Search parent nodes in darker/subdued color
-                display_line += "\033[2m" + node->content + "\033[0m"; // Dim/faint text
+                display_line += "\033[2m" + node->raw_content + "\033[0m"; // Dim/faint text
             }
             else
             {
-                display_line += node->content;
+                // Use pre-formatted content directly from the node
+                display_line += node->formatted_content.text;
             }
             
-            // Truncate if too long
-            if (display_line.length() > static_cast<size_t>(width))
+            // Add array size indicator for objects with children
+            std::string size_indicator = GetArraySizeIndicator(node);
+            if (!size_indicator.empty())
             {
-                display_line = display_line.substr(0, width);
+                display_line += " " + size_indicator;
+            }
+            
+            // Truncate if too long (considering visual length, not including ANSI codes)
+            if (CalculateVisualLength(display_line) > static_cast<size_t>(width))
+            {
+                // Truncate while preserving ANSI sequences as much as possible
+                size_t visual_len = 0;
+                size_t truncate_pos = 0;
+                
+                for (size_t i = 0; i < display_line.length(); i++)
+                {
+                    if (display_line[i] == '\033' && i + 1 < display_line.length() && display_line[i + 1] == '[')
+                    {
+                        // Skip ANSI escape sequence
+                        i++;
+                        while (i < display_line.length() && display_line[i] != 'm')
+                            i++;
+                        // Don't increment visual_len for ANSI codes
+                    }
+                    else
+                    {
+                        visual_len++;
+                        if (visual_len >= static_cast<size_t>(width))
+                        {
+                            truncate_pos = i + 1;
+                            break;
+                        }
+                    }
+                    truncate_pos = i + 1;
+                }
+                
+                display_line = display_line.substr(0, truncate_pos);
+                display_line += "\033[0m"; // Ensure we end with a reset
             }
 
             // Render with optional cursor highlighting
@@ -585,7 +762,7 @@ bool TreeView::MatchesSearch(TreeNode* node) const
     try
     {
         // Search both content and full path
-        return std::regex_search(node->content, _search_regex) ||
+        return std::regex_search(node->raw_content, _search_regex) ||
                std::regex_search(node->path, _search_regex);
     }
     catch (const std::exception&)
@@ -674,7 +851,7 @@ void TreeView::UpdateSearchFlagsRecursive(TreeNode* node)
         try
         {
             // Check if this node matches the search pattern
-            bool matches = std::regex_search(node->content, _search_regex) ||
+            bool matches = std::regex_search(node->raw_content, _search_regex) ||
                           std::regex_search(node->path, _search_regex);
             
             if (matches)

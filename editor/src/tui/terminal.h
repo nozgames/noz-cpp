@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <noz/color.h>
+#include "tstring.h"
+
 // Special key codes (using values that don't conflict with ASCII)
 #define KEY_LEFT    260
 #define KEY_RIGHT   261
@@ -35,6 +38,8 @@ void SetColor(int pair);
 void UnsetColor(int pair);
 void SetColor256(int fg, int bg = -1);                    // 256-color mode (0-255)
 void SetColorRGB(int r, int g, int b, int bg_r = -1, int bg_g = -1, int bg_b = -1);  // RGB mode
+void BeginColor(int r, int g, int b);                     // Begin RGB color
+void EndColor();                                          // Reset to default color
 void SetBold(bool enabled);
 void SetUnderline(bool enabled);
 void SetItalic(bool enabled);
@@ -46,3 +51,4 @@ int GetCursorX();
 int GetTerminalKey();
 int GetTerminalWidth();
 int GetTerminalHeight();
+

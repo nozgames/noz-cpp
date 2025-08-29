@@ -319,7 +319,7 @@ void AddStringWithCursor(const std::string& str, int cursor_pos)
     {
         AddString("\033[7m");  // Enable reverse video
         AddChar(cursor_char[0]);
-        AddString("\033[27m"); // Disable reverse video
+        AddString("\033[0m"); // Reset all attributes
         AddString(after_cursor.c_str());
     }
     else if (cursor_pos >= visible_char_count)
@@ -327,7 +327,7 @@ void AddStringWithCursor(const std::string& str, int cursor_pos)
         // Cursor position is beyond the string - show cursor at end
         AddString("\033[7m");  // Enable reverse video
         AddChar(' ');
-        AddString("\033[27m"); // Disable reverse video
+        AddString("\033[0m"); // Reset all attributes
     }
 }
 
@@ -398,6 +398,24 @@ void SetColorRGB(int r, int g, int b, int bg_r, int bg_g, int bg_b)
     color_seq += "m";
     g_output_buffer += color_seq;
 }
+
+void BeginColor(int r, int g, int b)
+{
+    // Clamp RGB values to 0-255
+    r = std::max(0, std::min(255, r));
+    g = std::max(0, std::min(255, g));
+    b = std::max(0, std::min(255, b));
+    
+    std::string color_seq = "\033[38;2;" + std::to_string(r) + ";" + std::to_string(g) + ";" + std::to_string(b) + "m";
+    g_output_buffer += color_seq;
+}
+
+void EndColor()
+{
+    g_output_buffer += "\033[0m";
+}
+
+
 
 void SetBold(bool enabled)
 {

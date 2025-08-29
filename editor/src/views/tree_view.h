@@ -5,10 +5,12 @@
 #pragma once
 
 #include "view_interface.h"
+#include "../tui/tstring.h"
 
 struct TreeNode
 {
-    std::string content;
+    TString formatted_content;  // Pre-formatted content with colors and visual length
+    std::string raw_content;    // Raw text for searching
     std::string path; // Full path from root, e.g., "Game Systems/Player System/Movement Component"
     int indent_level;
     bool is_expanded;
@@ -20,7 +22,8 @@ struct TreeNode
     std::vector<std::unique_ptr<TreeNode>> children;
     
     TreeNode(const std::string& text, int indent = 0, bool expanded = false, bool object = true)
-        : content(text)
+        : formatted_content(text, text.length()) // Default: plain text with no formatting
+        , raw_content(text)
         , indent_level(indent)
         , is_expanded(expanded)
         , is_object(object)
