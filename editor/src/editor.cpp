@@ -5,6 +5,7 @@
 #include "tui/terminal.h"
 #include "tui/text_input.h"
 #include "views/log_view.h"
+#include "views/test_tree_view.h"
 #include "views/view_interface.h"
 #include <stack>
 
@@ -45,6 +46,11 @@ static void PopView()
         if (current->CanPopFromStack())
         {
             g_editor.view_stack.pop();
+            // Delete the popped view if it's not the base log view
+            if (current != &g_editor.log_view)
+            {
+                delete current;
+            }
         }
     }
 }
@@ -194,16 +200,30 @@ static void HandleCommand(const std::string& command)
 {
     if (command == "q" || command == "quit")
     {
-        g_editor.is_running = false;
+        // If there are views on the stack, pop one instead of quitting
+        if (!g_editor.view_stack.empty())
+        {
+            PopView();
+        }
+        else
+        {
+            g_editor.is_running = false;
+        }
     }
     else if (command == "clear")
     {
         g_editor.log_view.Clear();
     }
+    else if (command == "t" || command == "tree")
+    {
+        // Push a new test tree view onto the stack
+        TestTreeView* tree_view = new TestTreeView();
+        PushView(tree_view);
+    }
     else if (!command.empty())
     {
         LogInfo("Unknown command: %s", command.c_str());
-        LogInfo("Available commands: clear, quit");
+        LogInfo("Available commands: clear, quit, tree (t)");
     }
 }
 

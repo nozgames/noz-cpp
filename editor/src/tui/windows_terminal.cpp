@@ -254,6 +254,83 @@ void AddString(const char* str)
     }
 }
 
+void AddStringWithCursor(const std::string& str, int cursor_pos)
+{
+    if (cursor_pos < 0)
+    {
+        AddString(str.c_str());
+        return;
+    }
+    
+    size_t pos = 0;
+    int visible_char_count = 0;
+    std::string before_cursor, cursor_char, after_cursor;
+    bool cursor_found = false;
+    
+    while (pos < str.length())
+    {
+        if (str[pos] == '\033')
+        {
+            // ANSI escape sequence - skip to end (find 'm')
+            size_t escape_start = pos;
+            while (pos < str.length() && str[pos] != 'm')
+                pos++;
+            if (pos < str.length())
+                pos++; // Include the 'm'
+            
+            // Add escape sequence to appropriate part
+            std::string escape_seq = str.substr(escape_start, pos - escape_start);
+            if (!cursor_found)
+            {
+                before_cursor += escape_seq;
+            }
+            else
+            {
+                after_cursor += escape_seq;
+            }
+        }
+        else
+        {
+            // Regular visible character
+            if (visible_char_count == cursor_pos && !cursor_found)
+            {
+                cursor_char = str[pos];
+                cursor_found = true;
+                pos++;
+            }
+            else if (!cursor_found)
+            {
+                before_cursor += str[pos];
+                pos++;
+            }
+            else
+            {
+                after_cursor += str.substr(pos);
+                break;
+            }
+            visible_char_count++;
+        }
+    }
+    
+    // Render the parts
+    AddString(before_cursor.c_str());
+    
+    if (cursor_found)
+    {
+        AddString("\033[7m");  // Enable reverse video
+        AddChar(cursor_char[0]);
+        AddString("\033[27m"); // Disable reverse video
+        AddString(after_cursor.c_str());
+    }
+    else if (cursor_pos >= visible_char_count)
+    {
+        // Cursor position is beyond the string - show cursor at end
+        AddString("\033[7m");  // Enable reverse video
+        AddChar(' ');
+        AddString("\033[27m"); // Disable reverse video
+    }
+}
+
 void SetColor(int pair)
 {
     if (pair >= 0 && pair < (int)(sizeof(g_color_sequences) / sizeof(g_color_sequences[0])))
