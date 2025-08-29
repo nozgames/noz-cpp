@@ -8,7 +8,7 @@
 #include <vector>
 
 // Forward declaration
-class Window;
+class Terminal;
 
 class LogView {
 private:
@@ -18,7 +18,7 @@ private:
 public:
     void AddMessage(const std::string& message);
     void Clear();
-    void Render(Window* window, int width, int height);
+    void Render(Terminal* terminal, int width, int height);
     size_t MessageCount() const;
     void SetMaxMessages(size_t max_messages);
 };

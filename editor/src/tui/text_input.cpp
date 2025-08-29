@@ -3,7 +3,6 @@
 //
 
 #include "text_input.h"
-#include <algorithm>
 
 text_input::text_input(int x, int y, int width) 
     : cursor_pos_(0), x_(x), y_(y), width_(width), active_(false) {

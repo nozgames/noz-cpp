@@ -1,6 +1,10 @@
-#include "controls/text_input.h"
+//
+//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//
+
+#include "tui/terminal.h"
+#include "tui/text_input.h"
 #include "views/log_view.h"
-#include "window.h"
 
 int InitImporter();
 void ShutdownImporter();
@@ -11,13 +15,13 @@ static Editor* g_editor_instance = nullptr;
 
 static FILE* g_debug_log = nullptr;
 
-void editor_log_callback(LogType type, const char* message);
+void OnLog(LogType type, const char* message);
 
 class Editor
 {
     LogView _log_view;
     std::unique_ptr<text_input> _command_input;
-    std::unique_ptr<Window> _window;
+    std::unique_ptr<Terminal> _terminal;
     bool _command_mode = false;
     std::atomic<bool> _running = true;
     std::unique_ptr<std::thread> _importer_thread;
@@ -32,7 +36,7 @@ public:
             StopImporter();
         }
 
-        _window.reset();
+        _terminal.reset();
         g_editor_instance = nullptr;
 
         // Close debug log file
@@ -45,17 +49,17 @@ public:
 
     bool Initialize()
     {
-        _window = std::make_unique<Window>();
-        if (!_window->Initialize())
+        _terminal = CreateTerminal();
+        if (!_terminal->Initialize())
         {
             return false;
         }
 
-        _window->SetRenderCallback([this](int width, int height) { this->RenderContent(width, height); });
+        _terminal->SetRenderCallback([this](int width, int height) { this->RenderContent(width, height); });
 
-        _window->SetResizeCallback([this](int new_width, int new_height) { this->OnResize(new_width, new_height); });
+        _terminal->SetResizeCallback([this](int new_width, int new_height) { this->OnResize(new_width, new_height); });
 
-        _command_input = std::make_unique<text_input>(1, _window->GetHeight() - 1, _window->GetWidth() - 1);
+        _command_input = std::make_unique<text_input>(1, _terminal->GetHeight() - 1, _terminal->GetWidth() - 1);
 
         return true;
     }
@@ -63,7 +67,7 @@ public:
     void HandleLogMessage(const std::string& message)
     {
         _log_view.AddMessage(message);
-        _window->RequestRedraw();
+        _terminal->RequestRedraw();
     }
 
     void OnResize(int new_width, int new_height)
@@ -73,15 +77,15 @@ public:
 
     void RenderContent(int width, int height)
     {
-        _window->ClearScreen();
-        _log_view.Render(_window.get(), width, height);
+        _terminal->ClearScreen();
+        _log_view.Render(_terminal.get(), width, height);
         DrawStatusBar(width, height);
         DrawCommandLine(width, height);
     }
 
     void DrawStatusBar(int width, int height)
     {
-        _window->SetColor(Window::COLOR_STATUS_BAR);
+        _terminal->SetColor(Terminal::COLOR_STATUS_BAR);
 
         std::string status = "NoZ Editor";
         if (_command_mode)
@@ -89,24 +93,24 @@ public:
             status += " - Command Mode";
         }
 
-        _window->MoveCursor(height - 2, 0);
+        _terminal->MoveCursor(height - 2, 0);
         for (int i = 0; i < width; i++)
         {
             char ch = (i < static_cast<int>(status.length())) ? status[i] : ' ';
-            _window->AddChar(ch);
+            _terminal->AddChar(ch);
         }
 
-        _window->UnsetColor(Window::COLOR_STATUS_BAR);
+        _terminal->UnsetColor(Terminal::COLOR_STATUS_BAR);
     }
 
     void DrawCommandLine(int width, int height)
     {
-        _window->SetColor(Window::COLOR_COMMAND_LINE);
+        _terminal->SetColor(Terminal::COLOR_COMMAND_LINE);
 
-        _window->MoveCursor(height - 1, 0);
+        _terminal->MoveCursor(height - 1, 0);
         if (_command_mode)
         {
-            _window->AddChar(':');
+            _terminal->AddChar(':');
 
             std::string input_text = _command_input->get_text();
             size_t cursor_pos = _command_input->get_cursor_pos();
@@ -131,27 +135,27 @@ public:
                 }
             }
 
-            _window->AddString(display_text.c_str());
+            _terminal->AddString(display_text.c_str());
 
             int remaining = available_width - static_cast<int>(display_text.length());
             for (int i = 0; i < remaining; i++)
             {
-                _window->AddChar(' ');
+                _terminal->AddChar(' ');
             }
 
             int final_cursor_x = 1 + static_cast<int>(display_cursor_pos);
-            _window->MoveCursor(height - 1, final_cursor_x);
+            _terminal->MoveCursor(height - 1, final_cursor_x);
         }
         else
         {
             for (int i = 0; i < width; i++)
             {
-                _window->AddChar(' ');
+                _terminal->AddChar(' ');
             }
-            _window->MoveCursor(0, 0);
+            _terminal->MoveCursor(0, 0);
         }
 
-        _window->UnsetColor(Window::COLOR_COMMAND_LINE);
+        _terminal->UnsetColor(Terminal::COLOR_COMMAND_LINE);
     }
 
     void StartImporter()
@@ -243,30 +247,30 @@ public:
         }
 
         g_editor_instance = this;
-        LogInit(editor_log_callback);
 
+        LogInit(OnLog);
         LogInfo("NoZ Editor starting...");
         LogInfo("Auto-starting asset importer...");
 
         StartImporter();
-        _window->Render();
+        _terminal->Render();
 
         while (_running)
         {
             // Handle resize with highest priority
-            if (_window->ShouldResize())
+            if (_terminal->ShouldResize())
             {
-                _window->HandleResize();
+                _terminal->HandleResize();
             }
 
-            _window->CheckResize();
-            int key = _window->GetKey();
+            _terminal->CheckResize();
+            int key = _terminal->GetKey();
 
             if (key == ERR)
             {
-                if (_window->NeedsRedraw())
+                if (_terminal->NeedsRedraw())
                 {
-                    _window->Render();
+                    _terminal->Render();
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(20));
                 continue;
@@ -281,14 +285,14 @@ public:
                     _command_mode = false;
                     _command_input->set_active(false);
                     _command_input->clear();
-                    _window->SetCursorVisible(false);
+                    _terminal->SetCursorVisible(false);
                 }
                 else if (key == 27)
                 { // Escape
                     _command_mode = false;
                     _command_input->set_active(false);
                     _command_input->clear();
-                    _window->SetCursorVisible(false);
+                    _terminal->SetCursorVisible(false);
                 }
                 else
                 {
@@ -302,7 +306,7 @@ public:
                     _command_mode = true;
                     _command_input->set_active(true);
                     _command_input->clear();
-                    _window->SetCursorVisible(true);
+                    _terminal->SetCursorVisible(true);
                 }
                 else if (key == 'q')
                 {
@@ -310,12 +314,12 @@ public:
                 }
             }
 
-            _window->Render();
+            _terminal->Render();
         }
     }
 };
 
-void editor_log_callback(LogType type, const char* message)
+void OnLog(LogType type, const char* message)
 {
     // Handle debug logging to file
     if (type == LOG_TYPE_DEBUG)

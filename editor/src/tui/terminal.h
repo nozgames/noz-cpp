@@ -1,53 +1,50 @@
 #pragma once
 
+#include <functional>
+#include <atomic>
+#include <memory>
+
 #ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#undef MOUSE_MOVED
+#include <windows.h>
+#undef MOUSE_MOVED
 #include <curses.h>
 #else
 #include <ncurses.h>
 #endif
 
-// functional and atomic are already included in PCH
-
 /**
- * Window class handles ncurses initialization, resize events, and provides
- * a clean interface for rendering through callbacks.
+ * Terminal class wraps ncurses/PDCurses and handles platform-specific behavior
  */
-class Window {
+class Terminal {
 public:
-    // Callback function types
     using RenderCallback = std::function<void(int width, int height)>;
     using ResizeCallback = std::function<void(int new_width, int new_height)>;
 
-    Window();
-    ~Window();
+    Terminal();
+    virtual ~Terminal();
 
-    // Initialization and cleanup
-    bool Initialize();
-    void Cleanup();
+    virtual bool Initialize() = 0;
+    virtual void Cleanup() = 0;
 
-    // Callback management
     void SetRenderCallback(RenderCallback callback);
     void SetResizeCallback(ResizeCallback callback);
 
-    // Resize handling
-    void HandleResize();
-    void CheckResize();
-    bool ShouldResize();
+    virtual void HandleResize() = 0;
+    virtual void CheckResize() = 0;
+    virtual bool ShouldResize() = 0;
 
-    // Rendering
     void Render();
     void RequestRedraw();
     bool NeedsRedraw();
-
-    // Input handling
     int GetKey();
 
-    // Window properties
     int GetWidth() const;
     int GetHeight() const;
     WINDOW* GetWindow() const;
 
-    // Drawing utilities
     void ClearScreen();
     void MoveCursor(int y, int x);
     void AddChar(char ch);
@@ -57,14 +54,13 @@ public:
     void SetCursorVisible(bool visible);
     bool HasColorSupport() const;
 
-    // Color pairs (predefined)
-    static constexpr int COLOR_STATUS_BAR = 1;     // Black on white
-    static constexpr int COLOR_COMMAND_LINE = 2;   // White on black
-    static constexpr int COLOR_SUCCESS = 3;        // Green on black
-    static constexpr int COLOR_ERROR = 4;          // Red on black
-    static constexpr int COLOR_WARNING = 5;        // Yellow on black
+    static constexpr int COLOR_STATUS_BAR = 1;
+    static constexpr int COLOR_COMMAND_LINE = 2;
+    static constexpr int COLOR_SUCCESS = 3;
+    static constexpr int COLOR_ERROR = 4;
+    static constexpr int COLOR_WARNING = 5;
 
-private:
+protected:
     WINDOW* _main_window;
     int _screen_width;
     int _screen_height;
@@ -73,5 +69,9 @@ private:
     ResizeCallback _on_resize_callback;
     
     std::atomic<bool> _needs_redraw = false;
-    bool _running;
+
+    void InitializeColors();
+    void InitializeTerminal();
 };
+
+std::unique_ptr<Terminal> CreateTerminal();
