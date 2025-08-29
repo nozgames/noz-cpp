@@ -4,7 +4,31 @@
 
 #pragma once
 
+// Standard Library Headers (commonly used across editor)
+#include <algorithm>
+#include <atomic>
+#include <cassert>
+#include <cctype>
+#include <chrono>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <csignal>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <functional>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <regex>
+#include <set>
+#include <sstream>
 #include <string>
+#include <thread>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include <noz/noz.h>
 #include "tokenizer.h"

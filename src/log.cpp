@@ -2,30 +2,20 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-#include <noz/log.h>
 #include <cstdio>
 #include <cstdarg>
-#include <cstring>
 #include <iostream>
 
 static LogFunc g_log_callback = nullptr;
 
-static void InternalLog(const char* prefix, const char* format, va_list args)
+static void LogImpl(LogType type, const char* format, va_list args)
 {
     char buffer[2048];
-    int written = 0;
-    
-    if (prefix && strlen(prefix) > 0) {
-        written = snprintf(buffer, sizeof(buffer), "[%s] ", prefix);
-    }
-    
-    vsnprintf(buffer + written, sizeof(buffer) - written, format, args);
+    vsnprintf(buffer, sizeof(buffer), format, args);
     buffer[sizeof(buffer) - 1] = '\0';
+    
     if (g_log_callback) {
-        g_log_callback(buffer);
-    } else {
-        printf("%s\n", buffer);
-        fflush(stdout);
+        g_log_callback(type, buffer);
     }
 }
 
@@ -34,11 +24,19 @@ void LogInit(LogFunc callback)
     g_log_callback = callback;
 }
 
-void Log(const char* format, ...)
+void Log(LogType type, const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    InternalLog("INFO", format, args);
+    LogImpl(type, format, args);
+    va_end(args);
+}
+
+void LogInfo(const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    LogImpl(LOG_TYPE_INFO, format, args);
     va_end(args);
 }
 
@@ -46,7 +44,7 @@ void LogWarning(const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    InternalLog("WARNING", format, args);
+    LogImpl(LOG_TYPE_WARNING, format, args);
     va_end(args);
 }
 
@@ -54,19 +52,25 @@ void LogError(const char* format, ...)
 {
     va_list args;
     va_start(args, format);
-    InternalLog("ERROR", format, args);
+    LogImpl(LOG_TYPE_ERROR, format, args);
     va_end(args);
 }
 
 void LogFileError(const char* filename, const char* format, ...)
 {
-    char prefix[256];
-    snprintf(prefix, sizeof(prefix), "ERROR:%s", filename);
-    
+    char buffer[2048];
     va_list args;
     va_start(args, format);
-    InternalLog(prefix, format, args);
+    
+    // Format the message with filename prefix
+    int written = snprintf(buffer, sizeof(buffer), "ERROR:%s ", filename);
+    vsnprintf(buffer + written, sizeof(buffer) - written, format, args);
+    buffer[sizeof(buffer) - 1] = '\0';
     va_end(args);
+    
+    if (g_log_callback) {
+        g_log_callback(LOG_TYPE_ERROR, buffer);
+    }
 }
 
 void LogShutdown()

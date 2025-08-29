@@ -1,7 +1,7 @@
 #include "window.h"
-#include <csignal>
+#include <noz/log.h>
 #ifndef _WIN32
-#include <cstdlib> // for setenv
+// cstdlib for setenv - already in PCH but keep comment for clarity
 #endif
 
 // Global pointer to active window for signal handling
@@ -9,6 +9,7 @@ static Window* g_active_window = nullptr;
 
 // Global flag for window resize
 static std::atomic<bool> g_window_resized = false;
+
 
 #ifndef _WIN32
 // Signal handler for window resize (Unix/Linux only)
@@ -37,6 +38,8 @@ Window::~Window()
 
 bool Window::Initialize()
 {
+    // Debug logging will be handled by the main application
+
     _main_window = initscr();
     if (!_main_window)
     {
@@ -44,6 +47,8 @@ bool Window::Initialize()
     }
 
     getmaxyx(stdscr, _screen_height, _screen_width);
+
+    LogDebug("Window initialization completed - Initial size: %dx%d", _screen_width, _screen_height);
 
     cbreak();
     noecho();
@@ -86,6 +91,8 @@ void Window::Cleanup()
     {
         g_active_window = nullptr;
     }
+
+    LogDebug("Window cleanup completed");
 }
 
 void Window::SetRenderCallback(RenderCallback callback)
@@ -97,10 +104,39 @@ void Window::HandleResize()
 {
     int new_height, new_width;
 
+    LogDebug("HandleResize called");
+
 #ifdef _WIN32
-    // Windows PDCurses approach
+    // Windows PDCurses approach - more robust handling
+    LogDebug("Using Windows resize approach");
+    
     resize_term(0, 0);
+    clear();
+    refresh();
     getmaxyx(stdscr, new_height, new_width);
+    
+    LogDebug("After resize_term: %dx%d", new_width, new_height);
+    
+    // If resize_term didn't work properly, try alternative approach
+    if (new_height <= 0 || new_width <= 0)
+    {
+        LogDebug("resize_term failed, trying endwin/initscr");
+        
+        endwin();
+        _main_window = initscr();
+        if (_main_window)
+        {
+            cbreak();
+            noecho();
+            keypad(stdscr, TRUE);
+            curs_set(0);
+            nodelay(stdscr, TRUE);
+            timeout(50);
+            getmaxyx(stdscr, new_height, new_width);
+            
+            LogDebug("After reinit: %dx%d", new_width, new_height);
+        }
+    }
 #else
     // Unix/Linux approach
     endwin();
@@ -119,6 +155,8 @@ void Window::HandleResize()
     // Only proceed if dimensions actually changed and are valid
     if ((new_height != _screen_height || new_width != _screen_width) && new_height > 0 && new_width > 0)
     {
+        LogDebug("Applying resize: %dx%d -> %dx%d", 
+                 _screen_width, _screen_height, new_width, new_height);
 
         // Update stored dimensions
         _screen_height = new_height;
@@ -135,11 +173,44 @@ void Window::HandleResize()
         RequestRedraw();
         Render();
     }
+    else
+    {
+        LogDebug("No resize needed or invalid dimensions");
+    }
 }
 
 void Window::CheckResize()
 {
-    // Only check resize occasionally to avoid performance impact
+#ifdef _WIN32
+    // On Windows, check more frequently since we rely on polling
+    static int resize_check_counter = 0;
+    resize_check_counter++;
+    
+    // Check every 5th frame instead of every 20th for better responsiveness
+    if (resize_check_counter % 5 != 0)
+    {
+        return;
+    }
+    
+    // On Windows, poll for resize since no SIGWINCH
+    int new_height, new_width;
+    getmaxyx(stdscr, new_height, new_width);
+    
+    // Debug output every 100 checks
+    if (resize_check_counter % 100 == 0)
+    {
+        LogDebug("CheckResize: current=%dx%d, detected=%dx%d", 
+                 _screen_width, _screen_height, new_width, new_height);
+    }
+    
+    if (new_height != _screen_height || new_width != _screen_width && new_height > 0 && new_width > 0)
+    {
+        LogDebug("Resize detected! %dx%d -> %dx%d", 
+                 _screen_width, _screen_height, new_width, new_height);
+        g_window_resized = true;
+    }
+#else
+    // On Unix/Linux, check less frequently since we have signal handler
     static int resize_check_counter = 0;
     resize_check_counter++;
 
@@ -147,16 +218,7 @@ void Window::CheckResize()
     {
         return;
     }
-
-#ifdef _WIN32
-    // On Windows, poll for resize since no SIGWINCH
-    int new_height, new_width;
-    getmaxyx(stdscr, new_height, new_width);
-    if (new_height != _screen_height || new_width != _screen_width)
-    {
-        g_window_resized = true;
-    }
-#else
+    
     // On Unix/Linux, rely on signal handler but still check occasionally
     int new_height, new_width;
     getmaxyx(stdscr, new_height, new_width);

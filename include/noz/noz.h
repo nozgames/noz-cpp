@@ -45,6 +45,7 @@ inline int i32_max(i32 a, i32 b) { return (a > b) ? a : b; }
 inline int i32_min(i32 a, i32 b) { return (a < b) ? a : b; }
 
 #include "allocator.h"
+#include "log.h"
 #include "linked_list.h"
 #include "bounds3.h"
 #include "rect.h"

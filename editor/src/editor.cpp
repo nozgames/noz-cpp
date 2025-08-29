@@ -1,57 +1,46 @@
-#include <atomic>
-#include <chrono>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <thread>
-#include <vector>
-
 #include "controls/text_input.h"
 #include "views/log_view.h"
 #include "window.h"
-#include <noz/log.h>
 
-// Forward declarations for importer functions
 int InitImporter();
 void ShutdownImporter();
 
-// Forward declaration of editor class
 class Editor;
 
-// Global pointer to editor for log callback
 static Editor* g_editor_instance = nullptr;
 
-// Log callback function that routes NoZ logging to editor
-void editor_log_callback(const char* message);
+static FILE* g_debug_log = nullptr;
+
+void editor_log_callback(LogType type, const char* message);
 
 class Editor
 {
-private:
-    // Views (data/logic)
     LogView _log_view;
-
-    // Controls (UI rendering)
     std::unique_ptr<text_input> _command_input;
-
-    // Window management
     std::unique_ptr<Window> _window;
-
-    // Editor state
     bool _command_mode = false;
     std::atomic<bool> _running = true;
-
-    // Importer management
     std::unique_ptr<std::thread> _importer_thread;
     std::atomic<bool> _importer_running = false;
 
 public:
-    Editor()
-    {
-    }
 
     ~Editor()
     {
-        Cleanup();
+        if (_importer_running)
+        {
+            StopImporter();
+        }
+
+        _window.reset();
+        g_editor_instance = nullptr;
+
+        // Close debug log file
+        if (g_debug_log)
+        {
+            fclose(g_debug_log);
+            g_debug_log = nullptr;
+        }
     }
 
     bool Initialize()
@@ -69,17 +58,6 @@ public:
         _command_input = std::make_unique<text_input>(1, _window->GetHeight() - 1, _window->GetWidth() - 1);
 
         return true;
-    }
-
-    void Cleanup()
-    {
-        if (_importer_running)
-        {
-            StopImporter();
-        }
-
-        _window.reset();
-        g_editor_instance = nullptr;
     }
 
     void HandleLogMessage(const std::string& message)
@@ -180,11 +158,11 @@ public:
     {
         if (_importer_running)
         {
-            Log("Importer is already running");
+            LogInfo("Importer is already running");
             return;
         }
 
-        Log("Starting asset importer...");
+        LogInfo("Starting asset importer...");
         _importer_running = true;
 
         _importer_thread = std::make_unique<std::thread>(
@@ -192,7 +170,7 @@ public:
             {
                 int result = InitImporter();
                 _importer_running = false;
-                Log("Importer stopped with code: %d", result);
+                LogInfo("Importer stopped with code: %d", result);
             });
     }
 
@@ -200,11 +178,11 @@ public:
     {
         if (!_importer_running)
         {
-            Log("Importer is not running");
+            LogInfo("Importer is not running");
             return;
         }
 
-        Log("Stopping importer...");
+        LogInfo("Stopping importer...");
         ShutdownImporter();
 
         if (_importer_thread && _importer_thread->joinable())
@@ -242,17 +220,17 @@ public:
         {
             if (_importer_running)
             {
-                Log("Importer is running");
+                LogInfo("Importer is running");
             }
             else
             {
-                Log("Importer is stopped");
+                LogInfo("Importer is stopped");
             }
         }
         else if (!command.empty())
         {
-            Log("Unknown command: %s", command.c_str());
-            Log("Available commands: start, stop, restart, status, clear, quit");
+            LogInfo("Unknown command: %s", command.c_str());
+            LogInfo("Available commands: start, stop, restart, status, clear, quit");
         }
     }
 
@@ -267,8 +245,8 @@ public:
         g_editor_instance = this;
         LogInit(editor_log_callback);
 
-        Log("NoZ Editor starting...");
-        Log("Auto-starting asset importer...");
+        LogInfo("NoZ Editor starting...");
+        LogInfo("Auto-starting asset importer...");
 
         StartImporter();
         _window->Render();
@@ -337,11 +315,35 @@ public:
     }
 };
 
-void editor_log_callback(const char* message)
+void editor_log_callback(LogType type, const char* message)
 {
+    // Handle debug logging to file
+    if (type == LOG_TYPE_DEBUG)
+    {
+        if (!g_debug_log)
+        {
+            g_debug_log = fopen("debug.log", "w");
+        }
+        if (g_debug_log)
+        {
+            fprintf(g_debug_log, "[DEBUG] %s\n", message);
+            fflush(g_debug_log);
+        }
+        return; // Don't show debug messages in editor UI
+    }
+    
+    // Route other messages to editor UI
     if (g_editor_instance)
     {
-        g_editor_instance->HandleLogMessage(std::string(message));
+        // Add type prefix for display
+        std::string formatted_message;
+        switch(type) {
+            case LOG_TYPE_INFO: formatted_message = "[INFO] " + std::string(message); break;
+            case LOG_TYPE_WARNING: formatted_message = "[WARNING] " + std::string(message); break;
+            case LOG_TYPE_ERROR: formatted_message = "[ERROR] " + std::string(message); break;
+            default: formatted_message = std::string(message); break;
+        }
+        g_editor_instance->HandleLogMessage(formatted_message);
     }
 }
 

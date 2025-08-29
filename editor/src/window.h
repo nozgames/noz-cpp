@@ -6,8 +6,7 @@
 #include <ncurses.h>
 #endif
 
-#include <functional>
-#include <atomic>
+// functional and atomic are already included in PCH
 
 /**
  * Window class handles ncurses initialization, resize events, and provides

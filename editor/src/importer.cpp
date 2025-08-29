@@ -1,19 +1,12 @@
 //
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
-// @STL
 
-#include <algorithm>
-#include <csignal>
 #include "file_watcher.h"
-#include <filesystem>
-#include <iostream>
 #include <noz/noz.h>
 #include <noz/asset.h>
 #include <noz/platform.h>
 #include <noz/log.h>
-#include <string>
-#include <vector>
 #include "asset_manifest.h"
 #include "server.h"
 
@@ -51,7 +44,7 @@ void signal_handler(int sig)
     if (sig != SIGINT)
         return;
 
-    Log("Shutting down...");
+    LogInfo("Shutting down...");
     g_running = false;
 }
 
@@ -65,7 +58,7 @@ static bool LoadConfig()
 
         if (g_config != nullptr)
         {
-            Log("loaded configuration '%s'", config_path.string().c_str());
+            LogInfo("loaded configuration '%s'", config_path.string().c_str());
             return true;
         }
     }
@@ -258,7 +251,7 @@ bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers)
                         asset_path.replace_extension("");
                         std::string asset_name = asset_path.string();
                         std::replace(asset_name.begin(), asset_name.end(), '\\', '/');
-                        Log("Imported '%s'", asset_name.c_str());
+                        LogInfo("Imported '%s'", asset_name.c_str());
 
                         // Broadcast hotload message
                         BroadcastAssetChange(asset_name);
@@ -313,16 +306,16 @@ int InitImporter()
     }
 
     // Add directories to watch (file watcher will auto-start when first directory is added)
-    Log("Adding directories to watch:");
+    LogInfo("Adding directories to watch:");
     auto source = g_config->GetKeys("source");
     for (const auto& source_dir_str : source)
     {
-        Log("  - %s", source_dir_str.c_str());
+        LogInfo("  - %s", source_dir_str.c_str());
         if (!WatchDirectory(fs::path(source_dir_str)))
             LogWarning("Failed to add directory '%s'", source_dir_str.c_str());
     }
 
-    Log("Watching for file changes... Press Ctrl-C to exit");
+    LogInfo("Watching for file changes... Press Ctrl-C to exit");
 
     while (g_running)
     {
@@ -353,7 +346,7 @@ int InitImporter()
             int hotload_port = g_config->GetInt("hotload", "port", 8080);
             if (InitHotloadServer(hotload_port))
             {
-                Log("Hotload server initialized on port %d", hotload_port);
+                LogInfo("Hotload server initialized on port %d", hotload_port);
             }
             else
             {
@@ -372,6 +365,6 @@ int InitImporter()
 
 void ShutdownImporter()
 {
-    Log("Shutting down importer...");
+    LogInfo("Shutting down importer...");
     g_running = false;
 }

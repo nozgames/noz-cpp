@@ -2,15 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-// @STL
-
 #include "file_watcher.h"
-#include <filesystem>
-#include <vector>
-#include <map>
-#include <string>
-#include <algorithm>
-#include <chrono>
+// std headers (filesystem, vector, map, string, algorithm, chrono) now in PCH
 
 #ifndef nullptr
 #define nullptr NULL
