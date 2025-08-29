@@ -32,141 +32,237 @@ void TreeView::AddLine(const std::string& line)
     int indent_level = CountLeadingTabs(line);
     std::string content = RemoveLeadingTabs(line);
     
-    // Create new node - only expand root level nodes by default
-    TreeNode node(content, indent_level, indent_level == 0);
-    
-    // Find parent and update hierarchy
-    if (!nodes_.empty() && indent_level > 0)
+    // Adjust stack to match indent level
+    while (_node_stack.size() > static_cast<size_t>(indent_level))
     {
-        // Find the most recent node with lower indent level (potential parent)
-        for (int i = static_cast<int>(nodes_.size()) - 1; i >= 0; i--)
-        {
-            if (nodes_[i].indent_level < indent_level)
-            {
-                // This is the parent
-                if (!nodes_[i].has_children)
-                {
-                    nodes_[i].has_children = true;
-                    nodes_[i].first_child_index = nodes_.size();
-                }
-                nodes_[i].child_count++;
-                break;
-            }
-        }
+        _node_stack.pop_back();
     }
     
-    nodes_.push_back(node);
-    
-    // Keep only the most recent entries
-    while (nodes_.size() > max_entries_)
+    TreeNode* new_node = nullptr;
+    if (_node_stack.empty())
     {
-        nodes_.erase(nodes_.begin());
-        // Rebuild hierarchy after removal
-        RebuildVisibleList();
+        // Root node
+        auto root = std::make_unique<TreeNode>(content, 0, true, true);
+        root->path = content;
+        new_node = root.get();
+        _root_nodes.push_back(std::move(root));
+    }
+    else
+    {
+        // Child node
+        TreeNode* parent = _node_stack.back();
+        new_node = parent->AddChild(content, true);
     }
     
-    // Rebuild visible list and auto-scroll to bottom
+    _node_stack.push_back(new_node);
     RebuildVisibleList();
-    if (!visible_indices_.empty())
+    
+    // Auto-scroll to bottom
+    if (!_visible_nodes.empty())
     {
-        cursor_row_ = static_cast<int>(visible_indices_.size()) - 1;
+        _cursor_row = static_cast<int>(_visible_nodes.size()) - 1;
+    }
+}
+
+void TreeView::AddObject(const std::string& name)
+{
+    TreeNode* new_node = nullptr;
+    if (_node_stack.empty())
+    {
+        // Root node
+        auto root = std::make_unique<TreeNode>(name, 0, false, true);
+        root->path = name;
+        new_node = root.get();
+        _root_nodes.push_back(std::move(root));
+    }
+    else
+    {
+        // Child node
+        TreeNode* parent = _node_stack.back();
+        new_node = parent->AddChild(name, true);
+    }
+    
+    RebuildVisibleList();
+}
+
+void TreeView::AddProperty(const std::string& name, const std::string& value)
+{
+    std::string content = name;
+    if (!value.empty())
+    {
+        content += ": " + value;
+    }
+    
+    if (!_node_stack.empty())
+    {
+        TreeNode* parent = _node_stack.back();
+        parent->AddChild(content, false);
+    }
+    
+    RebuildVisibleList();
+}
+
+void TreeView::BeginObject(const std::string& name)
+{
+    TreeNode* new_node = nullptr;
+    if (_node_stack.empty())
+    {
+        // Root node
+        auto root = std::make_unique<TreeNode>(name, 0, false, true);
+        root->path = name;
+        new_node = root.get();
+        _root_nodes.push_back(std::move(root));
+    }
+    else
+    {
+        // Child node
+        TreeNode* parent = _node_stack.back();
+        new_node = parent->AddChild(name, true);
+    }
+    
+    _node_stack.push_back(new_node);
+    RebuildVisibleList();
+}
+
+void TreeView::EndObject()
+{
+    if (!_node_stack.empty())
+    {
+        _node_stack.pop_back();
     }
 }
 
 void TreeView::RebuildVisibleList()
 {
-    visible_indices_.clear();
-    
-    if (search_active_ && search_regex_valid_)
+    // Remember current cursor node if any
+    TreeNode* current_cursor_node = nullptr;
+    if (!_visible_nodes.empty() && _cursor_row >= 0 && _cursor_row < static_cast<int>(_visible_nodes.size()))
     {
-        // Search mode: only show matching nodes and their parents
-        for (size_t i = 0; i < nodes_.size(); i++)
+        current_cursor_node = _visible_nodes[_cursor_row];
+    }
+    
+    _visible_nodes.clear();
+    
+    for (auto& root : _root_nodes)
+    {
+        if (_search_active && _search_regex_valid)
         {
-            if (ShouldShowInSearch(i))
+            CollectSearchResults(root.get(), _visible_nodes);
+        }
+        else
+        {
+            CollectVisibleNodes(root.get(), _visible_nodes);
+        }
+    }
+    
+    // Try to restore cursor position to the same node, or closest available
+    if (current_cursor_node && !_visible_nodes.empty())
+    {
+        // First try to find the exact same node
+        for (size_t i = 0; i < _visible_nodes.size(); i++)
+        {
+            if (_visible_nodes[i] == current_cursor_node)
             {
-                visible_indices_.push_back(i);
+                _cursor_row = static_cast<int>(i);
+                return;
             }
         }
+        
+        // If exact node not found, try to find a close ancestor or descendant
+        int best_distance = INT_MAX;
+        int best_position = 0;
+        
+        for (size_t i = 0; i < _visible_nodes.size(); i++)
+        {
+            TreeNode* node = _visible_nodes[i];
+            int distance = CalculateNodeDistance(current_cursor_node, node);
+            if (distance < best_distance)
+            {
+                best_distance = distance;
+                best_position = static_cast<int>(i);
+            }
+        }
+        
+        _cursor_row = best_position;
     }
     else
     {
-        // Normal mode: show nodes based on expansion state
-        for (size_t i = 0; i < nodes_.size(); i++)
+        // No previous cursor or empty list - reset to top
+        _cursor_row = 0;
+    }
+    
+    // Ensure cursor is in valid range
+    if (!_visible_nodes.empty())
+    {
+        _cursor_row = std::max(0, std::min(_cursor_row, static_cast<int>(_visible_nodes.size()) - 1));
+    }
+}
+
+void TreeView::CollectVisibleNodes(TreeNode* node, std::vector<TreeNode*>& visible)
+{
+    if (!node) return;
+    
+    visible.push_back(node);
+    
+    if (node->is_expanded && node->has_children())
+    {
+        for (auto& child : node->children)
         {
-            const TreeNode& node = nodes_[i];
-            
-            // Always add root level nodes
-            if (node.indent_level == 0)
-            {
-                visible_indices_.push_back(i);
-                continue;
-            }
-            
-            // For child nodes, check if all parents are expanded
-            bool should_be_visible = true;
-            for (int j = static_cast<int>(i) - 1; j >= 0; j--)
-            {
-                if (nodes_[j].indent_level < node.indent_level)
-                {
-                    // This is a parent node
-                    if (nodes_[j].has_children && !nodes_[j].is_expanded)
-                    {
-                        should_be_visible = false;
-                        break;
-                    }
-                    // Continue checking higher level parents
-                    if (nodes_[j].indent_level == 0)
-                        break;
-                }
-            }
-            
-            if (should_be_visible)
-            {
-                visible_indices_.push_back(i);
-            }
+            CollectVisibleNodes(child.get(), visible);
         }
     }
 }
 
-void TreeView::ToggleExpansion(size_t node_index)
+void TreeView::CollectSearchResults(TreeNode* node, std::vector<TreeNode*>& visible)
 {
-    if (node_index >= nodes_.size())
-        return;
+    if (!node) return;
+    
+    if (node->matches_search)
+    {
+        // Add this matching node
+        visible.push_back(node);
         
-    TreeNode& node = nodes_[node_index];
-    if (node.has_children)
-    {
-        node.is_expanded = !node.is_expanded;
-        RebuildVisibleList();
+        // Add children only if this node is expanded (respecting expansion state even in search)
+        if (node->is_expanded && node->has_children())
+        {
+            for (auto& child : node->children)
+            {
+                visible.push_back(child.get());
+                
+                // Recursively add children of expanded nodes
+                std::function<void(TreeNode*)> AddChildrenOfExpanded = [&](TreeNode* n) {
+                    if (n->is_expanded && n->has_children())
+                    {
+                        for (auto& grandchild : n->children)
+                        {
+                            visible.push_back(grandchild.get());
+                            AddChildrenOfExpanded(grandchild.get());
+                        }
+                    }
+                };
+                AddChildrenOfExpanded(child.get());
+            }
+        }
     }
-}
-
-int TreeView::CountVisibleChildren(size_t node_index) const
-{
-    if (node_index >= nodes_.size() || !nodes_[node_index].has_children)
-        return 0;
-    
-    const TreeNode& parent = nodes_[node_index];
-    int count = 0;
-    
-    // Count immediate children that are visible
-    for (size_t i = node_index + 1; i < nodes_.size(); i++)
+    else if (node->is_search_parent)
     {
-        if (nodes_[i].indent_level <= parent.indent_level)
-            break; // No more children
-            
-        if (nodes_[i].indent_level == parent.indent_level + 1)
-            count++;
+        // Add this parent node (will be rendered in darker color)
+        visible.push_back(node);
+        
+        // Only add children that are either matches or search parents
+        for (auto& child : node->children)
+        {
+            CollectSearchResults(child.get(), visible);
+        }
     }
-    
-    return count;
 }
 
 void TreeView::Clear()
 {
-    nodes_.clear();
-    visible_indices_.clear();
-    cursor_row_ = 0;
+    _root_nodes.clear();
+    _visible_nodes.clear();
+    _node_stack.clear();
+    _cursor_row = 0;
 }
 
 void TreeView::Render(int width, int height)
@@ -182,19 +278,19 @@ void TreeView::Render(int width, int height)
     }
 
     // Calculate which nodes to show based on cursor position
-    if (!visible_indices_.empty())
+    if (!_visible_nodes.empty())
     {
-        size_t total_visible = visible_indices_.size();
+        size_t total_visible = _visible_nodes.size();
         size_t max_display_count = std::min(static_cast<size_t>(tree_height), total_visible);
         
         // Ensure cursor is within valid range
-        cursor_row_ = std::max(0, std::min(cursor_row_, static_cast<int>(total_visible) - 1));
+        _cursor_row = std::max(0, std::min(_cursor_row, static_cast<int>(total_visible) - 1));
         
         // Calculate window to show cursor
         size_t start_idx = 0;
         if (total_visible > max_display_count)
         {
-            int cursor_pos = cursor_row_;
+            int cursor_pos = _cursor_row;
             int ideal_start = cursor_pos - static_cast<int>(max_display_count) / 2;
             int max_start = static_cast<int>(total_visible) - static_cast<int>(max_display_count);
             
@@ -202,39 +298,45 @@ void TreeView::Render(int width, int height)
         }
         
         size_t display_count = std::min(max_display_count, total_visible - start_idx);
-        int cursor_in_window = cursor_row_ - static_cast<int>(start_idx);
+        int cursor_in_window = _cursor_row - static_cast<int>(start_idx);
 
         for (size_t i = 0; i < display_count; i++)
         {
-            size_t node_index = visible_indices_[start_idx + i];
-            const TreeNode& node = nodes_[node_index];
+            TreeNode* node = _visible_nodes[start_idx + i];
             
             MoveCursor(static_cast<int>(i), 0);
 
-            // Build display string with indentation and expansion indicators
             std::string display_line;
             
             // Add indentation
-            for (int indent = 0; indent < node.indent_level; indent++)
+            for (int indent = 0; indent < node->indent_level; indent++)
             {
                 display_line += "  "; // 2 spaces per indent level
             }
             
             // Add expansion indicator for nodes with children
-            if (node.has_children)
+            if (node->has_children())
             {
-                if (node.is_expanded)
+                if (node->is_expanded)
                     display_line += "- ";
                 else
                     display_line += "+ ";
             }
-            else if (node.indent_level > 0)
+            else if (node->indent_level > 0)
             {
                 display_line += "  ";
             }
             
-            // Add content
-            display_line += node.content;
+            // Add content with appropriate coloring
+            if (_search_active && node->is_search_parent && !node->matches_search)
+            {
+                // Search parent nodes in darker/subdued color
+                display_line += "\033[2m" + node->content + "\033[0m"; // Dim/faint text
+            }
+            else
+            {
+                display_line += node->content;
+            }
             
             // Truncate if too long
             if (display_line.length() > static_cast<size_t>(width))
@@ -243,7 +345,7 @@ void TreeView::Render(int width, int height)
             }
 
             // Render with optional cursor highlighting
-            int cursor_pos = (show_cursor_ && static_cast<int>(i) == cursor_in_window) ? 0 : -1;
+            int cursor_pos = (_show_cursor && static_cast<int>(i) == cursor_in_window) ? 0 : -1;
             AddStringWithCursor(display_line, cursor_pos);
         }
     }
@@ -251,24 +353,32 @@ void TreeView::Render(int width, int height)
 
 size_t TreeView::NodeCount() const
 {
-    return nodes_.size();
+    size_t count = 0;
+    std::function<void(TreeNode*)> count_nodes = [&](TreeNode* node) {
+        if (!node) return;
+        count++;
+        for (auto& child : node->children)
+        {
+            count_nodes(child.get());
+        }
+    };
+    
+    for (auto& root : _root_nodes)
+    {
+        count_nodes(root.get());
+    }
+    
+    return count;
 }
 
 size_t TreeView::VisibleCount() const
 {
-    return visible_indices_.size();
+    return _visible_nodes.size();
 }
 
 void TreeView::SetMaxEntries(size_t max_entries)
 {
-    max_entries_ = max_entries;
-
-    // Trim existing nodes if needed
-    while (nodes_.size() > max_entries_)
-    {
-        nodes_.erase(nodes_.begin());
-    }
-    
+    _max_entries = max_entries;
     RebuildVisibleList();
 }
 
@@ -277,74 +387,69 @@ bool TreeView::HandleKey(int key)
     switch (key)
     {
         case KEY_UP:
-            if (cursor_row_ > 0)
+            if (_cursor_row > 0)
             {
-                cursor_row_--;
+                _cursor_row--;
             }
             return true;
             
         case KEY_DOWN:
-            if (!visible_indices_.empty() && cursor_row_ < static_cast<int>(visible_indices_.size()) - 1)
+            if (!_visible_nodes.empty() && _cursor_row < static_cast<int>(_visible_nodes.size()) - 1)
             {
-                cursor_row_++;
+                _cursor_row++;
             }
             return true;
             
         case KEY_PPAGE:  // Page Up
-            cursor_row_ = std::max(0, cursor_row_ - 10);
+            _cursor_row = std::max(0, _cursor_row - 10);
             return true;
             
         case KEY_NPAGE:  // Page Down
-            if (!visible_indices_.empty())
+            if (!_visible_nodes.empty())
             {
-                cursor_row_ = std::min(cursor_row_ + 10, static_cast<int>(visible_indices_.size()) - 1);
+                _cursor_row = std::min(_cursor_row + 10, static_cast<int>(_visible_nodes.size()) - 1);
             }
             return true;
             
         case KEY_HOME:
-            cursor_row_ = 0;
+            _cursor_row = 0;
             return true;
             
         case KEY_END:
-            if (!visible_indices_.empty())
+            if (!_visible_nodes.empty())
             {
-                cursor_row_ = static_cast<int>(visible_indices_.size()) - 1;
+                _cursor_row = static_cast<int>(_visible_nodes.size()) - 1;
             }
             return true;
             
         case KEY_RIGHT:
         case ' ':  // Space also expands
             // Expand current node
-            if (!visible_indices_.empty() && cursor_row_ >= 0 && cursor_row_ < static_cast<int>(visible_indices_.size()))
+            if (!_visible_nodes.empty() && _cursor_row >= 0 && _cursor_row < static_cast<int>(_visible_nodes.size()))
             {
-                size_t node_index = visible_indices_[cursor_row_];
-                ToggleExpansion(node_index);
+                TreeNode* node = _visible_nodes[_cursor_row];
+                ToggleExpansion(node);
             }
             return true;
             
         case KEY_LEFT:
             // Collapse current node or move to parent
-            if (!visible_indices_.empty() && cursor_row_ >= 0 && cursor_row_ < static_cast<int>(visible_indices_.size()))
+            if (!_visible_nodes.empty() && _cursor_row >= 0 && _cursor_row < static_cast<int>(_visible_nodes.size()))
             {
-                size_t node_index = visible_indices_[cursor_row_];
-                const TreeNode& node = nodes_[node_index];
+                TreeNode* node = _visible_nodes[_cursor_row];
                 
-                if (node.has_children && node.is_expanded)
+                if (node->has_children() && node->is_expanded)
                 {
                     // Collapse current node
-                    ToggleExpansion(node_index);
+                    ToggleExpansion(node);
                 }
-                else if (node.indent_level > 0)
+                else if (node->parent)
                 {
                     // Move to parent
-                    for (int i = cursor_row_ - 1; i >= 0; i--)
+                    auto it = std::find(_visible_nodes.begin(), _visible_nodes.end(), node->parent);
+                    if (it != _visible_nodes.end())
                     {
-                        size_t parent_index = visible_indices_[i];
-                        if (nodes_[parent_index].indent_level < node.indent_level)
-                        {
-                            cursor_row_ = i;
-                            break;
-                        }
+                        _cursor_row = static_cast<int>(std::distance(_visible_nodes.begin(), it));
                     }
                 }
             }
@@ -357,73 +462,90 @@ bool TreeView::HandleKey(int key)
 
 void TreeView::ScrollUp(int lines)
 {
-    cursor_row_ = std::max(0, cursor_row_ - lines);
+    _cursor_row = std::max(0, _cursor_row - lines);
 }
 
 void TreeView::ScrollDown(int lines)
 {
-    if (!visible_indices_.empty())
+    if (!_visible_nodes.empty())
     {
-        cursor_row_ = std::min(cursor_row_ + lines, static_cast<int>(visible_indices_.size()) - 1);
+        _cursor_row = std::min(_cursor_row + lines, static_cast<int>(_visible_nodes.size()) - 1);
     }
 }
 
 void TreeView::ScrollToTop()
 {
-    cursor_row_ = 0;
+    _cursor_row = 0;
 }
 
 void TreeView::ScrollToBottom()
 {
-    if (!visible_indices_.empty())
+    if (!_visible_nodes.empty())
     {
-        cursor_row_ = static_cast<int>(visible_indices_.size()) - 1;
+        _cursor_row = static_cast<int>(_visible_nodes.size()) - 1;
     }
 }
 
 void TreeView::SetCursorVisible(bool visible)
 {
-    show_cursor_ = visible;
+    _show_cursor = visible;
 }
 
 void TreeView::SetCursorPosition(int row, int col)
 {
-    cursor_row_ = row;
+    _cursor_row = row;
 }
 
 void TreeView::ExpandAll()
 {
-    for (TreeNode& node : nodes_)
-    {
-        if (node.has_children)
+    std::function<void(TreeNode*)> expand_recursive = [&](TreeNode* node) {
+        if (!node) return;
+        if (node->has_children())
         {
-            node.is_expanded = true;
+            node->is_expanded = true;
         }
+        for (auto& child : node->children)
+        {
+            expand_recursive(child.get());
+        }
+    };
+    
+    for (auto& root : _root_nodes)
+    {
+        expand_recursive(root.get());
     }
     RebuildVisibleList();
 }
 
 void TreeView::CollapseAll()
 {
-    for (TreeNode& node : nodes_)
-    {
-        if (node.has_children)
+    std::function<void(TreeNode*)> collapse_recursive = [&](TreeNode* node) {
+        if (!node) return;
+        if (node->has_children())
         {
-            node.is_expanded = false;
+            node->is_expanded = false;
         }
+        for (auto& child : node->children)
+        {
+            collapse_recursive(child.get());
+        }
+    };
+    
+    for (auto& root : _root_nodes)
+    {
+        collapse_recursive(root.get());
     }
     RebuildVisibleList();
 }
 
 void TreeView::ExpandCurrent()
 {
-    if (!visible_indices_.empty() && cursor_row_ >= 0 && cursor_row_ < static_cast<int>(visible_indices_.size()))
+    if (!_visible_nodes.empty() && _cursor_row >= 0 && _cursor_row < static_cast<int>(_visible_nodes.size()))
     {
-        size_t node_index = visible_indices_[cursor_row_];
-        TreeNode& node = nodes_[node_index];
-        if (node.has_children)
+        TreeNode* node = _visible_nodes[_cursor_row];
+        if (node->has_children())
         {
-            node.is_expanded = true;
+            node->is_expanded = true;
             RebuildVisibleList();
         }
     }
@@ -431,26 +553,40 @@ void TreeView::ExpandCurrent()
 
 void TreeView::CollapseCurrent()
 {
-    if (!visible_indices_.empty() && cursor_row_ >= 0 && cursor_row_ < static_cast<int>(visible_indices_.size()))
+    if (!_visible_nodes.empty() && _cursor_row >= 0 && _cursor_row < static_cast<int>(_visible_nodes.size()))
     {
-        size_t node_index = visible_indices_[cursor_row_];
-        TreeNode& node = nodes_[node_index];
-        if (node.has_children)
+        TreeNode* node = _visible_nodes[_cursor_row];
+        if (node->has_children())
         {
-            node.is_expanded = false;
+            node->is_expanded = false;
             RebuildVisibleList();
         }
     }
 }
 
-bool TreeView::MatchesSearch(size_t node_index) const
+void TreeView::ToggleExpansion(TreeNode* node)
 {
-    if (!search_regex_valid_ || node_index >= nodes_.size())
+    if (node && node->has_children())
+    {
+        node->is_expanded = !node->is_expanded;
+        RebuildVisibleList();
+    }
+}
+
+bool TreeView::MatchesSearch(TreeNode* node) const
+{
+    if (!_search_regex_valid || !node)
+        return false;
+    
+    // Only search objects, not properties
+    if (!node->is_object)
         return false;
     
     try
     {
-        return std::regex_search(nodes_[node_index].content, search_regex_);
+        // Search both content and full path
+        return std::regex_search(node->content, _search_regex) ||
+               std::regex_search(node->path, _search_regex);
     }
     catch (const std::exception&)
     {
@@ -458,82 +594,186 @@ bool TreeView::MatchesSearch(size_t node_index) const
     }
 }
 
-bool TreeView::ShouldShowInSearch(size_t node_index) const
-{
-    if (node_index >= nodes_.size())
-        return false;
-        
-    const TreeNode& node = nodes_[node_index];
-    
-    // If this node matches, show it
-    if (MatchesSearch(node_index))
-        return true;
-    
-    // If any child matches, show this parent
-    for (size_t i = node_index + 1; i < nodes_.size(); i++)
-    {
-        if (nodes_[i].indent_level <= node.indent_level)
-            break; // No more children
-            
-        if (MatchesSearch(i))
-            return true;
-    }
-    
-    // If this node is a child and its parent should be shown, show it too
-    if (node.indent_level > 0)
-    {
-        for (int i = static_cast<int>(node_index) - 1; i >= 0; i--)
-        {
-            if (nodes_[i].indent_level < node.indent_level)
-            {
-                // This is a parent - if it should be shown and matches, show this child
-                if (ShouldShowInSearch(i) && MatchesSearch(i))
-                    return true;
-                break;
-            }
-        }
-    }
-    
-    return false;
-}
-
 void TreeView::SetSearchPattern(const std::string& pattern)
 {
-    search_pattern_ = pattern;
-    search_regex_valid_ = false;
+    _search_pattern = pattern;
+    _search_regex_valid = false;
     
     if (!pattern.empty())
     {
-        search_active_ = true;
+        _search_active = true;
         try
         {
-            search_regex_ = std::regex(pattern, std::regex_constants::icase);
-            search_regex_valid_ = true;
+            _search_regex = std::regex(pattern, std::regex_constants::icase);
+            _search_regex_valid = true;
         }
         catch (const std::exception&)
         {
-            // Invalid regex, keep search_regex_valid_ as false
+            // Invalid regex, keep _search_regex_valid as false
         }
     }
     else
     {
-        search_active_ = false;
+        _search_active = false;
     }
     
+    UpdateSearchFlags();
     RebuildVisibleList();
-    cursor_row_ = 0; // Reset cursor to top when search changes
+    
+    // Position cursor on first matching result to ensure it's visible
+    if (_search_active && _search_regex_valid && !_visible_nodes.empty())
+    {
+        // Find first matching node in visible list
+        for (size_t i = 0; i < _visible_nodes.size(); i++)
+        {
+            if (_visible_nodes[i]->matches_search)
+            {
+                _cursor_row = static_cast<int>(i);
+                break;
+            }
+        }
+    }
+    else
+    {
+        _cursor_row = 0; // Reset cursor to top when search cleared
+    }
 }
 
 void TreeView::ClearSearch()
 {
-    search_active_ = false;
-    search_pattern_.clear();
-    search_regex_valid_ = false;
-    RebuildVisibleList();
-    cursor_row_ = 0;
+    _search_active = false;
+    _search_pattern.clear();
+    _search_regex_valid = false;
+    UpdateSearchFlags();
+    RebuildVisibleList(); // This will automatically preserve cursor position
 }
 
 bool TreeView::SupportsSearch() const
 {
     return true;
+}
+
+void TreeView::UpdateSearchFlags()
+{
+    for (auto& root : _root_nodes)
+    {
+        UpdateSearchFlagsRecursive(root.get());
+    }
+}
+
+void TreeView::UpdateSearchFlagsRecursive(TreeNode* node)
+{
+    if (!node) return;
+    
+    // Clear flags
+    node->matches_search = false;
+    node->is_search_parent = false;
+    
+    if (_search_active && _search_regex_valid)
+    {
+        try
+        {
+            // Check if this node matches the search pattern
+            bool matches = std::regex_search(node->content, _search_regex) ||
+                          std::regex_search(node->path, _search_regex);
+            
+            if (matches)
+            {
+                if (node->is_object)
+                {
+                    node->matches_search = true;
+                    // Mark all parents as search parents and expand them
+                    TreeNode* parent = node->parent;
+                    while (parent)
+                    {
+                        parent->is_search_parent = true;
+                        parent->is_expanded = true;
+                        parent = parent->parent;
+                    }
+                }
+                else if (node->parent)
+                {
+                    // Property matches - mark parent object instead
+                    node->parent->matches_search = true;
+                    // Expand the parent object to show the matching property
+                    node->parent->is_expanded = true;
+                    // Mark all grandparents as search parents and expand them
+                    TreeNode* parent = node->parent->parent;
+                    while (parent)
+                    {
+                        parent->is_search_parent = true;
+                        parent->is_expanded = true;
+                        parent = parent->parent;
+                    }
+                }
+            }
+        }
+        catch (const std::exception&)
+        {
+            // Regex error, skip this node
+        }
+    }
+    
+    // Recurse to children
+    for (auto& child : node->children)
+    {
+        UpdateSearchFlagsRecursive(child.get());
+    }
+}
+
+int TreeView::CalculateNodeDistance(TreeNode* from, TreeNode* to) const
+{
+    if (!from || !to) return INT_MAX;
+    if (from == to) return 0;
+    
+    // Check if one is an ancestor of the other
+    TreeNode* ancestor = from->parent;
+    int distance = 1;
+    while (ancestor)
+    {
+        if (ancestor == to) return distance;
+        ancestor = ancestor->parent;
+        distance++;
+    }
+    
+    ancestor = to->parent;
+    distance = 1;
+    while (ancestor)
+    {
+        if (ancestor == from) return distance;
+        ancestor = ancestor->parent;
+        distance++;
+    }
+    
+    // Find common ancestor and calculate distance through it
+    std::vector<TreeNode*> from_path;
+    std::vector<TreeNode*> to_path;
+    
+    TreeNode* node = from;
+    while (node)
+    {
+        from_path.push_back(node);
+        node = node->parent;
+    }
+    
+    node = to;
+    while (node)
+    {
+        to_path.push_back(node);
+        node = node->parent;
+    }
+    
+    // Find common ancestor
+    int common_depth = 0;
+    while (common_depth < static_cast<int>(from_path.size()) && 
+           common_depth < static_cast<int>(to_path.size()) &&
+           from_path[from_path.size() - 1 - common_depth] == to_path[to_path.size() - 1 - common_depth])
+    {
+        common_depth++;
+    }
+    
+    if (common_depth == 0) return INT_MAX; // No common ancestor
+    
+    // Distance is sum of distances to common ancestor
+    return static_cast<int>(from_path.size()) + static_cast<int>(to_path.size()) - 2 * common_depth;
 }

@@ -3,53 +3,76 @@
 //
 
 #pragma once
+
 #include "view_interface.h"
-#include <vector>
-#include <string>
-#include <regex>
 
 struct TreeNode
 {
     std::string content;
+    std::string path; // Full path from root, e.g., "Game Systems/Player System/Movement Component"
     int indent_level;
     bool is_expanded;
-    bool has_children;
-    size_t first_child_index;
-    size_t child_count;
+    bool is_object; // true for objects (searchable), false for properties (display only)
+    bool matches_search; // true if this node matches the current search
+    bool is_search_parent; // true if this node is a parent of a matching node
     
-    TreeNode(const std::string& text, int indent = 0, bool expanded = false)
+    TreeNode* parent;
+    std::vector<std::unique_ptr<TreeNode>> children;
+    
+    TreeNode(const std::string& text, int indent = 0, bool expanded = false, bool object = true)
         : content(text)
         , indent_level(indent)
         , is_expanded(expanded)
-        , has_children(false)
-        , first_child_index(0)
-        , child_count(0)
+        , is_object(object)
+        , matches_search(false)
+        , is_search_parent(false)
+        , parent(nullptr)
     {}
+    
+    bool has_children() const { return !children.empty(); }
+    
+    TreeNode* AddChild(const std::string& text, bool object = true)
+    {
+        auto child = std::make_unique<TreeNode>(text, indent_level + 1, false, object);
+        child->parent = this;
+        child->path = path.empty() ? text : path + "/" + text;
+        TreeNode* ptr = child.get();
+        children.push_back(std::move(child));
+        return ptr;
+    }
 };
 
 class TreeView : public IView
 {
 protected:
-    std::vector<TreeNode> nodes_;
-    std::vector<size_t> visible_indices_;  // Indices of currently visible nodes
-    size_t max_entries_ = 1000;
-    int cursor_row_ = 0;     // Current cursor position in visible list
-    bool show_cursor_ = false;
+    std::vector<std::unique_ptr<TreeNode>> _root_nodes;
+    std::vector<TreeNode*> _visible_nodes;  // Pointers to currently visible nodes
+    std::vector<TreeNode*> _node_stack;     // Stack for tracking current parent during construction
+    size_t _max_entries = 1000;
+    int _cursor_row = 0;     // Current cursor position in visible list
+    bool _show_cursor = false;
     
     // Search functionality
-    bool search_active_ = false;
-    std::string search_pattern_;
-    std::regex search_regex_;
-    bool search_regex_valid_ = false;
-    
+    bool _search_active = false;
+    std::string _search_pattern;
+    std::regex _search_regex;
+    bool _search_regex_valid = false;
+
     void RebuildVisibleList();
-    void ToggleExpansion(size_t node_index);
-    int CountVisibleChildren(size_t node_index) const;
-    bool MatchesSearch(size_t node_index) const;
-    bool ShouldShowInSearch(size_t node_index) const;
+    void CollectVisibleNodes(TreeNode* node, std::vector<TreeNode*>& visible);
+    void CollectSearchResults(TreeNode* node, std::vector<TreeNode*>& visible);
+    void ToggleExpansion(TreeNode* node);
+    bool MatchesSearch(TreeNode* node) const;
+    void UpdateSearchFlags();
+    void UpdateSearchFlagsRecursive(TreeNode* node);
+    int CalculateNodeDistance(TreeNode* from, TreeNode* to) const;
     
 public:
-    void AddLine(const std::string& line);
+    void AddLine(const std::string& line); // Generic method (for backward compatibility)
+    void AddObject(const std::string& name); // Add searchable object at current indent
+    void AddProperty(const std::string& name, const std::string& value = ""); // Add non-searchable property
+    void BeginObject(const std::string& name); // Add object and increase indent level
+    void EndObject(); // Decrease indent level
     void Clear();
     size_t NodeCount() const;
     size_t VisibleCount() const;
