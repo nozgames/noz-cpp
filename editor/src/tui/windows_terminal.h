@@ -10,12 +10,11 @@ public:
 
     bool Initialize() override;
     void Cleanup() override;
-    void HandleResize() override;
-    void CheckResize() override;
-    bool ShouldResize() override;
+    void Update() override;
 
 private:
     std::thread _resize_thread;
     std::atomic<bool> _resize_thread_running = false;
     void ResizeThreadLoop();
+    void HandleResize();
 };

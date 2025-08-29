@@ -32,9 +32,7 @@ public:
     void SetRenderCallback(RenderCallback callback);
     void SetResizeCallback(ResizeCallback callback);
 
-    virtual void HandleResize() = 0;
-    virtual void CheckResize() = 0;
-    virtual bool ShouldResize() = 0;
+    virtual void Update() = 0;
 
     void Render();
     void RequestRedraw();

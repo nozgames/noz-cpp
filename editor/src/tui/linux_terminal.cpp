@@ -1,4 +1,8 @@
+#ifndef _WIN32
 #include "linux_terminal.h"
+#include <noz/log.h>
+#include <csignal>
+#include <cstdlib>
 
 static LinuxTerminal* g_active_terminal = nullptr;
 static std::atomic<bool> g_window_resized = false;
@@ -119,3 +123,5 @@ bool LinuxTerminal::ShouldResize()
 {
     return g_window_resized.exchange(false);
 }
+
+#endif // !_WIN32

@@ -1,4 +1,6 @@
+#ifdef _WIN32
 #include "windows_terminal.h"
+#include <noz/log.h>
 
 static std::atomic<bool> g_window_resized = false;
 
@@ -55,88 +57,40 @@ void WindowsTerminal::Cleanup()
 
 void WindowsTerminal::HandleResize()
 {
-    int new_height, new_width;
-
-    LogDebug("WindowsTerminal HandleResize called");
-
-    // Method 1: Try resize_term first
+    // PDCurses resize_term(0,0) handles the resize for us
     resize_term(0, 0);
+    
+    int new_width, new_height;
     getmaxyx(stdscr, new_height, new_width);
     
-    LogDebug("After resize_term: %dx%d", new_width, new_height);
-    
-    // Method 2: If dimensions are invalid or unchanged, force full reinit
-    if (new_height <= 0 || new_width <= 0 || 
-        (new_height == _screen_height && new_width == _screen_width))
+    // Only proceed if dimensions are valid and changed
+    if (new_width > 0 && new_height > 0 && 
+        (new_width != _screen_width || new_height != _screen_height))
     {
-        LogDebug("resize_term failed or no change, trying full reinit");
+        LogDebug("Resize: %dx%d -> %dx%d", _screen_width, _screen_height, new_width, new_height);
         
-        endwin();
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        
-        _main_window = initscr();
-        if (_main_window)
-        {
-            InitializeTerminal();
-            InitializeColors();
-            
-            getmaxyx(stdscr, new_height, new_width);
-            LogDebug("After full reinit: %dx%d", new_width, new_height);
-        }
-    }
-    
-    // Method 3: Last resort
-    if (new_height <= 0 || new_width <= 0)
-    {
-        LogDebug("Dimensions still invalid, trying refresh approach");
-        clear();
-        refresh();
-        getmaxyx(stdscr, new_height, new_width);
-        LogDebug("After refresh: %dx%d", new_width, new_height);
-    }
-
-    // Apply resize if dimensions changed and are valid
-    if ((new_height != _screen_height || new_width != _screen_width) && new_height > 0 && new_width > 0)
-    {
-        LogDebug("Applying resize: %dx%d -> %dx%d", 
-                 _screen_width, _screen_height, new_width, new_height);
-
-        _screen_height = new_height;
         _screen_width = new_width;
-
-        erase();
+        _screen_height = new_height;
+        
+        // Clear and redraw
         clear();
-        clearok(stdscr, TRUE);
-        wrefresh(stdscr);
-
+        
         if (_on_resize_callback)
         {
             _on_resize_callback(_screen_width, _screen_height);
         }
-
-        RequestRedraw();
         
-        if (_render_callback)
-        {
-            _render_callback(_screen_width, _screen_height);
-        }
-        refresh();
+        RequestRedraw();
     }
-    else
+}
+
+void WindowsTerminal::Update()
+{
+    // Check if resize thread detected a resize
+    if (g_window_resized.exchange(false))
     {
-        LogDebug("No resize needed or invalid dimensions: %dx%d", new_width, new_height);
+        HandleResize();
     }
-}
-
-void WindowsTerminal::CheckResize()
-{
-    // Windows resize detection handled by background thread
-    return;
-}
-
-bool WindowsTerminal::ShouldResize()
-{
-    return g_window_resized.exchange(false);
 }
 
 void WindowsTerminal::ResizeThreadLoop()
@@ -158,3 +112,5 @@ void WindowsTerminal::ResizeThreadLoop()
     
     LogDebug("Windows resize monitoring thread stopped");
 }
+
+#endif // _WIN32

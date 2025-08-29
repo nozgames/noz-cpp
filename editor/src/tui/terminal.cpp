@@ -16,7 +16,7 @@ Terminal::Terminal()
 
 Terminal::~Terminal()
 {
-    Cleanup();
+    // Cleanup is handled by derived classes in their destructors
 }
 
 void Terminal::SetRenderCallback(RenderCallback callback)

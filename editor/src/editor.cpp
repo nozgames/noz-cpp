@@ -257,13 +257,8 @@ public:
 
         while (_running)
         {
-            // Handle resize with highest priority
-            if (_terminal->ShouldResize())
-            {
-                _terminal->HandleResize();
-            }
-
-            _terminal->CheckResize();
+            // Update terminal (handles resize internally)
+            _terminal->Update();
             int key = _terminal->GetKey();
 
             if (key == ERR)
