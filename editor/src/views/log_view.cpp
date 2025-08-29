@@ -21,17 +21,15 @@ void LogView::Clear()
     messages_.clear();
 }
 
-void LogView::Render(Terminal* terminal, int width, int height)
+void LogView::Render(int width, int height)
 {
     int log_height = height - 2; // Leave 2 rows for status and command
 
     for (int row = 0; row < log_height; row++)
     {
-        terminal->MoveCursor(row, 0);
+        MoveCursor(row, 0);
         for (int col = 0; col < width; col++)
-        {
-            terminal->AddChar(' ');
-        }
+            AddChar(' ');
     }
 
     // Calculate which messages to show (show most recent)
@@ -44,7 +42,7 @@ void LogView::Render(Terminal* terminal, int width, int height)
         for (size_t i = 0; i < display_count; i++)
         {
             const std::string& message = messages_[start_idx + i];
-            terminal->MoveCursor(static_cast<int>(i), 0);
+            MoveCursor(static_cast<int>(i), 0);
 
             std::string display_msg = message;
             if (display_msg.length() > static_cast<size_t>(width))
@@ -52,7 +50,7 @@ void LogView::Render(Terminal* terminal, int width, int height)
                 display_msg = display_msg.substr(0, width);
             }
 
-            terminal->AddString(display_msg.c_str());
+            AddString(display_msg.c_str());
         }
     }
 }

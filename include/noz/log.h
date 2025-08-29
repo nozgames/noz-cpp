@@ -14,7 +14,7 @@ enum LogType
 
 typedef void (*LogFunc)(LogType type, const char* message);
 
-void LogInit(LogFunc callback);
+void InitLog(LogFunc callback);
 void Log(LogType type, const char* format, ...);
 void LogInfo(const char* format, ...);
 void LogWarning(const char* format, ...);

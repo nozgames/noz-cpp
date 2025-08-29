@@ -29,6 +29,9 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <functional>
+#include <atomic>
+#include <memory>
 
 #include <noz/noz.h>
 #include "tokenizer.h"
@@ -43,3 +46,13 @@ using namespace glm;
 #include <cctype>
 
 #include "asset_importer.h"
+
+static constexpr int TERM_COLOR_STATUS_BAR = 1;
+static constexpr int TERM_COLOR_COMMAND_LINE = 2;
+static constexpr int TERM_COLOR_SUCCESS = 3;
+static constexpr int TERM_COLOR_ERROR = 4;
+static constexpr int TERM_COLOR_WARNING = 5;
+
+// Terminal key constants
+static constexpr int ERR = -1;
+static constexpr int KEY_MOUSE = 409;

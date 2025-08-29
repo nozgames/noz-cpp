@@ -5,350 +5,293 @@
 #include "tui/terminal.h"
 #include "tui/text_input.h"
 #include "views/log_view.h"
+#include <thread>
+#include <mutex>
+#include <queue>
 
-int InitImporter();
+bool InitImporter();
 void ShutdownImporter();
+bool IsImporterRunning();
 
-class Editor;
-
-static Editor* g_editor_instance = nullptr;
-
-static FILE* g_debug_log = nullptr;
-
-void OnLog(LogType type, const char* message);
-
-class Editor
+struct Editor
 {
-    LogView _log_view;
-    std::unique_ptr<text_input> _command_input;
-    std::unique_ptr<Terminal> _terminal;
-    bool _command_mode = false;
-    std::atomic<bool> _running = true;
-    std::unique_ptr<std::thread> _importer_thread;
-    std::atomic<bool> _importer_running = false;
+    LogView log_view;
+    TextInput* command_input;
+    bool command_mode = false;
+    std::atomic<bool> is_running = true;
+};
 
-public:
+static Editor g_editor = {};
 
-    ~Editor()
+struct DebugLog
+{
+    std::mutex mutex;
+    FILE* file = nullptr;
+};
+
+static DebugLog& GetDebugLog()
+{
+    static DebugLog instance;
+    return instance;
+}
+
+// Thread safety for log messages
+static std::thread::id g_main_thread_id;
+
+struct LogQueue
+{
+    std::mutex mutex;
+    std::queue<std::string> queue;
+};
+
+static LogQueue& GetLogQueue()
+{
+    static LogQueue instance;
+    return instance;
+}
+
+static void HandleResize(int new_width, int new_height)
+{
+    //g_editor.command_input = std::make_unique<text_input>(1, new_height - 1, new_width - 1);
+}
+
+static void HandleLog(LogType type, const char* message)
+{
+    // Handle debug logging to file (thread-safe)
+    if (type == LOG_TYPE_DEBUG)
     {
-        if (_importer_running)
+        DebugLog& debug_log = GetDebugLog();
+        std::lock_guard<std::mutex> lock(debug_log.mutex);
+        
+        if (!debug_log.file)
+            debug_log.file = fopen("debug.log", "w");
+
+        if (debug_log.file)
         {
-            StopImporter();
+            fprintf(debug_log.file, "[DEBUG] %s\n", message);
+            fflush(debug_log.file);
         }
-
-        _terminal.reset();
-        g_editor_instance = nullptr;
-
-        // Close debug log file
-        if (g_debug_log)
-        {
-            fclose(g_debug_log);
-            g_debug_log = nullptr;
-        }
+        return;
     }
 
-    bool Initialize()
-    {
-        _terminal = CreateTerminal();
-        if (!_terminal->Initialize())
-        {
-            return false;
-        }
-
-        _terminal->SetRenderCallback([this](int width, int height) { this->RenderContent(width, height); });
-
-        _terminal->SetResizeCallback([this](int new_width, int new_height) { this->OnResize(new_width, new_height); });
-
-        _command_input = std::make_unique<text_input>(1, _terminal->GetHeight() - 1, _terminal->GetWidth() - 1);
-
-        return true;
+    // Add type prefix for display
+    std::string formatted_message;
+    switch(type) {
+    case LOG_TYPE_INFO: formatted_message = "[INFO] " + std::string(message); break;
+    case LOG_TYPE_WARNING: formatted_message = "[WARNING] " + std::string(message); break;
+    case LOG_TYPE_ERROR: formatted_message = "[ERROR] " + std::string(message); break;
+    default: formatted_message = std::string(message); break;
     }
 
-    void HandleLogMessage(const std::string& message)
+    // Check if we're on the main thread
+    if (std::this_thread::get_id() == g_main_thread_id)
     {
-        _log_view.AddMessage(message);
-        _terminal->RequestRedraw();
+        // On main thread - add directly to log view
+        g_editor.log_view.AddMessage(formatted_message);
+        RequestRender();
+    }
+    else
+    {
+        // On background thread - queue the message safely
+        LogQueue& log_queue = GetLogQueue();
+        std::lock_guard<std::mutex> lock(log_queue.mutex);
+        log_queue.queue.push(formatted_message);
+        // Don't call RequestRender() from background thread
+    }
+}
+
+static void ProcessQueuedLogMessages()
+{
+    LogQueue& log_queue = GetLogQueue();
+    std::lock_guard<std::mutex> lock(log_queue.mutex);
+    while (!log_queue.queue.empty())
+    {
+        std::string message = log_queue.queue.front();
+        log_queue.queue.pop();
+        g_editor.log_view.AddMessage(message);
+    }
+}
+
+static void DrawStatusBar(int width, int height)
+{
+    SetColor(TERM_COLOR_STATUS_BAR);
+
+    std::string status = "NoZ Editor";
+    if (g_editor.command_mode)
+        status += " - Command Mode";
+
+    MoveCursor(height - 2, 0);
+    for (int i = 0; i < width - 1; i++)  // Leave last column to avoid line wrap
+    {
+        char ch = (i < static_cast<int>(status.length())) ? status[i] : ' ';
+        AddChar(ch);
     }
 
-    void OnResize(int new_width, int new_height)
+    UnsetColor(TERM_COLOR_STATUS_BAR);
+}
+
+static void DrawCommandLine(int width, int height)
+{
+    SetColor(TERM_COLOR_COMMAND_LINE);
+
+    MoveCursor(height - 1, 0);
+    if (g_editor.command_mode)
     {
-        _command_input = std::make_unique<text_input>(1, new_height - 1, new_width - 1);
+        AddChar(':');
+        Draw(g_editor.command_input);
     }
-
-    void RenderContent(int width, int height)
+    else
     {
-        _terminal->ClearScreen();
-        _log_view.Render(_terminal.get(), width, height);
-        DrawStatusBar(width, height);
-        DrawCommandLine(width, height);
-    }
-
-    void DrawStatusBar(int width, int height)
-    {
-        _terminal->SetColor(Terminal::COLOR_STATUS_BAR);
-
-        std::string status = "NoZ Editor";
-        if (_command_mode)
-        {
-            status += " - Command Mode";
-        }
-
-        _terminal->MoveCursor(height - 2, 0);
         for (int i = 0; i < width; i++)
-        {
-            char ch = (i < static_cast<int>(status.length())) ? status[i] : ' ';
-            _terminal->AddChar(ch);
-        }
-
-        _terminal->UnsetColor(Terminal::COLOR_STATUS_BAR);
+            AddChar(' ');
     }
 
-    void DrawCommandLine(int width, int height)
+    UnsetColor(TERM_COLOR_COMMAND_LINE);
+}
+
+
+static void HandleCommand(const std::string& command)
+{
+    if (command == "q" || command == "quit")
     {
-        _terminal->SetColor(Terminal::COLOR_COMMAND_LINE);
+        g_editor.is_running = false;
+    }
+    else if (command == "clear")
+    {
+        g_editor.log_view.Clear();
+    }
+    else if (!command.empty())
+    {
+        LogInfo("Unknown command: %s", command.c_str());
+        LogInfo("Available commands: clear, quit");
+    }
+}
 
-        _terminal->MoveCursor(height - 1, 0);
-        if (_command_mode)
+static void RunEditor()
+{
+    // Store main thread ID for thread safety
+    g_main_thread_id = std::this_thread::get_id();
+    
+    InitLog(HandleLog);
+    LogInfo("NoZ Editor starting...");
+    LogInfo("Auto-starting asset importer...");
+
+    InitImporter();
+    RenderTerminal();
+
+    while (g_editor.is_running)
+    {
+        // Process any queued log messages from background threads
+        ProcessQueuedLogMessages();
+        
+        UpdateTerminal();
+
+        int key = GetTerminalKey();
+        if (key == ERR)
         {
-            _terminal->AddChar(':');
+            RenderTerminal();
+            std::this_thread::yield();
+            continue;
+        }
+        
+        // Handle mouse events (including scroll) to prevent terminal scrolling
+        if (key == KEY_MOUSE)
+        {
+            LogDebug("Mouse event intercepted");
+            // Just consume the mouse event to prevent terminal scrolling
+            // TODO: Implement proper mouse/scroll handling later
+            continue; // Don't process mouse events as regular keys
+        }
 
-            std::string input_text = _command_input->get_text();
-            size_t cursor_pos = _command_input->get_cursor_pos();
-            int available_width = width - 1;
-
-            // Handle scrolling for long text
-            std::string display_text = input_text;
-            size_t display_cursor_pos = cursor_pos;
-
-            if (input_text.length() > static_cast<size_t>(available_width))
+        if (g_editor.command_mode)
+        {
+            if (key == '\n' || key == '\r')
             {
-                if (cursor_pos >= static_cast<size_t>(available_width))
-                {
-                    // Scroll text to keep cursor visible
-                    size_t start = cursor_pos - available_width + 1;
-                    display_text = input_text.substr(start);
-                    display_cursor_pos = available_width - 1;
-                }
-                else
-                {
-                    display_text = input_text.substr(0, available_width);
-                }
+                std::string command = GetText(g_editor.command_input);
+                HandleCommand(command);
+                g_editor.command_mode = false;
+                SetActive(g_editor.command_input, false);
+                Clear(g_editor.command_input);
+                SetCursorVisible(false);
             }
-
-            _terminal->AddString(display_text.c_str());
-
-            int remaining = available_width - static_cast<int>(display_text.length());
-            for (int i = 0; i < remaining; i++)
+            else if (key == 27)
+            { // Escape
+                g_editor.command_mode = false;
+                SetActive(g_editor.command_input, false);
+                Clear(g_editor.command_input);
+                SetCursorVisible(false);
+            }
+            else
             {
-                _terminal->AddChar(' ');
+                HandleKey(g_editor.command_input, key);
             }
-
-            int final_cursor_x = 1 + static_cast<int>(display_cursor_pos);
-            _terminal->MoveCursor(height - 1, final_cursor_x);
         }
         else
         {
-            for (int i = 0; i < width; i++)
+            if (key == ':')
             {
-                _terminal->AddChar(' ');
+                LogDebug("Entering command mode");
+                g_editor.command_mode = true;
+                SetActive(g_editor.command_input, true);
+                Clear(g_editor.command_input);
+                SetCursorVisible(true);
             }
-            _terminal->MoveCursor(0, 0);
+            else if (key == 'q')
+            {
+                g_editor.is_running = false;
+            }
         }
 
-        _terminal->UnsetColor(Terminal::COLOR_COMMAND_LINE);
+        RenderTerminal();
     }
+}
 
-    void StartImporter()
-    {
-        if (_importer_running)
-        {
-            LogInfo("Importer is already running");
-            return;
-        }
 
-        LogInfo("Starting asset importer...");
-        _importer_running = true;
-
-        _importer_thread = std::make_unique<std::thread>(
-            [this]()
-            {
-                int result = InitImporter();
-                _importer_running = false;
-                LogInfo("Importer stopped with code: %d", result);
-            });
-    }
-
-    void StopImporter()
-    {
-        if (!_importer_running)
-        {
-            LogInfo("Importer is not running");
-            return;
-        }
-
-        LogInfo("Stopping importer...");
-        ShutdownImporter();
-
-        if (_importer_thread && _importer_thread->joinable())
-        {
-            _importer_thread->join();
-        }
-        _importer_thread.reset();
-    }
-
-    void HandleCommand(const std::string& command)
-    {
-        if (command == "q" || command == "quit")
-        {
-            _running = false;
-        }
-        else if (command == "start" || command == "import")
-        {
-            StartImporter();
-        }
-        else if (command == "stop")
-        {
-            StopImporter();
-        }
-        else if (command == "restart")
-        {
-            StopImporter();
-            std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Small delay to ensure clean shutdown
-            StartImporter();
-        }
-        else if (command == "clear")
-        {
-            _log_view.Clear();
-        }
-        else if (command == "status")
-        {
-            if (_importer_running)
-            {
-                LogInfo("Importer is running");
-            }
-            else
-            {
-                LogInfo("Importer is stopped");
-            }
-        }
-        else if (!command.empty())
-        {
-            LogInfo("Unknown command: %s", command.c_str());
-            LogInfo("Available commands: start, stop, restart, status, clear, quit");
-        }
-    }
-
-    void Run()
-    {
-        if (!Initialize())
-        {
-            std::cerr << "Failed to initialize ncurses\n";
-            return;
-        }
-
-        g_editor_instance = this;
-
-        LogInit(OnLog);
-        LogInfo("NoZ Editor starting...");
-        LogInfo("Auto-starting asset importer...");
-
-        StartImporter();
-        _terminal->Render();
-
-        while (_running)
-        {
-            // Update terminal (handles resize internally)
-            _terminal->Update();
-            int key = _terminal->GetKey();
-
-            if (key == ERR)
-            {
-                if (_terminal->NeedsRedraw())
-                {
-                    _terminal->Render();
-                }
-                std::this_thread::sleep_for(std::chrono::milliseconds(20));
-                continue;
-            }
-
-            if (_command_mode)
-            {
-                if (key == '\n' || key == '\r')
-                {
-                    std::string command = _command_input->get_text();
-                    HandleCommand(command);
-                    _command_mode = false;
-                    _command_input->set_active(false);
-                    _command_input->clear();
-                    _terminal->SetCursorVisible(false);
-                }
-                else if (key == 27)
-                { // Escape
-                    _command_mode = false;
-                    _command_input->set_active(false);
-                    _command_input->clear();
-                    _terminal->SetCursorVisible(false);
-                }
-                else
-                {
-                    _command_input->handle_key(key);
-                }
-            }
-            else
-            {
-                if (key == ':')
-                {
-                    _command_mode = true;
-                    _command_input->set_active(true);
-                    _command_input->clear();
-                    _terminal->SetCursorVisible(true);
-                }
-                else if (key == 'q')
-                {
-                    _running = false;
-                }
-            }
-
-            _terminal->Render();
-        }
-    }
-};
-
-void OnLog(LogType type, const char* message)
+void RenderEditor(int width, int height)
 {
-    // Handle debug logging to file
-    if (type == LOG_TYPE_DEBUG)
+    LogDebug("RenderEditor %d, %d", width, height);
+
+    ClearScreen();
+    g_editor.log_view.Render(width, height);
+    DrawStatusBar(width, height);
+    DrawCommandLine(width, height);
+}
+
+void InitEditor()
+{
+    InitLog(HandleLog);
+    LogDebug("InitEditor");
+    InitTerminal();
+    SetRenderCallback([](int width, int height) { RenderEditor(width, height); });
+    SetResizeCallback([](int new_width, int new_height) { HandleResize(new_width, new_height); });
+    int term_height = GetTerminalHeight();
+    int term_width = GetTerminalWidth();
+    LogDebug("Creating TextInput at position (1, %d) with width %d", term_height - 1, term_width - 1);
+    g_editor.command_input = CreateTextInput(1, term_height - 1, term_width - 1);
+}
+
+void ShutdownEditor()
+{
+    LogDebug("ShutdownEditor");
+
+    Destroy(g_editor.command_input);
+    ShutdownImporter();
+    ShutdownTerminal();
+
+    // Close debug log file (thread-safe)
+    DebugLog& debug_log = GetDebugLog();
+    std::lock_guard<std::mutex> lock(debug_log.mutex);
+    if (debug_log.file)
     {
-        if (!g_debug_log)
-        {
-            g_debug_log = fopen("debug.log", "w");
-        }
-        if (g_debug_log)
-        {
-            fprintf(g_debug_log, "[DEBUG] %s\n", message);
-            fflush(g_debug_log);
-        }
-        return; // Don't show debug messages in editor UI
-    }
-    
-    // Route other messages to editor UI
-    if (g_editor_instance)
-    {
-        // Add type prefix for display
-        std::string formatted_message;
-        switch(type) {
-            case LOG_TYPE_INFO: formatted_message = "[INFO] " + std::string(message); break;
-            case LOG_TYPE_WARNING: formatted_message = "[WARNING] " + std::string(message); break;
-            case LOG_TYPE_ERROR: formatted_message = "[ERROR] " + std::string(message); break;
-            default: formatted_message = std::string(message); break;
-        }
-        g_editor_instance->HandleLogMessage(formatted_message);
+        fclose(debug_log.file);
+        debug_log.file = nullptr;
     }
 }
 
 int main(int argc, char* argv[])
 {
-    Editor editor;
-    editor.Run();
+    InitEditor();
+    RunEditor();
+    ShutdownEditor();
     return 0;
 }

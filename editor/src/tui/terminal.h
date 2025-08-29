@@ -1,75 +1,35 @@
+//
+//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//
+
 #pragma once
 
-#include <functional>
-#include <atomic>
-#include <memory>
+using TerminalRenderCallback = std::function<void(int width, int height)>;
+using TerminalResizeCallback = std::function<void(int new_width, int new_height)>;
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#undef MOUSE_MOVED
-#include <windows.h>
-#undef MOUSE_MOVED
-#include <curses.h>
-#else
-#include <ncurses.h>
-#endif
+void InitTerminal();
+void ShutdownTerminal();
+void RequestRender();
+void RenderTerminal();
+void UpdateTerminal();
 
-/**
- * Terminal class wraps ncurses/PDCurses and handles platform-specific behavior
- */
-class Terminal {
-public:
-    using RenderCallback = std::function<void(int width, int height)>;
-    using ResizeCallback = std::function<void(int new_width, int new_height)>;
-
-    Terminal();
-    virtual ~Terminal();
-
-    virtual bool Initialize() = 0;
-    virtual void Cleanup() = 0;
-
-    void SetRenderCallback(RenderCallback callback);
-    void SetResizeCallback(ResizeCallback callback);
-
-    virtual void Update() = 0;
-
-    void Render();
-    void RequestRedraw();
-    bool NeedsRedraw();
-    int GetKey();
-
-    int GetWidth() const;
-    int GetHeight() const;
-    WINDOW* GetWindow() const;
-
-    void ClearScreen();
-    void MoveCursor(int y, int x);
-    void AddChar(char ch);
-    void AddString(const char* str);
-    void SetColor(int pair);
-    void UnsetColor(int pair);
-    void SetCursorVisible(bool visible);
-    bool HasColorSupport() const;
-
-    static constexpr int COLOR_STATUS_BAR = 1;
-    static constexpr int COLOR_COMMAND_LINE = 2;
-    static constexpr int COLOR_SUCCESS = 3;
-    static constexpr int COLOR_ERROR = 4;
-    static constexpr int COLOR_WARNING = 5;
-
-protected:
-    WINDOW* _main_window;
-    int _screen_width;
-    int _screen_height;
-    
-    RenderCallback _render_callback;
-    ResizeCallback _on_resize_callback;
-    
-    std::atomic<bool> _needs_redraw = false;
-
-    void InitializeColors();
-    void InitializeTerminal();
-};
-
-std::unique_ptr<Terminal> CreateTerminal();
+void SetRenderCallback(TerminalRenderCallback callback);
+void SetResizeCallback(TerminalResizeCallback callback);
+void ClearScreen();
+void MoveCursor(int y, int x);
+void AddChar(char ch);
+void AddString(const char* str);
+void SetColor(int pair);
+void UnsetColor(int pair);
+void SetColor256(int fg, int bg = -1);                    // 256-color mode (0-255)
+void SetColorRGB(int r, int g, int b, int bg_r = -1, int bg_g = -1, int bg_b = -1);  // RGB mode
+void SetBold(bool enabled);
+void SetUnderline(bool enabled);
+void SetItalic(bool enabled);
+void SetScrollRegion(int top, int bottom);               // Set scrolling region (1-based lines)
+void ResetScrollRegion();                                // Reset to full screen scrolling
+void SetCursorVisible(bool visible);
+bool HasColorSupport();
+int GetTerminalKey();
+int GetTerminalWidth();
+int GetTerminalHeight();

@@ -19,7 +19,7 @@ static void LogImpl(LogType type, const char* format, va_list args)
     }
 }
 
-void LogInit(LogFunc callback)
+void InitLog(LogFunc callback)
 {
     g_log_callback = callback;
 }

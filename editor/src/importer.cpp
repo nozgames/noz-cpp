@@ -9,6 +9,8 @@
 #include <noz/log.h>
 #include "asset_manifest.h"
 #include "server.h"
+#include <thread>
+#include <atomic>
 
 namespace fs = std::filesystem;
 
@@ -29,7 +31,9 @@ struct ImportJob
 
 static std::vector<ImportJob> g_import_queue;
 static Props* g_config = nullptr;
-static volatile bool g_running = true;
+static std::atomic<bool> g_running{false};
+static std::unique_ptr<std::thread> g_importer_thread;
+static std::atomic<bool> g_thread_running{false};
 
 // Importer uses NoZ logging system
 
@@ -279,7 +283,7 @@ bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers)
     return any_imports_processed;
 }
 
-int InitImporter()
+static int RunImporterLoop()
 {
     if (!LoadConfig())
         return 1;
@@ -315,7 +319,7 @@ int InitImporter()
             LogWarning("Failed to add directory '%s'", source_dir_str.c_str());
     }
 
-    LogInfo("Watching for file changes... Press Ctrl-C to exit");
+    LogInfo("Watching for file changes...");
 
     while (g_running)
     {
@@ -363,8 +367,45 @@ int InitImporter()
     return 0;
 }
 
+bool InitImporter()
+{
+    if (g_thread_running)
+    {
+        LogInfo("Importer thread is already running");
+        return true;
+    }
+
+    LogInfo("Starting asset importer thread...");
+    g_running = true;
+    g_thread_running = true;
+
+    g_importer_thread = std::make_unique<std::thread>([](){
+        int result = RunImporterLoop();
+        g_thread_running = false;
+        LogInfo("Importer thread stopped with code: %d", result);
+    });
+
+    return true;
+}
+
 void ShutdownImporter()
 {
-    LogInfo("Shutting down importer...");
+    if (!g_thread_running)
+    {
+        LogInfo("Importer thread is not running");
+        return;
+    }
+
+    LogInfo("Shutting down importer thread...");
     g_running = false;
+
+    if (g_importer_thread && g_importer_thread->joinable())
+        g_importer_thread->join();
+
+    g_importer_thread.reset();
+}
+
+bool IsImporterRunning()
+{
+    return g_thread_running;
 }

@@ -4,21 +4,16 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-
-// Forward declaration
-class Terminal;
-
-class LogView {
-private:
+class LogView
+{
     std::vector<std::string> messages_;
     size_t max_messages_ = 1000;
     
 public:
+
     void AddMessage(const std::string& message);
     void Clear();
-    void Render(Terminal* terminal, int width, int height);
+    void Render(int width, int height);
     size_t MessageCount() const;
     void SetMaxMessages(size_t max_messages);
 };

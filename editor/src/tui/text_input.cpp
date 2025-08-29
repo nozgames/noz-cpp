@@ -3,94 +3,86 @@
 //
 
 #include "text_input.h"
+#include "terminal.h"
+#include <cassert>
+#include <noz/log.h>
 
-text_input::text_input(int x, int y, int width) 
-    : cursor_pos_(0), x_(x), y_(y), width_(width), active_(false) {
+struct TextInputImpl : TextInput
+{
+    std::string buffer;
+    size_t cursor_pos = 0;
+    int x, y;
+    int width;
+    bool active = false;
+    
+    TextInputImpl(int x_, int y_, int width_) 
+        : x(x_), y(y_), width(width_) {}
+};
+
+TextInput* CreateTextInput(int x, int y, int width)
+{
+    return new TextInputImpl(x, y, width);
 }
 
-void text_input::draw(WINDOW* win) {
-    // Calculate display parameters
-    std::string display_text = buffer_;
-    size_t text_start = 0;
-    size_t display_cursor_pos = cursor_pos_;
-    
-    // Handle text scrolling if it's too long
-    if (display_text.length() > static_cast<size_t>(width_)) {
-        if (cursor_pos_ >= static_cast<size_t>(width_)) {
-            // Scroll text to keep cursor visible
-            text_start = cursor_pos_ - width_ + 1;
-            display_cursor_pos = width_ - 1;
-        }
-        display_text = display_text.substr(text_start, width_);
-    }
-    
-    // Clear the input area and draw text using mvwaddnstr to avoid cursor movement
-    for (int i = 0; i < width_; i++) {
-        mvwaddch(win, y_, x_ + i, ' ');
-    }
-    
-    // Draw the visible text without moving cursor
-    if (!display_text.empty()) {
-        mvwaddnstr(win, y_, x_, display_text.c_str(), width_);
-    }
-    
-    // Position cursor correctly only at the very end
-    if (active_) {
-        int final_cursor_x = x_ + static_cast<int>(display_cursor_pos);
-        wmove(win, y_, final_cursor_x);
+void Destroy(TextInput* input)
+{
+    if (input)
+    {
+        TextInputImpl* impl = static_cast<TextInputImpl*>(input);
+        delete impl;
     }
 }
 
-void text_input::set_active(bool active) {
-    active_ = active;
+void Draw(TextInput* input)
+{
+    assert(input);
+    TextInputImpl* impl = static_cast<TextInputImpl*>(input);
+    
+    // Always add the text (even if empty) and show cursor position if active
+    AddString(impl->buffer.c_str());
+    
+    // Add cursor indicator if active  
+    if (impl->active) {
+        AddChar('\xDB');  // Solid block character (█)
+    }
 }
 
-bool text_input::handle_key(int key) {
-    if (!active_) {
+void SetActive(TextInput* input, bool active)
+{
+    assert(input);
+    TextInputImpl* impl = static_cast<TextInputImpl*>(input);
+    impl->active = active;
+}
+
+bool HandleKey(TextInput* input, int key)
+{
+    assert(input);
+    TextInputImpl* impl = static_cast<TextInputImpl*>(input);
+    
+    LogDebug("HandleKey: key=%d, active=%s, buffer_len=%zu, cursor_pos=%zu", 
+             key, impl->active ? "true" : "false", impl->buffer.length(), impl->cursor_pos);
+    
+    if (!impl->active)
         return false;
-    }
     
     switch (key) {
-        case KEY_BACKSPACE:
         case 127: // Delete/Backspace
         case 8:
-            if (cursor_pos_ > 0) {
-                buffer_.erase(cursor_pos_ - 1, 1);
-                cursor_pos_--;
-            }
-            return true;
-            
-        case KEY_LEFT:
-            if (cursor_pos_ > 0) {
-                cursor_pos_--;
-            }
-            return true;
-            
-        case KEY_RIGHT:
-            if (cursor_pos_ < buffer_.length()) {
-                cursor_pos_++;
-            }
-            return true;
-            
-        case KEY_HOME:
-            cursor_pos_ = 0;
-            return true;
-            
-        case KEY_END:
-            cursor_pos_ = buffer_.length();
-            return true;
-            
-        case KEY_DC: // Delete key
-            if (cursor_pos_ < buffer_.length()) {
-                buffer_.erase(cursor_pos_, 1);
+            if (impl->cursor_pos > 0) {
+                impl->buffer.erase(impl->cursor_pos - 1, 1);
+                impl->cursor_pos--;
             }
             return true;
             
         default:
             // Handle regular characters
             if (key >= 32 && key <= 126) { // Printable ASCII
-                buffer_.insert(cursor_pos_, 1, static_cast<char>(key));
-                cursor_pos_++;
+                // Ensure cursor_pos is valid
+                if (impl->cursor_pos > impl->buffer.length())
+                    impl->cursor_pos = impl->buffer.length();
+                    
+                impl->buffer.insert(impl->cursor_pos, 1, static_cast<char>(key));
+                impl->cursor_pos++;
                 return true;
             }
             break;
@@ -99,16 +91,39 @@ bool text_input::handle_key(int key) {
     return false;
 }
 
-void text_input::clear() {
-    buffer_.clear();
-    cursor_pos_ = 0;
+void Clear(TextInput* input)
+{
+    assert(input);
+    TextInputImpl* impl = static_cast<TextInputImpl*>(input);
+    impl->buffer.clear();
+    impl->cursor_pos = 0;
 }
 
-const std::string& text_input::get_text() const {
-    return buffer_;
+const std::string& GetText(TextInput* input)
+{
+    assert(input);
+    TextInputImpl* impl = static_cast<TextInputImpl*>(input);
+    return impl->buffer;
 }
 
-void text_input::set_text(const std::string& text) {
-    buffer_ = text;
-    cursor_pos_ = buffer_.length();
+void SetText(TextInput* input, const std::string& text)
+{
+    assert(input);
+    TextInputImpl* impl = static_cast<TextInputImpl*>(input);
+    impl->buffer = text;
+    impl->cursor_pos = impl->buffer.length();
+}
+
+size_t GetCursorPos(TextInput* input)
+{
+    assert(input);
+    TextInputImpl* impl = static_cast<TextInputImpl*>(input);
+    return impl->cursor_pos;
+}
+
+bool IsActive(TextInput* input)
+{
+    assert(input);
+    TextInputImpl* impl = static_cast<TextInputImpl*>(input);
+    return impl->active;
 }
