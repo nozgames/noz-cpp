@@ -5,12 +5,10 @@
 #include "tui/terminal.h"
 #include "tui/text_input.h"
 #include "views/log_view.h"
-#include "views/test_tree_view.h"
 #include "views/tree_view.h"
 #include "views/view_interface.h"
 #include "views/inspector_view.h"
 #include "views/inspector_object.h"
-#include "../../src/editor/editor_messages.h"
 #include <stack>
 
 bool InitImporter();
@@ -62,35 +60,17 @@ static void PopView()
 }
 
 // Forward inspection data to active inspector view
-void ForwardInspectionData(Stream* inspector_data)
+void HandleInspectorObject(std::unique_ptr<InspectorObject> object)
 {
-    LogInfo("ForwardInspectionData called");
-    
-    IView* current_view = GetCurrentView();
-    LogInfo("Current view pointer: %p", current_view);
-    
-    InspectorView* inspector = dynamic_cast<InspectorView*>(current_view);
-    LogInfo("Inspector view pointer: %p", inspector);
-    LogInfo("Inspector data pointer: %p", inspector_data);
-    
-    if (inspector && inspector_data)
+    auto current_view = GetCurrentView();
+    auto inspector = dynamic_cast<InspectorView*>(current_view);
+
+    if (inspector && object)
     {
-        LogInfo("Both inspector and data are valid - populating inspector");
-        
         try
         {
-            // Create proper InspectorObject hierarchy instead of using legacy API
-            auto root_object = std::make_unique<InspectorObject>("Scene");
-            
-            // Add fake object as child
-            InspectorObject* fake_obj = root_object->AddChild("FakeObject");
-            fake_obj->AddProperty("position", "(1.0, 2.0, 3.0)", 0);
-            fake_obj->AddProperty("rotation", "(0.0, 0.0, 0.0, 1.0)", 0);
-            
             // Set the root object in the inspector
-            inspector->SetRootObject(root_object.release());
-            
-            LogInfo("Successfully populated inspector with received data");
+            inspector->SetRootObject(std::move(object));
         }
         catch (...)
         {
@@ -302,17 +282,11 @@ static void HandleCommand(const std::string& command)
     {
         g_editor.log_view.Clear();
     }
-    else if (command == "t" || command == "tree")
-    {
-        // Push a new test tree view onto the stack
-        TestTreeView* tree_view = new TestTreeView();
-        PushView(tree_view);
-    }
     else if (command == "i" || command == "inspector")
     {
         // Check if current view is already an inspector
-        IView* current_view = GetCurrentView();
-        InspectorView* existing_inspector = dynamic_cast<InspectorView*>(current_view);
+        auto* current_view = GetCurrentView();
+        auto* existing_inspector = dynamic_cast<InspectorView*>(current_view);
         
         if (existing_inspector)
         {
@@ -524,6 +498,8 @@ void RenderEditor(int width, int height)
 
 void InitEditor()
 {
+    g_scratch_allocator = CreateArenaAllocator(32 * noz::MB, "scratch");
+
     InitLog(HandleLog);
     InitTerminal();
     SetRenderCallback([](int width, int height) { RenderEditor(width, height); });

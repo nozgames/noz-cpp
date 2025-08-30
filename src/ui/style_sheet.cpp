@@ -76,6 +76,11 @@ const Style& GetStyle(StyleSheet* sheet, const name_t* id, PseudoState pseudo_st
     return *style;
 }
 
+const name_t* GetName(StyleSheet* sheet)
+{
+    return Impl(sheet)->name;
+}
+
 bool HasStyle(StyleSheet* sheet, const name_t* name, PseudoState pseudo_state)
 {
     return HasKey(Impl(sheet)->styles, GetStyleKey(name, pseudo_state));

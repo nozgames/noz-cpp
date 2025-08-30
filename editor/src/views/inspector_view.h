@@ -18,7 +18,7 @@ private:
     std::unique_ptr<PropertiesView> _properties_view;
     bool _focus_on_tree = true;  // true = tree has focus, false = properties has focus
     int _split_position = 50;     // Percentage of width for tree view (0-100)
-    InspectorObject* _root_object = nullptr;
+    std::unique_ptr<InspectorObject> _root_object;
     bool _has_requested_data = false;  // Track if we've sent a request yet
     
     void UpdateLayout(int width, int height);
@@ -32,8 +32,8 @@ public:
     ~InspectorView() = default;
     
     // InspectorObject management - the main API
-    void SetRootObject(InspectorObject* root);
-    InspectorObject* GetRootObject() const { return _root_object; }
+    void SetRootObject(std::unique_ptr<InspectorObject> root);
+    InspectorObject* GetRootObject() const { return _root_object.get(); }
     InspectorObject* GetSelectedObject() const;
     
     // Legacy tree operations (still available for manual tree building)

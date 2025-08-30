@@ -51,6 +51,7 @@ bool ReadBool(Stream* stream);
 void ReadBytes(Stream* stream, void* dest, size_t count);
 int ReadString(Stream* stream, char* buffer, int buffer_size);
 color_t ReadColor(Stream* stream);
+vec3 ReadVec3(Stream* stream);
 
 // @write
 void WriteFileSignature(Stream* stream, const char* signature, size_t signature_length);
@@ -66,6 +67,7 @@ void WriteFloat(Stream* stream, float value);
 void WriteDouble(Stream* stream, double value);
 void WriteBool(Stream* stream, bool value);
 void WriteString(Stream* stream, const char* value);
+void WriteVec3(Stream* stream, const vec3& value);
 void WriteCSTR(Stream* stream, const char* format, ...); // Write formatted C string without length prefix
 void WriteBytes(Stream* stream, void* data, size_t size);
 void WriteColor(Stream* stream, color_t value);

@@ -7,6 +7,8 @@
 #include <noz/noz.h>
 #include <noz/color.h>
 
+#include "editor/editor_client.h"
+
 // @mesh
 typedef struct mesh_vertex
 {

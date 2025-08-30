@@ -157,16 +157,8 @@ void InitApplication(ApplicationTraits* traits)
     LoadRendererAssets(g_application.asset_allocator);
 
 #ifdef NOZ_EDITOR
-    // Initialize editor client
-    if (InitEditorClient("127.0.0.1", 8080))
-    {
-        printf("Editor client initialized in asset system\n");
-        SetHotloadCallback(OnHotload);
-    }
-    else
-    {
-        printf("Warning: Failed to initialize editor client in asset system\n");
-    }
+    SetHotloadCallback(OnHotload);
+    InitEditorClient("127.0.0.1", 8080);
 #endif // NOZ_EDITOR
 
     InitEntity();
@@ -223,6 +215,7 @@ bool UpdateApplication()
 
 #ifdef NOZ_EDITOR
     // Update editor client connection
+
     UpdateEditorClient();
 #endif
 

@@ -5,7 +5,9 @@
 #include "inspector_view.h"
 #include "../tui/terminal.h"
 #include "../tokenizer.h"
-#include <algorithm>
+
+extern void SendInspectRequest(const std::string& search_filter);
+extern bool HasConnectedClient();
 
 static void FormatValue(TStringBuilder& builder, const std::string& value)
 {
@@ -95,17 +97,14 @@ InspectorView::InspectorView()
     _tree_view->AddLine("Waiting for client...");
 }
 
-void InspectorView::SetRootObject(InspectorObject* root)
+void InspectorView::SetRootObject(std::unique_ptr<InspectorObject> root)
 {
-    _root_object = root;
-    if (root)
-    {
-        BuildTreeFromInspectorObject(root);
-    }
+    _root_object = std::move(root);
+
+    if (_root_object)
+        BuildTreeFromInspectorObject(_root_object.get());
     else
-    {
         ClearTree();
-    }
 }
 
 InspectorObject* InspectorView::GetSelectedObject() const
@@ -282,16 +281,7 @@ void InspectorView::RenderPropertiesSection(int start_col, int properties_width,
         MoveCursor(current_row, render_start_col);
         
         // Add indentation and property name
-        std::string indented_name;
-        for (int indent = 0; indent < prop.indent_level; indent++)
-            indented_name += "  ";
-        indented_name += prop.name;
-        
-        AddString(indented_name.c_str());
-        
-        // Pad to alignment
-        for (size_t pad = indented_name.length(); pad < max_name_length; pad++)
-            AddChar(' ');
+        AddString(prop.name.c_str());
         
         AddString(" : ");
         
@@ -347,7 +337,7 @@ void InspectorView::RefreshPropertiesFromSelectedNode()
         for (size_t i = 0; i < props.Count(); i++)
         {
             const ObjectProperty& prop = props.GetProperty(i);
-            _properties_view->AddProperty(prop.name, prop.value, prop.indent_level);  // prop.value is now TString
+            _properties_view->AddProperty(prop.name, prop.value);
         }
     }
     catch (...)
@@ -390,10 +380,7 @@ void InspectorView::Render(int width, int height)
     // Check if we haven't requested data yet and if a client is now connected
     if (!_has_requested_data)
     {
-        extern bool HasConnectedClients();
-        extern void SendInspectRequest(const std::string& search_filter);
-        
-        if (HasConnectedClients())
+        if (HasConnectedClient())
         {
             // Client connected - send the inspection request
             SendInspectRequest("");

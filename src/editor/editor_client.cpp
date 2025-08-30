@@ -4,16 +4,17 @@
 
 #ifdef NOZ_EDITOR
 
-#include "noz/editor.h"
 #include "editor_messages.h"
+#include "noz/editor.h"
+
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
 #include <enet/enet.h>
 #include <iostream>
-#include <thread>
-#include <queue>
 #include <mutex>
-#include <atomic>
-#include <condition_variable>
-#include <chrono>
+#include <queue>
+#include <thread>
 
 // @types
 struct EditorClientEvent
@@ -26,74 +27,58 @@ typedef void (*inspect_ack_callback_t)(Stream* inspector_data);
 
 static ENetHost* g_client = nullptr;
 static ENetPeer* g_server = nullptr;
-static hotload_callback_t g_callback = nullptr;
-static std::atomic<bool> g_initialized = false;
-static std::atomic<bool> g_should_stop = false;
+static HotloadCallbackFunc g_callback = nullptr;
+static std::atomic g_initialized = false;
+static std::atomic g_should_stop = false;
 static std::thread g_hotload_thread;
 static std::queue<EditorClientEvent> g_event_queue;
 static inspect_ack_callback_t g_inspect_ack_callback = nullptr;
 static std::mutex g_queue_mutex;
 static std::condition_variable g_thread_cv;
 
-// @helpers
-static void SendInspectAck(ENetPeer* server, const std::string& search_filter)
+void WriteInspectorEntity(Stream* stream, Entity* entity);
+
+Stream* CreateEditorMessage(EditorEvent event)
 {
-    std::cout << "SendInspectAck called with server: " << server << std::endl;
-    
-    if (!server)
-    {
-        std::cout << "Server is null, returning" << std::endl;
-        return;
-    }
-    
-    // Create fake inspector data for now
-    std::cout << "Creating fake inspector data..." << std::endl;
+    Stream* output_stream = CreateStream(ALLOCATOR_SCRATCH, 1024);
+    WriteEditorMessage(output_stream, event);
+    return output_stream;
+}
+
+void SendEditorMessage(Stream* stream)
+{
+    if (ENetPacket* packet = enet_packet_create(GetData(stream), GetSize(stream), ENET_PACKET_FLAG_RELIABLE))
+        enet_peer_send(g_server, 0, packet);
+
+    Destroy(stream);
+}
+
+static void HandleInspect(Stream* input_stream)
+{
+    assert(input_stream);
+
+    auto stream = CreateEditorMessage(EDITOR_EVENT_INSPECT_ACK);
+    WriteInspectorEntity(stream, GetRootEntity());
+    SendEditorMessage(stream);
+}
+
+static void HandleEditorMessage(ENetPeer* server, void* data, size_t data_size)
+{
     PushScratch();
-    Stream* fake_data = CreateStream(ALLOCATOR_SCRATCH, 1024);
-    WriteString(fake_data, "FakeObject");
-    WriteString(fake_data, "position");
-    WriteString(fake_data, "vec3");
-    WriteFloat(fake_data, 1.0f);
-    WriteFloat(fake_data, 2.0f);
-    WriteFloat(fake_data, 3.0f);
-    WriteString(fake_data, "rotation");
-    WriteString(fake_data, "quat");
-    WriteFloat(fake_data, 0.0f);
-    WriteFloat(fake_data, 0.0f);
-    WriteFloat(fake_data, 0.0f);
-    WriteFloat(fake_data, 1.0f);
-    
-    std::cout << "Creating EDITOR_EVENT_INSPECT_ACK message..." << std::endl;
-    EditorMessage ack_msg = CreateInspectAckMessage(fake_data);
-    std::cout << "ACK message created with event_id: " << ack_msg.event_id << ", data_size: " << ack_msg.data_size << std::endl;
-    
-    // Serialize and send
-    const size_t buffer_size = sizeof(uint32_t) * 2 + ack_msg.data_size;
-    uint8_t* buffer = new uint8_t[buffer_size];
-    size_t serialized_size = SerializeMessage(ack_msg, buffer, buffer_size);
-    std::cout << "Serialized message size: " << serialized_size << " bytes" << std::endl;
-    
-    if (serialized_size > 0)
+    Stream* stream = LoadStream(ALLOCATOR_SCRATCH, (u8*)data, data_size);
+    switch (ReadEditorMessage(stream))
     {
-        ENetPacket* packet = enet_packet_create(buffer, serialized_size, ENET_PACKET_FLAG_RELIABLE);
-        if (packet)
-        {
-            std::cout << "Sending packet to server..." << std::endl;
-            enet_peer_send(server, 0, packet);
-            std::cout << "Packet sent successfully" << std::endl;
-        }
-        else
-        {
-            std::cout << "Failed to create ENet packet" << std::endl;
-        }
+    case EDITOR_EVENT_HOTLOAD:
+        break;
+
+    case EDITOR_EVENT_INSPECT:
+        HandleInspect(stream);
+        break;
+
+    default:
+        break;
     }
-    else
-    {
-        std::cout << "Failed to serialize message" << std::endl;
-    }
-    
-    delete[] buffer;
-    FreeMessage(ack_msg);
+    Destroy(stream);
     PopScratch();
 }
 
@@ -101,7 +86,6 @@ static void SendInspectAck(ENetPeer* server, const std::string& search_filter)
 static void EditorClientThread(const char* server_address, int port)
 {
     ENetHost* client = nullptr;
-    ENetPeer* server = nullptr;
     bool connected = false;
     
     if (enet_initialize() != 0)
@@ -122,8 +106,8 @@ static void EditorClientThread(const char* server_address, int port)
                 if (enet_address_set_host(&address, server_address) >= 0)
                 {
                     address.port = port;
-                    server = enet_host_connect(client, &address, 2, 0);
-                    if (server)
+                    g_server = enet_host_connect(client, &address, 2, 0);
+                    if (g_server)
                     {
                         // Wait for connection with timeout
                         ENetEvent event;
@@ -135,8 +119,8 @@ static void EditorClientThread(const char* server_address, int port)
                         else
                         {
                             // Connection failed, clean up and retry later
-                            enet_peer_reset(server);
-                            server = nullptr;
+                            enet_peer_reset(g_server);
+                            g_server = nullptr;
                         }
                     }
                 }
@@ -166,43 +150,7 @@ static void EditorClientThread(const char* server_address, int port)
                 {
                     case ENET_EVENT_TYPE_RECEIVE:
                     {
-                        // Deserialize editor message
-                        EditorMessage editor_msg;
-                        if (DeserializeMessage(event.packet->data, event.packet->dataLength, editor_msg))
-                        {
-                            EditorClientEvent client_event;
-                            client_event.event_type = static_cast<EditorEvent>(editor_msg.event_id);
-                            
-                            switch (editor_msg.event_id)
-                            {
-                                case EDITOR_EVENT_HOTLOAD:
-                                {
-                                    std::string asset_name;
-                                    if (ParseHotloadMessage(editor_msg, asset_name))
-                                    {
-                                        client_event.data = asset_name;
-                                        std::lock_guard<std::mutex> lock(g_queue_mutex);
-                                        g_event_queue.push(client_event);
-                                    }
-                                    break;
-                                }
-                                case EDITOR_EVENT_INSPECT:
-                                {
-                                    // Server is requesting inspection - send back ACK with fake data
-                                    std::cout << "Client received EDITOR_EVENT_INSPECT request" << std::endl;
-                                    std::string search_filter;
-                                    ParseInspectMessage(editor_msg, search_filter);
-                                    std::cout << "Parsing inspect message with filter: '" << search_filter << "'" << std::endl;
-                                    std::cout << "Calling SendInspectAck..." << std::endl;
-                                    SendInspectAck(server, search_filter);
-                                    std::cout << "SendInspectAck completed" << std::endl;
-                                    break;
-                                }
-                            }
-                            
-                            FreeMessage(editor_msg);
-                        }
-                        
+                        HandleEditorMessage(g_server, event.packet->data, event.packet->dataLength);
                         enet_packet_destroy(event.packet);
                         break;
                     }
@@ -211,7 +159,7 @@ static void EditorClientThread(const char* server_address, int port)
                     {
                         std::cout << "Hotload thread: Disconnected from server\n";
                         connected = false;
-                        server = nullptr;
+                        g_server = nullptr;
                         break;
                     }
                 }
@@ -220,9 +168,9 @@ static void EditorClientThread(const char* server_address, int port)
     }
     
     // Cleanup
-    if (server)
+    if (g_server)
     {
-        enet_peer_disconnect(server, 0);
+        enet_peer_disconnect(g_server, 0);
         
         // Wait for disconnection to complete
         ENetEvent event;
@@ -243,10 +191,10 @@ static void EditorClientThread(const char* server_address, int port)
 }
 
 // @init
-bool InitEditorClient(const char* server_address, int port)
+void InitEditorClient(const char* server_address, int port)
 {
     if (g_initialized.load())
-        return true;
+        return;
 
     g_should_stop.store(false);
     
@@ -257,12 +205,10 @@ bool InitEditorClient(const char* server_address, int port)
         g_initialized.store(true);
         
         std::cout << "Hotload system initialized (running on background thread)\n";
-        return true;
     }
     catch (const std::exception& e)
     {
         std::cerr << "Failed to start hotload thread: " << e.what() << "\n";
-        return false;
     }
 }
 
@@ -305,7 +251,7 @@ void UpdateEditorClient()
     
     // Move events from the shared queue to local queue to minimize lock time
     {
-        std::lock_guard<std::mutex> lock(g_queue_mutex);
+        std::lock_guard lock(g_queue_mutex);
         events_to_process = g_event_queue;
         std::queue<EditorClientEvent> empty;
         std::swap(g_event_queue, empty);
@@ -326,7 +272,7 @@ void UpdateEditorClient()
 }
 
 // @callback
-void SetHotloadCallback(hotload_callback_t callback)
+void SetHotloadCallback(HotloadCallbackFunc callback)
 {
     g_callback = callback;
 }
@@ -334,6 +280,42 @@ void SetHotloadCallback(hotload_callback_t callback)
 void SetInspectAckCallback(inspect_ack_callback_t callback)
 {
     g_inspect_ack_callback = callback;
+}
+
+void BeginInspectorObject(Stream* stream, type_t type, const char* name)
+{
+    WriteU8(stream, INSPECTOR_OBJECT_COMMAND_BEGIN);
+    WriteString(stream, name);
+}
+
+static void WriteInspectorProperty(Stream* stream, const char* name, InspectorObjectCommand value_type)
+{
+    WriteU8(stream, INSPECTOR_OBJECT_COMMAND_PROPERTY);
+    WriteString(stream, name);
+    WriteU8(stream, value_type);
+}
+
+void WriteInspectorProperty(Stream* stream, const char* name, const char* value)
+{
+    WriteInspectorProperty(stream, name, INSPECTOR_OBJECT_COMMAND_STRING);
+    WriteString(stream, value);
+}
+
+void WriteInspectorProperty(Stream* stream, const char* name, float value)
+{
+    WriteInspectorProperty(stream, name, INSPECTOR_OBJECT_COMMAND_FLOAT);
+    WriteFloat(stream, value);
+}
+
+void WriteInspectorProperty(Stream* stream, const char* name, const vec3& value)
+{
+    WriteInspectorProperty(stream, name, INSPECTOR_OBJECT_COMMAND_VEC3);
+    WriteVec3(stream, value);
+}
+
+void EndInspectorObject(Stream* stream)
+{
+    WriteU8(stream, INSPECTOR_OBJECT_COMMAND_END);
 }
 
 #endif

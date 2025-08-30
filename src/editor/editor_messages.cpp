@@ -6,6 +6,17 @@
 #include "noz/noz.h"
 #include <cstring>
 
+void WriteEditorMessage(Stream* stream, EditorEvent event)
+{
+    WriteU8(stream, (u8)event);
+}
+
+EditorEvent ReadEditorMessage(Stream* stream)
+{
+    return (EditorEvent)ReadU8(stream);
+}
+
+#if 0
 EditorMessage CreateHotloadMessage(const std::string& asset_name)
 {
     EditorMessage msg{};
@@ -52,16 +63,6 @@ bool ParseInspectMessage(const EditorMessage& msg, std::string& search_filter)
     
     search_filter = std::string(reinterpret_cast<const char*>(msg.data), msg.data_size - 1);
     return true;
-}
-
-bool ParseInspectAckMessage(const EditorMessage& msg, Stream** inspector_data)
-{
-    if (msg.event_id != EDITOR_EVENT_INSPECT_ACK || msg.data_size == 0)
-        return false;
-    
-    // Use default allocator in editor context - scratch allocator may not be available
-    *inspector_data = LoadStream(ALLOCATOR_DEFAULT, msg.data, msg.data_size);
-    return (*inspector_data != nullptr);
 }
 
 size_t SerializeMessage(const EditorMessage& msg, uint8_t* buffer, size_t buffer_size)
@@ -122,3 +123,4 @@ void FreeMessage(EditorMessage& msg)
     }
     msg.data_size = 0;
 }
+#endif

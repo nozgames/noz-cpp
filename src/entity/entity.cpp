@@ -21,6 +21,7 @@ constexpr u32 ENTITY_FLAG_WORLD_DIRTY = 1 << 4;
 struct EntityImpl
 {
     OBJECT_BASE;
+    const name_t* name;
     Entity* parent;
     vec3 local_position;
     vec3 local_scale;
@@ -479,3 +480,21 @@ void InitEntity()
 void ShutdownEntity()
 {
 }
+
+#ifdef NOZ_EDITOR
+void WriteInspectorEntity(Stream* stream, Entity* entity)
+{
+    auto impl = Impl(entity);
+    BeginInspectorObject(stream, GetType(entity), entity == GetRootEntity() ? "root" : "entity");
+
+    WriteInspectorProperty(stream, "local_position", impl->local_position);
+
+    if (auto traits = GetEntityTraits(entity); traits->editor_inspect)
+        traits->editor_inspect(entity, stream);
+
+    for (auto child=GetFirstChild(entity); child; child=GetNextChild(entity, child))
+        WriteInspectorEntity(stream, child);
+
+    EndInspectorObject(stream);
+}
+#endif

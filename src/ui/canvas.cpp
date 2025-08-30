@@ -154,11 +154,22 @@ Canvas* CreateCanvas(Allocator* allocator, CanvasType type, float reference_widt
     return canvas;
 }
 
+#ifdef NOZ_EDITOR
+void CanvasEditorInspect(Entity* entity, Stream* stream)
+{
+    auto impl = Impl((Canvas*)entity);
+    WriteInspectorProperty(stream, "sheet", impl->style_sheet ? GetName(impl->style_sheet)->value : "null");
+}
+#endif
+
 void InitCanvas()
 {
     static EntityTraits traits = {
         .on_enabled = CanvasOnEnabled,
-        .on_disabled = CanvasOnDisabled
+        .on_disabled = CanvasOnDisabled,
+#ifdef NOZ_EDITOR
+        .editor_inspect = CanvasEditorInspect
+#endif
     };
 
     SetEntityTraits(TYPE_CANVAS, &traits);

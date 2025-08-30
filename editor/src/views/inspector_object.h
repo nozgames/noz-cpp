@@ -5,13 +5,9 @@
 #pragma once
 
 #include "object_properties.h"
-#include <string>
-#include <vector>
-#include <memory>
 
 class InspectorObject
 {
-private:
     std::string _name;
     ObjectProperties _properties;
     std::vector<std::unique_ptr<InspectorObject>> _children;
@@ -25,16 +21,11 @@ public:
     void SetName(const std::string& name) { _name = name; }
     
     // Property management
-    void AddProperty(const std::string& name, const std::string& value = "", int indent_level = 0)
-    {
-        _properties.AddProperty(name, value, indent_level);
-    }
-    
-    void SetProperty(const std::string& name, const std::string& value, int indent_level = 0)
-    {
-        _properties.SetProperty(name, value, indent_level);
-    }
-    
+    void AddProperty(const std::string& name, const std::string& value);
+    void AddProperty(const std::string& name, const TString& value);
+
+    const ObjectProperty* FindProperty(const std::string& name) const;
+
     const ObjectProperties& GetProperties() const { return _properties; }
     ObjectProperties& GetProperties() { return _properties; }
     
@@ -122,4 +113,6 @@ public:
     {
         _children.clear();
     }
+
+    static std::unique_ptr<InspectorObject> CreateFromStream(Stream* stream);
 };

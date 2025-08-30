@@ -15,7 +15,7 @@ struct Component : Object { };
 struct MeshRenderer : Component { };
 
 // @entity
-#define ENTITY_BASE_SIZE 264
+#define ENTITY_BASE_SIZE 272
 #define ENTITY_BASE EntityBase __entity;
 
 struct EntityBase { u8 _entity[ENTITY_BASE_SIZE]; };
@@ -25,6 +25,10 @@ struct EntityTraits
     void(*on_destroy)(Entity*);
     void(*on_enabled)(Entity*);
     void(*on_disabled)(Entity*);
+
+#ifdef NOZ_EDITOR
+    void(*editor_inspect)(Entity*, Stream*);
+#endif
 };
 
 extern const EntityTraits* g_entity_traits[];
