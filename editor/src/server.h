@@ -16,3 +16,6 @@ void UpdateEditorServer();
 // @broadcast
 void BroadcastAssetChange(const std::string& asset_name);
 void SendInspectRequest(const std::string& search_filter = "");
+
+// @connection
+bool HasConnectedClients();

@@ -320,8 +320,7 @@ static void HandleCommand(const std::string& command)
             LogInfo("Resetting existing inspector view");
             existing_inspector->ClearTree();
             existing_inspector->AddLine("Waiting for client...");
-            extern void SendInspectRequest(const std::string& search_filter);
-            SendInspectRequest("");
+            existing_inspector->ResetRequestState(); // Reset so it will send a new request
         }
         else
         {

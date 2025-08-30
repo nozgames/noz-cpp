@@ -91,14 +91,8 @@ InspectorView::InspectorView()
     : _tree_view(std::make_unique<TreeView>())
     , _properties_view(std::make_unique<PropertiesView>())
 {
-    // Show waiting message initially
+    // Show waiting message initially - don't send request until we have a client
     _tree_view->AddLine("Waiting for client...");
-    
-    // Request inspection data from connected clients
-    // This will be ignored if no client is connected, but will populate
-    // the inspector if a client is available
-    extern void SendInspectRequest(const std::string& search_filter);
-    SendInspectRequest("");
 }
 
 void InspectorView::SetRootObject(InspectorObject* root)
@@ -138,6 +132,11 @@ void InspectorView::AddObject(const std::string& name)
 void InspectorView::ClearTree()
 {
     _tree_view->Clear();
+}
+
+void InspectorView::ResetRequestState()
+{
+    _has_requested_data = false;
 }
 
 void InspectorView::AddProperty(const std::string& name, const std::string& value, int indent_level)
@@ -388,6 +387,20 @@ void InspectorView::BuildTreeFromInspectorObject(InspectorObject* obj)
 
 void InspectorView::Render(int width, int height)
 {
+    // Check if we haven't requested data yet and if a client is now connected
+    if (!_has_requested_data)
+    {
+        extern bool HasConnectedClients();
+        extern void SendInspectRequest(const std::string& search_filter);
+        
+        if (HasConnectedClients())
+        {
+            // Client connected - send the inspection request
+            SendInspectRequest("");
+            _has_requested_data = true;
+        }
+    }
+    
     UpdateLayout(width, height);
     
     // Check if tree cursor has changed and refresh properties if so

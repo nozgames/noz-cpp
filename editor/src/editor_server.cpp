@@ -15,6 +15,12 @@ extern void ForwardInspectionData(Stream* inspector_data);
 static ENetHost* g_server = nullptr;
 static std::vector<ENetPeer*> g_clients;
 
+// Function to check if any clients are connected
+bool HasConnectedClients()
+{
+    return !g_clients.empty();
+}
+
 // @init
 bool InitEditorServer(int port)
 {

@@ -19,6 +19,7 @@ private:
     bool _focus_on_tree = true;  // true = tree has focus, false = properties has focus
     int _split_position = 50;     // Percentage of width for tree view (0-100)
     InspectorObject* _root_object = nullptr;
+    bool _has_requested_data = false;  // Track if we've sent a request yet
     
     void UpdateLayout(int width, int height);
     void RenderDivider(int width, int height, int split_col);
@@ -39,6 +40,7 @@ public:
     void AddLine(const std::string& line);
     void AddObject(const std::string& name);
     void ClearTree();
+    void ResetRequestState(); // Reset the data request state
     
     // Legacy properties operations
     void AddProperty(const std::string& name, const std::string& value = "", int indent_level = 0);
