@@ -5,7 +5,7 @@
 #pragma once
 
 #ifdef _DEBUG
-#define _HOTLOAD
+#define NOZ_EDITOR
 #endif
 
 #include <assert.h>
@@ -69,4 +69,4 @@ inline int i32_min(i32 a, i32 b) { return (a < b) ? a : b; }
 #include "input.h"
 #include "physics.h"
 #include "core_assets.h"
-#include "hotload.h"
+#include "editor.h"

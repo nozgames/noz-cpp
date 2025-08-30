@@ -105,7 +105,7 @@ static void UpdateEnabled(Entity* entity)
         if (is_enabled)
             Impl(child)->flags.value |= ENTITY_FLAG_ENABLED_HIERARCHY;
         else
-            Impl(child)->flags.value &~ ENTITY_FLAG_ENABLED_HIERARCHY;
+            Impl(child)->flags.value &= ~ENTITY_FLAG_ENABLED_HIERARCHY;
 
         UpdateEnabled(child);
     }

@@ -105,7 +105,7 @@ static void UpdateScreenSize()
     g_application.screen_aspect_ratio = (float)w / (float)h;
 }
 
-#ifdef _HOTLOAD
+#ifdef NOZ_EDITOR
 void OnHotload(const char* asset_name)
 {
     auto name = GetName(asset_name);
@@ -156,18 +156,18 @@ void InitApplication(ApplicationTraits* traits)
 
     LoadRendererAssets(g_application.asset_allocator);
 
-#ifdef _HOTLOAD
-    // Initialize hotload client
-    if (InitHotload("127.0.0.1", 8080))
+#ifdef NOZ_EDITOR
+    // Initialize editor client
+    if (InitEditorClient("127.0.0.1", 8080))
     {
-        printf("Hotload client initialized in asset system\n");
+        printf("Editor client initialized in asset system\n");
         SetHotloadCallback(OnHotload);
     }
     else
     {
-        printf("Warning: Failed to initialize hotload client in asset system\n");
+        printf("Warning: Failed to initialize editor client in asset system\n");
     }
-#endif // _HOTLOAD
+#endif // NOZ_EDITOR
 
     InitEntity();
     InitUI();
@@ -176,10 +176,10 @@ void InitApplication(ApplicationTraits* traits)
 // @shutdown
 void ShutdownApplication()
 {
-#ifdef _HOTLOAD
-    // Shutdown hotload client
-    ShutdownHotload();
-#endif // _HOTLOAD
+#ifdef NOZ_EDITOR
+    // Shutdown editor client
+    ShutdownEditorClient();
+#endif // NOZ_EDITOR
 
     if (g_application.traits.unload_assets)
         g_application.traits.unload_assets();
@@ -220,6 +220,11 @@ bool UpdateApplication()
 
     UpdateTime();
     UpdateInput();
+
+#ifdef NOZ_EDITOR
+    // Update editor client connection
+    UpdateEditorClient();
+#endif
 
     return true;
 }

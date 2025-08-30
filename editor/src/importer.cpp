@@ -327,7 +327,7 @@ static int RunImporterLoop()
         thread_sleep_ms(100);
 
         // Update hotload server
-        UpdateHotloadServer();
+        UpdateEditorServer();
 
         // Enqueue changed files
         FileChangeEvent event;
@@ -348,7 +348,7 @@ static int RunImporterLoop()
         if (!hotload_initialized && g_config->HasGroup("hotload"))
         {
             int hotload_port = g_config->GetInt("hotload", "port", 8080);
-            if (InitHotloadServer(hotload_port))
+            if (InitEditorServer(hotload_port))
             {
                 LogInfo("Hotload server initialized on port %d", hotload_port);
             }
@@ -362,7 +362,7 @@ static int RunImporterLoop()
 
     // Clean up
     ShutdownFileWatcher();
-    ShutdownHotloadServer();
+    ShutdownEditorServer();
     g_import_queue.clear();
     return 0;
 }

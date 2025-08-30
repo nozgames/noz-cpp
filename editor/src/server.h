@@ -7,11 +7,12 @@
 #include <string>
 
 // @init
-bool InitHotloadServer(int port);
-void ShutdownHotloadServer();
+bool InitEditorServer(int port);
+void ShutdownEditorServer();
 
 // @server
-void UpdateHotloadServer();
+void UpdateEditorServer();
 
 // @broadcast
 void BroadcastAssetChange(const std::string& asset_name);
+void SendInspectRequest(const std::string& search_filter = "");

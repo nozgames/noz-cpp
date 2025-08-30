@@ -57,7 +57,7 @@ public:
     void Render(int width, int height) override;
     bool HandleKey(int key) override;
     void SetCursorVisible(bool visible) override;
-    bool CanPopFromStack() const override { return false; }
+    bool CanPopFromStack() const override { return true; }
     
     // Search support - delegates to tree view
     void SetSearchPattern(const std::string& pattern) override;

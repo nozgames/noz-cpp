@@ -91,6 +91,14 @@ InspectorView::InspectorView()
     : _tree_view(std::make_unique<TreeView>())
     , _properties_view(std::make_unique<PropertiesView>())
 {
+    // Show waiting message initially
+    _tree_view->AddLine("Waiting for client...");
+    
+    // Request inspection data from connected clients
+    // This will be ignored if no client is connected, but will populate
+    // the inspector if a client is available
+    extern void SendInspectRequest(const std::string& search_filter);
+    SendInspectRequest("");
 }
 
 void InspectorView::SetRootObject(InspectorObject* root)
