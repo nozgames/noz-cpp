@@ -36,12 +36,14 @@ private:
 public:
     TStringBuilder() : _visual_length(0) {}
     
-    // Builder pattern methods - all return *this for chaining  
+    // Builder pattern methods - all return *this for chaining
+    TStringBuilder& Add(const char* text);
     TStringBuilder& Add(const std::string& text);     // Add text in current color from stack
     TStringBuilder& Add(const std::string& text, const color24_t& color);  // Add text with specific color
     TStringBuilder& Add(const std::string& text, int r, int g, int b);  // Add text with RGB color
     
     // Type-specific overloads for common NoZ types
+    TStringBuilder& Add(const TString& tstr);         // Add existing TString (text + visual length)
     TStringBuilder& Add(const vec2& v);               // Format as "(x, y)" 
     TStringBuilder& Add(const vec3& v);               // Format as "(x, y, z)"
     TStringBuilder& Add(const vec4& v);               // Format as "(x, y, z, w)"

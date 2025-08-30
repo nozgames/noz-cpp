@@ -7,7 +7,6 @@
 #include "../tokenizer.h"
 #include <algorithm>
 #include <string>
-#include <cstdio>
 
 static int CountLeadingTabs(const std::string& line)
 {
@@ -28,33 +27,6 @@ static std::string RemoveLeadingTabs(const std::string& line)
     while (first_non_tab < line.length() && line[first_non_tab] == '\t')
         first_non_tab++;
     return line.substr(first_non_tab);
-}
-
-
-static size_t CalculateVisualLength(const std::string& str)
-{
-    size_t visual_length = 0;
-    size_t i = 0;
-    
-    while (i < str.length())
-    {
-        if (str[i] == '\033' && i + 1 < str.length() && str[i + 1] == '[')
-        {
-            // Skip ANSI escape sequence
-            i += 2;
-            while (i < str.length() && str[i] != 'm')
-                i++;
-            if (i < str.length())
-                i++; // Skip the 'm'
-        }
-        else
-        {
-            visual_length++;
-            i++;
-        }
-    }
-    
-    return visual_length;
 }
 
 static void FormatValue(TStringBuilder& builder, const std::string& value)
@@ -117,7 +89,7 @@ static void FormatValue(TStringBuilder& builder, const std::string& value)
     }
     
     // Check for number (integer or float)
-    std::regex number_regex("^[-+]?([0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)$");
+    static const std::regex number_regex("^[-+]?([0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)$");
     if (std::regex_match(value, number_regex))
     {
         // Try parsing as int first, then float
@@ -448,78 +420,49 @@ void TreeView::Render(int width, int height)
             
             MoveCursor(static_cast<int>(i), 0);
 
-            std::string display_line;
+            // Build display line using TStringBuilder
+            auto line_builder = TStringBuilder::Build();
             
             // Add indentation
             for (int indent = 0; indent < node->indent_level; indent++)
             {
-                display_line += "  "; // 2 spaces per indent level
+                line_builder.Add("  "); // 2 spaces per indent level
             }
             
             // Add expansion indicator for nodes with children
             if (node->has_children())
             {
                 if (node->is_expanded)
-                    display_line += "- ";
+                    line_builder.Add("- ");
                 else
-                    display_line += "+ ";
+                    line_builder.Add("+ ");
             }
             else if (node->indent_level > 0)
             {
-                display_line += "  ";
+                line_builder.Add("  ");
             }
             
-            // Add content with appropriate coloring
+            // Add content
             if (_search_active && node->is_search_parent && !node->matches_search)
             {
                 // Search parent nodes in darker/subdued color
-                display_line += "\033[2m" + node->raw_content + "\033[0m"; // Dim/faint text
+                line_builder.Add(node->raw_content, 128, 128, 128);
             }
             else
             {
-                // Use pre-formatted content directly from the node
-                display_line += node->formatted_content.text;
+                line_builder.Add(node->formatted_content);
             }
             
             // Add array size indicator for objects with children
             std::string size_indicator = GetArraySizeIndicator(node);
             if (!size_indicator.empty())
             {
-                display_line += " " + size_indicator;
+                line_builder.Add(" " + size_indicator);
             }
             
-            // Truncate if too long (considering visual length, not including ANSI codes)
-            if (CalculateVisualLength(display_line) > static_cast<size_t>(width))
-            {
-                // Truncate while preserving ANSI sequences as much as possible
-                size_t visual_len = 0;
-                size_t truncate_pos = 0;
-                
-                for (size_t i = 0; i < display_line.length(); i++)
-                {
-                    if (display_line[i] == '\033' && i + 1 < display_line.length() && display_line[i + 1] == '[')
-                    {
-                        // Skip ANSI escape sequence
-                        i++;
-                        while (i < display_line.length() && display_line[i] != 'm')
-                            i++;
-                        // Don't increment visual_len for ANSI codes
-                    }
-                    else
-                    {
-                        visual_len++;
-                        if (visual_len >= static_cast<size_t>(width))
-                        {
-                            truncate_pos = i + 1;
-                            break;
-                        }
-                    }
-                    truncate_pos = i + 1;
-                }
-                
-                display_line = display_line.substr(0, truncate_pos);
-                display_line += "\033[0m"; // Ensure we end with a reset
-            }
+            // Truncate if needed and build final TString
+            line_builder.TruncateToWidth(width);
+            TString display_line = line_builder.ToString();
 
             // Render with optional cursor highlighting
             int cursor_pos = (_show_cursor && static_cast<int>(i) == cursor_in_window) ? 0 : -1;

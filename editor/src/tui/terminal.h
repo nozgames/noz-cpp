@@ -33,7 +33,9 @@ void MoveCursor(int y, int x);
 void AddChar(char ch);
 void AddChar(char ch, int count);
 void AddString(const char* str);
+void AddString(const TString& tstr);
 void AddStringWithCursor(const std::string& str, int cursor_pos);
+void AddStringWithCursor(const TString& tstr, int cursor_pos);
 void SetColor(int pair);
 void UnsetColor(int pair);
 void SetColor256(int fg, int bg = -1);                    // 256-color mode (0-255)

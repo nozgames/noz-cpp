@@ -231,25 +231,36 @@ void AddChar(char ch)
 
 void AddString(const char* str)
 {
-    // More efficient string addition - add entire string at once
+    // Simple string addition for legacy compatibility
     if (str && *str && g_cursor_y >= 0 && g_cursor_y < g_screen_height)
     {
-        // Calculate how much of the string fits on current line
-        int remaining_on_line = g_screen_width - g_cursor_x;
-        int str_len = static_cast<int>(strlen(str));
+        g_output_buffer += str;
+        // Note: cursor tracking may be inaccurate for ANSI sequences
+        g_cursor_x += static_cast<int>(strlen(str));
+    }
+}
 
+void AddString(const TString& tstr)
+{
+    // Optimized string addition using pre-calculated visual length
+    if (!tstr.text.empty() && g_cursor_y >= 0 && g_cursor_y < g_screen_height)
+    {
+        int remaining_on_line = g_screen_width - g_cursor_x;
         if (remaining_on_line > 0)
         {
-            int chars_to_add = std::min(str_len, remaining_on_line);
-            g_output_buffer.append(str, chars_to_add);
-
-            // Update cursor position
-            g_cursor_x += chars_to_add;
-            if (g_cursor_x >= g_screen_width)
+            // Use the pre-calculated visual length from TString
+            if (static_cast<int>(tstr.visual_length) <= remaining_on_line)
             {
-                g_cursor_x = 0;
-                g_cursor_y++;
+                g_output_buffer += tstr.text;
+                g_cursor_x += static_cast<int>(tstr.visual_length);
+                
+                if (g_cursor_x >= g_screen_width)
+                {
+                    g_cursor_x = 0;
+                    g_cursor_y++;
+                }
             }
+            // If it doesn't fit, don't add it (tree view should have truncated already)
         }
     }
 }
@@ -329,6 +340,18 @@ void AddStringWithCursor(const std::string& str, int cursor_pos)
         AddChar(' ');
         AddString("\033[0m"); // Reset all attributes
     }
+}
+
+void AddStringWithCursor(const TString& tstr, int cursor_pos)
+{
+    if (cursor_pos < 0)
+    {
+        AddString(tstr);
+        return;
+    }
+    
+    // For TString with cursor, fall back to string version since cursor logic is complex
+    AddStringWithCursor(tstr.text, cursor_pos);
 }
 
 void SetColor(int pair)

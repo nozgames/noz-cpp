@@ -32,6 +32,13 @@ TStringBuilder& TStringBuilder::Add(const std::string& text)
     }
 }
 
+TStringBuilder& TStringBuilder::Add(const char* text)
+{
+    Add(std::string(text));
+    return *this;
+}
+
+
 TStringBuilder& TStringBuilder::Add(const std::string& text, const color24_t& color)
 {
     return Add(text, color.r, color.g, color.b);
@@ -119,6 +126,13 @@ TStringBuilder& TStringBuilder::TruncateToWidth(size_t max_width)
 }
 
 // Type-specific Add overloads
+TStringBuilder& TStringBuilder::Add(const TString& tstr)
+{
+    _buffer += tstr.text;
+    _visual_length += tstr.visual_length;
+    return *this;
+}
+
 TStringBuilder& TStringBuilder::Add(const vec2& v)
 {
     Add("(", TCOLOR_GREY).Add(v.x)
