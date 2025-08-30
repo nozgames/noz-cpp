@@ -14,35 +14,42 @@ struct TreeNode
     std::string path; // Full path from root, e.g., "Game Systems/Player System/Movement Component"
     int indent_level;
     bool is_expanded;
-    bool is_object; // true for objects (searchable), false for properties (display only)
     bool matches_search; // true if this node matches the current search
     bool is_search_parent; // true if this node is a parent of a matching node
     
     TreeNode* parent;
     std::vector<std::unique_ptr<TreeNode>> children;
+    void* user_data = nullptr;  // User data pointer for attaching custom data
     
-    TreeNode(const std::string& text, int indent = 0, bool expanded = false, bool object = true)
+    TreeNode(const std::string& text, int indent = 0, bool expanded = false)
         : formatted_content(text, text.length()) // Default: plain text with no formatting
         , raw_content(text)
         , indent_level(indent)
         , is_expanded(expanded)
-        , is_object(object)
         , matches_search(false)
         , is_search_parent(false)
         , parent(nullptr)
     {}
     
     bool has_children() const { return !children.empty(); }
+    bool has_user_data() const { return user_data != nullptr; }
     
-    TreeNode* AddChild(const std::string& text, bool object = true)
+    TreeNode* AddChild(const std::string& text)
     {
-        auto child = std::make_unique<TreeNode>(text, indent_level + 1, false, object);
+        auto child = std::make_unique<TreeNode>(text, indent_level + 1, false);
         child->parent = this;
         child->path = path.empty() ? text : path + "/" + text;
         TreeNode* ptr = child.get();
         children.push_back(std::move(child));
         return ptr;
     }
+    
+    void SetUserData(void* data)
+    {
+        user_data = data;
+    }
+    
+    void* GetUserData() const { return user_data; }
 };
 
 class TreeView : public IView
@@ -50,9 +57,9 @@ class TreeView : public IView
 protected:
     std::vector<std::unique_ptr<TreeNode>> _root_nodes;
     std::vector<TreeNode*> _visible_nodes;  // Pointers to currently visible nodes
-    std::vector<TreeNode*> _node_stack;     // Stack for tracking current parent during construction
     size_t _max_entries = 1000;
     int _cursor_row = 0;     // Current cursor position in visible list
+    int _previous_cursor_row = -1; // Track cursor changes
     bool _show_cursor = false;
     
     // Search functionality
@@ -71,15 +78,26 @@ protected:
     int CalculateNodeDistance(TreeNode* from, TreeNode* to) const;
     
 public:
-    void AddLine(const std::string& line); // Generic method (for backward compatibility)
-    void AddObject(const std::string& name); // Add searchable object at current indent
-    void AddProperty(const std::string& name, const std::string& value = ""); // Add non-searchable property
-    void BeginObject(const std::string& name); // Add object and increase indent level
-    void EndObject(); // Decrease indent level
+    void Add(const std::string& name, int indent_level = 0, void* user_data = nullptr); // Main API
+    
+    // Legacy methods (for backward compatibility)
+    void AddLine(const std::string& line); 
+    void AddLine(const std::string& line, void* user_data);
+    void AddObject(const std::string& name);
+    void AddObject(const std::string& name, void* user_data);
     void Clear();
     size_t NodeCount() const;
     size_t VisibleCount() const;
     void SetMaxEntries(size_t max_entries);
+    
+    // User data management for nodes
+    void SetCurrentNodeUserData(void* data);
+    void SetNodeUserData(const std::string& node_path, void* data);
+    
+    // Cursor and selection
+    TreeNode* GetCurrentNode() const;
+    bool HasCursorChanged() const;
+    void MarkCursorProcessed();
     
     // IView interface
     void Render(int width, int height) override;

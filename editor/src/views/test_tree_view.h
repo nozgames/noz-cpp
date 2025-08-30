@@ -3,9 +3,10 @@
 //
 
 #pragma once
-#include "tree_view.h"
+#include "inspector_view.h"
+#include <memory>
 
-class TestTreeView : public TreeView
+class TestTreeView : public InspectorView
 {
 public:
     TestTreeView();
@@ -15,4 +16,5 @@ public:
     
 private:
     void PopulateTestData();
+    std::unique_ptr<InspectorObject> _test_data;  // Store the test data
 };

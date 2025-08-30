@@ -122,32 +122,57 @@ static std::string GetArraySizeIndicator(const TreeNode* node)
 
 void TreeView::AddLine(const std::string& line)
 {
-    int indent_level = CountLeadingTabs(line);
-    std::string content = RemoveLeadingTabs(line);
-    
-    // Adjust stack to match indent level
-    while (_node_stack.size() > static_cast<size_t>(indent_level))
-    {
-        _node_stack.pop_back();
-    }
-    
-    TreeNode* new_node = nullptr;
-    if (_node_stack.empty())
+    AddLine(line, nullptr);
+}
+
+void TreeView::Add(const std::string& name, int indent_level, void* user_data)
+{
+    if (indent_level == 0)
     {
         // Root node
-        auto root = std::make_unique<TreeNode>(content, 0, true, true);
-        root->path = content;
-        new_node = root.get();
+        auto root = std::make_unique<TreeNode>(name, 0, false);
+        root->path = name;
+        root->SetUserData(user_data);
         _root_nodes.push_back(std::move(root));
     }
     else
     {
-        // Child node
-        TreeNode* parent = _node_stack.back();
-        new_node = parent->AddChild(content, true);
+        // Find the appropriate parent by looking for the most recent node at indent_level-1
+        TreeNode* parent = nullptr;
+        
+        // Search through all root nodes and their children to find the most recently added parent
+        std::function<TreeNode*(const std::vector<std::unique_ptr<TreeNode>>&)> find_parent = 
+            [&](const std::vector<std::unique_ptr<TreeNode>>& nodes) -> TreeNode* {
+                for (auto it = nodes.rbegin(); it != nodes.rend(); ++it)
+                {
+                    TreeNode* node = it->get();
+                    if (node->indent_level == indent_level - 1)
+                        return node;
+                    
+                    // Search children recursively
+                    if (TreeNode* found = find_parent(node->children))
+                        return found;
+                }
+                return nullptr;
+            };
+        
+        parent = find_parent(_root_nodes);
+        
+        if (parent)
+        {
+            TreeNode* new_node = parent->AddChild(name);
+            new_node->SetUserData(user_data);
+        }
+        else
+        {
+            // No parent found, add as root
+            auto root = std::make_unique<TreeNode>(name, indent_level, false);
+            root->path = name;
+            root->SetUserData(user_data);
+            _root_nodes.push_back(std::move(root));
+        }
     }
     
-    _node_stack.push_back(new_node);
     RebuildVisibleList();
     
     // Auto-scroll to bottom
@@ -157,93 +182,78 @@ void TreeView::AddLine(const std::string& line)
     }
 }
 
+void TreeView::AddLine(const std::string& line, void* user_data)
+{
+    int indent_level = CountLeadingTabs(line);
+    std::string content = RemoveLeadingTabs(line);
+    Add(content, indent_level, user_data);
+}
+
 void TreeView::AddObject(const std::string& name)
 {
-    TreeNode* new_node = nullptr;
-    if (_node_stack.empty())
-    {
-        // Root node
-        auto root = std::make_unique<TreeNode>(name, 0, false, true);
-        root->path = name;
-        new_node = root.get();
-        _root_nodes.push_back(std::move(root));
-    }
-    else
-    {
-        // Child node
-        TreeNode* parent = _node_stack.back();
-        new_node = parent->AddChild(name, true);
-    }
-    
-    RebuildVisibleList();
+    Add(name, 0, nullptr);  // Add as root with no user data
 }
 
-void TreeView::AddProperty(const std::string& name, const std::string& value)
+void TreeView::AddObject(const std::string& name, void* user_data)
 {
-    std::string raw_content = name;
-    TString formatted_content;
-    
-    if (!value.empty())
+    Add(name, 0, user_data);  // Add as root with user data
+}
+
+
+
+void TreeView::SetCurrentNodeUserData(void* data)
+{
+    // Set user data on the currently selected node
+    TreeNode* current_node = GetCurrentNode();
+    if (current_node)
     {
-        raw_content += ": " + value;
+        current_node->SetUserData(data);
+    }
+}
+
+void TreeView::SetNodeUserData(const std::string& node_path, void* data)
+{
+    // Find node by path and set user data
+    std::function<TreeNode*(TreeNode*, const std::string&)> find_by_path = [&](TreeNode* node, const std::string& path) -> TreeNode* {
+        if (!node) return nullptr;
+        if (node->path == path) return node;
         
-        // Format the content immediately with proper colors
-        auto builder = TStringBuilder::Build();
-        builder.Add(name + ": ");
-        FormatValue(builder, value);
-        formatted_content = builder.ToString();
-    }
-    else
-    {
-        // No value, just plain name
-        formatted_content = TString(name, name.length());
-    }
+        for (auto& child : node->children)
+        {
+            TreeNode* found = find_by_path(child.get(), path);
+            if (found) return found;
+        }
+        return nullptr;
+    };
     
-    TreeNode* new_node = nullptr;
-    if (!_node_stack.empty())
+    for (auto& root : _root_nodes)
     {
-        TreeNode* parent = _node_stack.back();
-        new_node = parent->AddChild(raw_content, false);
+        TreeNode* target_node = find_by_path(root.get(), node_path);
+        if (target_node)
+        {
+            target_node->SetUserData(data);
+            return;
+        }
     }
-    
-    // Update the node with formatted content
-    if (new_node)
-    {
-        new_node->formatted_content = formatted_content;
-        new_node->raw_content = raw_content;
-    }
-    
-    RebuildVisibleList();
 }
 
-void TreeView::BeginObject(const std::string& name)
+TreeNode* TreeView::GetCurrentNode() const
 {
-    TreeNode* new_node = nullptr;
-    if (_node_stack.empty())
+    if (!_visible_nodes.empty() && _cursor_row >= 0 && _cursor_row < static_cast<int>(_visible_nodes.size()))
     {
-        // Root node
-        auto root = std::make_unique<TreeNode>(name, 0, false, true);
-        root->path = name;
-        new_node = root.get();
-        _root_nodes.push_back(std::move(root));
+        return _visible_nodes[_cursor_row];
     }
-    else
-    {
-        // Child node
-        TreeNode* parent = _node_stack.back();
-        new_node = parent->AddChild(name, true);
-    }
-    
-    _node_stack.push_back(new_node);
-    RebuildVisibleList();
+    return nullptr;
 }
 
-void TreeView::EndObject()
+bool TreeView::HasCursorChanged() const
 {
-    if (!_node_stack.empty())
-    {
-        _node_stack.pop_back();
-    }
+    return _cursor_row != _previous_cursor_row;
+}
+
+void TreeView::MarkCursorProcessed()
+{
+    _previous_cursor_row = _cursor_row;
 }
 
 void TreeView::RebuildVisibleList()
@@ -375,7 +385,6 @@ void TreeView::Clear()
 {
     _root_nodes.clear();
     _visible_nodes.clear();
-    _node_stack.clear();
     _cursor_row = 0;
 }
 
@@ -425,10 +434,8 @@ void TreeView::Render(int width, int height)
             
             // Add indentation
             for (int indent = 0; indent < node->indent_level; indent++)
-            {
                 line_builder.Add("  "); // 2 spaces per indent level
-            }
-            
+
             // Add expansion indicator for nodes with children
             if (node->has_children())
             {
@@ -441,7 +448,7 @@ void TreeView::Render(int width, int height)
             {
                 line_builder.Add("  ");
             }
-            
+
             // Add content
             if (_search_active && node->is_search_parent && !node->matches_search)
             {
@@ -698,10 +705,6 @@ bool TreeView::MatchesSearch(TreeNode* node) const
     if (!_search_regex_valid || !node)
         return false;
     
-    // Only search objects, not properties
-    if (!node->is_object)
-        return false;
-    
     try
     {
         // Search both content and full path
@@ -799,32 +802,14 @@ void TreeView::UpdateSearchFlagsRecursive(TreeNode* node)
             
             if (matches)
             {
-                if (node->is_object)
+                node->matches_search = true;
+                // Mark all parents as search parents and expand them
+                TreeNode* parent = node->parent;
+                while (parent)
                 {
-                    node->matches_search = true;
-                    // Mark all parents as search parents and expand them
-                    TreeNode* parent = node->parent;
-                    while (parent)
-                    {
-                        parent->is_search_parent = true;
-                        parent->is_expanded = true;
-                        parent = parent->parent;
-                    }
-                }
-                else if (node->parent)
-                {
-                    // Property matches - mark parent object instead
-                    node->parent->matches_search = true;
-                    // Expand the parent object to show the matching property
-                    node->parent->is_expanded = true;
-                    // Mark all grandparents as search parents and expand them
-                    TreeNode* parent = node->parent->parent;
-                    while (parent)
-                    {
-                        parent->is_search_parent = true;
-                        parent->is_expanded = true;
-                        parent = parent->parent;
-                    }
+                    parent->is_search_parent = true;
+                    parent->is_expanded = true;
+                    parent = parent->parent;
                 }
             }
         }
