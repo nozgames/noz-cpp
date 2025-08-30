@@ -11,7 +11,6 @@ struct Element : Object {};
 struct Label : Element {};
 
 #define ELEMENT_BASE_SIZE 360
-#define ELEMENT_BASE ElementBase __element;
 
 struct ElementBase { u8 __entity[ELEMENT_BASE_SIZE]; };
 
@@ -110,14 +109,6 @@ struct Style
     StyleLength padding_right;
 };
 
-// @element_traits
-struct ElementTraits
-{
-    vec2(*measure_content)(Element*, const vec2& available_size, const Style& style) = nullptr;
-    void(*render_content)(Element*, const Style& style) = nullptr;
-    void(*on_apply_style)(Element*, const Style&) = nullptr;
-};
-
 const Style& GetDefaultStyle();
 void DeserializeStyle(Stream* stream, Style& style);
 Style DeserializeStyle(Stream* stream);
@@ -156,6 +147,18 @@ void SetVisible(Canvas* element, bool visible);
 
 // @element
 
+// @element_traits
+struct ElementTraits
+{
+    vec2(*measure_content)(Element*, const vec2& available_size, const Style& style) = nullptr;
+    void(*render_content)(Element*, const Style& style) = nullptr;
+    void(*on_apply_style)(Element*, const Style&) = nullptr;
+
+#ifdef NOZ_EDITOR
+    void(*editor_inspect)(Element*, Stream*);
+#endif
+};
+
 extern const ElementTraits* g_element_traits[];
 
 void SetElementTraits(type_t id, const ElementTraits* traits);
@@ -164,15 +167,24 @@ inline const ElementTraits* GetElementTraits(Element* element) { return g_elemen
 
 Element* CreateElement(Allocator* allocator, size_t element_size, type_t element_type, const name_t* id = nullptr);
 Element* CreateElement(Allocator* allocator, const name_t* id = nullptr);
+const name_t* GetName(Element* element);
 void SetParent(Element* element, Element* parent);
 void SetParent(Element* element, Canvas* parent);
 void AddChild(Element* element, Element* child);
 void RemoveChild(Element* element, Element* child);
 void RemoveFromParent(Element* element);
+Element* GetFirstChild(Element* element);
+Element* GetNextChild(Element* element, Element* child);
 bool IsVisible(Element* element);
 void SetVisible(Element* element, bool visible);
 void SetPseudoState(Element* element, PseudoState state, bool value);
 void MarkDirty(Element* element);
+Canvas* GetCanvas(Element* element);
+
+inline Element* GetRootElement(Element* element)
+{
+    return GetRootElement(GetCanvas(element));
+}
 
 // @label
 Label* CreateLabel(Allocator* allocator, const char* text, const name_t* id);

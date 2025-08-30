@@ -93,7 +93,7 @@ public:
     void MarkCursorProcessed();
     
     // IView interface
-    void Render(int width, int height) override;
+    void Render(const irect_t& rect) override;
     bool HandleKey(int key) override;
     void SetCursorVisible(bool visible) override;
     bool CanPopFromStack() const override { return false; }

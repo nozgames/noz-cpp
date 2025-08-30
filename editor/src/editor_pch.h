@@ -34,6 +34,7 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <stack>
 
 #include <noz/noz.h>
 #include "tokenizer.h"

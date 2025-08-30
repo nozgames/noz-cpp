@@ -2,16 +2,24 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+// https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
+
 #ifdef _WIN32
 
+#include "screen.h"
 #include "terminal.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
 
+extern void InitScreen(i32 width, i32 height);
+extern void UpdateScreenSize(i32 width, i32 height);
+extern ScreenOutputBuffer RenderScreen();
+
 static HANDLE g_console_input = INVALID_HANDLE_VALUE;
 static HANDLE g_console_output = INVALID_HANDLE_VALUE;
+
 
 static int g_screen_width = 0;
 static int g_screen_height = 0;
@@ -69,6 +77,8 @@ void UpdateScreenSize()
         COORD buffer_size = {(SHORT)new_width, (SHORT)new_height};
         SetConsoleScreenBufferSize(g_console_output, buffer_size);
 
+        UpdateScreenSize(new_width, new_height);
+
         if (g_resize_callback)
             g_resize_callback(g_screen_width, g_screen_height);
 
@@ -83,25 +93,15 @@ void RenderTerminal()
     if (!g_render_callback)
         return;
 
-    // Clear the output buffer
-    g_output_buffer.clear();
+    g_render_callback(GetScreenWidth(), GetScreenHeight());
 
-    // Reset cursor position for rendering
-    g_cursor_x = 0;
-    g_cursor_y = 0;
+    auto buffer = RenderScreen();
+    if (buffer.size == 0)
+        return;
 
-    // Always call the render callback to populate the output buffer
-    g_render_callback(g_screen_width, g_screen_height);
-
-    // Write the entire output buffer at once for maximum performance
-    if (!g_output_buffer.empty())
-    {
-        DWORD written;
-        WriteConsoleA(g_console_output, g_output_buffer.c_str(), (DWORD)g_output_buffer.length(), &written, nullptr);
-        FlushFileBuffers(g_console_output); // Force immediate output
-    }
-
-    // Clear the redraw flag
+    DWORD written;
+    WriteConsoleA(g_console_output, buffer.buffer, (DWORD)buffer.size, &written, nullptr);
+    FlushFileBuffers(g_console_output);
     g_needs_redraw = false;
 }
 
@@ -173,34 +173,6 @@ int GetTerminalKey()
     return ERR; // No input available
 }
 
-int GetTerminalWidth()
-{
-    return g_screen_width;
-}
-
-int GetTerminalHeight()
-{
-    return g_screen_height;
-}
-
-void ClearScreen()
-{
-    // Add VT sequence to clear entire screen and move cursor to home
-    // Also reset any color attributes to prevent color bleeding
-    g_output_buffer += "\033[0m\033[2J\033[H";
-    g_cursor_x = 0;
-    g_cursor_y = 0;
-    g_current_color = 0; // Reset current color tracking
-}
-
-void MoveCursor(int y, int x)
-{
-    // Always add VT sequence - disable optimization for now to avoid sync issues
-    // VT sequence: ESC[row;columnH (1-based coordinates)
-    g_output_buffer += "\033[" + std::to_string(y + 1) + ";" + std::to_string(x + 1) + "H";
-    g_cursor_x = x;
-    g_cursor_y = y;
-}
 
 void AddChar(char ch, int count)
 {
@@ -484,12 +456,16 @@ void InitTerminal()
     DWORD final_mode;
     GetConsoleMode(g_console_output, &final_mode);
 
+    CONSOLE_SCREEN_BUFFER_INFO csbi = {};
+    if (!GetConsoleScreenBufferInfo(g_console_output, &csbi))
+        return;
+
+    InitScreen(
+        csbi.srWindow.Right - csbi.srWindow.Left + 1,
+        csbi.srWindow.Bottom - csbi.srWindow.Top + 1);
+
     // Initialize screen size
     UpdateScreenSize();
-
-    // Force remove scrollbar by setting buffer size aggressively
-    COORD buffer_size = {(SHORT)g_screen_width, (SHORT)g_screen_height};
-    SetConsoleScreenBufferSize(g_console_output, buffer_size);
 
     // Initialize output buffer and cursor position
     g_output_buffer.reserve(g_screen_width * g_screen_height * 2); // Reserve space for efficiency

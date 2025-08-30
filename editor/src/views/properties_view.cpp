@@ -7,86 +7,6 @@
 #include "../tokenizer.h"
 #include <algorithm>
 
-static void FormatValue(TStringBuilder& builder, const std::string& value)
-{
-    if (value.empty())
-    {
-        builder.Add(value);
-        return;
-    }
-    
-    Tokenizer tok;
-    Token token;
-    
-    // Check for color patterns using tokenizer
-    color_t color_result;
-    Init(tok, value.c_str());
-    if (ExpectColor(tok, &token, &color_result))
-    {
-        builder.Add(color_result);
-        return;
-    }
-    
-    // Check for vector patterns using tokenizer: (x,y), (x,y,z), or (x,y,z,w)
-    if (value.size() >= 5 && value.front() == '(' && value.back() == ')')
-    {
-        vec2 vec2_result;
-        vec3 vec3_result;
-        vec4 vec4_result;
-        
-        // Try parsing as vec2 first
-        Init(tok, value.c_str());
-        if (ExpectVec2(tok, &token, &vec2_result))
-        {
-            builder.Add(vec2_result);
-            return;
-        }
-        
-        // Reset tokenizer and try vec3
-        Init(tok, value.c_str());
-        if (ExpectVec3(tok, &token, &vec3_result))
-        {
-            builder.Add(vec3_result);
-            return;
-        }
-        
-        // Reset tokenizer and try vec4
-        Init(tok, value.c_str());
-        if (ExpectVec4(tok, &token, &vec4_result))
-        {
-            builder.Add(vec4_result);
-            return;
-        }
-    }
-    
-    // Check for boolean values
-    if (value == "true" || value == "false")
-    {
-        builder.Add(value == "true");
-        return;
-    }
-    
-    // Check for number (integer or float)
-    static const std::regex number_regex("^[-+]?([0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)$");
-    if (std::regex_match(value, number_regex))
-    {
-        // Try parsing as int first, then float
-        char* end;
-        long int_val = strtol(value.c_str(), &end, 10);
-        if (*end == '\0')
-            builder.Add(static_cast<int>(int_val));
-        else
-            builder.Add(static_cast<float>(strtof(value.c_str(), nullptr)));
-        return;
-    }
-    
-    // Everything else is treated as a string
-    if (!value.empty() && value.front() == '"' && value.back() == '"')
-        builder.Add(value, TCOLOR_GREEN); // Already has quotes
-    else
-        builder.Add("\"" + value + "\"", TCOLOR_GREEN); // Add quotes
-}
-
 void PropertiesView::AddProperty(const std::string& name, const TString& value)
 {
     _properties.push_back(std::move(std::make_unique<Item>(name, value)));
@@ -103,21 +23,13 @@ void PropertiesView::Clear()
 void PropertiesView::RebuildVisibleList()
 {
     _visible_properties.clear();
-    
     for (auto& property : _properties)
-    {
         _visible_properties.push_back(property.get());
-    }
-    
-    // Ensure cursor is in valid range
+
     if (!_visible_properties.empty())
-    {
         _cursor_row = std::max(0, std::min(_cursor_row, static_cast<int>(_visible_properties.size()) - 1));
-    }
     else
-    {
         _cursor_row = 0;
-    }
 }
 
 size_t PropertiesView::PropertyCount() const
@@ -125,12 +37,10 @@ size_t PropertiesView::PropertyCount() const
     return _properties.size();
 }
 
-void PropertiesView::Render(int width, int height)
+void PropertiesView::Render(const irect_t& rect)
 {
-    int properties_height = height - 2; // Leave 2 rows for status and command
-
-    // Clear the properties area
-    for (int row = 0; row < properties_height; row++)
+#if 0
+    for (int row = 0; row < height; row++)
     {
         MoveCursor(row, 0);
         for (int col = 0; col < width; col++)
@@ -168,6 +78,7 @@ void PropertiesView::Render(int width, int height)
             AddString(property->value, cursor_pos, width);
         }
     }
+#endif
 }
 
 bool PropertiesView::HandleKey(int key)

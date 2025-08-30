@@ -4,111 +4,7 @@
 
 #include "tree_view.h"
 #include "../tui/terminal.h"
-#include "../tokenizer.h"
-#include <algorithm>
-#include <string>
-
-static int CountLeadingTabs(const std::string& line)
-{
-    int count = 0;
-    for (char c : line)
-    {
-        if (c == '\t')
-            count++;
-        else
-            break;
-    }
-    return count;
-}
-
-static std::string RemoveLeadingTabs(const std::string& line)
-{
-    size_t first_non_tab = 0;
-    while (first_non_tab < line.length() && line[first_non_tab] == '\t')
-        first_non_tab++;
-    return line.substr(first_non_tab);
-}
-
-static void FormatValue(TStringBuilder& builder, const std::string& value)
-{
-    if (value.empty())
-    {
-        builder.Add(value);
-        return;
-    }
-    
-    Tokenizer tok;
-    Token token;
-    
-    // Check for color patterns using tokenizer
-    color_t color_result;
-    Init(tok, value.c_str());
-    if (ExpectColor(tok, &token, &color_result))
-    {
-        builder.Add(color_result);
-        return;
-    }
-    
-    // Check for vector patterns using tokenizer: (x,y), (x,y,z), or (x,y,z,w)
-    if (value.size() >= 5 && value.front() == '(' && value.back() == ')')
-    {
-        vec2 vec2_result;
-        vec3 vec3_result;
-        vec4 vec4_result;
-        
-        // Try parsing as vec2 first
-        Init(tok, value.c_str());
-        if (ExpectVec2(tok, &token, &vec2_result))
-        {
-            builder.Add(vec2_result);
-            return;
-        }
-        
-        // Reset tokenizer and try vec3
-        Init(tok, value.c_str());
-        if (ExpectVec3(tok, &token, &vec3_result))
-        {
-            builder.Add(vec3_result);
-            return;
-        }
-        
-        // Reset tokenizer and try vec4
-        Init(tok, value.c_str());
-        if (ExpectVec4(tok, &token, &vec4_result))
-        {
-            builder.Add(vec4_result);
-            return;
-        }
-    }
-    
-    // Check for boolean values
-    if (value == "true" || value == "false")
-    {
-        builder.Add(value == "true");
-        return;
-    }
-    
-    // Check for number (integer or float)
-    static const std::regex number_regex("^[-+]?([0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)$");
-    if (std::regex_match(value, number_regex))
-    {
-        // Try parsing as int first, then float
-        char* end;
-        long int_val = strtol(value.c_str(), &end, 10);
-        if (*end == '\0')
-            builder.Add(static_cast<int>(int_val));
-        else
-            builder.Add(static_cast<float>(strtof(value.c_str(), nullptr)));
-        return;
-    }
-    
-    // Everything else is treated as a string
-    if (!value.empty() && value.front() == '"' && value.back() == '"')
-        builder.Add(value, TCOLOR_GREEN); // Already has quotes
-    else
-        builder.Add("\"" + value + "\"", TCOLOR_GREEN); // Add quotes
-}
-
+#include "../tui/screen.h"
 
 static std::string GetArraySizeIndicator(const TreeNode* node)
 {
@@ -360,82 +256,68 @@ void TreeView::Clear()
     _cursor_row = 0;
 }
 
-void TreeView::Render(int width, int height)
+void TreeView::Render(const irect_t& rect)
 {
-    int tree_height = height - 2; // Leave 2 rows for status and command
+    if (_visible_nodes.empty())
+        return;
 
-    // Clear the tree area
-    for (int row = 0; row < tree_height; row++)
+    auto visible_rows = static_cast<int>(_visible_nodes.size());
+    auto max_rows = std::min(rect.height, visible_rows);
+        
+    _cursor_row = std::max(0, std::min(_cursor_row, visible_rows - 1));
+        
+    // Calculate the display window
+    i32 start_row = 0;
+    if (visible_rows > max_rows)
     {
-        MoveCursor(row, 0);
-        for (int col = 0; col < width; col++)
-            AddChar(' ');
+        auto ideal_start_row = _cursor_row - max_rows / 2;
+        auto max_start_row = visible_rows - max_rows;
+        start_row = std::max(0, std::min(ideal_start_row, max_start_row));
     }
 
-    // Calculate which nodes to show based on cursor position
-    if (!_visible_nodes.empty())
+    auto row_count = std::min(max_rows, visible_rows - start_row);
+    int cursor_in_window = _cursor_row - start_row;
+
+    for (i32 row = 0; row < row_count; row++)
     {
-        size_t total_visible = _visible_nodes.size();
-        size_t max_display_count = std::min(static_cast<size_t>(tree_height), total_visible);
-        
-        // Ensure cursor is within valid range
-        _cursor_row = std::max(0, std::min(_cursor_row, static_cast<int>(total_visible) - 1));
-        
-        // Calculate window to show cursor
-        size_t start_idx = 0;
-        if (total_visible > max_display_count)
+        auto node = _visible_nodes[start_row + row];
+
+        MoveCursor(0, row);
+
+        // Add indentation
+        for (int indent = 0; indent < node->indent_level; indent++)
+            AddPixels("  ");
+
+        // Add expansion indicator for nodes with children
+        if (node->has_children())
         {
-            int cursor_pos = _cursor_row;
-            int ideal_start = cursor_pos - static_cast<int>(max_display_count) / 2;
-            int max_start = static_cast<int>(total_visible) - static_cast<int>(max_display_count);
-            
-            start_idx = std::max(0, std::min(ideal_start, max_start));
-        }
-        
-        size_t display_count = std::min(max_display_count, total_visible - start_idx);
-        int cursor_in_window = _cursor_row - static_cast<int>(start_idx);
-
-        for (size_t i = 0; i < display_count; i++)
-        {
-            TreeNode* node = _visible_nodes[start_idx + i];
-            
-            MoveCursor(static_cast<int>(i), 0);
-
-            // Build display line using TStringBuilder
-            auto line_builder = TStringBuilder::Build();
-            
-            // Add indentation
-            for (int indent = 0; indent < node->indent_level; indent++)
-                line_builder.Add("  "); // 2 spaces per indent level
-
-            // Add expansion indicator for nodes with children
-            if (node->has_children())
-            {
-                if (node->is_expanded)
-                    line_builder.Add("- ");
-                else
-                    line_builder.Add("+ ");
-            }
-            else if (node->indent_level > 0)
-            {
-                line_builder.Add("  ");
-            }
-
-            if (_search_active && node->is_search_parent && !node->matches_search)
-                line_builder.Add(node->value.raw, 128, 128, 128);
+            if (node->is_expanded)
+                AddPixel('-');
             else
-                line_builder.Add(node->value.formatted);
-
-            // Add array size indicator for objects with children
-            std::string size_indicator = GetArraySizeIndicator(node);
-            if (!size_indicator.empty())
-            {
-                line_builder.Add(" " + size_indicator);
-            }
-            
-            int cursor_pos = (_show_cursor && static_cast<int>(i) == cursor_in_window) ? 0 : -1;
-            AddString(line_builder.ToString(), cursor_pos, width);
+                AddPixel('+');
         }
+        else
+            AddPixel(' ');
+
+        AddPixel(' ');
+        AddPixels(node->value.raw.c_str());
+
+        //AddString(node->line_builder.ToString(), cursor_pos, rect.width);
+
+        // if (_search_active && node->is_search_parent && !node->matches_search)
+        //     line_builder.Add(node->value.raw, 128, 128, 128);
+        // else
+        //     line_builder.Add(node->value.formatted);
+        //
+        // // Add array size indicator for objects with children
+        // std::string size_indicator = GetArraySizeIndicator(node);
+        // if (!size_indicator.empty())
+        // {
+        //     line_builder.Add(" " + size_indicator);
+        // }
+        //
+        // int cursor_pos = (_show_cursor && static_cast<int>(row) == cursor_in_window) ? 0 : -1;
+        // AddString(line_builder.ToString(), cursor_pos, rect.width);
     }
 }
 

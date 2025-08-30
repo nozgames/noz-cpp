@@ -275,6 +275,13 @@ vec3 ReadVec3(Stream* stream)
     return value;
 }
 
+rect_t ReadRect(Stream* stream)
+{
+    rect_t value;
+    ReadBytes(stream, &value, sizeof(rect_t));
+    return value;
+}
+
 double ReadDouble(Stream* stream)
 {
     double value;
@@ -368,6 +375,11 @@ void WriteFloat(Stream* stream, float value)
 void WriteVec3(Stream* stream, const vec3& value)
 {
     WriteBytes(stream, (void*)&value, sizeof(vec3));
+}
+
+void WriteRect(Stream* stream, const rect_t& value)
+{
+    WriteBytes(stream, (void*)&value, sizeof(rect_t));
 }
 
 void WriteDouble(Stream* stream, double value)

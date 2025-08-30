@@ -4,18 +4,32 @@
 
 #include "log_view.h"
 
-void LogView::AddMessage(const std::string& message)
+LogView::LogView()
 {
-    // Use the base TreeView's AddLine method, which handles tab-based nesting
-    Add(TStringBuilder().Add(message).ToString(), 0, nullptr);
+    _tree_view = std::make_unique<TreeView>();
 }
 
-size_t LogView::MessageCount() const
+void LogView::Clear()
 {
-    return NodeCount();
+    _tree_view->Clear();
 }
 
-void LogView::SetMaxMessages(size_t max_messages)
+void LogView::Add(const std::string& message)
 {
-    SetMaxEntries(max_messages);
+    _tree_view->Add(TStringBuilder().Add(message).ToString(), 0, nullptr);
+}
+
+size_t LogView::Count() const
+{
+    return _tree_view->NodeCount();
+}
+
+void LogView::SetMax(size_t max_messages)
+{
+    _tree_view->SetMaxEntries(max_messages);
+}
+
+void LogView::Render(const irect_t& rect)
+{
+    _tree_view->Render(rect);
 }

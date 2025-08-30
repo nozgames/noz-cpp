@@ -2,9 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct LabelImpl
+struct LabelImpl : ElementBase
 {
-    ELEMENT_BASE;
     text_t text;
     TextMesh* mesh;
     u64 mesh_hash;

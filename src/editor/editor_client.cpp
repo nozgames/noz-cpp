@@ -320,6 +320,12 @@ void WriteInspectorProperty(Stream* stream, const char* name, const vec3& value)
     WriteVec3(stream, value);
 }
 
+void WriteInspectorProperty(Stream* stream, const char* name, const rect_t& value)
+{
+    WriteInspectorProperty(stream, name, INSPECTOR_OBJECT_COMMAND_RECT);
+    WriteRect(stream, value);
+}
+
 void EndInspectorObject(Stream* stream)
 {
     WriteU8(stream, INSPECTOR_OBJECT_COMMAND_END);

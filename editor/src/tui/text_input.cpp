@@ -3,25 +3,28 @@
 //
 
 #include "text_input.h"
+
+#include "screen.h"
 #include "terminal.h"
-#include <cassert>
-#include <noz/log.h>
 
 struct TextInputImpl : TextInput
 {
     std::string buffer;
-    size_t cursor_pos = 0;
-    int x, y;
+    size_t cursor_pos;
+    int x;
+    int y;
     int width;
-    bool active = false;
-    
-    TextInputImpl(int x_, int y_, int width_) 
-        : x(x_), y(y_), width(width_) {}
+    bool active;
 };
 
 TextInput* CreateTextInput(int x, int y, int width)
 {
-    return new TextInputImpl(x, y, width);
+    auto ti = new TextInputImpl;
+    ti->x = x;
+    ti->y = y;
+    ti->width = width;
+    ti->active = false;
+    return ti;
 }
 
 void Destroy(TextInput* input)
@@ -33,33 +36,47 @@ void Destroy(TextInput* input)
     }
 }
 
-void Draw(TextInput* input)
+void Render(TextInput* input)
 {
     assert(input);
     TextInputImpl* impl = static_cast<TextInputImpl*>(input);
-    
-    if (impl->active) {
+
+    if (impl->active)
+    {
+        AddPixels(impl->buffer.c_str());
+
+#if 0
         // Render text with cursor at correct position
-        for (size_t i = 0; i <= impl->buffer.length(); ++i) {
-            if (i == impl->cursor_pos) {
+        for (size_t i = 0; i <= impl->buffer.length(); ++i)
+        {
+            if (i == impl->cursor_pos)
+            {
                 // Show cursor at this position
-                if (i < impl->buffer.length()) {
+                if (i < impl->buffer.length())
+                {
                     // Cursor is over a character - show character with inverse video
-                    BeginInverse();  // Enable reverse video (inverse)
+                    BeginInverse(); // Enable reverse video (inverse)
                     AddChar(impl->buffer[i]);
                     EndInverse(); // Disable reverse video
-                } else {
-                    // Cursor is after the last character - show cursor block
-                    AddChar('\xDB');  // Solid block character (█)
                 }
-            } else if (i < impl->buffer.length()) {
+                else
+                {
+                    // Cursor is after the last character - show cursor block
+                    AddChar('\xDB'); // Solid block character (█)
+                }
+            }
+            else if (i < impl->buffer.length())
+            {
                 // Regular character
                 AddChar(impl->buffer[i]);
             }
         }
-    } else {
+#endif
+    }
+    else
+    {
         // Just render the text without cursor when inactive
-        AddString(impl->buffer.c_str());
+      //  AddString(impl->buffer.c_str());
     }
 }
 
@@ -77,50 +94,55 @@ bool HandleKey(TextInput* input, int key)
 
     if (!impl->active)
         return false;
-    
-    switch (key) {
-        case 127: // Delete/Backspace
-        case 8:
-            if (impl->cursor_pos > 0) {
-                impl->buffer.erase(impl->cursor_pos - 1, 1);
-                impl->cursor_pos--;
-            }
+
+    switch (key)
+    {
+    case 127: // Delete/Backspace
+    case 8:
+        if (impl->cursor_pos > 0)
+        {
+            impl->buffer.erase(impl->cursor_pos - 1, 1);
+            impl->cursor_pos--;
+        }
+        return true;
+
+    case KEY_LEFT:
+        if (impl->cursor_pos > 0)
+        {
+            impl->cursor_pos--;
+        }
+        return true;
+
+    case KEY_RIGHT:
+        if (impl->cursor_pos < impl->buffer.length())
+        {
+            impl->cursor_pos++;
+        }
+        return true;
+
+    case KEY_HOME:
+        impl->cursor_pos = 0;
+        return true;
+
+    case KEY_END:
+        impl->cursor_pos = impl->buffer.length();
+        return true;
+
+    default:
+        // Handle regular characters
+        if (key >= 32 && key <= 126)
+        { // Printable ASCII
+            // Ensure cursor_pos is valid
+            if (impl->cursor_pos > impl->buffer.length())
+                impl->cursor_pos = impl->buffer.length();
+
+            impl->buffer.insert(impl->cursor_pos, 1, static_cast<char>(key));
+            impl->cursor_pos++;
             return true;
-            
-        case KEY_LEFT:
-            if (impl->cursor_pos > 0) {
-                impl->cursor_pos--;
-            }
-            return true;
-            
-        case KEY_RIGHT:
-            if (impl->cursor_pos < impl->buffer.length()) {
-                impl->cursor_pos++;
-            }
-            return true;
-            
-        case KEY_HOME:
-            impl->cursor_pos = 0;
-            return true;
-            
-        case KEY_END:
-            impl->cursor_pos = impl->buffer.length();
-            return true;
-            
-        default:
-            // Handle regular characters
-            if (key >= 32 && key <= 126) { // Printable ASCII
-                // Ensure cursor_pos is valid
-                if (impl->cursor_pos > impl->buffer.length())
-                    impl->cursor_pos = impl->buffer.length();
-                    
-                impl->buffer.insert(impl->cursor_pos, 1, static_cast<char>(key));
-                impl->cursor_pos++;
-                return true;
-            }
-            break;
+        }
+        break;
     }
-    
+
     return false;
 }
 

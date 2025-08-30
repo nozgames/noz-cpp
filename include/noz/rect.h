@@ -12,6 +12,14 @@ struct rect_t
     float height;
 };
 
+struct irect_t
+{
+    i32 x;
+    i32 y;
+    i32 width;
+    i32 height;
+};
+
 inline float GetLeft(const rect_t& rect) { return rect.x; }
 inline float GetTop(const rect_t& rect) { return rect.y; }
 inline float GetBottom(const rect_t& rect) { return rect.y + rect.height; }
@@ -25,3 +33,7 @@ inline void SetRight(rect_t& rect, float value) { rect.width = value - rect.x; }
 inline bool Contains(const rect_t& rect, float x, float y);
 inline bool Intersects(const rect_t& rect, const rect_t& other);
 inline rect_t Intersection(const rect_t& rect, const rect_t& other);
+
+
+inline i32 GetRight(const irect_t& rect) { return rect.x + rect.width; }
+inline i32 GetBottom(const irect_t& rect) { return rect.y + rect.height; }

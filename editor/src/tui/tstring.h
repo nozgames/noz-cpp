@@ -4,13 +4,6 @@
 
 #pragma once
 
-extern const color24_t TCOLOR_ORANGE;
-extern const color24_t TCOLOR_GREEN;
-extern const color24_t TCOLOR_PURPLE;
-extern const color24_t TCOLOR_GREY;
-extern const color24_t TCOLOR_WHITE;
-extern const color24_t TCOLOR_DISABLED;
-
 struct TString
 {
     std::string raw;

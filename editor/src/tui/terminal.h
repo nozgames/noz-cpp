@@ -28,8 +28,7 @@ void UpdateTerminal();
 
 void SetRenderCallback(TerminalRenderCallback callback);
 void SetResizeCallback(TerminalResizeCallback callback);
-void ClearScreen();
-void MoveCursor(int y, int x);
+void ClearRect(const rect_t& rect);
 void AddChar(char ch);
 void AddChar(char ch, int count);
 void AddString(const char* str);
@@ -51,6 +50,6 @@ void SetCursorVisible(bool visible);
 bool HasColorSupport();
 int GetCursorX();
 int GetTerminalKey();
-int GetTerminalWidth();
-int GetTerminalHeight();
+
+
 

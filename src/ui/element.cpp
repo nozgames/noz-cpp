@@ -17,7 +17,7 @@ struct ElementImpl
 {
     OBJECT_BASE;
     Canvas* canvas;
-    const name_t* id;
+    const name_t* name;
     ElementFlags flags;
     Style style;
     rect_t bounds;
@@ -71,20 +71,20 @@ Element* CreateRootElement(Allocator* allocator, Canvas* canvas, const name_t* i
     return element;
 }
 
-Element* CreateElement(Allocator* allocator, size_t element_size, type_t element_type, const name_t* id)
+Element* CreateElement(Allocator* allocator, size_t element_size, type_t element_type, const name_t* name)
 {
     auto element = (Element*)CreateObject(allocator, element_size, element_type, TYPE_ELEMENT);
     auto impl = Impl(element);
-    impl->id = id;
+    impl->name = name;
     impl->style = GetDefaultStyle();
     impl->flags.value = ELEMENT_FLAG_VISIBLE;
     Init(impl->children, offsetof(ElementImpl, node_child));
     return element;
 }
 
-Element* CreateElement(Allocator* allocator, const name_t* id)
+Element* CreateElement(Allocator* allocator, const name_t* name)
 {
-    return CreateElement(allocator, sizeof(ElementImpl), TYPE_ELEMENT, id);
+    return CreateElement(allocator, sizeof(ElementImpl), TYPE_ELEMENT, name);
 }
 
 void SetParent(Element* element, Canvas* canvas)
@@ -586,7 +586,7 @@ static void ApplyStyle(ElementImpl* impl, const name_t* id)
         effective_state &= ~priority_state;
 
         Style style;
-        if (!GetStyle(style_sheet, impl->id, priority_state, &style))
+        if (!GetStyle(style_sheet, impl->name, priority_state, &style))
         {
             if (priority_state == PSEUDO_STATE_NONE)
                 return;
@@ -609,7 +609,7 @@ static void ApplyStyle(ElementImpl* impl)
     if (!impl->canvas)
         return;
 
-    ApplyStyle(impl, impl->id);
+    ApplyStyle(impl, impl->name);
 
     for (auto child = (Element*)GetFront(impl->children); child; child = (Element*)GetNext(impl->children, child))
     {
@@ -717,6 +717,21 @@ void SetElementTraits(type_t id, const ElementTraits* traits)
     g_element_traits[id] = traits;
 }
 
+Element* GetFirstChild(Element* element)
+{
+    return (Element*)GetFront(Impl(element)->children);
+}
+
+Element* GetNextChild(Element* element, Element* child)
+{
+    return (Element*)GetNext(Impl(element)->children, child);
+}
+
+const name_t* GetName(Element* element)
+{
+    return Impl(element)->name;
+}
+
 void InitElement()
 {
     static TypeTraits element_type_traits = {
@@ -733,3 +748,21 @@ void InitElement()
 void ShutdownElement()
 {
 }
+
+
+#ifdef NOZ_EDITOR
+void WriteInspectorElement(Stream* stream, Element* element)
+{
+    auto impl = Impl(element);
+    BeginInspectorObject(stream, GetType(element), GetValue(GetName(element)));
+    WriteInspectorProperty(stream, "enabled", IsEnabled(impl->canvas));
+
+    if (auto traits = GetElementTraits(element); traits->editor_inspect)
+        traits->editor_inspect(element, stream);
+
+    for (auto child=GetFirstChild(element); child; child=GetNextChild(element, child))
+        WriteInspectorElement(stream, child);
+
+    EndInspectorObject(stream);
+}
+#endif

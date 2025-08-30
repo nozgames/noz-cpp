@@ -3,6 +3,7 @@
 //
 
 Element* CreateRootElement(Allocator* allocator, Canvas* canvas, const name_t* id);
+void WriteInspectorElement(Stream* stream, Element* element);
 void RenderElements(Element* element, const mat4& canvas_transform, const vec2& canvas_size, bool is_dirty);
 void BeginUIPass();
 
@@ -34,6 +35,9 @@ void MarkDirty(Canvas* canvas)
 
 Element* GetRootElement(Canvas* canvas)
 {
+    if (!canvas)
+        return nullptr;
+
     return Impl(canvas)->root;
 }
 
@@ -159,6 +163,7 @@ void CanvasEditorInspect(Entity* entity, Stream* stream)
 {
     auto impl = Impl((Canvas*)entity);
     WriteInspectorProperty(stream, "sheet", impl->style_sheet ? GetName(impl->style_sheet)->value : "null");
+    WriteInspectorElement(stream, impl->root);
 }
 #endif
 

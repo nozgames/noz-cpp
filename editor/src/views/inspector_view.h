@@ -7,13 +7,11 @@
 #include "view_interface.h"
 #include "tree_view.h"
 #include "properties_view.h"
-#include "object_properties.h"
 #include "inspector_object.h"
 #include <memory>
 
 class InspectorView : public IView
 {
-private:
     std::unique_ptr<TreeView> _tree_view;
     std::unique_ptr<PropertiesView> _properties_view;
     bool _focus_on_tree = true;  // true = tree has focus, false = properties has focus
@@ -21,8 +19,8 @@ private:
     std::unique_ptr<InspectorObject> _root_object;
     bool _has_requested_data = false;  // Track if we've sent a request yet
     
-    void UpdateLayout(int width, int height);
-    void RenderDivider(int width, int height, int split_col);
+    void UpdateLayout(const irect_t& rect);
+    void RenderDivider(const irect_t& rect, int split_col);
     void RenderPropertiesSection(int start_col, int properties_width, int height);
     void RefreshPropertiesFromSelectedNode();
     void BuildTreeFromInspectorObject(InspectorObject* obj);
@@ -40,18 +38,13 @@ public:
     void ResetRequestState(); // Reset the data request state
     void AddProperty(const std::string& name, const TString& value);
     void ClearProperties();
-    
-    // ObjectProperties management
-    void SetCurrentNodeProperties(ObjectProperties* properties);
-    void SetNodeProperties(const std::string& node_path, ObjectProperties* properties);
-    ObjectProperties* GetCurrentNodeProperties() const;
-    
+
     // Layout control
     void SetSplitPosition(int percentage); // 0-100, percentage of width for tree
     void ToggleFocus();
     
     // IView interface
-    void Render(int width, int height) override;
+    void Render(const irect_t& rect) override;
     bool HandleKey(int key) override;
     void SetCursorVisible(bool visible) override;
     bool CanPopFromStack() const override { return true; }

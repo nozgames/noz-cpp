@@ -3,6 +3,7 @@
 //
 
 #include "inspector_view.h"
+#include "../tui/screen.h"
 #include "../tui/terminal.h"
 #include "../tokenizer.h"
 
@@ -158,28 +159,6 @@ void InspectorView::ClearProperties()
     }
 }
 
-void InspectorView::SetCurrentNodeProperties(ObjectProperties* properties)
-{
-    _tree_view->SetCurrentNodeUserData(properties);
-    RefreshPropertiesFromSelectedNode();
-}
-
-void InspectorView::SetNodeProperties(const std::string& node_path, ObjectProperties* properties)
-{
-    _tree_view->SetNodeUserData(node_path, properties);
-    RefreshPropertiesFromSelectedNode();
-}
-
-ObjectProperties* InspectorView::GetCurrentNodeProperties() const
-{
-    TreeNode* current_node = _tree_view->GetCurrentNode();
-    if (current_node)
-    {
-        return static_cast<ObjectProperties*>(current_node->GetUserData());
-    }
-    return nullptr;
-}
-
 void InspectorView::SetSplitPosition(int percentage)
 {
     _split_position = std::max(10, std::min(90, percentage)); // Clamp to 10-90%
@@ -192,23 +171,17 @@ void InspectorView::ToggleFocus()
     _properties_view->SetCursorVisible(!_focus_on_tree);
 }
 
-void InspectorView::UpdateLayout(int width, int height)
+void InspectorView::UpdateLayout(const irect_t& rect)
 {
     // Calculate split column
-    int split_col = (width * _split_position) / 100;
-    split_col = std::max(5, std::min(width - 5, split_col)); // Ensure minimum space for both views
+    int split_col = (rect.width * _split_position) / 100;
+    split_col = std::max(5, std::min(rect.width - 5, split_col));
 }
 
-void InspectorView::RenderDivider(int width, int height, int split_col)
+void InspectorView::RenderDivider(const irect_t& rect, int split_col)
 {
-    // Render vertical divider between tree and properties using background color
-    for (int row = 0; row < height - 2; row++) // Leave 2 rows for status and command
-    {
-        MoveCursor(row, split_col);
-        SetColorRGB(255, 255, 255, 128, 128, 128);  // White text, gray background
-        AddChar(' ');  // Space character with background
-        EndColor();  // Reset color
-    }
+    //SetColorRGB(255, 255, 255, 128, 128, 128);  // White text, gray background
+    DrawVerticalLine(rect.x + split_col, rect.y, rect.height, '|', TCOLOR_WHITE);
 }
 
 void InspectorView::RenderPropertiesSection(int start_col, int properties_width, int height)
@@ -348,8 +321,10 @@ void InspectorView::BuildTreeFromInspectorObject(InspectorObject* obj)
     build_recursive(obj, 0);
 }
 
-void InspectorView::Render(int width, int height)
+void InspectorView::Render(const irect_t& rect)
 {
+    PushClipRect(rect);
+
     // Check if we haven't requested data yet and if a client is now connected
     if (!_has_requested_data)
     {
@@ -361,7 +336,7 @@ void InspectorView::Render(int width, int height)
         }
     }
     
-    UpdateLayout(width, height);
+    UpdateLayout(rect);
     
     // Check if tree cursor has changed and refresh properties if so
     if (_tree_view->HasCursorChanged())
@@ -369,7 +344,8 @@ void InspectorView::Render(int width, int height)
         RefreshPropertiesFromSelectedNode();
         _tree_view->MarkCursorProcessed();
     }
-    
+
+#if 0
     int split_col = (width * _split_position) / 100;
     split_col = std::max(width / 2, std::min(width - 5, split_col));  // Minimum 50% for tree, maximum leave 5 for properties
     
@@ -386,12 +362,22 @@ void InspectorView::Render(int width, int height)
     
     // Render tree view (left side)
     _tree_view->Render(tree_width, height);
-    
+#endif
+
+    int split_col = (rect.width * _split_position) / 100;
+    split_col = std::max(rect.width / 2, std::min(rect.width - 5, split_col));  // Minimum 50% for tree, maximum leave 5 for properties
+
+    _tree_view->Render({rect.x, rect.y, split_col - 1, rect.height});
+
     // Render divider
-    RenderDivider(width, height, split_col);
-    
+    RenderDivider(rect, split_col);
+
+#if 0
     // Render properties view (right side) manually
     RenderPropertiesSection(split_col + 1, properties_width, height);
+#endif
+
+    PopClipRect();
 }
 
 bool InspectorView::HandleKey(int key)
