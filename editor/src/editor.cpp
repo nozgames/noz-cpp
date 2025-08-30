@@ -76,7 +76,7 @@ void HandleInspectorObject(std::unique_ptr<InspectorObject> object)
         {
             LogWarning("Exception occurred while populating inspector");
             inspector->ClearTree();
-            inspector->AddLine("Error processing inspection data");
+            //inspector->AddLine("Error processing inspection data");
         }
     }
     else if (inspector)
@@ -84,12 +84,7 @@ void HandleInspectorObject(std::unique_ptr<InspectorObject> object)
         LogInfo("Inspector exists but no data - showing no-data message");
         // Inspector exists but no data received - update waiting message
         inspector->ClearTree();
-        inspector->AddLine("No client connected or no data received");
-        LogInfo("Updated inspector with no-data message");
-    }
-    else
-    {
-        LogInfo("No active inspector view to receive data");
+        //inspector->AddLine("No client connected or no data received");
     }
 }
 
@@ -102,8 +97,7 @@ void HandleNoInspectionResponse()
     if (inspector)
     {
         inspector->ClearTree();
-        inspector->AddLine("No client connected");
-        LogInfo("Updated inspector with no-client message");
+        //inspector->AddLine("No client connected");
     }
 }
 
@@ -293,7 +287,7 @@ static void HandleCommand(const std::string& command)
             // Reset existing inspector and request new data
             LogInfo("Resetting existing inspector view");
             existing_inspector->ClearTree();
-            existing_inspector->AddLine("Waiting for client...");
+            //existing_inspector->AddProperty(TStringBuilder().Add("Waiting for client...").ToString());
             existing_inspector->ResetRequestState(); // Reset so it will send a new request
         }
         else

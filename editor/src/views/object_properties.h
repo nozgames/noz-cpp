@@ -12,12 +12,6 @@ struct ObjectProperty
 {
     std::string name;
     TString value;
-
-    ObjectProperty(const std::string& prop_name, const std::string& prop_value = "", int indent = 0)
-        : name(prop_name), value(prop_value, prop_value.length()) {}
-        
-    ObjectProperty(const std::string& prop_name, const TString& prop_value, int indent = 0)
-        : name(prop_name), value(prop_value) {}
 };
 
 class ObjectProperties
@@ -26,14 +20,9 @@ class ObjectProperties
     
 public:
 
-    void AddProperty(const std::string& name, const std::string& value = "", int indent_level = 0)
+    void AddProperty(const std::string& name, const TString& value)
     {
-        _properties.emplace_back(name, value, indent_level);
-    }
-    
-    void AddProperty(const std::string& name, const TString& value, int indent_level = 0)
-    {
-        _properties.emplace_back(name, value, indent_level);
+        _properties.emplace_back(name, value);
     }
     
     void Clear()

@@ -45,9 +45,9 @@ void Draw(TextInput* input)
                 // Show cursor at this position
                 if (i < impl->buffer.length()) {
                     // Cursor is over a character - show character with inverse video
-                    AddString("\033[7m");  // Enable reverse video (inverse)
+                    BeginInverse();  // Enable reverse video (inverse)
                     AddChar(impl->buffer[i]);
-                    AddString("\033[27m"); // Disable reverse video
+                    EndInverse(); // Disable reverse video
                 } else {
                     // Cursor is after the last character - show cursor block
                     AddChar('\xDB');  // Solid block character (█)

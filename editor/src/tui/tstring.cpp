@@ -12,7 +12,7 @@ const color24_t TCOLOR_GREEN = {0, 128, 0};
 const color24_t TCOLOR_PURPLE = {128, 0, 128};
 const color24_t TCOLOR_GREY = {128, 128, 128};
 const color24_t TCOLOR_WHITE = {255, 255, 255};
-
+const color24_t TCOLOR_DISABLED = {64, 64, 64};
 
 // TStringBuilder implementation
 TStringBuilder& TStringBuilder::Add(const std::string& text)
@@ -23,13 +23,10 @@ TStringBuilder& TStringBuilder::Add(const std::string& text)
         const color24_t& color = _color_stack.back();
         return Add(text, color.r, color.g, color.b);
     }
-    else
-    {
-        // No color, add plain text
-        _buffer += text;
-        _visual_length += text.length();
-        return *this;
-    }
+
+    _raw += text;
+    _formatted += text;
+    return *this;
 }
 
 TStringBuilder& TStringBuilder::Add(const char* text)
@@ -37,7 +34,6 @@ TStringBuilder& TStringBuilder::Add(const char* text)
     Add(std::string(text));
     return *this;
 }
-
 
 TStringBuilder& TStringBuilder::Add(const std::string& text, const color24_t& color)
 {
@@ -51,13 +47,24 @@ TStringBuilder& TStringBuilder::Add(const std::string& text, int r, int g, int b
     g = std::max(0, std::min(255, g));
     b = std::max(0, std::min(255, b));
     
-    _buffer += "\033[38;2;" + std::to_string(r) + ";" + std::to_string(g) + ";" + std::to_string(b) + "m";
-    _buffer += text;
-    _buffer += "\033[0m";
-    _visual_length += text.length();
+    _formatted += "\033[38;2;" + std::to_string(r) + ";" + std::to_string(g) + ";" + std::to_string(b) + "m";
+    _formatted += text;
+    _formatted += "\033[0m";
+    _raw += text;
     return *this;
 }
 
+TStringBuilder& TStringBuilder::Add(const std::string& text, int tcolor)
+{
+    if (tcolor <= 0)
+        return Add(text);
+
+    _formatted += "\033[" + std::to_string(tcolor) + "m";
+    _formatted += text;
+    _formatted += "\033[0m";
+    _raw += text;
+    return *this;
+}
 
 TStringBuilder& TStringBuilder::PushColor(const color24_t& color)
 {
@@ -82,28 +89,29 @@ TStringBuilder& TStringBuilder::PopColor()
 
 TStringBuilder& TStringBuilder::Clear()
 {
-    _buffer.clear();
-    _visual_length = 0;
+    _raw.clear();
+    _formatted.clear();
     _color_stack.clear();
     return *this;
 }
 
+#if 0
 TStringBuilder& TStringBuilder::TruncateToWidth(size_t max_width)
 {
-    if (_visual_length <= max_width)
+    if (_raw.size() <= max_width)
         return *this;
         
     // Need to truncate while preserving ANSI sequences
     size_t visual_len = 0;
     size_t truncate_pos = 0;
     
-    for (size_t i = 0; i < _buffer.length(); i++)
+    for (size_t i = 0; i < _formatted.length(); i++)
     {
-        if (_buffer[i] == '\033' && i + 1 < _buffer.length() && _buffer[i + 1] == '[')
+        if (_formatted[i] == '\033' && i + 1 < _formatted.length() && _formatted[i + 1] == '[')
         {
             // Skip ANSI escape sequence
             i++;
-            while (i < _buffer.length() && _buffer[i] != 'm')
+            while (i < _formatted.length() && _formatted[i] != 'm')
                 i++;
             // Don't increment visual_len for ANSI codes
         }
@@ -119,17 +127,17 @@ TStringBuilder& TStringBuilder::TruncateToWidth(size_t max_width)
         truncate_pos = i + 1;
     }
     
-    _buffer = _buffer.substr(0, truncate_pos);
-    _buffer += "\033[0m"; // Ensure we end with a reset
-    _visual_length = max_width;
+    _formatted = _formatted.substr(0, truncate_pos);
+    _formatted += "\033[0m"; // Ensure we end with a reset
     return *this;
 }
+#endif
 
 // Type-specific Add overloads
 TStringBuilder& TStringBuilder::Add(const TString& tstr)
 {
-    _buffer += tstr.text;
-    _visual_length += tstr.visual_length;
+    _raw += tstr.raw;
+    _formatted += tstr.formatted;
     return *this;
 }
 
@@ -164,11 +172,13 @@ TStringBuilder& TStringBuilder::Add(const color24_t& color)
 {
     char hex[8];
     snprintf(hex, sizeof(hex), "#%02X%02X%02X", color.r, color.g, color.b);
+
+    auto hex_str = std::string(hex);
     
     // Add color block with background color followed by hex text
-    _buffer += "\033[48;2;" + std::to_string(color.r) + ";" + std::to_string(color.g) + ";" + std::to_string(color.b) + "m \033[0m";
-    _buffer += " " + std::string(hex);
-    _visual_length += 1 + 1 + strlen(hex); // block + space + hex text
+    _formatted += "\033[48;2;" + std::to_string(color.r) + ";" + std::to_string(color.g) + ";" + std::to_string(color.b) + "m \033[0m";
+    _formatted += " " + hex_str;
+    _raw += hex_str;
     return *this;
 }
 

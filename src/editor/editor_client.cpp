@@ -285,6 +285,7 @@ void SetInspectAckCallback(inspect_ack_callback_t callback)
 void BeginInspectorObject(Stream* stream, type_t type, const char* name)
 {
     WriteU8(stream, INSPECTOR_OBJECT_COMMAND_BEGIN);
+    WriteString(stream, GetTypeName(type));
     WriteString(stream, name);
 }
 
@@ -299,6 +300,12 @@ void WriteInspectorProperty(Stream* stream, const char* name, const char* value)
 {
     WriteInspectorProperty(stream, name, INSPECTOR_OBJECT_COMMAND_STRING);
     WriteString(stream, value);
+}
+
+void WriteInspectorProperty(Stream* stream, const char* name, bool value)
+{
+    WriteInspectorProperty(stream, name, INSPECTOR_OBJECT_COMMAND_BOOL);
+    WriteBool(stream, value);
 }
 
 void WriteInspectorProperty(Stream* stream, const char* name, float value)

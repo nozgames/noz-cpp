@@ -6,13 +6,11 @@
 
 #include "../../../src/editor/editor_messages.h"
 
-void InspectorObject::AddProperty(const std::string& name, const std::string& value)
-{
-    _properties.AddProperty(name, value);
-}
-
 void InspectorObject::AddProperty(const std::string& name, const TString& value)
 {
+    if (name == "enabled")
+        _enabled = value.raw == "true";
+
     _properties.AddProperty(name, value);
 }
 
@@ -25,6 +23,21 @@ const ObjectProperty* InspectorObject::FindProperty(const std::string& name) con
     return nullptr;
 }
 
+InspectorObject* InspectorObject::GetChild(size_t index) const
+{
+    if (index < _children.size())
+        return _children[index].get();
+    return nullptr;
+}
+
+InspectorObject* InspectorObject::AddChild(std::unique_ptr<InspectorObject> child)
+{
+    child->_parent = this;
+    InspectorObject* ptr = child.get();
+    _children.push_back(std::move(child));
+    return ptr;
+}
+
 std::unique_ptr<InspectorObject> InspectorObject::CreateFromStream(Stream* stream)
 {
     std::vector<InspectorObject*> stack;
@@ -35,9 +48,12 @@ std::unique_ptr<InspectorObject> InspectorObject::CreateFromStream(Stream* strea
         {
         case INSPECTOR_OBJECT_COMMAND_BEGIN:
         {
+            char type_buffer[1024];
+            ReadString(stream, type_buffer, 1024);
+
             char name_buffer[1024];
             ReadString(stream, name_buffer, 1024);
-            auto object = new InspectorObject(name_buffer);
+            auto object = new InspectorObject(type_buffer, name_buffer);
             stack.push_back(object);
             break;
         }
@@ -63,6 +79,9 @@ std::unique_ptr<InspectorObject> InspectorObject::CreateFromStream(Stream* strea
             {
             case INSPECTOR_OBJECT_COMMAND_VEC3:
                 object->AddProperty(name_buffer, TStringBuilder().Add(ReadVec3(stream)).ToString());
+                break;
+            case INSPECTOR_OBJECT_COMMAND_BOOL:
+                object->AddProperty(name_buffer, TStringBuilder().Add(ReadBool(stream)).ToString());
                 break;
             }
             break;

@@ -9,21 +9,18 @@
 
 struct TreeNode
 {
-    TString formatted_content;  // Pre-formatted content with colors and visual length
-    std::string raw_content;    // Raw text for searching
-    std::string path; // Full path from root, e.g., "Game Systems/Player System/Movement Component"
+    TString value;
     int indent_level;
     bool is_expanded;
-    bool matches_search; // true if this node matches the current search
-    bool is_search_parent; // true if this node is a parent of a matching node
+    bool matches_search;
+    bool is_search_parent;
     
     TreeNode* parent;
     std::vector<std::unique_ptr<TreeNode>> children;
-    void* user_data = nullptr;  // User data pointer for attaching custom data
+    void* user_data = nullptr;
     
-    TreeNode(const std::string& text, int indent = 0, bool expanded = false)
-        : formatted_content(text, text.length()) // Default: plain text with no formatting
-        , raw_content(text)
+    TreeNode(const TString& value, int indent = 0, bool expanded = false)
+        : value(value)
         , indent_level(indent)
         , is_expanded(expanded)
         , matches_search(false)
@@ -34,11 +31,10 @@ struct TreeNode
     bool has_children() const { return !children.empty(); }
     bool has_user_data() const { return user_data != nullptr; }
     
-    TreeNode* AddChild(const std::string& text)
+    TreeNode* AddChild(const TString& value)
     {
-        auto child = std::make_unique<TreeNode>(text, indent_level + 1, false);
+        auto child = std::make_unique<TreeNode>(value, indent_level + 1, false);
         child->parent = this;
-        child->path = path.empty() ? text : path + "/" + text;
         TreeNode* ptr = child.get();
         children.push_back(std::move(child));
         return ptr;
@@ -55,6 +51,7 @@ struct TreeNode
 class TreeView : public IView
 {
 protected:
+
     std::vector<std::unique_ptr<TreeNode>> _root_nodes;
     std::vector<TreeNode*> _visible_nodes;  // Pointers to currently visible nodes
     size_t _max_entries = 1000;
@@ -78,13 +75,9 @@ protected:
     int CalculateNodeDistance(TreeNode* from, TreeNode* to) const;
     
 public:
-    void Add(const std::string& name, int indent_level = 0, void* user_data = nullptr); // Main API
+
+    void Add(const TString& name, int indent_level = 0, void* user_data = nullptr);
     
-    // Legacy methods (for backward compatibility)
-    void AddLine(const std::string& line); 
-    void AddLine(const std::string& line, void* user_data);
-    void AddObject(const std::string& name);
-    void AddObject(const std::string& name, void* user_data);
     void Clear();
     size_t NodeCount() const;
     size_t VisibleCount() const;

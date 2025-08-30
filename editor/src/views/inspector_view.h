@@ -36,14 +36,9 @@ public:
     InspectorObject* GetRootObject() const { return _root_object.get(); }
     InspectorObject* GetSelectedObject() const;
     
-    // Legacy tree operations (still available for manual tree building)
-    void AddLine(const std::string& line);
-    void AddObject(const std::string& name);
     void ClearTree();
     void ResetRequestState(); // Reset the data request state
-    
-    // Legacy properties operations
-    void AddProperty(const std::string& name, const std::string& value = "", int indent_level = 0);
+    void AddProperty(const std::string& name, const TString& value);
     void ClearProperties();
     
     // ObjectProperties management

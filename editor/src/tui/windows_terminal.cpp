@@ -5,13 +5,9 @@
 #ifdef _WIN32
 
 #include "terminal.h"
-#include <noz/log.h>
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
-#include <algorithm>
-#include <sstream>
-#include <string>
 #include <windows.h>
 
 static HANDLE g_console_input = INVALID_HANDLE_VALUE;
@@ -212,13 +208,22 @@ void AddChar(char ch, int count)
         AddChar(ch);
 }
 
+static void AddEscapedChar(char ch)
+{
+    g_output_buffer += ch;
+}
+
+void AddEscapedString(const char* str)
+{
+    while (*str)
+        AddEscapedChar(*str++);
+}
+
 void AddChar(char ch)
 {
     // Only add character if within screen bounds
     if (g_cursor_y >= 0 && g_cursor_y < g_screen_height && g_cursor_x >= 0 && g_cursor_x < g_screen_width)
-    {
         g_output_buffer += ch;
-    }
 
     // Advance cursor position tracking
     g_cursor_x++;
@@ -231,127 +236,39 @@ void AddChar(char ch)
 
 void AddString(const char* str)
 {
-    // Simple string addition for legacy compatibility
-    if (str && *str && g_cursor_y >= 0 && g_cursor_y < g_screen_height)
-    {
-        g_output_buffer += str;
-        // Note: cursor tracking may be inaccurate for ANSI sequences
-        g_cursor_x += static_cast<int>(strlen(str));
-    }
+    while (*str)
+        AddChar(*str++);
 }
 
-void AddString(const TString& tstr)
+void AddString(const TString& tstr, int cursor_pos, int truncate)
 {
-    // Optimized string addition using pre-calculated visual length
-    if (!tstr.text.empty() && g_cursor_y >= 0 && g_cursor_y < g_screen_height)
-    {
-        int remaining_on_line = g_screen_width - g_cursor_x;
-        if (remaining_on_line > 0)
-        {
-            // Use the pre-calculated visual length from TString
-            if (static_cast<int>(tstr.visual_length) <= remaining_on_line)
-            {
-                g_output_buffer += tstr.text;
-                g_cursor_x += static_cast<int>(tstr.visual_length);
-                
-                if (g_cursor_x >= g_screen_width)
-                {
-                    g_cursor_x = 0;
-                    g_cursor_y++;
-                }
-            }
-            // If it doesn't fit, don't add it (tree view should have truncated already)
-        }
-    }
-}
-
-void AddStringWithCursor(const std::string& str, int cursor_pos)
-{
-    if (cursor_pos < 0)
-    {
-        AddString(str.c_str());
-        return;
-    }
-    
     size_t pos = 0;
-    int visible_char_count = 0;
-    std::string before_cursor, cursor_char, after_cursor;
-    bool cursor_found = false;
-    
-    while (pos < str.length())
+    size_t visual_length = 0;
+    const std::string& str = tstr.formatted;
+    size_t str_len = str.size();
+    while (pos < str_len && visual_length < truncate)
     {
+        // Skip and add colors
         if (str[pos] == '\033')
         {
-            // ANSI escape sequence - skip to end (find 'm')
-            size_t escape_start = pos;
             while (pos < str.length() && str[pos] != 'm')
-                pos++;
+                AddEscapedChar(str[pos++]);
             if (pos < str.length())
-                pos++; // Include the 'm'
-            
-            // Add escape sequence to appropriate part
-            std::string escape_seq = str.substr(escape_start, pos - escape_start);
-            if (!cursor_found)
-            {
-                before_cursor += escape_seq;
-            }
-            else
-            {
-                after_cursor += escape_seq;
-            }
-        }
-        else
-        {
-            // Regular visible character
-            if (visible_char_count == cursor_pos && !cursor_found)
-            {
-                cursor_char = str[pos];
-                cursor_found = true;
-                pos++;
-            }
-            else if (!cursor_found)
-            {
-                before_cursor += str[pos];
-                pos++;
-            }
-            else
-            {
-                after_cursor += str.substr(pos);
-                break;
-            }
-            visible_char_count++;
-        }
-    }
-    
-    // Render the parts
-    AddString(before_cursor.c_str());
-    
-    if (cursor_found)
-    {
-        AddString("\033[7m");  // Enable reverse video
-        AddChar(cursor_char[0]);
-        AddString("\033[0m"); // Reset all attributes
-        AddString(after_cursor.c_str());
-    }
-    else if (cursor_pos >= visible_char_count)
-    {
-        // Cursor position is beyond the string - show cursor at end
-        AddString("\033[7m");  // Enable reverse video
-        AddChar(' ');
-        AddString("\033[0m"); // Reset all attributes
-    }
-}
+                AddEscapedChar(str[pos++]);
 
-void AddStringWithCursor(const TString& tstr, int cursor_pos)
-{
-    if (cursor_pos < 0)
-    {
-        AddString(tstr);
-        return;
+            continue;
+        }
+
+        bool cursor_here = cursor_pos == visual_length;
+        if (cursor_here)
+            BeginInverse();
+
+        AddChar(str[pos++]);
+        visual_length++;
+
+        if (cursor_here)
+            EndInverse();
     }
-    
-    // For TString with cursor, fall back to string version since cursor logic is complex
-    AddStringWithCursor(tstr.text, cursor_pos);
 }
 
 void SetColor(int pair)
@@ -438,18 +355,12 @@ void EndColor()
     g_output_buffer += "\033[0m";
 }
 
-
-
 void SetBold(bool enabled)
 {
     if (enabled)
-    {
-        g_output_buffer += "\033[1m";
-    }
+        AddEscapedString("\033[1m");
     else
-    {
-        g_output_buffer += "\033[22m"; // Reset bold/dim
-    }
+        AddEscapedString("\033[22m");
 }
 
 void SetUnderline(bool enabled)
@@ -519,6 +430,16 @@ void UpdateTerminal()
 int GetCursorX()
 {
     return g_cursor_x;
+}
+
+void BeginInverse()
+{
+    AddEscapedString("\033[7m");
+}
+
+void EndInverse()
+{
+    AddEscapedString("\033[27m");
 }
 
 void InitTerminal()

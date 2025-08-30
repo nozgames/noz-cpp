@@ -87,34 +87,9 @@ static void FormatValue(TStringBuilder& builder, const std::string& value)
         builder.Add("\"" + value + "\"", TCOLOR_GREEN); // Add quotes
 }
 
-void PropertiesView::FormatProperty(Item* property)
+void PropertiesView::AddProperty(const std::string& name, const TString& value)
 {
-    if (!property->value.empty())
-    {
-        auto builder = TStringBuilder::Build();
-        builder.Add(property->name + ": ");
-        FormatValue(builder, property->value);
-        property->formatted_content = builder.ToString();
-    }
-    else
-    {
-        property->formatted_content = TString(property->name, property->name.length());
-    }
-}
-
-void PropertiesView::AddProperty(const std::string& name, const std::string& value, int indent_level)
-{
-    auto property = std::make_unique<Item>(name, value, indent_level);
-    FormatProperty(property.get());
-    _properties.push_back(std::move(property));
-    RebuildVisibleList();
-}
-
-void PropertiesView::AddProperty(const std::string& name, const TString& value, int indent_level)
-{
-    auto property = std::make_unique<Item>(name, value, indent_level);
-    FormatProperty(property.get());
-    _properties.push_back(std::move(property));
+    _properties.push_back(std::move(std::make_unique<Item>(name, value)));
     RebuildVisibleList();
 }
 
@@ -188,28 +163,9 @@ void PropertiesView::Render(int width, int height)
         for (size_t i = 0; i < display_count; i++)
         {
             Item* property = _visible_properties[start_idx + i];
-            
             MoveCursor(static_cast<int>(i), 0);
-
-            // Build display line using TStringBuilder
-            auto line_builder = TStringBuilder::Build();
-            
-            // Add indentation
-            for (int indent = 0; indent < property->indent_level; indent++)
-            {
-                line_builder.Add("  "); // 2 spaces per indent level
-            }
-            
-            // Add content
-            line_builder.Add(property->formatted_content);
-            
-            // Truncate if needed and build final TString
-            line_builder.TruncateToWidth(width);
-            TString display_line = line_builder.ToString();
-
-            // Render with optional cursor highlighting
             int cursor_pos = (_show_cursor && static_cast<int>(i) == cursor_in_window) ? 0 : -1;
-            AddStringWithCursor(display_line, cursor_pos);
+            AddString(property->value, cursor_pos, width);
         }
     }
 }

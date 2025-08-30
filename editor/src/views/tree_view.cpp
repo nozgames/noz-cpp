@@ -120,18 +120,11 @@ static std::string GetArraySizeIndicator(const TreeNode* node)
     return "";
 }
 
-void TreeView::AddLine(const std::string& line)
-{
-    AddLine(line, nullptr);
-}
-
-void TreeView::Add(const std::string& name, int indent_level, void* user_data)
+void TreeView::Add(const TString& name, int indent_level, void* user_data)
 {
     if (indent_level == 0)
     {
-        // Root node
         auto root = std::make_unique<TreeNode>(name, 0, false);
-        root->path = name;
         root->SetUserData(user_data);
         _root_nodes.push_back(std::move(root));
     }
@@ -167,7 +160,6 @@ void TreeView::Add(const std::string& name, int indent_level, void* user_data)
         {
             // No parent found, add as root
             auto root = std::make_unique<TreeNode>(name, indent_level, false);
-            root->path = name;
             root->SetUserData(user_data);
             _root_nodes.push_back(std::move(root));
         }
@@ -181,25 +173,6 @@ void TreeView::Add(const std::string& name, int indent_level, void* user_data)
         _cursor_row = static_cast<int>(_visible_nodes.size()) - 1;
     }
 }
-
-void TreeView::AddLine(const std::string& line, void* user_data)
-{
-    int indent_level = CountLeadingTabs(line);
-    std::string content = RemoveLeadingTabs(line);
-    Add(content, indent_level, user_data);
-}
-
-void TreeView::AddObject(const std::string& name)
-{
-    Add(name, 0, nullptr);  // Add as root with no user data
-}
-
-void TreeView::AddObject(const std::string& name, void* user_data)
-{
-    Add(name, 0, user_data);  // Add as root with user data
-}
-
-
 
 void TreeView::SetCurrentNodeUserData(void* data)
 {
@@ -216,8 +189,7 @@ void TreeView::SetNodeUserData(const std::string& node_path, void* data)
     // Find node by path and set user data
     std::function<TreeNode*(TreeNode*, const std::string&)> find_by_path = [&](TreeNode* node, const std::string& path) -> TreeNode* {
         if (!node) return nullptr;
-        if (node->path == path) return node;
-        
+
         for (auto& child : node->children)
         {
             TreeNode* found = find_by_path(child.get(), path);
@@ -449,17 +421,11 @@ void TreeView::Render(int width, int height)
                 line_builder.Add("  ");
             }
 
-            // Add content
             if (_search_active && node->is_search_parent && !node->matches_search)
-            {
-                // Search parent nodes in darker/subdued color
-                line_builder.Add(node->raw_content, 128, 128, 128);
-            }
+                line_builder.Add(node->value.raw, 128, 128, 128);
             else
-            {
-                line_builder.Add(node->formatted_content);
-            }
-            
+                line_builder.Add(node->value.formatted);
+
             // Add array size indicator for objects with children
             std::string size_indicator = GetArraySizeIndicator(node);
             if (!size_indicator.empty())
@@ -467,13 +433,8 @@ void TreeView::Render(int width, int height)
                 line_builder.Add(" " + size_indicator);
             }
             
-            // Truncate if needed and build final TString
-            line_builder.TruncateToWidth(width);
-            TString display_line = line_builder.ToString();
-
-            // Render with optional cursor highlighting
             int cursor_pos = (_show_cursor && static_cast<int>(i) == cursor_in_window) ? 0 : -1;
-            AddStringWithCursor(display_line, cursor_pos);
+            AddString(line_builder.ToString(), cursor_pos, width);
         }
     }
 }
@@ -707,9 +668,7 @@ bool TreeView::MatchesSearch(TreeNode* node) const
     
     try
     {
-        // Search both content and full path
-        return std::regex_search(node->raw_content, _search_regex) ||
-               std::regex_search(node->path, _search_regex);
+        return std::regex_search(node->value.raw, _search_regex);
     }
     catch (const std::exception&)
     {
@@ -786,9 +745,8 @@ void TreeView::UpdateSearchFlags()
 
 void TreeView::UpdateSearchFlagsRecursive(TreeNode* node)
 {
-    if (!node) return;
+    assert(node);
     
-    // Clear flags
     node->matches_search = false;
     node->is_search_parent = false;
     
@@ -796,34 +754,24 @@ void TreeView::UpdateSearchFlagsRecursive(TreeNode* node)
     {
         try
         {
-            // Check if this node matches the search pattern
-            bool matches = std::regex_search(node->raw_content, _search_regex) ||
-                          std::regex_search(node->path, _search_regex);
-            
-            if (matches)
+            if (std::regex_search(node->value.raw, _search_regex))
             {
                 node->matches_search = true;
-                // Mark all parents as search parents and expand them
-                TreeNode* parent = node->parent;
-                while (parent)
+
+                for (TreeNode* parent = node->parent; parent; parent = parent->parent)
                 {
                     parent->is_search_parent = true;
                     parent->is_expanded = true;
-                    parent = parent->parent;
                 }
             }
         }
         catch (const std::exception&)
         {
-            // Regex error, skip this node
         }
     }
     
-    // Recurse to children
     for (auto& child : node->children)
-    {
         UpdateSearchFlagsRecursive(child.get());
-    }
 }
 
 int TreeView::CalculateNodeDistance(TreeNode* from, TreeNode* to) const

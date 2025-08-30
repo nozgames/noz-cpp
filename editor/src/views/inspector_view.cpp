@@ -93,8 +93,7 @@ InspectorView::InspectorView()
     : _tree_view(std::make_unique<TreeView>())
     , _properties_view(std::make_unique<PropertiesView>())
 {
-    // Show waiting message initially - don't send request until we have a client
-    _tree_view->AddLine("Waiting for client...");
+    _tree_view->Add(TStringBuilder().Add("Waiting for client...").ToString());
 }
 
 void InspectorView::SetRootObject(std::unique_ptr<InspectorObject> root)
@@ -117,17 +116,6 @@ InspectorObject* InspectorView::GetSelectedObject() const
     return nullptr;
 }
 
-void InspectorView::AddLine(const std::string& line)
-{
-    _tree_view->AddLine(line);
-}
-
-void InspectorView::AddObject(const std::string& name)
-{
-    _tree_view->AddObject(name);
-}
-
-
 void InspectorView::ClearTree()
 {
     _tree_view->Clear();
@@ -138,7 +126,7 @@ void InspectorView::ResetRequestState()
     _has_requested_data = false;
 }
 
-void InspectorView::AddProperty(const std::string& name, const std::string& value, int indent_level)
+void InspectorView::AddProperty(const std::string& name, const TString& value)
 {
     // Add property to current node's ObjectProperties
     TreeNode* current_node = _tree_view->GetCurrentNode();
@@ -152,7 +140,7 @@ void InspectorView::AddProperty(const std::string& name, const std::string& valu
         current_node->SetUserData(props);
     }
     
-    props->AddProperty(name, value, indent_level);
+    props->AddProperty(name, value);
     RefreshPropertiesFromSelectedNode();
 }
 
@@ -254,7 +242,8 @@ void InspectorView::RenderPropertiesSection(int start_col, int properties_width,
         MoveCursor(0, render_start_col);
         AddString("(No properties)");
         MoveCursor(1, render_start_col);
-        AddString(("Object: " + selected_obj->GetName()).c_str());
+        AddString(("Type: " + selected_obj->GetType()).c_str());
+        AddString(("Name: " + selected_obj->GetType()).c_str());
         return;
     }
     
@@ -279,30 +268,14 @@ void InspectorView::RenderPropertiesSection(int start_col, int properties_width,
         const ObjectProperty& prop = props.GetProperty(i);
         
         MoveCursor(current_row, render_start_col);
-        
-        // Add indentation and property name
         AddString(prop.name.c_str());
-        
         AddString(" : ");
         
         // Calculate remaining width for value after alignment
-        int value_start_pos = render_start_col + static_cast<int>(max_name_length) + 2; // +2 for ": "
         int remaining_width = available_width - static_cast<int>(max_name_length) - 2;
-        
         if (remaining_width > 0)
-        {
-            // Format the value
-            auto builder = TStringBuilder::Build();
-            FormatValue(builder, prop.value.text);
-            
-            // Truncate to fit remaining width
-            builder.TruncateToWidth(remaining_width);
-            TString formatted_value = builder.ToString();
-            
-            // Render the formatted value
-            AddString(formatted_value);
-        }
-        
+            AddString(prop.value,remaining_width);
+
         current_row++;
     }
 }
@@ -350,29 +323,29 @@ void InspectorView::RefreshPropertiesFromSelectedNode()
 
 void InspectorView::BuildTreeFromInspectorObject(InspectorObject* obj)
 {
-    if (!obj) return;
-    
-    // Clear the tree first
+    assert(obj);
+
     _tree_view->Clear();
     
-    // Recursively build tree structure with explicit indent levels
-    std::function<void(InspectorObject*, int)> build_recursive = [&](InspectorObject* inspector_obj, int indent) {
-        if (!inspector_obj) return;
+    std::function<void(InspectorObject*, int)> build_recursive = [&](InspectorObject* inspector_obj, int indent)
+    {
+        assert(inspector_obj);
+
+        auto builder = TStringBuilder();
+        if (inspector_obj->IsEnabled())
+            builder.Add(inspector_obj->GetType());
+        else
+            builder.Add(inspector_obj->GetType(), TCOLOR_DISABLED);
+
+        _tree_view->Add(builder.ToString(), indent, inspector_obj);
         
-        // Add this object to the tree with user data attached directly
-        _tree_view->Add(inspector_obj->GetName(), indent, inspector_obj);
-        
-        // Debug: Log child count for this object
         size_t child_count = inspector_obj->GetChildCount();
-        // TODO: Add proper logging when available - for now just check child_count
-        
-        // Add all children at the next indent level
         for (size_t i = 0; i < child_count; i++)
             if (InspectorObject* child = inspector_obj->GetChild(i))
                 build_recursive(child, indent + 1);
     };
     
-    build_recursive(obj, 0);  // Start at indent level 0
+    build_recursive(obj, 0);
 }
 
 void InspectorView::Render(int width, int height)

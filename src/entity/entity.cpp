@@ -486,7 +486,7 @@ void WriteInspectorEntity(Stream* stream, Entity* entity)
 {
     auto impl = Impl(entity);
     BeginInspectorObject(stream, GetType(entity), entity == GetRootEntity() ? "root" : "entity");
-
+    WriteInspectorProperty(stream, "enabled", IsEnabled(entity));
     WriteInspectorProperty(stream, "local_position", impl->local_position);
 
     if (auto traits = GetEntityTraits(entity); traits->editor_inspect)

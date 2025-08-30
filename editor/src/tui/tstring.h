@@ -4,44 +4,36 @@
 
 #pragma once
 
-#include <noz/color.h>
-#include <string>
-#include <vector>
+extern const color24_t TCOLOR_ORANGE;
+extern const color24_t TCOLOR_GREEN;
+extern const color24_t TCOLOR_PURPLE;
+extern const color24_t TCOLOR_GREY;
+extern const color24_t TCOLOR_WHITE;
+extern const color24_t TCOLOR_DISABLED;
 
-// Color constants
-extern const color24_t TCOLOR_ORANGE;   // Numbers
-extern const color24_t TCOLOR_GREEN;    // Strings
-extern const color24_t TCOLOR_PURPLE;   // Booleans
-extern const color24_t TCOLOR_GREY;     // Vector punctuation
-extern const color24_t TCOLOR_WHITE;    // White text
-
-// Final string product with visual length
 struct TString
 {
-    std::string text;
-    size_t visual_length;
-    
-    TString() : text(""), visual_length(0) {}
-    TString(std::string str, size_t vis_len) : text(std::move(str)), visual_length(vis_len) {}
+    std::string raw;
+    std::string formatted;
+
+    bool IsEmpty() const { return raw.empty(); }
 };
 
-// Terminal String Builder for clean color management
 class TStringBuilder
 {
-private:
-    std::string _buffer;
-    size_t _visual_length;
-    std::vector<color24_t> _color_stack; // Color stack
+    std::string _formatted;
+    std::string _raw;
+    std::vector<color24_t> _color_stack;
 
 public:
-    TStringBuilder() : _visual_length(0) {}
-    
+
     // Builder pattern methods - all return *this for chaining
     TStringBuilder& Add(const char* text);
     TStringBuilder& Add(const std::string& text);     // Add text in current color from stack
     TStringBuilder& Add(const std::string& text, const color24_t& color);  // Add text with specific color
     TStringBuilder& Add(const std::string& text, int r, int g, int b);  // Add text with RGB color
-    
+    TStringBuilder& Add(const std::string& text, int tcolor);  // Add text with RGB color
+
     // Type-specific overloads for common NoZ types
     TStringBuilder& Add(const TString& tstr);         // Add existing TString (text + visual length)
     TStringBuilder& Add(const vec2& v);               // Format as "(x, y)" 
@@ -60,14 +52,14 @@ public:
     
     // Utility methods
     TStringBuilder& Clear();
-    TStringBuilder& TruncateToWidth(size_t max_width);
+    //TStringBuilder& TruncateToWidth(size_t max_width);
     
     // Query methods (const)
-    size_t VisualLength() const { return _visual_length; }
-    bool Empty() const { return _buffer.empty(); }
+    size_t VisualLength() const { return _raw.length(); }
+    bool Empty() const { return _formatted.empty(); }
     
     // Final build method
-    TString ToString() const { return TString(_buffer, _visual_length); }
+    TString ToString() const { return { _raw, _formatted }; }
     
     // Static factory method
     static TStringBuilder Build() { return TStringBuilder(); }

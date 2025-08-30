@@ -7,7 +7,7 @@
 void LogView::AddMessage(const std::string& message)
 {
     // Use the base TreeView's AddLine method, which handles tab-based nesting
-    AddLine(message);
+    Add(TStringBuilder().Add(message).ToString(), 0, nullptr);
 }
 
 size_t LogView::MessageCount() const

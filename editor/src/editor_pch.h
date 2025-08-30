@@ -55,6 +55,8 @@ static constexpr int TERM_COLOR_SUCCESS = 3;
 static constexpr int TERM_COLOR_ERROR = 4;
 static constexpr int TERM_COLOR_WARNING = 5;
 
+static constexpr int TERM_COLOR_DISABLED_TEXT = 8;
+
 // Terminal key constants
 static constexpr int ERR = -1;
 static constexpr int KEY_MOUSE = 409;
