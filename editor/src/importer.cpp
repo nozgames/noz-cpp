@@ -54,7 +54,7 @@ void signal_handler(int sig)
 
 static bool LoadConfig()
 {
-    std::filesystem::path config_path = "./importer.cfg";
+    std::filesystem::path config_path = "./editor.cfg";
     if (Stream* config_stream = LoadStream(nullptr, config_path))
     {
         g_config = Props::Load(config_stream);

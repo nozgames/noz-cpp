@@ -13,6 +13,6 @@ ViewTraits g_view_traits[TYPE_COUNT] = {};
 
 View* CreateView(Allocator* allocator, size_t view_size, type_t view_type)
 {
-    return nullptr;
+    return (View*)CreateObject(allocator, view_size, view_type);
 }
 

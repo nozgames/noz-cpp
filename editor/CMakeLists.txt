@@ -73,19 +73,19 @@ add_executable(nozed ${SOURCE_FILES})
 
 # Include directories
 target_include_directories(nozed  PRIVATE
-        ${CMAKE_SOURCE_DIR}/libs/noz/external
-        ${CMAKE_SOURCE_DIR}/libs/noz/include
-        ${CMAKE_SOURCE_DIR}/libs/noz/external/sdl_shadercross/include
-        ${CMAKE_SOURCE_DIR}/libs/noz/external/enet/include
-        ${CMAKE_SOURCE_DIR}/libs/noz/external/glm/include)
+        ${CMAKE_CURRENT_SOURCE_DIR}/../external
+        ${CMAKE_CURRENT_SOURCE_DIR}/../include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../external/sdl_shadercross/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../external/enet/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../external/glm/include)
 
 # Link libraries
 target_link_libraries(nozed PRIVATE
     noz
     cgltf_lib
-    ${CMAKE_SOURCE_DIR}/libs/noz/external/sdl_shadercross/SDL3_shadercross-static.lib
-    ${CMAKE_SOURCE_DIR}/libs/noz/external/sdl_shadercross/spirv-cross-c-shared.lib
-    ${CMAKE_SOURCE_DIR}/libs/noz/external/enet/enet.lib
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external/sdl_shadercross/SDL3_shadercross-static.lib
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external/sdl_shadercross/spirv-cross-c-shared.lib
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external/enet/enet.lib
 )
 
 # Link terminal library (only needed for Unix-like systems)
@@ -114,13 +114,13 @@ target_precompile_headers(nozed PRIVATE src/editor_pch.h)
 if(WIN32)
     add_custom_command(TARGET nozed POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/libs/noz/external/sdl_shadercross/dxcompiler.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/../external/sdl_shadercross/dxcompiler.dll
         $<TARGET_FILE_DIR:nozed>
         COMMENT "Copying dxcompiler.dll to output directory"
     )
     add_custom_command(TARGET nozed POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/libs/noz/external/sdl_shadercross/spirv-cross-c-shared.dll
+        ${CMAKE_CURRENT_SOURCE_DIR}/../external/sdl_shadercross/spirv-cross-c-shared.dll
         $<TARGET_FILE_DIR:nozed>
         COMMENT "Copying spirv-cross-c-shared.dll to output directory"
     )
