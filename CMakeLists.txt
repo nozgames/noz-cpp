@@ -6,55 +6,13 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(FetchContent)
 
-# SDL3
-FetchContent_Declare(
-  SDL3
-  GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-  GIT_TAG        main
-)
-
-set(SDL3_STATIC ON CACHE BOOL "Build SDL as static library" FORCE)
-set(SDL3_SHARED OFF CACHE BOOL "Don't build SDL as shared library" FORCE)
-set(SDL_TESTS OFF CACHE BOOL "Don't build SDL tests" FORCE)
-set(SDL_TEST_LIBRARY OFF CACHE BOOL "Don't build SDL test library" FORCE)
-set(SDL_INSTALL OFF CACHE BOOL "Don't install SDL" FORCE)
-set(SDL_LIBUDEV OFF CACHE BOOL "Disable udev support" FORCE)
-set(SDL_DBUS OFF CACHE BOOL "Disable D-Bus support" FORCE)
-set(SDL_HAPTIC OFF CACHE BOOL "Disable haptic/force feedback support" FORCE)
-set(SDL_SENSOR OFF CACHE BOOL "Disable sensor support" FORCE)
-set(SDL3_VENDORED ON CACHE BOOL "" FORCE)
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
-
-# GLM
-
 # GLM (OpenGL Mathematics)
 FetchContent_Declare(glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
     GIT_TAG 0.9.9.8
 )
 
-# Box2d
-FetchContent_Declare(
-    box2d
-    GIT_REPOSITORY https://github.com/erincatto/box2d.git
-    GIT_TAG v2.4.1
-)
-
-set(BOX2D_SHARED OFF CACHE BOOL "Don't build Box2D as shared library" FORCE)
-set(BOX2D_STATIC ON CACHE BOOL "Build Box2D as static library" FORCE)
-set(BOX2D_BUILD_TESTBED OFF CACHE BOOL "Don't build Box2D testbed" FORCE)
-set(BOX2D_BUILD_UNIT_TESTS OFF CACHE BOOL "Don't build Box2D unit tests" FORCE)
-set(BOX2D_BUILD_SAMPLES OFF CACHE BOOL "Don't build Box2D samples" FORCE)
-
-# ENet
-FetchContent_Declare(
-    enet
-    GIT_REPOSITORY https://github.com/lsalzman/enet.git
-    GIT_TAG v1.3.17
-)
-
-FetchContent_MakeAvailable(SDL3 box2d glm enet)
+FetchContent_MakeAvailable(glm)
 
 add_library(noz STATIC
         include/noz/noz_math.h)
@@ -71,7 +29,9 @@ else()
 endif()
 
 target_sources(noz PRIVATE ${SOURCE_FILES})
-target_include_directories(noz PRIVATE ${enet_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/external)
+target_include_directories(noz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include ${CMAKE_CURRENT_SOURCE_DIR}/external)
+target_include_directories(noz PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl/include)
+target_include_directories(noz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/include)
 target_include_directories(noz PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include )
 
 target_compile_definitions(noz PRIVATE _CRT_SECURE_NO_WARNINGS)
@@ -79,12 +39,17 @@ target_compile_definitions(noz PRIVATE _CRT_SECURE_NO_WARNINGS)
 # Link dependencies for noz
 target_link_libraries(noz
     PUBLIC
-        box2d
-        enet
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/box2d.lib
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/enet.lib
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl/SDL3-static.lib
         ws2_32
         winmm
+        setupapi      # For SetupDi* functions (SDL3)
+        cfgmgr32      # For CM_* functions (SDL3)
+        version       # For GetFileVersionInfo* functions (SDL3)
+        imm32         # For Imm* functions (SDL3 IME support)
+        dxcompiler    # For DxcCreateInstance (SDL3_shadercross)
         glm::glm
-        SDL3::SDL3
 )
 
 add_subdirectory(editor)
