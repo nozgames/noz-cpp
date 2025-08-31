@@ -31,4 +31,8 @@ Makefile
 # Temporary files
 *.tmp
 *.temp
-*~
+*~# Allow specific library files needed for linking
+!external/sdl_shadercross/*.dll
+!external/sdl_shadercross/*.lib
+!external/box2d/*.lib
+!external/sdl/*.lib
