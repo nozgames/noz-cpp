@@ -64,3 +64,35 @@ float RandomFloat(float min, float max);
 int RandomInt(int min, int max);
 bool RandomBool();
 bool RandomBool(float probability);
+
+
+
+
+struct Mat4
+{
+    f32 m[16];
+};
+
+struct Mat3
+{
+    f32 m[9];
+};
+
+struct Vec2
+{
+    f32 x;
+    f32 y;
+
+    Vec2 operator+(const Vec2& v) const { return Vec2{ x + v.x, y + v.y }; }
+    Vec2 operator-(const Vec2& v) const { return Vec2{ x - v.x, y - v.y }; }
+};
+
+struct IVec2
+{
+    i32 x;
+    i32 y;
+};
+
+constexpr Mat3 MAT3_IDENTITY = { 1,0,0, 0,1,0, 0,0,1 };
+
+Mat3 TRS(const Vec2& translation, f32 rotation, const Vec2& scale);
