@@ -256,7 +256,7 @@ void TreeView::Clear()
     _cursor_row = 0;
 }
 
-void TreeView::Render(const irect_t& rect)
+void TreeView::Render(const RectInt& rect)
 {
     if (_visible_nodes.empty())
         return;

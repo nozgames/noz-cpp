@@ -90,6 +90,8 @@ struct Vec2
 
     Vec2 operator+(const Vec2& v) const { return Vec2{ x + v.x, y + v.y }; }
     Vec2 operator-(const Vec2& v) const { return Vec2{ x - v.x, y - v.y }; }
+    Vec2& operator+=(const Vec2& v) { x += v.x; y += v.y; return *this; }
+    Vec2 operator*(f32 scalar) const { return Vec2{ x * scalar, y * scalar }; }
 };
 
 struct IVec2
@@ -105,3 +107,6 @@ Mat4 Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
 Mat4 Ortho(f32 top, f32 bottom, f32 near, f32 far);
 
 Mat3 TRS(const Vec2& translation, f32 rotation, const Vec2& scale);
+
+Vec2 Reflect(const Vec2& v, const Vec2& normal);
+Vec2 Normalize(const Vec2& v);

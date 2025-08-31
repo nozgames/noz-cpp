@@ -41,9 +41,10 @@ Mat4 Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far)
 
 Mat4 Ortho(f32 top, f32 bottom, f32 near, f32 far)
 {
-    f32 height = top - bottom;
+    f32 height = abs(top - bottom);
     f32 width = height * GetScreenAspectRatio();
     f32 left = -width * 0.5f;
     f32 right = width * 0.5f;
     return Ortho(left, right, bottom, top, near, far);
 }
+

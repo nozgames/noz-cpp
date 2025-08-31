@@ -37,7 +37,7 @@ size_t PropertiesView::PropertyCount() const
     return _properties.size();
 }
 
-void PropertiesView::Render(const irect_t& rect)
+void PropertiesView::Render(const RectInt& rect)
 {
 #if 0
     for (int row = 0; row < height; row++)

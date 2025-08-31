@@ -91,14 +91,14 @@ void InspectorView::ToggleFocus()
     _properties_view->SetCursorVisible(!_focus_on_tree);
 }
 
-void InspectorView::UpdateLayout(const irect_t& rect)
+void InspectorView::UpdateLayout(const RectInt& rect)
 {
     // Calculate split column
     int split_col = (rect.width * _split_position) / 100;
     split_col = std::max(5, std::min(rect.width - 5, split_col));
 }
 
-void InspectorView::RenderDivider(const irect_t& rect, int split_col)
+void InspectorView::RenderDivider(const RectInt& rect, int split_col)
 {
     //SetColorRGB(255, 255, 255, 128, 128, 128);  // White text, gray background
     DrawVerticalLine(rect.x + split_col, rect.y, rect.height, '|', TCOLOR_WHITE);
@@ -245,7 +245,7 @@ void InspectorView::BuildTreeFromInspectorObject(InspectorObject* obj)
 #endif
 }
 
-void InspectorView::Render(const irect_t& rect)
+void InspectorView::Render(const RectInt& rect)
 {
     PushClipRect(rect);
 

@@ -173,7 +173,7 @@ static PseudoState GetHighestPriority(PseudoState mask)
     return PSEUDO_STATE_NONE;
 }
 
-static float Evaluate(const StyleLength& length, float parent_value)
+float Evaluate(const StyleLength& length, float parent_value)
 {
     switch (length.unit)
     {

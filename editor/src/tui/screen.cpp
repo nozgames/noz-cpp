@@ -15,7 +15,7 @@ struct Pixel
 
 struct Clip
 {
-    irect_t rect;
+    RectInt rect;
     bool wrap;
 };
 
@@ -32,11 +32,11 @@ color24_t GetTColor(tcolor_t color)
     return g_colors[color];
 }
 
-static irect_t Clip(const irect_t& rect)
+static RectInt Clip(const RectInt& rect)
 {
     assert(g_clip.size() > 0);
     auto& clip = g_clip.back().rect;
-    irect_t r;
+    RectInt r;
     r.x = max(rect.x, clip.x);
     r.y = max(rect.y, clip.y);
     r.width = min(rect.x + rect.width, clip.x + clip.width) - r.x;
@@ -110,7 +110,7 @@ void AddPixels(const char* str, tcolor_t color)
         AddPixel(*str, color);
 }
 
-void PushClipRect(const irect_t& rect, bool wrap)
+void PushClipRect(const RectInt& rect, bool wrap)
 {
     g_clip.push_back({rect, wrap});
 }
@@ -150,7 +150,7 @@ void DrawHorizontalLine(i32 x, i32 y, i32 width, char c, tcolor_t color, tcolor_
         SetPixel(x, y, c, color, bg_color);
 }
 
-void SetBackgroundColor(const irect_t& rect, tcolor_t color)
+void SetBackgroundColor(const RectInt& rect, tcolor_t color)
 {
     auto clip = Clip(rect);
     for (int y = clip.y, yy = GetBottom(clip); y < yy; y++)

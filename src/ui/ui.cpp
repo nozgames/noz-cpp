@@ -52,6 +52,17 @@ void RenderUI()
     // TODO: render all screen canvases based on sort
 }
 
+struct CachedTextMesh
+{
+    TextMesh* text_mesh;
+    int last_frame;
+};
+
+static CachedTextMesh g_text_mesh_cache_values[1024] = {};
+static u64 g_text_mesh_cache_keys[1024] = {};
+static Map g_text_mesh_cache;
+
+
 void InitUI()
 {
     g_ui.element_quad = CreateElementQuad(ALLOCATOR_DEFAULT);
@@ -62,10 +73,598 @@ void InitUI()
     InitCanvas();
     InitElement();
     InitLabel();
+
+    Init(g_text_mesh_cache, g_text_mesh_cache_keys, g_text_mesh_cache_values, 1024, sizeof(CachedTextMesh));
 }
 
 void ShutdownUI()
 {
     ShutdownElement();
     g_ui = {};
+}
+
+typedef u16 ElementType;
+
+constexpr ElementType ELEMENT_TYPE_UNKNOWN = 0;
+constexpr ElementType ELEMENT_TYPE_NONE = 1;
+constexpr ElementType ELEMENT_TYPE_CANVAS = 2;
+constexpr ElementType ELEMENT_TYPE_LABEL = 3;
+
+struct CanvasInfo
+{
+};
+
+struct Element2
+{
+    ElementType type;
+    Rect bounds;
+    u32 parent;
+    Style style;
+    Vec2 measured_size;
+    u32 index;
+    u32 child_count;
+    void* resource;
+    Material* material;
+};
+
+constexpr int MAX_ELEMENTS = 1024;
+
+static Element2 g_elements[1024] = {};
+static u32 g_element_count = 0;
+static u32 g_element_stack[MAX_ELEMENTS] = {};
+static u32 g_element_stack_count = 0;
+static StyleSheet* g_style_sheet = nullptr;
+
+static Element2& GetCurrentElement()
+{
+    return g_elements[g_element_count-1];
+}
+
+void SetStyleSheet(StyleSheet* style_sheet)
+{
+    g_style_sheet = style_sheet;
+}
+
+void BeginElement(ElementType type, const name_t* id)
+{
+    Element2& e = g_elements[g_element_count++];
+    e.type = type;
+    e.bounds = Rect(0,0,0,0);
+    e.parent = (g_element_stack_count > 0) ? g_element_stack[g_element_stack_count-1] : UINT32_MAX;
+    e.style = g_style_sheet ? GetStyle(g_style_sheet, id, PSEUDO_STATE_NONE) : GetDefaultStyle();
+    e.index = g_element_count-1;
+    e.child_count = 0;
+    g_element_stack[g_element_stack_count++] = e.index;
+}
+
+void BeginElement(ElementType type)
+{
+    BeginElement(type, nullptr);
+}
+
+void BeginElement(const name_t* id)
+{
+    BeginElement(ELEMENT_TYPE_NONE, id);
+}
+
+void EndElement()
+{
+    Element2& e = g_elements[g_element_stack[g_element_stack_count-1]];
+    if (e.parent != UINT32_MAX)
+    {
+        Element2& p = g_elements[e.parent];
+        p.child_count++;
+    }
+    g_element_stack_count--;
+}
+
+void BeginCanvas(u32 referenceWidth, u32 referenceHeight)
+{
+    BeginElement(ELEMENT_TYPE_CANVAS);
+
+    ivec2 screen_size = GetScreenSize();
+
+    f32 rw = (f32)referenceWidth;
+    f32 rh = (f32)referenceHeight;
+    f32 sw = (f32)screen_size.x;
+    f32 sh = (f32)screen_size.y;
+    f32 sw_rw = sw / rw;
+    f32 sh_rh = sh / rh;
+
+    float ortho_width;
+    float ortho_height;
+    if (std::abs(sw_rw - 1.0f) < std::abs(sh_rh - 1.0f))
+    {
+        ortho_width = rw;
+        ortho_height = rw * sh / sw;
+    }
+    else
+    {
+        ortho_height = rh;
+        ortho_width = rh * sw / sh;
+    }
+
+    // Force the canvas element to fit the reference
+    Element2& e = GetCurrentElement();
+    e.style.width = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, ortho_width };
+    e.style.height = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, ortho_height };
+}
+
+void EndCanvas()
+{
+    EndElement();
+}
+
+void RenderCanvas(const Element2& e)
+{
+    Mat4 camera_projection = Ortho(0, e.style.width.value, e.style.height.value, 0, -1.0f, 1.0f);
+    BindCamera(MAT4_IDENTITY, camera_projection);
+}
+
+void RenderElement(const Element2& e)
+{
+    if (e.style.background_color.value.a > 0)
+    {
+        Mat4 t = TRS({e.bounds.x, e.bounds.y}, 0.0f, {e.bounds.width, e.bounds.height});
+        BindTransform(t);
+        RenderElementQuad(e.style.background_color.value, nullptr);
+    }
+
+    switch (e.type)
+    {
+        case ELEMENT_TYPE_CANVAS:
+            RenderCanvas(e);
+            break;
+
+        case ELEMENT_TYPE_LABEL:
+        {
+            Mat4 t = TRS({e.bounds.x, e.bounds.y}, 0.0f, {1,1});
+            BindTransform(t);
+            BindColor(e.style.color.value);
+            BindMaterial(e.material);
+            DrawMesh((Mesh*)e.resource);
+            break;
+        }
+    }
+}
+
+extern float Evaluate(const StyleLength& length, float parent_value);
+
+static Vec2 MeasureContent(Element2& e, const Vec2& available_size)
+{
+    // auto traits = GetElementTraits((Element*)impl);
+    // if (traits->measure_content)
+    //     return traits->measure_content((Element*)impl, available_size, impl->style);
+
+    return { 0, 0 };
+}
+
+
+u32 MeasureElement(u32 element_index, const Vec2& available_size)
+{
+    Element2& e = g_elements[element_index++];
+    Style& style = e.style;
+    auto& measured_size = e.measured_size;
+
+    Vec2 content_available = available_size;
+    if (IsFixed(style.padding_left))
+        content_available.x -= Evaluate(style.padding_left, 0);
+    if (IsFixed(style.padding_right))
+        content_available.x -= Evaluate(style.padding_right, 0);
+    if (IsFixed(style.padding_top))
+        content_available.y -= Evaluate(style.padding_top, 0);
+    if (IsFixed(style.padding_bottom))
+        content_available.y -= Evaluate(style.padding_bottom, 0);
+
+    Vec2 content_measured_size = MeasureContent(e, content_available);
+
+    // Children get the content size after padding as their available size
+    Vec2 child_available_size = content_available;
+
+    Vec2 child_measured_size = { 0.0f, 0.0f };
+    for (u32 child_index=0, child_count = e.child_count; child_index<child_count; child_index++)
+    {
+        Element2& child = g_elements[element_index];
+        Style& child_style = child.style;
+
+        element_index = MeasureElement(element_index, available_size);
+
+        // Calculate child size including margins for parent's auto-sizing
+        auto child_width_with_margins = child.measured_size.x;
+        auto child_height_with_margins = child.measured_size.y;
+
+        // Add margins to child size for parent calculations
+        if (IsFixed(child_style.margin_left))
+            child_width_with_margins += Evaluate(child_style.margin_left, child_available_size.x);
+        if (IsFixed(child_style.margin_right))
+            child_width_with_margins += Evaluate(child_style.margin_right, child_available_size.x);
+        if (IsFixed(child_style.margin_top))
+            child_height_with_margins += Evaluate(child_style.margin_top, child_available_size.y);
+        if (IsFixed(child_style.margin_bottom))
+            child_height_with_margins += Evaluate(child_style.margin_bottom, child_available_size.y);
+
+        if (IsAuto(style.width))
+        {
+            if (style.flex_direction.value == FLEX_DIRECTION_COL ||
+                style.flex_direction.value == FLEX_DIRECTION_COL_REVERSE)
+                child_measured_size.x += child_width_with_margins;
+            else
+                child_measured_size.x = max(child_width_with_margins, child_measured_size.x);
+        }
+
+        if (IsAuto(style.height))
+        {
+            if (style.flex_direction.value == FLEX_DIRECTION_ROW ||
+                style.flex_direction.value == FLEX_DIRECTION_ROW_REVERSE)
+                child_measured_size.y += child_height_with_margins;
+            else
+                child_measured_size.y = max(child_height_with_margins, child_measured_size.y);
+        }
+    }
+
+    measured_size = Vec2(0.0f, 0.0f);
+
+    if (IsAuto(style.width))
+    {
+        measured_size.x = max(content_measured_size.x, child_measured_size.x);
+        // Add padding to the measured size
+        if (IsFixed(style.padding_left))
+            measured_size.x += Evaluate(style.padding_left, available_size.x);
+        if (IsFixed(style.padding_right))
+            measured_size.x += Evaluate(style.padding_right, available_size.x);
+    }
+    else
+        measured_size.x = Evaluate(style.width, available_size.x);
+
+    if (IsAuto(style.height))
+    {
+        measured_size.y = max(content_measured_size.y, child_measured_size.y);
+        // Add padding to the measured size
+        if (IsFixed(style.padding_top))
+            measured_size.y += Evaluate(style.padding_top, available_size.y);
+        if (IsFixed(style.padding_bottom))
+            measured_size.y += Evaluate(style.padding_bottom, available_size.y);
+    }
+    else
+        measured_size.y = Evaluate(style.height, available_size.y);
+
+    return element_index;
+}
+
+void BeginUI()
+{
+    g_element_stack_count = 0;
+    g_element_count = 0;
+}
+
+u32 Layout(u32 element_index, const Rect& parent_bounds);
+
+void EndUI()
+{
+    ivec2 screen_size = GetScreenSize();
+    Vec2 screen_size_f = Vec2((f32)screen_size.x, (f32)screen_size.y);
+    Rect screen_bounds = { 0, 0, screen_size_f.x, screen_size_f.y };
+    for (u32 element_index=0; element_index < g_element_count; )
+        element_index = MeasureElement(element_index, screen_size_f);
+    for (u32 element_index=0; element_index < g_element_count; )
+        element_index = Layout(element_index, screen_bounds);
+}
+
+void DrawUI()
+{
+    for (u32 i = 0; i < g_element_count; i++)
+        RenderElement(g_elements[i]);
+}
+
+static u32 LayoutChildren(
+    u32 element_index,
+    float content_left,
+    float content_top,
+    float content_width,
+    float content_height)
+{
+    Element2& e = g_elements[element_index++];
+    if (e.child_count == 0)
+        return element_index;
+
+    FlexDirection flex_direction = e.style.flex_direction.value;
+    bool is_column = (flex_direction == FLEX_DIRECTION_COL || flex_direction == FLEX_DIRECTION_COL_REVERSE);
+    bool is_reverse = (flex_direction == FLEX_DIRECTION_ROW_REVERSE || flex_direction == FLEX_DIRECTION_COL_REVERSE);
+
+    // Pass 1: Calculate total intrinsic size and count auto margins
+    f32 totalIntrinsicSize = 0.0f;
+    i32 auto_margin_count = 0;
+
+    for (u32 child_index=0, child_count=e.child_count; child_index<child_count; child_index++)
+    {
+	Element2& child = g_elements[element_index];
+	Style& child_style = child.style;
+
+        // Add child's measured size (which does NOT include margins)
+        totalIntrinsicSize += is_column
+            ? child.measured_size.x
+            : child.measured_size.y;
+
+        // Add fixed margins to total size and count auto margins
+        if (is_column)
+        {
+            if (IsAuto(child_style.margin_left))
+                auto_margin_count++;
+            else
+                totalIntrinsicSize += Evaluate(child_style.margin_left, content_width);
+
+            if (IsAuto(child_style.margin_right))
+                auto_margin_count++;
+            else
+                totalIntrinsicSize += Evaluate(child_style.margin_right, content_width);
+        }
+        else
+        {
+            if (IsAuto(child_style.margin_top))
+                auto_margin_count++;
+            else
+                totalIntrinsicSize += Evaluate(child_style.margin_top, content_height);
+
+            if (IsAuto(child_style.margin_bottom))
+                auto_margin_count++;
+            else
+                totalIntrinsicSize += Evaluate(child_style.margin_bottom, content_height);
+        }
+    }
+
+    // Pass 2: Calculate auto margin size
+    float mainAxisSize = is_column ? content_width : content_height;
+    float remainingSpace = mainAxisSize - totalIntrinsicSize;
+    float flex_margin_size = (auto_margin_count > 0 && remainingSpace > 0) ? remainingSpace / auto_margin_count : 0.0f;
+
+    // Pass 3: Layout children with resolved margins
+    auto current_offset = 0.0f;
+
+    // Set up iteration based on direction
+    // todo: hadnle reverse?
+    // auto child_index = is_reverse ? (e.child_count - 1) : 0;
+    // auto increment = is_reverse ? -1 : 1;
+
+    for (u32 child_index=0, child_count=e.child_count; child_index<child_count; child_index++)
+    {
+        Element2& child = g_elements[element_index];
+        Style& child_style = child.style;
+
+        // Calculate resolved margins
+        float margin_start;
+        float margin_end;
+        if (is_column)
+        {
+            margin_start = IsAuto(child_style.margin_left)
+                ? flex_margin_size
+                : Evaluate(child_style.margin_left, content_width);
+            margin_end = IsAuto(child_style.margin_right)
+                ? flex_margin_size
+                : Evaluate(child_style.margin_right, content_width);
+        }
+        else
+        {
+            margin_start = IsAuto(child_style.margin_top)
+                ? flex_margin_size
+                : Evaluate(child_style.margin_top, content_height);
+            margin_end = IsAuto(child_style.margin_bottom)
+                ? flex_margin_size
+                : Evaluate(child_style.margin_bottom, content_height);
+        }
+
+        // Don't add margin to offset - give child the full space including margins
+        // The child will position itself within this space using its own margins
+
+        // Create child bounds that include space for margins
+        Rect child_bounds = {};
+        if (is_column)
+        {
+            float child_total_width = margin_start + child.measured_size.x + margin_end;
+            child_bounds = {
+                content_left + current_offset,
+                content_top,
+                child_total_width,
+                content_height
+            };
+            current_offset += child_total_width;
+        }
+        else
+        {
+            float child_total_height = margin_start + child.measured_size.y + margin_end;
+            child_bounds = {
+                content_left,
+                content_top + current_offset,
+                content_width,
+                child_total_height
+            };
+            current_offset += child_total_height;
+        }
+
+        element_index = Layout(element_index, child_bounds);
+    }
+
+    return element_index;
+}
+
+
+static void LayoutAxis(
+    const StyleLength& margin_min,
+    const StyleLength& margin_max,
+    const StyleLength& size,
+    float measured_size,
+    float available_size,
+    float& resolved_margin_min,
+    float& resolved_margin_max,
+    float& resolved_size)
+{
+    resolved_margin_min = 0;
+    resolved_margin_max = 0;
+    resolved_size = 0;
+
+    // Calculate the total contribution of auto margins and size (treated as flex(1))
+    float contrib = 0.0f;
+    if (IsAuto(margin_min))
+        contrib += 1.0f;
+    else
+        resolved_margin_min = Evaluate(margin_min, available_size);
+
+    if (IsAuto(margin_max))
+        contrib += 1.0f;
+    else
+        resolved_margin_max = Evaluate(margin_max, available_size);
+
+    // Handle size calculation accounting for margins
+    if (IsAuto(size))
+    {
+        resolved_size = measured_size;
+    }
+    else
+    {
+        // For percentage sizes, reduce available space by margins first
+        bool has_percent_size = (size.unit == STYLE_LENGTH_UNIT_PERCENT);
+        float total_margin_space = resolved_margin_min + resolved_margin_max;
+
+        if (has_percent_size && total_margin_space > 0.0f)
+        {
+            float available_for_size = available_size - total_margin_space;
+            if (available_for_size > 0.0f)
+                resolved_size = Evaluate(size, available_for_size);
+            else
+                resolved_size = 0.0f;
+        }
+        else
+        {
+            resolved_size = Evaluate(size, available_size);
+        }
+    }
+
+    float remaining_space = available_size - resolved_margin_min - resolved_margin_max - resolved_size;
+
+    if (contrib > 0.0f && remaining_space > 0.0f)
+    {
+        contrib = 1.0f / contrib;
+        if (IsAuto(margin_min))
+            resolved_margin_min = 1.0f * contrib * remaining_space;
+        if (IsAuto(margin_max))
+            resolved_margin_max = 1.0f * contrib * remaining_space;
+    }
+}
+
+u32 Layout(u32 element_index, const Rect& parent_bounds2)
+{
+    Element2& e = g_elements[element_index];
+    Style& style = e.style;
+    Rect& bounds = e.bounds;
+    Vec2& measured_size = e.measured_size;
+    Rect parent_bounds = parent_bounds2;
+
+    if (e.type == ELEMENT_TYPE_CANVAS)
+        parent_bounds = { 0, 0, e.style.width.value, e.style.height.value };
+
+    float hmin = 0.0f;
+    float hmax = 0.0f;
+    float hsize = 0.0f;
+    LayoutAxis(
+        style.margin_left,
+        style.margin_right,
+        style.width,
+        measured_size.x,
+        parent_bounds.width,
+        hmin,
+        hmax,
+        hsize);
+
+    float vmin = 0.0f;
+    float vmax = 0.0f;
+    float vsize = 0.0f;
+    LayoutAxis(
+        style.margin_top,
+        style.margin_bottom,
+        style.height,
+        measured_size.y,
+        parent_bounds.height,
+        vmin,
+        vmax,
+        vsize);
+
+    bounds = {
+        parent_bounds.x + hmin,
+        parent_bounds.y + vmin,
+        hsize,
+        vsize
+    };
+
+    // Calculate content area after padding (relative to Element* bounds)
+    float content_left = 0;
+    float content_top = 0;
+    float content_width = hsize;
+    float content_height = vsize;
+
+    if (IsFixed(style.padding_left))
+    {
+        float paddingValue = Evaluate(style.padding_left, 0);
+        content_left += paddingValue;
+        content_width -= paddingValue;
+    }
+    if (IsFixed(style.padding_right))
+        content_width -= Evaluate(style.padding_right, 0);
+
+    if (IsFixed(style.padding_top))
+    {
+        float paddingValue = Evaluate(style.padding_top, 0);
+        content_top += paddingValue;
+        content_height -= paddingValue;
+    }
+
+    if (IsFixed(style.padding_bottom))
+        content_height -= Evaluate(style.padding_bottom, 0);
+
+    // Two-pass flex layout for proper auto margin handling
+    // Pass in the world-space content bounds
+    element_index = LayoutChildren(
+        element_index,
+        bounds.x + content_left,
+        bounds.y + content_top,
+        content_width,
+        content_height);
+
+    // e.local_to_world =
+    //     translate(vec3(bounds.x, bounds.y, 0.0f)) *
+    //     scale(vec3(bounds.width, bounds.height, 1.0f));
+
+    return element_index;
+}
+
+static u64 GetMeshHash(const TextRequest& request)
+{
+    return Hash(Hash(request.text), (u64)request.font, (u64)request.font_size);
+}
+
+void Label(const char* text, const name_t* id)
+{
+    BeginElement(ELEMENT_TYPE_LABEL, id);
+
+    Element2& e = GetCurrentElement();
+
+    TextRequest r = {};
+    r.font = GetDefaultFont();
+    r.font_size = e.style.font_size.value;
+    SetValue(r.text, text);
+    u64 mesh_key = GetMeshHash(r);
+
+    CachedTextMesh* c = (CachedTextMesh*)GetValue(g_text_mesh_cache, mesh_key);
+    if (c == nullptr)
+    {
+        TextMesh* tm = CreateTextMesh(ALLOCATOR_DEFAULT, r);
+        if (tm)
+        {
+            e.resource = GetMesh(tm);
+            e.material = GetMaterial(tm);
+            c = (CachedTextMesh*)SetValue(g_text_mesh_cache, mesh_key);
+            c->last_frame = 0;
+            c->text_mesh = tm;
+        }
+    }
+
+    EndElement();
 }
