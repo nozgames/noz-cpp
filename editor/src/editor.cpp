@@ -5,7 +5,7 @@
 #include "tui/terminal.h"
 #include "tui/text_input.h"
 #include "tui/screen.h"
-#include "views/log_view.h"
+#include "views/views.h"
 #include "views/view_interface.h"
 #include "views/inspector_view.h"
 #include "views/inspector_object.h"
@@ -16,7 +16,7 @@ bool IsImporterRunning();
 
 struct Editor
 {
-    std::unique_ptr<LogView> log_view;
+    LogView* log_view;
     std::stack<std::unique_ptr<IView>> view_stack;
     TextInput* command_input;
     TextInput* search_input;
@@ -29,10 +29,11 @@ static Editor g_editor = {};
 
 static IView* GetView()
 {
-    if (g_editor.view_stack.empty())
-        return g_editor.log_view.get();
-
-    return g_editor.view_stack.top().get();
+    // if (g_editor.view_stack.empty())
+    //     return g_editor.log_view.get();
+    //
+    // return g_editor.view_stack.top().get();
+    return nullptr;
 }
 
 static void PushView(std::unique_ptr<IView> view)
@@ -166,7 +167,7 @@ static void HandleLog(LogType type, const char* message)
     if (std::this_thread::get_id() == g_main_thread_id)
     {
         // On main thread - add directly to log view
-        g_editor.log_view->Add(formatted_message);
+        //g_editor.log_view->Add(formatted_message);
         RequestRender();
     }
     else
@@ -188,7 +189,7 @@ static void ProcessQueuedLogMessages()
     {
         std::string message = log_queue.queue.front();
         log_queue.queue.pop();
-        g_editor.log_view->Add(message);
+        //g_editor.log_view->Add(message);
         render = true;
     }
 
@@ -259,7 +260,7 @@ static void HandleCommand(const std::string& command)
     }
     else if (command == "clear")
     {
-        g_editor.log_view->Clear();
+        //g_editor.log_view->Clear();
     }
     else if (command == "i" || command == "inspector")
     {
@@ -479,13 +480,17 @@ void InitEditor()
 {
     g_scratch_allocator = CreateArenaAllocator(32 * noz::MB, "scratch");
 
+#define EDITOR_TYPE(type) SetTypeName(EDITOR_TYPE_##type, #type);
+    EDITOR_TYPES
+#undef EDITOR_TYPE
+
     InitLog(HandleLog);
     InitTerminal();
     SetRenderCallback([](int width, int height) { RenderEditor({0, 0, width, height}); });
     SetResizeCallback([](int new_width, int new_height) { HandleResize(new_width, new_height); });
     int term_height = GetScreenHeight();
     int term_width = GetScreenWidth();
-    g_editor.log_view = std::unique_ptr<LogView>(new LogView());
+    g_editor.log_view = CreateLogView(ALLOCATOR_DEFAULT);
     g_editor.command_input = CreateTextInput(1, term_height - 1, term_width - 1);
     g_editor.search_input = CreateTextInput(1, term_height - 1, term_width - 1);
     g_editor.is_running = true;

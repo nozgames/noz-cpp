@@ -3,18 +3,25 @@
 //
 
 #include "tstring.h"
-#include <algorithm>
-#include <cstdio>
+#include "screen.h"
 
-// Color constants
-const color24_t TCOLOR_ORANGE = {255, 165, 0};
-const color24_t TCOLOR_GREEN = {0, 128, 0};
-const color24_t TCOLOR_PURPLE = {128, 0, 128};
-const color24_t TCOLOR_GREY = {128, 128, 128};
-const color24_t TCOLOR_WHITE = {255, 255, 255};
-const color24_t TCOLOR_DISABLED = {64, 64, 64};
+struct TStringImpl : Object
+{
+    size_t length;
+    size_t capacity;
+};
 
-// TStringBuilder implementation
+struct TStringBuilderImpl : Object
+{
+    size_t length;
+    size_t capacity;
+    tchar_t* buffer;
+};
+
+static TStringImpl* Impl(TString* s) { return (TStringImpl*)Cast(s, TYPE_UNKNOWN); }
+static TStringBuilderImpl* Impl(TStringBuilder* s) { return (TStringBuilderImpl*)Cast(s, TYPE_UNKNOWN); }
+
+#if 0
 TStringBuilder& TStringBuilder::Add(const std::string& text)
 {
     if (!_color_stack.empty())
@@ -95,6 +102,8 @@ TStringBuilder& TStringBuilder::Clear()
     return *this;
 }
 
+#endif
+
 #if 0
 TStringBuilder& TStringBuilder::TruncateToWidth(size_t max_width)
 {
@@ -133,6 +142,7 @@ TStringBuilder& TStringBuilder::TruncateToWidth(size_t max_width)
 }
 #endif
 
+#if 0
 // Type-specific Add overloads
 TStringBuilder& TStringBuilder::Add(const TString& tstr)
 {
@@ -211,4 +221,202 @@ TStringBuilder& TStringBuilder::Add(float value)
     snprintf(buffer, sizeof(buffer), "%g", value);
     Add(std::string(buffer), TCOLOR_ORANGE);
     return *this;
+}
+
+#endif
+
+static char* RenderEscape(char* o)
+{
+    *(o++) = '\033';
+    *(o++) = '[';
+    return o;
+}
+
+static char* RenderInt(char* o, int i)
+{
+    //auto len = snprintf(o, OUTPUT_BUFFER_SIZE - (o - g_output_buffer)-1, "%d", i);
+    auto len = snprintf(o, 1024, "%d", i);
+    o += len;;
+    return o;
+}
+
+static char* RenderColor(char* o, tcolor_t color)
+{
+    if (color == TCOLOR_NONE)
+    {
+        o = RenderEscape(o);
+        *o++ = '3';
+        *o++ = '9';
+        *o++ = 'm';
+        return o;
+    }
+
+    auto color24 = GetTColor(color);
+
+    o = RenderEscape(o);
+    *o++ = '3';
+    *o++ = '8';
+    *o++ = ';';
+    *o++ = '2';
+    *o++ = ';';
+    o = RenderInt(o, color24.r);
+    *o++ = ';';
+    o = RenderInt(o, color24.g);
+    *o++ = ';';
+    o = RenderInt(o, color24.b);
+    *o++ = 'm';
+    return o;
+}
+
+static char* RenderBackgroundColor(char* o, tcolor_t color)
+{
+    if (color == TCOLOR_NONE)
+    {
+        o = RenderEscape(o);
+        *o++ = '4';
+        *o++ = '9';
+        *o++ = 'm';
+        return o;
+    }
+
+    auto color24 = GetTColor(color);
+
+    o = RenderEscape(o);
+    *o++ = '4';
+    *o++ = '8';
+    *o++ = ';';
+    *o++ = '2';
+    *o++ = ';';
+    o = RenderInt(o, color24.r);
+    *o++ = ';';
+    o = RenderInt(o, color24.g);
+    *o++ = ';';
+    o = RenderInt(o, color24.b);
+    *o++ = 'm';
+    return o;
+}
+
+TStringBuilder* Append(TStringBuilder* builder, const char* text, tcolor_t color, tcolor_t bg_color)
+{
+    return builder;
+}
+
+TStringBuilder* CreateTStringBuilder(Allocator* allocator, size_t capacity)
+{
+    auto builder = (TStringBuilder*)CreateObject(allocator, sizeof(TStringBuilderImpl) + sizeof(tchar_t) * capacity, TYPE_UNKNOWN);
+    auto impl = Impl(builder);
+    impl->length = 0;
+    impl->capacity = capacity;
+    impl->buffer = (tchar_t*)(impl + 1);
+    return builder;
+}
+
+TString* CreateTString(Allocator* allocator, const tchar_t* data, size_t data_len)
+{
+    auto tstr = (TString*)CreateObject(allocator, sizeof(TStringImpl) + sizeof(tchar_t) * data_len, TYPE_UNKNOWN);
+    auto impl = Impl(tstr);
+    impl->length = data_len;
+    impl->capacity = data_len;
+    memcpy(impl + 1, data, data_len * sizeof(tchar_t));
+    return tstr;
+}
+
+TString* CreateTString(Allocator* allocator, size_t capacity)
+{
+    auto tstr = (TString*)CreateObject(allocator, sizeof(TStringImpl) + sizeof(tchar_t) * capacity, TYPE_UNKNOWN);
+    auto impl = Impl(tstr);
+    impl->length = 0;
+    impl->capacity = capacity;
+    return tstr;
+}
+
+
+void CStringToTChar(const char* src, tchar_t* dst, u32 dst_size)
+{
+    tcolor2_t fg_color = { 0, 0, 0, 0 };
+    tcolor2_t bg_color = { 0, 0, 0, 0 };
+
+    Token token;
+    Tokenizer tk;
+    Init(tk, src);
+
+    while (HasTokens(tk))
+    {
+        char c = PeekChar(tk);
+        if (c != '\033')
+        {
+            *dst = { c, TCOLOR_NONE, TCOLOR_NONE, fg_color, bg_color };
+            dst_size--;
+            NextChar(tk);
+            continue;
+        }
+
+        if (!ExpectChar(tk, '['))
+            continue;
+
+        if (ExpectChar(tk, 'm'))
+        {
+            fg_color = { 0, 0, 0, 0 };
+            bg_color = { 0, 0, 0, 0 };
+            continue;
+        }
+
+        bool expect_semi = false;
+
+        while (HasTokens(tk) && !ExpectChar(tk, 'm'))
+        {
+            if (expect_semi && !ExpectChar(tk, ';'))
+                break;
+
+            expect_semi = true;
+
+            int value = 0;
+            if (!ExpectInt(tk, &token, &value))
+                continue;
+
+            switch (value)
+            {
+            case 0:
+                fg_color = { 0, 0, 0, 0 };
+                bg_color = { 0, 0, 0, 0 };
+                break;
+
+            case 30:
+            case 31:
+            case 32:
+            case 33:
+            case 34:
+            case 35:
+            case 36:
+            case 37:
+                fg_color = { (u8)value, 0, 0, 0 };
+                break;
+
+            case 38:
+                break;
+
+            case 39:
+                fg_color = { 0, 0, 0, 0 };
+                break;
+
+            case 40:
+            case 41:
+            case 42:
+            case 43:
+            case 44:
+            case 45:
+            case 46:
+            case 47:
+                bg_color = { (u8)value, 0, 0, 0 };
+                break;
+
+            case 48:
+                break;
+
+            case 49:
+                fg_color = { 0, 0, 0, 0 };
+                break;
+            }
+        }
+    }
 }

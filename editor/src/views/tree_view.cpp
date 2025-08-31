@@ -300,7 +300,7 @@ void TreeView::Render(const irect_t& rect)
             AddPixel(' ');
 
         AddPixel(' ');
-        AddPixels(node->value.raw.c_str());
+        //AddPixels(node->value.raw.c_str());
 
         //AddString(node->line_builder.ToString(), cursor_pos, rect.width);
 
@@ -550,7 +550,7 @@ bool TreeView::MatchesSearch(TreeNode* node) const
     
     try
     {
-        return std::regex_search(node->value.raw, _search_regex);
+        return false; // return std::regex_search(node->value.raw, _search_regex);
     }
     catch (const std::exception&)
     {
@@ -627,6 +627,7 @@ void TreeView::UpdateSearchFlags()
 
 void TreeView::UpdateSearchFlagsRecursive(TreeNode* node)
 {
+#if 0
     assert(node);
     
     node->matches_search = false;
@@ -654,6 +655,7 @@ void TreeView::UpdateSearchFlagsRecursive(TreeNode* node)
     
     for (auto& child : node->children)
         UpdateSearchFlagsRecursive(child.get());
+#endif
 }
 
 int TreeView::CalculateNodeDistance(TreeNode* from, TreeNode* to) const

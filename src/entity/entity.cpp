@@ -18,9 +18,8 @@ constexpr u32 ENTITY_FLAG_ENABLED_HIERARCHY = 1 << 2;
 constexpr u32 ENTITY_FLAG_LOCAL_DIRTY = 1 << 3;
 constexpr u32 ENTITY_FLAG_WORLD_DIRTY = 1 << 4;
 
-struct EntityImpl
+struct EntityImpl : Object
 {
-    OBJECT_BASE;
     const name_t* name;
     Entity* parent;
     vec3 local_position;

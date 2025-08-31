@@ -2,9 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct TextMeshImpl
+struct TextMeshImpl : Object
 {
-    OBJECT_BASE;
     Mesh* mesh;
     Material* material;
     ivec2 size;

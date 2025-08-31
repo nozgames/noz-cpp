@@ -2,9 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct StyleSheetImpl
+struct StyleSheetImpl : Object
 {
-    OBJECT_BASE;
     const name_t* name;
     Map styles;
 #ifdef _HOTLOAD

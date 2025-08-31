@@ -2,9 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct ComponentImpl
+struct ComponentImpl : Object
 {
-    OBJECT_BASE;
     Entity* entity;
     LinkedListNode node_entity;
 };

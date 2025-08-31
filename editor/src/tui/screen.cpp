@@ -27,6 +27,11 @@ static ivec2 g_cursor = {0,0};
 static std::vector<Clip> g_clip;
 static color24_t g_colors[TCOLOR_MAX] = {};
 
+color24_t GetTColor(tcolor_t color)
+{
+    return g_colors[color];
+}
+
 static irect_t Clip(const irect_t& rect)
 {
     assert(g_clip.size() > 0);

@@ -3,22 +3,21 @@
 //
 
 #include "inspector_object.h"
-
 #include "../../../src/editor/editor_messages.h"
 
-void InspectorObject::AddProperty(const std::string& name, const TString& value)
+void InspectorObject::AddProperty(const std::string& name, TString* value)
 {
-    if (name == "enabled")
-        _enabled = value.raw == "true";
-
-    _properties.AddProperty(name, value);
+    // if (name == "enabled")
+    //     _enabled = value.raw == "true";
+    //
+    // _properties.AddProperty(name, value);
 }
 
 const ObjectProperty* InspectorObject::FindProperty(const std::string& name) const
 {
-    for (const auto& prop : _properties.GetProperties())
-        if (prop.name == name)
-            return &prop;
+    // for (const auto& prop : _properties.GetProperties())
+    //     if (prop.name == name)
+    //         return &prop;
 
     return nullptr;
 }
@@ -71,19 +70,19 @@ std::unique_ptr<InspectorObject> InspectorObject::CreateFromStream(Stream* strea
 
         case INSPECTOR_OBJECT_COMMAND_PROPERTY:
         {
-            auto object = stack.back();
-
-            char name_buffer[1024];
-            ReadString(stream, name_buffer, 1024);
-            switch (ReadU8(stream))
-            {
-            case INSPECTOR_OBJECT_COMMAND_VEC3:
-                object->AddProperty(name_buffer, TStringBuilder().Add(ReadVec3(stream)).ToString());
-                break;
-            case INSPECTOR_OBJECT_COMMAND_BOOL:
-                object->AddProperty(name_buffer, TStringBuilder().Add(ReadBool(stream)).ToString());
-                break;
-            }
+            // auto object = stack.back();
+            //
+            // char name_buffer[1024];
+            // ReadString(stream, name_buffer, 1024);
+            // switch (ReadU8(stream))
+            // {
+            // case INSPECTOR_OBJECT_COMMAND_VEC3:
+            //     object->AddProperty(name_buffer, TStringBuilder().Add(ReadVec3(stream)).ToString());
+            //     break;
+            // case INSPECTOR_OBJECT_COMMAND_BOOL:
+            //     object->AddProperty(name_buffer, TStringBuilder().Add(ReadBool(stream)).ToString());
+            //     break;
+            // }
             break;
         }
 

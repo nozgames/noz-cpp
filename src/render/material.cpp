@@ -2,9 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct MaterialImpl
+struct MaterialImpl : Object
 {    
-    OBJECT_BASE;
     name_t name;
     int vertex_uniform_count;
     int fragment_uniform_count;

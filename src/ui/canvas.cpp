@@ -7,9 +7,8 @@ void WriteInspectorElement(Stream* stream, Element* element);
 void RenderElements(Element* element, const mat4& canvas_transform, const vec2& canvas_size, bool is_dirty);
 void BeginUIPass();
 
-struct CanvasImpl
+struct CanvasImpl : Entity
 {
-    ENTITY_BASE;
     Element* root;
     StyleSheet* style_sheet;
     vec2 size;

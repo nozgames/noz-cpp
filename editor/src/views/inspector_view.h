@@ -8,7 +8,6 @@
 #include "tree_view.h"
 #include "properties_view.h"
 #include "inspector_object.h"
-#include <memory>
 
 class InspectorView : public IView
 {

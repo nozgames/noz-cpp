@@ -5,9 +5,8 @@
 //#define isfinite(x) ((x) == std::numeric_limits<float>::infinity())
 #include "physics_internal.h"
 
-struct RigidBodyImpl
+struct RigidBodyImpl : Component
 {
-    OBJECT_BASE;
     b2Body* body;
     RigidBodyType body_type;
     bool initialized;

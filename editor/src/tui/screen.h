@@ -43,3 +43,5 @@ void MoveCursor(int x, int y);
 
 void PushClipRect(const irect_t& rect, bool wrap=false);
 void PopClipRect();
+
+color24_t GetTColor(tcolor_t color);

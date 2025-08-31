@@ -5,9 +5,8 @@
 void DrawMeshRenderers(Camera* camera);
 void DrawWorldCanvases(Camera* camera);
 
-struct CameraImpl
+struct CameraImpl : Entity
 {
-    ENTITY_BASE;
     ivec2 view_size;
     mat4 projection;
     mat4 view_projection;

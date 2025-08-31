@@ -5,9 +5,8 @@
 #define MAX_GLYPHS 256  // Support extended ASCII
 #define MAX_KERNING (MAX_GLYPHS * MAX_GLYPHS)  // All possible kerning pairs
 
-struct FontImpl
+struct FontImpl : Object
 {
-    OBJECT_BASE;
     const name_t* name;
     Material* material;
     Texture* texture;

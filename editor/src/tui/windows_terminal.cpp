@@ -214,6 +214,7 @@ void AddString(const char* str)
 
 void AddString(const TString& tstr, int cursor_pos, int truncate)
 {
+#if 0
     size_t pos = 0;
     size_t visual_length = 0;
     const std::string& str = tstr.formatted;
@@ -241,6 +242,7 @@ void AddString(const TString& tstr, int cursor_pos, int truncate)
         if (cursor_here)
             EndInverse();
     }
+#endif
 }
 
 void SetColor(int pair)

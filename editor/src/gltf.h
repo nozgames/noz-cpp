@@ -5,11 +5,6 @@
 
 #pragma once
 
-#include <filesystem>
-#include <string>
-#include <vector>
-#include <memory>
-
 // Forward declarations
 struct cgltf_data;
 struct cgltf_mesh;
@@ -60,8 +55,7 @@ struct GLTFBoneFilter
 
 class GLTFLoader
 {
-private:
-    struct cgltf_data* data = nullptr;
+    cgltf_data* data = nullptr;
     std::filesystem::path path;
 
 public:

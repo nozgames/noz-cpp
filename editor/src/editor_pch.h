@@ -61,3 +61,6 @@ static constexpr int TERM_COLOR_DISABLED_TEXT = 8;
 // Terminal key constants
 static constexpr int ERR = -1;
 static constexpr int KEY_MOUSE = 409;
+
+#include "editor_types.h"
+#include "tui/tstring.h"

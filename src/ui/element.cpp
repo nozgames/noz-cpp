@@ -13,9 +13,8 @@ struct ElementFlags
 
 constexpr u32 ELEMENT_FLAG_VISIBLE = 1 << 0;
 
-struct ElementImpl
+struct ElementImpl : Object
 {
-    OBJECT_BASE;
     Canvas* canvas;
     const name_t* name;
     ElementFlags flags;

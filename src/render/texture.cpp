@@ -4,9 +4,8 @@
 
 #define INITIAL_CACHE_SIZE 64
 
-struct TextureImpl
+struct TextureImpl : Object
 {
-    OBJECT_BASE;
     const name_t* name;
     SDL_GPUTexture* handle;
     SamplerOptions sampler_options;

@@ -10,6 +10,8 @@ typedef u16 type_t;
     NOZ_TYPE(STREAM) \
     NOZ_TYPE(LIST) \
     NOZ_TYPE(MAP) \
+    NOZ_TYPE(RING_BUFFER) \
+    NOZ_TYPE(LINKED_LIST) \
     NOZ_TYPE(PROPS) \
     NOZ_TYPE(MESH_BUILDER) \
     NOZ_TYPE(INPUT_SET) \
@@ -33,12 +35,13 @@ typedef u16 type_t;
 
 enum Type : type_t
 {
-#define NOZ_TYPE(type) TYPE_##type,
     TYPE_INVALID = (u16)0,
     TYPE_GAME = (u16)1,
     TYPE_UNKNOWN = (u16)256,
+#define NOZ_TYPE(type) TYPE_##type,
     NOZ_CORE_TYPES
 #undef NOZ_TYPE
+    TYPE_EDITOR = 384
 };
 
 constexpr int TYPE_COUNT = 512;

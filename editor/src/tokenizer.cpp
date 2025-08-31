@@ -5,8 +5,6 @@
 #include <noz/noz.h>
 #include "tokenizer.h"
 
-static char PeekChar(Tokenizer& tok);
-static char NextChar(Tokenizer& tok);
 static void ClearToken(Token* token);
 static bool IsOperator(char c);
 static bool IsDelimiter(char c);
@@ -28,7 +26,7 @@ bool HasTokens(Tokenizer& tok)
     return tok.position < tok.length;
 }
 
-static char PeekChar(Tokenizer& tok)
+char PeekChar(Tokenizer& tok)
 {
     if (!HasTokens(tok))
         return '\0';
@@ -36,7 +34,7 @@ static char PeekChar(Tokenizer& tok)
     return tok.input[tok.position];
 }
 
-static char NextChar(Tokenizer& tok)
+char NextChar(Tokenizer& tok)
 {
     if (!HasTokens(tok))
         return '\0';

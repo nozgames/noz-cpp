@@ -4,13 +4,36 @@
 
 #pragma once
 
-struct TString
-{
-    std::string raw;
-    std::string formatted;
+#include "screen.h"
 
-    bool IsEmpty() const { return raw.empty(); }
+struct tcolor2_t
+{
+    uint8_t code;
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
 };
+
+struct tchar_t
+{
+    char value;
+    tcolor_t color;
+    tcolor_t bg_color;
+    tcolor2_t color1;
+    tcolor2_t color2;
+};
+
+struct TString : Object {};
+struct TStringBuilder : Object {};
+
+TString* CreateTString(Allocator* allocator);
+TStringBuilder* CreateTStringBuilder(Allocator* allocator, size_t capacity = 8192);
+
+TStringBuilder* Append(TStringBuilder* builder, const char* text, tcolor_t color = TCOLOR_NONE, tcolor_t bg_color = TCOLOR_NONE);
+
+void CStringToTChar(const char* str, tchar_t* buffer, u32 buffer_size);
+
+#if 0
 
 class TStringBuilder
 {
@@ -52,8 +75,10 @@ public:
     bool Empty() const { return _formatted.empty(); }
     
     // Final build method
-    TString ToString() const { return { _raw, _formatted }; }
+    TString ToTString() const;
     
     // Static factory method
     static TStringBuilder Build() { return TStringBuilder(); }
 };
+
+#endif

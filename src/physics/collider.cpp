@@ -4,9 +4,8 @@
 
 #include "physics_internal.h"
 
-struct ColliderImpl
+struct ColliderImpl : Component
 {
-    OBJECT_BASE;
     b2Fixture* fixture;
     b2FixtureDef fixture_def;
     b2Shape* shape;

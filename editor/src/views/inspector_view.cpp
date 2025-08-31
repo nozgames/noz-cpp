@@ -10,91 +10,11 @@
 extern void SendInspectRequest(const std::string& search_filter);
 extern bool HasConnectedClient();
 
-static void FormatValue(TStringBuilder& builder, const std::string& value)
-{
-    if (value.empty())
-    {
-        builder.Add(value);
-        return;
-    }
-    
-    Tokenizer tok;
-    Token token;
-    
-    // Check for color patterns using tokenizer
-    color_t color_result;
-    Init(tok, value.c_str());
-    if (ExpectColor(tok, &token, &color_result))
-    {
-        builder.Add(color_result);
-        return;
-    }
-    
-    // Check for vector patterns using tokenizer: (x,y), (x,y,z), or (x,y,z,w)
-    if (value.size() >= 5 && value.front() == '(' && value.back() == ')')
-    {
-        vec2 vec2_result;
-        vec3 vec3_result;
-        vec4 vec4_result;
-        
-        // Try parsing as vec2 first
-        Init(tok, value.c_str());
-        if (ExpectVec2(tok, &token, &vec2_result))
-        {
-            builder.Add(vec2_result);
-            return;
-        }
-        
-        // Reset tokenizer and try vec3
-        Init(tok, value.c_str());
-        if (ExpectVec3(tok, &token, &vec3_result))
-        {
-            builder.Add(vec3_result);
-            return;
-        }
-        
-        // Reset tokenizer and try vec4
-        Init(tok, value.c_str());
-        if (ExpectVec4(tok, &token, &vec4_result))
-        {
-            builder.Add(vec4_result);
-            return;
-        }
-    }
-    
-    // Check for boolean values
-    if (value == "true" || value == "false")
-    {
-        builder.Add(value == "true");
-        return;
-    }
-    
-    // Check for number (integer or float)
-    static const std::regex number_regex("^[-+]?([0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?)$");
-    if (std::regex_match(value, number_regex))
-    {
-        // Try parsing as int first, then float
-        char* end;
-        long int_val = strtol(value.c_str(), &end, 10);
-        if (*end == '\0')
-            builder.Add(static_cast<int>(int_val));
-        else
-            builder.Add(static_cast<float>(strtof(value.c_str(), nullptr)));
-        return;
-    }
-    
-    // Everything else is treated as a string
-    if (!value.empty() && value.front() == '"' && value.back() == '"')
-        builder.Add(value, TCOLOR_GREEN); // Already has quotes
-    else
-        builder.Add("\"" + value + "\"", TCOLOR_GREEN); // Add quotes
-}
-
 InspectorView::InspectorView()
     : _tree_view(std::make_unique<TreeView>())
     , _properties_view(std::make_unique<PropertiesView>())
 {
-    _tree_view->Add(TStringBuilder().Add("Waiting for client...").ToString());
+    //_tree_view->Add(TStringBuilder().Add("Waiting for client...").ToString());
 }
 
 void InspectorView::SetRootObject(std::unique_ptr<InspectorObject> root)
@@ -141,7 +61,7 @@ void InspectorView::AddProperty(const std::string& name, const TString& value)
         current_node->SetUserData(props);
     }
     
-    props->AddProperty(name, value);
+    //props->AddProperty(name, value);
     RefreshPropertiesFromSelectedNode();
 }
 
@@ -186,6 +106,7 @@ void InspectorView::RenderDivider(const irect_t& rect, int split_col)
 
 void InspectorView::RenderPropertiesSection(int start_col, int properties_width, int height)
 {
+#if 0
     if (!_properties_view) return;
     
     int properties_height = height - 2; // Leave 2 rows for status and command
@@ -251,6 +172,7 @@ void InspectorView::RenderPropertiesSection(int start_col, int properties_width,
 
         current_row++;
     }
+#endif
 }
 
 void InspectorView::RefreshPropertiesFromSelectedNode()
@@ -283,7 +205,7 @@ void InspectorView::RefreshPropertiesFromSelectedNode()
         for (size_t i = 0; i < props.Count(); i++)
         {
             const ObjectProperty& prop = props.GetProperty(i);
-            _properties_view->AddProperty(prop.name, prop.value);
+            //_properties_view->AddProperty(prop.name, prop.value);
         }
     }
     catch (...)
@@ -296,6 +218,7 @@ void InspectorView::RefreshPropertiesFromSelectedNode()
 
 void InspectorView::BuildTreeFromInspectorObject(InspectorObject* obj)
 {
+#if 0
     assert(obj);
 
     _tree_view->Clear();
@@ -319,6 +242,7 @@ void InspectorView::BuildTreeFromInspectorObject(InspectorObject* obj)
     };
     
     build_recursive(obj, 0);
+#endif
 }
 
 void InspectorView::Render(const irect_t& rect)

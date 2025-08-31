@@ -22,7 +22,7 @@ public:
     const std::string& GetName() const { return _name; }
     const std::string& GetType() const { return _type; }
     void AddProperty(const std::string& name, const std::string& value);
-    void AddProperty(const std::string& name, const TString& value);
+    void AddProperty(const std::string& name, TString* value);
     const ObjectProperty* FindProperty(const std::string& name) const;
     const ObjectProperties& GetProperties() const { return _properties; }
     ObjectProperties& GetProperties() { return _properties; }

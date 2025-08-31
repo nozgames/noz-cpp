@@ -8,9 +8,8 @@ constexpr uint8_t BUTTON_STATE_DOWN = 1 << 2;
 constexpr uint8_t BUTTON_STATE_RESET = 1 << 3;
 constexpr uint8_t BUTTON_STATE_ENABLED = 1 << 4;
 
-struct InputSetImpl
+struct InputSetImpl : Object
 {
-    OBJECT_BASE;
     u8 buttons[INPUT_CODE_COUNT];
     SDL_Scancode scancodes[SDL_SCANCODE_COUNT];
     u32 scancode_count;

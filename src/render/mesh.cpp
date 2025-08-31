@@ -2,9 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct MeshImpl 
+struct MeshImpl : Object
 {
-    OBJECT_BASE;
     const name_t* name;
     size_t vertex_count;
     size_t index_count;

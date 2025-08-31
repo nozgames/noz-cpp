@@ -4,6 +4,9 @@
 
 #pragma once
 
+#define ENTITY_BASE_SIZE 272
+#define COMPONENT_BASE_SIZE 40
+
 constexpr u64 RENDER_MASK_DEFAULT = 1 << 0;
 
 // @entities
@@ -11,14 +14,10 @@ struct Entity : Object { };
 struct Camera : Entity { };
 
 // @components
-struct Component : Object { };
+struct Component : Object { u8 _component[COMPONENT_BASE_SIZE]; };
 struct MeshRenderer : Component { };
 
 // @entity
-#define ENTITY_BASE_SIZE 272
-#define ENTITY_BASE EntityBase __entity;
-
-struct EntityBase { u8 _entity[ENTITY_BASE_SIZE]; };
 
 struct EntityTraits
 {
@@ -80,7 +79,6 @@ void BindTransform(Entity* entity);
 void LookAt(Entity* entity, const vec3& target, const vec3& up);
 
 // @component
-#define COMPONENT_BASE_SIZE 40
 #define COMPONENT_BASE ComponentBase _component;
 
 struct ComponentTraits
@@ -92,8 +90,6 @@ struct ComponentTraits
 };
 
 extern const ComponentTraits* g_component_traits[];
-
-struct ComponentBase { u8 _component[COMPONENT_BASE_SIZE]; };
 
 void SetComponentTraits(type_t id, const ComponentTraits* traits);
 inline const ComponentTraits* GetComponentTraits(type_t id) { return g_component_traits[id]; }

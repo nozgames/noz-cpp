@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "view_interface.h"
 #include "../tui/tstring.h"
-#include <vector>
+#include "view_interface.h"
 #include <memory>
+#include <vector>
 
 class PropertiesView : public IView
 {

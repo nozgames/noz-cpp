@@ -4,14 +4,12 @@
 
 #pragma once
 
-#include <vector>
-#include <string>
 #include "../tui/tstring.h"
 
 struct ObjectProperty
 {
-    std::string name;
-    TString value;
+    const name_t* name;
+    TString* value;
 };
 
 class ObjectProperties
@@ -20,9 +18,9 @@ class ObjectProperties
     
 public:
 
-    void AddProperty(const std::string& name, const TString& value)
+    void AddProperty(const name_t* name, TString* value)
     {
-        _properties.emplace_back(name, value);
+        _properties.emplace_back(ObjectProperty{name, value});
     }
     
     void Clear()

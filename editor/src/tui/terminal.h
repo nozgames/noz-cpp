@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <noz/color.h>
 #include "tstring.h"
+#include <noz/color.h>
 
 // Special key codes (using values that don't conflict with ASCII)
 #define KEY_LEFT    260

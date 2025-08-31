@@ -2,9 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct MeshRendererImpl
+struct MeshRendererImpl : Component
 {
-    COMPONENT_BASE;
     Mesh* mesh;
     Material* material;
     uint64_t render_layer;

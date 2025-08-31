@@ -58,6 +58,9 @@ bool ReadLine(Tokenizer& tok, Token* token);
 bool NextToken(Tokenizer& tok, Token* token);
 void SkipWhitespace(Tokenizer& tok);
 void SkipLine(Tokenizer* tok);
+char PeekChar(Tokenizer& tok);
+char NextChar(Tokenizer& tok);
+bool ExpectChar(Tokenizer& tok, char expected);
 
 // @token
 void InitToken(Token* token);

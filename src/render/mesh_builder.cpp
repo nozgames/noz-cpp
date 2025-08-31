@@ -2,9 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct MeshBuilderImpl
+struct MeshBuilderImpl : Object
 {
-    OBJECT_BASE;
     vec3* positions;
     vec3* normals;
     vec2* uv0;

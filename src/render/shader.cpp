@@ -4,9 +4,8 @@
 
 // todo: rework memory management here after asset loading
 
-struct ShaderImpl
+struct ShaderImpl : Object
 {
-    OBJECT_BASE;
     SDL_GPUShader* vertex;
     SDL_GPUShader* fragment;
     int vertex_uniform_count;

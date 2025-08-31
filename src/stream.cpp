@@ -8,9 +8,8 @@
 
 #define DEFAULT_INITIAL_CAPACITY 256
 
-struct StreamImpl
+struct StreamImpl : Object
 {
-    OBJECT_BASE;
     u8* data;
     size_t size;
     size_t capacity;

@@ -8,19 +8,12 @@
 #include "types.h"
 
 #define OBJECT_BASE_SIZE (sizeof(u16) * 2 + sizeof(void*) + sizeof(u32))
-#define OBJECT_BASE ObjectBase __object
 #define OBJECT_OFFSET_TYPE (0)
 #define OBJECT_OFFSET_BASE (sizeof(u16))
 #define OBJECT_OFFSET_SIZE (sizeof(u16) * 2)
 #define OBJECT_OFFSET_ALLOCATOR (sizeof(u16) * 2 + sizeof(u32))
 
-struct ObjectBase
-{
-    u8 _object[OBJECT_BASE_SIZE];
-};
-
-
-struct Object {};
+struct Object { u8 _object[OBJECT_BASE_SIZE]; };
 
 // @object
 Object* CreateObject(Allocator* allocator, size_t object_size, type_t object_type, type_t base_type);
