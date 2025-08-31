@@ -49,7 +49,7 @@ void LogView::SetMax(size_t max_messages)
     _tree_view->SetMaxEntries(max_messages);
 }
 
-void LogView::Render(const irect_t& rect)
+void LogView::Render(const RectInt& rect)
 {
     _tree_view->Render(rect);
 }
@@ -67,7 +67,7 @@ void AddMessage(LogView* view, const char* str)
     CStringToTChar(str, item->value, MAX_LOG_MESSAGE_LENGTH);
 }
 
-void LogViewRender(View* view, const irect_t& rect)
+void LogViewRender(View* view, const RectInt& rect)
 {
 }
 

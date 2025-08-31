@@ -197,7 +197,7 @@ static void ProcessQueuedLogMessages()
         RequestRender();
 }
 
-static void DrawStatusBar(const irect_t& rect)
+static void DrawStatusBar(const RectInt& rect)
 {
     static auto title = "NoZ Editor";
     static auto cmd_mode = " - Command Mode";
@@ -211,7 +211,7 @@ static void DrawStatusBar(const irect_t& rect)
     SetBackgroundColor({rect.x, line, rect.width, 1}, TCOLOR_LIGHT_GRAY);
 }
 
-static void DrawCommandLine(const irect_t& rect)
+static void DrawCommandLine(const RectInt& rect)
 {
     if (g_editor.search_mode)
     {
@@ -447,7 +447,7 @@ static void RunEditor()
 }
 
 
-void RenderEditor(const irect_t& rect)
+void RenderEditor(const RectInt& rect)
 {
     ClearScreen();
     DrawStatusBar(rect);

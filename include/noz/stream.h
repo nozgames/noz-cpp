@@ -52,7 +52,7 @@ void ReadBytes(Stream* stream, void* dest, size_t count);
 int ReadString(Stream* stream, char* buffer, int buffer_size);
 color_t ReadColor(Stream* stream);
 vec3 ReadVec3(Stream* stream);
-rect_t ReadRect(Stream* stream);
+Rect ReadRect(Stream* stream);
 
 // @write
 void WriteFileSignature(Stream* stream, const char* signature, size_t signature_length);
@@ -72,7 +72,7 @@ void WriteVec3(Stream* stream, const vec3& value);
 void WriteCSTR(Stream* stream, const char* format, ...); // Write formatted C string without length prefix
 void WriteBytes(Stream* stream, void* data, size_t size);
 void WriteColor(Stream* stream, color_t value);
-void WriteRect(Stream* stream, const rect_t& value);
+void WriteRect(Stream* stream, const Rect& value);
 
 
 #define ReadStruct(stream, type) \

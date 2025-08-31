@@ -38,10 +38,10 @@ void AddPixels(const char* str, tcolor_t color = TCOLOR_NONE);
 void AddPixel(char c, tcolor_t color = TCOLOR_NONE);
 void DrawVerticalLine(i32 x, i32 y, i32 height, char c, tcolor_t color, tcolor_t bg_color = TCOLOR_NONE);
 void DrawHorizontalLine(i32 x, i32 y, i32 width, char c, tcolor_t color, tcolor_t bg_color = TCOLOR_NONE);
-void SetBackgroundColor(const irect_t& rect, tcolor_t color);
+void SetBackgroundColor(const RectInt& rect, tcolor_t color);
 void MoveCursor(int x, int y);
 
-void PushClipRect(const irect_t& rect, bool wrap=false);
+void PushClipRect(const RectInt& rect, bool wrap=false);
 void PopClipRect();
 
 color24_t GetTColor(tcolor_t color);

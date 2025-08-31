@@ -18,7 +18,7 @@ void UpdatePhysics()
 {
     assert(B2_IS_NON_NULL(g_physics_world));
 
-    g_physics.accumulator += GetDeltaTime();
+    g_physics.accumulator += GetFrameTime();
 
     auto fixed = GetFixedTime();
     while (g_physics.accumulator > fixed)

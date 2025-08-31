@@ -31,7 +31,7 @@ void UpdateTime()
     g_time.total = (float)total_ticks / (float)frequency;
 }
 
-float GetDeltaTime()
+float GetFrameTime()
 {
     return g_time.delta;
 }

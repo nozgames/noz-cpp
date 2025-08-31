@@ -11,7 +11,7 @@ struct LogView : View {};
 
 struct ViewTraits
 {
-    void(*render)(View* view, const irect_t& rect);
+    void(*render)(View* view, const RectInt& rect);
 };
 
 extern ViewTraits g_view_traits[];

@@ -19,7 +19,7 @@ struct ElementImpl : Object
     const name_t* name;
     ElementFlags flags;
     Style style;
-    rect_t bounds;
+    Rect bounds;
     vec2 measured_size;
     Element* parent = nullptr;
     LinkedList children;
@@ -42,7 +42,7 @@ static void ApplyStyle(ElementImpl* impl);
 static void Measure(ElementImpl* impl, const vec2& available_size);
 static vec2 MeasureContent(ElementImpl* impl, const vec2& available_size);
 static void RenderBackground(ElementImpl* impl, const mat4& canvas_transform);
-static void Layout(ElementImpl* impl, const rect_t& parent_bounds);
+static void Layout(ElementImpl* impl, const Rect& parent_bounds);
 static void layout_children(ElementImpl* impl, float content_left, float content_top, float content_width, float content_height);
 static void LayoutAxis(
     ElementImpl* impl,
@@ -285,7 +285,7 @@ void Measure(ElementImpl* impl, const vec2& available_size)
 
 // @layout
 
-void Layout(ElementImpl* impl, const rect_t& parent_bounds)
+void Layout(ElementImpl* impl, const Rect& parent_bounds)
 {
 	    auto& style = impl->style;
 	    auto& bounds = impl->bounds;
@@ -465,7 +465,7 @@ static void layout_children(
         // The child will position itself within this space using its own margins
 
         // Create child bounds that include space for margins
-        rect_t child_bounds = {};
+        Rect child_bounds = {};
         if (is_column)
         {
             float child_total_width = margin_start + child_impl->measured_size.x + margin_end;

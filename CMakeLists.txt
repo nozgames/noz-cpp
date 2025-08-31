@@ -36,6 +36,7 @@ set(SOURCE_FILES
     src/memory/pool_allocator.cpp
     src/memory/arena_allocator.cpp
     src/math/mat3.cpp
+    src/math/mat4.cpp
     src/math/vec2.cpp
     src/name.cpp
     src/object.cpp

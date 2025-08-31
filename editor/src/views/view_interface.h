@@ -9,7 +9,7 @@ class IView
 public:
 
     virtual ~IView() = default;
-    virtual void Render(const irect_t& rect) = 0;
+    virtual void Render(const RectInt& rect) = 0;
     virtual bool HandleKey(int key) { return false; }
     virtual void SetCursorVisible(bool visible) {};
     virtual bool CanPopFromStack() const { return true; }

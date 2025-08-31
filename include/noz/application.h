@@ -41,7 +41,7 @@ float GetScreenAspectRatio();
 void ShowCursor(bool show);
 
 // @time
-float GetDeltaTime();
+float GetFrameTime();
 float GetFixedTime();
 void GetFixedTimeRate(int rate);
 float GetTotalTime();

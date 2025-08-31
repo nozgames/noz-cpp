@@ -28,7 +28,7 @@ void UpdateTerminal();
 
 void SetRenderCallback(TerminalRenderCallback callback);
 void SetResizeCallback(TerminalResizeCallback callback);
-void ClearRect(const rect_t& rect);
+void ClearRect(const Rect& rect);
 void AddChar(char ch);
 void AddChar(char ch, int count);
 void AddString(const char* str);

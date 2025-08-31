@@ -18,8 +18,8 @@ class InspectorView : public IView
     std::unique_ptr<InspectorObject> _root_object;
     bool _has_requested_data = false;  // Track if we've sent a request yet
     
-    void UpdateLayout(const irect_t& rect);
-    void RenderDivider(const irect_t& rect, int split_col);
+    void UpdateLayout(const RectInt& rect);
+    void RenderDivider(const RectInt& rect, int split_col);
     void RenderPropertiesSection(int start_col, int properties_width, int height);
     void RefreshPropertiesFromSelectedNode();
     void BuildTreeFromInspectorObject(InspectorObject* obj);
@@ -43,7 +43,7 @@ public:
     void ToggleFocus();
     
     // IView interface
-    void Render(const irect_t& rect) override;
+    void Render(const RectInt& rect) override;
     bool HandleKey(int key) override;
     void SetCursorVisible(bool visible) override;
     bool CanPopFromStack() const override { return true; }

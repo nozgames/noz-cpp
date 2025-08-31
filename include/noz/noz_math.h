@@ -5,6 +5,7 @@
 #pragma once
 
 #include <glm/vec2.hpp>
+#include <glm/mat4x4.hpp>
 
 namespace noz
 {
@@ -71,11 +72,15 @@ bool RandomBool(float probability);
 struct Mat4
 {
     f32 m[16];
+    
+    operator glm::mat4() const;
 };
 
 struct Mat3
 {
     f32 m[9];
+    
+    operator Mat4() const;
 };
 
 struct Vec2
@@ -94,5 +99,9 @@ struct IVec2
 };
 
 constexpr Mat3 MAT3_IDENTITY = { 1,0,0, 0,1,0, 0,0,1 };
+constexpr Mat4 MAT4_IDENTITY = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
+
+Mat4 Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
+Mat4 Ortho(f32 top, f32 bottom, f32 near, f32 far);
 
 Mat3 TRS(const Vec2& translation, f32 rotation, const Vec2& scale);

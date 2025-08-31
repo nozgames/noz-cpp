@@ -31,7 +31,7 @@ public:
     size_t PropertyCount() const;
     
     // IView interface
-    void Render(const irect_t& rect) override;
+    void Render(const RectInt& rect) override;
     bool HandleKey(int key) override;
     void SetCursorVisible(bool visible) override;
     bool CanPopFromStack() const override { return false; }

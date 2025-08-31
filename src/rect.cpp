@@ -2,18 +2,18 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-bool Contains(const rect_t& rect, float px, float py)
+bool Contains(const Rect& rect, float px, float py)
 {
     return px >= rect.x && px <= rect.x + rect.width && py >= rect.y && py <= rect.y + rect.height;
 }
 
-bool Intersects(const rect_t& rect, const rect_t& other)
+bool Intersects(const Rect& rect, const Rect& other)
 {
     return !(other.x > rect.x + rect.width || other.x + other.width < rect.x ||
              other.y > rect.y + rect.height || other.y + other.height < rect.y);
 }
 
-rect_t Intersection(const rect_t& rect, const rect_t& other)
+Rect Intersection(const Rect& rect, const Rect& other)
 {
     float left = max(rect.x, other.x);
     float top = max(rect.y, other.y);
