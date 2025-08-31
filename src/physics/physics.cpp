@@ -4,26 +4,11 @@
 
 #include "physics_internal.h"
 
-struct raycast_callback : b2RayCastCallback
-{
-    raycast_callback(RaycastResult& result) : _result(result) {}
-
-    float ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction) override
-    {
-        _result.hit = true;
-        _result.point = vec2(point.x, point.y);
-        _result.normal = vec2(normal.x, normal.y);
-        _result.fraction = fraction;
-        _result.user_data = reinterpret_cast<void*>(fixture->GetBody()->GetUserData().pointer);
-        return fraction;
-    }
-
-    RaycastResult& _result;
-};
+// Global physics world for Box2D 3.x
+b2WorldId g_physics_world = b2_nullWorldId;
 
 struct Physics
 {
-    b2World* world;
     float accumulator;
 };
 
@@ -31,23 +16,21 @@ static Physics g_physics = {};
 
 void UpdatePhysics()
 {
-    assert(g_physics.world);
+    assert(B2_IS_NON_NULL(g_physics_world));
 
     g_physics.accumulator += GetDeltaTime();
 
     auto fixed = GetFixedTime();
     while (g_physics.accumulator > fixed)
     {
-        g_physics.world->Step(fixed, 6, 2);
+        b2World_Step(g_physics_world, fixed, 4);
         g_physics.accumulator -= fixed;
     }
-
-    g_physics.world->ClearForces();
 }
 
-b2World* world()
+b2WorldId GetPhysicsWorld()
 {
-    return g_physics.world;
+    return g_physics_world;
 }
 
 RaycastResult Raycast(const vec2& start, const vec2& end, uint16 category_mask)
@@ -55,22 +38,41 @@ RaycastResult Raycast(const vec2& start, const vec2& end, uint16 category_mask)
     RaycastResult result {};
     result.hit = false;
 
-    if (!g_physics.world)
+    if (!B2_IS_NON_NULL(g_physics_world))
         return result;
 
-    raycast_callback callback(result);
-    g_physics.world->RayCast(&callback, ToBox2d(start), ToBox2d(end));
+    // Box2D 3.x raycast API
+    b2Vec2 translation = {ToBox2d(end).x - ToBox2d(start).x, ToBox2d(end).y - ToBox2d(start).y};
+    b2QueryFilter filter = {0xFFFFFFFF, 0xFFFFFFFF}; // Default filter - collide with everything
+    b2RayResult ray_result = b2World_CastRayClosest(g_physics_world, ToBox2d(start), translation, filter);
+    
+    if (ray_result.hit)
+    {
+        result.hit = true;
+        result.point = FromBox2d(ray_result.point);
+        result.normal = FromBox2d(ray_result.normal);
+        result.fraction = ray_result.fraction;
+        // TODO: Get user data from shape
+        result.user_data = nullptr;
+    }
+    
     return result;
 }
 
 void InitPhysics()
 {
-    g_physics.world = new b2World(b2Vec2(0, 0));
+    // Create Box2D 3.x world
+    b2WorldDef world_def = b2DefaultWorldDef();
+    world_def.gravity = {0.0f, 0.0f}; // No gravity by default
+    g_physics_world = b2CreateWorld(&world_def);
 }
 
 void ShutdownPhysics()
 {
-    delete g_physics.world;
-    g_physics.world = nullptr;
+    if (B2_IS_NON_NULL(g_physics_world))
+    {
+        b2DestroyWorld(g_physics_world);
+        g_physics_world = b2_nullWorldId;
+    }
     g_physics = {};
 }

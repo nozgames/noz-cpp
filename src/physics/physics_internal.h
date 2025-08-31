@@ -8,7 +8,12 @@
 #include <box2d/box2d.h>
 #undef isfinite
 
+// Box2D 3.x uses a global world and ID-based system
+extern b2WorldId g_physics_world;
+
+// Conversion functions for Box2D 3.x API
 inline b2Vec2 ToBox2d(const vec2& v) { return {v.x, v.y}; }
+inline vec2 FromBox2d(const b2Vec2& v) { return {v.x, v.y}; }
 
 inline b2BodyType ToBox2d(RigidBodyType bt)
 {
@@ -24,3 +29,16 @@ inline b2BodyType ToBox2d(RigidBodyType bt)
         return b2_dynamicBody;
     }
 }
+
+// Physics world management
+b2WorldId GetPhysicsWorld();
+
+// Rigid body management functions
+b2BodyId GetRigidBodyId(RigidBody* rigid_body);
+b2BodyId GetOrCreateRigidBodyId(RigidBody* rigid_body, Entity* entity);
+void SetRigidBodyType(RigidBody* rigid_body, RigidBodyType type);
+
+// Collider management functions
+void CreateColliderShape(Collider* collider, Entity* entity);
+void DestroyColliderShape(Collider* collider);
+b2ShapeId GetColliderShapeId(Collider* collider);

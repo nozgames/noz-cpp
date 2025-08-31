@@ -6,16 +6,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(FetchContent)
 
-# GLM (OpenGL Mathematics)
-FetchContent_Declare(glm
-    GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG 0.9.9.8
-)
-
-FetchContent_MakeAvailable(glm)
-
-add_library(noz STATIC
-        include/noz/noz_math.h)
+add_library(noz STATIC include/noz/noz_math.h)
 
 target_precompile_headers(noz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.h)
 
@@ -29,10 +20,13 @@ else()
 endif()
 
 target_sources(noz PRIVATE ${SOURCE_FILES})
-target_include_directories(noz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include ${CMAKE_CURRENT_SOURCE_DIR}/external)
-target_include_directories(noz PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl/include)
-target_include_directories(noz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/include)
-target_include_directories(noz PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include )
+target_include_directories(noz PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/glm/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/external
+        ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_compile_definitions(noz PRIVATE _CRT_SECURE_NO_WARNINGS)
 
@@ -42,6 +36,7 @@ target_link_libraries(noz
         ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/box2d.lib
         ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/enet.lib
         ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl/SDL3-static.lib
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/glm/glm.lib
         ws2_32
         winmm
         setupapi      # For SetupDi* functions (SDL3)
@@ -49,7 +44,6 @@ target_link_libraries(noz
         version       # For GetFileVersionInfo* functions (SDL3)
         imm32         # For Imm* functions (SDL3 IME support)
         dxcompiler    # For DxcCreateInstance (SDL3_shadercross)
-        glm::glm
 )
 
 add_subdirectory(editor)

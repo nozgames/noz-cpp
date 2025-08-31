@@ -7,7 +7,7 @@
 
 struct RigidBodyImpl : Component
 {
-    b2Body* body;
+    b2BodyId body;
     RigidBodyType body_type;
     bool initialized;
     uint32_t last_transform_version;
@@ -20,7 +20,7 @@ RigidBody* CreateRigidBody(Allocator* allocator)
 {
     auto rigid_body = (RigidBody*)CreateObject(allocator, sizeof(RigidBodyImpl), TYPE_RIGID_BODY);
     auto impl = Impl(rigid_body);
-    impl->body = nullptr;
+    impl->body = b2_nullBodyId;
     impl->body_type = RIGID_BODY_TYPE_DYNAMIC;
     impl->initialized = false;
     impl->last_transform_version = 0;
@@ -28,70 +28,64 @@ RigidBody* CreateRigidBody(Allocator* allocator)
 }
 
 
-#if 0
-void rigid_body_create_body(RigidBodyImpl* impl, entity entity)
+void CreateRigidBodyInWorld(RigidBodyImpl* impl, Entity* entity)
 {
-    NOZ_ASSERT(impl);
+    assert(impl);
+    assert(entity);
 
-    // Extract Y-axis rotation from quaternion
-    auto rot = entity.rotation();
-    auto pos = entity.position();
-    float angle = atan2(
-        2.0f * (rot.w * rot.y + rot.x * rot.z),
-        1.0f - 2.0f * (rot.y * rot.y + rot.z * rot.z));
+    if (B2_IS_NON_NULL(impl->body))
+        return; // Body already created
 
-    b2BodyDef body_def;
-    body_def.type = to_b2(impl->body_type);
-    body_def.position.Set(pos.x, pos.z);
-    body_def.angle = angle;
-    body_def.userData.pointer = reinterpret_cast<uintptr_t>(impl);
+    // For now, create at origin with no rotation
+    // TODO: Extract transform from entity when transform system is available
+    vec3 pos = {0.0f, 0.0f, 0.0f};
+    float angle = 0.0f;
 
-    auto world = physics::world();
-    NOZ_ASSERT(world);
-    impl->body = world->CreateBody(&body_def);
+    // Create body with Box2D 3.x API
+    b2BodyDef body_def = b2DefaultBodyDef();
+    body_def.type = ToBox2d(impl->body_type);
+    body_def.position = {pos.x, pos.z}; // Use X,Z for 2D physics (top-down view)
+    body_def.rotation = b2MakeRot(angle);
+    body_def.userData = entity; // Store entity pointer as user data
 
-    impl->last_transform_version = entity.version();
+    impl->body = b2CreateBody(g_physics_world, &body_def);
+    impl->initialized = true;
+    impl->target = entity;
 }
 
-void rigid_body_destroy_body(RigidBodyImpl* impl)
+void DestroyRigidBodyInWorld(RigidBodyImpl* impl)
 {
-    if (!impl->body)
+    if (!B2_IS_NON_NULL(impl->body))
         return;
 
-    auto world = physics::world();
-    NOZ_ASSERT(world);
-
-    world->DestroyBody(impl->body);
-    impl->body = nullptr;
+    b2DestroyBody(impl->body);
+    impl->body = b2_nullBodyId;
+    impl->initialized = false;
+    impl->target = nullptr;
 }
 
-void rigid_body_scene_enter(RigidBody component, entity entity)
+b2BodyId GetRigidBodyId(RigidBody* rigid_body)
 {
-    auto impl = component.impl();
-    NOZ_ASSERT(!impl->body);
-    rigid_body_create_body(impl, entity);
-}
-
-void rigid_body_scene_leave(RigidBody component, entity entity)
-{
-    auto impl = component.impl();
-    NOZ_ASSERT(impl->body);
-    rigid_body_destroy_body(impl);
-}
-
-b2Body* rigid_body_get_body(RigidBody component)
-{
-    auto impl = component.impl();
+    auto impl = Impl(rigid_body);
     return impl->body;
 }
 
-b2Body* rigid_body_get_or_create_body(RigidBody component)
+b2BodyId GetOrCreateRigidBodyId(RigidBody* rigid_body, Entity* entity)
 {
-    auto impl = component.impl();
-    NOZ_ASSERT(impl);
-    if (impl->body == nullptr)
-        rigid_body_create_body(impl, entity::for_component(component));
+    auto impl = Impl(rigid_body);
+    assert(impl);
+    
+    if (!B2_IS_NON_NULL(impl->body))
+        CreateRigidBodyInWorld(impl, entity);
 
     return impl->body;
 }
-#endif
+
+void SetRigidBodyType(RigidBody* rigid_body, RigidBodyType type)
+{
+    auto impl = Impl(rigid_body);
+    impl->body_type = type;
+    
+    if (B2_IS_NON_NULL(impl->body))
+        b2Body_SetType(impl->body, ToBox2d(type));
+}

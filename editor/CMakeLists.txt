@@ -39,7 +39,8 @@ target_include_directories(nozed  PRIVATE
         ${CMAKE_SOURCE_DIR}/libs/noz/external
         ${CMAKE_SOURCE_DIR}/libs/noz/include
         ${CMAKE_SOURCE_DIR}/libs/noz/external/sdl_shadercross/include
-        ${CMAKE_SOURCE_DIR}/libs/noz/external/enet/include)
+        ${CMAKE_SOURCE_DIR}/libs/noz/external/enet/include
+        ${CMAKE_SOURCE_DIR}/libs/noz/external/glm/include)
 
 # Link libraries
 target_link_libraries(nozed PRIVATE
