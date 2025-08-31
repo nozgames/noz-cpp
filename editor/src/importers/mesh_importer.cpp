@@ -4,12 +4,7 @@
 // @STL
 
 #include "../gltf.h"
-#include <algorithm>
-#include <filesystem>
-#include <noz/asset.h>
-#include <noz/noz.h>
-#include <string>
-#include <vector>
+#include "../../../src/internal.h"
 
 namespace fs = std::filesystem;
 

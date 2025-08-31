@@ -35,20 +35,25 @@
 #include <mutex>
 #include <queue>
 #include <stack>
-
-#include <noz/noz.h>
-#include "tokenizer.h"
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
-using namespace glm;
-#include "../../src/internal.h"
-
-#include <SDL3/SDL.h>
-#include <SDL3_shadercross/SDL_shadercross.h>
 #include <cctype>
 
+// Define Windows header control macros before any Windows includes
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN  
+#define WIN32_LEAN_AND_MEAN
+#endif
+#define NOGDI
+#define NOUSER
+
+#include <noz/noz.h>
+//#include "../../src/internal.h"
+
+#include "tokenizer.h"
 #include "asset_importer.h"
+#include "editor_types.h"
+#include "tui/tstring.h"
 
 static constexpr int TERM_COLOR_STATUS_BAR = 1;
 static constexpr int TERM_COLOR_COMMAND_LINE = 2;
@@ -62,5 +67,3 @@ static constexpr int TERM_COLOR_DISABLED_TEXT = 8;
 static constexpr int ERR = -1;
 static constexpr int KEY_MOUSE = 409;
 
-#include "editor_types.h"
-#include "tui/tstring.h"

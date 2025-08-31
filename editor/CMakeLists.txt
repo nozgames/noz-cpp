@@ -27,7 +27,44 @@ if(NOT WIN32)
     pkg_check_modules(NCURSES REQUIRED ncurses)
 endif()
 
-file(GLOB_RECURSE SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+# Explicitly list all source files
+set(SOURCE_FILES
+    src/asset_manifest.cpp
+    src/editor_server.cpp
+    src/editor.cpp
+    src/file_watcher.cpp
+    src/gltf.cpp
+    src/importer.cpp
+    src/importers/mesh_importer.cpp
+    src/importers/font_importer.cpp
+    src/importers/shader_importer.cpp
+    src/importers/animation_importer.cpp
+    src/importers/skeleton_importer.cpp
+    src/importers/style_sheet_importer.cpp
+    src/importers/texture_importer.cpp
+    src/msdf/Contour.cpp
+    src/msdf/Edge.cpp
+    src/msdf/Shape.cpp
+    src/msdf/Math.cpp
+    src/msdf/msdf.cpp
+    src/msdf/SignedDistance.cpp
+    src/rect_packer.cpp
+    src/props.cpp
+    src/tokenizer.cpp
+    src/shader_reflect.cpp
+    src/ttf/TrueTypeFont.cpp
+    src/ttf/TrueTypeFontReader.cpp
+    src/tui/screen.cpp
+    src/tui/text_input.cpp
+    src/tui/tstring.cpp
+    src/tui/windows_terminal.cpp
+    src/views/inspector_object.cpp
+    src/views/inspector_view.cpp
+    src/views/log_view.cpp
+    src/views/properties_view.cpp
+    src/views/tree_view.cpp
+    src/views/view.cpp
+)
 
 # TTF files have been updated to use Stream API and are now included
 
@@ -68,7 +105,7 @@ endif()
 
 set_target_properties(nozed PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-target_compile_definitions(nozed PRIVATE _CRT_SECURE_NO_WARNINGS )
+target_compile_definitions(nozed PRIVATE _CRT_SECURE_NO_WARNINGS GLM_ENABLE_EXPERIMENTAL)
 
 # Enable precompiled headers for nozed only (asset_manifest is standalone)
 target_precompile_headers(nozed PRIVATE src/editor_pch.h)

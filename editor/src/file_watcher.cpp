@@ -3,6 +3,7 @@
 //
 
 #include "file_watcher.h"
+#include <SDL3/SDL.h>
 // std headers (filesystem, vector, map, string, algorithm, chrono) now in PCH
 
 #ifndef nullptr

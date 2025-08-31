@@ -6,6 +6,8 @@
 
 #ifdef _WIN32
 
+// Need Windows user definitions for VK codes in this file
+#undef NOUSER
 #include "screen.h"
 #include "terminal.h"
 

@@ -1,8 +1,21 @@
 // @STL
 
+// Isolate ENet from Windows GUI conflicts
+#ifdef _WIN32
+#undef NOUSER
+#undef NOGDI
+#endif
+
+#include <enet/enet.h>
+
+// Re-apply restrictions after ENet
+#ifdef _WIN32
+#define NOGDI  
+#define NOUSER
+#endif
+
 #include "server.h"
 #include "../../src/editor/editor_messages.h"
-#include <enet/enet.h>
 #include "views/inspector_object.h"
 
 void HandleInspectorObject(std::unique_ptr<InspectorObject> object);

@@ -3,6 +3,7 @@
 //
 
 #include "shader_reflect.h"
+#include "../../src/internal.h"
 #include <noz/noz.h>
 #include <spirv_cross_c.h>
 

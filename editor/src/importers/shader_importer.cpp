@@ -2,17 +2,10 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-#include <noz/asset.h>
-#include <noz/noz.h>
+#include <SDL3_shadercross/SDL_shadercross.h>
+#include "../../../src/internal.h"
 #include "../props.h"
 #include "../shader_reflect.h"
-#include <filesystem>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <iostream>
-#include <regex>
 
 namespace fs = std::filesystem;
 
