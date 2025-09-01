@@ -299,6 +299,14 @@ VfxColorCurve ParseColorCurve(const std::string& str, const VfxColorCurve& defau
 
 void ImportVfx(const fs::path& source_path, Stream* output_stream, Props* config, Props* meta)
 {
+    Stream* input_stream = LoadStream(ALLOCATOR_SCRATCH, source_path);
+    if (!input_stream)
+        throw std::runtime_error("could not read file");
+
+    Props* source = Props::Load(input_stream);
+    if (!source)
+        throw std::runtime_error("could not load source file");
+
     // Write asset header
     AssetHeader header = {};
     header.signature = ASSET_SIGNATURE_VFX;
@@ -307,23 +315,30 @@ void ImportVfx(const fs::path& source_path, Stream* output_stream, Props* config
     WriteAssetHeader(output_stream, &header);
 
     // Write header
-    VfxFloat duration = ParseFloat(meta->GetString("VFX", "duration", "5.0"), {5,5});
-    bool loop = meta->GetBool("vfx", "loop", false);
+    VfxFloat duration = ParseFloat(source->GetString("VFX", "duration", "5.0"), {5,5});
+    bool loop = source->GetBool("vfx", "loop", false);
     WriteStruct(output_stream, duration);
     WriteBool(output_stream, loop);
 
     // Write emitters
-    auto emitter_names = meta->GetKeys("emitters");
+    auto emitter_names = source->GetKeys("emitters");
     WriteU32(output_stream, emitter_names.size());
     for (const auto& emitter_name : emitter_names)
     {
+        if (!source->HasGroup(emitter_name.c_str()))
+            throw std::exception((std::string("missing emitter ") + emitter_name).c_str());
+
+        std::string particle_section = emitter_name + ".particle";
+        if (!source->HasGroup(particle_section.c_str()))
+            throw std::exception((std::string("missing particle ") + particle_section).c_str());
+
         // Write emitter data
-        VfxInt rate = ParseInt(meta->GetString(emitter_name.c_str(), "rate", "0"), VFX_INT_ZERO);
-        VfxInt burst = ParseInt(meta->GetString(emitter_name.c_str(), "burst", "0"), VFX_INT_ZERO);
-        VfxFloat emitter_duration = ParseFloat(meta->GetString(emitter_name.c_str(), "duration", "1.0"), VFX_FLOAT_ONE);
-        VfxFloat angle = ParseFloat(meta->GetString(emitter_name.c_str(), "angle", "0..360"), {0.0f, 360.0f});
-        VfxFloat radius = ParseFloat(meta->GetString(emitter_name.c_str(), "radius", "0"), VFX_FLOAT_ZERO);
-        VfxVec2 spawn = ParseVec2(meta->GetString(emitter_name.c_str(), "spawn", "(0, 0, 0)"), VFX_VEC2_ZERO);
+        VfxInt rate = ParseInt(source->GetString(emitter_name.c_str(), "rate", "0"), VFX_INT_ZERO);
+        VfxInt burst = ParseInt(source->GetString(emitter_name.c_str(), "burst", "0"), VFX_INT_ZERO);
+        VfxFloat emitter_duration = ParseFloat(source->GetString(emitter_name.c_str(), "duration", "1.0"), VFX_FLOAT_ONE);
+        VfxFloat angle = ParseFloat(source->GetString(emitter_name.c_str(), "angle", "0..360"), {0.0f, 360.0f});
+        VfxFloat radius = ParseFloat(source->GetString(emitter_name.c_str(), "radius", "0"), VFX_FLOAT_ZERO);
+        VfxVec2 spawn = ParseVec2(source->GetString(emitter_name.c_str(), "spawn", "(0, 0, 0)"), VFX_VEC2_ZERO);
 
         WriteStruct(output_stream, rate);
         WriteStruct(output_stream, burst);
@@ -333,16 +348,15 @@ void ImportVfx(const fs::path& source_path, Stream* output_stream, Props* config
         WriteStruct(output_stream, spawn);
 
         // Write particle data
-        std::string particle_section = emitter_name + ".particle";
-        std::string mesh_name = meta->GetString(particle_section.c_str(), "mesh", "quad");
-        VfxFloat particle_duration = ParseFloat(meta->GetString(particle_section.c_str(), "duration", "1.0"), VFX_FLOAT_ONE);
-        VfxFloatCurve size = ParseFloatCurve(meta->GetString(particle_section.c_str(), "size", "1.0"), VFX_FLOAT_CURVE_ONE);
-        VfxFloatCurve speed = ParseFloatCurve(meta->GetString(particle_section.c_str(), "speed", "0"), VFX_FLOAT_CURVE_ZERO);
-        VfxColorCurve color = ParseColorCurve(meta->GetString(particle_section.c_str(), "Color", "white"), VFX_COLOR_CURVE_WHITE);
-        VfxVec2 gravity = ParseVec2(meta->GetString(particle_section.c_str(), "gravity", "(0, 0, 0)"), VFX_VEC2_ZERO);
-        VfxFloat drag = ParseFloat(meta->GetString(particle_section.c_str(), "drag", "0"), VFX_FLOAT_ZERO);
-        VfxFloatCurve rotation = ParseFloatCurve(meta->GetString(particle_section.c_str(), "rotation", "0.0"), VFX_FLOAT_CURVE_ZERO);
-        VfxFloatCurve angular_velocity = ParseFloatCurve(meta->GetString(particle_section.c_str(), "angular_velocity", "0"), VFX_FLOAT_CURVE_ZERO);
+        std::string mesh_name = source->GetString(particle_section.c_str(), "mesh", "quad");
+        VfxFloat particle_duration = ParseFloat(source->GetString(particle_section.c_str(), "duration", "1.0"), VFX_FLOAT_ONE);
+        VfxFloatCurve size = ParseFloatCurve(source->GetString(particle_section.c_str(), "size", "1.0"), VFX_FLOAT_CURVE_ONE);
+        VfxFloatCurve speed = ParseFloatCurve(source->GetString(particle_section.c_str(), "speed", "0"), VFX_FLOAT_CURVE_ZERO);
+        VfxColorCurve color = ParseColorCurve(source->GetString(particle_section.c_str(), "Color", "white"), VFX_COLOR_CURVE_WHITE);
+        VfxVec2 gravity = ParseVec2(source->GetString(particle_section.c_str(), "gravity", "(0, 0, 0)"), VFX_VEC2_ZERO);
+        VfxFloat drag = ParseFloat(source->GetString(particle_section.c_str(), "drag", "0"), VFX_FLOAT_ZERO);
+        VfxFloatCurve rotation = ParseFloatCurve(source->GetString(particle_section.c_str(), "rotation", "0.0"), VFX_FLOAT_CURVE_ZERO);
+        VfxFloatCurve angular_velocity = ParseFloatCurve(source->GetString(particle_section.c_str(), "angular_velocity", "0"), VFX_FLOAT_CURVE_ZERO);
 
         WriteString(output_stream, mesh_name.c_str());
         WriteStruct(output_stream, particle_duration);
