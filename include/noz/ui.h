@@ -6,13 +6,6 @@
 
 // @types
 struct StyleSheet : Object {};
-struct Canvas : Entity {};
-struct Element : Object {};
-struct Label : Element {};
-
-#define ELEMENT_BASE_SIZE 360
-
-struct ElementBase { u8 __entity[ELEMENT_BASE_SIZE]; };
 
 // @style
 
@@ -37,9 +30,7 @@ enum StyleKeyword
 enum FlexDirection
 {
     FLEX_DIRECTION_ROW,
-    FLEX_DIRECTION_COL,
-    FLEX_DIRECTION_ROW_REVERSE,
-    FLEX_DIRECTION_COL_REVERSE
+    FLEX_DIRECTION_COL
 } ;
 
 enum StyleLengthUnit
@@ -130,66 +121,3 @@ inline bool IsPercent(const StyleLength& length) { return length.unit == STYLE_L
 void SetDefaultFont(Font* font);
 Font* GetDefaultFont();
 
-// @canvas
-enum CanvasType
-{
-    CANVAS_TYPE_SCREEN,
-    CANVAS_TYPE_WORLD,
-};
-
-Canvas* CreateCanvas(Allocator* allocator, CanvasType type, float reference_width, float reference_height, const name_t* id = nullptr);
-StyleSheet* GetStyleSheet(Canvas* canvas);
-Element* GetRootElement(Canvas* canvas);
-void SetStyleSheet(Canvas* canvas, StyleSheet* sheet);
-StyleSheet* GetStyleSheet(Canvas* canvas);
-void MarkDirty(Canvas* canvas);
-void SetVisible(Canvas* element, bool visible);
-
-// @element
-
-// @element_traits
-struct ElementTraits
-{
-    vec2(*measure_content)(Element*, const vec2& available_size, const Style& style) = nullptr;
-    void(*render_content)(Element*, const Style& style) = nullptr;
-    void(*on_apply_style)(Element*, const Style&) = nullptr;
-
-#ifdef NOZ_EDITOR
-    void(*editor_inspect)(Element*, Stream*);
-#endif
-};
-
-extern const ElementTraits* g_element_traits[];
-
-void SetElementTraits(type_t id, const ElementTraits* traits);
-inline const ElementTraits* GetElementTraits(type_t id) { return g_element_traits[id]; }
-inline const ElementTraits* GetElementTraits(Element* element) { return g_element_traits[GetType(element)]; }
-
-Element* CreateElement(Allocator* allocator, size_t element_size, type_t element_type, const name_t* id = nullptr);
-Element* CreateElement(Allocator* allocator, const name_t* id = nullptr);
-const name_t* GetName(Element* element);
-void SetParent(Element* element, Element* parent);
-void SetParent(Element* element, Canvas* parent);
-void AddChild(Element* element, Element* child);
-void RemoveChild(Element* element, Element* child);
-void RemoveFromParent(Element* element);
-Element* GetFirstChild(Element* element);
-Element* GetNextChild(Element* element, Element* child);
-bool IsVisible(Element* element);
-void SetVisible(Element* element, bool visible);
-void SetPseudoState(Element* element, PseudoState state, bool value);
-void MarkDirty(Element* element);
-Canvas* GetCanvas(Element* element);
-
-inline Element* GetRootElement(Element* element)
-{
-    return GetRootElement(GetCanvas(element));
-}
-
-// @label
-Label* CreateLabel(Allocator* allocator, const char* text, const name_t* id);
-Label* CreateLabel(Allocator* allocator, const text_t& text, const name_t* id);
-Label* CreateLabel(Allocator* allocator, const name_t* id);
-const text_t& GetText(Label* label);
-void SetText(Label* label, const char* text);
-void SetText(Label* label, const text_t& text);

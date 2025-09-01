@@ -59,9 +59,6 @@ set(SOURCE_FILES
     src/type.cpp
     src/time.cpp
     src/text.cpp
-    src/ui/button.cpp
-    src/ui/image.cpp
-    src/ui/label.cpp
     src/ui/canvas.cpp
     src/ui/element.cpp
     src/ui/ui.cpp

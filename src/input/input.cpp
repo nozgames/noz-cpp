@@ -26,7 +26,7 @@ void UpdateInput()
     UpdateInputState((InputSet*)GetBack(g_input.active_sets));
 }
 
-void Push(InputSet* input_set)
+void PushInputSet(InputSet* input_set)
 {
     assert(input_set);
     assert(!IsInList(g_input.active_sets, input_set));
@@ -49,7 +49,7 @@ void SetInputSet(InputSet* input_set)
 {
     ResetInputState((InputSet*)GetBack(g_input.active_sets));
     Clear(g_input.active_sets);
-    Push(input_set);
+    PushInputSet(input_set);
 }
 
 vec2 GetMousePosition()

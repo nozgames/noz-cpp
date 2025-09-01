@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#if 0
+
 Element* CreateRootElement(Allocator* allocator, Canvas* canvas, const name_t* id);
 void WriteInspectorElement(Stream* stream, Element* element);
 void RenderElements(Element* element, const mat4& canvas_transform, const vec2& canvas_size, bool is_dirty);
@@ -181,3 +183,5 @@ void InitCanvas()
     Init(g_screen_render, offsetof(CanvasImpl, node_render));
     Init(g_world_render, offsetof(CanvasImpl, node_render));
 }
+
+#endif

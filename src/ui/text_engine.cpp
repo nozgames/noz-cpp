@@ -6,7 +6,7 @@ struct TextMeshImpl : Object
 {
     Mesh* mesh;
     Material* material;
-    ivec2 size;
+    Vec2 size;
 };
 
 static TextMeshImpl* Impl(TextMesh* tm) { return (TextMeshImpl*)Cast(tm, TYPE_TEXT_MESH); }
@@ -151,7 +151,7 @@ Mesh* GetMesh(TextMesh* tm)
     return Impl(tm)->mesh;
 }
 
-ivec2 GetSize(TextMesh* tm)
+Vec2 GetSize(TextMesh* tm)
 {
     return Impl(tm)->size;
 }

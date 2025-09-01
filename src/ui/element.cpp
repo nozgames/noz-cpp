@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#if 0
+
 void MarkDirty(Canvas* canvas);
 void RenderElementQuad(const color_t& color, Texture* texture);
 
@@ -764,4 +766,6 @@ void WriteInspectorElement(Stream* stream, Element* element)
 
     EndInspectorObject(stream);
 }
+#endif
+
 #endif

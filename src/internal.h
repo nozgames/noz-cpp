@@ -239,4 +239,4 @@ TextMesh* CreateTextMesh(Allocator* allocator, const TextRequest& request);
 vec2 MeasureText(const text_t& text, Font* font, float font_size);
 Mesh* GetMesh(TextMesh* tm);
 Material* GetMaterial(TextMesh* tm);
-ivec2 GetSize(TextMesh* tm);
+Vec2 GetSize(TextMesh* tm);

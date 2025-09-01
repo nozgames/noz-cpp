@@ -208,7 +208,6 @@ void EndRenderFrame()
         return;
 
     RenderGammaPass();
-    DrawScreenCanvases();
     ExecuteRenderCommands(g_renderer.command_buffer);
     SDL_SubmitGPUCommandBuffer(g_renderer.command_buffer);
 
