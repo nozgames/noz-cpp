@@ -7,7 +7,6 @@
 
 struct ArenaAllocHeader
 {
-    DestructorFunc destructor;
     u32 size;
     u32 reserved;
 };
@@ -24,7 +23,7 @@ struct ArenaAllocator
     size_t used;
 };
 
-void* ArenaAlloc(Allocator* a, size_t size, DestructorFunc destructor)
+void* ArenaAlloc(Allocator* a, size_t size)
 {
     auto* impl = (ArenaAllocator*)a;
 
@@ -44,7 +43,6 @@ void* ArenaAlloc(Allocator* a, size_t size, DestructorFunc destructor)
     // Stuff a header before the actual data
     auto* header = (ArenaAllocHeader*)ptr;
     header->size = total_size;
-    header->destructor = destructor;
 
     // Return the real data pointer
     return header + 1;
@@ -58,14 +56,7 @@ void* ArenaRealloc(Allocator* a, void* ptr, size_t new_size)
 
 void ArenaFree(Allocator* a, void* ptr)
 {
-    ArenaAllocHeader* header = ((ArenaAllocHeader*)ptr) - 1;
-    if (!header->destructor)
-        return;
-
-    auto destructor = header->destructor;
-    header->destructor = nullptr;
-    if (destructor)
-        destructor(ptr);
+    // todo: if it was the last pointer we can pop it off
 }
 
 void ArenaClear(Allocator* a)
@@ -77,12 +68,7 @@ void ArenaClear(Allocator* a)
     while (size < impl->used)
     {
         auto header = (ArenaAllocHeader*)(impl->data + size);
-        auto destructor = header->destructor;
-        header->destructor = nullptr;
         size += header->size;
-
-        if (destructor)
-            destructor(header + 1);
     }
 
     impl->stack[0] = 0;

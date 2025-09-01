@@ -7,6 +7,10 @@
 struct AllocHeader
 {
     DestructorFunc destructor;
+    Allocator* allocator;
+#ifdef _DEBUG
+    u64 checksum;
+#endif
 };
 
 // todo: implement debug tracking.
@@ -16,29 +20,35 @@ struct DebugAllocHeader
     size_t size;
 };
 
-static void* AllocDefault(Allocator* a, size_t size, DestructorFunc destructor)
+static AllocHeader* GetHeader(void* p) { return (AllocHeader*)p - 1; }
+
+#ifdef _DEBUG
+u64 CreateChecksum(Allocator* a, void* ptr)
 {
-    auto header = (AllocHeader*)malloc(size + sizeof(AllocHeader));
-    header->destructor = destructor;
-    return header + 1;
+    return (u64)ptr ^ (u64)a;
+}
+
+void ValidateHeader(void *p)
+{
+    AllocHeader* header = GetHeader(p);
+    u64 checksum = CreateChecksum(header->allocator, p);
+    assert(checksum == header->checksum);
+}
+#endif
+
+static void* AllocDefault(Allocator* a, size_t size)
+{
+    return malloc(size);
 }
 
 static void* ReallocDefault(Allocator* a, void* ptr, size_t new_size)
 {
-    auto header = ((AllocHeader*)ptr) - 1;
-    header = (AllocHeader*)realloc(header, new_size + sizeof(AllocHeader));
-    return header + 1;
+    return realloc(ptr, new_size);
 }
 
 static void FreeDefault(Allocator* a, void* ptr)
 {
-    auto header = ((AllocHeader*)ptr) - 1;
-    auto destructor = header->destructor;
-    header->destructor = nullptr;
-    if (destructor)
-        destructor(ptr);
-
-    free(header);
+    free(ptr);
 }
 
 static void PushDefault(Allocator* a)
@@ -69,7 +79,9 @@ Allocator* g_scratch_allocator = nullptr;
 void* Alloc(Allocator* a, size_t size, DestructorFunc destructor)
 {
     a = GET_ALLOCATOR(a);
-    auto ptr = a->alloc(a, size, destructor);
+
+    void* ptr = a->alloc(a, size + sizeof(AllocHeader));
+    ptr = (void*)((u8*)ptr + sizeof(AllocHeader));
 
     if (!ptr)
     {
@@ -83,20 +95,51 @@ void* Alloc(Allocator* a, size_t size, DestructorFunc destructor)
         return nullptr;
     }
 
+    AllocHeader* header = GetHeader(ptr);
+    header->destructor = destructor;
+    header->allocator = a;
+
+#ifdef _DEBUG
+    header->checksum = CreateChecksum(a, ptr);
+#endif
+
     memset(ptr, 0, size);
     return ptr;
 }
 
-void Free(Allocator* a, void* ptr)
+void Free(void* ptr)
 {
-    a = GET_ALLOCATOR(a);
-    a->free(a, ptr);
+#if _DEBUG
+    ValidateHeader(ptr);
+#endif
+
+    AllocHeader* header = GetHeader(ptr);
+    Allocator* a = header->allocator;
+
+    if (header->destructor)
+        header->destructor(ptr);
+
+    a->free(a, header);
 }
 
-void* Realloc(Allocator* a, void* ptr, size_t new_size)
+void* Realloc(void* ptr, size_t new_size)
 {
+#if _DEBUG
+    ValidateHeader(ptr);
+#endif
+
+    Allocator* a = GetHeader(ptr)->allocator;
     a = GET_ALLOCATOR(a);
     return a->realloc(a, ptr, new_size);
+}
+
+Allocator* GetAllocator(void* ptr)
+{
+#if _DEBUG
+    ValidateHeader(ptr);
+#endif
+
+    return GetHeader(ptr)->allocator;
 }
 
 void Push(Allocator* a)

@@ -21,7 +21,7 @@ struct ApplicationTraits
     RendererTraits renderer;
     bool (*load_assets)(Allocator* allocator);
     void (*unload_assets)();
-    void (*hotload_asset)(const name_t* name);
+    void (*hotload_asset)(const Name* name);
 };
 
 void Init(ApplicationTraits& traits);

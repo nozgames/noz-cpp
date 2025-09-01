@@ -108,7 +108,7 @@ void SetStyleSheet(StyleSheet* style_sheet)
     g_ui.style_sheet = style_sheet;
 }
 
-static void BeginElement(ElementType type, const name_t* id)
+static void BeginElement(ElementType type, const Name* id)
 {
     Element& e = g_ui.elements[g_ui.element_count++];
     e.type = type;
@@ -125,7 +125,7 @@ static void BeginElement(ElementType type)
     BeginElement(type, nullptr);
 }
 
-void BeginElement(const name_t* id)
+void BeginElement(const Name* id)
 {
     BeginElement(ELEMENT_TYPE_NONE, id);
 }
@@ -608,7 +608,7 @@ static u64 GetMeshHash(const TextRequest& request)
     return Hash(Hash(request.text), (u64)request.font, (u64)request.font_size);
 }
 
-void Label(const char* text, const name_t* id)
+void Label(const char* text, const Name* id)
 {
     BeginElement(ELEMENT_TYPE_LABEL, id);
 

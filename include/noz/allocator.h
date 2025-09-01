@@ -14,7 +14,7 @@ struct AllocatorStats
 // @allocator
 struct Allocator
 {
-    void* (*alloc)(Allocator*, size_t size, DestructorFunc func);
+    void* (*alloc)(Allocator*, size_t size);
     void (*free)(Allocator*, void* ptr);
     void* (*realloc)(Allocator*, void* ptr, size_t new_size);
     void (*push)(Allocator*);
@@ -25,12 +25,13 @@ struct Allocator
 };
 
 void* Alloc(Allocator* a, size_t size, DestructorFunc = nullptr);
-void Free(Allocator* a, void* ptr);
-void* Realloc(Allocator* a, void* ptr, size_t new_size);
+void Free(void* ptr);
+void* Realloc(void* ptr, size_t new_size);
 void Push(Allocator* a);
 void Pop(Allocator* a);
 void Clear(Allocator* a);
 void Destroy(Allocator* a);
+Allocator* GetAllocator(void* ptr);
 
 // @arena
 Allocator* CreateArenaAllocator(size_t size, const char* name);

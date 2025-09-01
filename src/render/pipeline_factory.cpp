@@ -206,8 +206,8 @@ void InitPipelineFactory(RendererTraits* traits, SDL_Window* win, SDL_GPUDevice*
 void ShutdownPipelineFactory()
 {
     assert(g_device);
-    Free(nullptr, g_cache_keys);
-    Free(nullptr, g_cache_pipelines);
+    Free(g_cache_keys);
+    Free(g_cache_pipelines);
     g_cache = {};
     g_window = nullptr;
     g_device = nullptr;

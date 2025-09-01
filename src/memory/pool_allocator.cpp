@@ -15,10 +15,8 @@ struct PoolAllocator
     size_t count;
 };
 
-void* PoolAlloc(Allocator* aptr, size_t size, DestructorFunc destructor)
+void* PoolAlloc(Allocator* aptr, size_t size)
 {
-    assert(!destructor);
-
     auto a = (PoolAllocator*)aptr;
     assert(a);
     if (!a->free)

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "asset.h"
+
 struct Vfx;
 
 enum VfxCurveType
@@ -57,10 +59,7 @@ struct VfxColorCurve
     VfxColor end;
 };
 
-struct Vfx
-{
-
-};
+struct Vfx : Asset { };
 
 constexpr VfxInt VFX_INT_ZERO = { 0, 0 };
 constexpr VfxFloat VFX_FLOAT_ZERO = { 0, 0 };
@@ -69,6 +68,9 @@ constexpr VfxFloatCurve VFX_FLOAT_CURVE_ZERO = { VFX_CURVE_TYPE_LINEAR, { 0.0f, 
 constexpr VfxFloatCurve VFX_FLOAT_CURVE_ONE = { VFX_CURVE_TYPE_LINEAR, { 1.0f, 1.0f}, {1.0f, 1.0f} };
 constexpr VfxColorCurve VFX_COLOR_CURVE_WHITE = { VFX_CURVE_TYPE_LINEAR, { {1,1,1,1}, {1,1,1,1}}, {{1,1,1,1}, {1,1,1,1}} };
 constexpr VfxVec2 VFX_VEC2_ZERO = { { 0.0f, 0.0f }, {0.0f, 0.0f} };
+
+// @vfx
+
 
 // Random value generation
 // float GetRandom(const VfxParsedFloat& range);

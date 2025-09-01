@@ -107,8 +107,8 @@ void ShutdownSamplerFactory()
     assert(g_cache_samplers);
     assert(g_cache_keys);
 
-    Free(nullptr, g_cache_samplers);
-    Free(nullptr, g_cache_keys);
+    Free(g_cache_samplers);
+    Free(g_cache_keys);
 
     g_cache_samplers = nullptr;
     g_cache_keys = nullptr;

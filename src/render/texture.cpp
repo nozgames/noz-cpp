@@ -2,11 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-#define INITIAL_CACHE_SIZE 64
-
-struct TextureImpl : Object
+struct TextureImpl : Texture
 {
-    const name_t* name;
     SDL_GPUTexture* handle;
     SamplerOptions sampler_options;
     ivec2 size;
@@ -24,8 +21,6 @@ static SamplerOptions g_default_sampler_options = {
 
 static void texture_destroy_impl(TextureImpl* impl);
 int GetBytesPerPixel(TextureFormat format);
-
-static TextureImpl* Impl(Texture* t) { return (TextureImpl*)Cast(t, TYPE_TEXTURE); }
 
 SDL_GPUTextureFormat ToSDL(const TextureFormat format)
 {
@@ -49,7 +44,7 @@ static void CreateTexture(
     size_t height,
     int channels,
     bool generate_mipmaps,
-    const name_t* name)
+    const Name* name)
 {
     assert(impl);
     assert(data);
@@ -182,7 +177,7 @@ static void CreateTexture(
         free(rgba_data);
 }
 
-Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const name_t* name)
+Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const Name* name)
 {
     assert(width > 0);
     assert(height > 0);
@@ -193,7 +188,7 @@ Texture* CreateTexture(Allocator* allocator, int width, int height, TextureForma
     if (!texture)
         return nullptr;
 
-    auto impl = Impl(texture);
+    TextureImpl* impl = static_cast<TextureImpl*>(texture);
     impl->size.x = width;
     impl->size.y = height;
     impl->name = name;
@@ -223,7 +218,7 @@ Texture* CreateTexture(
     size_t width,
     size_t height,
     TextureFormat format,
-    const name_t* name)
+    const Name* name)
 {
     assert(data);
     assert(name);
@@ -232,7 +227,7 @@ Texture* CreateTexture(
     if (!texture)
         return nullptr;
 
-    auto impl = Impl(texture);
+    TextureImpl* impl = static_cast<TextureImpl*>(texture);
     CreateTexture(impl, data, width, height, GetBytesPerPixel(format), false, name);
     impl->sampler_options = g_default_sampler_options;
     return texture;
@@ -250,22 +245,22 @@ static void texture_destroy_impl(TextureImpl* impl)
 
 ivec2 GetSize(Texture* texture)
 {
-    return Impl(texture)->size;
+    return static_cast<TextureImpl*>(texture)->size;
 }
 
 int GetWidth(Texture* texture)
 {
-    return Impl(texture)->size.x;
+    return static_cast<TextureImpl*>(texture)->size.x;
 }
 
 int GetHeight(Texture* texture)
 {
-    return Impl(texture)->size.y;
+    return static_cast<TextureImpl*>(texture)->size.y;
 }
 
 SDL_GPUTexture* GetGPUTexture(Texture* texture)
 {
-    return Impl(texture)->handle;
+    return static_cast<TextureImpl*>(texture)->handle;
 }
 
 SamplerOptions GetSamplerOptions(Texture* texture)
@@ -273,10 +268,10 @@ SamplerOptions GetSamplerOptions(Texture* texture)
     if (!texture)
         return g_default_sampler_options;
 
-    return Impl(texture)->sampler_options;
+    return static_cast<TextureImpl*>(texture)->sampler_options;
 }
 
-Object* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name)
+Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
 {
     assert(stream);
     assert(name);
@@ -296,7 +291,7 @@ Object* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, c
     if (!texture)
         return nullptr;
 
-    TextureImpl* impl = Impl(texture);
+    TextureImpl* impl = static_cast<TextureImpl*>(texture);
     impl->handle = nullptr;
     impl->size.x = width;
     impl->size.y = height;

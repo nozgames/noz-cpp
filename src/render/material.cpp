@@ -2,9 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct MaterialImpl : Object
+struct MaterialImpl : Material
 {    
-    name_t name;
     int vertex_uniform_count;
     int fragment_uniform_count;
     Shader* shader;
@@ -12,8 +11,6 @@ struct MaterialImpl : Object
     size_t texture_count;
     u8* uniforms_data;
 };
-
-static MaterialImpl* Impl(Material* m) { return (MaterialImpl*)Cast(m, TYPE_MATERIAL); }
 
 Material* CreateMaterial(Allocator* allocator, Shader* shader)
 {
@@ -29,31 +26,31 @@ Material* CreateMaterial(Allocator* allocator, Shader* shader)
     if (!material)
         return nullptr;
 
-    auto impl = Impl(material);
+    MaterialImpl* impl = static_cast<MaterialImpl*>(material);
     impl->shader = shader;
     impl->vertex_uniform_count = GetVertexUniformCount(shader);
     impl->fragment_uniform_count = GetFragmentUniformCount(shader);
     impl->texture_count = texture_count;
     impl->textures = (Texture**)(impl + 1);
     impl->uniforms_data = (u8*)(impl->textures + texture_count);
-    return (Material*)impl;
+    return impl;
 }
 
 Shader* GetShader(Material* material)
 {
-    return Impl(material)->shader;
+    return static_cast<MaterialImpl*>(material)->shader;
 }
 
 void SetTexture(Material* material, Texture* texture, size_t index)
 {
-    auto impl = Impl(material);
+    MaterialImpl* impl = static_cast<MaterialImpl*>(material);
     assert(index < impl->texture_count);
     impl->textures[index] = texture;
 }
 
 void BindMaterialGPU(Material* material, SDL_GPUCommandBuffer* cb)
 {
-    auto impl = Impl(material);
+    MaterialImpl* impl = static_cast<MaterialImpl*>(material);
     BindShaderGPU(impl->shader);
     PushUniformDataGPU(impl->shader, cb, impl->uniforms_data);
 

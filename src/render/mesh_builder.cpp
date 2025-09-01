@@ -663,7 +663,7 @@ void mesh_builder::add_cone(
 }
 #endif
 
-Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const name_t* name)
+Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name)
 {
     assert(builder);
     MeshBuilderImpl* impl = Impl(builder);

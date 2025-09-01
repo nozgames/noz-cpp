@@ -2,6 +2,40 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+struct VfxParticleDef
+{
+    VfxVec2 gravity;
+    VfxFloat duration;
+    VfxFloat drag;
+    VfxFloatCurve size;        // Replaces start_size/end_size
+    VfxFloatCurve speed;       // Replaces start_speed/end_speed
+    VfxColorCurve color;       // Replaces start_color/end_color
+    VfxFloatCurve rotation;
+    VfxFloatCurve angular_velocity;
+    //string mesh_name;
+    //int billboard_mode; // 0=none, 1=camera, 2=velocity
+};
+
+struct VfxEmitterDef
+{
+    VfxInt   rate;
+    VfxInt   burst;
+    VfxFloat duration;
+    VfxFloat angle;
+    VfxFloat radius;
+    VfxVec2  spawn;
+    VfxParticleDef particle_def;
+};
+
+struct VfxImpl : Vfx
+{
+    VfxFloat duration;
+    VfxEmitterDef* emitters;
+    u32 emitter_count;
+    bool loop;
+};
+
+
 // float GetRandom(const VfxParsedFloat& range)
 // {
 //     return RandomFloat(range.min, range.max);
@@ -22,94 +56,39 @@
 //     return Lerp(range.min, range.max, RandomFloat());
 // }
 
-Object* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name)
+Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
 {
-    return nullptr;
-}
+    Vfx* vfx = (Vfx*)Alloc(allocator, sizeof(VfxImpl));
+    VfxImpl* impl = static_cast<VfxImpl*>(vfx);
+    impl->name = name;
+    impl->duration = ReadStruct<VfxFloat>(stream);
+    impl->loop = ReadBool(stream);
+    impl->emitter_count = ReadU32(stream);
+    impl->emitters = (VfxEmitterDef*)Alloc(allocator, sizeof(VfxEmitterDef) * impl->emitter_count);
 
-#if 0
-// Load VFX from binary stream
-static vfx load_vfx_from_stream(binary_stream& stream)
-{
-    auto vfx_obj = create_object<vfx>();
-    auto impl = vfx_obj.impl();
-
-    // Read header
-    impl->duration = stream.read<float>();
-    impl->loop = stream.read<bool>();
-
-    // Read emitter count
-    uint32_t emitter_count = stream.read<uint32_t>();
-    impl->emitters.resize(emitter_count);
-
-    // Read each emitter
-    for (uint32_t i = 0; i < emitter_count; ++i)
+    for (u32 i = 0; i < impl->emitter_count; ++i)
     {
-        auto& emitter = impl->emitters[i];
+        VfxEmitterDef* emitter_def = &impl->emitters[i];
+        emitter_def->rate = ReadStruct<VfxInt>(stream);
+        emitter_def->burst = ReadStruct<VfxInt>(stream);
+        emitter_def->duration = ReadStruct<VfxFloat>(stream);
+        emitter_def->angle = ReadStruct<VfxFloat>(stream);
+        emitter_def->radius = ReadStruct<VfxFloat>(stream);
+        emitter_def->spawn = ReadStruct<VfxVec2>(stream);
 
-        // Read emitter data
-        emitter.rate = stream.read<int>();
-        emitter.burst.min = stream.read<int>();
-        emitter.burst.max = stream.read<int>();
-        emitter.duration.min = stream.read<float>();
-        emitter.duration.max = stream.read<float>();
-        emitter.angle.min = stream.read<float>();
-        emitter.angle.max = stream.read<float>();
-        emitter.radius.min = stream.read<float>();
-        emitter.radius.max = stream.read<float>();
-        emitter.spawn.min = stream.read<vec3>();
-        emitter.spawn.max = stream.read<vec3>();
+        VfxParticleDef* particle_def = &emitter_def->particle_def;
+        char mesh_name[1024];
+        ReadString(stream, mesh_name, 1024);
 
-        // Read particle data
-        auto& particle = emitter.particle;
-        particle.mesh_name = stream.read_string();
-        particle.duration.min = stream.read<float>();
-        particle.duration.max = stream.read<float>();
-        particle.size.start.min = stream.read<float>();
-        particle.size.start.max = stream.read<float>();
-        particle.size.end.min = stream.read<float>();
-        particle.size.end.max = stream.read<float>();
-        particle.size.curve = static_cast<VfxCurveType>(stream.read<int>());
-        particle.speed.start.min = stream.read<float>();
-        particle.speed.start.max = stream.read<float>();
-        particle.speed.end.min = stream.read<float>();
-        particle.speed.end.max = stream.read<float>();
-        particle.speed.curve = static_cast<VfxCurveType>(stream.read<int>());
-        particle.Color.start.min = stream.read<Color>();
-        particle.Color.start.max = stream.read<Color>();
-        particle.Color.end.min = stream.read<Color>();
-        particle.Color.end.max = stream.read<Color>();
-        particle.Color.curve = static_cast<VfxCurveType>(stream.read<int>());
-        particle.gravity = stream.read<vec3>();
-        particle.drag = stream.read<float>();
-        particle.rotation.min = stream.read<float>();
-        particle.rotation.max = stream.read<float>();
-        particle.angular_velocity.min = stream.read<float>();
-        particle.angular_velocity.max = stream.read<float>();
-        particle.billboard_mode = stream.read<int>();
+        particle_def->duration = ReadStruct<VfxFloat>(stream);
+        particle_def->size = ReadStruct<VfxFloatCurve>(stream);
+        particle_def->speed = ReadStruct<VfxFloatCurve>(stream);
+        particle_def->color = ReadStruct<VfxColorCurve>(stream);
+        particle_def->gravity = ReadStruct<VfxVec2>(stream);
+        particle_def->drag = ReadStruct<VfxFloat>(stream);
+        particle_def->rotation = ReadStruct<VfxFloatCurve>(stream);
+        particle_def->angular_velocity = ReadStruct<VfxFloatCurve>(stream);
     }
 
-    return vfx_obj;
+    return vfx;
 }
-
-vfx load_vfx(const string& name)
-{
-    binary_stream stream(get_asset_path(name, "vfx"));
-    auto vfx_obj = load_vfx_from_stream(stream);
-    vfx_obj.impl()->name = name;
-    return vfx_obj;
-}
-
-float get_duration(const vfx& vfx)
-{
-    auto impl = vfx.impl();
-    return impl ? impl->duration : 0.0f;
-}
-
-bool is_looping(const vfx& vfx)
-{
-    auto impl = vfx.impl();
-    return impl ? impl->loop : false;
-}
-
-#endif

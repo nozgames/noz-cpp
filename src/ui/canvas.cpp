@@ -4,7 +4,7 @@
 
 #if 0
 
-Element* CreateRootElement(Allocator* allocator, Canvas* canvas, const name_t* id);
+Element* CreateRootElement(Allocator* allocator, Canvas* canvas, const Name* id);
 void WriteInspectorElement(Stream* stream, Element* element);
 void RenderElements(Element* element, const mat4& canvas_transform, const vec2& canvas_size, bool is_dirty);
 void BeginUIPass();
@@ -147,7 +147,7 @@ void CanvasOnDisabled(Entity* entity)
         Remove(g_screen_render, entity);
 }
 
-Canvas* CreateCanvas(Allocator* allocator, CanvasType type, float reference_width, float reference_height, const name_t* id)
+Canvas* CreateCanvas(Allocator* allocator, CanvasType type, float reference_width, float reference_height, const Name* id)
 {
     auto canvas = (Canvas*)CreateEntity(allocator, sizeof(CanvasImpl), TYPE_CANVAS);
     auto impl = Impl(canvas);

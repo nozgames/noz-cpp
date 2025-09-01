@@ -5,9 +5,9 @@
 #define MAX_GLYPHS 256  // Support extended ASCII
 #define MAX_KERNING (MAX_GLYPHS * MAX_GLYPHS)  // All possible kerning pairs
 
-struct FontImpl : Object
+struct FontImpl : Font
 {
-    const name_t* name;
+    const Name* name;
     Material* material;
     Texture* texture;
     float baseline;
@@ -25,8 +25,6 @@ struct FontImpl : Object
 
 static SDL_GPUDevice* g_device = nullptr;
 
-inline FontImpl* Impl(Font* f) { return (FontImpl*)Cast(f, TYPE_FONT); }
-
 #if 0
 static void font_destroy_impl(FontImpl* impl)
 {
@@ -39,7 +37,7 @@ static void font_destroy_impl(FontImpl* impl)
 }
 #endif
 
-Object* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name)
+Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
 {
     if (!stream || !header)
         return nullptr;
@@ -47,7 +45,7 @@ Object* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, cons
     // Header already validated by LoadAsset
     // Version is in header->version
 
-    auto* impl = (FontImpl*)CreateObject(allocator, sizeof(FontImpl), TYPE_FONT);
+    auto* impl = (FontImpl*)Alloc(allocator, sizeof(FontImpl));
     if (!impl)
         return nullptr;
 
@@ -119,7 +117,8 @@ Object* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, cons
     uint8_t* atlas_data = (uint8_t*)malloc(atlas_data_size);
     if (!atlas_data)
     {
-        Destroy((Font*)impl);
+        // todo: free without allocator, stuff allocator with destructor?
+        //Free(impl);
         return nullptr;
     }
 
@@ -131,16 +130,16 @@ Object* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, cons
 
     if (!impl->texture)
     {
-        Destroy((Font*)impl);
+        Free(impl);
         return nullptr;
     }
 
-    return (Object*)impl;
+    return impl;
 }
 
 const FontGlyph* GetGlyph(Font* font, char ch)
 {
-    FontImpl* impl = Impl(font);
+    FontImpl* impl = static_cast<FontImpl*>(font);
     
     // Check if glyph exists (advance > 0 means valid glyph)
     unsigned char index = (unsigned char)ch;
@@ -171,7 +170,7 @@ const FontGlyph* GetGlyph(Font* font, char ch)
 
 float GetKerning(Font* font, char first, char second)
 {
-    auto* impl = Impl(font);
+    FontImpl* impl = static_cast<FontImpl*>(font);
     
     auto f = (unsigned char)first;
     auto s = (unsigned char)second;
@@ -188,12 +187,12 @@ float GetKerning(Font* font, char first, char second)
 
 float GetBaseline(Font* font)
 {
-    return Impl(font)->baseline;
+    return static_cast<FontImpl*>(font)->baseline;
 }
 
 Material* GetMaterial(Font* font)
 {
-    auto impl = Impl(font);
+    FontImpl* impl = static_cast<FontImpl*>(font);
     if (impl->material == nullptr)
     {
         impl->material = CreateMaterial(GetAllocator(font), CoreAssets.shaders.text);

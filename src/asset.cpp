@@ -7,7 +7,7 @@
 #include <filesystem>
 
 #ifdef _HOTLOAD
-void ReloadStyleSheet(Object* asset, Stream* stream, const AssetHeader* header, const name_t* name);
+void ReloadStyleSheet(Object* asset, Stream* stream, const AssetHeader* header, const Name* name);
 #endif
 
 LoadedCoreAssets CoreAssets = {};
@@ -90,7 +90,7 @@ const char* GetExtensionFromSignature(asset_signature_t signature)
     return ext;
 }
 
-Stream* LoadAssetStream(Allocator* allocator, const name_t* asset_name, asset_signature_t signature)
+Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, asset_signature_t signature)
 {
     assert(asset_name);
 
@@ -113,7 +113,7 @@ Stream* LoadAssetStream(Allocator* allocator, const name_t* asset_name, asset_si
     return LoadStream(allocator, asset_path);
 }
 
-Object* LoadAsset(Allocator* allocator, const name_t* asset_name, asset_signature_t signature, AssetLoaderFunc loader)
+Asset* LoadAsset(Allocator* allocator, const Name* asset_name, asset_signature_t signature, AssetLoaderFunc loader)
 {
     if (!asset_name || !loader)
         return nullptr;
@@ -137,7 +137,7 @@ Object* LoadAsset(Allocator* allocator, const name_t* asset_name, asset_signatur
 
 
 #ifdef _HOTLOAD
-void ReloadAsset(const name_t* name, Object* asset)
+void ReloadAsset(const Name* name, Object* asset)
 {
     assert(name);
     assert(asset);

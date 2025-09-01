@@ -8,7 +8,7 @@
 
 struct ObjectProperty
 {
-    const name_t* name;
+    const Name* name;
     TString* value;
 };
 
@@ -18,7 +18,7 @@ class ObjectProperties
     
 public:
 
-    void AddProperty(const name_t* name, TString* value)
+    void AddProperty(const Name* name, TString* value)
     {
         _properties.emplace_back(ObjectProperty{name, value});
     }

@@ -2,9 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct StyleSheetImpl : Object
+struct StyleSheetImpl : StyleSheet
 {
-    const name_t* name;
     Map styles;
 #ifdef _HOTLOAD
     u64* hotload_keys;
@@ -12,9 +11,7 @@ struct StyleSheetImpl : Object
 #endif
 };
 
-static StyleSheetImpl* Impl(StyleSheet* s) { return (StyleSheetImpl*)Cast(s, TYPE_STYLE_SHEET); }
-
-static u64 GetStyleKey(const name_t* id, PseudoState pseudo_state) { return Hash(Hash(id), pseudo_state); }
+static u64 GetStyleKey(const Name* id, PseudoState pseudo_state) { return Hash(Hash(id), pseudo_state); }
 
 static void LoadStyles(StyleSheetImpl* impl, Stream* stream, u32 style_count, u64* keys, Style* styles)
 {
@@ -32,17 +29,17 @@ static void LoadStyles(StyleSheetImpl* impl, Stream* stream, u32 style_count, u6
     Init(impl->styles, keys, styles, style_count, sizeof(Style), style_count);
 }
 
-Object* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name)
+Asset* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
 {
     auto style_count = ReadU32(stream);
     auto keys_size = style_count * sizeof(u64);
     auto style_size = style_count * sizeof(Style);
 
-    auto* sheet = (StyleSheet*)CreateObject(allocator, sizeof(StyleSheetImpl) + style_size + keys_size, TYPE_STYLE_SHEET);
+    auto* sheet = (StyleSheet*)Alloc(allocator, sizeof(StyleSheetImpl) + style_size + keys_size);
     if (!sheet)
         return nullptr;
 
-    auto impl = Impl(sheet);
+    StyleSheetImpl* impl = static_cast<StyleSheetImpl*>(sheet);
     impl->name = name;
 
     auto keys = (u64*)(impl + 1);
@@ -52,11 +49,11 @@ Object* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header
     return sheet;
 }
 
-bool GetStyle(StyleSheet* sheet, const name_t* id, PseudoState pseudo_state, Style* result)
+bool GetStyle(StyleSheet* sheet, const Name* id, PseudoState pseudo_state, Style* result)
 {
-    auto style_key = GetStyleKey(id, pseudo_state);
-    auto impl = Impl(sheet);
-    auto style = (Style*)GetValue(impl->styles, style_key);
+    u64 style_key = GetStyleKey(id, pseudo_state);
+    StyleSheetImpl* impl = static_cast<StyleSheetImpl*>(sheet);
+    Style* style = (Style*)GetValue(impl->styles, style_key);
     if (!style)
         return false;
 
@@ -64,25 +61,20 @@ bool GetStyle(StyleSheet* sheet, const name_t* id, PseudoState pseudo_state, Sty
     return true;
 }
 
-const Style& GetStyle(StyleSheet* sheet, const name_t* id, PseudoState pseudo_state)
+const Style& GetStyle(StyleSheet* sheet, const Name* id, PseudoState pseudo_state)
 {
-    auto style_key = GetStyleKey(id, pseudo_state);
-    auto impl = Impl(sheet);
-    auto style = (Style*)GetValue(impl->styles, style_key);
+    u64 style_key = GetStyleKey(id, pseudo_state);
+    StyleSheetImpl* impl = static_cast<StyleSheetImpl*>(sheet);
+    Style* style = (Style*)GetValue(impl->styles, style_key);
     if (!style)
         return GetDefaultStyle();
 
     return *style;
 }
 
-const name_t* GetName(StyleSheet* sheet)
+bool HasStyle(StyleSheet* sheet, const Name* name, PseudoState pseudo_state)
 {
-    return Impl(sheet)->name;
-}
-
-bool HasStyle(StyleSheet* sheet, const name_t* name, PseudoState pseudo_state)
-{
-    return HasKey(Impl(sheet)->styles, GetStyleKey(name, pseudo_state));
+    return HasKey(static_cast<StyleSheetImpl*>(sheet)->styles, GetStyleKey(name, pseudo_state));
 }
 
 #ifdef _HOTLOAD
@@ -95,7 +87,7 @@ void MarkAllCanvasesDirty(Entity* entity)
         MarkAllCanvasesDirty(child);
 }
 
-void ReloadStyleSheet(Object* asset, Stream* stream, const AssetHeader* header, const name_t* name)
+void ReloadStyleSheet(Object* asset, Stream* stream, const AssetHeader* header, const Name* name)
 {
     auto impl = Impl((StyleSheet*)asset);
 

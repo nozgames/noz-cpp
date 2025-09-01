@@ -18,7 +18,7 @@ constexpr u32 ELEMENT_FLAG_VISIBLE = 1 << 0;
 struct ElementImpl : Object
 {
     Canvas* canvas;
-    const name_t* name;
+    const Name* name;
     ElementFlags flags;
     Style style;
     Rect bounds;
@@ -57,7 +57,7 @@ static void LayoutAxis(
     float& resolved_margin_max,
     float& resolved_size);
 
-Element* CreateRootElement(Allocator* allocator, Canvas* canvas, const name_t* id)
+Element* CreateRootElement(Allocator* allocator, Canvas* canvas, const Name* id)
 {
     assert(canvas);
 
@@ -72,7 +72,7 @@ Element* CreateRootElement(Allocator* allocator, Canvas* canvas, const name_t* i
     return element;
 }
 
-Element* CreateElement(Allocator* allocator, size_t element_size, type_t element_type, const name_t* name)
+Element* CreateElement(Allocator* allocator, size_t element_size, type_t element_type, const Name* name)
 {
     auto element = (Element*)CreateObject(allocator, element_size, element_type, TYPE_ELEMENT);
     auto impl = Impl(element);
@@ -83,7 +83,7 @@ Element* CreateElement(Allocator* allocator, size_t element_size, type_t element
     return element;
 }
 
-Element* CreateElement(Allocator* allocator, const name_t* name)
+Element* CreateElement(Allocator* allocator, const Name* name)
 {
     return CreateElement(allocator, sizeof(ElementImpl), TYPE_ELEMENT, name);
 }
@@ -570,7 +570,7 @@ static void RenderBackground(ElementImpl* impl, const mat4& canvas_transform)
 
 // @style
 
-static void ApplyStyle(ElementImpl* impl, const name_t* id)
+static void ApplyStyle(ElementImpl* impl, const Name* id)
 {
     if (!id)
         return;
@@ -728,7 +728,7 @@ Element* GetNextChild(Element* element, Element* child)
     return (Element*)GetNext(Impl(element)->children, child);
 }
 
-const name_t* GetName(Element* element)
+const Name* GetName(Element* element)
 {
     return Impl(element)->name;
 }

@@ -6,7 +6,7 @@
 
 u64 Hash(void* data, size_t size);
 u64 Hash(const char* str);
-inline u64 Hash(const name_t* name) { return (u64)name; }
+inline u64 Hash(const Name* name) { return (u64)name; }
 
 #define hash_combine(...) Hash(__VA_ARGS__, 0)
 

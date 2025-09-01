@@ -5,7 +5,7 @@
 #pragma once
 
 // @types
-struct StyleSheet : Object {};
+struct StyleSheet : Asset {};
 
 // @style
 
@@ -107,10 +107,10 @@ void SerializeStyle(const Style& style, Stream* stream);
 void MergeStyles(Style& dst, const Style& src, bool apply_defaults=false);
 
 // @stylesheet
-const Style& GetStyle(StyleSheet* sheet, const name_t* name, PseudoState pseudo_state);
-bool GetStyle(StyleSheet* sheet, const name_t* id, PseudoState pseudo_state, Style* result);
-bool HasStyle(StyleSheet* sheet, const name_t* name, PseudoState pseudo_state);
-const name_t* GetName(StyleSheet* sheet);
+const Style& GetStyle(StyleSheet* sheet, const Name* name, PseudoState pseudo_state);
+bool GetStyle(StyleSheet* sheet, const Name* id, PseudoState pseudo_state, Style* result);
+bool HasStyle(StyleSheet* sheet, const Name* name, PseudoState pseudo_state);
+const Name* GetName(StyleSheet* sheet);
 
 // @style_length
 inline bool IsAuto(const StyleLength& length) { return length.unit == STYLE_LENGTH_UNIT_AUTO; }
@@ -123,9 +123,9 @@ extern Font* GetDefaultFont();
 extern void BeginUI();
 extern void EndUI();
 extern void BeginCanvas(u32 referenceWidth, u32 referenceHeight);
-extern void BeginElement(const name_t* id);
+extern void BeginElement(const Name* id);
 extern void EndElement();
 extern void EndCanvas();
 extern void SetStyleSheet(StyleSheet* sheet);
 extern void DrawUI();
-extern void Label(const char* text, const name_t* id);
+extern void Label(const char* text, const Name* id);

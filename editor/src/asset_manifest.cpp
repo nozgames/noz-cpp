@@ -653,7 +653,7 @@ static void GenerateHotloadNames(ManifestGenerator* generator, Stream* stream)
     for (const auto& path : unique_paths)
     {
         std::string name_var = PathToNameVar(path);
-        WriteCSTR(stream, "static const name_t* %s;\n", name_var.c_str());
+        WriteCSTR(stream, "static const Name* %s;\n", name_var.c_str());
     }
     
     WriteCSTR(stream, "\n");
@@ -662,7 +662,7 @@ static void GenerateHotloadNames(ManifestGenerator* generator, Stream* stream)
 static void GenerateHotloadFunction(ManifestGenerator* generator, Stream* stream)
 {
     WriteCSTR(stream, "#ifdef _HOTLOAD\n\n");
-    WriteCSTR(stream, "void HotloadAsset(const name_t* incoming_name)\n");
+    WriteCSTR(stream, "void HotloadAsset(const Name* incoming_name)\n");
     WriteCSTR(stream, "{\n");
     
     // Group assets by type for cleaner organization

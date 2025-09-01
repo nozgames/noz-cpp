@@ -2,9 +2,7 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-// todo: rework memory management here after asset loading
-
-struct ShaderImpl : Object
+struct ShaderImpl : Shader
 {
     SDL_GPUShader* vertex;
     SDL_GPUShader* fragment;
@@ -15,14 +13,12 @@ struct ShaderImpl : Object
     SDL_GPUBlendFactor src_blend;
     SDL_GPUBlendFactor dst_blend;
     SDL_GPUCullMode cull;
-    const name_t* name;
+    const Name* name;
     size_t uniform_data_size;
     ShaderUniformBuffer* uniforms;
 };
 
 static SDL_GPUDevice* g_device = nullptr;
-
-static ShaderImpl* Impl(Shader* s) { return (ShaderImpl*)Cast(s, TYPE_SHADER); }
 
 // todo: destructor
 #if 0
@@ -44,7 +40,7 @@ static void shader_destroy_impl(ShaderImpl* impl)
 }
 #endif
 
-Object* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name)
+Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
 {
     assert(stream);
     assert(header);
@@ -55,11 +51,11 @@ Object* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, co
     auto sampler_count = ReadI32(stream);
     size_t uniform_count = vertex_uniform_count + fragment_uniform_count;
 
-    auto* shader = (Shader*)CreateObject(allocator, sizeof(ShaderImpl) + sizeof(ShaderUniformBuffer) * uniform_count, TYPE_SHADER);
+    Shader* shader = (Shader*)Alloc(allocator, sizeof(ShaderImpl) + sizeof(ShaderUniformBuffer) * uniform_count);
     if (!shader)
         return nullptr;
 
-    auto* impl = Impl(shader);
+    ShaderImpl* impl = static_cast<ShaderImpl*>(shader);
     impl->vertex = nullptr;
     impl->fragment = nullptr;
     impl->vertex_uniform_count = vertex_uniform_count;
@@ -84,7 +80,7 @@ Object* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, co
     auto* fragment_bytecode = (u8*)Alloc(ALLOCATOR_SCRATCH, fragment_bytecode_length);
     if (!fragment_bytecode) 
     {
-        Free(nullptr, vertex_bytecode);
+        Free(vertex_bytecode);
         return nullptr;
     }
     ReadBytes(stream, fragment_bytecode, fragment_bytecode_length);
@@ -120,8 +116,8 @@ Object* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, co
 
     if (!impl->fragment)
     {
-        Free(allocator, vertex_bytecode);
-        Free(allocator, fragment_bytecode);
+        Free(vertex_bytecode);
+        Free(fragment_bytecode);
         return nullptr;
     }
 
@@ -142,8 +138,8 @@ Object* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, co
     impl->vertex = SDL_CreateGPUShader(g_device, &vertex_create_info);
     SDL_DestroyProperties(vertex_create_info.props);
 
-    Free(ALLOCATOR_SCRATCH, vertex_bytecode);
-    Free(ALLOCATOR_SCRATCH, fragment_bytecode);
+    Free(vertex_bytecode);
+    Free(fragment_bytecode);
 
     if (!impl->vertex)
         return nullptr;
@@ -153,85 +149,85 @@ Object* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, co
 
 SDL_GPUShader* GetGPUVertexShader(Shader* shader)
 {
-    return Impl(shader)->vertex;
+    return static_cast<ShaderImpl*>(shader)->vertex;
 }
 
 SDL_GPUShader* GetGPUFragmentShader(Shader* shader)
 {
-    return Impl(shader)->fragment;
+    return static_cast<ShaderImpl*>(shader)->fragment;
 }
 
 SDL_GPUCullMode GetGPUCullMode(Shader* shader)
 {
-    return Impl(shader)->cull;
+    return static_cast<ShaderImpl*>(shader)->cull;
 }
 
 bool IsBlendEnabled(Shader* shader)
 {
-    return (Impl(shader)->flags & shader_flags_blend) != 0;
+    return (static_cast<ShaderImpl*>(shader)->flags & shader_flags_blend) != 0;
 }
 
 SDL_GPUBlendFactor GetGPUSrcBlend(Shader* shader)
 {
-    return Impl(shader)->src_blend;
+    return static_cast<ShaderImpl*>(shader)->src_blend;
 }
 
 SDL_GPUBlendFactor GetGPUDstBlend(Shader* shader)
 {
-    return Impl(shader)->dst_blend;
+    return static_cast<ShaderImpl*>(shader)->dst_blend;
 }
 
 bool IsDepthTestEnabled(Shader* shader)
 {
-    return (Impl(shader)->flags & shader_flags_depth_test) != 0;
+    return (static_cast<ShaderImpl*>(shader)->flags & shader_flags_depth_test) != 0;
 }
 
 bool IsDepthWriteEnabled(Shader* shader)
 {
-    return (Impl(shader)->flags & shader_flags_depth_write) != 0;
+    return (static_cast<ShaderImpl*>(shader)->flags & shader_flags_depth_write) != 0;
 }
 
 int GetVertexUniformCount(Shader* shader)
 {
-    return Impl(shader)->vertex_uniform_count;
+    return static_cast<ShaderImpl*>(shader)->vertex_uniform_count;
 }
 
 int GetFragmentUniformCount(Shader* shader)
 {
-    return Impl(shader)->fragment_uniform_count;
+    return static_cast<ShaderImpl*>(shader)->fragment_uniform_count;
 }
 
 int GetSamplerCount(Shader* shader)
 {
-    return Impl(shader)->sampler_count;
+    return static_cast<ShaderImpl*>(shader)->sampler_count;
 }
 
 const char* GetGPUName(Shader* shader)
 {
-    return Impl(shader)->name->value;
+    return static_cast<ShaderImpl*>(shader)->name->value;
 }
 
 size_t GetUniformDataSize(Shader* shader)
 {
-    return Impl(shader)->uniform_data_size;
+    return static_cast<ShaderImpl*>(shader)->uniform_data_size;
 }
 
 ShaderUniformBuffer GetVertexUniformBuffer(Shader* shader, int index)
 {
-    assert(index >=0 && index < Impl(shader)->vertex_uniform_count);
-    return Impl(shader)->uniforms[index];
+    assert(index >=0 && index < static_cast<ShaderImpl*>(shader)->vertex_uniform_count);
+    return static_cast<ShaderImpl*>(shader)->uniforms[index];
 }
 
 ShaderUniformBuffer GetFragmentUniformBuffer(Shader* shader, int index)
 {
-    auto impl = Impl(shader);
+    auto impl = static_cast<ShaderImpl*>(shader);
     assert(index >=0 && index < impl->fragment_uniform_count);
     return impl->uniforms[index + impl->vertex_uniform_count];
 }
 
 void PushUniformDataGPU(Shader* shader, SDL_GPUCommandBuffer* cb, u8* data)
 {
-    auto impl = Impl(shader);
+    auto impl = static_cast<ShaderImpl*>(shader);
 
     // vertex
     for (int i=0, c=impl->vertex_uniform_count; i<c; i++)

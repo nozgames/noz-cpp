@@ -2,9 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct MeshImpl : Object
+struct MeshImpl : Mesh
 {
-    const name_t* name;
     size_t vertex_count;
     size_t index_count;
     SDL_GPUBuffer* vertex_buffer;
@@ -18,9 +17,8 @@ struct MeshImpl : Object
 
 static SDL_GPUDevice* g_device = nullptr;
 
-static void UploadMesh(MeshImpl* impl, const name_t* name);
+static void UploadMesh(MeshImpl* impl, const Name* name);
 static void mesh_destroy_impl(MeshImpl* impl);
-static MeshImpl* Impl(void* s) { return (MeshImpl*)Cast((Object*)s, TYPE_MESH); }
 
 inline size_t GetMeshImplSize(size_t vertex_count, size_t index_count)
 {
@@ -30,18 +28,17 @@ inline size_t GetMeshImplSize(size_t vertex_count, size_t index_count)
         sizeof(uint16_t) * index_count;
 }
 
-static Mesh* CreateMesh(Allocator* allocator, size_t vertex_count, size_t index_count)
+static MeshImpl* CreateMesh(Allocator* allocator, size_t vertex_count, size_t index_count, const Name* name)
 {
-    auto mesh = (Mesh*)CreateObject(allocator, GetMeshImplSize(vertex_count, index_count), TYPE_MESH);
+    MeshImpl* mesh = (MeshImpl*)Alloc(allocator, GetMeshImplSize(vertex_count, index_count));
     if (!mesh)
         return nullptr;
 
-    auto impl = Impl(mesh);
-    impl->vertex_count = vertex_count;
-    impl->index_count = index_count;
-    impl->vertices = (mesh_vertex*)((u8*)impl + sizeof(MeshImpl));
-    impl->indices = (uint16_t*)((u8*)impl->vertices + sizeof(mesh_vertex) * vertex_count);
-
+    mesh->name = name;
+    mesh->vertex_count = vertex_count;
+    mesh->index_count = index_count;
+    mesh->vertices = (mesh_vertex*)((u8*)mesh + sizeof(MeshImpl));
+    mesh->indices = (uint16_t*)((u8*)mesh->vertices + sizeof(mesh_vertex) * vertex_count);
     return mesh;
 }
 
@@ -54,7 +51,7 @@ Mesh* CreateMesh(
     u8* bone_indices,
     size_t index_count,
     u16* indices,
-    const name_t* name)
+    const Name* name)
 {
     assert(positions);
     assert(normals);
@@ -64,37 +61,36 @@ Mesh* CreateMesh(
     if (vertex_count == 0 || index_count == 0)
         return nullptr;
 
-    auto mesh = CreateMesh(allocator, vertex_count, index_count);
-    auto impl = Impl(mesh);
-    impl->bounds = to_bounds(positions, vertex_count);
+    MeshImpl* mesh = CreateMesh(allocator, vertex_count, index_count, name);
+    mesh->bounds = to_bounds(positions, vertex_count);
 
     if (bone_indices)
     {
         for (size_t i = 0; i < vertex_count; i++)
         {
-            impl->vertices[i].position = positions[i];
-            impl->vertices[i].normal = normals[i];
-            impl->vertices[i].uv0 = uvs[i];
-            impl->vertices[i].bone = (float)bone_indices[i];
+            mesh->vertices[i].position = positions[i];
+            mesh->vertices[i].normal = normals[i];
+            mesh->vertices[i].uv0 = uvs[i];
+            mesh->vertices[i].bone = (float)bone_indices[i];
         }
     }
     else
     {
         for (size_t i = 0; i < vertex_count; i++)
         {
-            impl->vertices[i].position = positions[i];
-            impl->vertices[i].normal = normals[i];
-            impl->vertices[i].uv0 = uvs[i];
-            impl->vertices[i].bone = 0;
+            mesh->vertices[i].position = positions[i];
+            mesh->vertices[i].normal = normals[i];
+            mesh->vertices[i].uv0 = uvs[i];
+            mesh->vertices[i].bone = 0;
         }
     }
 
-    memcpy(impl->indices, indices, sizeof(uint16_t) * index_count);
-    UploadMesh(impl, name);
+    memcpy(mesh->indices, indices, sizeof(uint16_t) * index_count);
+    UploadMesh(mesh, name);
     return mesh;
 }
 
-Object* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name)
+Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
 {
     // Read bounds
     bounds3 bounds = {};
@@ -104,15 +100,13 @@ Object* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, cons
     auto vertex_count = ReadU32(stream);
     auto index_count = ReadU32(stream);
 
-    auto mesh = CreateMesh(allocator, vertex_count, index_count);
+    MeshImpl* mesh = CreateMesh(allocator, vertex_count, index_count, name);
     if (!mesh)
         return nullptr;
 
-    auto impl = Impl(mesh);
-    ReadBytes(stream, impl->vertices, sizeof(mesh_vertex) * impl->vertex_count);
-    ReadBytes(stream, impl->indices, sizeof(uint16_t) * impl->index_count);
-    UploadMesh(impl, name);
-
+    ReadBytes(stream, mesh->vertices, sizeof(mesh_vertex) * mesh->vertex_count);
+    ReadBytes(stream, mesh->indices, sizeof(uint16_t) * mesh->index_count);
+    UploadMesh(mesh, name);
     return mesh;
 }
 
@@ -129,7 +123,7 @@ static void mesh_destroy_impl(MeshImpl* impl)
         SDL_ReleaseGPUTransferBuffer(g_device, impl->vertex_transfer);
 
     if (impl->vertex_buffer)
-        SDL_ReleaseGPUBuffer(g_device, impl->vertex_buffer);    
+        SDL_ReleaseGPUBuffer(g_device, impl->vertex_buffer);
 }
 #endif
 
@@ -137,7 +131,7 @@ void DrawMeshGPU(Mesh* mesh, SDL_GPURenderPass* pass)
 {
     assert(pass);
 
-    MeshImpl* impl = Impl(mesh);
+    MeshImpl* impl = static_cast<MeshImpl*>(mesh);
     if (!impl->vertex_buffer)
         return;
 
@@ -153,7 +147,7 @@ void DrawMeshGPU(Mesh* mesh, SDL_GPURenderPass* pass)
     SDL_DrawGPUIndexedPrimitives(pass, (uint32_t)impl->index_count, 1, 0, 0, 0);
 }
 
-static void UploadMesh(MeshImpl* impl, const name_t* name)
+static void UploadMesh(MeshImpl* impl, const Name* name)
 {
     assert(impl);
     assert(!impl->vertex_buffer);
@@ -221,17 +215,17 @@ static void UploadMesh(MeshImpl* impl, const name_t* name)
 
 size_t GetVertexCount(Mesh* mesh)
 {
-	return Impl(mesh)->vertex_count;
+    return static_cast<MeshImpl*>(mesh)->vertex_count;
 }
 
 size_t GetIndexCount(Mesh* mesh)
 {
-    return Impl(mesh)->index_count;
+    return static_cast<MeshImpl*>(mesh)->index_count;
 }
 
 bounds3 GetBounds(Mesh* mesh)
 {
-    return Impl(mesh)->bounds;
+    return static_cast<MeshImpl*>(mesh)->bounds;
 }
 
 void InitMesh(RendererTraits* traits, SDL_GPUDevice* device)

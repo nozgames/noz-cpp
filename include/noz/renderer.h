@@ -6,13 +6,12 @@
 
 // @types
 struct Camera;
-struct Texture : Object {};
-struct Material : Object {};
-struct Mesh : Object {};
-struct Font : Object {};
-struct Shader : Object {};
+struct Texture : Asset {};
+struct Material : Asset {};
+struct Font : Asset {};
+struct Shader : Asset {};
+struct Animation : Asset {};
 struct MeshBuilder : Object {};
-struct Animation : Object {};
 
 // @renderer_traits
 struct RendererTraits
@@ -51,8 +50,8 @@ enum TextureFormat
     TEXTURE_FORMAT_R8
 };
 
-Texture* CreateTexture(Allocator* allocator, void* data, size_t width, size_t height, TextureFormat format, const name_t* name);
-Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const name_t* name);
+Texture* CreateTexture(Allocator* allocator, void* data, size_t width, size_t height, TextureFormat format, const Name* name);
+Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const Name* name);
 int GetBytesPerPixel(TextureFormat format);
 ivec2 GetSize(Texture* texture);
 
@@ -62,6 +61,8 @@ Shader* GetShader(Material* material);
 void SetTexture(Material* material, Texture* texture, size_t index=0);
 
 // @mesh
+struct Mesh : Asset { };
+
 Mesh* CreateMesh(
     Allocator* allocator,
     size_t vertex_count,
@@ -71,8 +72,8 @@ Mesh* CreateMesh(
     u8* bone_indices,
     size_t index_count,
     u16* indices,
-    const name_t* name);
-Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const name_t* name);
+    const Name* name);
+Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name);
 
 // @mesh_builder
 MeshBuilder* CreateMeshBuilder(Allocator* allocator, int max_vertices, int max_indices);

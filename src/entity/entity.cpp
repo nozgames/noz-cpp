@@ -20,7 +20,7 @@ constexpr u32 ENTITY_FLAG_WORLD_DIRTY = 1 << 4;
 
 struct EntityImpl : Object
 {
-    const name_t* name;
+    const Name* name;
     Entity* parent;
     vec3 local_position;
     vec3 local_scale;

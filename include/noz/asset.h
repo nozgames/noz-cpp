@@ -24,25 +24,32 @@ struct AssetHeader
     asset_signature_t signature;
     uint32_t version;
     uint32_t flags;
-} ;
+};
 
-typedef Object* (*AssetLoaderFunc)(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name);
+struct Asset
+{
+    const Name* name;
+};
+
+typedef Asset* (*AssetLoaderFunc)(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
 
 bool ReadAssetHeader(Stream* stream, AssetHeader* header);
 bool WriteAssetHeader(Stream* stream, AssetHeader* header);
 bool ValidateAssetHeader(AssetHeader* header, uint32_t expected_signature);
 type_t ToType(asset_signature_t signature);
 const char* GetExtensionFromSignature(asset_signature_t signature);
-Object* LoadAsset(Allocator* allocator, const name_t* asset_name, asset_signature_t signature, AssetLoaderFunc loader);
+Asset* LoadAsset(Allocator* allocator, const Name* asset_name, asset_signature_t signature, AssetLoaderFunc loader);
+
+inline const Name* GetName(Asset* asset) { return asset->name; }
 
 
 // @loaders
-Object* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name);
-Object* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name);
-Object* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name);
-Object* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name);
-Object* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name);
-Object* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name);
+Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
+Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
+Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
+Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
+Asset* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
+Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
 
 // @macros
 #define NOZ_LOAD_SHADER(allocator, path, member) \
@@ -65,7 +72,7 @@ Object* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const
 
 // @hotload
 #ifdef _HOTLOAD
-void ReloadAsset(const name_t* name, Object* asset);
+void ReloadAsset(const Name* name, Asset* asset);
 
 #define NOZ_HOTLOAD_ASSET(name_var, asset_member) \
     if (incoming_name == name_var) \

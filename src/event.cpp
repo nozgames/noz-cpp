@@ -52,8 +52,8 @@ void InitEvent(ApplicationTraits* traits)
 
 void ShutdownEvent()
 {
-    Free(ALLOCATOR_DEFAULT, g_events);
-    Free(ALLOCATOR_DEFAULT, g_event_stack);
+    Free(g_events);
+    Free(g_event_stack);
 }
 
 int FindListener(event_t event, EventCallback callback)
