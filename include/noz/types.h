@@ -31,7 +31,8 @@ typedef u16 type_t;
     NOZ_TYPE(CANVAS) \
     NOZ_TYPE(ELEMENT) \
     NOZ_TYPE(TEXT_MESH) \
-    NOZ_TYPE(LABEL)
+    NOZ_TYPE(LABEL) \
+    NOZ_TYPE(VFX)
 
 enum Type : type_t
 {

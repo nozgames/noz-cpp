@@ -96,7 +96,7 @@ struct Vec2
     operator glm::vec2() const { return { x, y }; }
 };
 
-struct IVec2
+struct Vec2Int
 {
     i32 x;
     i32 y;

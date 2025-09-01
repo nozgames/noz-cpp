@@ -252,7 +252,9 @@ bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers)
                         asset_path.replace_extension("");
                         std::string asset_name = asset_path.string();
                         std::replace(asset_name.begin(), asset_name.end(), '\\', '/');
-                        LogInfo("Imported '%s'", asset_name.c_str());
+                        LogInfo("Imported \033[38;2;128;128;128m%s", asset_name.c_str());
+
+                        // todo: format nicely using TStringBuilder
 
                         // Broadcast hotload message
                         BroadcastAssetChange(asset_name);

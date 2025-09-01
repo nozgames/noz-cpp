@@ -43,7 +43,8 @@ void Render(TextInput* input)
 
     if (impl->active)
     {
-        AddPixels(impl->buffer.c_str());
+        //WriteScreen(
+        //AddPixels(impl->buffer.c_str());
 
 #if 0
         // Render text with cursor at correct position

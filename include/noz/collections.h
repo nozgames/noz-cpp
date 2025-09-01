@@ -5,7 +5,6 @@
 #pragma once
 
 struct List : Object {};
-struct RingBuffer : Object {};
 
 // @list
 List* CreateList(Allocator* allocator, size_t item_size, size_t capacity);
@@ -17,18 +16,29 @@ void Clear(List* list);
 
 
 // @ring_buffer
+struct RingBuffer
+{
+    u8* items;
+    u32 item_size;
+    u32 capacity;
+    u32 count;
+    u32 front;
+    u32 back;
+};
+
 RingBuffer* CreateRingBuffer(Allocator* allocator, u32 item_size, u32 capacity);
-void* PushFront(RingBuffer* buffer);
-void* PushFront(RingBuffer* buffer, const void* item);
-void* PushBack(RingBuffer* buffer);
-void* PushBack(RingBuffer* buffer, const void* item);
-void PopBack(RingBuffer* buffer);
-void PopFront(RingBuffer* buffer);
-u32 GetCount(RingBuffer* buffer);
-void Clear(RingBuffer* buffer);
-void* GetAt(RingBuffer* list, u32 index);
-bool IsEmpty(RingBuffer* list);
-bool IsFull(RingBuffer* list);
+void* PushFront(RingBuffer* rb);
+void* PushFront(RingBuffer* rb, const void* item);
+void* PushBack(RingBuffer* rb);
+void* PushBack(RingBuffer* rb, const void* item);
+void PopBack(RingBuffer* rb);
+void PopFront(RingBuffer* rb);
+void Clear(RingBuffer* rb);
+void* GetAt(RingBuffer* rb, u32 index);
+
+inline bool IsEmpty(RingBuffer* rb) { return rb->count == 0; }
+inline bool IsFull(RingBuffer* rb) { return rb->count == rb->capacity; }
+inline u32 GetCount(RingBuffer* rb) { return rb->count; }
 
 // @map
 

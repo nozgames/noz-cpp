@@ -258,6 +258,7 @@ void TreeView::Clear()
 
 void TreeView::Render(const RectInt& rect)
 {
+#if 0
     if (_visible_nodes.empty())
         return;
 
@@ -319,6 +320,7 @@ void TreeView::Render(const RectInt& rect)
         // int cursor_pos = (_show_cursor && static_cast<int>(row) == cursor_in_window) ? 0 : -1;
         // AddString(line_builder.ToString(), cursor_pos, rect.width);
     }
+#endif
 }
 
 size_t TreeView::NodeCount() const

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "../tui/screen.h"
+
 // @structs
 struct View
 {
@@ -23,3 +25,5 @@ struct LogView : public View
 };
 
 LogView* CreateLogView(Allocator* allocator);
+void AddMessage(LogView* view, const char* str);
+

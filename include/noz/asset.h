@@ -5,7 +5,7 @@
 #pragma once
 
 #define MAKE_FOURCC(a, b, c, d) \
-    ((u32)(a) | ((u32)(b) << 8) | ((u32)(c) << 16) | ((u32)(d) << 24))
+    ((u32)(d) | ((u32)(c) << 8) | ((u32)(b) << 16) | ((u32)(a) << 24))
 
 typedef u32 asset_signature_t;
 
@@ -42,6 +42,7 @@ Object* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, co
 Object* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name);
 Object* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name);
 Object* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name);
+Object* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name);
 
 // @macros
 #define NOZ_LOAD_SHADER(allocator, path, member) \
@@ -58,6 +59,9 @@ Object* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header
 
 #define NOZ_LOAD_FONT(allocator, path, member) \
     member = (Font*)LoadAsset(allocator, path, ASSET_SIGNATURE_FONT, LoadFont);
+
+#define NOZ_LOAD_VFX(allocator, path, member) \
+    member = (Vfx*)LoadAsset(allocator, path, ASSET_SIGNATURE_VFX, LoadVfx);
 
 // @hotload
 #ifdef _HOTLOAD

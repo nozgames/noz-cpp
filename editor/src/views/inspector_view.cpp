@@ -101,7 +101,7 @@ void InspectorView::UpdateLayout(const RectInt& rect)
 void InspectorView::RenderDivider(const RectInt& rect, int split_col)
 {
     //SetColorRGB(255, 255, 255, 128, 128, 128);  // White text, gray background
-    DrawVerticalLine(rect.x + split_col, rect.y, rect.height, '|', TCOLOR_WHITE);
+    //DrawVerticalLine(rect.x + split_col, rect.y, rect.height, '|', TCOLOR_WHITE);
 }
 
 void InspectorView::RenderPropertiesSection(int start_col, int properties_width, int height)

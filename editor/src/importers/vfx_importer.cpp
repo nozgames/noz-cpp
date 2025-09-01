@@ -299,6 +299,13 @@ VfxColorCurve ParseColorCurve(const std::string& str, const VfxColorCurve& defau
 
 void ImportVfx(const fs::path& source_path, Stream* output_stream, Props* config, Props* meta)
 {
+    // Write asset header
+    AssetHeader header = {};
+    header.signature = ASSET_SIGNATURE_VFX;
+    header.version = 1;
+    header.flags = 0;
+    WriteAssetHeader(output_stream, &header);
+
     // Write header
     VfxFloat duration = ParseFloat(meta->GetString("VFX", "duration", "5.0"), {5,5});
     bool loop = meta->GetBool("vfx", "loop", false);

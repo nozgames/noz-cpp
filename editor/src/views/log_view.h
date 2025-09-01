@@ -4,7 +4,3 @@
 
 #pragma once
 
-struct LogView;
-
-void AddMessage(LogView* view, const char* str);
-

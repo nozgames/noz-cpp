@@ -4,34 +4,41 @@
 
 #pragma once
 
-#include "screen.h"
-
-struct tcolor2_t
+struct TColor
 {
     uint8_t code;
     uint8_t r;
     uint8_t g;
     uint8_t b;
+
+    bool operator== (const TColor& o) const { return code == o.code && r == o.r && g == o.g && b == o.b; }
+    bool operator!= (const TColor& o) const { return !(*this == o); }
 };
 
-struct tchar_t
+struct TChar
 {
     char value;
-    tcolor_t color;
-    tcolor_t bg_color;
-    tcolor2_t color1;
-    tcolor2_t color2;
+    TColor fg_color;
+    TColor bg_color;
 };
 
 struct TString : Object {};
 struct TStringBuilder : Object {};
 
-TString* CreateTString(Allocator* allocator);
-TStringBuilder* CreateTStringBuilder(Allocator* allocator, size_t capacity = 8192);
+constexpr TColor TCOLOR_NONE = { 39, 0, 0, 0 };
+constexpr TColor TCOLOR_RED = { 31, 0, 0, 0 };
+constexpr TColor TCOLOR_STRING_VALUE = { 38, 0, 255, 0 };
 
-TStringBuilder* Append(TStringBuilder* builder, const char* text, tcolor_t color = TCOLOR_NONE, tcolor_t bg_color = TCOLOR_NONE);
+constexpr TColor TCOLOR_BACKGROUND_NONE = { 49, 0, 0, 0 };
+constexpr TColor TCOLOR_BACKGROUND_RED = { 41, 0, 0, 0 };
+constexpr TColor TCOLOR_BACKGROUND_WHITE = { 47, 0, 0, 0 };
+constexpr TChar TCHAR_NONE = { ' ', TCOLOR_NONE, TCOLOR_BACKGROUND_NONE };
+constexpr TChar TCHAR_WHITE_BACKGROUND = { ' ', TCOLOR_NONE, TCOLOR_BACKGROUND_WHITE };
 
-void CStringToTChar(const char* str, tchar_t* buffer, u32 buffer_size);
+extern TString* CreateTString(Allocator* allocator);
+extern TStringBuilder* CreateTStringBuilder(Allocator* allocator, size_t capacity = 8192);
+extern TStringBuilder* Append(TStringBuilder* builder, const char* text, TColor fg_color = TCOLOR_NONE, TColor bg_color = TCOLOR_NONE);
+extern u32 CStringToTChar(const char* src, TChar* dst, u32 dst_size);
 
 #if 0
 

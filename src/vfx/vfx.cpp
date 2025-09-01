@@ -22,6 +22,11 @@
 //     return Lerp(range.min, range.max, RandomFloat());
 // }
 
+Object* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const name_t* name)
+{
+    return nullptr;
+}
+
 #if 0
 // Load VFX from binary stream
 static vfx load_vfx_from_stream(binary_stream& stream)

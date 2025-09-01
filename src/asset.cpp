@@ -53,6 +53,7 @@ type_t ToType(asset_signature_t signature)
         case ASSET_SIGNATURE_MATERIAL: return TYPE_MATERIAL;
         case ASSET_SIGNATURE_FONT:     return TYPE_FONT;
         case ASSET_SIGNATURE_STYLE_SHEET:     return TYPE_STYLE_SHEET;
+        case ASSET_SIGNATURE_VFX: return TYPE_VFX;
         default:                       return TYPE_UNKNOWN;
     }
 }
@@ -67,6 +68,7 @@ static asset_signature_t AssetSignatureFromType(type_t type)
     case TYPE_SHADER:   return ASSET_SIGNATURE_SHADER;
     case TYPE_MATERIAL: return ASSET_SIGNATURE_MATERIAL;
     case TYPE_FONT:     return ASSET_SIGNATURE_FONT;
+    case TYPE_VFX: return ASSET_SIGNATURE_VFX;
     case TYPE_STYLE_SHEET:     return ASSET_SIGNATURE_STYLE_SHEET;
     default:
         return ASSET_SIGNATURE_UNKNOWN;

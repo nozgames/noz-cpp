@@ -10,6 +10,8 @@
 #include "views/inspector_view.h"
 #include "views/inspector_object.h"
 
+constexpr int MAX_VIEWS = 16;
+
 bool InitImporter();
 void ShutdownImporter();
 bool IsImporterRunning();
@@ -17,7 +19,8 @@ bool IsImporterRunning();
 struct Editor
 {
     LogView* log_view;
-    std::stack<std::unique_ptr<IView>> view_stack;
+    View* view_stack[MAX_VIEWS];
+    u32 view_stack_count = 0;
     TextInput* command_input;
     TextInput* search_input;
     bool command_mode;
@@ -27,33 +30,34 @@ struct Editor
 
 static Editor g_editor = {};
 
-static IView* GetView()
+static View* GetView()
 {
-    // if (g_editor.view_stack.empty())
-    //     return g_editor.log_view.get();
-    //
-    // return g_editor.view_stack.top().get();
-    return nullptr;
+    if (g_editor.view_stack_count == 0)
+        return g_editor.log_view;
+
+    return g_editor.view_stack[g_editor.view_stack_count-1];
 }
 
-static void PushView(std::unique_ptr<IView> view)
+static void PushView(View* view)
 {
-    assert(view && view.get());
-    g_editor.view_stack.push(std::move(view));
+    assert(view);
+    assert(g_editor.view_stack_count < MAX_VIEWS);
+    g_editor.view_stack[g_editor.view_stack_count++] = view;
 }
 
 static void PopView()
 {
-    assert(g_editor.view_stack.size() > 0);
-    auto current = g_editor.view_stack.top().get();
-    if (!current->CanPopFromStack())
-        return;
+    assert(g_editor.view_stack_count > 0);
+    auto current = g_editor.view_stack[g_editor.view_stack_count-1];
+    // if (!current->CanPopFromStack())
+    //     return;
 
-    g_editor.view_stack.pop();
+    g_editor.view_stack_count--;
 }
 
 void HandleInspectorObject(std::unique_ptr<InspectorObject> object)
 {
+#if 0
     auto current_view = GetView();
     auto inspector = dynamic_cast<InspectorView*>(current_view);
 
@@ -78,11 +82,13 @@ void HandleInspectorObject(std::unique_ptr<InspectorObject> object)
         inspector->ClearTree();
         //inspector->AddLine("No client connected or no data received");
     }
+#endif
 }
 
 // Handle case where no inspection response is received
 void HandleNoInspectionResponse()
 {
+#if 0
     IView* current_view = GetView();
     InspectorView* inspector = dynamic_cast<InspectorView*>(current_view);
     
@@ -91,6 +97,7 @@ void HandleNoInspectionResponse()
         inspector->ClearTree();
         //inspector->AddLine("No client connected");
     }
+#endif
 }
 
 struct DebugLog
@@ -163,20 +170,16 @@ static void HandleLog(LogType type, const char* message)
         break;
     }
 
-    // Check if we're on the main thread
     if (std::this_thread::get_id() == g_main_thread_id)
     {
-        // On main thread - add directly to log view
-        //g_editor.log_view->Add(formatted_message);
+        AddMessage(g_editor.log_view, formatted_message.c_str());
         RequestRender();
     }
     else
     {
-        // On background thread - queue the message safely
         LogQueue& log_queue = GetLogQueue();
-        std::lock_guard<std::mutex> lock(log_queue.mutex);
+        std::lock_guard lock(log_queue.mutex);
         log_queue.queue.push(formatted_message);
-        // Don't call RequestRender() from background thread
     }
 }
 
@@ -189,7 +192,7 @@ static void ProcessQueuedLogMessages()
     {
         std::string message = log_queue.queue.front();
         log_queue.queue.pop();
-        //g_editor.log_view->Add(message);
+        AddMessage(g_editor.log_view, message.c_str());
         render = true;
     }
 
@@ -199,6 +202,7 @@ static void ProcessQueuedLogMessages()
 
 static void DrawStatusBar(const RectInt& rect)
 {
+#if 0
     static auto title = "NoZ Editor";
     static auto cmd_mode = " - Command Mode";
 
@@ -209,10 +213,12 @@ static void DrawStatusBar(const RectInt& rect)
         AddPixels(cmd_mode, TCOLOR_BLACK);
 
     SetBackgroundColor({rect.x, line, rect.width, 1}, TCOLOR_LIGHT_GRAY);
+#endif
 }
 
 static void DrawCommandLine(const RectInt& rect)
 {
+#if 0
     if (g_editor.search_mode)
     {
         SetPixel(rect.x, rect.y, '/');
@@ -223,6 +229,7 @@ static void DrawCommandLine(const RectInt& rect)
         SetPixel(rect.x, rect.y, ':');
         Render(g_editor.command_input);
     }
+#endif
 #if 0
     else
     {
@@ -249,14 +256,10 @@ static void HandleCommand(const std::string& command)
     if (command == "q" || command == "quit")
     {
         // If there are views on the stack, pop one instead of quitting
-        if (!g_editor.view_stack.empty())
-        {
+        if (g_editor.view_stack_count > 0)
             PopView();
-        }
         else
-        {
             g_editor.is_running = false;
-        }
     }
     else if (command == "clear")
     {
@@ -264,6 +267,7 @@ static void HandleCommand(const std::string& command)
     }
     else if (command == "i" || command == "inspector")
     {
+#if 0
         // Check if current view is already an inspector
         auto* current_view = GetView();
         auto* existing_inspector = dynamic_cast<InspectorView*>(current_view);
@@ -276,8 +280,9 @@ static void HandleCommand(const std::string& command)
         else
         {
             // Push a new inspector view onto the stack
-            PushView(std::unique_ptr<IView>(new InspectorView()));
+            //PushView(std::unique_ptr<IView>(new InspectorView()));
         }
+#endif
     }
     else if (!command.empty())
     {
@@ -330,8 +335,8 @@ static void RunEditor()
                 SetActive(g_editor.search_input, false);
                 
                 // Show cursor in current view when exiting search mode
-                IView* current_view = GetView();
-                current_view->SetCursorVisible(true);
+                // View* view = GetView();
+                // view->SetCursorVisible(true);
             }
             else if (key == 27)
             { // Escape
@@ -340,18 +345,18 @@ static void RunEditor()
                 SetActive(g_editor.search_input, false);
                 Clear(g_editor.search_input);
                 
-                IView* current_view = GetView();
-                current_view->ClearSearch();
-                current_view->SetCursorVisible(true);
+                // IView* current_view = GetView();
+                // current_view->ClearSearch();
+                // current_view->SetCursorVisible(true);
             }
             else
             {
                 HandleKey(g_editor.search_input, key);
                 
                 // Update search in real-time
-                std::string pattern = GetText(g_editor.search_input);
-                IView* current_view = GetView();
-                current_view->SetSearchPattern(pattern);
+                // std::string pattern = GetText(g_editor.search_input);
+                // IView* current_view = GetView();
+                // current_view->SetSearchPattern(pattern);
             }
         }
         else if (g_editor.command_mode)
@@ -365,8 +370,8 @@ static void RunEditor()
                 Clear(g_editor.command_input);
                 
                 // Show cursor in current view when exiting command mode
-                IView* current_view = GetView();
-                current_view->SetCursorVisible(true);
+                // IView* current_view = GetView();
+                // current_view->SetCursorVisible(true);
             }
             else if (key == 27)
             { // Escape
@@ -375,8 +380,8 @@ static void RunEditor()
                 Clear(g_editor.command_input);
                 
                 // Show cursor in current view when exiting command mode
-                IView* current_view = GetView();
-                current_view->SetCursorVisible(true);
+                // IView* current_view = GetView();
+                // current_view->SetCursorVisible(true);
             }
             else
             {
@@ -385,10 +390,11 @@ static void RunEditor()
         }
         else
         {
-            IView* current_view = GetView();
+            View* current_view = GetView();
             
             if (key == '/')
             {
+#if 0
                 // Start search mode if current view supports it
                 if (current_view->SupportsSearch())
                 {
@@ -400,6 +406,7 @@ static void RunEditor()
                     // Hide cursor in current view when entering search mode
                     current_view->SetCursorVisible(false);
                 }
+#endif
             }
             else if (key == ':')
             {
@@ -409,7 +416,7 @@ static void RunEditor()
                 SetCursorVisible(true);
                 
                 // Hide cursor in current view when entering command mode
-                current_view->SetCursorVisible(false);
+//                current_view->SetCursorVisible(false);
             }
             else if (key == 'q')
             {
@@ -423,8 +430,8 @@ static void RunEditor()
                 {
                     // Clear active search
                     Clear(g_editor.search_input);
-                    IView* current_view = GetView();
-                    current_view->ClearSearch();
+                    // View* view = GetView();
+                    // current_view->ClearSearch();
                 }
                 else
                 {
@@ -435,10 +442,10 @@ static void RunEditor()
             else
             {
                 // Route input to current view
-                if (!current_view->HandleKey(key))
-                {
-                    // View didn't handle the key, could add default handling here
-                }
+                // if (!current_view->HandleKey(key))
+                // {
+                //     // View didn't handle the key, could add default handling here
+                // }
             }
         }
 
@@ -449,13 +456,14 @@ static void RunEditor()
 
 void RenderEditor(const RectInt& rect)
 {
-    ClearScreen();
+    ClearScreen(TCHAR_NONE);
     DrawStatusBar(rect);
     DrawCommandLine({rect.x, rect.height - 1, rect.width, 1});
 
     auto view = GetView();
-    if (view != nullptr)
-        view->Render({rect.x, rect.y, rect.width, rect.height - 2});
+    if (view != nullptr && view->traits->render)
+        view->traits->render(view, {rect.x, rect.y, rect.width, rect.height - 2});
+
 
 #if 0
     // Always render the log view as the base layer

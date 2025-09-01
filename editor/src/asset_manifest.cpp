@@ -192,26 +192,24 @@ static void GenerateAssetsHeader(ManifestGenerator* generator, const fs::path& h
         for (const auto& entry : generator->asset_entries)
         {
             const char* type_name = ToStringFromSignature(entry.signature, *generator->importers);
-            if (type_name)
-            {
-                // Convert asset path to access path (e.g., "textures/icons/button" -> "LoadedAssets.textures.icons.button")
-                fs::path asset_path(entry.path);
-                std::string access_path = "LoadedAssets";
-                
-                auto parent_path = asset_path.parent_path();
-                for (const auto& part : parent_path)
-                {
-                    access_path += "." + part.string();
-                }
-                
-                std::string var_name = PathToVarName(asset_path.filename().string());
-                access_path += "." + var_name;
-                
-                // Add to the appropriate type group
-                std::string type_key = std::string(type_name) + "s";
-                std::transform(type_key.begin(), type_key.end(), type_key.begin(), ::tolower);
-                assets_by_type[type_key].push_back(access_path);
-            }
+            if (!type_name)
+                continue;
+
+            // Convert asset path to access path (e.g., "textures/icons/button" -> "LoadedAssets.textures.icons.button")
+            fs::path asset_path(entry.path);
+            std::string access_path = "LoadedAssets";
+
+            auto parent_path = asset_path.parent_path();
+            for (const auto& part : parent_path)
+                access_path += "." + part.string();
+
+            std::string var_name = PathToVarName(asset_path.filename().string());
+            access_path += "." + var_name;
+
+            // Add to the appropriate type group
+            std::string type_key = std::string(type_name) + "s";
+            std::transform(type_key.begin(), type_key.end(), type_key.begin(), ::tolower);
+            assets_by_type[type_key].push_back(access_path);
         }
         
         // Write the comment block
@@ -219,9 +217,7 @@ static void GenerateAssetsHeader(ManifestGenerator* generator, const fs::path& h
         {
             WriteCSTR(header_stream, "// @%s\n", type_name.c_str());
             for (const auto& asset_path : asset_list)
-            {
                 WriteCSTR(header_stream, "// %s\n", asset_path.c_str());
-            }
             WriteCSTR(header_stream, "//\n");
         }
         WriteCSTR(header_stream, "\n");
@@ -233,6 +229,7 @@ static void GenerateAssetsHeader(ManifestGenerator* generator, const fs::path& h
         "// Forward declarations\n"
         "struct Allocator;\n"
         "struct Shader;\n"
+        "struct Vfx;\n"
         "struct Texture;\n"
         "struct Mesh;\n"
         "struct Font;\n"
@@ -264,13 +261,10 @@ static void GenerateAssetsHeader(ManifestGenerator* generator, const fs::path& h
     // Write LoadedAssets struct
     WriteCSTR(header_stream, "struct LoadedAssets\n{\n");
     if (generator->asset_entries.empty())
-    {
         WriteCSTR(header_stream, "    void* _dummy;\n");
-    }
     else
-    {
         WriteHeaderNestedStructs(header_stream, root, *generator->importers);
-    }
+
     WriteCSTR(header_stream, "};\n\n");
     
     WriteCSTR(header_stream, "extern LoadedAssets Assets;\n");
@@ -308,14 +302,10 @@ static bool ReadAssetHeader(const fs::path& file_path, uint32_t* signature)
 
 static void ScanAssetFile(const fs::path& file_path, ManifestGenerator* generator)
 {
-    // First, try to read the asset header to get the signature
     uint32_t signature = 0;
     if (!ReadAssetHeader(file_path, &signature))
-    {
-        // If we can't read the header, this might not be a valid asset file
         return;
-    }
-    
+
     // Check if any importer recognizes this signature
     bool is_recognized_asset = false;
     for (const auto* importer : *generator->importers)
@@ -339,29 +329,14 @@ static void ScanAssetFile(const fs::path& file_path, ManifestGenerator* generato
     
     // Check if this asset is already in the list (compare without extensions)
     for (const auto& existing : generator->asset_entries)
-    {
         if (existing.path == relative_str)
-        {
-            // Asset already in list, skip it
             return;
-        }
-    }
 
     AssetEntry entry = {};
-    
-    // Copy the relative path we already computed (extension already removed)
     entry.path = relative_str;
-    
-    // Get file size using std::filesystem
     entry.file_size = fs::file_size(file_path);
-
-    // Generate variable name from path (without extension)
     entry.var_name = PathToVarName(entry.path);
-
-    // Use the signature we already read
     entry.signature = signature;
-    
-    // Add entry to the list
     generator->asset_entries.push_back(entry);
 }
 
@@ -579,10 +554,8 @@ static const char* ToMacroFromSignature(asset_signature_t signature, const std::
         {
             // Check cache first
             if (macro_cache.find(signature) != macro_cache.end())
-            {
                 return macro_cache[signature].c_str();
-            }
-            
+
             // Build macro name: NOZ_LOAD_ + uppercase type name
             std::string type_name = importer->type_name;
             std::string macro_name = "NOZ_LOAD_";
@@ -614,12 +587,9 @@ static const char* ToMacroFromSignature(asset_signature_t signature, const std::
 static const char* ToStringFromSignature(asset_signature_t signature, const std::vector<AssetImporterTraits*>& importers)
 {
     for (const auto* importer : importers)
-    {
         if (importer && importer->signature == signature)
-        {
             return importer->type_name;
-        }
-    }
+
     return nullptr;
 }
 
@@ -701,12 +671,12 @@ static void GenerateHotloadFunction(ManifestGenerator* generator, Stream* stream
     for (const auto& entry : generator->asset_entries)
     {
         const char* type_name = ToStringFromSignature(entry.signature, *generator->importers);
-        if (type_name)
-        {
-            std::string type_key = std::string(type_name) + "s";
-            std::transform(type_key.begin(), type_key.end(), type_key.begin(), ::tolower);
-            assets_by_type[type_key].push_back(entry);
-        }
+        if (!type_name)
+            continue;
+
+        std::string type_key = std::string(type_name) + "s";
+        std::transform(type_key.begin(), type_key.end(), type_key.begin(), ::tolower);
+        assets_by_type[type_key].push_back(entry);
     }
     
     // Generate hotload checks grouped by type

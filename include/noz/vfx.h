@@ -57,6 +57,11 @@ struct VfxColorCurve
     VfxColor end;
 };
 
+struct Vfx
+{
+
+};
+
 constexpr VfxInt VFX_INT_ZERO = { 0, 0 };
 constexpr VfxFloat VFX_FLOAT_ZERO = { 0, 0 };
 constexpr VfxFloat VFX_FLOAT_ONE = { 1, 1 };

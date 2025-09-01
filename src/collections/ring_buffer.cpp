@@ -3,120 +3,90 @@
 //
 
 
-struct RingBufferImpl : Object
-{
-    u8* items;
-    u32 item_size;
-    u32 capacity;
-    u32 count;
-    u32 front;
-    u32 back;
-};
-
-static RingBufferImpl* Impl(RingBuffer* l) { return (RingBufferImpl*)Cast(l, TYPE_RING_BUFFER); }
-
 RingBuffer* CreateRingBuffer(Allocator* allocator, u32 item_size, u32 capacity)
 {
-    auto rb = (RingBuffer*)CreateObject(allocator, sizeof(RingBufferImpl), TYPE_RING_BUFFER);
-    auto impl = Impl(rb);
-    impl->item_size = item_size;
-    impl->capacity = capacity;
-    impl->count = 0;
-    impl->front = 0;
-    impl->back = 0;
-    impl->items = (u8*)Alloc(allocator, item_size * capacity);
+    auto rb = (RingBuffer*)Alloc(allocator, sizeof(RingBuffer));
+    rb->item_size = item_size;
+    rb->capacity = capacity;
+    rb->count = 0;
+    rb->front = 0;
+    rb->back = 0;
+    rb->items = (u8*)Alloc(allocator, item_size * capacity);
     return rb;
 }
 
 void* PushFront(RingBuffer* rb)
 {
-    auto impl = Impl(rb);
-    if (impl->count == impl->capacity)
+    if (rb->count == rb->capacity)
         return nullptr;
 
-    impl->count++;
-    impl->front = (impl->front + impl->capacity - 1) % impl->capacity;
-    return impl->items + impl->front * impl->item_size;
+    rb->count++;
+    rb->front = (rb->front + rb->capacity - 1) % rb->capacity;
+    return rb->items + rb->front * rb->item_size;
 }
 
-void* PushFront(RingBuffer* buffer, const void* value)
+void* PushFront(RingBuffer* rb, const void* value)
 {
-    auto impl = Impl(buffer);
-    auto item = PushFront(buffer);
+    auto impl = rb;
+    auto item = PushFront(rb);
     if (!item)
         return nullptr;
-    memcpy(item, value, impl->item_size);
+    memcpy(item, value, rb->item_size);
     return item;
 }
 
 void* PushBack(RingBuffer* rb)
 {
-    auto impl = Impl(rb);
-    if (impl->count == impl->capacity)
+    auto impl = rb;
+    if (rb->count == rb->capacity)
         return nullptr;
 
-    impl->count++;
-    impl->back = (impl->back + 1) % impl->capacity;
-    return GetAt(rb, impl->back);
+    rb->count++;
+    rb->back = (rb->back + 1) % rb->capacity;
+    return GetAt(rb, rb->count - 1);
 }
 
 void* PushBack(RingBuffer* rb, const void* value)
 {
-    auto impl = Impl(rb);
+    auto impl = rb;
     auto item = PushBack(rb);
     if (!item)
         return nullptr;
-    memcpy(item, value, impl->item_size);
+    memcpy(item, value, rb->item_size);
     return item;
 }
 
 void PopFront(RingBuffer* rb)
 {
-    auto impl = Impl(rb);
-    if (impl->count == 0)
+    auto impl = rb;
+    if (rb->count == 0)
         return;
 
-    impl->count--;
-    impl->front = (impl->front + 1) % impl->capacity;
+    rb->count--;
+    rb->front = (rb->front + 1) % rb->capacity;
 }
 
-void PopBack(RingBuffer* buffer)
+void PopBack(RingBuffer* rb)
 {
-    auto impl = Impl(buffer);
-    if (impl->count == 0)
+    if (rb->count == 0)
         return;
 
-    impl->count--;
-    impl->back = (impl->back + 1) % impl->capacity;
+    rb->count--;
+    rb->back = (rb->back + 1) % rb->capacity;
 }
 
-u32 GetCount(RingBuffer* buffer)
+
+void Clear(RingBuffer* rb)
 {
-    return Impl(buffer)->count;
+    auto impl = rb;
+    rb->count = 0;
+    rb->front = 0;
+    rb->back = 0;
 }
 
-void Clear(RingBuffer* buffer)
+void* GetAt(RingBuffer* rb, u32 index)
 {
-    auto impl = Impl(buffer);
-    impl->count = 0;
-    impl->front = 0;
-    impl->back = 0;
+    auto impl = rb;
+    assert(index < rb->count);
+    return rb->items + ((rb->front + index) % rb->capacity) * rb->item_size;
 }
-
-void* GetAt(RingBuffer* list, u32 index)
-{
-    auto impl = Impl(list);
-    assert(index < impl->count);
-    return impl->items + (impl->front + index) * impl->item_size;
-}
-
-bool IsEmpty(RingBuffer* list)
-{
-    return Impl(list)->count == 0;
-}
-
-bool IsFull(RingBuffer* list)
-{
-    return Impl(list)->count == Impl(list)->capacity;
-}
-

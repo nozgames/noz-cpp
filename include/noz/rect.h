@@ -35,6 +35,7 @@ inline void SetRight(Rect& rect, f32 value) { rect.width = value - rect.x; }
 inline bool Contains(const Rect& rect, f32 x, f32 y);
 inline Rect Intersection(const Rect& rect, const Rect& other);
 
+inline i32 GetLeft(const RectInt& rect) { return rect.x; }
 inline i32 GetRight(const RectInt& rect) { return rect.x + rect.width; }
 inline i32 GetTop(const RectInt& rect) { return rect.y; }
 inline i32 GetBottom(const RectInt& rect) { return rect.y + rect.height; }

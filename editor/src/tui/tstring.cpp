@@ -15,7 +15,7 @@ struct TStringBuilderImpl : Object
 {
     size_t length;
     size_t capacity;
-    tchar_t* buffer;
+    TChar* buffer;
 };
 
 static TStringImpl* Impl(TString* s) { return (TStringImpl*)Cast(s, TYPE_UNKNOWN); }
@@ -240,9 +240,10 @@ static char* RenderInt(char* o, int i)
     return o;
 }
 
-static char* RenderColor(char* o, tcolor_t color)
+static char* RenderColor(char* o, TColor color)
 {
-    if (color == TCOLOR_NONE)
+#if 0
+    if (color.code == 0)
     {
         o = RenderEscape(o);
         *o++ = '3';
@@ -265,12 +266,14 @@ static char* RenderColor(char* o, tcolor_t color)
     *o++ = ';';
     o = RenderInt(o, color24.b);
     *o++ = 'm';
+#endif
     return o;
 }
 
-static char* RenderBackgroundColor(char* o, tcolor_t color)
+static char* RenderBackgroundColor(char* o, TColor color)
 {
-    if (color == TCOLOR_NONE)
+#if 0
+    if (color.code == 0)
     {
         o = RenderEscape(o);
         *o++ = '4';
@@ -293,37 +296,38 @@ static char* RenderBackgroundColor(char* o, tcolor_t color)
     *o++ = ';';
     o = RenderInt(o, color24.b);
     *o++ = 'm';
+#endif
     return o;
 }
 
-TStringBuilder* Append(TStringBuilder* builder, const char* text, tcolor_t color, tcolor_t bg_color)
+TStringBuilder* Append(TStringBuilder* builder, const char* text, TColor fg_color, TColor bg_color)
 {
     return builder;
 }
 
 TStringBuilder* CreateTStringBuilder(Allocator* allocator, size_t capacity)
 {
-    auto builder = (TStringBuilder*)CreateObject(allocator, sizeof(TStringBuilderImpl) + sizeof(tchar_t) * capacity, TYPE_UNKNOWN);
+    auto builder = (TStringBuilder*)CreateObject(allocator, sizeof(TStringBuilderImpl) + sizeof(TChar) * capacity, TYPE_UNKNOWN);
     auto impl = Impl(builder);
     impl->length = 0;
     impl->capacity = capacity;
-    impl->buffer = (tchar_t*)(impl + 1);
+    impl->buffer = (TChar*)(impl + 1);
     return builder;
 }
 
-TString* CreateTString(Allocator* allocator, const tchar_t* data, size_t data_len)
+TString* CreateTString(Allocator* allocator, const TChar* data, size_t data_len)
 {
-    auto tstr = (TString*)CreateObject(allocator, sizeof(TStringImpl) + sizeof(tchar_t) * data_len, TYPE_UNKNOWN);
+    auto tstr = (TString*)CreateObject(allocator, sizeof(TStringImpl) + sizeof(TChar) * data_len, TYPE_UNKNOWN);
     auto impl = Impl(tstr);
     impl->length = data_len;
     impl->capacity = data_len;
-    memcpy(impl + 1, data, data_len * sizeof(tchar_t));
+    memcpy(impl + 1, data, data_len * sizeof(TChar));
     return tstr;
 }
 
 TString* CreateTString(Allocator* allocator, size_t capacity)
 {
-    auto tstr = (TString*)CreateObject(allocator, sizeof(TStringImpl) + sizeof(tchar_t) * capacity, TYPE_UNKNOWN);
+    auto tstr = (TString*)CreateObject(allocator, sizeof(TStringImpl) + sizeof(TChar) * capacity, TYPE_UNKNOWN);
     auto impl = Impl(tstr);
     impl->length = 0;
     impl->capacity = capacity;
@@ -331,10 +335,11 @@ TString* CreateTString(Allocator* allocator, size_t capacity)
 }
 
 
-void CStringToTChar(const char* src, tchar_t* dst, u32 dst_size)
+u32 CStringToTChar(const char* src, TChar* dst, u32 dst_size)
 {
-    tcolor2_t fg_color = { 0, 0, 0, 0 };
-    tcolor2_t bg_color = { 0, 0, 0, 0 };
+    TColor fg_color = TCOLOR_NONE;
+    TColor bg_color = TCOLOR_BACKGROUND_NONE;
+    u32 length = 0;
 
     Token token;
     Tokenizer tk;
@@ -345,19 +350,23 @@ void CStringToTChar(const char* src, tchar_t* dst, u32 dst_size)
         char c = PeekChar(tk);
         if (c != '\033')
         {
-            *dst = { c, TCOLOR_NONE, TCOLOR_NONE, fg_color, bg_color };
+            *dst = { c, fg_color, bg_color };
+            dst++;
             dst_size--;
+            length++;
             NextChar(tk);
             continue;
         }
+
+        NextChar(tk);
 
         if (!ExpectChar(tk, '['))
             continue;
 
         if (ExpectChar(tk, 'm'))
         {
-            fg_color = { 0, 0, 0, 0 };
-            bg_color = { 0, 0, 0, 0 };
+            fg_color = TCOLOR_NONE;
+            bg_color = TCOLOR_BACKGROUND_NONE;
             continue;
         }
 
@@ -377,8 +386,8 @@ void CStringToTChar(const char* src, tchar_t* dst, u32 dst_size)
             switch (value)
             {
             case 0:
-                fg_color = { 0, 0, 0, 0 };
-                bg_color = { 0, 0, 0, 0 };
+                fg_color = TCOLOR_NONE;
+                bg_color = TCOLOR_BACKGROUND_NONE;
                 break;
 
             case 30:
@@ -396,7 +405,7 @@ void CStringToTChar(const char* src, tchar_t* dst, u32 dst_size)
                 break;
 
             case 39:
-                fg_color = { 0, 0, 0, 0 };
+                fg_color = TCOLOR_NONE;
                 break;
 
             case 40:
@@ -414,9 +423,33 @@ void CStringToTChar(const char* src, tchar_t* dst, u32 dst_size)
                 break;
 
             case 49:
-                fg_color = { 0, 0, 0, 0 };
+                fg_color = TCOLOR_BACKGROUND_NONE;
                 break;
+            }
+
+            if (value == 38 || value == 48)
+            {
+                i32 r;
+                i32 g;
+                i32 b;
+                bool success = ExpectChar(tk, ';');
+                success = success && ExpectChar(tk, '2');
+                success = success && ExpectChar(tk, ';');
+                success = success && ExpectInt(tk, &token, &r);
+                success = success && ExpectChar(tk, ';');
+                success = success && ExpectInt(tk, &token, &g);
+                success = success && ExpectChar(tk, ';');
+                success = success && ExpectInt(tk, &token, &b);
+                if (success)
+                {
+                    if (value == 38)
+                        fg_color = { (u8)value, (u8)r, (u8)g, (u8)b};
+                    else
+                        bg_color = { (u8)value, (u8)r, (u8)g, (u8)b};
+                }
             }
         }
     }
+
+    return length;
 }
