@@ -28,7 +28,7 @@ public:
     void SetInt(const char* group, const char* key, int value);
     void SetFloat(const char* group, const char* key, float value);
     void SetVec3(const char* group, const char* key, vec3 value);
-    void SetColor(const char* group, const char* key, color_t value);
+    void SetColor(const char* group, const char* key, Color value);
 
     // @get
     std::string GetString(const char* group, const char* key, const char* default_value) const;
@@ -36,7 +36,7 @@ public:
     float GetFloat(const char* group, const char* key, float default_value) const;
     bool GetBool(const char* group, const char* key, bool default_value) const;
     vec3 GetVec3(const char* group, const char* key, vec3 default_value) const;
-    color_t GetColor(const char* group, const char* key, color_t default_value) const;
+    Color GetColor(const char* group, const char* key, Color default_value) const;
 
     // @keys
     void AddKey(const char* group, const char* key);

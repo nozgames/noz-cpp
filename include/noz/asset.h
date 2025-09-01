@@ -4,15 +4,19 @@
 
 #pragma once
 
+#define MAKE_FOURCC(a, b, c, d) \
+    ((u32)(a) | ((u32)(b) << 8) | ((u32)(c) << 16) | ((u32)(d) << 24))
+
 typedef u32 asset_signature_t;
 
-constexpr asset_signature_t ASSET_SIGNATURE_TEXTURE     = 0x4E5A5458;  // 'NZTX'
-constexpr asset_signature_t ASSET_SIGNATURE_MESH        = 0x4E5A4D53;  // 'NZMS'
-constexpr asset_signature_t ASSET_SIGNATURE_SOUND       = 0x4E5A534E;  // 'NZSN'
-constexpr asset_signature_t ASSET_SIGNATURE_SHADER      = 0x4E5A5348;  // 'NZSH'
-constexpr asset_signature_t ASSET_SIGNATURE_MATERIAL    = 0x4E5A4D54;  // 'NZMT'
-constexpr asset_signature_t ASSET_SIGNATURE_FONT        = 0x4E5A4654;  // 'NZFT'
-constexpr asset_signature_t ASSET_SIGNATURE_STYLE_SHEET = 0x4E5A5354;  // 'NZST'
+constexpr asset_signature_t ASSET_SIGNATURE_TEXTURE     = MAKE_FOURCC('N', 'Z', 'T', 'X');
+constexpr asset_signature_t ASSET_SIGNATURE_MESH        = MAKE_FOURCC('N', 'Z', 'M', 'S');
+constexpr asset_signature_t ASSET_SIGNATURE_SOUND       = MAKE_FOURCC('N', 'Z', 'S', 'N');
+constexpr asset_signature_t ASSET_SIGNATURE_SHADER      = MAKE_FOURCC('N', 'Z', 'S', 'H');
+constexpr asset_signature_t ASSET_SIGNATURE_MATERIAL    = MAKE_FOURCC('N', 'Z', 'M', 'T');
+constexpr asset_signature_t ASSET_SIGNATURE_FONT        = MAKE_FOURCC('N', 'Z', 'F', 'T');
+constexpr asset_signature_t ASSET_SIGNATURE_STYLE_SHEET = MAKE_FOURCC('N', 'Z', 'S', 'T');
+constexpr asset_signature_t ASSET_SIGNATURE_VFX         = MAKE_FOURCC('N', 'Z', 'F', 'X');
 constexpr asset_signature_t ASSET_SIGNATURE_UNKNOWN     = 0xF00DF00D;
 
 struct AssetHeader

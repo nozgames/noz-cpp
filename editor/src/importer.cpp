@@ -2,23 +2,20 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-#include "file_watcher.h"
-#include <noz/noz.h>
-#include <noz/asset.h>
 #include <noz/platform.h>
-#include <noz/log.h>
+#include "file_watcher.h"
 #include "asset_manifest.h"
 #include "server.h"
-#include <thread>
-#include <atomic>
 
 namespace fs = std::filesystem;
 
-AssetImporterTraits* GetShaderImporterTraits();
-AssetImporterTraits* GetTextureImporterTraits();
-AssetImporterTraits* GetFontImporterTraits();
-AssetImporterTraits* GetMeshImporterTraits();
-AssetImporterTraits* GetStyleSheetImporterTraits();
+extern AssetImporterTraits* GetShaderImporterTraits();
+extern AssetImporterTraits* GetTextureImporterTraits();
+extern AssetImporterTraits* GetFontImporterTraits();
+extern AssetImporterTraits* GetMeshImporterTraits();
+extern AssetImporterTraits* GetStyleSheetImporterTraits();
+extern AssetImporterTraits* GetVfxImporterTraits();
+
 
 struct ImportJob
 {
@@ -293,7 +290,8 @@ static int RunImporterLoop()
         GetTextureImporterTraits(),
         GetFontImporterTraits(),
         GetMeshImporterTraits(),
-        GetStyleSheetImporterTraits()
+        GetStyleSheetImporterTraits(),
+        GetVfxImporterTraits()
     };
 
     // Set up signal handler for Ctrl-C

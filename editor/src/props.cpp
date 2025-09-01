@@ -41,7 +41,7 @@ void Props::SetVec3(const char* group, const char* key, vec3 value)
     SetString(group, key, value_str);
 }
 
-void Props::SetColor(const char* group, const char* key, color_t value)
+void Props::SetColor(const char* group, const char* key, Color value)
 {
     char value_str[128];
     snprintf(value_str, sizeof(value_str), "rgba(%.0f,%.0f,%.0f,%.3f)",
@@ -136,7 +136,7 @@ vec3 Props::GetVec3(const char* group, const char* key, vec3 default_value) cons
     return result;
 }
 
-color_t Props::GetColor(const char* group, const char* key, color_t default_value) const
+Color Props::GetColor(const char* group, const char* key, Color default_value) const
 {
     auto value = GetString(group, key, "");
     if (value.empty())
@@ -146,7 +146,7 @@ color_t Props::GetColor(const char* group, const char* key, color_t default_valu
     Init(tok, value.c_str());
 
     Token token = {};
-    color_t result = default_value;
+    Color result = default_value;
     if (!ExpectColor(tok, &token, &result))
         return default_value;
 

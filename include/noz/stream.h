@@ -48,11 +48,18 @@ int64_t ReadI64(Stream* stream);
 float ReadFloat(Stream* stream);
 double ReadDouble(Stream* stream);
 bool ReadBool(Stream* stream);
-void ReadBytes(Stream* stream, void* dest, size_t count);
 int ReadString(Stream* stream, char* buffer, int buffer_size);
-color_t ReadColor(Stream* stream);
+Color ReadColor(Stream* stream);
 vec3 ReadVec3(Stream* stream);
 Rect ReadRect(Stream* stream);
+void ReadBytes(Stream* stream, void* dest, size_t count);
+
+template <typename TStruct> TStruct ReadStruct(Stream* stream)
+{
+    TStruct result;
+    ReadBytes(stream, &result, sizeof(TStruct));
+    return result;
+}
 
 // @write
 void WriteFileSignature(Stream* stream, const char* signature, size_t signature_length);
@@ -69,14 +76,13 @@ void WriteDouble(Stream* stream, double value);
 void WriteBool(Stream* stream, bool value);
 void WriteString(Stream* stream, const char* value);
 void WriteVec3(Stream* stream, const vec3& value);
+void WriteVec2(Stream* stream, const Vec2& value);
 void WriteCSTR(Stream* stream, const char* format, ...); // Write formatted C string without length prefix
-void WriteBytes(Stream* stream, void* data, size_t size);
-void WriteColor(Stream* stream, color_t value);
+void WriteColor(Stream* stream, Color value);
 void WriteRect(Stream* stream, const Rect& value);
+void WriteBytes(Stream* stream, void* data, size_t size);
 
-
-#define ReadStruct(stream, type) \
-    ({ type result; stream_read(stream, &result, sizeof(type)); result; })
-
-#define WriteStruct(stream, value) \
-    stream_write(stream, &(value), sizeof(value))
+template <typename TStruct> void WriteStruct(Stream* stream, TStruct& value)
+{
+    WriteBytes(stream, &value, sizeof(TStruct));
+}

@@ -71,7 +71,7 @@ struct SetScissorData
 
 struct BindColorData
 {
-    color_t color;
+    Color color;
 };
 
 struct DrawMeshData
@@ -82,7 +82,7 @@ struct DrawMeshData
 struct BeginPassData
 {
     bool clear;
-    color_t color;
+    Color color;
     bool msaa;
     Texture* target;
 };
@@ -147,7 +147,7 @@ void ClearRenderCommands()
     g_render_buffer->transform_count = 1;
 }
 
-void BeginRenderPass(bool clear, color_t clear_color, bool msaa, Texture* target)
+void BeginRenderPass(bool clear, Color clear_color, bool msaa, Texture* target)
 {
     RenderCommand cmd = {
         .type = command_type_begin_pass,
@@ -264,7 +264,7 @@ void BindBoneTransforms(const mat4* bones, size_t bone_count)
     AddRenderCommand(&cmd);
 }
 
-void BindColor(color_t color)
+void BindColor(Color color)
 {
     RenderCommand cmd = {
         .type = command_type_bind_color,

@@ -5,7 +5,7 @@
 #if 0
 
 void MarkDirty(Canvas* canvas);
-void RenderElementQuad(const color_t& color, Texture* texture);
+void RenderElementQuad(const Color& color, Texture* texture);
 
 
 struct ElementFlags

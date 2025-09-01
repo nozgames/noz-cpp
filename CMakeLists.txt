@@ -65,6 +65,8 @@ set(SOURCE_FILES
     src/ui/style_sheet.cpp
     src/ui/text_engine.cpp
     src/ui/style.cpp
+    src/vfx/vfx.cpp
+    src/vfx/vfx_system.cpp
 )
 
 # Add platform-specific files

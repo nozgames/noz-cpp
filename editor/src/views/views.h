@@ -4,26 +4,22 @@
 
 #pragma once
 
-struct View : Object {};
-struct LogView : View {};
+// @structs
+struct View
+{
+    const struct ViewTraits* traits;
+};
 
-// @view_traits
-
+// @traits
 struct ViewTraits
 {
     void(*render)(View* view, const RectInt& rect);
 };
 
-extern ViewTraits g_view_traits[];
-
-// @view
-View* CreateView(Allocator* allocator, size_t view_size, type_t view_type);
-
 // @log_view
-LogView* CreateLogView(Allocator* allocator);
+struct LogView : public View
+{
+    RingBuffer* messages = nullptr;
+};
 
-// void Clear(LogView* view);
-// void Render(LogView* view, const irect_t& rect);
-// void Add(const std::string& message);
-// size_t Count() const;
-// void SetMax(size_t max_messages);
+LogView* CreateLogView(Allocator* allocator);

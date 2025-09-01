@@ -16,3 +16,4 @@ Vec2 Normalize(const Vec2& v)
     }
     return Vec2{ 0.0f, 0.0f };
 }
+

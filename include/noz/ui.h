@@ -55,7 +55,7 @@ struct StyleLength
 struct StyleColor
 {
     StyleParameter parameter;
-    color_t value;
+    Color value;
 };
 
 struct StyleFloat

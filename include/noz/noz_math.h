@@ -110,5 +110,9 @@ Mat4 Ortho(f32 top, f32 bottom, f32 near, f32 far);
 
 Mat3 TRS(const Vec2& translation, f32 rotation, const Vec2& scale);
 
+// @vec2
 Vec2 Reflect(const Vec2& v, const Vec2& normal);
 Vec2 Normalize(const Vec2& v);
+
+inline Vec2 Lerp(const Vec2& v1, const Vec2& v2, float t) { return v1 + (v2 - v1) * t; }
+

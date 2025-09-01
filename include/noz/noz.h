@@ -67,3 +67,4 @@ inline int i32_min(i32 a, i32 b) { return (a < b) ? a : b; }
 #include "physics.h"
 #include "core_assets.h"
 #include "editor.h"
+#include "vfx.h"

@@ -49,7 +49,7 @@ static StyleColor ParseStyleColor(const string& value)
 {
     Tokenizer tk = {};
     Token token = {};
-    color_t color = color_transparent;
+    Color color = COLOR_TRANSPARENT;
     Init(tk, value.c_str());
     ExpectColor(tk, &token, &color);
     return StyleColor{ {STYLE_KEYWORD_OVERWRITE}, color };
@@ -77,8 +77,6 @@ static StyleFlexDirection ParseStyleFlexDirection(const string& value)
 {
     if (value == "row") return StyleFlexDirection{ STYLE_KEYWORD_OVERWRITE, FLEX_DIRECTION_ROW };
     if (value == "column") return StyleFlexDirection{ STYLE_KEYWORD_OVERWRITE, FLEX_DIRECTION_COL };
-    if (value == "row-reverse") return StyleFlexDirection{ STYLE_KEYWORD_OVERWRITE, FLEX_DIRECTION_ROW_REVERSE };
-    if (value == "column-reverse") return StyleFlexDirection{ STYLE_KEYWORD_OVERWRITE, FLEX_DIRECTION_COL_REVERSE };
     return StyleFlexDirection{ STYLE_KEYWORD_INHERIT, FLEX_DIRECTION_ROW };
 }
 

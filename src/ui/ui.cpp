@@ -59,7 +59,7 @@ Font* GetDefaultFont()
     return g_ui.default_font;
 }
 
-void RenderElementQuad(const color_t& color, Texture* texture)
+void RenderElementQuad(const Color& color, Texture* texture)
 {
     BindMaterial(g_ui.element_material);
     BindColor(color);

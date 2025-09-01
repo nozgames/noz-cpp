@@ -26,7 +26,7 @@ color32_t color32_create(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
     return color;
 }
 
-color32_t color32_from_color(const color_t* color)
+color32_t color32_from_color(const Color* color)
 {
     if (!color) 
     {
@@ -76,7 +76,7 @@ color24_t color24_create(uint8_t r, uint8_t g, uint8_t b)
     return color;
 }
 
-color24_t color24_from_color(const color_t* color)
+color24_t color24_from_color(const Color* color)
 {
     if (!color) 
     {
@@ -109,20 +109,20 @@ bool color24_equals(const color24_t* a, const color24_t* b)
 }
 
 // Color functions
-color_t color_create(float r, float g, float b, float a)
+Color color_create(float r, float g, float b, float a)
 {
-    color_t color = {r, g, b, a};
+    Color color = {r, g, b, a};
     return color;
 }
 
-color_t color_from_color32(const color32_t* color)
+Color color_from_color32(const color32_t* color)
 {
     if (!color) 
     {
         return color_create(0.0f, 0.0f, 0.0f, 1.0f);
     }
     
-    color_t result = 
+    Color result =
     {
         color->r / 255.0f,
         color->g / 255.0f,
@@ -132,14 +132,14 @@ color_t color_from_color32(const color32_t* color)
     return result;
 }
 
-color_t color_from_color24(const color24_t* color, float alpha)
+Color color_from_color24(const color24_t* color, float alpha)
 {
     if (!color) 
     {
         return color_create(0.0f, 0.0f, 0.0f, alpha);
     }
     
-    color_t result = 
+    Color result =
     {
         color->r / 255.0f,
         color->g / 255.0f,
@@ -149,17 +149,17 @@ color_t color_from_color24(const color24_t* color, float alpha)
     return result;
 }
 
-bool color_is_transparent(const color_t* color)
+bool color_is_transparent(const Color* color)
 {
     return color && color->a <= 0.0f;
 }
 
-bool color_is_opaque(const color_t* color)
+bool color_is_opaque(const Color* color)
 {
     return color && color->a >= 1.0f;
 }
 
-color_t color_clamped(const color_t* color)
+Color color_clamped(const Color* color)
 {
     if (!color) 
     {
@@ -174,7 +174,7 @@ color_t color_clamped(const color_t* color)
     );
 }
 
-bool color_equals(const color_t* a, const color_t* b)
+bool color_equals(const Color* a, const Color* b)
 {
     if (!a || !b) return a == b;
     
@@ -185,7 +185,7 @@ bool color_equals(const color_t* a, const color_t* b)
            fabsf(a->a - b->a) < epsilon;
 }
 
-color_t color_add(const color_t* a, const color_t* b)
+Color color_add(const Color* a, const Color* b)
 {
     if (!a || !b) 
     {
@@ -195,7 +195,7 @@ color_t color_add(const color_t* a, const color_t* b)
     return color_create(a->r + b->r, a->g + b->g, a->b + b->b, a->a + b->a);
 }
 
-color_t color_subtract(const color_t* a, const color_t* b)
+Color color_subtract(const Color* a, const Color* b)
 {
     if (!a || !b) 
     {
@@ -205,7 +205,7 @@ color_t color_subtract(const color_t* a, const color_t* b)
     return color_create(a->r - b->r, a->g - b->g, a->b - b->b, a->a - b->a);
 }
 
-color_t color_multiply_scalar(const color_t* color, float scalar)
+Color color_multiply_scalar(const Color* color, float scalar)
 {
     if (!color) 
     {
@@ -215,7 +215,7 @@ color_t color_multiply_scalar(const color_t* color, float scalar)
     return color_create(color->r * scalar, color->g * scalar, color->b * scalar, color->a * scalar);
 }
 
-color_t color_multiply(const color_t* a, const color_t* b)
+Color color_multiply(const Color* a, const Color* b)
 {
     if (!a || !b) 
     {
@@ -225,7 +225,7 @@ color_t color_multiply(const color_t* a, const color_t* b)
     return color_create(a->r * b->r, a->g * b->g, a->b * b->b, a->a * b->a);
 }
 
-color_t color_lerp(const color_t* a, const color_t* b, float t)
+Color color_lerp(const Color* a, const Color* b, float t)
 {
     if (!a || !b) 
     {
@@ -256,9 +256,10 @@ color24_t color24_green = {0, 255, 0};
 color24_t color24_blue = {0, 0, 255};
 
 // @color
-color_t color_black = {0.0f, 0.0f, 0.0f, 1.0f};
-color_t color_white = {1.0f, 1.0f, 1.0f, 1.0f};
-color_t color_red = {1.0f, 0.0f, 0.0f, 1.0f};
-color_t color_green = {0.0f, 1.0f, 0.0f, 1.0f};
-color_t color_blue = {0.0f, 0.0f, 1.0f, 1.0f};
-color_t color_transparent = {0.0f, 0.0f, 0.0f, 0.0f};
+Color COLOR_BLACK = {0.0f, 0.0f, 0.0f, 1.0f};
+Color COLOR_WHITE = {1.0f, 1.0f, 1.0f, 1.0f};
+Color COLOR_RED = {1.0f, 0.0f, 0.0f, 1.0f};
+Color COLOR_GREEN = {0.0f, 1.0f, 0.0f, 1.0f};
+Color COLOR_BLUE = {0.0f, 0.0f, 1.0f, 1.0f};
+Color COLOR_TRANSPARENT = {0.0f, 0.0f, 0.0f, 0.0f};
+

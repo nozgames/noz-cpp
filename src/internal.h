@@ -122,7 +122,7 @@ void InitRenderer(RendererTraits* traits, SDL_Window* window);
 void ShutdownRenderer();
 void BeginFrameGPU();
 void EndFrameGPU();
-SDL_GPURenderPass* BeginPassGPU(bool clear, color_t clear_color, bool msaa, Texture* target);
+SDL_GPURenderPass* BeginPassGPU(bool clear, Color clear_color, bool msaa, Texture* target);
 SDL_GPURenderPass* BeginShadowPassGPU();
 SDL_GPURenderPass* BeginGammaPassGPU();
 void EndRenderPassGPU();
@@ -200,7 +200,7 @@ void animation_evaluate_frame(
     size_t transform_count);
 
 // @helpers
-inline SDL_FColor ColorToSDL(color_t color)
+inline SDL_FColor ColorToSDL(Color color)
 {
     SDL_FColor result;
     result.r = color.r;

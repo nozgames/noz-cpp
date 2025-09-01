@@ -242,7 +242,7 @@ bool ExpectInt(Tokenizer& tok, Token* token, int* result)
     return false;
 }
 
-bool ExpectVec2(Tokenizer& tok, Token* token, vec2* result)
+bool ExpectVec2(Tokenizer& tok, Token* token, Vec2* result)
 {
     assert(token);
     assert(result);
@@ -250,6 +250,14 @@ bool ExpectVec2(Tokenizer& tok, Token* token, vec2* result)
     SkipWhitespace(tok);
 
     BeginToken(tok, token);
+
+    // Single value (no parens)
+    if (ExpectFloat(tok, token, &result->x))
+    {
+        EndToken(tok, token, TOKEN_TYPE_VEC2);
+        result->y = result->x;
+        return true;
+    }
 
     if (!ExpectChar(tok, '('))
         return false;
@@ -491,7 +499,7 @@ bool NextToken(Tokenizer& tok, Token* token)
     // Color?
     if (c == '#')
     {
-        color_t col = {};
+        Color col = {};
         return ExpectColor(tok, token, &col);
     }
 
@@ -511,7 +519,7 @@ bool IsTokenValue(const Token& token, const char* value)
     return value && strcmp(token.value, value) == 0;
 }
 
-bool ExpectColor(Tokenizer& tok, Token* token, color_t* result)
+bool ExpectColor(Tokenizer& tok, Token* token, Color* result)
 {
     assert(result);
 
@@ -604,7 +612,7 @@ bool ExpectColor(Tokenizer& tok, Token* token, color_t* result)
         return true;
     }
 
-    struct ColorName { const char* name; color_t color; };
+    struct ColorName { const char* name; Color color; };
     static const ColorName predefined_colors[] = {
         {"black", {0.0f, 0.0f, 0.0f, 1.0f}},
         {"white", {1.0f, 1.0f, 1.0f, 1.0f}},
@@ -657,7 +665,10 @@ bool ExpectToken(Tokenizer& tok, TokenType type, Token* token)
     return NextToken(tok, token) && token->type == type;
 }
 
-bool IsValue(const Token& token, const char* value)
+bool IsValue(const Token& token, const char* value, bool ignore_case)
 {
+    if (ignore_case)
+        return _strnicmp(token.value, value, token.length) == 0;
+
     return strncmp(token.value, value, token.length) == 0;
 }

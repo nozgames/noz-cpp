@@ -215,7 +215,7 @@ void EndRenderFrame()
     g_renderer.render_pass = nullptr;
 }
 
-SDL_GPURenderPass* BeginPassGPU(SDL_GPUTexture* target, bool clear, color_t clear_color)
+SDL_GPURenderPass* BeginPassGPU(SDL_GPUTexture* target, bool clear, Color clear_color)
 {
     SDL_GPUColorTargetInfo color_target = {};
     color_target.texture = target;
@@ -238,7 +238,7 @@ SDL_GPURenderPass* BeginPassGPU(SDL_GPUTexture* target, bool clear, color_t clea
     return g_renderer.render_pass;
 }
 
-SDL_GPURenderPass* BeginPassGPU(bool clear, color_t clear_color, bool msaa, Texture* target)
+SDL_GPURenderPass* BeginPassGPU(bool clear, Color clear_color, bool msaa, Texture* target)
 {
     assert(!g_renderer.render_pass);
 
@@ -375,7 +375,7 @@ SDL_GPURenderPass* BeginUIPassGPU()
     assert(!g_renderer.render_pass);
     assert(g_renderer.command_buffer);
 
-    return BeginPassGPU(g_renderer.swap_chain_texture, false, color_black);
+    return BeginPassGPU(g_renderer.swap_chain_texture, false, COLOR_BLACK);
 }
 
 SDL_GPURenderPass* BeginShadowPassGPU()
@@ -440,7 +440,7 @@ SDL_GPURenderPass* BeginGammaPassGPU()
     if (!g_renderer.gamma_material)
         Exit("missing gamma shader");
 
-    return BeginPassGPU(g_renderer.swap_chain_texture, false, color_black);
+    return BeginPassGPU(g_renderer.swap_chain_texture, false, COLOR_BLACK);
 }
 
 static void RenderGammaPass()

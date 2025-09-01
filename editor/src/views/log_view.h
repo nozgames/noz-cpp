@@ -3,7 +3,8 @@
 //
 
 #pragma once
-#include "tree_view.h"
 
+struct LogView;
 
+void AddMessage(LogView* view, const char* str);
 

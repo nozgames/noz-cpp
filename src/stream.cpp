@@ -376,6 +376,11 @@ void WriteVec3(Stream* stream, const vec3& value)
     WriteBytes(stream, (void*)&value, sizeof(vec3));
 }
 
+void WriteVec2(Stream* stream, const Vec2& value)
+{
+    WriteBytes(stream, (void*)&value, sizeof(Vec2));
+}
+
 void WriteRect(Stream* stream, const Rect& value)
 {
     WriteBytes(stream, (void*)&value, sizeof(Rect));
@@ -441,16 +446,16 @@ void WriteBytes(Stream* stream, void* data, size_t size)
 }
 
 // Color operations
-color_t ReadColor(Stream* stream)
+Color ReadColor(Stream* stream)
 {
-    color_t color = {0.0f, 0.0f, 0.0f, 1.0f};
-    ReadBytes(stream, &color, sizeof(color_t));
+    Color color = {0.0f, 0.0f, 0.0f, 1.0f};
+    ReadBytes(stream, &color, sizeof(Color));
     return color;
 }
 
-void WriteColor(Stream* stream, color_t value)
+void WriteColor(Stream* stream, Color value)
 {
-    WriteBytes(stream, &value, sizeof(color_t));
+    WriteBytes(stream, &value, sizeof(Color));
 }
 
 // Internal helper functions

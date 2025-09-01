@@ -13,72 +13,35 @@ struct LogMessage
     u32 length;
 };
 
-struct LogViewImpl
-{
-    RingBuffer* messages = nullptr;
-};
-
-static LogViewImpl* Impl(LogView* view) { return (LogViewImpl*)Cast(view, EDITOR_TYPE_LOG_VIEW); }
-
-#if 0
-LogView::LogView()
-{
-    _tree_view = std::make_unique<TreeView>();
-}
-
-void LogView::Clear()
-{
-    _tree_view->Clear();
-}
-
-void LogView::Add(const std::string& message)
-{
-    auto builder = CreateTStringBuilder(ALLOCATOR_SCRATCH);
-
-    //_tree_view->Add(TStringBuilder().Add(message).ToString(), 0, nullptr);
-    Destroy(builder);
-}
-
-size_t LogView::Count() const
-{
-    return _tree_view->NodeCount();
-}
-
-void LogView::SetMax(size_t max_messages)
-{
-    _tree_view->SetMaxEntries(max_messages);
-}
-
-void LogView::Render(const RectInt& rect)
-{
-    _tree_view->Render(rect);
-}
-
-#endif
-
 void AddMessage(LogView* view, const char* str)
 {
-    auto impl = Impl(view);
+    if (IsFull(view->messages))
+        PopFront(view->messages);
 
-    if (IsFull(impl->messages))
-        PopFront(impl->messages);
-
-    auto item = (LogMessage*)PushBack(impl->messages);
+    auto item = (LogMessage*)PushBack(view->messages);
     CStringToTChar(str, item->value, MAX_LOG_MESSAGE_LENGTH);
 }
 
 void LogViewRender(View* view, const RectInt& rect)
 {
+    LogView* log_view = (LogView*)view;
+    u32 count = GetCount(log_view->messages);
+    u32 bot = GetBottom(rect) - 1;
+    u32 top = GetTop(rect);
+    // for (u32 i=0; i<count && bot - i >= top; i++)
+    //     AddPixels()
+
+    // TODO: need tstring working
 }
+
+static ViewTraits g_log_view_traits = {
+    .render = LogViewRender
+};
 
 LogView* CreateLogView(Allocator* allocator)
 {
-    g_view_traits[EDITOR_TYPE_LOG_VIEW] = {
-        .render = LogViewRender
-    };
-
-    LogView* view = (LogView*)CreateView(allocator, sizeof(LogViewImpl), EDITOR_TYPE_LOG_VIEW);
-    LogViewImpl* impl = Impl(view);
-    impl->messages = CreateRingBuffer(allocator, MAX_LOG_MESSAGES, sizeof(LogMessage));
+    LogView* view = (LogView*)Alloc(allocator, sizeof(LogView));
+    view->traits = &g_log_view_traits;
+    view->messages = CreateRingBuffer(allocator, MAX_LOG_MESSAGES, sizeof(LogMessage));
     return view;
 }

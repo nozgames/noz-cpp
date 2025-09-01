@@ -159,6 +159,9 @@ void ImportShader(const fs::path& source_path, Stream* output_stream, Props* con
 
 bool DoesShaderDependOn(const fs::path& source_path, const fs::path& dependency_path)
 {
+    if (dependency_path.extension() != ".hlsl")
+        return false;
+
     try
     {
         // Read source file

@@ -41,6 +41,7 @@ set(SOURCE_FILES
     src/importers/animation_importer.cpp
     src/importers/skeleton_importer.cpp
     src/importers/style_sheet_importer.cpp
+    src/importers/vfx_importer.cpp
     src/importers/texture_importer.cpp
     src/msdf/Contour.cpp
     src/msdf/Edge.cpp

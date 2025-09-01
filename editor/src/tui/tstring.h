@@ -56,7 +56,7 @@ public:
     TStringBuilder& Add(const vec3& v);               // Format as "(x, y, z)"
     TStringBuilder& Add(const vec4& v);               // Format as "(x, y, z, w)"
     TStringBuilder& Add(const color24_t& color);      // Format as hex color
-    TStringBuilder& Add(const color_t& color);        // Format as hex color (from float color)
+    TStringBuilder& Add(const Color& color);        // Format as hex color (from float color)
     TStringBuilder& Add(bool value);                  // Format as "true"/"false"
     TStringBuilder& Add(int value);                   // Format as integer
     TStringBuilder& Add(float value);                 // Format as float
