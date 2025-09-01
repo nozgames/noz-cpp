@@ -24,6 +24,8 @@ inline f32 GetLeft(const Rect& rect) { return rect.x; }
 inline f32 GetTop(const Rect& rect) { return rect.y; }
 inline f32 GetBottom(const Rect& rect) { return rect.y + rect.height; }
 inline f32 GetRight(const Rect& rect) { return rect.x + rect.width; }
+inline Vec2 GetTopLeft(const Rect& rect) { return { rect.x, rect.y }; }
+inline Vec2 GetCenter(const Rect& rect) { return { rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f }; }
 
 inline void SetLeft(Rect& rect, f32 value) { rect.x = value; }
 inline void SetTop(Rect& rect, f32 value) { rect.y = value; }
@@ -31,8 +33,13 @@ inline void SetBottom(Rect& rect, f32 value) { rect.height = value - rect.y; }
 inline void SetRight(Rect& rect, f32 value) { rect.width = value - rect.x; }
 
 inline bool Contains(const Rect& rect, f32 x, f32 y);
-inline bool Intersects(const Rect& rect, const Rect& other);
 inline Rect Intersection(const Rect& rect, const Rect& other);
 
 inline i32 GetRight(const RectInt& rect) { return rect.x + rect.width; }
 inline i32 GetBottom(const RectInt& rect) { return rect.y + rect.height; }
+
+inline bool Intersects(const Rect& rect, const Rect& other)
+{
+    return !(other.x > rect.x + rect.width || other.x + other.width < rect.x ||
+             other.y > rect.y + rect.height || other.y + other.height < rect.y);
+}

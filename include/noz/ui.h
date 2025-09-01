@@ -118,6 +118,14 @@ inline bool IsFixed(const StyleLength& length) { return length.unit == STYLE_LEN
 inline bool IsPercent(const StyleLength& length) { return length.unit == STYLE_LENGTH_UNIT_PERCENT; }
 
 // @ui
-void SetDefaultFont(Font* font);
-Font* GetDefaultFont();
-
+extern void SetDefaultFont(Font* font);
+extern Font* GetDefaultFont();
+extern void BeginUI();
+extern void EndUI();
+extern void BeginCanvas(u32 referenceWidth, u32 referenceHeight);
+extern void BeginElement(const name_t* id);
+extern void EndElement();
+extern void EndCanvas();
+extern void SetStyleSheet(StyleSheet* sheet);
+extern void DrawUI();
+extern void Label(const char* text, const name_t* id);
