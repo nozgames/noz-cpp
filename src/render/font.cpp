@@ -195,7 +195,7 @@ Material* GetMaterial(Font* font)
     FontImpl* impl = static_cast<FontImpl*>(font);
     if (impl->material == nullptr)
     {
-        impl->material = CreateMaterial(GetAllocator(font), CoreAssets.shaders.text);
+        impl->material = CreateMaterial(GetAllocator(font), g_core_assets.shaders.text);
         SetTexture(impl->material, impl->texture);
     }
 

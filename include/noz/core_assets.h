@@ -29,4 +29,4 @@ struct LoadedCoreAssets
     } textures;
 };
 
-extern LoadedCoreAssets CoreAssets;
+extern LoadedCoreAssets g_core_assets;

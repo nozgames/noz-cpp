@@ -4,22 +4,6 @@
 
 #define GET_ALLOCATOR(a) (a == nullptr ? g_default_allocator : a);
 
-struct AllocHeader
-{
-    DestructorFunc destructor;
-    Allocator* allocator;
-#ifdef _DEBUG
-    u64 checksum;
-#endif
-};
-
-// todo: implement debug tracking.
-struct DebugAllocHeader
-{
-    Allocator* allocator;
-    size_t size;
-};
-
 static AllocHeader* GetHeader(void* p) { return (AllocHeader*)p - 1; }
 
 #ifdef _DEBUG

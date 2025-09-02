@@ -10,7 +10,7 @@
 void ReloadStyleSheet(Object* asset, Stream* stream, const AssetHeader* header, const Name* name);
 #endif
 
-LoadedCoreAssets CoreAssets = {};
+LoadedCoreAssets g_core_assets = {};
 
 bool ReadAssetHeader(Stream* stream, AssetHeader* header)
 {

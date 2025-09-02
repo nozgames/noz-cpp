@@ -24,6 +24,15 @@ struct Allocator
     const char* name;
 };
 
+struct AllocHeader
+{
+    DestructorFunc destructor;
+    Allocator* allocator;
+#ifdef _DEBUG
+    u64 checksum;
+#endif
+};
+
 void* Alloc(Allocator* a, size_t size, DestructorFunc = nullptr);
 void Free(void* ptr);
 void* Realloc(void* ptr, size_t new_size);
@@ -41,6 +50,7 @@ struct PoolAllocator : Allocator { };
 
 PoolAllocator* CreatePoolAllocator(u32 item_size, u32 capacity);
 void* GetAt(PoolAllocator* allocator, u32 index);
+u32 GetIndex(PoolAllocator* allocator, const void* ptr);
 
 // @scratch
 void PushScratch();

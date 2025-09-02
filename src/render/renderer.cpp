@@ -321,7 +321,7 @@ void EndRenderPassGPU()
 void BindDefaultTextureGPU(int index)
 {
     assert(g_renderer.device);
-    BindTextureGPU(CoreAssets.textures.white, g_renderer.command_buffer, sampler_register_user0 + index);
+    BindTextureGPU(g_core_assets.textures.white, g_renderer.command_buffer, sampler_register_user0 + index);
 }
 
 void BindTextureGPU(Texture* texture, SDL_GPUCommandBuffer* cb, int index)
@@ -330,7 +330,7 @@ void BindTextureGPU(Texture* texture, SDL_GPUCommandBuffer* cb, int index)
         return;
 
     // Get the actual texture to bind (use default if none provided)
-    Texture* actual_texture = texture ? texture : CoreAssets.textures.white;
+    Texture* actual_texture = texture ? texture : g_core_assets.textures.white;
 
     // Main pass: bind diffuse texture and shadow map
     SDL_GPUTextureSamplerBinding binding = {0};
@@ -418,7 +418,7 @@ static void ResetRenderState()
     BindBoneTransformsGPU(&identity, 1);
 
     for (int i = 0; i < (int)(sampler_register_count); i++)
-        BindTextureGPU(CoreAssets.textures.white, g_renderer.command_buffer, i);
+        BindTextureGPU(g_core_assets.textures.white, g_renderer.command_buffer, i);
 }
 
 static void UpdateBackBuffer()
@@ -443,7 +443,7 @@ static void InitGammaPass()
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
     g_renderer.gamma_mesh = CreateMesh(nullptr, builder, GetName("gamma"));
-    Destroy(builder);
+    Free(builder);
 }
 
 SDL_GPURenderPass* BeginGammaPassGPU()
@@ -469,8 +469,8 @@ static void RenderGammaPass()
 
 void LoadRendererAssets(Allocator* allocator)
 {
-    CoreAssets.textures.white = CreateTexture(nullptr, &color32_white, 1, 1, TEXTURE_FORMAT_RGBA8, GetName("white"));
-    g_renderer.gamma_material = CreateMaterial(ALLOCATOR_DEFAULT, CoreAssets.shaders.gamma);
+    g_core_assets.textures.white = CreateTexture(nullptr, &color32_white, 1, 1, TEXTURE_FORMAT_RGBA8, GetName("white"));
+    g_renderer.gamma_material = CreateMaterial(ALLOCATOR_DEFAULT, g_core_assets.shaders.gamma);
 }
 
 void InitRenderer(RendererTraits* traits, SDL_Window* window)

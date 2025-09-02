@@ -49,6 +49,9 @@ void PoolFree(Allocator* a, void* ptr)
 
 PoolAllocator* CreatePoolAllocator(u32 item_size, u32 capacity)
 {
+    // The Alloc function will request extra space for the AllocHeader so prepare for it.
+    item_size += sizeof(AllocHeader);
+
     u32 alloc_size = sizeof(PoolAllocatorImpl) + (item_size + sizeof(u32)) * capacity;
     PoolAllocatorImpl* impl = (PoolAllocatorImpl*)calloc(1, alloc_size);
     impl->alloc = PoolAlloc;
@@ -66,10 +69,23 @@ PoolAllocator* CreatePoolAllocator(u32 item_size, u32 capacity)
     return impl;
 }
 
+u32 GetIndex(PoolAllocator* allocator, const void* ptr)
+{
+    assert(allocator);
+    PoolAllocatorImpl* impl = static_cast<PoolAllocatorImpl*>(allocator);
+
+    u8* corrected_ptr = (u8*)ptr - sizeof(AllocHeader);
+
+    assert(corrected_ptr >= impl->items);
+    u32 index = ((u8*)corrected_ptr - (u8*)impl->items) / impl->item_size;
+    assert(index < impl->capacity);
+    return index;
+}
+
 void* GetAt(PoolAllocator* allocator, u32 index)
 {
     assert(allocator);
     PoolAllocatorImpl* impl = static_cast<PoolAllocatorImpl*>(allocator);
     assert(index < impl->capacity);
-    return (u8*)impl->items + impl->item_size * index;
+    return (u8*)impl->items + impl->item_size * index + sizeof(AllocHeader);
 }

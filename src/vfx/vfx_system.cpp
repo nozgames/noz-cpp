@@ -8,6 +8,12 @@ constexpr u16 INVALID_INDEX = 0xFFFF;
 constexpr u16 MAX_PARTICLES = 4096;
 constexpr u16 MAX_EMITTERS = 1024;
 constexpr u16 MAX_INSTANCES = 256;
+constexpr u16 MAX_MESHES = 1;
+
+enum VfxMesh
+{
+    VFX_MESH_SQUARE
+};
 
 struct VfxParticle
 {
@@ -66,6 +72,8 @@ struct VfxSystem
     u16 emitter_count;
     u16 instance_count;
     u16 particle_count;
+    Mesh* meshes[MAX_MESHES];
+    Material* material;
 };
 
 static VfxSystem g_vfx = {};
@@ -115,7 +123,7 @@ static int GetRandom(const VfxInt& v) { return RandomInt(v.min, v.max); }
 static Color GetRandom(const VfxColor& v) { return Lerp(v.min, v.max, RandomFloat()); }
 static Vec2 GetRandom(const VfxVec2& range) { return Lerp(range.min, range.max, RandomFloat()); }
 
-static u16 GetIndex(VfxInstance* instance) { return ((u8*)instance - (u8*)GetAt(g_vfx.instance_pool, 0)) / sizeof(VfxInstance); }
+static u16 GetIndex(VfxInstance* instance) { return GetIndex(g_vfx.instance_pool, instance); }
 static VfxInstance* GetInstance(u16 index) { return static_cast<VfxInstance*>(GetAt(g_vfx.instance_pool, index)); }
 static VfxHandle GetHandle(VfxInstance* instance) { return { GetIndex(instance), instance->version }; }
 
@@ -133,7 +141,7 @@ static VfxInstance* CreateInstance()
     if (g_vfx.instance_count >= MAX_INSTANCES)
         return nullptr;
 
-    VfxInstance* instance = (VfxInstance*)Alloc(g_vfx.particle_pool, sizeof(VfxInstance));
+    VfxInstance* instance = (VfxInstance*)Alloc(g_vfx.instance_pool, sizeof(VfxInstance));
     assert(instance);
     g_vfx.instance_count++;
     return instance;
@@ -193,9 +201,9 @@ static void UpdateParticles()
 
     float dt = GetFrameTime();
 
-    VfxParticle* p = static_cast<VfxParticle*>(GetAt(g_vfx.particle_pool, 0));
-    for (u32 i = 0; i < MAX_PARTICLES; ++i, p++)
+    for (u32 i = 0; i < MAX_PARTICLES; ++i)
     {
+        VfxParticle* p = static_cast<VfxParticle*>(GetAt(g_vfx.particle_pool, i));
         if (p->emitter_index == INVALID_INDEX)
             continue;
 
@@ -249,9 +257,9 @@ static void DestroyEmitter(VfxEmitter* emitter)
 static void UpdateEmitters()
 {
     float dt = GetFrameTime();
-    VfxEmitter* e = (VfxEmitter*)GetAt(g_vfx.emitter_pool, 0);
     for (u32 i=0; i<MAX_EMITTERS; i++)
     {
+        VfxEmitter* e = (VfxEmitter*)GetAt(g_vfx.emitter_pool, i);
         if (e->instance_index == INVALID_INDEX)
             continue;
 
@@ -296,9 +304,9 @@ void Destroy(VfxHandle& handle)
     Stop(handle);
 
     // Free any particles associated with the instance
-    VfxParticle* p = (VfxParticle*)GetAt(g_vfx.particle_pool, 0);
     for (u32 i = 0; i < MAX_PARTICLES; ++i)
     {
+        VfxParticle* p = (VfxParticle*)GetAt(g_vfx.particle_pool, i);
         if (p->emitter_index == INVALID_INDEX)
             continue;
 
@@ -328,15 +336,22 @@ void DrawVfx()
     if (g_vfx.particle_count == 0)
         return;
 
-    VfxParticle* p = static_cast<VfxParticle*>(GetAt(g_vfx.particle_pool, 0));
     for (int i=0; i<MAX_PARTICLES; i++)
     {
+        VfxParticle* p = static_cast<VfxParticle*>(GetAt(g_vfx.particle_pool, i));
         if (p->emitter_index == INVALID_INDEX)
             continue;
 
         float t = p->elapsed / p->lifetime;
         float size = Lerp(p->size_start, p->size_end, EvaluateCurve(p->size_curve, t));
         Color col = Lerp(p->color_start, p->color_end, EvaluateCurve(p->color_curve, t));
+
+        //BindTransform( particle_transform * world_transform);
+        BindColor(col);
+        BindMaterial(g_vfx.material);
+
+        // Render the particle mesh
+        DrawMesh(g_vfx.meshes[VFX_MESH_SQUARE]);
 
 #if 0
         // Create particle transform
@@ -377,6 +392,12 @@ void DrawVfx()
         DrawMesh(p->mesh);
 #endif
     }
+}
+
+VfxHandle Play(Vfx* vfx, const Vec2& position)
+{
+    Mat3 transform = TRS(position, 0.0f, {1.0f, 1.0f});
+    return Play(vfx, transform);
 }
 
 VfxHandle Play(Vfx* vfx, const Mat3& transform)
@@ -438,6 +459,13 @@ void InitVfx()
         VfxEmitter* e = (VfxEmitter*)GetAt(g_vfx.emitter_pool, i);
         e->instance_index = INVALID_INDEX;
     }
+
+    g_vfx.material = CreateMaterial(ALLOCATOR_DEFAULT, g_core_assets.shaders.ui);
+
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
+    AddQuad(builder, VEC3_UP, VEC3_RIGHT, 1, 1, {0,0});
+    g_vfx.meshes[VFX_MESH_SQUARE] = CreateMesh(ALLOCATOR_DEFAULT, builder, GetName("vfx_square"));
+    Free(builder);
 }
 
 void ShutdownVfx()

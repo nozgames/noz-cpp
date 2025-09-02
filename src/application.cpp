@@ -150,7 +150,6 @@ void InitApplication(ApplicationTraits* traits)
     InitRenderer(&traits->renderer, g_application.window);
     InitTime();
     InitPhysics();
-    InitVfx();
 
     g_application.asset_allocator = CreateArenaAllocator(traits->asset_memory_size, "assets");
 
@@ -164,6 +163,7 @@ void InitApplication(ApplicationTraits* traits)
     InitEditorClient("127.0.0.1", 8080);
 #endif // NOZ_EDITOR
 
+    InitVfx();
     InitEntity();
     InitUI();
 }

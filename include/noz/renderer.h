@@ -11,7 +11,7 @@ struct Material : Asset {};
 struct Font : Asset {};
 struct Shader : Asset {};
 struct Animation : Asset {};
-struct MeshBuilder : Object {};
+struct MeshBuilder {};
 
 // @renderer_traits
 struct RendererTraits

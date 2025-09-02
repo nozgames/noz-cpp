@@ -50,7 +50,7 @@ static std::vector<std::pair<std::string, std::string>> core_assets = {
     { "fonts.fallback", "fonts/Roboto-Black" }
 };
 
-static void GenerateManifestCode(ManifestGenerator* generator, const fs::path& header_path);
+static void GenerateManifestCode(ManifestGenerator* generator, const fs::path& header_path, Props* config);
 static void GenerateAssetsHeader(ManifestGenerator* generator, const fs::path& header_path);
 static std::string PathToVarName(const std::string& path);
 static std::string PathToNameVar(const std::string& path);
@@ -58,9 +58,9 @@ static void OrganizeAssetsByType(ManifestGenerator* generator);
 static void ScanAssetFile(const fs::path& file_path, ManifestGenerator* generator);
 static const char* ToStringFromSignature(asset_signature_t signature, const std::vector<AssetImporterTraits*>& importers);
 static const char* ToMacroFromSignature(asset_signature_t signature, const std::vector<AssetImporterTraits*>& importers);
-static void GenerateCoreAssetAssignments(ManifestGenerator* generator, Stream* stream);
+static void GenerateCoreAssetAssignments(ManifestGenerator* generator, Stream* stream, Props* config);
 static void GenerateHotloadNames(ManifestGenerator* generator, Stream* stream);
-static void GenerateHotloadFunction(ManifestGenerator* generator, Stream* stream);
+static void GenerateHotloadFunction(ManifestGenerator* generator, Stream* stream, Props* config);
 
 bool GenerateAssetManifest(
     const fs::path& output_directory,
@@ -94,7 +94,7 @@ bool GenerateAssetManifest(
         fs::path header_path = manifest_output_path;
         header_path.replace_extension(".h");
         
-        GenerateManifestCode(&generator, header_path);
+        GenerateManifestCode(&generator, header_path, config);
         bool success = SaveStream(generator.manifest_stream, manifest_output_path);
         Destroy(generator.manifest_stream);
         return success;
@@ -131,7 +131,7 @@ bool GenerateAssetManifest(
     header_path.replace_extension(".h");
     
     // Generate the manifest C code
-    GenerateManifestCode(&generator, header_path);
+    GenerateManifestCode(&generator, header_path, config);
     GenerateAssetsHeader(&generator, header_path);
 
     // Save the manifest to file
@@ -267,8 +267,8 @@ static void GenerateAssetsHeader(ManifestGenerator* generator, const fs::path& h
 
     WriteCSTR(header_stream, "};\n\n");
     
-    WriteCSTR(header_stream, "extern LoadedAssets Assets;\n");
-    WriteCSTR(header_stream, "extern LoadedCoreAssets CoreAssets;\n\n");
+    WriteCSTR(header_stream, "extern LoadedAssets %s;\n", generator->config->GetString("manifest", "global_variable", "Assets").c_str());
+    WriteCSTR(header_stream, "extern LoadedCoreAssets g_core_assets;\n\n");
     WriteCSTR(header_stream, "bool LoadAssets(Allocator* allocator);\n");
     WriteCSTR(header_stream, "void UnloadAssets();\n\n");
     WriteCSTR(header_stream, "#ifdef _HOTLOAD\n");
@@ -340,7 +340,7 @@ static void ScanAssetFile(const fs::path& file_path, ManifestGenerator* generato
     generator->asset_entries.push_back(entry);
 }
 
-static void GenerateManifestCode(ManifestGenerator* generator, const fs::path& header_path)
+static void GenerateManifestCode(ManifestGenerator* generator, const fs::path& header_path, Props* config)
 {
     auto stream = generator->manifest_stream;
 
@@ -357,13 +357,13 @@ static void GenerateManifestCode(ManifestGenerator* generator, const fs::path& h
         "#include \"%s\"\n\n", header_filename.c_str());
 
     WriteCSTR(stream, "// @assets\n");
-    WriteCSTR(stream, "LoadedAssets Assets = {};\n\n");
+    WriteCSTR(stream, "LoadedAssets %s = {};\n\n", config->GetString("manifest", "global_variable", "Assets").c_str());
 
     // Generate name variables
     GenerateHotloadNames(generator, stream);
     
     // Generate hotload function
-    GenerateHotloadFunction(generator, stream);
+    GenerateHotloadFunction(generator, stream, config);
 
     OrganizeAssetsByType(generator);
 
@@ -406,7 +406,7 @@ static void GenerateManifestCode(ManifestGenerator* generator, const fs::path& h
 
         // Build nested access path (e.g., Assets.textures.icons.myicon)
         fs::path asset_path(entry.path);
-        std::string access_path = "Assets";
+        std::string access_path = config->GetString("manifest", "global_variable", "Assets");
         
         auto parent_path = asset_path.parent_path();
         for (const auto& part : parent_path)
@@ -427,18 +427,20 @@ static void GenerateManifestCode(ManifestGenerator* generator, const fs::path& h
     }
     
     // Generate core asset assignments
-    GenerateCoreAssetAssignments(generator, stream);
+    GenerateCoreAssetAssignments(generator, stream, config);
     
     WriteCSTR(stream, "\n    return true;\n}\n\n");
-    
+
+    std::string global_var = config->GetString("manifest", "global_variable", "Assets");
+
     // Write UnloadAssets function
     WriteCSTR(stream,
         "// @uninit\n"
         "void UnloadAssets()\n"
         "{\n"
         "    // Clear all asset pointers\n"
-        "    memset(&Assets, 0, sizeof(Assets));\n"
-        "}\n");
+        "    memset(&%s, 0, sizeof(%s));\n"
+        "}\n", global_var.c_str(), global_var.c_str());
 }
 
 
@@ -593,7 +595,7 @@ static const char* ToStringFromSignature(asset_signature_t signature, const std:
     return nullptr;
 }
 
-static void GenerateCoreAssetAssignments(ManifestGenerator* generator, Stream* stream)
+static void GenerateCoreAssetAssignments(ManifestGenerator* generator, Stream* stream, Props* config)
 {
     WriteCSTR(stream, "\n    // Assign core engine assets\n");
     
@@ -601,7 +603,7 @@ static void GenerateCoreAssetAssignments(ManifestGenerator* generator, Stream* s
     {
         // Convert asset path to access path (e.g., "shaders/shadow" -> "Assets.shaders.shadow")
         fs::path path(asset_path);
-        std::string access_path = "Assets";
+        std::string access_path = config->GetString("manifest", "global_variable", "Assets");
 
         auto parent_path = path.parent_path();
         for (const auto& part : parent_path)
@@ -611,7 +613,7 @@ static void GenerateCoreAssetAssignments(ManifestGenerator* generator, Stream* s
         access_path += "." + var_name;
         
         // Generate: CoreAssets.shaders.shadow = Assets.shaders.shadow;
-        WriteCSTR(stream, "    CoreAssets.%s = %s;\n", core_path.c_str(), access_path.c_str());
+        WriteCSTR(stream, "    g_core_assets.%s = %s;\n", core_path.c_str(), access_path.c_str());
     }
 }
 
@@ -659,7 +661,7 @@ static void GenerateHotloadNames(ManifestGenerator* generator, Stream* stream)
     WriteCSTR(stream, "\n");
 }
 
-static void GenerateHotloadFunction(ManifestGenerator* generator, Stream* stream)
+static void GenerateHotloadFunction(ManifestGenerator* generator, Stream* stream, Props* config)
 {
     WriteCSTR(stream, "#ifdef _HOTLOAD\n\n");
     WriteCSTR(stream, "void HotloadAsset(const Name* incoming_name)\n");
@@ -694,7 +696,7 @@ static void GenerateHotloadFunction(ManifestGenerator* generator, Stream* stream
             
             // Build nested access path (e.g., Assets.textures.icons.myicon)
             fs::path asset_path(entry.path);
-            std::string access_path = "Assets";
+            std::string access_path = config->GetString("manifest", "global_variable", "Assets");
             
             auto parent_path = asset_path.parent_path();
             for (const auto& part : parent_path)

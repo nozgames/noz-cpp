@@ -76,7 +76,7 @@ static Mesh* CreateElementQuad(Allocator* allocator)
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
     auto mesh = CreateMesh(allocator, builder, GetName("element"));
-    Destroy(builder);
+    Free(builder);
     return mesh;
 }
 
@@ -640,9 +640,9 @@ void Label(const char* text, const Name* id)
 void InitUI()
 {
     g_ui.element_quad = CreateElementQuad(ALLOCATOR_DEFAULT);
-    g_ui.default_font = CoreAssets.fonts.fallback;
-    g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, CoreAssets.shaders.ui);
-    SetTexture(g_ui.element_material, CoreAssets.textures.white);
+    g_ui.default_font = g_core_assets.fonts.fallback;
+    g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, g_core_assets.shaders.ui);
+    SetTexture(g_ui.element_material, g_core_assets.textures.white);
 
     Init(g_ui.text_mesh_cache, g_ui.text_mesh_cache_keys, g_ui.text_mesh_cache_values, 1024, sizeof(CachedTextMesh));
 }
