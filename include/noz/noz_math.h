@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include <cmath>
 
 typedef float f32;
 typedef double f64;
@@ -184,6 +185,9 @@ constexpr Vec4 VEC4_ONE = { 1,1,1,1 };
 constexpr Vec2 VEC2_ZERO = { 0,0 };
 constexpr Vec2 VEC2_ONE = { 1,1 };
 
+constexpr f32 F32_MAX = 3.402823466e+38F;
+constexpr f32 F32_MIN = -3.402823466e+38F;
+
 Bounds3 ToBounds(const Vec3* positions, u32 count);
 bool Contains(const Bounds3& bounds, const Vec3& point);
 bool Intersects(const Bounds3& bounds, const Bounds3& point);
@@ -228,7 +232,6 @@ inline f64 Clamp(f64 v, f64 min, f64 max) { return v < min ? min : v > max ? max
 inline float Radians(float degrees) { return degrees * noz::PI / 180.0f; }
 inline float Degrees(float radians) { return radians * 180.0f / noz::PI; }
 
-
 inline i32 Min(i32 v1, i32 v2) { return v1 < v2 ? v1 : v2; }
 inline u32 Min(u32 v1, u32 v2) { return v1 < v2 ? v1 : v2; }
 inline f32 Min(f32 v1, f32 v2) { return v1 < v2 ? v1 : v2; }
@@ -241,6 +244,8 @@ inline Vec3 Max(const Vec3& m1, const Vec3& m2) { return Vec3{ Max(m1.x, m2.x), 
 inline i32 Abs(i32 v) { return v < 0 ? -v : v; }
 inline f32 Abs(f32 v) { return v < 0 ? -v : v; }
 inline f64 Abs(f64 v) { return v < 0 ? -v : v; }
+
+inline f32 Sqrt(f32 v) { return sqrtf(v); }
 
 constexpr Vec2Int RoundToNearest(const Vec2Int& v)
 {
