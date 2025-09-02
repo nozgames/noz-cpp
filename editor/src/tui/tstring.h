@@ -27,6 +27,8 @@ struct TStringBuilder : Object {};
 
 constexpr TColor TCOLOR_NONE = { 39, 0, 0, 0 };
 constexpr TColor TCOLOR_RED = { 31, 0, 0, 0 };
+constexpr TColor TCOLOR_BLACK = { 30, 0, 0, 0 };
+constexpr TColor TCOLOR_WHITE = { 37, 0, 0, 0 };
 constexpr TColor TCOLOR_STRING_VALUE = { 38, 0, 255, 0 };
 
 constexpr TColor TCOLOR_BACKGROUND_NONE = { 49, 0, 0, 0 };
@@ -38,7 +40,7 @@ constexpr TChar TCHAR_WHITE_BACKGROUND = { ' ', TCOLOR_NONE, TCOLOR_BACKGROUND_W
 extern TString* CreateTString(Allocator* allocator);
 extern TStringBuilder* CreateTStringBuilder(Allocator* allocator, size_t capacity = 8192);
 extern TStringBuilder* Append(TStringBuilder* builder, const char* text, TColor fg_color = TCOLOR_NONE, TColor bg_color = TCOLOR_NONE);
-extern u32 CStringToTChar(const char* src, TChar* dst, u32 dst_size);
+extern u32 CStringToTChar(const char* src, TChar* dst, u32 dst_size, TColor fg = TCOLOR_NONE, TColor bg = TCOLOR_BACKGROUND_NONE);
 
 #if 0
 

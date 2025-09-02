@@ -335,10 +335,10 @@ TString* CreateTString(Allocator* allocator, size_t capacity)
 }
 
 
-u32 CStringToTChar(const char* src, TChar* dst, u32 dst_size)
+u32 CStringToTChar(const char* src, TChar* dst, u32 dst_size, TColor fg, TColor bg)
 {
-    TColor fg_color = TCOLOR_NONE;
-    TColor bg_color = TCOLOR_BACKGROUND_NONE;
+    TColor fg_color = fg;
+    TColor bg_color = bg;
     u32 length = 0;
 
     Token token;
@@ -365,8 +365,8 @@ u32 CStringToTChar(const char* src, TChar* dst, u32 dst_size)
 
         if (ExpectChar(tk, 'm'))
         {
-            fg_color = TCOLOR_NONE;
-            bg_color = TCOLOR_BACKGROUND_NONE;
+            fg_color = fg;
+            bg_color = bg;
             continue;
         }
 
@@ -386,8 +386,8 @@ u32 CStringToTChar(const char* src, TChar* dst, u32 dst_size)
             switch (value)
             {
             case 0:
-                fg_color = TCOLOR_NONE;
-                bg_color = TCOLOR_BACKGROUND_NONE;
+                fg_color = fg;
+                bg_color = bg;
                 break;
 
             case 30:
@@ -405,7 +405,7 @@ u32 CStringToTChar(const char* src, TChar* dst, u32 dst_size)
                 break;
 
             case 39:
-                fg_color = TCOLOR_NONE;
+                fg_color = fg;
                 break;
 
             case 40:
@@ -423,7 +423,7 @@ u32 CStringToTChar(const char* src, TChar* dst, u32 dst_size)
                 break;
 
             case 49:
-                fg_color = TCOLOR_BACKGROUND_NONE;
+                fg_color = bg;
                 break;
             }
 

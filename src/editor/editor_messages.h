@@ -10,7 +10,9 @@ enum EditorEvent
 {
     EDITOR_EVENT_HOTLOAD = 1,
     EDITOR_EVENT_INSPECT = 2,
-    EDITOR_EVENT_INSPECT_ACK = 3
+    EDITOR_EVENT_INSPECT_ACK = 3,
+    EDITOR_EVENT_STATS,
+    EDITOR_EVENT_STATS_ACK
 };
 
 enum InspectorObjectCommand

@@ -202,34 +202,30 @@ static void ProcessQueuedLogMessages()
 
 static void DrawStatusBar(const RectInt& rect)
 {
-#if 0
-    static auto title = "NoZ Editor";
-    static auto cmd_mode = " - Command Mode";
+    static const char* title = "NoZ Editor";
+    static const char* cmd_mode = " - Command Mode";
 
     auto line = GetBottom(rect) - 2;
-    SetPixels(rect.x, GetBottom(rect) - 2, title, TCOLOR_BLACK);
+    WriteScreen(rect.x, line, title, TCOLOR_BLACK);
 
     if (g_editor.command_mode)
-        AddPixels(cmd_mode, TCOLOR_BLACK);
+        WriteScreen(cmd_mode, TCOLOR_BLACK);
 
-    SetBackgroundColor({rect.x, line, rect.width, 1}, TCOLOR_LIGHT_GRAY);
-#endif
+    WriteBackgroundColor({rect.x, line, rect.width, 1}, TCOLOR_BACKGROUND_WHITE);
 }
 
 static void DrawCommandLine(const RectInt& rect)
 {
-#if 0
     if (g_editor.search_mode)
     {
-        SetPixel(rect.x, rect.y, '/');
+        WriteScreen(rect.x, rect.y, "/");
         Render(g_editor.search_input);
     }
     else if (g_editor.command_mode)
     {
-        SetPixel(rect.x, rect.y, ':');
+        WriteScreen(rect.x, rect.y, ":");
         Render(g_editor.command_input);
     }
-#endif
 #if 0
     else
     {

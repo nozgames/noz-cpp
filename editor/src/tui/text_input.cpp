@@ -10,7 +10,7 @@
 struct TextInputImpl : TextInput
 {
     std::string buffer;
-    size_t cursor_pos;
+    i32 cursor_pos;
     int x;
     int y;
     int width;
@@ -41,43 +41,14 @@ void Render(TextInput* input)
     assert(input);
     TextInputImpl* impl = static_cast<TextInputImpl*>(input);
 
+    Vec2Int pos = GetWritePosition();
+
+    WriteScreen(impl->buffer.c_str());
+
     if (impl->active)
     {
-        //WriteScreen(
-        //AddPixels(impl->buffer.c_str());
-
-#if 0
-        // Render text with cursor at correct position
-        for (size_t i = 0; i <= impl->buffer.length(); ++i)
-        {
-            if (i == impl->cursor_pos)
-            {
-                // Show cursor at this position
-                if (i < impl->buffer.length())
-                {
-                    // Cursor is over a character - show character with inverse video
-                    BeginInverse(); // Enable reverse video (inverse)
-                    AddChar(impl->buffer[i]);
-                    EndInverse(); // Disable reverse video
-                }
-                else
-                {
-                    // Cursor is after the last character - show cursor block
-                    AddChar('\xDB'); // Solid block character (█)
-                }
-            }
-            else if (i < impl->buffer.length())
-            {
-                // Regular character
-                AddChar(impl->buffer[i]);
-            }
-        }
-#endif
-    }
-    else
-    {
-        // Just render the text without cursor when inactive
-      //  AddString(impl->buffer.c_str());
+        WriteBackgroundColor( {pos.x + impl->cursor_pos, pos.y, 1, 1 }, TCOLOR_BACKGROUND_WHITE);
+        WriteColor({pos.x + impl->cursor_pos, pos.y, 1, 1 }, TCOLOR_BLACK);
     }
 }
 

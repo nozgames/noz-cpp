@@ -43,6 +43,11 @@ static Vec2Int Clip(const Vec2Int& pt)
     return r;
 }
 
+Vec2Int GetWritePosition()
+{
+    return g_cursor;
+}
+
 int GetScreenWidth()
 {
     return g_screen_width;
@@ -70,6 +75,19 @@ void WriteScreen(TChar* str, u32 str_len)
         WriteScreen(*str);
 }
 
+void WriteScreen(const char* str, TColor fg)
+{
+    TChar temp[4096];
+    u32 len = CStringToTChar(str, temp, 4095, fg);
+    WriteScreen(temp, len);
+}
+
+void WriteScreen(i32 x, i32 y, const char* str, TColor fg)
+{
+    MoveCursor(x,y);
+    WriteScreen(str, fg);
+}
+
 void WriteScreen(i32 x, i32 y, TChar c)
 {
     MoveCursor(x, y);
@@ -79,7 +97,6 @@ void WriteScreen(i32 x, i32 y, TChar c)
 void WriteScreen(i32 x, i32 y, TChar* str, u32 str_len)
 {
     assert(str);
-
     MoveCursor(x,y);
     WriteScreen(str, str_len);
 }
@@ -111,7 +128,15 @@ void DrawHorizontalLine(i32 x, i32 y, i32 width, TChar c)
         WriteScreen(x, y, c);
 }
 
-void SetBackgroundColor(const RectInt& rect, TColor color)
+void WriteColor(const RectInt& rect, TColor color)
+{
+    auto clip = Clip(rect);
+    for (int y = clip.y, yy = GetBottom(clip); y < yy; y++)
+        for (int x = clip.x, xx = GetRight(clip); x < xx; x++)
+            g_buffer[y * g_screen_width + x].fg_color = color;
+}
+
+void WriteBackgroundColor(const RectInt& rect, TColor color)
 {
     auto clip = Clip(rect);
     for (int y = clip.y, yy = GetBottom(clip); y < yy; y++)

@@ -107,8 +107,6 @@ void Remove(LinkedList& list, void* node);
 void* PopFront(LinkedList& list);
 void* PopBack(LinkedList& list);
 
-
-
 // @free_list
 
 struct FreeList
