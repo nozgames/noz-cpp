@@ -6,13 +6,13 @@
 
 #ifdef NOZ_EDITOR
 
-enum EditorEvent
+enum EditorMessage
 {
-    EDITOR_EVENT_HOTLOAD = 1,
-    EDITOR_EVENT_INSPECT = 2,
-    EDITOR_EVENT_INSPECT_ACK = 3,
-    EDITOR_EVENT_STATS,
-    EDITOR_EVENT_STATS_ACK
+    EDITOR_MESSAGE_HOTLOAD = 1,
+    EDITOR_MESSAGE_INSPECT,
+    EDITOR_MESSAGE_INSPECT_ACK,
+    EDITOR_MESSAGE_STATS,
+    EDITOR_MESSAGE_STATS_ACK
 };
 
 enum InspectorObjectCommand
@@ -28,7 +28,7 @@ enum InspectorObjectCommand
     INSPECTOR_OBJECT_COMMAND_RECT
 };
 
-void WriteEditorMessage(Stream* stream, EditorEvent event);
-EditorEvent ReadEditorMessage(Stream* stream);
+void WriteEditorMessage(Stream* stream, EditorMessage event);
+EditorMessage ReadEditorMessage(Stream* stream);
 
 #endif

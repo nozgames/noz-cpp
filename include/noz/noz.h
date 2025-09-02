@@ -4,9 +4,9 @@
 
 #pragma once
 
-#ifdef _DEBUG
+//#ifdef _DEBUG
 #define NOZ_EDITOR
-#endif
+//#endif
 
 #include <assert.h>
 #include <stdint.h>

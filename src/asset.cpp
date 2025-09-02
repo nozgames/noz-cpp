@@ -94,7 +94,7 @@ Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, asset_sign
 {
     assert(asset_name);
 
-    const char* base_path = SDL_GetBasePath();
+    const char* base_path = SDL_GetCurrentDirectory();
     std::filesystem::path asset_path;
     
     if (!base_path)

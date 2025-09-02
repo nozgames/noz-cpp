@@ -77,7 +77,7 @@ static void InitScanCodeTable(InputCode* table)
 
 static void load_InputCode_table(SDL_Scancode* table)
 {
-    for (int i = 0; i < SDL_SCANCODE_COUNT; ++i)
+    for (int i = 0; i < INPUT_CODE_COUNT; ++i)
         table[i] = SDL_SCANCODE_UNKNOWN;
 
     table[KEY_A] = SDL_SCANCODE_A;

@@ -24,7 +24,7 @@ void HandleInspectorObject(std::unique_ptr<InspectorObject> object);
 static ENetHost* g_server = nullptr;
 static ENetPeer* g_client = nullptr;
 
-static Stream* CreateEditorMessage(EditorEvent event)
+static Stream* CreateEditorMessage(EditorMessage event)
 {
     Stream* output_stream = CreateStream(ALLOCATOR_SCRATCH, 1024);
     WriteEditorMessage(output_stream, event);
@@ -56,13 +56,26 @@ static void HandleInspectAck(Stream* stream)
     HandleInspectorObject(std::move(inspectorObject));
 }
 
+static void HandleStatsAck(Stream* stream)
+{
+    i32 fps = ReadI32(stream);
+    EditorEventStats stats{
+        .fps = fps
+    };
+    Send(EDITOR_EVENT_STATS, &stats);
+}
+
 static void HandleClientMessage(void* data, size_t data_size)
 {
     auto stream = LoadStream(ALLOCATOR_DEFAULT, (u8*)data, data_size);
     switch (ReadEditorMessage(stream))
     {
-    case EDITOR_EVENT_INSPECT_ACK:
+    case EDITOR_MESSAGE_INSPECT_ACK:
         HandleInspectAck(stream);
+        break;
+
+    case EDITOR_MESSAGE_STATS_ACK:
+        HandleStatsAck(stream);
         break;
 
     default:
@@ -159,9 +172,14 @@ void BroadcastAssetChange(const std::string& asset_name)
 
 void SendInspectRequest(const std::string& search_filter)
 {
-    auto msg = CreateEditorMessage(EDITOR_EVENT_INSPECT);
+    auto msg = CreateEditorMessage(EDITOR_MESSAGE_INSPECT);
     WriteString(msg, search_filter.c_str());
     SendEditorMessage(msg);
+}
+
+void RequestStats()
+{
+    SendEditorMessage(CreateEditorMessage(EDITOR_MESSAGE_STATS));
 }
 
 // @init

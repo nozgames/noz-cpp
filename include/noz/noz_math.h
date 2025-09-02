@@ -120,3 +120,6 @@ inline float Lerp(const float& v1, const float& v2, float t) { return v1 + (v2 -
 
 inline float Radians(float degrees) { return degrees * noz::PI / 180.0f; }
 inline float Degrees(float radians) { return radians * 180.0f / noz::PI; }
+
+
+inline i32 Min(i32 v1, i32 v2) { return v1 < v2 ? v1 : v2; }

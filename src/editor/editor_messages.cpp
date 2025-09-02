@@ -2,25 +2,27 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#ifdef NOZ_EDITOR
+
 #include "editor_messages.h"
 #include "noz/noz.h"
 #include <cstring>
 
-void WriteEditorMessage(Stream* stream, EditorEvent event)
+void WriteEditorMessage(Stream* stream, EditorMessage event)
 {
     WriteU8(stream, (u8)event);
 }
 
-EditorEvent ReadEditorMessage(Stream* stream)
+EditorMessage ReadEditorMessage(Stream* stream)
 {
-    return (EditorEvent)ReadU8(stream);
+    return (EditorMessage)ReadU8(stream);
 }
 
 #if 0
 EditorMessage CreateHotloadMessage(const std::string& asset_name)
 {
     EditorMessage msg{};
-    msg.event_id = EDITOR_EVENT_HOTLOAD;
+    msg.event_id = EDITOR_MESSAGE_HOTLOAD;
     msg.data_size = static_cast<uint32_t>(asset_name.length() + 1); // +1 for null terminator
     msg.data = new uint8_t[msg.data_size];
     std::memcpy(msg.data, asset_name.c_str(), msg.data_size);
@@ -30,7 +32,7 @@ EditorMessage CreateHotloadMessage(const std::string& asset_name)
 EditorMessage CreateInspectMessage(const std::string& search_filter)
 {
     EditorMessage msg{};
-    msg.event_id = EDITOR_EVENT_INSPECT;
+    msg.event_id = EDITOR_MESSAGE_INSPECT;
     msg.data_size = static_cast<uint32_t>(search_filter.length() + 1); // +1 for null terminator
     msg.data = new uint8_t[msg.data_size];
     std::memcpy(msg.data, search_filter.c_str(), msg.data_size);
@@ -40,7 +42,7 @@ EditorMessage CreateInspectMessage(const std::string& search_filter)
 EditorMessage CreateInspectAckMessage(Stream* inspector_data)
 {
     EditorMessage msg{};
-    msg.event_id = EDITOR_EVENT_INSPECT_ACK;
+    msg.event_id = EDITOR_MESSAGE_INSPECT_ACK;
     msg.data_size = static_cast<uint32_t>(GetSize(inspector_data));
     msg.data = new uint8_t[msg.data_size];
     std::memcpy(msg.data, GetData(inspector_data), msg.data_size);
@@ -49,7 +51,7 @@ EditorMessage CreateInspectAckMessage(Stream* inspector_data)
 
 bool ParseHotloadMessage(const EditorMessage& msg, std::string& asset_name)
 {
-    if (msg.event_id != EDITOR_EVENT_HOTLOAD || msg.data_size == 0)
+    if (msg.event_id != EDITOR_MESSAGE_HOTLOAD || msg.data_size == 0)
         return false;
     
     asset_name = std::string(reinterpret_cast<const char*>(msg.data), msg.data_size - 1);
@@ -58,7 +60,7 @@ bool ParseHotloadMessage(const EditorMessage& msg, std::string& asset_name)
 
 bool ParseInspectMessage(const EditorMessage& msg, std::string& search_filter)
 {
-    if (msg.event_id != EDITOR_EVENT_INSPECT || msg.data_size == 0)
+    if (msg.event_id != EDITOR_MESSAGE_INSPECT || msg.data_size == 0)
         return false;
     
     search_filter = std::string(reinterpret_cast<const char*>(msg.data), msg.data_size - 1);
@@ -123,4 +125,5 @@ void FreeMessage(EditorMessage& msg)
     }
     msg.data_size = 0;
 }
+#endif
 #endif

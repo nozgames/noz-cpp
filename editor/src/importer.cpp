@@ -327,7 +327,7 @@ static int RunImporterLoop()
         thread_sleep_ms(100);
 
         // Update hotload server
-        UpdateEditorServer();
+
 
         // Enqueue changed files
         FileChangeEvent event;

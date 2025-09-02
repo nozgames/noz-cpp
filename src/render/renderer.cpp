@@ -490,6 +490,14 @@ void InitRenderer(RendererTraits* traits, SDL_Window* window)
         Exit(SDL_GetError());
     }
 
+    SDL_SetWindowSurfaceVSync(window, traits->vsync);
+
+    SDL_SetGPUSwapchainParameters(
+        g_renderer.device,
+        window,
+        SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
+        traits->vsync == 0 ? SDL_GPU_PRESENTMODE_IMMEDIATE : SDL_GPU_PRESENTMODE_VSYNC);
+
     InitTexture(traits, g_renderer.device);
     InitShader(traits, g_renderer.device);
     InitFont(traits, g_renderer.device);

@@ -45,3 +45,4 @@ float GetFrameTime();
 float GetFixedTime();
 void GetFixedTimeRate(int rate);
 float GetTotalTime();
+float GetCurrentFPS();

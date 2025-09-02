@@ -94,7 +94,7 @@ void Unlisten(event_t event, EventCallback callback)
     registry->listener_count--;
 }
 
-void Send(event_t event, void* event_data)
+void Send(event_t event, const void* event_data)
 {
     auto listener_count = GetRegistry(event)->listener_count;
     if (g_event_stack_size + listener_count > g_event_max_stack_size)

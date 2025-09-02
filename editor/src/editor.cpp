@@ -2,15 +2,20 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include "server.h"
+#include "tui/screen.h"
 #include "tui/terminal.h"
 #include "tui/text_input.h"
-#include "tui/screen.h"
-#include "views/views.h"
-#include "views/view_interface.h"
-#include "views/inspector_view.h"
 #include "views/inspector_object.h"
+#include "views/inspector_view.h"
+#include "views/view_interface.h"
+#include "views/views.h"
 
 constexpr int MAX_VIEWS = 16;
+
+extern void UpdateEditorServer();
+extern void InitEvent(ApplicationTraits* traits);
+extern void RequestStats();
 
 bool InitImporter();
 void ShutdownImporter();
@@ -26,6 +31,8 @@ struct Editor
     bool command_mode;
     bool search_mode;
     std::atomic<bool> is_running;
+    int fps;
+    bool stats_requested;
 };
 
 static Editor g_editor = {};
@@ -204,12 +211,30 @@ static void DrawStatusBar(const RectInt& rect)
 {
     static const char* title = "NoZ Editor";
     static const char* cmd_mode = " - Command Mode";
+    static const char* fps = "FPS: ";
 
     auto line = GetBottom(rect) - 2;
+    auto eol = GetRight(rect);
     WriteScreen(rect.x, line, title, TCOLOR_BLACK);
 
     if (g_editor.command_mode)
         WriteScreen(cmd_mode, TCOLOR_BLACK);
+
+    if (HasConnectedClient())
+    {
+        if (!g_editor.stats_requested)
+        {
+            RequestStats();
+            g_editor.stats_requested = true;
+        }
+
+        char fps_value[32];
+        sprintf(fps_value, "%d", Min(9999, g_editor.fps));
+        WriteScreen(eol - 9, line, fps, TCOLOR_BLACK);
+        WriteScreen(eol - 4, line, fps_value, TCOLOR_BLACK);
+    }
+    else
+        g_editor.stats_requested = false;
 
     WriteBackgroundColor({rect.x, line, rect.width, 1}, TCOLOR_BACKGROUND_WHITE);
 }
@@ -303,7 +328,8 @@ static void RunEditor()
     {
         // Process any queued log messages from background threads
         ProcessQueuedLogMessages();
-        
+
+        UpdateEditorServer();
         UpdateTerminal();
 
         int key = GetTerminalKey();
@@ -480,6 +506,13 @@ void RenderEditor(const RectInt& rect)
 #endif
 }
 
+void HandleStatsEvents(event_t event, const void* event_data)
+{
+    EditorEventStats* stats = (EditorEventStats*)event_data;
+    g_editor.fps = stats->fps;
+    g_editor.stats_requested = false;
+}
+
 void InitEditor()
 {
     g_scratch_allocator = CreateArenaAllocator(32 * noz::MB, "scratch");
@@ -488,6 +521,10 @@ void InitEditor()
     EDITOR_TYPES
 #undef EDITOR_TYPE
 
+    ApplicationTraits traits = {};
+    Init(traits);
+
+    InitEvent(&traits);
     InitLog(HandleLog);
     InitTerminal();
     SetRenderCallback([](int width, int height) { RenderEditor({0, 0, width, height}); });
@@ -498,6 +535,8 @@ void InitEditor()
     g_editor.command_input = CreateTextInput(1, term_height - 1, term_width - 1);
     g_editor.search_input = CreateTextInput(1, term_height - 1, term_width - 1);
     g_editor.is_running = true;
+
+    Listen(EDITOR_EVENT_STATS, HandleStatsEvents);
 }
 
 void ShutdownEditor()

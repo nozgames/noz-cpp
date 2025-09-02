@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+static constexpr int FRAME_HISTORY_SIZE = 60;
+
 void LoadRendererAssets(Allocator* allocator);
 void InitRandom();
 void InitTypes();
@@ -41,6 +43,7 @@ static ApplicationTraits g_default_traits =
         .max_frame_objects = 128,
         .max_frame_transforms = 1024,
         .shadow_map_size = 2048,
+        .vsync = 0
     }
 };
 
@@ -55,9 +58,13 @@ struct Application
     const char* title;
     ApplicationTraits traits;
     Allocator* asset_allocator;
+    double frame_times[FRAME_HISTORY_SIZE];
+    int frame_index;
+    double accumulated_time;
+    double average_fps;
 };
 
-static Application g_application = {0};
+static Application g_app = {};
 
 void Init(ApplicationTraits& traits)
 {
@@ -77,12 +84,12 @@ void Exit(const char* format, ...)
         va_end(args);
         
         fprintf(stderr, "error: %s\n", buffer);
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, g_application.title, buffer, NULL);
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, g_app.title, buffer, NULL);
     }
     else
     {
         fprintf(stderr, "error: unknown error\n");
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, g_application.title, "unknown error", NULL);
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, g_app.title, "unknown error", NULL);
     }
     
     exit(1);
@@ -100,9 +107,9 @@ static void UpdateScreenSize()
 {
     int w;
     int h;
-    SDL_GetWindowSize(g_application.window, &w, &h);
-    g_application.screen_size = { w, h };
-    g_application.screen_aspect_ratio = (float)w / (float)h;
+    SDL_GetWindowSize(g_app.window, &w, &h);
+    g_app.screen_size = { w, h };
+    g_app.screen_aspect_ratio = (float)w / (float)h;
 }
 
 #ifdef NOZ_EDITOR
@@ -110,8 +117,8 @@ void OnHotload(const char* asset_name)
 {
     auto name = GetName(asset_name);
 
-    if (g_application.traits.hotload_asset)
-        g_application.traits.hotload_asset(name);
+    if (g_app.traits.hotload_asset)
+        g_app.traits.hotload_asset(name);
 }
 #endif
 
@@ -131,30 +138,30 @@ void InitApplication(ApplicationTraits* traits)
 
     Uint32 windowFlags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
 
-    memset(&g_application, 0, sizeof(Application));
-    g_application.title = traits->title;
-    g_application.window = SDL_CreateWindow(traits->title, traits->width, traits->height, windowFlags);
-    if (!g_application.window)
+    memset(&g_app, 0, sizeof(Application));
+    g_app.title = traits->title;
+    g_app.window = SDL_CreateWindow(traits->title, traits->width, traits->height, windowFlags);
+    if (!g_app.window)
     {
         SDL_Quit();
         return;
     }
 
-    g_application.traits = *traits;
+    g_app.traits = *traits;
 
     UpdateScreenSize();
 
     InitInput();
-    InitRenderer(&traits->renderer, g_application.window);
+    InitRenderer(&traits->renderer, g_app.window);
     InitTime();
     InitPhysics();
 
-    g_application.asset_allocator = CreateArenaAllocator(traits->asset_memory_size, "assets");
+    g_app.asset_allocator = CreateArenaAllocator(traits->asset_memory_size, "assets");
 
     if (traits->load_assets)
-        traits->load_assets(g_application.asset_allocator);
+        traits->load_assets(g_app.asset_allocator);
 
-    LoadRendererAssets(g_application.asset_allocator);
+    LoadRendererAssets(g_app.asset_allocator);
 
 #ifdef NOZ_EDITOR
     SetHotloadCallback(OnHotload);
@@ -174,13 +181,13 @@ void ShutdownApplication()
     ShutdownEditorClient();
 #endif // NOZ_EDITOR
 
-    if (g_application.traits.unload_assets)
-        g_application.traits.unload_assets();
+    if (g_app.traits.unload_assets)
+        g_app.traits.unload_assets();
 
-    if (g_application.asset_allocator)
+    if (g_app.asset_allocator)
     {
-        Destroy(g_application.asset_allocator);
-        g_application.asset_allocator = nullptr;
+        Destroy(g_app.asset_allocator);
+        g_app.asset_allocator = nullptr;
     }
 
     ShutdownEntity();
@@ -195,6 +202,22 @@ void ShutdownApplication()
     ShutdownAllocator();
 }
 
+static void UpdateFPS()
+{
+    // Update FPS tracking
+    double frame_time = GetFrameTime();
+    if (frame_time > 0.0)
+    {
+        g_app.accumulated_time -= g_app.frame_times[g_app.frame_index];
+        g_app.frame_times[g_app.frame_index] = frame_time;
+        g_app.accumulated_time += frame_time;
+        g_app.frame_index = (g_app.frame_index + 1) % FRAME_HISTORY_SIZE;
+
+        if (g_app.accumulated_time > 0.0)
+            g_app.average_fps = FRAME_HISTORY_SIZE / g_app.accumulated_time;
+    }
+}
+
 // @update
 bool UpdateApplication()
 {
@@ -205,9 +228,9 @@ bool UpdateApplication()
             return false;
 
         if (event.type == SDL_EVENT_WINDOW_FOCUS_GAINED)
-            g_application.has_focus = true;
+            g_app.has_focus = true;
         else if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST)
-            g_application.has_focus = false;
+            g_app.has_focus = false;
         else if (event.type == SDL_EVENT_WINDOW_RESIZED)
             UpdateScreenSize();
     }
@@ -216,10 +239,10 @@ bool UpdateApplication()
     UpdateInput();
 
 #ifdef NOZ_EDITOR
-    // Update editor client connection
-
     UpdateEditorClient();
 #endif
+
+    UpdateFPS();
 
     return true;
 }
@@ -227,12 +250,12 @@ bool UpdateApplication()
 // @screen
 ivec2 GetScreenSize()
 {
-    return g_application.screen_size;
+    return g_app.screen_size;
 }
 
 float GetScreenAspectRatio()
 {
-    return g_application.screen_aspect_ratio;
+    return g_app.screen_aspect_ratio;
 }
 
 
@@ -242,4 +265,9 @@ void ShowCursor(bool cursor)
         SDL_ShowCursor();
     else
         SDL_HideCursor();
+}
+
+float GetCurrentFPS()
+{
+    return (float)g_app.average_fps;
 }

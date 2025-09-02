@@ -26,6 +26,7 @@ struct RendererTraits
     size_t max_frame_objects;
     size_t max_frame_transforms;
     uint32_t shadow_map_size;
+    i32 vsync;
 };
 
 // @texture
