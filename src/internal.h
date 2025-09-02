@@ -226,7 +226,7 @@ void ShutdownPhysics();
 void UpdatePhysics();
 
 // @text_engine
-struct TextMesh : Object {};
+struct TextMesh {};
 
 struct TextRequest
 {

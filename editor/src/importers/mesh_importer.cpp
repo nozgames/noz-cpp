@@ -155,7 +155,6 @@ static const char* g_mesh_extensions[] = {
 
 static AssetImporterTraits g_mesh_importer_traits = {
     .type_name = "Mesh",
-    .type = TYPE_MESH,
     .signature = ASSET_SIGNATURE_MESH,
     .file_extensions = g_mesh_extensions,
     .import_func = ImportMesh,

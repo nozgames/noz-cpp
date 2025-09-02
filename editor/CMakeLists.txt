@@ -64,7 +64,6 @@ set(SOURCE_FILES
     src/views/log_view.cpp
     src/views/properties_view.cpp
     src/views/tree_view.cpp
-    src/views/view.cpp
 )
 
 # TTF files have been updated to use Stream API and are now included

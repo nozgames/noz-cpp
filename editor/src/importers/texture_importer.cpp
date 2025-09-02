@@ -365,7 +365,6 @@ static const char* g_texture_extensions[] = {
 
 static AssetImporterTraits g_texture_importer_traits = {
     .type_name = "Texture",
-    .type = TYPE_TEXTURE,
     .signature = ASSET_SIGNATURE_TEXTURE,
     .file_extensions = g_texture_extensions,
     .import_func = ImportTexture,

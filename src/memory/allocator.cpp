@@ -112,9 +112,16 @@ void* Realloc(void* ptr, size_t new_size)
     ValidateHeader(ptr);
 #endif
 
-    Allocator* a = GetHeader(ptr)->allocator;
+    AllocHeader* header = GetHeader(ptr);
+    Allocator* a = header->allocator;
     a = GET_ALLOCATOR(a);
-    return a->realloc(a, ptr, new_size);
+    header = (AllocHeader*)a->realloc(a, header, new_size);
+    ptr = (void*)(header + 1);
+#ifdef _DEBUG
+    header->checksum = CreateChecksum(a, ptr);
+#endif
+
+    return ptr;
 }
 
 Allocator* GetAllocator(void* ptr)

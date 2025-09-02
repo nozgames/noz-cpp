@@ -5,8 +5,8 @@
 #pragma once
 
 // @components
-struct Collider : Object {};
-struct RigidBody : Object{};
+struct Collider {};
+struct RigidBody {};
 
 // @enums
 enum RigidBodyType

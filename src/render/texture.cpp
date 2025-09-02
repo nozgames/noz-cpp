@@ -184,7 +184,7 @@ Texture* CreateTexture(Allocator* allocator, int width, int height, TextureForma
     assert(name);
     assert(g_device);
 
-    auto* texture = (Texture*)CreateObject(allocator, sizeof(TextureImpl), TYPE_TEXTURE);
+    auto* texture = (Texture*)Alloc(allocator, sizeof(TextureImpl));
     if (!texture)
         return nullptr;
 
@@ -223,7 +223,7 @@ Texture* CreateTexture(
     assert(data);
     assert(name);
 
-    auto* texture = (Texture*)CreateObject(allocator, sizeof(TextureImpl), TYPE_TEXTURE);
+    TextureImpl* texture = (TextureImpl*)Alloc(allocator, sizeof(TextureImpl));
     if (!texture)
         return nullptr;
 
@@ -287,11 +287,10 @@ Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, co
         return nullptr;
 
     // Create texture object
-    auto* texture = (Texture*)CreateObject(allocator, sizeof(TextureImpl), TYPE_TEXTURE);
-    if (!texture)
+    TextureImpl* impl = (TextureImpl*)Alloc(allocator, sizeof(TextureImpl));
+    if (!impl)
         return nullptr;
 
-    TextureImpl* impl = static_cast<TextureImpl*>(texture);
     impl->handle = nullptr;
     impl->size.x = width;
     impl->size.y = height;
@@ -344,17 +343,16 @@ Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, co
     {
         const int channels = (format == 1) ? 4 : 3;
         const size_t data_size = width * height * channels;
-        if (const auto texture_data = (u8*)malloc(data_size))
+        if (const auto texture_data = (u8*)Alloc(ALLOCATOR_SCRATCH, data_size))
         {
             ReadBytes(stream, texture_data, data_size);
             CreateTexture(impl, texture_data, width, height, channels, false, GetName(name->value));
-            free(texture_data);
+            Free(texture_data);
         }
     }
 
-    return texture;
+    return impl;
 }
-
 
 int GetBytesPerPixel(TextureFormat format)
 {

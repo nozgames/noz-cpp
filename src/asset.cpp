@@ -42,6 +42,7 @@ bool ValidateAssetHeader(AssetHeader* header, uint32_t expected_signature)
     return header->signature == expected_signature;
 }
 
+#if 0
 type_t ToType(asset_signature_t signature)
 {
     switch (signature)
@@ -74,7 +75,7 @@ static asset_signature_t AssetSignatureFromType(type_t type)
         return ASSET_SIGNATURE_UNKNOWN;
     }
 }
-
+#endif
 
 const char* GetExtensionFromSignature(asset_signature_t signature)
 {
@@ -125,12 +126,12 @@ Asset* LoadAsset(Allocator* allocator, const Name* asset_name, asset_signature_t
     AssetHeader header = {};
     if (!ReadAssetHeader(stream, &header) || !ValidateAssetHeader(&header, signature))
     {
-        Destroy(stream);
+        Free(stream);
         return nullptr;
     }
 
     auto asset = loader(allocator, stream, &header, asset_name);
-    Destroy(stream);
+    Free(stream);
     
     return asset;
 }

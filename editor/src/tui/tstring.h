@@ -22,8 +22,8 @@ struct TChar
     TColor bg_color;
 };
 
-struct TString : Object {};
-struct TStringBuilder : Object {};
+struct TString {};
+struct TStringBuilder {};
 
 constexpr TColor TCOLOR_NONE = { 39, 0, 0, 0 };
 constexpr TColor TCOLOR_RED = { 31, 0, 0, 0 };

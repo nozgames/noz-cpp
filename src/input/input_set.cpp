@@ -2,13 +2,13 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-constexpr uint8_t BUTTON_STATE_PRESSED = 1 << 0;
-constexpr uint8_t BUTTON_STATE_RELEASED = 1 << 1;
-constexpr uint8_t BUTTON_STATE_DOWN = 1 << 2;
-constexpr uint8_t BUTTON_STATE_RESET = 1 << 3;
-constexpr uint8_t BUTTON_STATE_ENABLED = 1 << 4;
+constexpr u8 BUTTON_STATE_PRESSED = 1 << 0;
+constexpr u8 BUTTON_STATE_RELEASED = 1 << 1;
+constexpr u8 BUTTON_STATE_DOWN = 1 << 2;
+constexpr u8 BUTTON_STATE_RESET = 1 << 3;
+constexpr u8 BUTTON_STATE_ENABLED = 1 << 4;
 
-struct InputSetImpl : Object
+struct InputSetImpl : InputSet
 {
     u8 buttons[INPUT_CODE_COUNT];
     SDL_Scancode scancodes[SDL_SCANCODE_COUNT];
@@ -16,26 +16,24 @@ struct InputSetImpl : Object
     LinkedListNode node_active;
 };
 
-static InputSetImpl* Impl(InputSet* s) { return (InputSetImpl*)Cast(s, TYPE_INPUT_SET);}
-
-static bool IsButtonEnabled(uint8_t state)
+static bool IsButtonEnabled(u8 state)
 {
     return (state & BUTTON_STATE_ENABLED) != 0;
 }
 
-static bool IsButtonDown(uint8_t state)
+static bool IsButtonDown(u8 state)
 {
     return (state & BUTTON_STATE_DOWN) != 0;
 }
 
-static bool IsButtonReset(uint8_t state)
+static bool IsButtonReset(u8 state)
 {
     return (state & BUTTON_STATE_RESET) != 0;
 }
 
 void EnableButton(InputSet* input_set, InputCode code)
 {
-    auto impl = Impl(input_set);
+    InputSetImpl* impl = static_cast<InputSetImpl*>(input_set);
     if (IsButtonEnabled(impl->buttons[code]))
         return;
     impl->scancodes[impl->scancode_count++] = InputCodeToScanCode(code);
@@ -44,7 +42,7 @@ void EnableButton(InputSet* input_set, InputCode code)
 
 void DisableButton(InputSet* input_set, InputCode code)
 {
-    auto impl = Impl(input_set);
+    InputSetImpl* impl = static_cast<InputSetImpl*>(input_set);
     if (!IsButtonEnabled(impl->buttons[code]))
         return;
 
@@ -123,7 +121,7 @@ void UpdateInputState(InputSet* input_set)
     if (nullptr == input_set)
         return;
 
-    auto impl = Impl(input_set);
+    InputSetImpl* impl = static_cast<InputSetImpl*>(input_set);
     for (int i = 0; i < INPUT_CODE_COUNT; i++)
         impl->buttons[i] &= ~(BUTTON_STATE_PRESSED | BUTTON_STATE_RELEASED);
 
@@ -133,17 +131,17 @@ void UpdateInputState(InputSet* input_set)
 
 bool IsButtonDown(InputSet* input_set, InputCode code)
 {
-    return (Impl(input_set)->buttons[code] & BUTTON_STATE_DOWN) != 0;
+    return (static_cast<InputSetImpl*>(input_set)->buttons[code] & BUTTON_STATE_DOWN) != 0;
 }
 
 bool WasButtonPressed(InputSet* input_set, InputCode code)
 {
-    return (Impl(input_set)->buttons[code] & BUTTON_STATE_PRESSED) != 0;
+    return (static_cast<InputSetImpl*>(input_set)->buttons[code] & BUTTON_STATE_PRESSED) != 0;
 }
 
 bool WasButtonReleased(InputSet* input_set, InputCode code)
 {
-    return (Impl(input_set)->buttons[code] & BUTTON_STATE_RELEASED) != 0;
+    return (static_cast<InputSetImpl*>(input_set)->buttons[code] & BUTTON_STATE_RELEASED) != 0;
 }
 
 void ResetInputState(InputSet* input_set)
@@ -151,7 +149,7 @@ void ResetInputState(InputSet* input_set)
     if (!input_set)
         return;
 
-    auto impl = Impl(input_set);
+    InputSetImpl* impl = static_cast<InputSetImpl*>(input_set);
     for (int i = 0; i < INPUT_CODE_COUNT; i++)
         impl->buttons[i] = (impl->buttons[i] & BUTTON_STATE_ENABLED) | BUTTON_STATE_RESET;
 
@@ -166,7 +164,7 @@ void InputActiveInputSetList(LinkedList& list)
 
 InputSet* CreateInputSet(Allocator* allocator)
 {
-    auto input_set = (InputSet*)CreateObject(allocator, sizeof(InputSetImpl), TYPE_INPUT_SET);
-    ResetInputState(input_set);
-    return input_set;
+    InputSetImpl* impl = (InputSetImpl*)Alloc(allocator, sizeof(InputSetImpl));
+    ResetInputState(impl);
+    return impl;
 }

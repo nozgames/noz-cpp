@@ -395,7 +395,6 @@ static const char* g_shader_extensions[] = {
 
 static AssetImporterTraits g_shader_importer_traits = {
     .type_name = "Shader",
-    .type = TYPE_SHADER,
     .signature = ASSET_SIGNATURE_SHADER,
     .file_extensions = g_shader_extensions,
     .import_func = ImportShader,

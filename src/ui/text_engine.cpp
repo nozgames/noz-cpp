@@ -2,14 +2,12 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct TextMeshImpl : Object
+struct TextMeshImpl : TextMesh
 {
     Mesh* mesh;
     Material* material;
     Vec2 size;
 };
-
-static TextMeshImpl* Impl(TextMesh* tm) { return (TextMeshImpl*)Cast(tm, TYPE_TEXT_MESH); }
 
 Vec2 MeasureText(const text_t& text, Font* font, float font_size)
 {
@@ -147,23 +145,23 @@ static void CreateTextMesh(Allocator* allocator, TextMeshImpl* impl, const TextR
 
 Mesh* GetMesh(TextMesh* tm)
 {
-    return Impl(tm)->mesh;
+    return static_cast<TextMeshImpl*>(tm)->mesh;
 }
 
 Vec2 GetSize(TextMesh* tm)
 {
-    return Impl(tm)->size;
+    return static_cast<TextMeshImpl*>(tm)->size;
 }
 
 Material* GetMaterial(TextMesh* tm)
 {
-    return Impl(tm)->material;
+    return static_cast<TextMeshImpl*>(tm)->material;
 }
 
 TextMesh* CreateTextMesh(Allocator* allocator, const TextRequest& request)
 {
-    auto tm = (TextMesh*)CreateObject(allocator, sizeof(TextMeshImpl), TYPE_TEXT_MESH);
-    auto impl = Impl(tm);
+    auto tm = (TextMeshImpl*)Alloc(allocator, sizeof(TextMeshImpl));
+    auto impl = static_cast<TextMeshImpl*>(tm);
 
     PushScratch();
     CreateTextMesh(allocator, impl, request);

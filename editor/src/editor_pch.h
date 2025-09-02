@@ -48,11 +48,9 @@
 #define NOUSER
 
 #include <noz/noz.h>
-//#include "../../src/internal.h"
 
 #include "tokenizer.h"
 #include "asset_importer.h"
-#include "editor_types.h"
 #include "tui/tstring.h"
 
 static constexpr int TERM_COLOR_STATUS_BAR = 1;

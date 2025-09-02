@@ -36,7 +36,6 @@ typedef Asset* (*AssetLoaderFunc)(Allocator* allocator, Stream* stream, AssetHea
 bool ReadAssetHeader(Stream* stream, AssetHeader* header);
 bool WriteAssetHeader(Stream* stream, AssetHeader* header);
 bool ValidateAssetHeader(AssetHeader* header, uint32_t expected_signature);
-type_t ToType(asset_signature_t signature);
 const char* GetExtensionFromSignature(asset_signature_t signature);
 Asset* LoadAsset(Allocator* allocator, const Name* asset_name, asset_signature_t signature, AssetLoaderFunc loader);
 

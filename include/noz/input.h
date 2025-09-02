@@ -7,7 +7,7 @@
 #include "input_code.h"
 
 // @types
-struct InputSet : Object {};
+struct InputSet {};
 
 // @input
 void SetInputSet(InputSet* map);

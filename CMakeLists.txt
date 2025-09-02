@@ -42,7 +42,6 @@ set(SOURCE_FILES
     src/math/vec2.cpp
     src/math/vec3.cpp
     src/name.cpp
-    src/object.cpp
     src/physics/physics.cpp
     src/physics/rigid_body.cpp
     src/physics/collider.cpp
@@ -59,7 +58,6 @@ set(SOURCE_FILES
     src/render/render_buffer.cpp
     src/render/renderer.cpp
     src/stream.cpp
-    src/type.cpp
     src/time.cpp
     src/text.cpp
     src/ui/canvas.cpp

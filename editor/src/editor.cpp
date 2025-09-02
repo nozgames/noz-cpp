@@ -517,10 +517,6 @@ void InitEditor()
 {
     g_scratch_allocator = CreateArenaAllocator(32 * noz::MB, "scratch");
 
-#define EDITOR_TYPE(type) SetTypeName(EDITOR_TYPE_##type, #type);
-    EDITOR_TYPES
-#undef EDITOR_TYPE
-
     ApplicationTraits traits = {};
     Init(traits);
 

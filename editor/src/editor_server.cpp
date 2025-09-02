@@ -39,7 +39,7 @@ static void SendEditorMessage(Stream* stream)
         enet_host_flush(g_server);
     }
 
-    Destroy(stream);
+    Free(stream);
 }
 
 bool HasConnectedClient()
@@ -81,7 +81,7 @@ static void HandleClientMessage(void* data, size_t data_size)
     default:
         break;
     }
-    Destroy(stream);
+    Free(stream);
 }
 
 

@@ -8,7 +8,6 @@ static constexpr int FRAME_HISTORY_SIZE = 60;
 
 void LoadRendererAssets(Allocator* allocator);
 void InitRandom();
-void InitTypes();
 void InitUI();
 void InitEvent(ApplicationTraits* traits);
 void InitName(ApplicationTraits* traits);
@@ -129,7 +128,6 @@ void InitApplication(ApplicationTraits* traits)
 
     InitAllocator(traits);
     InitName(traits);
-    InitTypes();
     InitRandom();
     InitEvent(traits);
 

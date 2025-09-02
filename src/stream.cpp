@@ -8,7 +8,7 @@
 
 #define DEFAULT_INITIAL_CAPACITY 256
 
-struct StreamImpl : Object
+struct StreamImpl : Stream
 {
     u8* data;
     size_t size;
@@ -17,21 +17,26 @@ struct StreamImpl : Object
 };
 
 static void EnsureCapacity(StreamImpl* impl, size_t required_size);
-static StreamImpl* Impl(Stream* stream) { return (StreamImpl*)Cast(stream, TYPE_STREAM); }
+
+void StreamDestructor(void* s)
+{
+    StreamImpl* impl = (StreamImpl*)s;
+    Free(impl->data);
+}
 
 Stream* CreateStream(Allocator* allocator, size_t capacity)
 {
-    StreamImpl* impl = Impl((Stream*)CreateObject(allocator, sizeof(StreamImpl), TYPE_STREAM));
+    StreamImpl* impl = (StreamImpl*)Alloc(allocator, sizeof(StreamImpl), StreamDestructor);
     if (!impl)
         return nullptr;
 
     if (capacity == 0)
         capacity = DEFAULT_INITIAL_CAPACITY;
 
-    impl->data = (u8*)malloc(capacity);
+    impl->data = (u8*)Alloc(ALLOCATOR_DEFAULT, capacity);
     if (!impl->data) 
     {
-        Destroy((Object*)impl);
+        Free(impl);
         return nullptr;
     }
     
@@ -39,12 +44,12 @@ Stream* CreateStream(Allocator* allocator, size_t capacity)
     impl->capacity = capacity;
     impl->position = 0;
     
-    return (Stream*)impl;
+    return impl;
 }
 
 Stream* LoadStream(Allocator* allocator, uint8_t* data, size_t size)
 {
-    StreamImpl* impl = Impl(CreateStream(allocator, size));
+    StreamImpl* impl = (StreamImpl*)CreateStream(allocator, size);
     if (!impl)
         return nullptr;
         
@@ -74,9 +79,8 @@ Stream* LoadStream(Allocator* allocator, const std::filesystem::path& path)
     }
     
     // Create stream and read file
-    Stream* stream = CreateStream(allocator, file_size + 1);
-    StreamImpl* impl = Impl(stream);
-    if (!impl) 
+    StreamImpl* impl = (StreamImpl*)CreateStream(allocator, file_size + 1);
+    if (!impl)
     {
         fclose(file);
         return nullptr;
@@ -89,14 +93,14 @@ Stream* LoadStream(Allocator* allocator, const std::filesystem::path& path)
     impl->size = bytes_read;
     impl->position = 0;
     
-    return (Stream*)impl;
+    return impl;
 }
 
 // todo: destructor
 #if 0
 void stream_destroy(Stream* stream) 
 {
-	StreamImpl* impl = Impl(stream);
+	StreamImpl* impl = static_cast<StreamImpl*>(stream);
     Destroy((Object*)stream);
 }
 #endif
@@ -106,7 +110,7 @@ bool SaveStream(Stream* stream, const std::filesystem::path& path)
     if (!stream)
         return false;
     
-    StreamImpl* impl = Impl(stream);
+    StreamImpl* impl = static_cast<StreamImpl*>(stream);
     
     FILE* file = fopen(path.string().c_str(), "wb");
     if (!file)
@@ -120,29 +124,29 @@ bool SaveStream(Stream* stream, const std::filesystem::path& path)
 
 uint8_t* GetData(Stream* stream)
 {
-    return Impl(stream)->data;
+    return static_cast<StreamImpl*>(stream)->data;
 }
 
 size_t GetSize(Stream* stream)
 {
-    return Impl(stream)->size;
+    return static_cast<StreamImpl*>(stream)->size;
 }
 
 void Clear(Stream* stream)
 {
-	StreamImpl* impl = Impl(stream);
+	StreamImpl* impl = static_cast<StreamImpl*>(stream);
     impl->size = 0;
     impl->position = 0;
 }
 
 size_t GetPosition(Stream* stream)
 {
-    return Impl(stream)->position;
+    return static_cast<StreamImpl*>(stream)->position;
 }
 
 void SetPosition(Stream* stream, size_t position)
 {
-    StreamImpl* impl = Impl(stream);
+    StreamImpl* impl = static_cast<StreamImpl*>(stream);
     impl->position = position;
 }
 
@@ -154,20 +158,20 @@ size_t SeekBegin(Stream* stream, size_t offset)
 
 size_t SeekCurrent(Stream* stream, size_t offset)
 {
-    SetPosition(stream, Impl(stream)->position + offset);
+    SetPosition(stream, static_cast<StreamImpl*>(stream)->position + offset);
     return GetPosition(stream);
 }
 
 size_t SeekEnd(Stream* stream, size_t offset)
 {
-    StreamImpl* impl = Impl(stream);
+    StreamImpl* impl = static_cast<StreamImpl*>(stream);
     SetPosition(stream, Max(i32(impl->size - offset), 0));
     return impl->position;
 }
 
 bool IsEOS(Stream* stream)
 {
-    StreamImpl* impl = Impl(stream);
+    StreamImpl* impl = static_cast<StreamImpl*>(stream);
     return impl->position >= impl->size;
 }
 
@@ -194,7 +198,7 @@ bool ReadFileSignature(Stream* stream, const char* expected_signature, size_t si
 {
     if (!stream || !expected_signature) return false;
     
-    StreamImpl* impl = Impl(stream);
+    StreamImpl* impl = static_cast<StreamImpl*>(stream);
     
     if (impl->position + signature_length > impl->size) return false;
     
@@ -210,7 +214,7 @@ uint8_t ReadU8(Stream* stream)
 {
     if (!stream) return 0;
     
-    StreamImpl* impl = Impl(stream);
+    StreamImpl* impl = static_cast<StreamImpl*>(stream);
     
     if (impl->position + sizeof(uint8_t) > impl->size) return 0;
     
@@ -297,7 +301,7 @@ void ReadBytes(Stream* stream, void* dest, size_t size)
 {
     if (!stream || !dest || size == 0) return;
     
-    StreamImpl* impl = Impl(stream);
+    StreamImpl* impl = static_cast<StreamImpl*>(stream);
     
     if (impl->position + size > impl->size) 
     {
@@ -431,7 +435,7 @@ void WriteBytes(Stream* stream, const void* data, size_t size)
 {
     if (!stream || !data || size == 0) return;
     
-    StreamImpl* impl = Impl(stream);
+    StreamImpl* impl = static_cast<StreamImpl*>(stream);
     
     EnsureCapacity(impl, impl->position + size);
     
@@ -440,9 +444,7 @@ void WriteBytes(Stream* stream, const void* data, size_t size)
     
     // Update size if we've written past the current end
     if (impl->position > impl->size) 
-    {
         impl->size = impl->position;
-    }
 }
 
 // Color operations
@@ -465,15 +467,13 @@ static void EnsureCapacity(StreamImpl* impl, size_t required_size)
     
     size_t new_capacity = impl->capacity;
     while (new_capacity < required_size) 
-    {
         new_capacity *= 2;
-    }
-    
-    u8* new_data = (u8*)realloc(impl->data, new_capacity);
-    if (new_data) 
-    {
-        impl->data = new_data;
-        impl->capacity = new_capacity;
-    }
+
+    u8* new_data = (u8*)Realloc(impl->data, new_capacity);
+    if (!new_data)
+        return;
+
+    impl->data = new_data;
+    impl->capacity = new_capacity;
 }
 

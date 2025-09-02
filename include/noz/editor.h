@@ -6,7 +6,7 @@
 
 #ifdef NOZ_EDITOR
 
-void BeginInspectorObject(Stream* stream, type_t type, const char* name);
+void BeginInspectorObject(Stream* stream, const char* type, const char* name);
 void WriteInspectorProperty(Stream* stream, const char* name, const char* value);
 void WriteInspectorProperty(Stream* stream, const char* name, float value);
 void WriteInspectorProperty(Stream* stream, const char* name, bool value);

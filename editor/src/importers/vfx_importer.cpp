@@ -365,7 +365,6 @@ static const char* g_vfx_extensions[] = {
 
 static AssetImporterTraits g_vfx_importer_traits = {
     .type_name = "Vfx",
-    .type = TYPE_SHADER,
     .signature = ASSET_SIGNATURE_VFX,
     .file_extensions = g_vfx_extensions,
     .import_func = ImportVfx,

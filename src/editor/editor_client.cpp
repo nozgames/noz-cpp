@@ -34,7 +34,7 @@ void SendEditorMessage(Stream* stream)
     if (ENetPacket* packet = enet_packet_create(GetData(stream), GetSize(stream), ENET_PACKET_FLAG_RELIABLE))
         enet_peer_send(g_client.peer, 0, packet);
 
-    Destroy(stream);
+    Free(stream);
 }
 
 static void HandleStats(Stream* input_stream)
@@ -54,10 +54,10 @@ void SetInspectAckCallback(inspect_ack_callback_t callback)
     g_inspect_ack_callback = callback;
 }
 
-void BeginInspectorObject(Stream* stream, type_t type, const char* name)
+void BeginInspectorObject(Stream* stream, const char* type, const char* name)
 {
     WriteU8(stream, INSPECTOR_OBJECT_COMMAND_BEGIN);
-    WriteString(stream, GetTypeName(type));
+    WriteString(stream, type);
     WriteString(stream, name);
 }
 
@@ -122,7 +122,7 @@ static void HandleEditorMessage(void* data, size_t data_size)
     default:
         break;
     }
-    Destroy(stream);
+    Free(stream);
     PopScratch();
 }
 

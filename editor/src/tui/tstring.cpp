@@ -5,21 +5,21 @@
 #include "tstring.h"
 #include "screen.h"
 
-struct TStringImpl : Object
+struct TStringImpl : TString
 {
     size_t length;
     size_t capacity;
 };
 
-struct TStringBuilderImpl : Object
+struct TStringBuilderImpl : TStringBuilder
 {
     size_t length;
     size_t capacity;
     TChar* buffer;
 };
 
-static TStringImpl* Impl(TString* s) { return (TStringImpl*)Cast(s, TYPE_UNKNOWN); }
-static TStringBuilderImpl* Impl(TStringBuilder* s) { return (TStringBuilderImpl*)Cast(s, TYPE_UNKNOWN); }
+static TStringImpl* Impl(TString* s) { return (TStringImpl*)s; }
+static TStringBuilderImpl* Impl(TStringBuilder* s) { return (TStringBuilderImpl*)s; }
 
 #if 0
 TStringBuilder& TStringBuilder::Add(const std::string& text)
@@ -307,7 +307,7 @@ TStringBuilder* Append(TStringBuilder* builder, const char* text, TColor fg_colo
 
 TStringBuilder* CreateTStringBuilder(Allocator* allocator, size_t capacity)
 {
-    auto builder = (TStringBuilder*)CreateObject(allocator, sizeof(TStringBuilderImpl) + sizeof(TChar) * capacity, TYPE_UNKNOWN);
+    auto builder = (TStringBuilder*)Alloc(allocator, sizeof(TStringBuilderImpl) + sizeof(TChar) * capacity);
     auto impl = Impl(builder);
     impl->length = 0;
     impl->capacity = capacity;
@@ -317,7 +317,7 @@ TStringBuilder* CreateTStringBuilder(Allocator* allocator, size_t capacity)
 
 TString* CreateTString(Allocator* allocator, const TChar* data, size_t data_len)
 {
-    auto tstr = (TString*)CreateObject(allocator, sizeof(TStringImpl) + sizeof(TChar) * data_len, TYPE_UNKNOWN);
+    auto tstr = (TString*)Alloc(allocator, sizeof(TStringImpl) + sizeof(TChar) * data_len);
     auto impl = Impl(tstr);
     impl->length = data_len;
     impl->capacity = data_len;
@@ -327,7 +327,7 @@ TString* CreateTString(Allocator* allocator, const TChar* data, size_t data_len)
 
 TString* CreateTString(Allocator* allocator, size_t capacity)
 {
-    auto tstr = (TString*)CreateObject(allocator, sizeof(TStringImpl) + sizeof(TChar) * capacity, TYPE_UNKNOWN);
+    auto tstr = (TString*)Alloc(allocator, sizeof(TStringImpl) + sizeof(TChar) * capacity);
     auto impl = Impl(tstr);
     impl->length = 0;
     impl->capacity = capacity;

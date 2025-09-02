@@ -17,7 +17,7 @@ namespace noz::ttf
             return nullptr;
         
         TrueTypeFont* font = load(stream, requestedSize, filter);
-        Destroy(stream);
+        Free(stream);
         return font;
     }
 

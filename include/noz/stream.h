@@ -12,18 +12,18 @@ namespace std
     }
 }
 
-struct Stream : Object {};
+struct Stream {};
 
 // @alloc
 Stream* CreateStream(Allocator* allocator, size_t capacity);
-Stream* LoadStream(Allocator* allocator, uint8_t* data, size_t size);
+Stream* LoadStream(Allocator* allocator, u8* data, size_t size);
 Stream* LoadStream(Allocator* allocator, const std::filesystem::path& path);
 
 // @file
 bool SaveStream(Stream* stream, const std::filesystem::path& path);
 
 // @data
-uint8_t* GetData(Stream* stream);
+u8* GetData(Stream* stream);
 size_t GetSize(Stream* stream);
 void Clear(Stream* stream);
 
@@ -37,14 +37,14 @@ bool IsEOS(Stream* stream);
 
 // @read
 bool ReadFileSignature(Stream* stream, const char* expected_signature, size_t signature_length);
-uint8_t ReadU8(Stream* stream);
-uint16_t ReadU16(Stream* stream);
-uint32_t ReadU32(Stream* stream);
-uint64_t ReadU64(Stream* stream);
-int8_t ReadI8(Stream* stream);
-int16_t ReadI16(Stream* stream);
-int32_t ReadI32(Stream* stream);
-int64_t ReadI64(Stream* stream);
+u8 ReadU8(Stream* stream);
+u16 ReadU16(Stream* stream);
+u32 ReadU32(Stream* stream);
+u64 ReadU64(Stream* stream);
+i8 ReadI8(Stream* stream);
+i16 ReadI16(Stream* stream);
+i32 ReadI32(Stream* stream);
+i64 ReadI64(Stream* stream);
 float ReadFloat(Stream* stream);
 double ReadDouble(Stream* stream);
 bool ReadBool(Stream* stream);
@@ -64,14 +64,14 @@ template <typename TStruct> TStruct ReadStruct(Stream* stream)
 
 // @write
 void WriteFileSignature(Stream* stream, const char* signature, size_t signature_length);
-void WriteU8(Stream* stream, uint8_t value);
-void WriteU16(Stream* stream, uint16_t value);
-void WriteU32(Stream* stream, uint32_t value);
-void WriteU64(Stream* stream, uint64_t value);
-void WriteI8(Stream* stream, int8_t value);
-void WriteI16(Stream* stream, int16_t value);
-void WriteI32(Stream* stream, int32_t value);
-void WriteI64(Stream* stream, int64_t value);
+void WriteU8(Stream* stream, u8 value);
+void WriteU16(Stream* stream, u16 value);
+void WriteU32(Stream* stream, u32 value);
+void WriteU64(Stream* stream, u64 value);
+void WriteI8(Stream* stream, i8 value);
+void WriteI16(Stream* stream, i16 value);
+void WriteI32(Stream* stream, i32 value);
+void WriteI64(Stream* stream, i64 value);
 void WriteFloat(Stream* stream, float value);
 void WriteDouble(Stream* stream, double value);
 void WriteBool(Stream* stream, bool value);

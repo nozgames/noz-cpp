@@ -232,7 +232,6 @@ static const char* g_font_extensions[] = {
 
 static AssetImporterTraits g_font_importer_traits = {
     .type_name = "Font",
-    .type = TYPE_FONT,
     .signature = ASSET_SIGNATURE_FONT,
     .file_extensions = g_font_extensions,
     .import_func = ImportFont,

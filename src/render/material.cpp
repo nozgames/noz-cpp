@@ -22,7 +22,7 @@ Material* CreateMaterial(Allocator* allocator, Shader* shader)
         textures_size +
         uniform_data_size;
 
-    auto material = (Material*)CreateObject(allocator, material_size, TYPE_MATERIAL);
+    auto material = (Material*)Alloc(allocator, material_size);
     if (!material)
         return nullptr;
 

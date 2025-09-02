@@ -55,7 +55,7 @@ static bool LoadConfig()
     if (Stream* config_stream = LoadStream(nullptr, config_path))
     {
         g_config = Props::Load(config_stream);
-        Destroy(config_stream);
+        Free(config_stream);
 
         if (g_config != nullptr)
         {
@@ -197,7 +197,7 @@ bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers)
                         if (auto meta_stream = LoadStream(nullptr, fs::path(job.source_path.string() + ".meta")))
                         {
                             meta = Props::Load(meta_stream);
-                            Destroy(meta_stream);
+                            Free(meta_stream);
                         }
 
                         // Create default props if meta file failed to load
@@ -241,11 +241,11 @@ bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers)
                         // Save the output stream
                         if (!SaveStream(output_stream, final_path))
                         {
-                            Destroy(output_stream);
+                            Free(output_stream);
                             throw std::runtime_error("Failed to save output file");
                         }
 
-                        Destroy(output_stream);
+                        Free(output_stream);
 
                         // Print success message using the relative path we computed
                         fs::path asset_path = relative_path;

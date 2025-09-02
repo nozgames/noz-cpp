@@ -89,14 +89,14 @@ bool GenerateAssetManifest(
         
         GenerateManifestCode(&generator, header_path, config);
         bool success = SaveStream(generator.manifest_stream, manifest_output_path);
-        Destroy(generator.manifest_stream);
+        Free(generator.manifest_stream);
         return success;
     }
 
     if (!fs::is_directory(generator.output_dir))
     {
         printf("ERROR: '%s' is not a directory\n", generator.output_dir.string().c_str());
-        Destroy(generator.manifest_stream);
+        Free(generator.manifest_stream);
         return false;
     }
 
@@ -115,7 +115,7 @@ bool GenerateAssetManifest(
     {
         printf("ERROR: Failed to enumerate files in directory: %s - %s\n", 
                generator.output_dir.string().c_str(), e.what());
-        Destroy(generator.manifest_stream);
+        Free(generator.manifest_stream);
         return false;
     }
 
@@ -135,7 +135,7 @@ bool GenerateAssetManifest(
     }
 
     // Clean up
-    Destroy(generator.manifest_stream);
+    Free(generator.manifest_stream);
 
     return success;
 }
@@ -270,7 +270,7 @@ static void GenerateAssetsHeader(ManifestGenerator* generator, const fs::path& h
     
     // Save header file
     SaveStream(header_stream, header_path);
-    Destroy(header_stream);
+    Free(header_stream);
 }
 
 static bool ReadAssetHeader(const fs::path& file_path, uint32_t* signature)
@@ -283,13 +283,13 @@ static bool ReadAssetHeader(const fs::path& file_path, uint32_t* signature)
     AssetHeader header;
     if (!ReadAssetHeader(stream, &header))
     {
-        Destroy(stream);
+        Free(stream);
         return false;
     }
 
     *signature = header.signature;
 
-    Destroy(stream);
+    Free(stream);
     return true;
 }
 

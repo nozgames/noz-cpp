@@ -247,7 +247,6 @@ static const char* g_stylesheet_extensions[] = {
 
 static AssetImporterTraits g_stylesheet_importer_traits = {
     .type_name = "StyleSheet",
-    .type = TYPE_STYLE_SHEET,
     .signature = ASSET_SIGNATURE_STYLE_SHEET,
     .file_extensions = g_stylesheet_extensions,
     .import_func = ImportStyleSheet,
