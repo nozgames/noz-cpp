@@ -191,10 +191,13 @@ Bounds3 Expand(const Bounds3& bounds, const Vec3& point);
 Bounds3 Expand(const Bounds3& bounds, const Bounds3& other);
 
 
+// @mat4
 Mat4 Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
 Mat4 Ortho(f32 top, f32 bottom, f32 near, f32 far);
 
-Mat3 TRS(const Vec2& translation, f32 rotation, const Vec2& scale);
+// @mat3
+extern Mat3 TRS(const Vec2& translation, f32 rotation, const Vec2& scale);
+extern Mat3 Translate(const Vec2& translation);
 
 // @vec2
 extern Vec2 Reflect(const Vec2& v, const Vec2& normal);

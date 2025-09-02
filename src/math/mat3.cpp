@@ -15,3 +15,12 @@ Mat3 TRS(const Vec2& translation, f32 rotation, const Vec2& scale)
         translation.x,   translation.y,   1
     };
 }
+
+Mat3 Translate(const Vec2& translation)
+{
+    return Mat3{
+        1, 0, 0,
+        0, 1, 0,
+        translation.x, translation.y, 1
+    };
+}
