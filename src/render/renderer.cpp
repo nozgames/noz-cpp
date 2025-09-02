@@ -12,9 +12,7 @@ extern void EndRenderPass();
 
 static void ResetRenderState();
 static void UpdateBackBuffer();
-static void InitGammaPass();
 static void InitShadowPass(const RendererTraits* traits);
-static void RenderGammaPass();
 
 struct Renderer
 {
@@ -24,10 +22,6 @@ struct Renderer
     SDL_GPURenderPass* render_pass;
     Mat4 view_projection;
     Mat4 view;
-
-    // gamma
-    Mesh* gamma_mesh;
-    Material* gamma_material;
 
     // Depth buffer support
     SDL_GPUTexture* depth_texture;
@@ -205,7 +199,7 @@ void BeginRenderFrame(Color clear_color)
 
     g_renderer.command_buffer = cmd;
 
-    BeginRenderPass(clear_color.a >= 1.0f, clear_color, false);
+    BeginRenderPass(clear_color.a >= 1.0f, clear_color, false, nullptr);
 }
 
 void EndRenderFrame()
@@ -218,9 +212,6 @@ void EndRenderFrame()
     DrawVfx();
     DrawUI();
     EndRenderPass();
-    assert(!g_renderer.render_pass);
-    RenderGammaPass();
-    assert(!g_renderer.render_pass);
     ExecuteRenderCommands(g_renderer.command_buffer);
     SDL_SubmitGPUCommandBuffer(g_renderer.command_buffer);
 
@@ -258,7 +249,7 @@ SDL_GPURenderPass* BeginPassGPU(bool clear, Color clear_color, bool msaa, Textur
     // TODO: handle msaa to a target texture
     SDL_GPUTexture* gpu_texture = target
         ? GetGPUTexture(target)
-        : GetGPUTexture(g_renderer.linear_back_buffer);
+        : g_renderer.swap_chain_texture; //  GetGPUTexture(g_renderer.linear_back_buffer);
 
     BeginPassGPU(gpu_texture, clear, clear_color);
     return g_renderer.render_pass;
@@ -435,44 +426,9 @@ static void UpdateBackBuffer()
         CreateTexture(nullptr, size.x, size.y, TEXTURE_FORMAT_RGBA16F, GetName("linear"));
 }
 
-static void InitGammaPass()
-{
-    MeshBuilder* builder = CreateMeshBuilder(nullptr, 4, 6);
-    AddVertex(builder, {-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, 0);
-    AddVertex(builder, {1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, 0);
-    AddVertex(builder, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, 0);
-    AddVertex(builder, {-1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, 0);
-    AddTriangle(builder, 0, 1, 2);
-    AddTriangle(builder, 0, 2, 3);
-    g_renderer.gamma_mesh = CreateMesh(nullptr, builder, GetName("gamma"));
-    Free(builder);
-}
-
-SDL_GPURenderPass* BeginGammaPassGPU()
-{
-    if (!g_renderer.gamma_material)
-        Exit("missing gamma shader");
-
-    return BeginPassGPU(g_renderer.swap_chain_texture, false, COLOR_BLACK);
-}
-
-static void RenderGammaPass()
-{
-    SetTexture(g_renderer.gamma_material, g_renderer.linear_back_buffer, 0);
-    BeginGammaPass();
-
-    static Mat4 identity = MAT4_IDENTITY;
-    BindCamera(identity, identity);
-    BindTransform(identity);
-    BindMaterial(g_renderer.gamma_material);
-    DrawMesh(g_renderer.gamma_mesh);
-    EndRenderPass();
-}
-
 void LoadRendererAssets(Allocator* allocator)
 {
     g_core_assets.textures.white = CreateTexture(nullptr, &color32_white, 1, 1, TEXTURE_FORMAT_RGBA8, GetName("white"));
-    g_renderer.gamma_material = CreateMaterial(ALLOCATOR_DEFAULT, g_core_assets.shaders.gamma);
 }
 
 void InitRenderer(RendererTraits* traits, SDL_Window* window)
@@ -495,7 +451,7 @@ void InitRenderer(RendererTraits* traits, SDL_Window* window)
     SDL_SetGPUSwapchainParameters(
         g_renderer.device,
         window,
-        SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
+        SDL_GPU_SWAPCHAINCOMPOSITION_SDR_LINEAR,
         traits->vsync == 0 ? SDL_GPU_PRESENTMODE_IMMEDIATE : SDL_GPU_PRESENTMODE_VSYNC);
 
     InitTexture(traits, g_renderer.device);
@@ -505,7 +461,6 @@ void InitRenderer(RendererTraits* traits, SDL_Window* window)
     InitRenderBuffer(traits);
     InitSamplerFactory(traits, g_renderer.device);
     InitPipelineFactory(traits, window, g_renderer.device);
-    InitGammaPass();
     InitShadowPass(traits);
 }
 
@@ -520,8 +475,6 @@ void ShutdownRenderer()
     ShutdownFont();
     ShutdownShader();
     ShutdownTexture();
-
-    // g_renderer.gamma_mesh = nullptr; // TODO: implement proper cleanup
 
     if (g_renderer.depth_texture)
         SDL_ReleaseGPUTexture(g_renderer.device, g_renderer.depth_texture);

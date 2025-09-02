@@ -21,7 +21,6 @@ enum RenderCommandType
     command_type_begin_pass,
     command_type_begin_ui_pass,
     command_type_begin_shadow_pass,
-    command_type_begin_gamma_pass,
     command_type_end_pass,
 };
 
@@ -175,12 +174,6 @@ void BeginShadowPass(Mat4 light_view, Mat4 light_projection)
 void EndRenderPass()
 {
     RenderCommand cmd = { .type = command_type_end_pass };
-    AddRenderCommand(&cmd);
-}
-
-void BeginGammaPass()
-{
-    RenderCommand cmd = { .type = command_type_begin_gamma_pass };
     AddRenderCommand(&cmd);
 }
 
@@ -352,10 +345,6 @@ void ExecuteRenderCommands(SDL_GPUCommandBuffer* cb)
 
         case command_type_bind_default_texture:
             BindDefaultTextureGPU(command->data.bind_default_texture.index);
-            break;
-
-        case command_type_begin_gamma_pass:
-            pass = BeginGammaPassGPU();
             break;
 
         case command_type_end_pass:
