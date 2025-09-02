@@ -72,9 +72,8 @@ set(SOURCE_FILES
 
 # Add platform-specific files
 if(WIN32)
-    list(APPEND SOURCE_FILES src/platform_win.cpp)
+    list(APPEND SOURCE_FILES src/platform/windows/windows_main.cpp)
 else()
-    list(APPEND SOURCE_FILES src/platform_posix.cpp)
 endif()
 
 target_sources(noz PRIVATE ${SOURCE_FILES})
