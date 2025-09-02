@@ -427,7 +427,7 @@ void WriteCSTR(Stream* stream, const char* format, ...)
     }
 }
 
-void WriteBytes(Stream* stream, void* data, size_t size)
+void WriteBytes(Stream* stream, const void* data, size_t size)
 {
     if (!stream || !data || size == 0) return;
     

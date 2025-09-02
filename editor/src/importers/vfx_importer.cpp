@@ -3,6 +3,7 @@
 //
 
 #include "../props.h"
+#include "../../../src/vfx/vfx_internal.h"
 
 namespace fs = std::filesystem;
 
@@ -333,40 +334,22 @@ void ImportVfx(const fs::path& source_path, Stream* output_stream, Props* config
             throw std::exception((std::string("missing particle ") + particle_section).c_str());
 
         // Write emitter data
-        VfxInt rate = ParseInt(source->GetString(emitter_name.c_str(), "rate", "0"), VFX_INT_ZERO);
-        VfxInt burst = ParseInt(source->GetString(emitter_name.c_str(), "burst", "0"), VFX_INT_ZERO);
-        VfxFloat emitter_duration = ParseFloat(source->GetString(emitter_name.c_str(), "duration", "1.0"), VFX_FLOAT_ONE);
-        VfxFloat angle = ParseFloat(source->GetString(emitter_name.c_str(), "angle", "0..360"), {0.0f, 360.0f});
-        VfxFloat radius = ParseFloat(source->GetString(emitter_name.c_str(), "radius", "0"), VFX_FLOAT_ZERO);
-        VfxVec2 spawn = ParseVec2(source->GetString(emitter_name.c_str(), "spawn", "(0, 0, 0)"), VFX_VEC2_ZERO);
-
-        WriteStruct(output_stream, rate);
-        WriteStruct(output_stream, burst);
-        WriteStruct(output_stream, emitter_duration);
-        WriteStruct(output_stream, angle);
-        WriteStruct(output_stream, radius);
-        WriteStruct(output_stream, spawn);
+        WriteStruct(output_stream, ParseInt(source->GetString(emitter_name.c_str(), "rate", "0"), VFX_INT_ZERO));
+        WriteStruct(output_stream, ParseInt(source->GetString(emitter_name.c_str(), "burst", "0"), VFX_INT_ZERO));
+        WriteStruct(output_stream, ParseFloat(source->GetString(emitter_name.c_str(), "duration", "1.0"), VFX_FLOAT_ONE));
+        WriteStruct(output_stream, ParseFloat(source->GetString(emitter_name.c_str(), "angle", "0..360"), {0.0f, 360.0f}));
+        WriteStruct(output_stream, ParseFloat(source->GetString(emitter_name.c_str(), "radius", "0"), VFX_FLOAT_ZERO));
+        WriteStruct(output_stream, ParseVec2(source->GetString(emitter_name.c_str(), "spawn", "(0, 0, 0)"), VFX_VEC2_ZERO));
 
         // Write particle data
-        std::string mesh_name = source->GetString(particle_section.c_str(), "mesh", "quad");
-        VfxFloat particle_duration = ParseFloat(source->GetString(particle_section.c_str(), "duration", "1.0"), VFX_FLOAT_ONE);
-        VfxFloatCurve size = ParseFloatCurve(source->GetString(particle_section.c_str(), "size", "1.0"), VFX_FLOAT_CURVE_ONE);
-        VfxFloatCurve speed = ParseFloatCurve(source->GetString(particle_section.c_str(), "speed", "0"), VFX_FLOAT_CURVE_ZERO);
-        VfxColorCurve color = ParseColorCurve(source->GetString(particle_section.c_str(), "Color", "white"), VFX_COLOR_CURVE_WHITE);
-        VfxVec2 gravity = ParseVec2(source->GetString(particle_section.c_str(), "gravity", "(0, 0, 0)"), VFX_VEC2_ZERO);
-        VfxFloat drag = ParseFloat(source->GetString(particle_section.c_str(), "drag", "0"), VFX_FLOAT_ZERO);
-        VfxFloatCurve rotation = ParseFloatCurve(source->GetString(particle_section.c_str(), "rotation", "0.0"), VFX_FLOAT_CURVE_ZERO);
-        VfxFloatCurve angular_velocity = ParseFloatCurve(source->GetString(particle_section.c_str(), "angular_velocity", "0"), VFX_FLOAT_CURVE_ZERO);
-
-        WriteString(output_stream, mesh_name.c_str());
-        WriteStruct(output_stream, particle_duration);
-        WriteStruct(output_stream, size);
-        WriteStruct(output_stream, speed);
-        WriteStruct(output_stream, color);
-        WriteStruct(output_stream, gravity);
-        WriteStruct(output_stream, drag);
-        WriteStruct(output_stream, rotation);
-        WriteStruct(output_stream, angular_velocity);
+        WriteString(output_stream, source->GetString(particle_section.c_str(), "mesh", "quad").c_str());
+        WriteStruct(output_stream, ParseFloat(source->GetString(particle_section.c_str(), "duration", "1.0"), VFX_FLOAT_ONE));
+        WriteStruct(output_stream, ParseFloatCurve(source->GetString(particle_section.c_str(), "size", "1.0"), VFX_FLOAT_CURVE_ONE));
+        WriteStruct(output_stream, ParseFloatCurve(source->GetString(particle_section.c_str(), "speed", "0"), VFX_FLOAT_CURVE_ZERO));
+        WriteStruct(output_stream, ParseColorCurve(source->GetString(particle_section.c_str(), "Color", "white"), VFX_COLOR_CURVE_WHITE));
+        WriteStruct(output_stream, ParseVec2(source->GetString(particle_section.c_str(), "gravity", "(0, 0, 0)"), VFX_VEC2_ZERO));
+        WriteStruct(output_stream, ParseFloat(source->GetString(particle_section.c_str(), "drag", "0"), VFX_FLOAT_ZERO));
+        WriteStruct(output_stream, ParseFloatCurve(source->GetString(particle_section.c_str(), "rotation", "0.0"), VFX_FLOAT_CURVE_ZERO));
     }
 }
 

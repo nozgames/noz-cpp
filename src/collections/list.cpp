@@ -4,124 +4,137 @@
 
 #define DEFAULT_CAPACITY 32
 
-struct ListImpl : Object
+struct ListImpl : List
 {
-    size_t count;
-    size_t item_size;
-    size_t capacity;
     void* items;
+    u32 count;
+    u32 item_size;
+    u32 capacity;
 };
 
-static ListImpl* Impl(List* l) { return (ListImpl*)Cast(l, TYPE_LIST); }
+void ListDestructor(void* ptr)
+{
+    ListImpl* impl = static_cast<ListImpl*>(ptr);
+    Free(impl->items);
+}
 
 List* CreateList(Allocator* allocator, size_t item_size, size_t capacity)
 {   
     if (capacity == 0)
 	capacity = DEFAULT_CAPACITY;
 
-    auto list = (List*)CreateObject(allocator, sizeof(ListImpl), TYPE_LIST);
-    auto impl = Impl(list);
+    List* list = (List*)Alloc(allocator, sizeof(ListImpl), ListDestructor);
+    ListImpl* impl = static_cast<ListImpl*>(list);
     if (!list)
         return nullptr;
     
     impl->count = 0;
     impl->capacity = capacity;
-    impl->items = (void*)Alloc(allocator, item_size * capacity);
+    impl->items = Alloc(allocator, item_size * capacity);
     if (!impl->items)
     {
-        Destroy(list);
+        Free(list);
         return nullptr;
     }
     
-    return (List*)list;
+    return list;
 }
 
-#if 0
-
-// todo: destructor
-#if 0
-void list_free(List* list)
+u32 GetCount(List* list)
 {
-    if (!list) return;
-    
-    if (list->data)
-        free(list->data);
-    free(list);
-}
-#endif
-
-size_t GetCount(List* list)
-{
-    return Impl(list)->count;
+    return static_cast<ListImpl*>(list)->count;
 }
 
-size_t GetCapacity(List* list)
+bool IsFull(List* list)
 {
-    return Impl(list)->capacity;
+    assert(list);
+    ListImpl* impl = static_cast<ListImpl*>(list);
+    return impl->count == impl->capacity;
 }
 
-void Add(List* list, void* value)
+void* GetAt(List* list, u32 index)
 {
-    ListImpl* impl = Impl(list);
-    
-    if (impl->count >= impl->capacity)
-    {
-        impl->capacity *= 2;
-		impl->values = (void**)Realloc(GetAllocator(list), impl->values, sizeof(void*) * impl->capacity);
-        if (!impl->values)
-            return;
-    }
-    
-	impl->values[impl->count++] = value;
+    assert(list);
+    ListImpl* impl = static_cast<ListImpl*>(list);
+    assert(index < impl->count);
+    return (u8*)impl->items + index * impl->item_size;
 }
 
-void* Pop(List* list)
+static void* AddInternal(List* list)
 {
-    ListImpl* impl = Impl(list);
-    if (impl->count == 0)
+    assert(list);
+
+    if (IsFull(list))
         return nullptr;
-    
-    return impl->values[--impl->count];
+
+    ListImpl* impl = static_cast<ListImpl*>(list);
+    impl->count++;
+    return GetAt(list, impl->count - 1);
 }
 
-void* GetAt(List* list, size_t index)
+void* Add(List* list)
 {
-    ListImpl* impl = Impl(list);
-	assert(index < impl->count);
-	return impl->values[index];
+    assert(list);
+
+    void* item = AddInternal(list);
+    if (!item)
+        return nullptr;
+
+    ListImpl* impl = static_cast<ListImpl*>(list);
+    memset(item, 0, impl->item_size);
+    return item;
+}
+
+void* Add(List* list, const void* value)
+{
+    assert(list);
+    assert(value);
+
+    void* item = AddInternal(list);
+    if (!item)
+        return nullptr;
+
+    ListImpl* impl = static_cast<ListImpl*>(list);
+    memcpy(item, value, impl->item_size);
+    return item;
+}
+
+void Remove(List* list, const void* item)
+{
+    assert(list);
+    assert(item);
+    RemoveRange(list, item, 1);
+}
+
+void RemoveRange(List* list, const void* first, int count)
+{
+    assert(list);
+    assert(first);
+    assert(count > 0);
+
+    ListImpl* impl = static_cast<ListImpl*>(list);
+    assert(first >= impl->items);
+
+    u32 index = ((u8*)first - (u8*)impl->items) / impl->item_size;
+    assert(index < impl->count);
+
+    if (index + count < impl->count)
+        memmove(GetAt(list, index), GetAt(list, index + count), impl->item_size * (impl->count - index - count));
+
+    impl->count -= count;
+}
+
+void RemoveAt(List* list, u32 index)
+{
+    assert(list);
+    ListImpl* impl = static_cast<ListImpl*>(list);
+    assert(index < impl->count);
+    RemoveRange(list, GetAt(list, index), 1);
 }
 
 void Clear(List* list)
 {
-    ListImpl* impl = Impl(list);
+    assert(list);
+    ListImpl* impl = static_cast<ListImpl*>(list);
     impl->count = 0;
 }
-
-bool IsEmpty(List* list)
-{
-    return Impl(list)->count == 0;
-}
-
-int Find(List* list, void* value)
-{
-	ListImpl* impl = Impl(list);
-    for (size_t i = 0; i < impl->count; i++)
-        if (impl->values[i] == value)
-            return (int)i;
-
-    return -1;
-}
-
-int Find(List* list, bool (*predicate) (void*, void* data), void* data)
-{
-    assert(predicate);
-    ListImpl* impl = Impl(list);
-    for (size_t i = 0; i < impl->count; i++)
-        if (predicate(impl->values[i], data))
-            return (int)i;
-
-    return -1;
-}
-
-
-#endif

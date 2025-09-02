@@ -11,10 +11,12 @@ void InitUI();
 void InitEvent(ApplicationTraits* traits);
 void InitName(ApplicationTraits* traits);
 void InitEntity();
+void InitVfx();
 void ShutdownEntity();
 void ShutdownEvent();
 void ShutdownUI();
 void ShutdownName();
+void ShutdownVfx();
 
 // @traits
 static ApplicationTraits g_default_traits = 
@@ -148,6 +150,7 @@ void InitApplication(ApplicationTraits* traits)
     InitRenderer(&traits->renderer, g_application.window);
     InitTime();
     InitPhysics();
+    InitVfx();
 
     g_application.asset_allocator = CreateArenaAllocator(traits->asset_memory_size, "assets");
 
@@ -184,6 +187,7 @@ void ShutdownApplication()
 
     ShutdownEntity();
     ShutdownUI();
+    ShutdownVfx();
     ShutdownPhysics();
     ShutdownTime();
     ShutdownRenderer();

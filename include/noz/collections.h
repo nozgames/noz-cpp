@@ -4,16 +4,20 @@
 
 #pragma once
 
-struct List : Object {};
+struct List {};
 
 // @list
 List* CreateList(Allocator* allocator, size_t item_size, size_t capacity);
+u32 GetCount(List* list);
 void* GetAt(List* list, u32 index);
-void Add(List* list, void* item);
+void* Add(List* list);
+void* Add(List* list, const void* value);
+void RemoveRange(List* list, const void* first, int count);
 void Remove(List* list, const void* item);
 void RemoveAt(List* list, u32 index);
 void Clear(List* list);
-
+bool IsEmpty(List* list);
+bool IsFull(List* list);
 
 // @ring_buffer
 struct RingBuffer
@@ -41,9 +45,6 @@ inline bool IsFull(RingBuffer* rb) { return rb->count == rb->capacity; }
 inline u32 GetCount(RingBuffer* rb) { return rb->count; }
 
 // @map
-
-
-
 struct Map
 {
     size_t capacity;
@@ -52,7 +53,6 @@ struct Map
     void* values;
     size_t value_stride;
 };
-
 
 inline void Init(Map& map, u64* keys, void* values, size_t capacity, size_t value_stride, size_t initial_count=0)
 {
@@ -106,3 +106,17 @@ void InsertBefore(LinkedList& list, void* existing_node, void* new_node);
 void Remove(LinkedList& list, void* node);
 void* PopFront(LinkedList& list);
 void* PopBack(LinkedList& list);
+
+
+
+// @free_list
+
+struct FreeList
+{
+    u32 count;
+    u32 capacity;
+    void* items;
+    u32 item_size;
+};
+
+void Init(FreeList& list, void* items, u32 item_size, u32 capacity);

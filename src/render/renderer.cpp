@@ -2,7 +2,13 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-void DrawScreenCanvases();
+extern void DrawUI();
+extern void DrawVfx();
+extern void BeginRenderPass();
+extern void ClearRenderCommands();
+extern void BeginRenderPass(bool clear, Color clear_color, bool msaa, Texture* target=nullptr);
+extern void BeginShadowPass(mat4 light_view, mat4 light_projection);
+extern void EndRenderPass();
 
 static void ResetRenderState();
 static void UpdateBackBuffer();
@@ -85,7 +91,7 @@ void InitShadowPass(const RendererTraits* traits)
         Exit(SDL_GetError());
 }
 
-void BeginRenderFrame()
+void BeginRenderFrame(Color clear_color)
 {
     ClearRenderCommands();
     UpdateBackBuffer();
@@ -198,6 +204,8 @@ void BeginRenderFrame()
     }
 
     g_renderer.command_buffer = cmd;
+
+    BeginRenderPass(clear_color.a >= 1.0f, clear_color, false);
 }
 
 void EndRenderFrame()
@@ -207,6 +215,9 @@ void EndRenderFrame()
     if (!g_renderer.command_buffer)
         return;
 
+    DrawVfx();
+    DrawUI();
+    EndRenderPass();
     RenderGammaPass();
     ExecuteRenderCommands(g_renderer.command_buffer);
     SDL_SubmitGPUCommandBuffer(g_renderer.command_buffer);

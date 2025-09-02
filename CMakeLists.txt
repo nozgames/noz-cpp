@@ -6,7 +6,8 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(FetchContent)
 
-add_library(noz STATIC include/noz/noz_math.h)
+add_library(noz STATIC include/noz/noz_math.h
+        src/collections/free_list.cpp)
 
 target_precompile_headers(noz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.h)
 
@@ -19,6 +20,7 @@ set(SOURCE_FILES
     src/collections/linked_list.cpp
     src/collections/map.cpp
     src/collections/ring_buffer.cpp
+    src/collections/free_list.cpp
     src/color.cpp
     src/editor/editor_client.cpp
     src/editor/editor_messages.cpp

@@ -2,59 +2,7 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct VfxParticleDef
-{
-    VfxVec2 gravity;
-    VfxFloat duration;
-    VfxFloat drag;
-    VfxFloatCurve size;        // Replaces start_size/end_size
-    VfxFloatCurve speed;       // Replaces start_speed/end_speed
-    VfxColorCurve color;       // Replaces start_color/end_color
-    VfxFloatCurve rotation;
-    VfxFloatCurve angular_velocity;
-    //string mesh_name;
-    //int billboard_mode; // 0=none, 1=camera, 2=velocity
-};
-
-struct VfxEmitterDef
-{
-    VfxInt   rate;
-    VfxInt   burst;
-    VfxFloat duration;
-    VfxFloat angle;
-    VfxFloat radius;
-    VfxVec2  spawn;
-    VfxParticleDef particle_def;
-};
-
-struct VfxImpl : Vfx
-{
-    VfxFloat duration;
-    VfxEmitterDef* emitters;
-    u32 emitter_count;
-    bool loop;
-};
-
-
-// float GetRandom(const VfxParsedFloat& range)
-// {
-//     return RandomFloat(range.min, range.max);
-// }
-//
-// int GetRandom(const VfxInt& range)
-// {
-//     return RandomInt(range.min, range.max);
-// }
-//
-// Color GetRandom(const VfxRandomColor& range)
-// {
-//     return Lerp(range.min, range.max, RandomFloat());
-// }
-//
-// Vec2 GetRandom(const VfxRandomVec2& range)
-// {
-//     return Lerp(range.min, range.max, RandomFloat());
-// }
+#include "vfx_internal.h"
 
 Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
 {
@@ -87,7 +35,6 @@ Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const 
         particle_def->gravity = ReadStruct<VfxVec2>(stream);
         particle_def->drag = ReadStruct<VfxFloat>(stream);
         particle_def->rotation = ReadStruct<VfxFloatCurve>(stream);
-        particle_def->angular_velocity = ReadStruct<VfxFloatCurve>(stream);
     }
 
     return vfx;

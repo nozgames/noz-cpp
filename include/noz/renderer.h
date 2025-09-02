@@ -123,9 +123,6 @@ void AddVertex(
     uint8_t bone_index=0);
 
 // @render_buffer
-void ClearRenderCommands();
-void BeginRenderPass(bool clear, Color clear_color, bool msaa, Texture* target=nullptr);
-void BeginShadowPass(mat4 light_view, mat4 light_projection);
 void BindDefaultTexture(int texture_index);
 void BindColor(Color color);
 void BindCamera(Camera* camera);
@@ -133,7 +130,6 @@ void BindCamera(const mat4& view, const mat4& projection);
 void BindTransform(const mat4& transform);
 void BindMaterial(Material* material);
 void DrawMesh(Mesh* mesh);
-void EndRenderPass();
 
 // @font
 struct FontGlyph

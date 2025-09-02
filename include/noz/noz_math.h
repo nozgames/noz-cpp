@@ -92,6 +92,7 @@ struct Vec2
     Vec2 operator-(const Vec2& v) const { return Vec2{ x - v.x, y - v.y }; }
     Vec2& operator+=(const Vec2& v) { x += v.x; y += v.y; return *this; }
     Vec2 operator*(f32 scalar) const { return Vec2{ x * scalar, y * scalar }; }
+    Vec2 operator*=(f32 scalar) const { return Vec2{ x * scalar, y * scalar }; }
 
     operator glm::vec2() const { return { x, y }; }
 };
@@ -115,4 +116,7 @@ Vec2 Reflect(const Vec2& v, const Vec2& normal);
 Vec2 Normalize(const Vec2& v);
 
 inline Vec2 Lerp(const Vec2& v1, const Vec2& v2, float t) { return v1 + (v2 - v1) * t; }
+inline float Lerp(const float& v1, const float& v2, float t) { return v1 + (v2 - v1) * t; }
 
+inline float Radians(float degrees) { return degrees * noz::PI / 180.0f; }
+inline float Degrees(float radians) { return radians * 180.0f / noz::PI; }

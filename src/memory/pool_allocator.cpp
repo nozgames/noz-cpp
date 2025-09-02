@@ -2,30 +2,29 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct PoolEntry
-{
-    PoolEntry* next;
-};
-
-struct PoolAllocator
+struct PoolAllocatorImpl : PoolAllocator
 {
     Allocator base;
-    PoolEntry* entries;
-    PoolEntry* free;
-    size_t count;
+    u32* free_list;
+    u32 count;
+    u32 capacity;
+    u32 item_size;
+    void* items;
 };
 
-void* PoolAlloc(Allocator* aptr, size_t size)
+void* PoolAlloc(Allocator* a, size_t size)
 {
-    auto a = (PoolAllocator*)aptr;
     assert(a);
-    if (!a->free)
+
+    PoolAllocatorImpl* impl = static_cast<PoolAllocatorImpl*>(a);
+    if (impl->count >= impl->capacity)
         return nullptr;
 
-    PoolEntry* entry = a->free;
-    a->free = entry->next;
-    a->count++;
-    return entry + 1;
+    assert((u32)size == impl->item_size);
+
+    u32 index = impl->free_list[impl->count];
+    impl->count++;
+    return GetAt(impl, index);
 }
 
 void* PoolRealloc(Allocator* aa, void* ptr, size_t new_size)
@@ -34,37 +33,43 @@ void* PoolRealloc(Allocator* aa, void* ptr, size_t new_size)
     return nullptr;
 }
 
-void PoolFree(Allocator* aa, void* ptr)
+void PoolFree(Allocator* a, void* ptr)
 {
-    auto a = (PoolAllocator*)aa;
     assert(a);
-    if (!ptr)
-        return;
-    auto entry = (PoolEntry*)((char*)ptr - sizeof(PoolEntry));
-    entry->next = a->free;
-    a->count--;
-    a->free = entry;
+    assert(ptr);
+    PoolAllocatorImpl* impl = static_cast<PoolAllocatorImpl*>(a);
+    assert(ptr >= impl->items);
+
+    u32 index = ((u8*)ptr - (u8*)impl->items) / impl->item_size;
+    assert(index < impl->capacity);
+
+    impl->count--;
+    impl->free_list[impl->count] = index;
 }
 
-Allocator* CreatePoolAllocator(size_t entry_size, size_t entry_count)
+PoolAllocator* CreatePoolAllocator(u32 item_size, u32 capacity)
 {
-    size_t stride = entry_size + sizeof(PoolEntry);
-    auto* a = (PoolAllocator*)calloc(1, sizeof(PoolAllocator) + stride * entry_count);
-    a->base = {
-        .alloc = PoolAlloc,
-        .free = PoolFree,
-        .realloc = PoolRealloc
-    };
-    a->entries = (PoolEntry*)(a + 1);
+    u32 alloc_size = sizeof(PoolAllocatorImpl) + (item_size + sizeof(u32)) * capacity;
+    PoolAllocatorImpl* impl = (PoolAllocatorImpl*)calloc(1, alloc_size);
+    impl->alloc = PoolAlloc;
+    impl->free = PoolFree;
+    impl->realloc = PoolRealloc;
+    impl->free_list = (u32*)(impl + 1);
+    impl->items = impl->free_list + capacity;
+    impl->capacity = capacity;
+    impl->item_size = item_size;
 
-    // link all entries into a free list
-    PoolEntry* prev = a->free = a->entries;
-    for (size_t i = 1; i < entry_count - 1; i++)
-    {
-        auto* entry = (PoolEntry*)((char*)a->entries + i * stride);
-        prev->next = entry;
-        prev = entry;
-    }
+    u32* f = impl->free_list;
+    for (u32 i=0; i<capacity; i++, f++)
+        *f = i;
 
-    return (Allocator*)a;
+    return impl;
+}
+
+void* GetAt(PoolAllocator* allocator, u32 index)
+{
+    assert(allocator);
+    PoolAllocatorImpl* impl = static_cast<PoolAllocatorImpl*>(allocator);
+    assert(index < impl->capacity);
+    return (u8*)impl->items + impl->item_size * index;
 }

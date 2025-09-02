@@ -37,7 +37,10 @@ Allocator* GetAllocator(void* ptr);
 Allocator* CreateArenaAllocator(size_t size, const char* name);
 
 // @pool
-Allocator* CreatePoolAllocator(size_t entry_size, size_t entry_count);
+struct PoolAllocator : Allocator { };
+
+PoolAllocator* CreatePoolAllocator(u32 item_size, u32 capacity);
+void* GetAt(PoolAllocator* allocator, u32 index);
 
 // @scratch
 void PushScratch();
