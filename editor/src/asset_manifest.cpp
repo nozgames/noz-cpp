@@ -6,14 +6,6 @@
 
 #include "asset_manifest.h"
 #include <noz/asset.h>
-#include <noz/platform.h>
-#include <filesystem>
-#include <vector>
-#include <string>
-#include <algorithm>
-#include <fstream>
-#include <map>
-#include <set>
 
 namespace fs = std::filesystem;
 
@@ -47,6 +39,7 @@ static std::vector<std::pair<std::string, std::string>> core_assets = {
     { "shaders.text", "shaders/text" },
     { "shaders.lit", "shaders/lit" },
     { "shaders.gizmo", "shaders/gizmo" },
+    { "shaders.vfx", "shaders/vfx" },
     { "fonts.fallback", "fonts/Roboto-Black" }
 };
 

@@ -16,6 +16,7 @@ struct LoadedCoreAssets
         Shader* lit;
         Shader* gizmo;
         Shader* gamma;
+        Shader* vfx;
     } shaders;
 
     struct

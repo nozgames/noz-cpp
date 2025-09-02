@@ -24,7 +24,7 @@ void* PoolAlloc(Allocator* a, size_t size)
 
     u32 index = impl->free_list[impl->count];
     impl->count++;
-    return GetAt(impl, index);
+    return (u8*)impl->items + impl->item_size * index;
 }
 
 void* PoolRealloc(Allocator* aa, void* ptr, size_t new_size)
@@ -39,6 +39,7 @@ void PoolFree(Allocator* a, void* ptr)
     assert(ptr);
     PoolAllocatorImpl* impl = static_cast<PoolAllocatorImpl*>(a);
     assert(ptr >= impl->items);
+    assert(impl->count > 0);
 
     u32 index = ((u8*)ptr - (u8*)impl->items) / impl->item_size;
     assert(index < impl->capacity);

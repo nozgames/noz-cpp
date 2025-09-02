@@ -5,8 +5,8 @@
 #include "vfx_internal.h"
 
 constexpr u16 INVALID_INDEX = 0xFFFF;
-constexpr u16 MAX_PARTICLES = 4096;
-constexpr u16 MAX_EMITTERS = 1024;
+constexpr u16 MAX_PARTICLES = 10096;
+constexpr u16 MAX_EMITTERS = 2024;
 constexpr u16 MAX_INSTANCES = 256;
 constexpr u16 MAX_MESHES = 1;
 
@@ -54,13 +54,8 @@ struct VfxEmitter
 struct VfxInstance
 {
     Vfx* vfx;
-    Mat3 transform;
-    List* particles;
-    List* emitters;
-    int max_particles;
-    int active_particles;
-    bool playing;
-    Vec2 spawn_position;
+    Vec2 position;
+    int particle_count;
     u32 version;
 };
 
@@ -78,7 +73,7 @@ struct VfxSystem
 
 static VfxSystem g_vfx = {};
 
-static VfxInstance* CreateInstance();
+static VfxInstance* CreateInstance(Vfx* vfx, const Vec2& position);
 static VfxEmitter* CreateEmitter(VfxInstance* instance, const VfxEmitterDef& def);
 static VfxParticle* EmitParticle(VfxEmitter* emitter);
 
@@ -121,10 +116,15 @@ float EvaluateCurve(VfxCurveType curve, float t)
 static float GetRandom(const VfxFloat& v) { return RandomFloat(v.min, v.max); }
 static int GetRandom(const VfxInt& v) { return RandomInt(v.min, v.max); }
 static Color GetRandom(const VfxColor& v) { return Lerp(v.min, v.max, RandomFloat()); }
-static Vec2 GetRandom(const VfxVec2& range) { return Lerp(range.min, range.max, RandomFloat()); }
+static Vec2 GetRandom(const VfxVec2& range)
+{
+    return { Lerp(range.min.x, range.max.x, RandomFloat()),
+             Lerp(range.min.y, range.max.y, RandomFloat()) };
+}
 
 static u16 GetIndex(VfxInstance* instance) { return GetIndex(g_vfx.instance_pool, instance); }
 static VfxInstance* GetInstance(u16 index) { return static_cast<VfxInstance*>(GetAt(g_vfx.instance_pool, index)); }
+static VfxInstance* GetInstance(VfxEmitter* emitter) { return GetInstance(emitter->instance_index); }
 static VfxHandle GetHandle(VfxInstance* instance) { return { GetIndex(instance), instance->version }; }
 
 static VfxInstance* GetInstance(const VfxHandle& handle)
@@ -136,13 +136,16 @@ static VfxInstance* GetInstance(const VfxHandle& handle)
     return instance;
 }
 
-static VfxInstance* CreateInstance()
+static VfxInstance* CreateInstance(Vfx* vfx, const Vec2& position)
 {
     if (g_vfx.instance_count >= MAX_INSTANCES)
         return nullptr;
 
     VfxInstance* instance = (VfxInstance*)Alloc(g_vfx.instance_pool, sizeof(VfxInstance));
     assert(instance);
+    instance->position = position;
+    instance->vfx = vfx;
+
     g_vfx.instance_count++;
     return instance;
 }
@@ -156,13 +159,16 @@ static VfxParticle* EmitParticle(VfxEmitter* emitter)
     if (nullptr == p)
         return nullptr;
 
+    VfxInstance* instance = GetInstance(emitter);
+    assert(instance);
+
     float angle = GetRandom(emitter->def->angle);
     Vec2 dir(cos(angle), sin(angle));
 
     g_vfx.particle_count++;
 
     const VfxParticleDef& def = emitter->def->particle_def;
-    p->position = GetRandom(emitter->def->spawn);
+    p->position = GetRandom(emitter->def->spawn) + instance->position;
     p->size_start = GetRandom(def.size.start);
     p->size_end = GetRandom(def.size.end);
     p->size_curve = def.size.type;
@@ -188,8 +194,7 @@ static VfxParticle* EmitParticle(VfxEmitter* emitter)
     // else
     //     p.mesh_ref = load_mesh("quad");
 
-    VfxInstance* instance = GetInstance(emitter->instance_index);
-    instance->active_particles++;
+    instance->particle_count++;
 
     return p;
 }
@@ -211,7 +216,7 @@ static void UpdateParticles()
 
         if (p->elapsed >= p->lifetime)
         {
-            p->emitter_index = 0;
+            p->emitter_index = INVALID_INDEX;
             Free(p);
             continue;
         }
@@ -261,6 +266,9 @@ static void UpdateEmitters()
     {
         VfxEmitter* e = (VfxEmitter*)GetAt(g_vfx.emitter_pool, i);
         if (e->instance_index == INVALID_INDEX)
+            continue;
+
+        if (e->rate <= 0.0000001f)
             continue;
 
         // Check emitter lifetime
@@ -336,6 +344,9 @@ void DrawVfx()
     if (g_vfx.particle_count == 0)
         return;
 
+    UpdateEmitters();
+    UpdateParticles();
+
     for (int i=0; i<MAX_PARTICLES; i++)
     {
         VfxParticle* p = static_cast<VfxParticle*>(GetAt(g_vfx.particle_pool, i));
@@ -346,11 +357,9 @@ void DrawVfx()
         float size = Lerp(p->size_start, p->size_end, EvaluateCurve(p->size_curve, t));
         Color col = Lerp(p->color_start, p->color_end, EvaluateCurve(p->color_curve, t));
 
-        //BindTransform( particle_transform * world_transform);
+        BindTransform(TRS(p->position, p->rotation, {size, size}));
         BindColor(col);
         BindMaterial(g_vfx.material);
-
-        // Render the particle mesh
         DrawMesh(g_vfx.meshes[VFX_MESH_SQUARE]);
 
 #if 0
@@ -396,21 +405,13 @@ void DrawVfx()
 
 VfxHandle Play(Vfx* vfx, const Vec2& position)
 {
-    Mat3 transform = TRS(position, 0.0f, {1.0f, 1.0f});
-    return Play(vfx, transform);
-}
-
-VfxHandle Play(Vfx* vfx, const Mat3& transform)
-{
-//    impl->spawn_position = get_position(renderer);
-
     VfxImpl* impl = static_cast<VfxImpl*>(vfx);
     assert(impl);
 
     if (g_vfx.emitter_count + impl->emitter_count > MAX_EMITTERS)
         return INVALID_HANDLE;
 
-    VfxInstance* instance = CreateInstance();
+    VfxInstance* instance = CreateInstance(vfx, position);
     if (!instance)
         return INVALID_HANDLE;
 
@@ -433,10 +434,42 @@ bool IsPlaying(const VfxHandle& handle)
     return GetInstance(handle) != nullptr;
 }
 
-void UpdateVfx()
+void ClearVfx()
 {
-    UpdateEmitters();
-    UpdateParticles();
+    for (u32 i=0; i<MAX_PARTICLES; i++)
+    {
+        VfxParticle* p = (VfxParticle*)GetAt(g_vfx.particle_pool, i);
+        if (p->emitter_index == INVALID_INDEX)
+            continue;
+
+        p->emitter_index = INVALID_INDEX;
+        Free(p);
+    }
+
+    for (u32 i=0; i<MAX_EMITTERS; i++)
+    {
+        VfxEmitter* e = (VfxEmitter*)GetAt(g_vfx.emitter_pool, i);
+        if (e->instance_index == INVALID_INDEX)
+            continue;
+
+        e->instance_index = INVALID_INDEX;
+        Free(e);
+    }
+
+    for (u32 i=0; i<MAX_INSTANCES; i++)
+    {
+        VfxInstance* instance = (VfxInstance*)GetAt(g_vfx.instance_pool, i);
+        if (!instance->vfx)
+            continue;
+
+        instance->vfx = nullptr;
+        instance->version++;
+        Free(instance);
+    }
+
+    g_vfx.particle_count = 0;
+    g_vfx.emitter_count = 0;
+    g_vfx.instance_count = 0;
 }
 
 void InitVfx()
@@ -460,7 +493,7 @@ void InitVfx()
         e->instance_index = INVALID_INDEX;
     }
 
-    g_vfx.material = CreateMaterial(ALLOCATOR_DEFAULT, g_core_assets.shaders.ui);
+    g_vfx.material = CreateMaterial(ALLOCATOR_DEFAULT, g_core_assets.shaders.vfx);
 
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
     AddQuad(builder, VEC3_UP, VEC3_RIGHT, 1, 1, {0,0});

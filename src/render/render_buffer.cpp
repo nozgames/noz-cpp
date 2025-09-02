@@ -227,6 +227,17 @@ void BindMaterial(Material* material)
     AddRenderCommand(&cmd);
 }
 
+void BindTransform(const Mat3& transform)
+{
+    RenderCommand cmd = {
+        .type = command_type_bind_transform,
+        .data = {
+            .bind_transform = {
+                .transform = (Mat4)transform}} };
+    AddRenderCommand(&cmd);
+
+}
+
 void BindTransform(const mat4& transform)
 {
     RenderCommand cmd = {

@@ -218,7 +218,9 @@ void EndRenderFrame()
     DrawVfx();
     DrawUI();
     EndRenderPass();
+    assert(!g_renderer.render_pass);
     RenderGammaPass();
+    assert(!g_renderer.render_pass);
     ExecuteRenderCommands(g_renderer.command_buffer);
     SDL_SubmitGPUCommandBuffer(g_renderer.command_buffer);
 
