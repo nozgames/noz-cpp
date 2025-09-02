@@ -83,20 +83,20 @@ namespace noz::msdf
 						if (glyphPoint.curve != ttf::TrueTypeFont::CurveType::Conic)
 						{
 							edges.push_back(new QuadraticEdge(
-								glm::dvec2(last.x, last.y),
-								glm::dvec2(control.x, control.y),
-								glm::dvec2(glyphPoint.xy.x, glyphPoint.xy.y)
+								Vec2Double(last.x, last.y),
+								Vec2Double(control.x, control.y),
+								Vec2Double(glyphPoint.xy.x, glyphPoint.xy.y)
 								));
 							last = glyphPoint.xy;
 							break;
 						}
 
-						auto middle = glm::dvec2((control.x + glyphPoint.xy.x) / 2, (control.y + glyphPoint.xy.y) / 2);
+						auto middle = Vec2Double((control.x + glyphPoint.xy.x) / 2, (control.y + glyphPoint.xy.y) / 2);
 
 						edges.push_back(new QuadraticEdge(
-							glm::dvec2(last.x, last.y),
-							glm::dvec2(control.x, control.y),
-							glm::dvec2(middle.x, middle.y)
+							Vec2Double(last.x, last.y),
+							Vec2Double(control.x, control.y),
+							Vec2Double(middle.x, middle.y)
 							));
 
 						last = middle;
@@ -108,16 +108,16 @@ namespace noz::msdf
 						if (glyph->points[glyphContour.start + glyphContour.length - 1].curve == ttf::TrueTypeFont::CurveType::Conic)
 						{
 							edges.push_back(new QuadraticEdge(
-								glm::dvec2(last.x, last.y),
-								glm::dvec2(control.x, control.y),
-								glm::dvec2(start.x, start.y)
+								Vec2Double(last.x, last.y),
+								Vec2Double(control.x, control.y),
+								Vec2Double(start.x, start.y)
 								));
 						}
 						else
 						{
 							edges.push_back(new LinearEdge(
-								glm::dvec2(last.x, last.y),
-								glm::dvec2(start.x, start.y)
+								Vec2Double(last.x, last.y),
+								Vec2Double(start.x, start.y)
 								));
 						}
 					}
@@ -125,8 +125,8 @@ namespace noz::msdf
 				else
 				{
 					edges.push_back(new LinearEdge(
-						glm::dvec2(last.x, last.y),
-						glm::dvec2(glyphPoint.xy.x, glyphPoint.xy.y)
+						Vec2Double(last.x, last.y),
+						Vec2Double(glyphPoint.xy.x, glyphPoint.xy.y)
 						));
 
 
@@ -135,8 +135,8 @@ namespace noz::msdf
 					// If we ended on a linear then finish on a linear
 					if (p == glyphContour.length)
 						edges.push_back(new LinearEdge(
-							glm::dvec2(last.x, last.y),
-							glm::dvec2(start.x, start.y)
+							Vec2Double(last.x, last.y),
+							Vec2Double(start.x, start.y)
 						));
 				}
 			}

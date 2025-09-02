@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#if 0
+
 struct MeshRendererImpl : Component
 {
     Mesh* mesh;
@@ -83,3 +85,5 @@ void InitMeshRenderer()
 
     Init(g_mesh_renderers, offsetof(MeshRendererImpl, node_render));
 }
+
+#endif

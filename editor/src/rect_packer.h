@@ -44,8 +44,8 @@ namespace noz
 
         void Resize(int32_t width, int32_t height);
 
-        int Insert(const glm::ivec2& size, method method, BinRect& result);
-        int Insert(int32_t width, int32_t height, method method, BinRect& result) { return Insert(glm::ivec2(width, height), method, result); }
+        int Insert(const Vec2Int& size, method method, BinRect& result);
+        int Insert(int32_t width, int32_t height, method method, BinRect& result) { return Insert(Vec2Int(width, height), method, result); }
 
         float GetOccupancy(void) const;
 

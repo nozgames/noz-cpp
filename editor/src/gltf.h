@@ -21,13 +21,13 @@ struct GLTFBone
     std::string name;
     int index;
     int parent_index;
-    mat4 world_to_local;
-    mat4 local_to_world;
-    vec3 position;
+    Mat4 world_to_local;
+    Mat4 local_to_world;
+    Vec3 position;
     quat rotation;
-    vec3 scale;
+    Vec3 scale;
     float length;
-    vec3 direction;
+    Vec3 direction;
 };
 
 struct GLTFAnimation
@@ -40,9 +40,9 @@ struct GLTFAnimation
 
 struct GLTFMesh
 {
-    std::vector<vec3> positions;
-    std::vector<vec3> normals;
-    std::vector<vec2> uvs;
+    std::vector<Vec3> positions;
+    std::vector<Vec3> normals;
+    std::vector<Vec2> uvs;
     std::vector<uint32_t> bone_indices;
     std::vector<uint16_t> indices;
 };

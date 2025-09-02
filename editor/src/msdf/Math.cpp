@@ -14,7 +14,7 @@ namespace noz::msdf
         return 2 * (n > 0.0 ? 1 : 0) - 1;
     }
 
-    double shoeLace(const dvec2& a, const dvec2& b)
+    double shoeLace(const Vec2Double& a, const Vec2Double& b)
     {
         return (b.x - a.x) * (a.y + b.y);
     }
@@ -97,13 +97,13 @@ namespace noz::msdf
         return solveCubicNormed(x0, x1, x2, b / a, c / a, d / a);
     }
 
-    dvec2 orthoNormalize(const dvec2& v, bool polarity)
+    Vec2Double orthoNormalize(const Vec2Double& v, bool polarity)
     {
-        double len = length(v);
-        return (polarity ? 1.0 : -1.0) * dvec2(-v.y / len, v.x / len);
+        double len = Length(v);
+        return (polarity ? 1.0 : -1.0) * Vec2Double(-v.y / len, v.x / len);
     }
 
-    double cross(const dvec2& lhs, const dvec2& rhs)
+    double cross(const Vec2Double& lhs, const Vec2Double& rhs)
     {
         return (lhs.x * rhs.y) - (lhs.y * rhs.x);
     }

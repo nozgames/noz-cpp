@@ -34,7 +34,7 @@ void Props::SetFloat(const char* group, const char* key, float value)
     SetString(group, key, value_str);
 }
 
-void Props::SetVec3(const char* group, const char* key, vec3 value)
+void Props::SetVec3(const char* group, const char* key, Vec3 value)
 {
     char value_str[128];
     snprintf(value_str, sizeof(value_str), "(%.6f,%.6f,%.6f)", value.x, value.y, value.z);
@@ -119,7 +119,7 @@ bool Props::GetBool(const char* group, const char* key, bool default_value) cons
     return false;
 }
 
-vec3 Props::GetVec3(const char* group, const char* key, vec3 default_value) const
+Vec3 Props::GetVec3(const char* group, const char* key, Vec3 default_value) const
 {
     auto value = GetString(group, key, "");
     if (value.empty())
@@ -129,7 +129,7 @@ vec3 Props::GetVec3(const char* group, const char* key, vec3 default_value) cons
     Init(tok, value.c_str());
 
     Token token = {};
-    vec3 result = default_value;
+    Vec3 result = default_value;
     if (!ExpectVec3(tok, &token, &result))
         return default_value;
 

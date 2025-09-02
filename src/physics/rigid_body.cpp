@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#if 0
+
 //#define isfinite(x) ((x) == std::numeric_limits<float>::infinity())
 #include "physics_internal.h"
 
@@ -38,7 +40,7 @@ void CreateRigidBodyInWorld(RigidBodyImpl* impl, Entity* entity)
 
     // For now, create at origin with no rotation
     // TODO: Extract transform from entity when transform system is available
-    vec3 pos = {0.0f, 0.0f, 0.0f};
+    Vec3 pos = {0.0f, 0.0f, 0.0f};
     float angle = 0.0f;
 
     // Create body with Box2D 3.x API
@@ -89,3 +91,6 @@ void SetRigidBodyType(RigidBody* rigid_body, RigidBodyType type)
     if (B2_IS_NON_NULL(impl->body))
         b2Body_SetType(impl->body, ToBox2d(type));
 }
+
+
+#endif

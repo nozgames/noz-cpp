@@ -77,8 +77,7 @@ target_include_directories(nozed  PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../external
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
         ${CMAKE_CURRENT_SOURCE_DIR}/../external/sdl_shadercross/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../external/enet/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../external/glm/include)
+        ${CMAKE_CURRENT_SOURCE_DIR}/../external/enet/include)
 
 # Link libraries
 target_link_libraries(nozed PRIVATE
@@ -106,7 +105,7 @@ endif()
 
 set_target_properties(nozed PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-target_compile_definitions(nozed PRIVATE _CRT_SECURE_NO_WARNINGS GLM_ENABLE_EXPERIMENTAL)
+target_compile_definitions(nozed PRIVATE _CRT_SECURE_NO_WARNINGS)
 
 # Enable precompiled headers for nozed only (asset_manifest is standalone)
 target_precompile_headers(nozed PRIVATE src/editor_pch.h)

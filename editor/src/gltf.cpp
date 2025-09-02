@@ -5,18 +5,14 @@
 
 #include "gltf.h"
 #include "../../src/internal.h"
-#include <cassert>
-#include <cmath>
-#include <cstring>
-#include <noz/allocator.h>
 
 #define CGLTF_IMPLEMENTATION
 #include <cgltf.h>
 
 // Conversion helpers
-static vec3 convert_vector3(float* vector3);
-static vec2 convert_vector2(float* vector2);  
-static vec2 convert_uv(float* vector2);
+static Vec3 convert_vector3(float* vector3);
+static Vec2 convert_vector2(float* vector2);  
+static Vec2 convert_uv(float* vector2);
 static quat convert_quaternion(float* quaternion);
 
 // @file
@@ -100,10 +96,10 @@ std::vector<GLTFBone> GLTFLoader::read_bones(const GLTFBoneFilter& filter)
         if (bone.parent_index >= 0)
         {
             GLTFBone& parent = bones[bone.parent_index];
-            vec3 direction = bone.position - parent.position;
-            parent.length = length(direction);
+            Vec3 direction = bone.position - parent.position;
+            parent.length = Length(direction);
             if (parent.length > 0.0f)
-                parent.direction = normalize(direction);
+                parent.direction = Normalize(direction);
         }
     }
     
@@ -134,16 +130,16 @@ void GLTFLoader::process_bone_recursive(struct cgltf_node* node, std::vector<GLT
     if (node->has_matrix)
     {
         // TODO: Extract position, rotation, scale from matrix
-        bone.position = vec3(node->matrix[12], node->matrix[13], node->matrix[14]);
+        bone.position = Vec3(node->matrix[12], node->matrix[13], node->matrix[14]);
         bone.rotation = quat(1.0f, 0.0f, 0.0f, 0.0f);
-        bone.scale = vec3(1.0f, 1.0f, 1.0f);
+        bone.scale = Vec3(1.0f, 1.0f, 1.0f);
     }
     else
     {
         // Extract from individual components
-        bone.position = node->has_translation ? convert_vector3(node->translation) : vec3(0.0f);
+        bone.position = node->has_translation ? convert_vector3(node->translation) : Vec3(0.0f);
         bone.rotation = node->has_rotation ? convert_quaternion(node->rotation) : quat(1.0f, 0.0f, 0.0f, 0.0f);
-        bone.scale = node->has_scale ? convert_vector3(node->scale) : vec3(1.0f);
+        bone.scale = node->has_scale ? convert_vector3(node->scale) : Vec3(1.0f);
     }
     
     bones.push_back(bone);
@@ -336,7 +332,7 @@ GLTFAnimation GLTFLoader::read_animation(const std::vector<GLTFBone>& bones, con
             if (channel->target_path == cgltf_animation_path_type_translation)
             {
                 float* translation = (float*)(output_buffer + frame * 3 * sizeof(float));
-                vec3 pos = convert_vector3(translation);
+                Vec3 pos = convert_vector3(translation);
                 animation.data[frame_offset + 0] = pos.x;
                 animation.data[frame_offset + 1] = pos.y;
                 animation.data[frame_offset + 2] = pos.z;
@@ -353,7 +349,7 @@ GLTFAnimation GLTFLoader::read_animation(const std::vector<GLTFBone>& bones, con
             else if (channel->target_path == cgltf_animation_path_type_scale)
             {
                 float* scale = (float*)(output_buffer + frame * 3 * sizeof(float));
-                vec3 scl = convert_vector3(scale);
+                Vec3 scl = convert_vector3(scale);
                 animation.data[frame_offset + 7] = scl.x;
                 animation.data[frame_offset + 8] = scl.y;
                 animation.data[frame_offset + 9] = scl.z;
@@ -373,28 +369,28 @@ GLTFBoneFilter GLTFLoader::load_bone_filter_from_meta(const std::filesystem::pat
 
 
 // Helper functions for vector conversion
-static vec3 convert_vector3(float* vector3)
+static Vec3 convert_vector3(float* vector3)
 {
     if (!vector3)
-        return vec3(0.0f);
+        return Vec3(0.0f);
 
-    return vec3(vector3[0], vector3[2], vector3[1]);
+    return Vec3(vector3[0], vector3[2], vector3[1]);
 }
 
-static vec2 convert_vector2(float* vector2)
+static Vec2 convert_vector2(float* vector2)
 {
     if (!vector2)
-        return vec2(0.0f);
+        return Vec2(0.0f);
 
-    return vec2(vector2[0], vector2[1]);
+    return Vec2(vector2[0], vector2[1]);
 }
 
-static vec2 convert_uv(float* vector2)
+static Vec2 convert_uv(float* vector2)
 {
     if (!vector2)
-        return vec2(0.0f);
+        return Vec2(0.0f);
 
-    return vec2(vector2[0], vector2[1]);
+    return Vec2(vector2[0], vector2[1]);
 }
 
 static quat convert_quaternion(float* quaternion)

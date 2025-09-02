@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#if 0
+
 #include "physics_internal.h"
 
 struct ColliderImpl : Component
@@ -9,8 +11,8 @@ struct ColliderImpl : Component
     b2ShapeId shape;
     b2ShapeDef shape_def;
     ColliderType collider_type;
-    vec2 box_size;
-    vec2 center;
+    Vec2 box_size;
+    Vec2 center;
     float radius;
     bool initialized;
     Entity* target;
@@ -29,7 +31,7 @@ Collider* CreateCollider(Allocator* allocator)
     return collider;
 }
 
-Collider* CreateBoxCollider(Allocator* allocator, const vec2& center, const vec2& size, float density, float friction, float restitution, bool is_sensor)
+Collider* CreateBoxCollider(Allocator* allocator, const Vec2& center, const Vec2& size, float density, float friction, float restitution, bool is_sensor)
 {
     auto collider = CreateCollider(allocator);
     auto impl = Impl(collider);
@@ -43,7 +45,7 @@ Collider* CreateBoxCollider(Allocator* allocator, const vec2& center, const vec2
     return collider;
 }
 
-Collider* CreateCircleCollider(Allocator* allocator, const vec2& center, float radius, float density, float friction, float restitution, bool is_sensor)
+Collider* CreateCircleCollider(Allocator* allocator, const Vec2& center, float radius, float density, float friction, float restitution, bool is_sensor)
 {
     auto collider = CreateCollider(allocator);
     auto impl = Impl(collider);
@@ -206,5 +208,7 @@ protected:
     virtual void createCollider(RigidBody* rigidBody) = 0;
 
 };
+
+#endif
 
 #endif

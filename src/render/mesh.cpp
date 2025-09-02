@@ -12,7 +12,7 @@ struct MeshImpl : Mesh
     SDL_GPUTransferBuffer* index_transfer;
     mesh_vertex* vertices;
     uint16_t* indices;
-    bounds3 bounds;
+    Bounds3 bounds;
 };
 
 static SDL_GPUDevice* g_device = nullptr;
@@ -45,9 +45,9 @@ static MeshImpl* CreateMesh(Allocator* allocator, size_t vertex_count, size_t in
 Mesh* CreateMesh(
     Allocator* allocator,
     size_t vertex_count,
-    vec3* positions,
-    vec3* normals,
-    vec2* uvs,
+    Vec3* positions,
+    Vec3* normals,
+    Vec2* uvs,
     u8* bone_indices,
     size_t index_count,
     u16* indices,
@@ -62,7 +62,7 @@ Mesh* CreateMesh(
         return nullptr;
 
     MeshImpl* mesh = CreateMesh(allocator, vertex_count, index_count, name);
-    mesh->bounds = to_bounds(positions, vertex_count);
+    mesh->bounds = ToBounds(positions, vertex_count);
 
     if (bone_indices)
     {
@@ -93,8 +93,8 @@ Mesh* CreateMesh(
 Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
 {
     // Read bounds
-    bounds3 bounds = {};
-    ReadBytes(stream, &bounds, sizeof(bounds3));
+    Bounds3 bounds = {};
+    ReadBytes(stream, &bounds, sizeof(Bounds3));
 
     // counts
     auto vertex_count = ReadU32(stream);
@@ -223,7 +223,7 @@ size_t GetIndexCount(Mesh* mesh)
     return static_cast<MeshImpl*>(mesh)->index_count;
 }
 
-bounds3 GetBounds(Mesh* mesh)
+Bounds3 GetBounds(Mesh* mesh)
 {
     return static_cast<MeshImpl*>(mesh)->bounds;
 }

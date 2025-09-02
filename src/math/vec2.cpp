@@ -17,3 +17,17 @@ Vec2 Normalize(const Vec2& v)
     return Vec2{ 0.0f, 0.0f };
 }
 
+f64 Length(const Vec2Double& v)
+{
+    return sqrt(v.x * v.x + v.y * v.y);
+}
+
+Vec2Double Normalize(const Vec2Double& v)
+{
+    f64 length = sqrt(v.x * v.x + v.y * v.y);
+    if (length <= 0.0f)
+        return { 0.0, 0.0 };
+
+    length = 1.0 / length;
+    return { v.x * length, v.y * length };
+}

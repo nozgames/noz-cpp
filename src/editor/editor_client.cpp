@@ -22,8 +22,6 @@ static EditorClient g_client = {};
 static HotloadCallbackFunc g_callback = nullptr;
 static inspect_ack_callback_t g_inspect_ack_callback = nullptr;
 
-void WriteInspectorEntity(Stream* stream, Entity* entity);
-
 Stream* CreateEditorMessage(EditorMessage event)
 {
     Stream* output_stream = CreateStream(ALLOCATOR_SCRATCH, 1024);
@@ -39,15 +37,6 @@ void SendEditorMessage(Stream* stream)
     Destroy(stream);
 }
 
-static void HandleInspect(Stream* input_stream)
-{
-    assert(input_stream);
-
-    auto stream = CreateEditorMessage(EDITOR_MESSAGE_INSPECT_ACK);
-    WriteInspectorEntity(stream, GetRootEntity());
-    SendEditorMessage(stream);
-}
-
 static void HandleStats(Stream* input_stream)
 {
     assert(input_stream);
@@ -55,9 +44,6 @@ static void HandleStats(Stream* input_stream)
     WriteI32(stream, GetCurrentFPS());
     SendEditorMessage(stream);
 }
-
-
-// @callback
 void SetHotloadCallback(HotloadCallbackFunc callback)
 {
     g_callback = callback;
@@ -100,7 +86,7 @@ void WriteInspectorProperty(Stream* stream, const char* name, float value)
     WriteFloat(stream, value);
 }
 
-void WriteInspectorProperty(Stream* stream, const char* name, const vec3& value)
+void WriteInspectorProperty(Stream* stream, const char* name, const Vec3& value)
 {
     WriteInspectorProperty(stream, name, INSPECTOR_OBJECT_COMMAND_VEC3);
     WriteVec3(stream, value);
@@ -127,7 +113,6 @@ static void HandleEditorMessage(void* data, size_t data_size)
         break;
 
     case EDITOR_MESSAGE_INSPECT:
-        HandleInspect(stream);
         break;
 
     case EDITOR_MESSAGE_STATS:

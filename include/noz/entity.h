@@ -4,6 +4,8 @@
 
 #pragma once
 
+#if 0
+
 #define ENTITY_BASE_SIZE 272
 #define COMPONENT_BASE_SIZE 40
 
@@ -51,32 +53,32 @@ Entity* GetFirstChild(Entity* entity);
 Entity* GetNextChild(Entity* entity, Entity* child);
 Entity* GetPrevChild(Entity* entity, Entity* child);
 int GetChildCount(Entity* entity);
-vec3 GetWorldPosition(Entity* entity);
-vec3 GetLocalPosition(Entity* entity);
-const mat4& GetWorldToLocal(Entity* entity);
-const mat4& GetLocalToWorld(Entity* entity);
-vec3 InverseTransformPoint(Entity* entity, const vec3& point);
-void SetLocalPosition(Entity* entity, const vec3& pos);
-inline void SetLocalPosition(Entity* entity, float x, float y, float z) { SetLocalPosition(entity, vec3(x,y,z));}
-void SetLocalScale(Entity* entity, const vec3& scale);
+Vec3 GetWorldPosition(Entity* entity);
+Vec3 GetLocalPosition(Entity* entity);
+const Mat4& GetWorldToLocal(Entity* entity);
+const Mat4& GetLocalToWorld(Entity* entity);
+Vec3 InverseTransformPoint(Entity* entity, const Vec3& point);
+void SetLocalPosition(Entity* entity, const Vec3& pos);
+inline void SetLocalPosition(Entity* entity, float x, float y, float z) { SetLocalPosition(entity, Vec3(x,y,z));}
+void SetLocalScale(Entity* entity, const Vec3& scale);
 void SetLocalScale(Entity* entity, float scale);
 void SetWorldPosition(Entity* e, float x, float y, float z);
-void SetWorldPosition(Entity* e, const vec3& world_position);
-void SetLocalEulerAngles(Entity* entity, const vec3& angles_in_degrees);
+void SetWorldPosition(Entity* e, const Vec3& world_position);
+void SetLocalEulerAngles(Entity* entity, const Vec3& angles_in_degrees);
 inline void SetLocalEulerAngles(Entity* entity, float x_in_degrees, float y_in_degrees, float z_in_degrees)
 {
 
-    SetLocalEulerAngles(entity, vec3(x_in_degrees, y_in_degrees, z_in_degrees));
+    SetLocalEulerAngles(entity, Vec3(x_in_degrees, y_in_degrees, z_in_degrees));
 }
 void SetLocalRotation(Entity* entity, const quat& rotation);
 void SetWorldRotation(Entity* entity, const quat& rotation);
-void SetWorldEulerAngles(Entity* entity, const vec3& angles);
+void SetWorldEulerAngles(Entity* entity, const Vec3& angles);
 inline void SetWorldEulerAngles(Entity* entity, float x, float y, float z)
 {
-    SetWorldEulerAngles(entity, vec3(x, y, z));
+    SetWorldEulerAngles(entity, Vec3(x, y, z));
 }
 void BindTransform(Entity* entity);
-void LookAt(Entity* entity, const vec3& target, const vec3& up);
+void LookAt(Entity* entity, const Vec3& target, const Vec3& up);
 
 // @component
 #define COMPONENT_BASE ComponentBase _component;
@@ -103,12 +105,12 @@ Camera* CreateCamera(Allocator* allocator);
 void Render(Camera* camera);
 void SetRenderLayerMask(Camera* camera, u64 mask);
 u64 GetRenderLayerMask(Camera* camera);
-const mat4& GetProjection(Camera* camera);
+const Mat4& GetProjection(Camera* camera);
 void SetOrthographic(Camera* camera, float left, float right, float top, float bottom, float near, float far);
 void SetOrthographic(Camera* camera, float view_height, float near, float far);
 bool IsOrthographic(Camera* camera);
-vec3 ScreenToWorld(Camera* camera, const vec2& screen_pos);
-vec2 WorldToScreen(Camera* camera, const vec3& world_pos);
+Vec3 ScreenToWorld(Camera* camera, const Vec2& screen_pos);
+Vec2 WorldToScreen(Camera* camera, const Vec3& world_pos);
 
 // @mesh_renderer
 MeshRenderer* CreateMeshRenderer(Allocator* allocator);
@@ -116,3 +118,4 @@ void SetMesh(MeshRenderer* renderer, Mesh* mesh);
 void SetMaterial(MeshRenderer* renderer, Material* material);
 void SetRenderLayer(MeshRenderer* renderer, uint64_t layer);
 
+#endif

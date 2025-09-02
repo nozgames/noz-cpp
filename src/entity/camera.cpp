@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#if 0
+
 void DrawMeshRenderers(Camera* camera);
 
 struct CameraImpl : Entity
@@ -120,3 +122,5 @@ void Render(Camera* camera)
     BindCamera(camera);
     DrawMeshRenderers(camera);
 }
+
+#endif

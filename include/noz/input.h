@@ -14,7 +14,7 @@ void SetInputSet(InputSet* map);
 InputSet* GetInputSet();
 void PushInputSet(InputSet* map);
 void PopInputSet();
-vec2 GetMousePosition();
+Vec2 GetMousePosition();
 
 // @InputSet
 InputSet* CreateInputSet(Allocator* allocator);

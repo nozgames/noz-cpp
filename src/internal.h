@@ -12,17 +12,17 @@
 // @mesh
 typedef struct mesh_vertex
 {
-    vec3 position;
-    vec2 uv0;
-    vec3 normal;
+    Vec3 position;
+    Vec2 uv0;
+    Vec3 normal;
     float bone;
 } mesh_vertex;
 
 
 typedef struct bone_transform
 {
-    vec3 position;
-    vec3 scale;
+    Vec3 position;
+    Vec3 scale;
     quat rotation;
 } bone_transform_t;
 
@@ -31,11 +31,11 @@ typedef struct bone
     char* name;
     int index;
     int parentIndex;
-    mat4 world_to_local;
-    mat4 local_to_world;
+    Mat4 world_to_local;
+    Mat4 local_to_world;
     bone_transform_t transform;
     float length;
-    vec3 direction;
+    Vec3 direction;
 } bone_t;
 
 struct SamplerOptions
@@ -236,7 +236,7 @@ struct TextRequest
 };
 
 TextMesh* CreateTextMesh(Allocator* allocator, const TextRequest& request);
-vec2 MeasureText(const text_t& text, Font* font, float font_size);
+Vec2 MeasureText(const text_t& text, Font* font, float font_size);
 Mesh* GetMesh(TextMesh* tm);
 Material* GetMaterial(TextMesh* tm);
 Vec2 GetSize(TextMesh* tm);

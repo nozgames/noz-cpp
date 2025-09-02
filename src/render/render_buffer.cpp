@@ -32,15 +32,15 @@ struct BindMaterialData
 
 struct BindTransformData
 {
-    mat4 transform;
+    Mat4 transform;
 };
 
 struct BindCameraData
 {
-    mat4 view;
-    mat4 projection;
-    mat4 view_projection;
-    mat4 light_view_projection;
+    Mat4 view;
+    Mat4 projection;
+    Mat4 view_projection;
+    Mat4 light_view_projection;
 };
 
 struct BindBonesData
@@ -51,11 +51,11 @@ struct BindBonesData
 
 struct BindLightData
 {
-    vec3 ambient_color;
+    Vec3 ambient_color;
     float ambient_intensity;
-    vec3 diffuse_color;
+    Vec3 diffuse_color;
     float diffuse_intensity;
-    vec3 direction;
+    Vec3 direction;
     float shadow_bias;
 };
 
@@ -115,7 +115,7 @@ struct RenderBuffer
 {
     RenderCommand* commands;
     size_t command_count;
-    mat4* transforms;
+    Mat4* transforms;
     size_t transform_count;
     size_t command_count_max;
     size_t transform_count_max;
@@ -143,7 +143,7 @@ void ClearRenderCommands()
     g_render_buffer->is_full = false;
     
     // add identity transform by default for all meshes with no bones
-    g_render_buffer->transforms[0] = identity<mat4>();
+    g_render_buffer->transforms[0] = MAT4_IDENTITY;
     g_render_buffer->transform_count = 1;
 }
 
@@ -166,7 +166,7 @@ void BeginUIPass()
     AddRenderCommand(&cmd);
 }
 
-void BeginShadowPass(mat4 light_view, mat4 light_projection)
+void BeginShadowPass(Mat4 light_view, Mat4 light_projection)
 {
     RenderCommand cmd = {.type = command_type_begin_shadow_pass};
     AddRenderCommand(&cmd);
@@ -194,15 +194,9 @@ void BindDefaultTexture(int texture_index)
     AddRenderCommand(&cmd);
 }
 
-void BindCamera(Camera* camera)
+void BindCamera(const Mat4& view, const Mat4& projection)
 {
-    assert(camera);
-    BindCamera(GetWorldToLocal(camera), GetProjection(camera));
-}
-
-void BindCamera(const mat4& view, const mat4& projection)
-{
-    mat4 view_projection = projection * view;
+    Mat4 view_projection = projection * view;
     RenderCommand cmd = {
         .type = command_type_bind_camera,
         .data = {
@@ -235,10 +229,9 @@ void BindTransform(const Mat3& transform)
             .bind_transform = {
                 .transform = (Mat4)transform}} };
     AddRenderCommand(&cmd);
-
 }
 
-void BindTransform(const mat4& transform)
+void BindTransform(const Mat4& transform)
 {
     RenderCommand cmd = {
         .type = command_type_bind_transform,
@@ -248,7 +241,7 @@ void BindTransform(const mat4& transform)
     AddRenderCommand(&cmd);
 }
 
-void BindBoneTransforms(const mat4* bones, size_t bone_count)
+void BindBoneTransforms(const Mat4* bones, size_t bone_count)
 {
     if (bone_count == 0)
         return;
@@ -269,7 +262,7 @@ void BindBoneTransforms(const mat4* bones, size_t bone_count)
     memcpy(
         g_render_buffer->transforms + g_render_buffer->transform_count,
         bones,
-        bone_count * sizeof(mat4));
+        bone_count * sizeof(Mat4));
     g_render_buffer->transform_count += bone_count;
 
     AddRenderCommand(&cmd);
@@ -437,7 +430,7 @@ void ExecuteRenderCommands(SDL_GPUCommandBuffer* cb)
 void InitRenderBuffer(RendererTraits* traits)
 {
     size_t commands_size = traits->max_frame_commands * sizeof(RenderCommand);
-    size_t transforms_size = traits->max_frame_transforms * sizeof(mat4);
+    size_t transforms_size = traits->max_frame_transforms * sizeof(Mat4);
     size_t buffer_size = sizeof(RenderBuffer) + commands_size + transforms_size;
     
     g_render_buffer = (RenderBuffer*)malloc(buffer_size);
@@ -449,7 +442,7 @@ void InitRenderBuffer(RendererTraits* traits)
 
     memset(g_render_buffer, 0, buffer_size);
     g_render_buffer->commands = (RenderCommand*)((char*)g_render_buffer + sizeof(RenderBuffer));
-    g_render_buffer->transforms = (mat4*)((char*)g_render_buffer->commands + commands_size);
+    g_render_buffer->transforms = (Mat4*)((char*)g_render_buffer->commands + commands_size);
     g_render_buffer->command_count_max = traits->max_frame_commands;
     g_render_buffer->transform_count_max = traits->max_frame_transforms;
 }

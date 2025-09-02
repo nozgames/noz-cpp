@@ -25,7 +25,7 @@ void rect_packer::Resize(int32_t width, int32_t height)
     free_.push_back(BinRect(1, 1, width - 2, height - 2));
 }
 
-int rect_packer::Insert(const glm::ivec2& size, method method, BinRect& result)
+int rect_packer::Insert(const Vec2Int& size, method method, BinRect& result)
 {
     BinRect rect;
     int32_t score1;

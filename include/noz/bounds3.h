@@ -4,17 +4,6 @@
 
 #pragma once
 
-struct bounds3
-{
-    vec3 min;
-    vec3 max;
-};
-
-bounds3 to_bounds(const vec3* positions, size_t count);
-bool contains(const bounds3& bounds, const vec3& point);
-bool intersects(const bounds3& bounds, const bounds3& point);
-bounds3 expand(const bounds3& bounds, const vec3& point);
-bounds3 expand(const bounds3& bounds, const bounds3& other);
 
 #if 0
 

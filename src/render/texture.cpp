@@ -6,7 +6,7 @@ struct TextureImpl : Texture
 {
     SDL_GPUTexture* handle;
     SamplerOptions sampler_options;
-    ivec2 size;
+    Vec2Int size;
 };
 
 static SDL_GPUDevice* g_device = nullptr;
@@ -243,7 +243,7 @@ static void texture_destroy_impl(TextureImpl* impl)
 }
 #endif
 
-ivec2 GetSize(Texture* texture)
+Vec2Int GetSize(Texture* texture)
 {
     return static_cast<TextureImpl*>(texture)->size;
 }

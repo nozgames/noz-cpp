@@ -61,7 +61,7 @@ Color color_multiply_scalar(Color* color, float scalar);
 Color color_multiply(Color* a, Color* b);
 Color color_lerp(Color* a, Color* b, float t);
 
-inline Color Lerp(const Color& a, const Color& b, float t)
+inline Color Mix(const Color& a, const Color& b, float t)
 {
     return {
         a.r + (b.r - a.r) * t,

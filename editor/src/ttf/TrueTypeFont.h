@@ -21,7 +21,7 @@ namespace noz::ttf
 
         struct Point
         {
-            glm::highp_dvec2 xy;
+            Vec2Double xy;
             CurveType curve;
         };
 
@@ -45,8 +45,8 @@ namespace noz::ttf
             std::vector<Point> points;
             std::vector<Contour> contours;
             double advance;
-            glm::highp_dvec2 size;
-            glm::highp_dvec2 bearing;
+            Vec2Double size;
+            Vec2Double bearing;
         };
 
         double ascent() const { return _ascent; }

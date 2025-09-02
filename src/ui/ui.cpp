@@ -69,10 +69,10 @@ void RenderElementQuad(const Color& color, Texture* texture)
 static Mesh* CreateElementQuad(Allocator* allocator)
 {
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddVertex(builder, vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f), vec2(0.0f, 0.0f), 0);
-    AddVertex(builder, vec3(1.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f), vec2(1.0f, 0.0f), 0);
-    AddVertex(builder, vec3(1.0f, 1.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f), vec2(1.0f, 1.0f), 0);
-    AddVertex(builder, vec3(0.0f, 1.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f), vec2(0.0f, 1.0f), 0);
+    AddVertex(builder, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, 0);
+    AddVertex(builder, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, 0);
+    AddVertex(builder, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, 0);
+    AddVertex(builder, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, 0);
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
     auto mesh = CreateMesh(allocator, builder, GetName("element"));
@@ -145,7 +145,7 @@ void BeginCanvas(u32 referenceWidth, u32 referenceHeight)
 {
     BeginElement(ELEMENT_TYPE_CANVAS);
 
-    ivec2 screen_size = GetScreenSize();
+    Vec2Int screen_size = GetScreenSize();
 
     f32 rw = (f32)referenceWidth;
     f32 rh = (f32)referenceHeight;
@@ -156,7 +156,7 @@ void BeginCanvas(u32 referenceWidth, u32 referenceHeight)
 
     float ortho_width;
     float ortho_height;
-    if (std::abs(sw_rw - 1.0f) < std::abs(sh_rh - 1.0f))
+    if (Abs(sw_rw - 1.0f) < Abs(sh_rh - 1.0f))
     {
         ortho_width = rw;
         ortho_height = rw * sh / sw;
@@ -274,7 +274,7 @@ u32 MeasureElement(u32 element_index, const Vec2& available_size)
             if (style.flex_direction.value == FLEX_DIRECTION_COL)
                 child_measured_size.x += child_width_with_margins;
             else
-                child_measured_size.x = max(child_width_with_margins, child_measured_size.x);
+                child_measured_size.x = Max(child_width_with_margins, child_measured_size.x);
         }
 
         if (IsAuto(style.height))
@@ -282,7 +282,7 @@ u32 MeasureElement(u32 element_index, const Vec2& available_size)
             if (style.flex_direction.value == FLEX_DIRECTION_ROW)
                 child_measured_size.y += child_height_with_margins;
             else
-                child_measured_size.y = max(child_height_with_margins, child_measured_size.y);
+                child_measured_size.y = Max(child_height_with_margins, child_measured_size.y);
         }
     }
 
@@ -290,7 +290,7 @@ u32 MeasureElement(u32 element_index, const Vec2& available_size)
 
     if (IsAuto(style.width))
     {
-        measured_size.x = max(content_measured_size.x, child_measured_size.x);
+        measured_size.x = Max(content_measured_size.x, child_measured_size.x);
         // Add padding to the measured size
         if (IsFixed(style.padding_left))
             measured_size.x += Evaluate(style.padding_left, available_size.x);
@@ -302,7 +302,7 @@ u32 MeasureElement(u32 element_index, const Vec2& available_size)
 
     if (IsAuto(style.height))
     {
-        measured_size.y = max(content_measured_size.y, child_measured_size.y);
+        measured_size.y = Max(content_measured_size.y, child_measured_size.y);
         // Add padding to the measured size
         if (IsFixed(style.padding_top))
             measured_size.y += Evaluate(style.padding_top, available_size.y);
@@ -323,7 +323,7 @@ void BeginUI()
 
 void EndUI()
 {
-    ivec2 screen_size = GetScreenSize();
+    Vec2Int screen_size = GetScreenSize();
     Vec2 screen_size_f = Vec2((f32)screen_size.x, (f32)screen_size.y);
     Rect screen_bounds = { 0, 0, screen_size_f.x, screen_size_f.y };
     for (u32 element_index=0; element_index < g_ui.element_count; )

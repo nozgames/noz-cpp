@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#if 0
+
 void InitMeshRenderer();
 void InitComponentList(LinkedList& list);
 void SetEntity(Component* component, Entity* entity);
@@ -496,4 +498,6 @@ void WriteInspectorEntity(Stream* stream, Entity* entity)
 
     EndInspectorObject(stream);
 }
+#endif
+
 #endif

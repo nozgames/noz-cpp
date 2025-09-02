@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include <cstdio>
+
 static constexpr int FRAME_HISTORY_SIZE = 60;
 
 void LoadRendererAssets(Allocator* allocator);
@@ -10,9 +12,7 @@ void InitTypes();
 void InitUI();
 void InitEvent(ApplicationTraits* traits);
 void InitName(ApplicationTraits* traits);
-void InitEntity();
 void InitVfx();
-void ShutdownEntity();
 void ShutdownEvent();
 void ShutdownUI();
 void ShutdownName();
@@ -53,7 +53,7 @@ struct Application
     SDL_Window* window;
     bool has_focus;
     bool vsync;
-    ivec2 screen_size;
+    Vec2Int screen_size;
     float screen_aspect_ratio;
     const char* title;
     ApplicationTraits traits;
@@ -169,7 +169,6 @@ void InitApplication(ApplicationTraits* traits)
 #endif // NOZ_EDITOR
 
     InitVfx();
-    InitEntity();
     InitUI();
 }
 
@@ -190,7 +189,6 @@ void ShutdownApplication()
         g_app.asset_allocator = nullptr;
     }
 
-    ShutdownEntity();
     ShutdownUI();
     ShutdownVfx();
     ShutdownPhysics();
@@ -248,7 +246,7 @@ bool UpdateApplication()
 }
 
 // @screen
-ivec2 GetScreenSize()
+Vec2Int GetScreenSize()
 {
     return g_app.screen_size;
 }

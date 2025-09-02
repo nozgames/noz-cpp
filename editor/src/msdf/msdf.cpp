@@ -30,12 +30,12 @@ namespace noz::msdf
     void generateSDF(
         std::vector<uint8_t>& output,
         int outputStride,
-        const ivec2& outputPosition,
-        const ivec2& outputSize,
+        const Vec2Int& outputPosition,
+        const Vec2Int& outputSize,
         const Shape& shape,
         double range,
-        const dvec2& scale,
-        const dvec2& translate)
+        const Vec2Double& scale,
+        const Vec2Double& translate)
     {
         int contourCount = (int)shape.contours.size();
         int w = outputSize.x;
@@ -55,7 +55,7 @@ namespace noz::msdf
             for (int x = 0; x < w; ++x)
             {
                 auto dummy = 0.0;
-                auto p = dvec2(x + .5, y + .5) / scale - translate;
+                auto p = Vec2Double(x + .5, y + .5) / scale - translate;
                 auto negDist = -SignedDistance::Infinite.distance;
                 auto posDist = SignedDistance::Infinite.distance;
                 int winding = 0;
@@ -100,7 +100,7 @@ namespace noz::msdf
                         sd = contourSD[i];
 
                 sd /= (range * 2.0);
-                sd = clamp(sd, -0.5, 0.5);
+                sd = Clamp(sd, -0.5, 0.5);
                 sd = sd + 0.5;
 
                 output[x + outputPosition.x + (row + outputPosition.y) * outputStride] =
@@ -113,11 +113,11 @@ namespace noz::msdf
         const ttf::TrueTypeFont::Glyph* glyph,
         std::vector<uint8_t>& output,
         int outputStride,
-        const ivec2& outputPosition,
-        const ivec2& outputSize,
+        const Vec2Int& outputPosition,
+        const Vec2Int& outputSize,
         double range,
-        const dvec2& scale,
-        const dvec2& translate)
+        const Vec2Double& scale,
+        const Vec2Double& translate)
     {
         auto shape = Shape::fromGlyph(glyph, true);
 

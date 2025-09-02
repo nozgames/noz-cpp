@@ -11,7 +11,7 @@ struct TextMeshImpl : Object
 
 static TextMeshImpl* Impl(TextMesh* tm) { return (TextMeshImpl*)Cast(tm, TYPE_TEXT_MESH); }
 
-vec2 MeasureText(const text_t& text, Font* font, float font_size)
+Vec2 MeasureText(const text_t& text, Font* font, float font_size)
 {
     assert(font);
 
@@ -35,11 +35,11 @@ vec2 MeasureText(const text_t& text, Font* font, float font_size)
         float glyph_bottom = -glyph->bearing.y * font_size;
         float glyph_top = (glyph->size.y - glyph->bearing.y) * font_size;
 
-        max_ascent = max(max_ascent, glyph_top);
-        max_descent = min(max_descent, glyph_bottom);
+        max_ascent = Max(max_ascent, glyph_top);
+        max_descent = Min(max_descent, glyph_bottom);
     }
 
-    return vec2(total_width, max_ascent - max_descent);
+    return Vec2(total_width, max_ascent - max_descent);
 }
 
 static void AddGlyph(
@@ -57,13 +57,12 @@ static void AddGlyph(
     auto glyph_y = y + glyph->bearing.y * scale - glyph->size.y * scale;
     auto glyph_width = glyph->size.x * scale;
     auto glyph_height = glyph->size.y * scale;
-    
 
     // Add vertices for this glyph quad
-    AddVertex(builder, vec3(glyph_x, glyph_y, 0.0f), vec3(0.0f, 0.0f, 1.0f), vec2(glyph->uv_min.x, glyph->uv_min.y));
-    AddVertex(builder, vec3(glyph_x + glyph_width, glyph_y, 0.0f), vec3(0.0f, 0.0f, 1.0f), vec2(glyph->uv_max.x, glyph->uv_min.y));
-    AddVertex(builder, vec3(glyph_x + glyph_width, glyph_y + glyph_height, 0.0f), vec3(0.0f, 0.0f, 1.0f), vec2(glyph->uv_max.x, glyph->uv_max.y));
-    AddVertex(builder, vec3(glyph_x, glyph_y + glyph_height, 0.0f), vec3(0.0f, 0.0f, 1.0f), vec2(glyph->uv_min.x, glyph->uv_max.y));
+    AddVertex(builder, {glyph_x, glyph_y, 0.0f}, {0.0f, 0.0f, 1.0f}, {glyph->uv_min.x, glyph->uv_min.y});
+    AddVertex(builder, {glyph_x + glyph_width, glyph_y, 0.0f}, {0.0f, 0.0f, 1.0f}, {glyph->uv_max.x, glyph->uv_min.y});
+    AddVertex(builder, {glyph_x + glyph_width, glyph_y + glyph_height, 0.0f}, {0.0f, 0.0f, 1.0f}, {glyph->uv_max.x, glyph->uv_max.y});
+    AddVertex(builder, {glyph_x, glyph_y + glyph_height, 0.0f}, {0.0f, 0.0f, 1.0f}, {glyph->uv_min.x, glyph->uv_max.y});
 
     // Add indices for this glyph quad
     AddTriangle(builder, vertex_offset, vertex_offset + 1, vertex_offset + 2);
@@ -101,8 +100,8 @@ static void CreateTextMesh(Allocator* allocator, TextMeshImpl* impl, const TextR
         float glyph_bottom = -glyph->bearing.y * font_size;
         float glyph_top = (glyph->size.y - glyph->bearing.y) * font_size;
 
-        max_ascent = max(max_ascent, glyph_top);
-        max_descent = min(max_descent, glyph_bottom);
+        max_ascent = Max(max_ascent, glyph_top);
+        max_descent = Min(max_descent, glyph_bottom);
     }
 
     float total_height = max_ascent - max_descent;

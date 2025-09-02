@@ -79,7 +79,7 @@ static VfxParticle* EmitParticle(VfxEmitter* emitter);
 
 float EvaluateCurve(VfxCurveType curve, float t)
 {
-    t = std::max(0.0f, std::min(1.0f, t));
+    t = Max(0.0f, Min(1.0f, t));
 
     switch (curve)
     {
@@ -115,11 +115,11 @@ float EvaluateCurve(VfxCurveType curve, float t)
 
 static float GetRandom(const VfxFloat& v) { return RandomFloat(v.min, v.max); }
 static int GetRandom(const VfxInt& v) { return RandomInt(v.min, v.max); }
-static Color GetRandom(const VfxColor& v) { return Lerp(v.min, v.max, RandomFloat()); }
+static Color GetRandom(const VfxColor& v) { return Mix(v.min, v.max, RandomFloat()); }
 static Vec2 GetRandom(const VfxVec2& range)
 {
-    return { Lerp(range.min.x, range.max.x, RandomFloat()),
-             Lerp(range.min.y, range.max.y, RandomFloat()) };
+    return { Mix(range.min.x, range.max.x, RandomFloat()),
+             Mix(range.min.y, range.max.y, RandomFloat()) };
 }
 
 static u16 GetIndex(VfxInstance* instance) { return GetIndex(g_vfx.instance_pool, instance); }
@@ -223,7 +223,7 @@ static void UpdateParticles()
 
         f32 t = p->elapsed / p->lifetime;
         f32 curve_t = EvaluateCurve(p->speed_curve, t);
-        f32 current_speed = Lerp(p->speed_start, p->speed_end, curve_t);
+        f32 current_speed = Mix(p->speed_start, p->speed_end, curve_t);
 
         Vec2 vel = Normalize(p->velocity) * current_speed;
         vel += p->gravity * dt;
@@ -231,7 +231,7 @@ static void UpdateParticles()
 
         p->position += vel * dt;
         p->velocity = vel;
-        p->rotation = Lerp(p->rotation_start, p->rotation_end, EvaluateCurve(p->rotation_curve, t));
+        p->rotation = Mix(p->rotation_start, p->rotation_end, EvaluateCurve(p->rotation_curve, t));
     }
 }
 
@@ -354,8 +354,8 @@ void DrawVfx()
             continue;
 
         float t = p->elapsed / p->lifetime;
-        float size = Lerp(p->size_start, p->size_end, EvaluateCurve(p->size_curve, t));
-        Color col = Lerp(p->color_start, p->color_end, EvaluateCurve(p->color_curve, t));
+        float size = Mix(p->size_start, p->size_end, EvaluateCurve(p->size_curve, t));
+        Color col = Mix(p->color_start, p->color_end, EvaluateCurve(p->color_curve, t));
 
         BindTransform(TRS(p->position, p->rotation, {size, size}));
         BindColor(col);

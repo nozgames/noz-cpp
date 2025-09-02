@@ -2,6 +2,7 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#if 0
 #include "physics_internal.h"
 
 // Global physics world for Box2D 3.x
@@ -33,7 +34,7 @@ b2WorldId GetPhysicsWorld()
     return g_physics_world;
 }
 
-RaycastResult Raycast(const vec2& start, const vec2& end, uint16 category_mask)
+RaycastResult Raycast(const Vec2& start, const Vec2& end, u16 category_mask)
 {
     RaycastResult result {};
     result.hit = false;
@@ -76,3 +77,15 @@ void ShutdownPhysics()
     }
     g_physics = {};
 }
+
+#else
+
+void InitPhysics()
+{
+}
+
+void ShutdownPhysics()
+{
+}
+
+#endif

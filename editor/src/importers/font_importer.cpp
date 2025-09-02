@@ -21,12 +21,12 @@ using namespace noz;
 struct ImportFontGlyph
 {
     const ttf::TrueTypeFont::Glyph* ttf;
-    ivec2 size;
-    dvec2 scale;
-    ivec2 packedSize;
-    ivec2 advance;
+    Vec2Int size;
+    Vec2Double scale;
+    Vec2Int packedSize;
+    Vec2Int advance;
     rect_packer::BinRect packedRect;
-    ivec2 bearing;
+    Vec2Int bearing;
     char ascii;
 };
 
@@ -49,7 +49,7 @@ static void WriteFontData(
     Stream* stream,
     const ttf::TrueTypeFont* ttf,
     const std::vector<unsigned char>& atlasData,
-    const ivec2& atlasSize,
+    const Vec2Int& atlasSize,
     const std::vector<ImportFontGlyph>& glyphs,
     int font_size)
 {
@@ -147,8 +147,8 @@ void ImportFont(const fs::path& source_path, Stream* output_stream, Props* confi
         iglyph.ascii = characters[i];
         iglyph.ttf = ttfGlyph;
 
-        iglyph.size = RoundToNearest(ttfGlyph->size + dvec2(sdf_padding * 2));
-        iglyph.scale = dvec2(iglyph.size.x, iglyph.size.y) / ttfGlyph->size;
+        iglyph.size = RoundToNearest(ttfGlyph->size + Vec2Double(sdf_padding * 2));
+        iglyph.scale = Vec2Double(iglyph.size.x, iglyph.size.y) / ttfGlyph->size;
         iglyph.packedSize = iglyph.size + (padding + sdf_padding) * 2;
         iglyph.bearing = RoundToNearest(ttfGlyph->bearing);
         iglyph.advance.x = RoundToNearest((float)ttfGlyph->advance);
@@ -185,7 +185,7 @@ void ImportFont(const fs::path& source_path, Stream* output_stream, Props* confi
     if (!packer.validate())
         throw std::runtime_error("RectPacker validation failed");
 
-    auto imageSize = ivec2(packer.size().w, packer.size().h);
+    auto imageSize = Vec2Int(packer.size().w, packer.size().h);
     std::vector<uint8_t> image;
     image.resize(imageSize.x * imageSize.y, 0);
 
@@ -199,20 +199,20 @@ void ImportFont(const fs::path& source_path, Stream* output_stream, Props* confi
             glyph.ttf,
             image,
             imageSize.x,
-            ivec2(
+            {
                 glyph.packedRect.x + padding,
                 glyph.packedRect.y + padding
-            ),
-            ivec2(
+            },
+            {
                 glyph.packedRect.w - padding * 2,
                 glyph.packedRect.h - padding * 2
-            ),
+            },
             sdf_padding,
             glyph.scale,
-            dvec2(
+            {
                 -glyph.ttf->bearing.x + sdf_padding,
                 (glyph.ttf->size.y - glyph.ttf->bearing.y) + sdf_padding
-            )
+            }
         );
     }
 

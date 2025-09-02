@@ -281,7 +281,7 @@ bool ExpectVec2(Tokenizer& tok, Token* token, Vec2* result)
 }
 
 
-bool ExpectVec3(Tokenizer& tok, Token* token, vec3* result)
+bool ExpectVec3(Tokenizer& tok, Token* token, Vec3* result)
 {
     assert(token);
     assert(result);
@@ -317,7 +317,7 @@ bool ExpectVec3(Tokenizer& tok, Token* token, vec3* result)
     return true;
 }
 
-bool ExpectVec4(Tokenizer& tok, Token* token, vec4* result)
+bool ExpectVec4(Tokenizer& tok, Token* token, Vec4* result)
 {
     assert(token);
     assert(result);
@@ -585,29 +585,29 @@ bool ExpectColor(Tokenizer& tok, Token* token, Color* result)
 
     if (IsValue(temp, "rgba"))
     {
-        vec4 color = {};
+        Vec4 color = {};
         if (!ExpectVec4(tok, &temp, &color))
             return false;
 
         EndToken(tok, &temp, TOKEN_TYPE_COLOR);
 
-        result->r = color.r / 255.0f;
-        result->g = color.g / 255.0f;
-        result->b = color.b / 255.0f;
-        result->a = color.a;
+        result->r = color.x / 255.0f;
+        result->g = color.y / 255.0f;
+        result->b = color.z / 255.0f;
+        result->a = color.w;
         return true;
     }
 
     if (IsValue(temp, "rgb"))
     {
-        vec3 color = {};
+        Vec3 color = {};
         if (!ExpectVec3(tok, &temp, &color))
             return false;
 
         EndToken(tok, &temp, TOKEN_TYPE_COLOR);
-        result->r = color.r / 255.0f;
-        result->g = color.g / 255.0f;
-        result->b = color.b / 255.0f;
+        result->r = color.x / 255.0f;
+        result->g = color.y / 255.0f;
+        result->b = color.z / 255.0f;
         result->a = 1.0f;
         return true;
     }

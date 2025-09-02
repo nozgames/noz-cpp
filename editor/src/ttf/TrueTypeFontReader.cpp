@@ -255,7 +255,7 @@ namespace noz::ttf
 
         _indexToLocFormat = readInt16();
 
-        _scale = glm::dvec2(0.0);
+        _scale = {0.0, 0.0};
         _scale.x = _requestedSize / _unitsPerEm;
         _scale.y = _requestedSize / _unitsPerEm;
     }
@@ -377,8 +377,8 @@ namespace noz::ttf
         }
 
         glyph.points.resize(numPoints);
-        glyph.size = glm::dvec2(maxx - minx, maxy - miny);
-        glyph.bearing = glm::dvec2(minx, maxy);
+        glyph.size = {maxx - minx, maxy - miny};
+        glyph.bearing = {minx, maxy};
 
         for (int i = 0; i < numPoints; i++)
         {
@@ -386,7 +386,7 @@ namespace noz::ttf
             glyph.points[i].curve = onCurve
                 ? TrueTypeFont::CurveType::None
                 : TrueTypeFont::CurveType::Conic;
-            glyph.points[i].xy = glm::dvec2(0.0);
+            glyph.points[i].xy = Vec2Double(0.0);
         }
 
         readPoints(glyph, flags, true);

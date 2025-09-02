@@ -3,6 +3,7 @@
 //
 
 #include <cctype>
+#include <cstdio>
 
 void SetValue(text_t& dst, const text_t& src)
 {
@@ -14,14 +15,14 @@ void SetValue(text_t& dst, const char* src)
 {
     assert(src);
 
-    size_t src_len = strlen(src);
+    u32 src_len = strlen(src);
     if (src_len == 0)
     {
         Clear(dst);
         return;
     }
 
-    dst.length = min(src_len, TEXT_SIZE - 1);
+    dst.length = Min(src_len, TEXT_SIZE - 1);
     memcpy(dst.value, src, src_len + 1);
     dst.length = src_len;
 }
@@ -30,7 +31,7 @@ void Append(text_t& dst, const char* src)
 {
     assert(src);
 
-    size_t src_len = min(strlen(src), TEXT_SIZE - dst.length - 1);
+    u32 src_len = Min((u32)strlen(src), TEXT_SIZE - dst.length - 1);
     if (src_len == 0)
         return;
 

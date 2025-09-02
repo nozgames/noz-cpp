@@ -9,7 +9,7 @@ void ResetInputState(InputSet* input_set);
 
 struct Input
 {
-    vec2 mouse_position;
+    Vec2 mouse_position;
     LinkedList active_sets;
 };
 
@@ -21,7 +21,7 @@ void UpdateInput()
     float x;
     float y;
     SDL_GetMouseState(&x, &y);
-    g_input.mouse_position = vec2(x, y);
+    g_input.mouse_position = Vec2(x, y);
 
     UpdateInputState((InputSet*)GetBack(g_input.active_sets));
 }
@@ -52,7 +52,7 @@ void SetInputSet(InputSet* input_set)
     PushInputSet(input_set);
 }
 
-vec2 GetMousePosition()
+Vec2 GetMousePosition()
 {
     return g_input.mouse_position;
 }

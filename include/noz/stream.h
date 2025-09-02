@@ -50,7 +50,8 @@ double ReadDouble(Stream* stream);
 bool ReadBool(Stream* stream);
 int ReadString(Stream* stream, char* buffer, int buffer_size);
 Color ReadColor(Stream* stream);
-vec3 ReadVec3(Stream* stream);
+Vec3 ReadVec3(Stream* stream);
+Vec2 ReadVec2(Stream* stream);
 Rect ReadRect(Stream* stream);
 void ReadBytes(Stream* stream, void* dest, size_t count);
 
@@ -75,7 +76,7 @@ void WriteFloat(Stream* stream, float value);
 void WriteDouble(Stream* stream, double value);
 void WriteBool(Stream* stream, bool value);
 void WriteString(Stream* stream, const char* value);
-void WriteVec3(Stream* stream, const vec3& value);
+void WriteVec3(Stream* stream, const Vec3& value);
 void WriteVec2(Stream* stream, const Vec2& value);
 void WriteCSTR(Stream* stream, const char* format, ...); // Write formatted C string without length prefix
 void WriteColor(Stream* stream, Color value);

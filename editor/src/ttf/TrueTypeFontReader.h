@@ -1,10 +1,6 @@
-/*
-
-    NoZ Game Engine
-
-    Copyright(c) 2025 NoZ Games, LLC
-
-*/
+//
+//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//
 
 #include "TrueTypeFont.h"
 #include <noz/stream.h>
@@ -77,7 +73,7 @@ namespace noz::ttf
         TrueTypeFont* _ttf;
         uint16_t _indexToLocFormat;
         std::vector<int64_t> _tableOffsets;
-        glm::dvec2 _scale;
+        Vec2Double _scale;
         std::string _filter;
         double _unitsPerEm;
         int _requestedSize;

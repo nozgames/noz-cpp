@@ -40,6 +40,7 @@ set(SOURCE_FILES
     src/math/mat3.cpp
     src/math/mat4.cpp
     src/math/vec2.cpp
+    src/math/vec3.cpp
     src/name.cpp
     src/object.cpp
     src/physics/physics.cpp
@@ -83,11 +84,10 @@ target_include_directories(noz PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/glm/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external
         ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-target_compile_definitions(noz PRIVATE _CRT_SECURE_NO_WARNINGS GLM_ENABLE_EXPERIMENTAL)
+target_compile_definitions(noz PRIVATE _CRT_SECURE_NO_WARNINGS)
 
 # Link dependencies for noz
 target_link_libraries(noz
@@ -95,7 +95,6 @@ target_link_libraries(noz
         ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/box2d.lib
         ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/enet.lib
         ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl/SDL3-static.lib
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/glm/glm.lib
         ws2_32
         winmm
         setupapi      # For SetupDi* functions (SDL3)

@@ -54,7 +54,7 @@ enum TextureFormat
 Texture* CreateTexture(Allocator* allocator, void* data, size_t width, size_t height, TextureFormat format, const Name* name);
 Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const Name* name);
 int GetBytesPerPixel(TextureFormat format);
-ivec2 GetSize(Texture* texture);
+Vec2Int GetSize(Texture* texture);
 
 // @material
 Material* CreateMaterial(Allocator* allocator, Shader* shader);
@@ -67,9 +67,9 @@ struct Mesh : Asset { };
 Mesh* CreateMesh(
     Allocator* allocator,
     size_t vertex_count,
-    vec3* positions,
-    vec3* normals,
-    vec2* uvs,
+    Vec3* positions,
+    Vec3* normals,
+    Vec2* uvs,
     u8* bone_indices,
     size_t index_count,
     u16* indices,
@@ -79,69 +79,69 @@ Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name);
 // @mesh_builder
 MeshBuilder* CreateMeshBuilder(Allocator* allocator, int max_vertices, int max_indices);
 void Clear(MeshBuilder* builder);
-vec3* GetPositions(MeshBuilder* builder);
-vec3* GetNormals(MeshBuilder* builder);
-vec2* GetUvs(MeshBuilder* builder);
+Vec3* GetPositions(MeshBuilder* builder);
+Vec3* GetNormals(MeshBuilder* builder);
+Vec2* GetUvs(MeshBuilder* builder);
 u8* GetBoneIndices(MeshBuilder* builder);
 u16* GetIndices(MeshBuilder* builder);
 size_t GetVertexCount(MeshBuilder* builder);
 size_t GetIndexCount(MeshBuilder* builder);
 void AddIndex(MeshBuilder* builder, uint16_t index);
 void AddTriangle(MeshBuilder* builder, uint16_t a, uint16_t b, uint16_t c);
-void AddTriangle(MeshBuilder* builder, vec3 a, vec3 b, vec3 c, uint8_t bone_index);
-void AddPyramid(MeshBuilder* builder, vec3 start, vec3 end, float size, uint8_t bone_index);
-void AddCube(MeshBuilder* builder, vec3 center, vec3 size, uint8_t bone_index);
+void AddTriangle(MeshBuilder* builder, const Vec3& a, const Vec3& b, const Vec3& c, uint8_t bone_index);
+void AddPyramid(MeshBuilder* builder, const Vec3& start, const Vec3& end, float size, uint8_t bone_index);
+void AddCube(MeshBuilder* builder, const Vec3& center, const Vec3& size, uint8_t bone_index);
 void AddRaw(
     MeshBuilder* builder,
     size_t vertex_count,
-    vec3* positions,
-    vec3* normals,
-    vec2* uv0,
-    uint8_t bone_index,
+    const Vec3* positions,
+    const Vec3* normals,
+    const Vec2* uv0,
+    u8 bone_index,
     size_t index_count,
-    uint16_t* indices);
+    const uint16_t* indices);
 void AddQuad(
     MeshBuilder* builder,
-    vec3 forward,
-    vec3 right,
-    float width,
-    float height,
-    vec2 color_uv);
+    const Vec3& forward,
+    const Vec3& right,
+    f32 width,
+    f32 height,
+    const Vec2& color_uv);
 void AddQuad(
     MeshBuilder* builder,
-    vec3 a,
-    vec3 b,
-    vec3 c,
-    vec3 d,
-    vec2 uv_color,
-    vec3 normal,
+    const Vec3& a,
+    const Vec3& b,
+    const Vec3& c,
+    const Vec3& d,
+    const Vec2& uv_color,
+    const Vec3& normal,
     uint8_t bone_index=0);
 void AddVertex(
     MeshBuilder* builder,
-    vec3 position,
-    vec3 normal,
-    vec2 uv,
+    const Vec3& position,
+    const Vec3& normal,
+    const Vec2& uv,
     uint8_t bone_index=0);
 
 // @render_buffer
 void BindDefaultTexture(int texture_index);
 void BindColor(Color color);
 void BindCamera(Camera* camera);
-void BindCamera(const mat4& view, const mat4& projection);
+void BindCamera(const Mat4& view, const Mat4& projection);
 void BindTransform(const Mat3& transform);
-void BindTransform(const mat4& transform);
+void BindTransform(const Mat4& transform);
 void BindMaterial(Material* material);
 void DrawMesh(Mesh* mesh);
 
 // @font
 struct FontGlyph
 {
-    vec2 uv_min;
-    vec2 uv_max;
-    vec2 size;
+    Vec2 uv_min;
+    Vec2 uv_max;
+    Vec2 size;
     float advance;
-    vec2 bearing;
-    vec2 sdf_offset;
+    Vec2 bearing;
+    Vec2 sdf_offset;
 };
 
 float GetBaseline(Font* font);

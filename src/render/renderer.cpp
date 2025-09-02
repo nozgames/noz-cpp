@@ -7,7 +7,7 @@ extern void DrawVfx();
 extern void BeginRenderPass();
 extern void ClearRenderCommands();
 extern void BeginRenderPass(bool clear, Color clear_color, bool msaa, Texture* target=nullptr);
-extern void BeginShadowPass(mat4 light_view, mat4 light_projection);
+extern void BeginShadowPass(Mat4 light_view, Mat4 light_projection);
 extern void EndRenderPass();
 
 static void ResetRenderState();
@@ -22,8 +22,8 @@ struct Renderer
     SDL_Window* window;
     SDL_GPUCommandBuffer* command_buffer;
     SDL_GPURenderPass* render_pass;
-    mat4 view_projection;
-    mat4 view;
+    Mat4 view_projection;
+    Mat4 view;
 
     // gamma
     Mesh* gamma_mesh;
@@ -39,7 +39,7 @@ struct Renderer
     SDL_GPUTexture* msaa_depth_texture;
 
     // Light view projection matrix for shadow mapping
-    mat4 light_view;
+    Mat4 light_view;
 
     Texture* linear_back_buffer;
     SDL_GPUTexture* swap_chain_texture;
@@ -362,16 +362,16 @@ void BindShaderGPU(Shader* shader)
     g_renderer.pipeline = pipeline;
 }
 
-void BindTransformGPU(const mat4* transform)
+void BindTransformGPU(const Mat4* transform)
 {
     SDL_PushGPUVertexUniformData(
         g_renderer.command_buffer,
         vertex_register_object,
         transform,
-        sizeof(mat4));
+        sizeof(Mat4));
 }
 
-void BindBoneTransformsGPU(const mat4* bones, int count)
+void BindBoneTransformsGPU(const Mat4* bones, int count)
 {
     assert(bones);
     assert(count > 0);
@@ -380,7 +380,7 @@ void BindBoneTransformsGPU(const mat4* bones, int count)
         g_renderer.command_buffer,
         vertex_register_bone,
         bones,
-        (Uint32)(count * sizeof(mat4)));
+        (Uint32)(count * sizeof(Mat4)));
 }
 
 SDL_GPURenderPass* BeginUIPassGPU()
@@ -416,7 +416,7 @@ static void ResetRenderState()
     // Reset all state tracking variables to force rebinding
     g_renderer.pipeline = nullptr;
 
-    static mat4 identity = glm::identity<mat4>();
+    static Mat4 identity = MAT4_IDENTITY;
     BindBoneTransformsGPU(&identity, 1);
 
     for (int i = 0; i < (int)(sampler_register_count); i++)
@@ -427,7 +427,7 @@ static void UpdateBackBuffer()
 {
     // is the back buffer the correct size?
     assert(g_renderer.device);
-    ivec2 size = GetScreenSize();
+    Vec2Int size = GetScreenSize();
     if (g_renderer.linear_back_buffer && GetSize(g_renderer.linear_back_buffer) == size)
         return;
 
@@ -438,10 +438,10 @@ static void UpdateBackBuffer()
 static void InitGammaPass()
 {
     MeshBuilder* builder = CreateMeshBuilder(nullptr, 4, 6);
-    AddVertex(builder, vec3(-1.0f, -1.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f), vec2(0.0f, 1.0f), 0);
-    AddVertex(builder, vec3(1.0f, -1.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f), vec2(1.0f, 1.0f), 0);
-    AddVertex(builder, vec3(1.0f, 1.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f), vec2(1.0f, 0.0f), 0);
-    AddVertex(builder, vec3(-1.0f, 1.0f, 0.0f), vec3(0.0f, 0.0f, 1.0f), vec2(0.0f, 0.0f), 0);
+    AddVertex(builder, {-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, 0);
+    AddVertex(builder, {1.0f, -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, 0);
+    AddVertex(builder, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, 0);
+    AddVertex(builder, {-1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, 0);
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
     g_renderer.gamma_mesh = CreateMesh(nullptr, builder, GetName("gamma"));
@@ -461,7 +461,7 @@ static void RenderGammaPass()
     SetTexture(g_renderer.gamma_material, g_renderer.linear_back_buffer, 0);
     BeginGammaPass();
 
-    static auto identity = glm::identity<mat4>();
+    static Mat4 identity = MAT4_IDENTITY;
     BindCamera(identity, identity);
     BindTransform(identity);
     BindMaterial(g_renderer.gamma_material);

@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#if 0
+
 #pragma once
 
 #define isfinite(x) ((x) == std::numeric_limits<float>::infinity())
@@ -12,8 +14,8 @@
 extern b2WorldId g_physics_world;
 
 // Conversion functions for Box2D 3.x API
-inline b2Vec2 ToBox2d(const vec2& v) { return {v.x, v.y}; }
-inline vec2 FromBox2d(const b2Vec2& v) { return {v.x, v.y}; }
+inline b2Vec2 ToBox2d(const Vec2& v) { return {v.x, v.y}; }
+inline Vec2 FromBox2d(const b2Vec2& v) { return {v.x, v.y}; }
 
 inline b2BodyType ToBox2d(RigidBodyType bt)
 {
@@ -42,3 +44,6 @@ void SetRigidBodyType(RigidBody* rigid_body, RigidBodyType type);
 void CreateColliderShape(Collider* collider, Entity* entity);
 void DestroyColliderShape(Collider* collider);
 b2ShapeId GetColliderShapeId(Collider* collider);
+
+
+#endif

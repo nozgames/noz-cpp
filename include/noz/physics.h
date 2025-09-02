@@ -26,18 +26,18 @@ enum ColliderType
 struct RaycastResult
 {
     bool hit;
-    vec2 point;
-    vec2 normal;
+    Vec2 point;
+    Vec2 normal;
     float fraction;
     void* user_data;
 };
 
 // @physics
-RaycastResult Raycast(const vec2& start, const vec2& end, uint16_t category_mask = 0xFFFF);
+RaycastResult Raycast(const Vec2& start, const Vec2& end, uint16_t category_mask = 0xFFFF);
 
 // @rigid_body
 RigidBody* CreateRigidBody(Allocator* allocator);
 
 // @collider
-Collider* CreateBoxCollider(Allocator* allocator, const vec2& center, const vec2& size, float density, float friction, float restitution, bool is_sensor);
-Collider* CreateCircleCollider(Allocator* allocator, const vec2& center, float radius, float density, float friction, float restitution, bool is_sensor);
+Collider* CreateBoxCollider(Allocator* allocator, const Vec2& center, const Vec2& size, float density, float friction, float restitution, bool is_sensor);
+Collider* CreateCircleCollider(Allocator* allocator, const Vec2& center, float radius, float density, float friction, float restitution, bool is_sensor);

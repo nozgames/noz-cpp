@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#if 0
+
 struct ComponentImpl : Object
 {
     Entity* entity;
@@ -41,3 +43,5 @@ void SetEntity(Component* component, Entity* entity)
     auto impl = Impl(component);
     impl->entity = entity;
 }
+
+#endif

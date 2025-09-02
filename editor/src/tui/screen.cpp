@@ -26,10 +26,10 @@ static RectInt Clip(const RectInt& rect)
     assert(g_clip.size() > 0);
     auto& clip = g_clip.back().rect;
     RectInt r;
-    r.x = max(rect.x, clip.x);
-    r.y = max(rect.y, clip.y);
-    r.width = min(rect.x + rect.width, clip.x + clip.width) - r.x;
-    r.height = min(rect.y + rect.height, clip.y + clip.height) - r.y;
+    r.x = Max(rect.x, clip.x);
+    r.y = Max(rect.y, clip.y);
+    r.width = Min(rect.x + rect.width, clip.x + clip.width) - r.x;
+    r.height = Min(rect.y + rect.height, clip.y + clip.height) - r.y;
     return r;
 }
 
@@ -38,8 +38,8 @@ static Vec2Int Clip(const Vec2Int& pt)
     assert(g_clip.size() > 0);
     auto& clip = g_clip.back().rect;
     Vec2Int r;
-    r.x = clamp(pt.x, clip.x, GetRight(clip) - 1);
-    r.y = clamp(pt.y, clip.y, GetBottom(clip) - 1);
+    r.x = Clamp(pt.x, clip.x, GetRight(clip) - 1);
+    r.y = Clamp(pt.y, clip.y, GetBottom(clip) - 1);
     return r;
 }
 
@@ -154,8 +154,8 @@ void UpdateScreenSize(i32 width, i32 height)
 
     if (old_buffer)
     {
-        i32 yy = min(height, g_screen_height);
-        i32 xx = min(width, g_screen_width);
+        i32 yy = Min(height, g_screen_height);
+        i32 xx = Min(width, g_screen_width);
         for (int y = 0; y < yy; y++)
         {
             auto old_row = old_buffer + y * g_screen_width;

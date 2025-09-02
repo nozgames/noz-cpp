@@ -73,8 +73,8 @@ static void WriteMeshData(
     WriteAssetHeader(stream, &header);
 
     // header
-    bounds3 bounds = to_bounds(mesh->positions.data(), mesh->positions.size());
-    WriteBytes(stream, &bounds, sizeof(bounds3));
+    Bounds3 bounds = ToBounds(mesh->positions.data(), mesh->positions.size());
+    WriteBytes(stream, &bounds, sizeof(Bounds3));
     WriteU32(stream, static_cast<uint32_t>(mesh->positions.size()));
     WriteU32(stream, static_cast<uint32_t>(mesh->indices.size()));
 
@@ -83,9 +83,9 @@ static void WriteMeshData(
     {
         mesh_vertex vertex = {};
         vertex.position = mesh->positions[i];
-        vertex.uv0 = vec2(0, 0);
+        vertex.uv0 = {0, 0};
         vertex.bone = 0;
-        vertex.normal = vec3(0, 1, 0);
+        vertex.normal = {0, 1, 0};
         
         if (mesh->normals.size() == mesh->positions.size() && i < mesh->normals.size())
             vertex.normal = mesh->normals[i];

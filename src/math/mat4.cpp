@@ -4,16 +4,6 @@
 
 #include <noz/noz_math.h>
 
-Mat4::operator glm::mat4() const
-{
-    return glm::mat4(
-        m[0], m[1], m[2], m[3],
-        m[4], m[5], m[6], m[7], 
-        m[8], m[9], m[10], m[11],
-        m[12], m[13], m[14], m[15]
-    );
-}
-
 Mat3::operator Mat4() const
 {
     Mat4 result;
@@ -41,10 +31,31 @@ Mat4 Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far)
 
 Mat4 Ortho(f32 top, f32 bottom, f32 near, f32 far)
 {
-    f32 height = abs(top - bottom);
+    f32 height = Abs(top - bottom);
     f32 width = height * GetScreenAspectRatio();
     f32 left = -width * 0.5f;
     f32 right = width * 0.5f;
     return Ortho(left, right, bottom, top, near, far);
 }
+
+Mat4 Mat4::operator*(const Mat4& o) const
+{
+    // multiply
+    Mat4 result;
+    for (int row = 0; row < 4; row++)
+    {
+        for (int col = 0; col < 4; col++)
+        {
+            result.m[col + row * 4] =
+                m[0 + row * 4] * o.m[col + 0 * 4] +
+                m[1 + row * 4] * o.m[col + 1 * 4] +
+                m[2 + row * 4] * o.m[col + 2 * 4] +
+                m[3 + row * 4] * o.m[col + 3 * 4];
+        }
+    }
+
+    return result;
+}
+
+
 

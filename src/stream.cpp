@@ -161,7 +161,7 @@ size_t SeekCurrent(Stream* stream, size_t offset)
 size_t SeekEnd(Stream* stream, size_t offset)
 {
     StreamImpl* impl = Impl(stream);
-    SetPosition(stream, i32_max(i32(impl->size - offset), 0));
+    SetPosition(stream, Max(i32(impl->size - offset), 0));
     return impl->position;
 }
 
@@ -180,7 +180,7 @@ int ReadString(Stream* stream, char* buffer, int buffer_size)
         return len;
     }
 
-    auto truncated_len = min(buffer_size-1, len);
+    auto truncated_len = Min(buffer_size-1, len);
     ReadBytes(stream, buffer, truncated_len);
     buffer[truncated_len] = 0;
 
@@ -267,10 +267,10 @@ float ReadFloat(Stream* stream)
     return value;
 }
 
-vec3 ReadVec3(Stream* stream)
+Vec3 ReadVec3(Stream* stream)
 {
-    vec3 value;
-    ReadBytes(stream, &value, sizeof(vec3));
+    Vec3 value;
+    ReadBytes(stream, &value, sizeof(Vec3));
     return value;
 }
 
@@ -371,9 +371,9 @@ void WriteFloat(Stream* stream, float value)
     WriteBytes(stream, &value, sizeof(float));
 }
 
-void WriteVec3(Stream* stream, const vec3& value)
+void WriteVec3(Stream* stream, const Vec3& value)
 {
-    WriteBytes(stream, (void*)&value, sizeof(vec3));
+    WriteBytes(stream, (void*)&value, sizeof(Vec3));
 }
 
 void WriteVec2(Stream* stream, const Vec2& value)

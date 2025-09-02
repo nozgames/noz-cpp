@@ -4,9 +4,9 @@
 
 struct MeshBuilderImpl : MeshBuilder
 {
-    vec3* positions;
-    vec3* normals;
-    vec2* uv0;
+    Vec3* positions;
+    Vec3* normals;
+    Vec2* uv0;
     uint8_t* bones;
     uint16_t* indices;
     size_t vertex_count;
@@ -39,9 +39,9 @@ MeshBuilder* CreateMeshBuilder(Allocator* allocator, int max_vertices, int max_i
     impl->index_count = 0;
     
     // TODO: do block alloc instead with the object above
-    impl->positions = (vec3*)Alloc(allocator, sizeof(vec3) * max_vertices);
-    impl->normals = (vec3*)Alloc(allocator, sizeof(vec3) * max_vertices);
-    impl->uv0 = (vec2*)Alloc(allocator, sizeof(vec2) * max_vertices);
+    impl->positions = (Vec3*)Alloc(allocator, sizeof(Vec3) * max_vertices);
+    impl->normals = (Vec3*)Alloc(allocator, sizeof(Vec3) * max_vertices);
+    impl->uv0 = (Vec2*)Alloc(allocator, sizeof(Vec2) * max_vertices);
     impl->bones = (uint8_t*)Alloc(allocator, sizeof(uint8_t) * max_vertices);
     impl->indices = (uint16_t*)Alloc(allocator, sizeof(uint16_t) * max_indices);
     
@@ -63,17 +63,17 @@ void Clear(MeshBuilder* builder)
     impl->index_count = 0;
 }
 
-vec3* GetPositions(MeshBuilder* builder)
+Vec3* GetPositions(MeshBuilder* builder)
 {
     return static_cast<MeshBuilderImpl*>(builder)->positions;
 }
 
-vec3* GetNormals(MeshBuilder* builder)
+Vec3* GetNormals(MeshBuilder* builder)
 {
     return static_cast<MeshBuilderImpl*>(builder)->normals;
 }
 
-vec2* GetUvs(MeshBuilder* builder)
+Vec2* GetUvs(MeshBuilder* builder)
 {
     return static_cast<MeshBuilderImpl*>(builder)->uv0;
 }
@@ -100,9 +100,9 @@ size_t GetIndexCount(MeshBuilder* builder)
 
 void AddVertex(
     MeshBuilder* builder,
-    vec3 position,
-    vec3 normal,
-    vec2 uv,
+    const Vec3& position,
+    const Vec3& normal,
+    const Vec2& uv,
     uint8_t bone_index)
 {
     MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);
@@ -144,15 +144,15 @@ void AddTriangle(MeshBuilder* builder, uint16_t a, uint16_t b, uint16_t c)
 
 void AddTriangle(
     MeshBuilder* builder,
-    vec3 a,
-    vec3 b,
-    vec3 c,
+    Vec3 a,
+    Vec3 b,
+    Vec3 c,
     uint8_t bone_index)
 {
     // Calculate face normal
-    vec3 v1 = b - a;
-    vec3 v2 = c - a;
-    vec3 normal = normalize(cross(v2, v1));
+    Vec3 v1 = b - a;
+    Vec3 v2 = c - a;
+    Vec3 normal = Normalize(Cross(v2, v1));
 
     // Add vertices with computed normal
     uint16_t vertex_index = (uint16_t)static_cast<MeshBuilderImpl*>(builder)->vertex_count;
@@ -164,32 +164,32 @@ void AddTriangle(
 
 void AddQuad(
     MeshBuilder* builder,
-    vec3 forward,
-    vec3 right,
-    float width,
-    float height,
-    vec2 color_uv)
+    const Vec3& forward,
+    const Vec3& right,
+    f32 width,
+    f32 height,
+    const Vec2& color_uv)
 {
-    float hw = width * 0.5f;
-    float hh = height * 0.5f;
-    vec3 normal = cross(forward, right);
-    forward = forward * hh;
-    right = right * hw;
-    vec3 a =  forward - right;
-    vec3 b =  forward + right;
-    vec3 c = -forward + right;
-    vec3 d = -forward - right;
+    f32 hw = width * 0.5f;
+    f32 hh = height * 0.5f;
+    Vec3 normal = Cross(forward, right);
+    Vec3 f = forward * hh;
+    Vec3 r = right * hw;
+    Vec3 a =  f - r;
+    Vec3 b =  f + r;
+    Vec3 c = -f + r;
+    Vec3 d = -f - r;
     AddQuad(builder, a, b, c, d, color_uv, normal, 0);
 }
 
 void AddQuad(
     MeshBuilder* builder,
-    vec3 a,
-    vec3 b,
-    vec3 c,
-    vec3 d,
-    vec2 uv_color,
-    vec3 normal,
+    const Vec3& a,
+    const Vec3& b,
+    const Vec3& c,
+    const Vec3& d,
+    const Vec2& uv_color,
+    const Vec3& normal,
     uint8_t bone_index)
 {
     uint16_t base_index = (uint16_t)static_cast<MeshBuilderImpl*>(builder)->vertex_count;
@@ -206,27 +206,27 @@ void AddQuad(
 }
 
 
-void AddPyramid(MeshBuilder* builder, vec3 start, vec3 end, float size, uint8_t bone_index)
+void AddPyramid(MeshBuilder* builder, Vec3 start, Vec3 end, float size, uint8_t bone_index)
 {
 #if 0
     // Calculate direction and create base
-    vec3 direction = vec3_normalize(vec3_sub(end, start));
+    Vec3 direction = vec3_normalize(vec3_sub(end, start));
     float length = vec3_distance(start, end);
 
     // Create rotation matrix to align with direction
-    vec3 up = { 0.0f, 1.0f, 0.0f };
+    Vec3 up = { 0.0f, 1.0f, 0.0f };
     if (fabs(vec3_dot(direction, up)) > 0.9f)
-        up = (vec3){ 1.0f, 0.0f, 0.0f };
+        up = (Vec3){ 1.0f, 0.0f, 0.0f };
 
-    vec3 right = vec3_normalize(vec3_cross(direction, up));
+    Vec3 right = vec3_normalize(vec3_cross(direction, up));
     up = vec3_normalize(vec3_cross(right, direction));
 
     auto hsize = size * 0.5f;
     right = vec3_muls(right, hsize);
     up = vec3_muls(up, hsize);
 
-    vec3 right_sub_up = vec3_sub(right, up);
-    vec3 right_add_up = vec3_add(right, up);
+    Vec3 right_sub_up = vec3_sub(right, up);
+    Vec3 right_add_up = vec3_add(right, up);
 
     AddTriangle(
         builder,
@@ -261,12 +261,12 @@ void AddPyramid(MeshBuilder* builder, vec3 start, vec3 end, float size, uint8_t 
 void AddRaw(
     MeshBuilder* builder,
     size_t vertex_count,
-    vec3* positions,
-    vec3* normals,
-    vec2* uv0,
+    const Vec3* positions,
+    const Vec3* normals,
+    const Vec2* uv0,
     uint8_t bone_index,
     size_t index_count,
-    uint16_t* indices)
+    const uint16_t* indices)
 {
     MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);
     impl->is_full = impl->is_full && (impl->vertex_count + vertex_count >= impl->vertex_max || impl->index_count + index_count >= impl->index_max);
@@ -274,9 +274,9 @@ void AddRaw(
         return;
 
     size_t vertex_start = impl->vertex_count;
-    memcpy(impl->positions + impl->vertex_count, positions, sizeof(vec3) * vertex_count);
-    memcpy(impl->normals + impl->vertex_count, normals, sizeof(vec3) * vertex_count);
-    memcpy(impl->uv0 + impl->vertex_count, uv0, sizeof(vec2) * vertex_count);
+    memcpy(impl->positions + impl->vertex_count, positions, sizeof(Vec3) * vertex_count);
+    memcpy(impl->normals + impl->vertex_count, normals, sizeof(Vec3) * vertex_count);
+    memcpy(impl->uv0 + impl->vertex_count, uv0, sizeof(Vec2) * vertex_count);
 
     for (size_t i = 0; i < vertex_count; ++i)
         impl->bones[vertex_start + i] = bone_index;
@@ -288,44 +288,44 @@ void AddRaw(
     }
 }
 
-void AddCube(MeshBuilder* builder, vec3 center, vec3 size, uint8_t bone_index)
+void AddCube(MeshBuilder* builder, Vec3 center, Vec3 size, uint8_t bone_index)
 {
 #if 0
     MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);
 
-    vec3 half_size = vec3_muls(size, 0.5f);
+    Vec3 half_size = vec3_muls(size, 0.5f);
 
-    vec3 positions[8] = {
-        vec3_add(center, (vec3) { -half_size.x, -half_size.y, -half_size.z }), // 0: bottom-left-back
-        vec3_add(center, (vec3) { half_size.x, -half_size.y, -half_size.z }), // 1: bottom-right-back
-        vec3_add(center, (vec3) { half_size.x,  half_size.y, -half_size.z }), // 2: top-right-back
-        vec3_add(center, (vec3) { -half_size.x,  half_size.y, -half_size.z }), // 3: top-left-back
-        vec3_add(center, (vec3) { -half_size.x, -half_size.y,  half_size.z }), // 4: bottom-left-front
-        vec3_add(center, (vec3) { half_size.x, -half_size.y,  half_size.z }), // 5: bottom-right-front
-        vec3_add(center, (vec3) { half_size.x,  half_size.y,  half_size.z }), // 6: top-right-front
-        vec3_add(center, (vec3) { -half_size.x,  half_size.y,  half_size.z })  // 7: top-left-front
+    Vec3 positions[8] = {
+        vec3_add(center, (Vec3) { -half_size.x, -half_size.y, -half_size.z }), // 0: bottom-left-back
+        vec3_add(center, (Vec3) { half_size.x, -half_size.y, -half_size.z }), // 1: bottom-right-back
+        vec3_add(center, (Vec3) { half_size.x,  half_size.y, -half_size.z }), // 2: top-right-back
+        vec3_add(center, (Vec3) { -half_size.x,  half_size.y, -half_size.z }), // 3: top-left-back
+        vec3_add(center, (Vec3) { -half_size.x, -half_size.y,  half_size.z }), // 4: bottom-left-front
+        vec3_add(center, (Vec3) { half_size.x, -half_size.y,  half_size.z }), // 5: bottom-right-front
+        vec3_add(center, (Vec3) { half_size.x,  half_size.y,  half_size.z }), // 6: top-right-front
+        vec3_add(center, (Vec3) { -half_size.x,  half_size.y,  half_size.z })  // 7: top-left-front
     };
 
-    vec3 normals[8] = {
-        (vec3) { 0.0f,  0.0f, -1.0f }, // Back face
-        (vec3) { 0.0f,  0.0f, -1.0f },
-        (vec3) { 0.0f,  0.0f, -1.0f },
-        (vec3) { 0.0f,  0.0f, -1.0f },
-        (vec3) { 0.0f,  0.0f,  1.0f }, // Front face
-        (vec3) { 0.0f,  0.0f,  1.0f },
-        (vec3) { 0.0f,  0.0f,  1.0f },
-        (vec3) { 0.0f,  0.0f,  1.0f }
+    Vec3 normals[8] = {
+        (Vec3) { 0.0f,  0.0f, -1.0f }, // Back face
+        (Vec3) { 0.0f,  0.0f, -1.0f },
+        (Vec3) { 0.0f,  0.0f, -1.0f },
+        (Vec3) { 0.0f,  0.0f, -1.0f },
+        (Vec3) { 0.0f,  0.0f,  1.0f }, // Front face
+        (Vec3) { 0.0f,  0.0f,  1.0f },
+        (Vec3) { 0.0f,  0.0f,  1.0f },
+        (Vec3) { 0.0f,  0.0f,  1.0f }
     };
 
-    vec3 uvs[8] = {
-        (vec3) { 0.0f, 0.0f, 0.0f },
-        (vec3) { 1.0f, 0.0f, 0.0f },
-        (vec3) { 1.0f, 1.0f, 0.0f },
-        (vec3) { 0.0f, 1.0f, 0.0f },
-        (vec3) { 0.0f, 0.0f, 0.0f },
-        (vec3) { 1.0f, 0.0f, 0.0f },
-        (vec3) { 1.0f, 1.0f, 0.0f },
-        (vec3) { 0.0f, 1.0f, 0.0f }
+    Vec3 uvs[8] = {
+        (Vec3) { 0.0f, 0.0f, 0.0f },
+        (Vec3) { 1.0f, 0.0f, 0.0f },
+        (Vec3) { 1.0f, 1.0f, 0.0f },
+        (Vec3) { 0.0f, 1.0f, 0.0f },
+        (Vec3) { 0.0f, 0.0f, 0.0f },
+        (Vec3) { 1.0f, 0.0f, 0.0f },
+        (Vec3) { 1.0f, 1.0f, 0.0f },
+        (Vec3) { 0.0f, 1.0f, 0.0f }
     };
 
     uint16_t indices[36] = {
@@ -341,7 +341,7 @@ void AddCube(MeshBuilder* builder, vec3 center, vec3 size, uint8_t bone_index)
 
 #if 0
 
-void mesh_builder::add_sphere(const glm::vec3& center, float radius, int segments, int rings, uint32_t boneIndex)
+void mesh_builder::add_sphere(const glm::Vec3& center, float radius, int segments, int rings, uint32_t boneIndex)
 {
     uint32_t baseIndex = static_cast<uint32_t>(_positions.size());
 
@@ -358,9 +358,9 @@ void mesh_builder::add_sphere(const glm::vec3& center, float radius, int segment
             float x = cos(theta) * ringRadius;
             float z = sin(theta) * ringRadius;
 
-            glm::vec3 position = center + glm::vec3(x, y, z) * radius;
-            glm::vec3 normal = glm::normalize(glm::vec3(x, y, z));
-            glm::vec2 uv = glm::vec2(static_cast<float>(segment) / segments, static_cast<float>(ring) / rings);
+            glm::Vec3 position = center + glm::Vec3(x, y, z) * radius;
+            glm::Vec3 normal = glm::normalize(glm::Vec3(x, y, z));
+            glm::Vec2 uv = glm::Vec2(static_cast<float>(segment) / segments, static_cast<float>(ring) / rings);
 
             add_vertex(position, normal, uv, boneIndex);
         }
@@ -383,18 +383,18 @@ void mesh_builder::add_sphere(const glm::vec3& center, float radius, int segment
     }
 }
 
-void mesh_builder::add_line(const glm::vec3& start, const glm::vec3& end, float thickness, uint32_t boneIndex)
+void mesh_builder::add_line(const glm::Vec3& start, const glm::Vec3& end, float thickness, uint32_t boneIndex)
 {
     // Create a simple line as a thin cylinder
-    glm::vec3 direction = glm::normalize(end - start);
+    glm::Vec3 direction = glm::normalize(end - start);
     float length = glm::distance(start, end);
 
     // Create rotation matrix
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::Vec3 up = glm::Vec3(0.0f, 1.0f, 0.0f);
     if (glm::abs(glm::dot(direction, up)) > 0.9f)
-        up = glm::vec3(1.0f, 0.0f, 0.0f);
+        up = glm::Vec3(1.0f, 0.0f, 0.0f);
 
-    glm::vec3 right = glm::normalize(glm::cross(direction, up));
+    glm::Vec3 right = glm::normalize(glm::cross(direction, up));
     up = glm::normalize(glm::cross(right, direction));
 
     // Create thin cylinder with 4 segments
@@ -405,24 +405,24 @@ void mesh_builder::add_line(const glm::vec3& start, const glm::vec3& end, float 
     for (int i = 0; i < segments; ++i)
     {
         float angle = (2.0f * glm::pi<float>() * i) / segments;
-        glm::vec3 offset = right * cos(angle) + up * sin(angle);
-        glm::vec3 position = start + offset * thickness;
-        glm::vec3 normal = glm::normalize(offset);
+        glm::Vec3 offset = right * cos(angle) + up * sin(angle);
+        glm::Vec3 position = start + offset * thickness;
+        glm::Vec3 normal = glm::normalize(offset);
 
         startIndices.push_back(static_cast<uint32_t>(_positions.size()));
-        add_vertex(position, normal, glm::vec2(0.0f, static_cast<float>(i) / segments), boneIndex);
+        add_vertex(position, normal, glm::Vec2(0.0f, static_cast<float>(i) / segments), boneIndex);
     }
 
     // Add end vertices
     for (int i = 0; i < segments; ++i)
     {
         float angle = (2.0f * glm::pi<float>() * i) / segments;
-        glm::vec3 offset = right * cos(angle) + up * sin(angle);
-        glm::vec3 position = end + offset * thickness;
-        glm::vec3 normal = glm::normalize(offset);
+        glm::Vec3 offset = right * cos(angle) + up * sin(angle);
+        glm::Vec3 position = end + offset * thickness;
+        glm::Vec3 normal = glm::normalize(offset);
 
         endIndices.push_back(static_cast<uint32_t>(_positions.size()));
-        add_vertex(position, normal, glm::vec2(1.0f, static_cast<float>(i) / segments), boneIndex);
+        add_vertex(position, normal, glm::Vec2(1.0f, static_cast<float>(i) / segments), boneIndex);
     }
 
     // Create side faces
@@ -432,11 +432,11 @@ void mesh_builder::add_line(const glm::vec3& start, const glm::vec3& end, float 
 
         // Add quad for side face
         add_quad(
-            glm::vec3(_positions[startIndices[i]]),
-            glm::vec3(_positions[startIndices[next]]),
-            glm::vec3(_positions[endIndices[next]]),
-            glm::vec3(_positions[endIndices[i]]),
-            glm::vec2(0, 0),
+            glm::Vec3(_positions[startIndices[i]]),
+            glm::Vec3(_positions[startIndices[next]]),
+            glm::Vec3(_positions[endIndices[next]]),
+            glm::Vec3(_positions[endIndices[i]]),
+            glm::Vec2(0, 0),
             glm::normalize(glm::cross(
                 _positions[startIndices[next]] - _positions[startIndices[i]],
                 _positions[endIndices[i]] - _positions[startIndices[i]]
@@ -447,12 +447,12 @@ void mesh_builder::add_line(const glm::vec3& start, const glm::vec3& end, float 
 }
 
 void mesh_builder::add_quad(
-    const glm::vec3& a,
-    const glm::vec3& b,
-    const glm::vec3& c,
-    const glm::vec3& d,
-    const glm::vec2& color,
-    const glm::vec3& normal,
+    const glm::Vec3& a,
+    const glm::Vec3& b,
+    const glm::Vec3& c,
+    const glm::Vec3& d,
+    const glm::Vec2& color,
+    const glm::Vec3& normal,
     uint32_t boneIndex)
 {
     uint32_t baseIndex = static_cast<uint32_t>(_positions.size());
@@ -468,7 +468,7 @@ void mesh_builder::add_quad(
     add_triangle(baseIndex, baseIndex + 2, baseIndex + 3);
 }
 
-void mesh_builder::add_quad(const vec3& forward, const vec3& right, float width, float height, const vec2& color_uv)
+void mesh_builder::add_quad(const Vec3& forward, const Vec3& right, float width, float height, const Vec2& color_uv)
 {
     auto hw = width * 0.5f;
     auto hh = height * 0.5f;
@@ -481,11 +481,11 @@ void mesh_builder::add_quad(const vec3& forward, const vec3& right, float width,
 }
 
 void mesh_builder::add_triangle(
-    const glm::vec3& a,
-    const glm::vec3& b,
-    const glm::vec3& c,
-    const glm::vec2& color,
-    const glm::vec3& normal,
+    const glm::Vec3& a,
+    const glm::Vec3& b,
+    const glm::Vec3& c,
+    const glm::Vec2& color,
+    const glm::Vec3& normal,
     uint32_t boneIndex)
 {
     uint32_t baseIndex = static_cast<uint32_t>(_positions.size());
@@ -499,17 +499,17 @@ void mesh_builder::add_triangle(
     add_triangle(baseIndex, baseIndex + 1, baseIndex + 2);
 }
 
-void mesh_builder::add_cylinder(const glm::vec3& start, const glm::vec3& end, float radius, const glm::vec2& colorUV, int segments, uint32_t boneIndex)
+void mesh_builder::add_cylinder(const glm::Vec3& start, const glm::Vec3& end, float radius, const glm::Vec2& colorUV, int segments, uint32_t boneIndex)
 {
-    glm::vec3 direction = glm::normalize(end - start);
+    glm::Vec3 direction = glm::normalize(end - start);
     float length = glm::distance(start, end);
 
     // Create rotation matrix to align with direction
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::Vec3 up = glm::Vec3(0.0f, 1.0f, 0.0f);
     if (glm::abs(glm::dot(direction, up)) > 0.9f)
-        up = glm::vec3(1.0f, 0.0f, 0.0f);
+        up = glm::Vec3(1.0f, 0.0f, 0.0f);
 
-    glm::vec3 right = glm::normalize(glm::cross(direction, up));
+    glm::Vec3 right = glm::normalize(glm::cross(direction, up));
     up = glm::normalize(glm::cross(right, direction));
 
     uint32_t baseIndex = static_cast<uint32_t>(_positions.size());
@@ -528,16 +528,16 @@ void mesh_builder::add_cylinder(const glm::vec3& start, const glm::vec3& end, fl
     for (int i = 0; i < segments; ++i)
     {
         float angle = (2.0f * glm::pi<float>() * i) / segments;
-        glm::vec3 offset = right * cos(angle) + up * sin(angle);
-        glm::vec3 normal = glm::normalize(offset);
+        glm::Vec3 offset = right * cos(angle) + up * sin(angle);
+        glm::Vec3 normal = glm::normalize(offset);
 
         // Start circle vertex
-        glm::vec3 startPos = start + offset * radius;
+        glm::Vec3 startPos = start + offset * radius;
         startIndices.push_back(static_cast<uint32_t>(_positions.size()));
         add_vertex(startPos, -direction, colorUV, boneIndex);
 
         // End circle vertex
-        glm::vec3 endPos = end + offset * radius;
+        glm::Vec3 endPos = end + offset * radius;
         endIndices.push_back(static_cast<uint32_t>(_positions.size()));
         add_vertex(endPos, direction, colorUV, boneIndex);
     }
@@ -562,16 +562,16 @@ void mesh_builder::add_cylinder(const glm::vec3& start, const glm::vec3& end, fl
         int next = (i + 1) % segments;
 
         // Calculate normal for this face
-        glm::vec3 v1 = glm::vec3(_positions[startIndices[next]]) - glm::vec3(_positions[startIndices[i]]);
-        glm::vec3 v2 = glm::vec3(_positions[endIndices[i]]) - glm::vec3(_positions[startIndices[i]]);
-        glm::vec3 faceNormal = -glm::normalize(glm::cross(v1, v2));
+        glm::Vec3 v1 = glm::Vec3(_positions[startIndices[next]]) - glm::Vec3(_positions[startIndices[i]]);
+        glm::Vec3 v2 = glm::Vec3(_positions[endIndices[i]]) - glm::Vec3(_positions[startIndices[i]]);
+        glm::Vec3 faceNormal = -glm::normalize(glm::cross(v1, v2));
 
         // Add quad for side face
         add_quad(
-            glm::vec3(_positions[endIndices[i]]),
-            glm::vec3(_positions[endIndices[next]]),
-            glm::vec3(_positions[startIndices[next]]),
-            glm::vec3(_positions[startIndices[i]]),
+            glm::Vec3(_positions[endIndices[i]]),
+            glm::Vec3(_positions[endIndices[next]]),
+            glm::Vec3(_positions[startIndices[next]]),
+            glm::Vec3(_positions[startIndices[i]]),
             colorUV,
             faceNormal,
             boneIndex
@@ -580,22 +580,22 @@ void mesh_builder::add_cylinder(const glm::vec3& start, const glm::vec3& end, fl
 }
 
 void mesh_builder::add_cone(
-    const glm::vec3& base,
-    const glm::vec3& tip,
+    const glm::Vec3& base,
+    const glm::Vec3& tip,
     float baseRadius,
-    const glm::vec2& colorUV,
+    const glm::Vec2& colorUV,
     int segments,
     uint32_t boneIndex)
 {
-    glm::vec3 direction = glm::normalize(tip - base);
+    glm::Vec3 direction = glm::normalize(tip - base);
     float length = glm::distance(base, tip);
 
     // Create rotation matrix to align with direction
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::Vec3 up = glm::Vec3(0.0f, 1.0f, 0.0f);
     if (glm::abs(glm::dot(direction, up)) > 0.9f)
-        up = glm::vec3(1.0f, 0.0f, 0.0f);
+        up = glm::Vec3(1.0f, 0.0f, 0.0f);
 
-    glm::vec3 right = glm::normalize(glm::cross(direction, up));
+    glm::Vec3 right = glm::normalize(glm::cross(direction, up));
     up = glm::normalize(glm::cross(right, direction));
 
     uint32_t baseIndex = static_cast<uint32_t>(_positions.size());
@@ -613,8 +613,8 @@ void mesh_builder::add_cone(
     for (int i = 0; i < segments; ++i)
     {
         float angle = (2.0f * glm::pi<float>() * i) / segments;
-        glm::vec3 offset = right * cos(angle) + up * sin(angle);
-        glm::vec3 basePos = base + offset * baseRadius;
+        glm::Vec3 offset = right * cos(angle) + up * sin(angle);
+        glm::Vec3 basePos = base + offset * baseRadius;
 
         baseIndices.push_back(static_cast<uint32_t>(_positions.size()));
         add_vertex(basePos, -direction, colorUV, boneIndex);
@@ -633,15 +633,15 @@ void mesh_builder::add_cone(
         int next = (i + 1) % segments;
 
         // Calculate normal for this face
-        auto v1 = glm::vec3(_positions[baseIndices[next]]) - glm::vec3(_positions[baseIndices[i]]);
-        auto v2 = glm::vec3(_positions[tipIndex]) - glm::vec3(_positions[baseIndices[i]]);
+        auto v1 = glm::Vec3(_positions[baseIndices[next]]) - glm::Vec3(_positions[baseIndices[i]]);
+        auto v2 = glm::Vec3(_positions[tipIndex]) - glm::Vec3(_positions[baseIndices[i]]);
         auto n = -glm::normalize(glm::cross(v1, v2));
 
         // Add triangle
         add_triangle(
-            glm::vec3(_positions[tipIndex]),
-            glm::vec3(_positions[baseIndices[next]]),
-            glm::vec3(_positions[baseIndices[i]]),
+            glm::Vec3(_positions[tipIndex]),
+            glm::Vec3(_positions[baseIndices[next]]),
+            glm::Vec3(_positions[baseIndices[i]]),
             colorUV,
             n,
             boneIndex
@@ -668,7 +668,7 @@ Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name)
 }
 
 #if 0
-void mesh_builder::add_mesh(mesh mesh, const vec3& offset)
+void mesh_builder::add_mesh(mesh mesh, const Vec3& offset)
 {
     throw std::runtime_error("not implemented");
 
