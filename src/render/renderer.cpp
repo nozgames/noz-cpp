@@ -22,6 +22,9 @@ struct Renderer
     SDL_GPURenderPass* render_pass;
     Mat4 view_projection;
     Mat4 view;
+    
+    // Renderer configuration
+    RendererTraits traits;
 
     // Depth buffer support
     SDL_GPUTexture* depth_texture;
@@ -159,10 +162,10 @@ void BeginRenderFrame(Color clear_color)
             g_renderer.msaa_depth_texture = nullptr;
         }
 
-        // Create MSAA color texture - use 16-bit float to match render target format
+        // Create MSAA color texture - use swap chain format for compatibility
         SDL_GPUTextureCreateInfo msaaColorInfo = {};
         msaaColorInfo.type = SDL_GPU_TEXTURETYPE_2D;
-        msaaColorInfo.format = SDL_GPU_TEXTUREFORMAT_R16G16B16A16_FLOAT;
+        msaaColorInfo.format = SDL_GetGPUSwapchainTextureFormat(g_renderer.device, g_renderer.window);
         msaaColorInfo.usage = SDL_GPU_TEXTUREUSAGE_COLOR_TARGET;
         msaaColorInfo.width = width;
         msaaColorInfo.height = height;
@@ -199,7 +202,7 @@ void BeginRenderFrame(Color clear_color)
 
     g_renderer.command_buffer = cmd;
 
-    BeginRenderPass(clear_color.a >= 1.0f, clear_color, false, nullptr);
+    BeginRenderPass(clear_color.a >= 1.0f, clear_color, g_renderer.traits.msaa, nullptr);
 }
 
 void EndRenderFrame()
@@ -246,59 +249,43 @@ SDL_GPURenderPass* BeginPassGPU(bool clear, Color clear_color, bool msaa, Textur
 {
     assert(!g_renderer.render_pass);
 
-    // TODO: handle msaa to a target texture
     SDL_GPUTexture* gpu_texture = target
         ? GetGPUTexture(target)
-        : g_renderer.swap_chain_texture; //  GetGPUTexture(g_renderer.linear_back_buffer);
+        : g_renderer.swap_chain_texture;
 
-    BeginPassGPU(gpu_texture, clear, clear_color);
-    return g_renderer.render_pass;
+    // Use MSAA if requested and MSAA textures are available
+    if (msaa && g_renderer.msaa_color_texture && g_renderer.msaa_depth_texture && !target)
+    {
+        g_renderer.msaa = true;
+        
+        SDL_GPUColorTargetInfo color_target = {};
+        color_target.texture = g_renderer.msaa_color_texture;
+        color_target.clear_color = ColorToSDL(clear_color);
+        color_target.load_op = clear ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD;
+        color_target.store_op = SDL_GPU_STOREOP_RESOLVE; // Resolve MSAA to backbuffer
+        color_target.resolve_texture = gpu_texture; // Resolve target
+        color_target.resolve_mip_level = 0;
+        color_target.resolve_layer = 0;
 
-#if 0
-    SDL_GPUColorTargetInfo color_target = { 0 };
-    SDL_GPUDepthStencilTargetInfo depth_target = { 0 };
-
-    // Use MSAA textures for scene rendering with resolve to backbuffer
-        if (false) // msaa && g_renderer.msaa_color_texture && g_renderer.msaa_depth_texture)
-        {
-            _msaa = true;
-            color_target.texture = g_renderer.msaa_color_texture;
-            color_target.clear_color = to_sdl(clear_color);
-            color_target.load_op = clear ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD;
-            color_target.store_op = SDL_GPU_STOREOP_RESOLVE; // Resolve MSAA to backbuffer
-            color_target.resolve_texture = gpu_texture; // Resolve target
-            color_target.resolve_mip_level = 0;
-            color_target.resolve_layer = 0;
-
-            depth_target.texture = g_renderer.msaa_depth_texture;
-            depth_target.clear_depth = 1.0f;
-            depth_target.clear_stencil = 0;
-            depth_target.load_op = SDL_GPU_LOADOP_CLEAR;
-            depth_target.store_op = SDL_GPU_STOREOP_DONT_CARE; // Don't need to store MSAA depth
-        }
-        // Standard rendering without MSAA
-        else
-        {
-            _msaa = false;
-            color_target.texture = gpu_texture;
-            color_target.clear_color = to_sdl(clear_color);
-            color_target.load_op = clear ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD;
-            color_target.store_op = SDL_GPU_STOREOP_STORE;
-
-            depth_target.texture = g_renderer.depth_texture;
-            depth_target.clear_depth = 1.0f;
-            depth_target.clear_stencil = 0;
-            depth_target.load_op = SDL_GPU_LOADOP_CLEAR;
-            depth_target.store_op = SDL_GPU_STOREOP_STORE;
-        }
+        SDL_GPUDepthStencilTargetInfo depth_target = {};
+        depth_target.texture = g_renderer.msaa_depth_texture;
+        depth_target.clear_depth = 1.0f;
+        depth_target.clear_stencil = 0;
+        depth_target.load_op = SDL_GPU_LOADOP_CLEAR;
+        depth_target.store_op = SDL_GPU_STOREOP_DONT_CARE; // Don't need to store MSAA depth
 
         g_renderer.render_pass = SDL_BeginGPURenderPass(g_renderer.command_buffer, &color_target, 1, &depth_target);
         assert(g_renderer.render_pass);
 
         ResetRenderState();
-
         return g_renderer.render_pass;
-#endif
+    }
+    
+    // Standard rendering without MSAA
+    g_renderer.msaa = false;
+    BeginPassGPU(gpu_texture, clear, clear_color);
+    return g_renderer.render_pass;
+
 }
 
 void EndRenderPassGPU()
@@ -434,6 +421,7 @@ void LoadRendererAssets(Allocator* allocator)
 void InitRenderer(RendererTraits* traits, SDL_Window* window)
 {
     g_renderer.window = window;
+    g_renderer.traits = *traits;
 
     // Create GPU device
     g_renderer.device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, nullptr);
