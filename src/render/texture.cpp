@@ -7,11 +7,7 @@
 
 struct TextureImpl : Texture
 {
-    //SDL_GPUTexture* handle;
-    platform::Image* platform_image = nullptr;
-    platform::ImageView* platform_image_view = nullptr;
-    platform::Memory* platform_memory = nullptr;
-    platform::Sampler* platform_sampler = nullptr;
+    platform::Texture* platform_texture = nullptr;
     SamplerOptions sampler_options;
     Vec2Int size;
 };
@@ -27,7 +23,23 @@ static SamplerOptions g_default_sampler_options = {
 };
 
 static void texture_destroy_impl(TextureImpl* impl);
-int GetBytesPerPixel(TextureFormat format);
+
+static int GetBytesPerPixel(TextureFormat format)
+{
+    switch (format)
+    {
+    case TEXTURE_FORMAT_RGBA8:
+        return 4;
+    case TEXTURE_FORMAT_RGBA16F:
+        return 8;
+    case TEXTURE_FORMAT_R8:
+        return 1;
+    default:
+        return 4; // Default to RGBA
+    }
+}
+
+
 
 #if 0
 SDL_GPUTextureFormat ToSDL(const TextureFormat format)
@@ -97,7 +109,8 @@ static void CreateTexture(
     }
 
     // Use platform abstraction to create the texture
-    if (!platform::CreatePlatformTexture(impl, data, width, height, channels, name->value))
+    impl->platform_texture = platform::CreateTexture(data, width, height, channels, impl->sampler_options, name->value);
+    if (!impl->platform_texture)
     {
         if (allocated_rgba)
             free(rgba_data);
@@ -254,16 +267,6 @@ Texture* CreateTexture(
     return texture;
 }
 
-#if 0
-static void texture_destroy_impl(TextureImpl* impl)
-{
-    assert(impl);
-    
-    if (impl->handle)
-		SDL_ReleaseGPUTexture(g_device, impl->handle);
-}
-#endif
-
 Vec2Int GetSize(Texture* texture)
 {
     return static_cast<TextureImpl*>(texture)->size;
@@ -278,13 +281,6 @@ int GetHeight(Texture* texture)
 {
     return static_cast<TextureImpl*>(texture)->size.y;
 }
-
-/*
-SDL_GPUTexture* GetGPUTexture(Texture* texture)
-{
-    return static_cast<TextureImpl*>(texture)->handle;
-}
-*/
 
 SamplerOptions GetSamplerOptions(Texture* texture)
 {
@@ -314,7 +310,6 @@ Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, co
     if (!impl)
         return nullptr;
 
-//    impl->handle = nullptr;
     impl->size.x = width;
     impl->size.y = height;
 
@@ -377,18 +372,7 @@ Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, co
     return impl;
 }
 
-int GetBytesPerPixel(TextureFormat format)
+void BindTextureInternal(Texture* texture, i32 slot)
 {
-    switch (format)
-    {
-    case TEXTURE_FORMAT_RGBA8:
-        return 4;
-    case TEXTURE_FORMAT_RGBA16F:
-        return 8;
-    case TEXTURE_FORMAT_R8:
-        return 1;
-    default:
-        return 4; // Default to RGBA
-    }
+    return platform::BindTexture(static_cast<TextureImpl*>(texture)->platform_texture, slot);
 }
-

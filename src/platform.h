@@ -18,6 +18,7 @@ namespace platform
     struct ImageView {};
     struct Memory {};
     struct Sampler {};
+    struct Texture;  // Forward declaration - defined in platform implementation
 
     Vec2 GetMousePosition();
     Vec2 GetCachedMousePosition();
@@ -50,13 +51,11 @@ namespace platform
     void DrawIndexed(size_t index_count);
     void BindTexture(Texture* texture, int slot);
     
-    // Texture creation functions
-    bool CreatePlatformTexture(Texture* texture, void* data, size_t width, size_t height, int channels, const char* name);
-    void DestroyPlatformTexture(Texture* texture);
-    ImageView* GetTextureImageView(Texture* texture);
-    Sampler* GetTextureSampler(Texture* texture);
-    
-    // Shader functions
+    // @texture
+    Texture* CreateTexture(void* data, size_t width, size_t height, int channels, const SamplerOptions& sampler_options, const char* name);
+    void DestroyTexture(Texture* texture);
+
+    // @shader
     ShaderModule* CreateShaderModule(const void* spirv_code, size_t code_size, const char* name = nullptr);
     void DestroyShaderModule(ShaderModule* module);
 

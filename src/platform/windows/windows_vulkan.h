@@ -78,6 +78,7 @@ extern PFN_vkCreateShaderModule vkCreateShaderModule;
 extern PFN_vkDestroyShaderModule vkDestroyShaderModule;
 extern PFN_vkCmdBindPipeline vkCmdBindPipeline;
 extern PFN_vkCmdBindDescriptorSets vkCmdBindDescriptorSets;
+extern PFN_vkCmdPushConstants vkCmdPushConstants;
 extern PFN_vkCreateDescriptorSetLayout vkCreateDescriptorSetLayout;
 extern PFN_vkDestroyDescriptorSetLayout vkDestroyDescriptorSetLayout;
 extern PFN_vkCreateDescriptorPool vkCreateDescriptorPool;

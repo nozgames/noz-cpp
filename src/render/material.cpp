@@ -5,7 +5,8 @@
 #include "../internal.h"
 #include "../platform.h"
 
-void BindShaderInternal(Shader* shader);
+extern void BindShaderInternal(Shader* shader);
+extern void BindTextureInternal(Texture* texture, i32 slot);
 
 struct MaterialImpl : Material
 {    
@@ -71,7 +72,7 @@ void BindMaterialInternal(Material* material)
             // Map to correct sampler register slot
             // sampler_register_user0 = 1, user1 = 2, user2 = 3 (shadow = 0)
             int slot = static_cast<int>(sampler_register_user0) + static_cast<int>(i);
-            platform::BindTexture(impl->textures[i], slot);
+            BindTextureInternal(impl->textures[i], slot);
         }
     }
 }

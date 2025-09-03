@@ -22,8 +22,8 @@ VertexOutput vs(VertexInput input)
 
 //@ FRAGMENT
 
-Texture2D<float4> Texture : register(t1, space2);
-SamplerState Sampler : register(s1, space2);
+Texture2D<float4> Texture : register(t1, space4);
+SamplerState Sampler : register(s1, space4);
 
 struct PixelInput
 {

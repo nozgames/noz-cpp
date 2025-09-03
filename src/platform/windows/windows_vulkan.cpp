@@ -79,6 +79,7 @@ PFN_vkCreateShaderModule vkCreateShaderModule = nullptr;
 PFN_vkDestroyShaderModule vkDestroyShaderModule = nullptr;
 PFN_vkCmdBindPipeline vkCmdBindPipeline = nullptr;
 PFN_vkCmdBindDescriptorSets vkCmdBindDescriptorSets = nullptr;
+PFN_vkCmdPushConstants vkCmdPushConstants = nullptr;
 PFN_vkCreateDescriptorSetLayout vkCreateDescriptorSetLayout = nullptr;
 PFN_vkDestroyDescriptorSetLayout vkDestroyDescriptorSetLayout = nullptr;
 PFN_vkCreateDescriptorPool vkCreateDescriptorPool = nullptr;
@@ -189,6 +190,7 @@ void LoadDeviceFunctions(VkInstance instance)
     vkDestroyShaderModule = (PFN_vkDestroyShaderModule)vkGetInstanceProcAddr(instance, "vkDestroyShaderModule");
     vkCmdBindPipeline = (PFN_vkCmdBindPipeline)vkGetInstanceProcAddr(instance, "vkCmdBindPipeline");
     vkCmdBindDescriptorSets = (PFN_vkCmdBindDescriptorSets)vkGetInstanceProcAddr(instance, "vkCmdBindDescriptorSets");
+    vkCmdPushConstants = (PFN_vkCmdPushConstants)vkGetInstanceProcAddr(instance, "vkCmdPushConstants");
     vkCreateDescriptorSetLayout = (PFN_vkCreateDescriptorSetLayout)vkGetInstanceProcAddr(instance, "vkCreateDescriptorSetLayout");
     vkDestroyDescriptorSetLayout = (PFN_vkDestroyDescriptorSetLayout)vkGetInstanceProcAddr(instance, "vkDestroyDescriptorSetLayout");
     vkCreateDescriptorPool = (PFN_vkCreateDescriptorPool)vkGetInstanceProcAddr(instance, "vkCreateDescriptorPool");

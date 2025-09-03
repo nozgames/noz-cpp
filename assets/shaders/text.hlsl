@@ -22,8 +22,8 @@ VertexOutput vs(VertexInput input)
 
 #include "../../shader_include/color.hlsl"
 
-Texture2D<float4> Texture : register(t1, space2);
-SamplerState Sampler : register(s1, space2);
+Texture2D<float> Texture : register(t1, space4);
+SamplerState Sampler : register(s1, space4);
 
 struct PixelInput
 {

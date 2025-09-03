@@ -5,14 +5,14 @@ cbuffer CameraBuffer : register(b0, space1)
     float2 cam_rot;
 };
 
-cbuffer ObjectBuffer : register(b1, space1)
+cbuffer ObjectBuffer : register(b0, space2)
 {
     float2 obj_pos;
     float2 obj_scale;
     float obj_rot;
 };
 
-cbuffer BoneBuffer : register(b2, space1)
+cbuffer BoneBuffer : register(b0, space3)
 {
     float3x3 bones[32];
 };
