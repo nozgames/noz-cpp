@@ -1,2 +1,4 @@
 [shader]
 cull = none
+depth_test = false
+depth_write = false

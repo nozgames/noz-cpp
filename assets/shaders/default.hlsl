@@ -14,7 +14,7 @@ VertexOutput vs(VertexInput input)
 {
     VertexOutput output;
     output.position = transform_to_screen(input.position);
-    output.uv0 = float2(input.uv0.x, input.uv0.y);
+    output.uv0 = input.uv0;
     return output;
 }
 

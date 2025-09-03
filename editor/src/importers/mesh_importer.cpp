@@ -29,9 +29,9 @@ static void FlattenMesh(GLTFMesh* mesh)
 
         // Find the maximum y value in this triangle
         float maxZ = std::max({
-            -mesh->positions[idx0].y,
-            -mesh->positions[idx1].y,
-            -mesh->positions[idx2].y
+            mesh->positions[idx0].z,
+            mesh->positions[idx1].z,
+            mesh->positions[idx2].z
         });
 
         triangles.push_back({maxZ, idx0, idx1, idx2});
@@ -54,9 +54,9 @@ static void FlattenMesh(GLTFMesh* mesh)
         mesh->indices[t * 3 + 1] = tri.i1;
         mesh->indices[t * 3 + 2] = tri.i2;
 
-        mesh->positions[tri.i0].y = ii * 0.001f;
-        mesh->positions[tri.i1].y = ii * 0.001f;
-        mesh->positions[tri.i2].y = ii * 0.001f;
+        mesh->positions[tri.i0].z = ii * 0.001f;
+        mesh->positions[tri.i1].z = ii * 0.001f;
+        mesh->positions[tri.i2].z = ii * 0.001f;
     }
 }
 
@@ -75,7 +75,7 @@ static void WriteMeshData(
     std::vector<Vec2> positions;
     positions.reserve(mesh->positions.size());
     for (const Vec3& pos : mesh->positions)
-        positions.push_back({pos.x, pos.y});
+        positions.push_back({pos.x, -pos.y});
 
     // header
     Bounds2 bounds = ToBounds(positions.data(), positions.size());
@@ -137,7 +137,7 @@ void ImportMesh(const fs::path& source_path, Stream* output_stream, Props* confi
     }
     
     // Apply flatten if requested
-    if (meta->GetBool("mesh", "flatten", false))
+    if (meta->GetBool("mesh", "flatten", config->GetBool("mesh.defaults", "flatten", false)))
         FlattenMesh(&mesh);
 
     // Write mesh data to stream

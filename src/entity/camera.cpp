@@ -104,11 +104,18 @@ Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos)
 
     CameraImpl* impl = static_cast<CameraImpl*>(camera);
     Vec2 screen_center = GetScreenCenter();
-    Vec2 view { screen_pos.x - screen_center.x, screen_center.y - screen_pos.y };
+
+    // Convert to view space with camera size scaling
+    Vec2 view {
+        (screen_pos.x - screen_center.x) * impl->render.size.x / screen_center.x,
+        (screen_pos.y - screen_center.y) * impl->render.size.y / screen_center.y
+    };
+
+    // Apply inverse rotation
     Vec2 cs = impl->render.rotation;
     return impl->render.position + Vec2{
-        view.x * cs.x + view.y * cs.y,
-        -view.x * cs.y + view.y * cs.x
+        view.x * cs.y - view.y * cs.x,
+        view.x * cs.x + view.y * cs.y
     };
 }
 
@@ -118,13 +125,28 @@ Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos)
 
     CameraImpl* impl = static_cast<CameraImpl*>(camera);
     Vec2 screen_center = GetScreenCenter();
+
+    // Translate to camera-relative position
     Vec2 translated = world_pos - impl->render.position;
-    Vec2 cs = impl->render.rotation;
+
+    // Apply camera rotation (forward rotation this time)
+    Vec2 cs = impl->render.rotation;  // {sin, cos}
     Vec2 view {
-        Dot(translated, Vec2(cs.x, -cs.y)),  // cos, -sin
-        Dot(translated, cs)                   // cos, sin
+        translated.x * cs.y + translated.y * cs.x,   // cos * x + sin * y
+        -translated.x * cs.x + translated.y * cs.y   // -sin * x + cos * y
     };
-    return {view.x + screen_center.x, screen_center.y - view.y};
+
+    // Scale from world units to screen pixels
+    Vec2 screen {
+        view.x * screen_center.x / impl->render.size.x,
+        view.y * screen_center.y / impl->render.size.y
+    };
+
+    // Convert to screen coordinates
+    return {
+        screen.x + screen_center.x,
+        screen.y + screen_center.y  // No flip
+    };
 }
 
 RenderCamera GetRenderCamera(Camera* camera)
