@@ -4,7 +4,6 @@
 
 #include "../platform.h"
 
-extern void InitSamplerFactory(const RendererTraits* traits);
 extern void InitPipelineFactory(const RendererTraits* traits);
 extern void DrawUI();
 extern void DrawVfx();
@@ -16,7 +15,6 @@ extern void BeginShadowPass(Mat4 light_view, Mat4 light_projection);
 extern void InitRenderBuffer(const RendererTraits* traits);
 extern void ShutdownVulkan();
 extern void ShutdownPipelineFactory();
-extern void ShutdownSamplerFactory();
 extern void ShutdownRenderBuffer();
 extern void ExecuteRenderCommands();
 extern platform::Pipeline* GetPipeline(Shader* shader);
@@ -292,14 +290,12 @@ void LoadRendererAssets(Allocator* allocator)
 void InitRenderer(const RendererTraits* traits)
 {
     InitRenderBuffer(traits);
-    InitSamplerFactory(traits);
     InitPipelineFactory(traits);
 }
 
 void ShutdownRenderer()
 {
     ShutdownPipelineFactory();
-    ShutdownSamplerFactory();
     ShutdownRenderBuffer();
 
     g_renderer = {};

@@ -48,12 +48,8 @@ typedef struct bone
 
 struct SamplerOptions
 {
-    TextureFilter min_filter;
-    TextureFilter mag_filter;
-    TextureClamp clamp_u;
-    TextureClamp clamp_v;
-    TextureClamp clamp_w;
-    //SDL_GPUCompareOp compare_op;
+    TextureFilter filter;
+    TextureClamp clamp;
 };
 
 // Function to compare sampler options
@@ -79,6 +75,7 @@ typedef enum vertex_register
     vertex_register_user2 = 5,
     vertex_register_count
 } vertex_register_t;
+
 
 typedef enum fragment_register 
 {

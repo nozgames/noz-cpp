@@ -2,17 +2,6 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-#include <noz/asset.h>
-#include <noz/noz.h>
-#include <filesystem>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <algorithm>
-#include <iostream>
-#include <cmath>
-#include <utility>
-
 #define STB_IMAGE_IMPLEMENTATION
 #include "../external/stb_image.h"
 
@@ -89,11 +78,8 @@ static void WriteTextureData(
     int width,
     int height,
     int channels,
-    const std::string& min_filter,
-    const std::string& mag_filter,
-    const std::string& clamp_u,
-    const std::string& clamp_v,
-    const std::string& clamp_w,
+    const std::string& filter,
+    const std::string& clamp,
     bool has_mipmaps)
 {
     // Write asset header
@@ -104,131 +90,25 @@ static void WriteTextureData(
     WriteAssetHeader(stream, &header);
     
     // Convert string options to enum values
-    uint8_t min_filter_value = (min_filter == "nearest" || min_filter == "point") ? 0 : 1;
-    uint8_t mag_filter_value = (mag_filter == "nearest" || mag_filter == "point") ? 0 : 1;
+    TextureFilter filter_value = filter == "nearest" || filter == "point"
+        ? TEXTURE_FILTER_NEAREST
+        : TEXTURE_FILTER_LINEAR;
+
+    TextureClamp clamp_value = clamp == "repeat" ?
+        TEXTURE_CLAMP_REPEAT :
+        TEXTURE_CLAMP_CLAMP;
     
-    uint8_t clamp_u_value = 1; // Default to ClampToEdge
-    if (clamp_u == "repeat") clamp_u_value = 0;
-    else if (clamp_u == "clamp_to_edge") clamp_u_value = 1;
-    else if (clamp_u == "mirrored_repeat") clamp_u_value = 2;
-    else if (clamp_u == "clamp_to_border") clamp_u_value = 3;
-    
-    uint8_t clamp_v_value = 1;
-    if (clamp_v == "repeat") clamp_v_value = 0;
-    else if (clamp_v == "clamp_to_edge") clamp_v_value = 1;
-    else if (clamp_v == "mirrored_repeat") clamp_v_value = 2;
-    else if (clamp_v == "clamp_to_border") clamp_v_value = 3;
-    
-    uint8_t clamp_w_value = 1;
-    if (clamp_w == "repeat") clamp_w_value = 0;
-    else if (clamp_w == "clamp_to_edge") clamp_w_value = 1;
-    else if (clamp_w == "mirrored_repeat") clamp_w_value = 2;
-    else if (clamp_w == "clamp_to_border") clamp_w_value = 3;
-    
-    // Write texture metadata
-    uint32_t format = (channels == 4) ? 1 : 0; // 0=RGB, 1=RGBA
-    WriteU32(stream, format);
+    TextureFormat format = TEXTURE_FORMAT_RGBA8;
+    WriteU8(stream, (u8)format);
     WriteU32(stream, width);
     WriteU32(stream, height);
-    
-    // Write sampler options
-    WriteU8(stream, min_filter_value);
-    WriteU8(stream, mag_filter_value);
-    WriteU8(stream, clamp_u_value);
-    WriteU8(stream, clamp_v_value);
-    WriteU8(stream, clamp_w_value);
-    WriteBool(stream, has_mipmaps);
-    
+    WriteU8(stream, (u8)filter_value);
+    WriteU8(stream, (u8)clamp_value);
+
     // Write pixel data
     size_t data_size = width * height * channels;
     WriteU32(stream, data_size);
     WriteBytes(stream, (void*)data, data_size);
-}
-
-static void WriteTextureWithMipmaps(
-    Stream* stream,
-    const std::vector<std::vector<uint8_t>>& mip_levels,
-    const std::vector<std::pair<int, int>>& mip_dimensions,
-    int channels,
-    const std::string& min_filter,
-    const std::string& mag_filter,
-    const std::string& clamp_u,
-    const std::string& clamp_v,
-    const std::string& clamp_w)
-{
-    if (mip_levels.empty() || mip_dimensions.empty())
-    {
-        throw std::runtime_error("Invalid mipmap data");
-    }
-    
-    // Calculate total size for runtime
-    size_t total_size = 0;
-    for (const auto& level : mip_levels)
-    {
-        total_size += level.size();
-    }
-    
-    // Write asset header
-    AssetHeader header = {};
-    header.signature = ASSET_SIGNATURE_TEXTURE;
-    header.version = 1;
-    header.flags = 0;
-    WriteAssetHeader(stream, &header);
-    
-    // Convert string options to enum values
-    uint8_t min_filter_value = (min_filter == "nearest" || min_filter == "point") ? 0 : 1;
-    uint8_t mag_filter_value = (mag_filter == "nearest" || mag_filter == "point") ? 0 : 1;
-    
-    uint8_t clamp_u_value = 1;
-    if (clamp_u == "repeat") clamp_u_value = 0;
-    else if (clamp_u == "clamp_to_edge") clamp_u_value = 1;
-    else if (clamp_u == "mirrored_repeat") clamp_u_value = 2;
-    else if (clamp_u == "clamp_to_border") clamp_u_value = 3;
-    
-    uint8_t clamp_v_value = 1;
-    if (clamp_v == "repeat") clamp_v_value = 0;
-    else if (clamp_v == "clamp_to_edge") clamp_v_value = 1;
-    else if (clamp_v == "mirrored_repeat") clamp_v_value = 2;
-    else if (clamp_v == "clamp_to_border") clamp_v_value = 3;
-    
-    uint8_t clamp_w_value = 1;
-    if (clamp_w == "repeat") clamp_w_value = 0;
-    else if (clamp_w == "clamp_to_edge") clamp_w_value = 1;
-    else if (clamp_w == "mirrored_repeat") clamp_w_value = 2;
-    else if (clamp_w == "clamp_to_border") clamp_w_value = 3;
-    
-    // Write texture metadata
-    uint32_t format = (channels == 4) ? 1 : 0; // 0=RGB, 1=RGBA
-    uint32_t width = mip_dimensions[0].first;
-    uint32_t height = mip_dimensions[0].second;
-    uint32_t num_mip_levels = static_cast<uint32_t>(mip_levels.size());
-    
-    WriteU32(stream, format);
-    WriteU32(stream, width);
-    WriteU32(stream, height);
-    
-    // Write sampler options
-    WriteU8(stream, min_filter_value);
-    WriteU8(stream, mag_filter_value);
-    WriteU8(stream, clamp_u_value);
-    WriteU8(stream, clamp_v_value);
-    WriteU8(stream, clamp_w_value);
-    WriteBool(stream, true); // has mipmaps
-    
-    // Write number of mip levels
-    WriteU32(stream, num_mip_levels);
-    
-    // Write each mip level
-    for (size_t i = 0; i < mip_levels.size(); ++i)
-    {
-        // Write mip level dimensions
-        WriteU32(stream, mip_dimensions[i].first);
-        WriteU32(stream, mip_dimensions[i].second);
-        
-        // Write mip level data
-        WriteU32(stream, static_cast<uint32_t>(mip_levels[i].size()));
-        WriteBytes(stream, (void*)mip_levels[i].data(), mip_levels[i].size());
-    }
 }
 
 void ImportTexture(const fs::path& source_path, Stream* output_stream, Props* config, Props* meta)
@@ -244,15 +124,10 @@ void ImportTexture(const fs::path& source_path, Stream* output_stream, Props* co
         throw std::runtime_error("Failed to load texture file");
     }
     
-    // Parse texture properties from meta props (with defaults)
-    std::string min_filter = meta->GetString("texture", "min_filter", "linear");
-    std::string mag_filter = meta->GetString("texture", "mag_filter", "linear");
-    std::string clamp_u = meta->GetString("texture", "clamp_u", "clamp_to_edge");
-    std::string clamp_v = meta->GetString("texture", "clamp_v", "clamp_to_edge");
-    std::string clamp_w = meta->GetString("texture", "clamp_w", "clamp_to_edge");
-    bool generate_mipmaps = meta->GetBool("texture", "mipmaps", false);
+    std::string filter = meta->GetString("texture", "filter", "linear");
+    std::string clamp = meta->GetString("texture", "clamp", "clamp");
     bool convert_from_srgb = meta->GetBool("texture", "srgb", false);
-    
+
     // Convert to RGBA if needed
     std::vector<uint8_t> rgba_data;
     if (channels != 4)
@@ -279,87 +154,27 @@ void ImportTexture(const fs::path& source_path, Stream* output_stream, Props* co
     if (convert_from_srgb)
         ConvertSRGBToLinear(rgba_data.data(), width, height, channels);
 
-    // Generate mipmaps if requested
-    if (generate_mipmaps)
-    {
-        std::vector<std::vector<uint8_t>> mip_levels;
-        std::vector<std::pair<int, int>> mip_dimensions;
-        
-        // Add base level
-        mip_levels.push_back(rgba_data);
-        mip_dimensions.push_back({width, height});
-        
-        // Generate additional mip levels
-        int current_width = width;
-        int current_height = height;
-        
-        while (current_width > 1 || current_height > 1)
-        {
-            int next_width = std::max(1, current_width / 2);
-            int next_height = std::max(1, current_height / 2);
-            
-            std::vector<uint8_t> mip_data(next_width * next_height * channels);
-            
-            // Generate mipmap from previous level
-            GenerateMipmap(
-                mip_levels.back().data(), current_width, current_height,
-                mip_data.data(), next_width, next_height,
-                channels
-            );
-            
-            mip_levels.push_back(std::move(mip_data));
-            mip_dimensions.push_back({next_width, next_height});
-            
-            current_width = next_width;
-            current_height = next_height;
-        }
-        
-        WriteTextureWithMipmaps(
-            output_stream,
-            mip_levels,
-            mip_dimensions,
-            channels,
-            min_filter,
-            mag_filter,
-            clamp_u,
-            clamp_v,
-            clamp_w
-        );
-    }
-    else
-    {
-        WriteTextureData(
-            output_stream,
-            rgba_data.data(),
-            width,
-            height,
-            channels,
-            min_filter,
-            mag_filter,
-            clamp_u,
-            clamp_v,
-            clamp_w,
-            false
-        );
-    }
-
+    WriteTextureData(
+        output_stream,
+        rgba_data.data(),
+        width,
+        height,
+        channels,
+        filter,
+        clamp,
+        false
+    );
 }
 
 bool DoesTextureDependOn(const fs::path& source_path, const fs::path& dependency_path)
 {
     // Check if dependency is the meta file for this texture
     fs::path meta_path = fs::path(source_path.string() + ".meta");
-    
     return meta_path == dependency_path;
 }
 
 static const char* g_texture_extensions[] = {
     ".png",
-    ".jpg",
-    ".jpeg",
-    ".bmp",
-    ".tga",
-    ".gif",
     nullptr
 };
 

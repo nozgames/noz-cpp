@@ -5,6 +5,8 @@
 #include "../../platform.h"
 #include "windows_vulkan.h"
 
+constexpr int MAX_UNIFORM_BUFFERS = 64;
+
 extern platform::ShaderModule* GetVertexShader(Shader* shader);
 extern platform::ShaderModule* GetFragmentShader(Shader* shader);
 
@@ -26,9 +28,7 @@ struct VulkanUniformBuffer
     VkBuffer buffer;
     VkDeviceMemory memory;
     void* mapped_ptr;
-    VkDescriptorSet camera_descriptor_set;      // For binding 0 (camera)
-    VkDescriptorSet transform_descriptor_set;   // For binding 1 (transform) 
-    VkDescriptorSet bones_descriptor_set;       // For binding 2 (bones)
+    VkDescriptorSet descriptor_set;  // Single descriptor set for this buffer
 };
 
 struct VulkanRenderer
@@ -93,15 +93,12 @@ struct VulkanRenderer
     VkSampler default_sampler;
 
     // Uniform buffer pool management
-    static const int MAX_UNIFORM_BUFFERS = 64;
-    VulkanUniformBuffer* uniform_buffer_pool[MAX_UNIFORM_BUFFERS];
+    VulkanUniformBuffer uniform_buffer_pool[MAX_UNIFORM_BUFFERS];
     int uniform_buffer_pool_count;
-    VulkanUniformBuffer* used_buffers[MAX_UNIFORM_BUFFERS];  // Track buffers used this frame
-    int used_buffer_count;
-    
 
     platform::Window* window;
     RendererTraits traits;
+    VkPipelineLayout pipeline_layout;
 };
 
 struct SwapchainSupportDetails
@@ -116,7 +113,6 @@ static VulkanRenderer g_vulkan = {};
 // Use bone size as uniform buffer size (largest of the three uniform types)
 static const size_t UNIFORM_BUFFER_SIZE = sizeof(RenderTransform) * 64;
 static uint32_t g_current_image_index = 0;
-static VkPipelineLayout g_current_pipeline_layout = VK_NULL_HANDLE;
 static HMODULE vulkan_library = nullptr;
 
 static VulkanUniformBuffer* CreateVulkanUniformBuffer();
@@ -200,10 +196,8 @@ static bool CreateUniformBuffer(size_t size, VkBuffer* buffer, VkDeviceMemory* m
     return true;
 }
 
-static VulkanUniformBuffer* CreateVulkanUniformBuffer()
+static bool InitializeUniformBuffer(VulkanUniformBuffer* uniform_buffer)
 {
-    VulkanUniformBuffer* uniform_buffer = new VulkanUniformBuffer{};
-    
     // Create the buffer
     if (!CreateUniformBuffer(
         UNIFORM_BUFFER_SIZE,
@@ -212,43 +206,54 @@ static VulkanUniformBuffer* CreateVulkanUniformBuffer()
         &uniform_buffer->mapped_ptr,
         "UniformBuffer"))
     {
-        delete uniform_buffer;
-        return nullptr;
+        return false;
     }
     
-    // Create descriptor sets for each binding type (camera, transform, bones)
-    // We'll create them when needed in the descriptor set update functions
-    uniform_buffer->camera_descriptor_set = VK_NULL_HANDLE;
-    uniform_buffer->transform_descriptor_set = VK_NULL_HANDLE;
-    uniform_buffer->bones_descriptor_set = VK_NULL_HANDLE;
+    // Create single descriptor set (we'll use the same layout for all uniform buffers)
+    VkDescriptorSetAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    alloc_info.descriptorPool = g_vulkan.descriptor_pool;
+    alloc_info.descriptorSetCount = 1;
+    alloc_info.pSetLayouts = &g_vulkan.camera_descriptor_set_layout; // All uniform buffer layouts are the same
     
-    return uniform_buffer;
+    if (vkAllocateDescriptorSets(g_vulkan.device, &alloc_info, &uniform_buffer->descriptor_set) != VK_SUCCESS)
+    {
+        return false;
+    }
+    
+    // Update descriptor set to point to this buffer
+    VkDescriptorBufferInfo buffer_info = {};
+    buffer_info.buffer = uniform_buffer->buffer;
+    buffer_info.offset = 0;
+    buffer_info.range = VK_WHOLE_SIZE;
+    
+    VkWriteDescriptorSet write = {};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = uniform_buffer->descriptor_set;
+    write.dstBinding = 0;
+    write.dstArrayElement = 0;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    write.descriptorCount = 1;
+    write.pBufferInfo = &buffer_info;
+    
+    vkUpdateDescriptorSets(g_vulkan.device, 1, &write, 0, nullptr);
+    
+    return true;
 }
 
 static VulkanUniformBuffer* AcquireUniformBuffer()
 {
-    VulkanUniformBuffer* buffer;
-    
-    if (g_vulkan.uniform_buffer_pool_count > 0)
-    {
-        // Take from pool
-        buffer = g_vulkan.uniform_buffer_pool[g_vulkan.uniform_buffer_pool_count - 1];
-        g_vulkan.uniform_buffer_pool_count--;
-    }
-    else
-    {
-        // Create new buffer
-        buffer = CreateVulkanUniformBuffer();
-        if (!buffer)
-        {
-            Exit("Failed to create uniform buffer");
-        }
-    }
-    
-    // Track this buffer as used this frame
-    g_vulkan.used_buffers[g_vulkan.used_buffer_count] = buffer;
-    g_vulkan.used_buffer_count++;
-    
+    if (g_vulkan.uniform_buffer_pool_count <= 0)
+        return nullptr;
+
+    g_vulkan.uniform_buffer_pool_count--;
+    VulkanUniformBuffer* buffer = &g_vulkan.uniform_buffer_pool[g_vulkan.uniform_buffer_pool_count];
+    if (buffer->buffer != VK_NULL_HANDLE)
+        return buffer;
+
+    if (!InitializeUniformBuffer(buffer))
+        return nullptr;
+
     return buffer;
 }
 
@@ -570,6 +575,12 @@ static void CreateDescriptorPool()
         Exit("Failed to create descriptor pool");
 }
 
+enum DescriptorSpace
+{
+    DESCRIPTOR_SPACE_FRAGMENT
+};
+
+
 static void CreateDescriptorSets()
 {
     // Allocate all five descriptor sets
@@ -691,11 +702,11 @@ static void CreateDescriptorSets()
     vkUpdateDescriptorSets(g_vulkan.device, 8, all_writes, 0, nullptr);
     
     // Set debug names for descriptor sets
-    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.camera_descriptor_set, "CameraUniforms_Space1");
-    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.transform_descriptor_set, "TransformUniforms_Space2");
-    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.bones_descriptor_set, "BonesUniforms_Space3");
-    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.texture_descriptor_set, "TextureSamplers_Space4");
-    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.fragment_descriptor_set, "FragmentUniforms_Space5");
+    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.camera_descriptor_set, "Camera");
+    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.transform_descriptor_set, "Transform");
+    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.bones_descriptor_set, "Bones");
+    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.texture_descriptor_set, "Textures");
+    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.fragment_descriptor_set, "Fragment");
 }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
@@ -1212,6 +1223,27 @@ static void CreateSyncObjects()
         Exit("Failed to create in flight fence");
 }
 
+static void CreatePipelineLayout()
+{
+    VkDescriptorSetLayout layouts[6] = {
+        VK_NULL_HANDLE,                               // space0 - unused
+        g_vulkan.camera_descriptor_set_layout,       // space1 - camera uniform
+        g_vulkan.transform_descriptor_set_layout,    // space2 - transform uniform
+        g_vulkan.bones_descriptor_set_layout,        // space3 - bones uniform
+        g_vulkan.texture_descriptor_set_layout,      // space4 - textures/samplers
+        g_vulkan.fragment_descriptor_set_layout      // space5 - fragment uniforms
+    };
+
+    VkPipelineLayoutCreateInfo layout_info = {};
+    layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    layout_info.setLayoutCount = 6;
+    layout_info.pSetLayouts = layouts;
+    layout_info.pushConstantRangeCount = 0;
+    layout_info.pPushConstantRanges = nullptr;
+
+    vkCreatePipelineLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.pipeline_layout);
+}
+
 void InitVulkan(const RendererTraits* traits, platform::Window* window)
 {
     g_vulkan.traits = *traits;
@@ -1236,7 +1268,7 @@ void InitVulkan(const RendererTraits* traits, platform::Window* window)
     CreateCommandPool();
     CreateCommandBuffer();
     CreateSyncObjects();
-    
+
     // Create uniform buffers
     // Create larger camera uniform buffer for multiple cameras per frame
     CreateUniformBuffer(sizeof(RenderCamera) * 16, &g_vulkan.camera_uniform_buffer, &g_vulkan.camera_uniform_memory, &g_vulkan.camera_uniform_mapped, "CameraUniformBuffer");
@@ -1254,6 +1286,7 @@ void InitVulkan(const RendererTraits* traits, platform::Window* window)
     CreateDescriptorSetLayout();
     CreateDescriptorPool();
     CreateDescriptorSets();
+    CreatePipelineLayout();
 
     printf("Vulkan renderer initialized successfully\n");
 }
@@ -1477,26 +1510,6 @@ platform::Pipeline* platform::CreatePipeline(Shader* shader)
     if (!g_vulkan.device)
         return nullptr;
 
-    VkDescriptorSetLayout layouts[6] = {
-        VK_NULL_HANDLE,                               // space0 - unused
-        g_vulkan.camera_descriptor_set_layout,       // space1 - camera uniform
-        g_vulkan.transform_descriptor_set_layout,    // space2 - transform uniform
-        g_vulkan.bones_descriptor_set_layout,        // space3 - bones uniform
-        g_vulkan.texture_descriptor_set_layout,      // space4 - textures/samplers
-        g_vulkan.fragment_descriptor_set_layout      // space5 - fragment uniforms
-    };
-    
-    VkPipelineLayoutCreateInfo layout_info = {};
-    layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    layout_info.setLayoutCount = 6;
-    layout_info.pSetLayouts = layouts;
-    layout_info.pushConstantRangeCount = 0;
-    layout_info.pPushConstantRanges = nullptr;
-
-    VkPipelineLayout layout;
-    if (vkCreatePipelineLayout(g_vulkan.device, &layout_info, nullptr, &layout) != VK_SUCCESS)
-        return nullptr;
-
     // Vertex input (basic for now - position, uv, normal, bone_index)
     VkVertexInputBindingDescription binding_desc = {};
     binding_desc.binding = 0;
@@ -1621,16 +1634,13 @@ platform::Pipeline* platform::CreatePipeline(Shader* shader)
     pipeline_info.pDepthStencilState = &depth_stencil;
     pipeline_info.pColorBlendState = &color_blending;
     pipeline_info.pDynamicState = &dynamic_state;
-    pipeline_info.layout = layout;
+    pipeline_info.layout = g_vulkan.pipeline_layout;
     pipeline_info.renderPass = g_vulkan.render_pass;
     pipeline_info.subpass = 0;
 
     VkPipeline pipeline;
     if (vkCreateGraphicsPipelines(g_vulkan.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline) != VK_SUCCESS)
-    {
-        vkDestroyPipelineLayout(g_vulkan.device, layout, nullptr);
         return nullptr;
-    }
 
     // Set debug name for the pipeline
     if (shader)
@@ -1640,10 +1650,6 @@ platform::Pipeline* platform::CreatePipeline(Shader* shader)
         SetVulkanObjectName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline, name_string);
     }
 
-    // Store the layout globally so we can access it for descriptor set binding
-    // TODO: Redesign API to properly associate layouts with pipelines
-    g_current_pipeline_layout = layout;
-    
     // Return the VkPipeline cast as PlatformPipeline (opaque handle)
     return (Pipeline*)pipeline;
 }
@@ -1662,34 +1668,12 @@ void platform::BindPipeline(Pipeline* pipeline)
     assert(g_vulkan.command_buffer);
 
     vkCmdBindPipeline(g_vulkan.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, (VkPipeline)pipeline);
-    
-    // Bind descriptor sets after pipeline is bound
-    if (g_current_pipeline_layout != VK_NULL_HANDLE)
-    {
-        // Bind camera uniforms to space1
-        vkCmdBindDescriptorSets(g_vulkan.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
-                               g_current_pipeline_layout, 1, 1, &g_vulkan.camera_descriptor_set, 0, nullptr);
-        
-        // Bind textures/samplers to space4
-        vkCmdBindDescriptorSets(g_vulkan.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
-                               g_current_pipeline_layout, 4, 1, &g_vulkan.texture_descriptor_set, 0, nullptr);
-        
-        // Bind fragment uniforms to space5  
-        vkCmdBindDescriptorSets(g_vulkan.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
-                               g_current_pipeline_layout, 5, 1, &g_vulkan.fragment_descriptor_set, 0, nullptr);
-    }
 }
 
 void platform::BeginRenderFrame()
 {
-    // Return all used buffers to the pool
-    for (int i = 0; i < g_vulkan.used_buffer_count; i++)
-    {
-        g_vulkan.uniform_buffer_pool[g_vulkan.uniform_buffer_pool_count] = g_vulkan.used_buffers[i];
-        g_vulkan.uniform_buffer_pool_count++;
-    }
-    g_vulkan.used_buffer_count = 0;
-    
+    g_vulkan.uniform_buffer_pool_count = MAX_UNIFORM_BUFFERS;
+
     vkWaitForFences(g_vulkan.device, 1, &g_vulkan.in_flight_fence, VK_TRUE, UINT64_MAX);
     vkResetFences(g_vulkan.device, 1, &g_vulkan.in_flight_fence);
 
@@ -1765,82 +1749,39 @@ void platform::BindTransform(const RenderTransform* transform)
     
     // Acquire a uniform buffer from pool
     VulkanUniformBuffer* buffer = AcquireUniformBuffer();
+    if (!buffer)
+        return;
     
-    // Write transform data to this buffer
     memcpy(buffer->mapped_ptr, transform, sizeof(RenderTransform));
-    
-    // Update descriptor set to point to this buffer
-    VkDescriptorBufferInfo buffer_info = {};
-    buffer_info.buffer = buffer->buffer;
-    buffer_info.offset = 0;
-    buffer_info.range = sizeof(RenderTransform);
-    
-    VkWriteDescriptorSet write = {};
-    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write.dstSet = g_vulkan.transform_descriptor_set;
-    write.dstBinding = 0;
-    write.dstArrayElement = 0;
-    write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    write.descriptorCount = 1;
-    write.pBufferInfo = &buffer_info;
-    
-    vkUpdateDescriptorSets(g_vulkan.device, 1, &write, 0, nullptr);
-    
-    // Bind transform descriptor set in command buffer (if pipeline is bound)
-    if (g_current_pipeline_layout != VK_NULL_HANDLE)
-    {
-        vkCmdBindDescriptorSets(
-            g_vulkan.command_buffer,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            g_current_pipeline_layout,
-            2, // Transform descriptor set (space2)
-            1,
-            &g_vulkan.transform_descriptor_set,
-            0, nullptr
-        );
-    }
+    vkCmdBindDescriptorSets(
+        g_vulkan.command_buffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        g_vulkan.pipeline_layout,
+        2, // Transform descriptor set (space2)
+        1,
+        &buffer->descriptor_set,
+        0, nullptr
+    );
 }
 
 void platform::BindCamera(const RenderCamera* camera)
 {
     assert(camera);
-    
-    // Acquire a uniform buffer from pool
+
     VulkanUniformBuffer* buffer = AcquireUniformBuffer();
+    if (!buffer)
+        return;
     
-    // Write camera data to this buffer
     memcpy(buffer->mapped_ptr, camera, sizeof(RenderCamera));
-    
-    // Update descriptor set to point to this buffer
-    VkDescriptorBufferInfo buffer_info = {};
-    buffer_info.buffer = buffer->buffer;
-    buffer_info.offset = 0;
-    buffer_info.range = sizeof(RenderCamera);
-    
-    VkWriteDescriptorSet write = {};
-    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write.dstSet = g_vulkan.camera_descriptor_set;
-    write.dstBinding = 0;
-    write.dstArrayElement = 0;
-    write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    write.descriptorCount = 1;
-    write.pBufferInfo = &buffer_info;
-    
-    vkUpdateDescriptorSets(g_vulkan.device, 1, &write, 0, nullptr);
-    
-    // Bind camera descriptor set in command buffer (if pipeline is bound)
-    if (g_current_pipeline_layout != VK_NULL_HANDLE)
-    {
-        vkCmdBindDescriptorSets(
-            g_vulkan.command_buffer,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            g_current_pipeline_layout,
-            1, // Camera descriptor set (space1)
-            1,
-            &g_vulkan.camera_descriptor_set,
-            0, nullptr
-        );
-    }
+    vkCmdBindDescriptorSets(
+        g_vulkan.command_buffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        g_vulkan.pipeline_layout,
+        1, // Camera descriptor set (space1)
+        1,
+        &buffer->descriptor_set,
+        0, nullptr
+    );
 }
 
 void platform::BindBoneTransforms(const RenderTransform* bones, int count)
@@ -1848,43 +1789,14 @@ void platform::BindBoneTransforms(const RenderTransform* bones, int count)
     assert(bones);
     assert(count > 0);
     assert(count <= 64); // Max bone count
+//    assert(g_current_pipeline_layout);
     
-    // Acquire a uniform buffer from pool
     VulkanUniformBuffer* buffer = AcquireUniformBuffer();
-    
-    // Write bone transforms to this buffer
-    memcpy(buffer->mapped_ptr, bones, sizeof(RenderTransform) * count);
-    
-    // Update descriptor set to point to this buffer
-    VkDescriptorBufferInfo buffer_info = {};
-    buffer_info.buffer = buffer->buffer;
-    buffer_info.offset = 0;
-    buffer_info.range = sizeof(RenderTransform) * count;
-    
-    VkWriteDescriptorSet write = {};
-    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write.dstSet = g_vulkan.bones_descriptor_set;
-    write.dstBinding = 0;
-    write.dstArrayElement = 0;
-    write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    write.descriptorCount = 1;
-    write.pBufferInfo = &buffer_info;
-    
-    vkUpdateDescriptorSets(g_vulkan.device, 1, &write, 0, nullptr);
-    
-    // Bind bones descriptor set in command buffer (if pipeline is bound)
-    if (g_current_pipeline_layout != VK_NULL_HANDLE)
-    {
-        vkCmdBindDescriptorSets(
-            g_vulkan.command_buffer,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            g_current_pipeline_layout,
-            3, // Bones descriptor set (space3)
-            1,
-            &g_vulkan.bones_descriptor_set,
-            0, nullptr
-        );
-    }
+    if (!buffer)
+        return;
+
+    // memcpy(buffer->mapped_ptr, bones, sizeof(RenderTransform) * count);
+    // g_vulkan.current_camera_buffer = buffer;
 }
 
 void platform::BindLight(const void* light)
@@ -1898,6 +1810,22 @@ void platform::BindLight(const void* light)
 void platform::BindColor(const void* color)
 {
     assert(color);
+
+    VulkanUniformBuffer* buffer = AcquireUniformBuffer();
+    if (!buffer)
+        return;
+
+    memcpy(buffer->mapped_ptr, color, sizeof(Color));
+    vkCmdBindDescriptorSets(
+        g_vulkan.command_buffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        g_vulkan.pipeline_layout,
+        1, // Camera descriptor set (space1)
+        fragment_register_color,
+        &buffer->descriptor_set,
+        0, nullptr
+    );
+
     assert(g_vulkan.color_uniform_mapped);
     
     // Copy color data to fragment_register_color (0) uniform buffer
@@ -2063,11 +1991,14 @@ static bool CreateTextureInternal(platform::Texture* texture, void* data, const 
 
     vkBindBufferMemory(g_vulkan.device, staging_buffer, staging_buffer_memory, 0);
 
-    // Map staging buffer and copy texture data
-    void* mapped_data;
-    vkMapMemory(g_vulkan.device, staging_buffer_memory, 0, size, 0, &mapped_data);
-    memcpy(mapped_data, data, size);
-    vkUnmapMemory(g_vulkan.device, staging_buffer_memory);
+    // Copy data if we have any
+    if (data)
+    {
+        void* mapped_data;
+        vkMapMemory(g_vulkan.device, staging_buffer_memory, 0, size, 0, &mapped_data);
+        memcpy(mapped_data, data, size);
+        vkUnmapMemory(g_vulkan.device, staging_buffer_memory);
+    }
 
     // Create VkImage
     VkImageCreateInfo image_info = {};
@@ -2199,11 +2130,11 @@ static bool CreateTextureInternal(platform::Texture* texture, void* data, const 
     // Create sampler based on texture filtering options
     VkSamplerCreateInfo sampler_info = {};
     sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    sampler_info.magFilter = (sampler_options.mag_filter == TEXTURE_FILTER_LINEAR) ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
-    sampler_info.minFilter = (sampler_options.min_filter == TEXTURE_FILTER_LINEAR) ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
-    sampler_info.addressModeU = (sampler_options.clamp_u == TEXTURE_CLAMP_REPEAT) ? VK_SAMPLER_ADDRESS_MODE_REPEAT : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    sampler_info.addressModeV = (sampler_options.clamp_v == TEXTURE_CLAMP_REPEAT) ? VK_SAMPLER_ADDRESS_MODE_REPEAT : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    sampler_info.addressModeW = (sampler_options.clamp_w == TEXTURE_CLAMP_REPEAT) ? VK_SAMPLER_ADDRESS_MODE_REPEAT : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_info.magFilter =
+        sampler_info.minFilter = sampler_options.filter == TEXTURE_FILTER_LINEAR ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+    sampler_info.addressModeU =
+        sampler_info.addressModeV =
+        sampler_info.addressModeW = sampler_options.clamp == TEXTURE_CLAMP_REPEAT ? VK_SAMPLER_ADDRESS_MODE_REPEAT : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     sampler_info.anisotropyEnable = VK_FALSE;
     sampler_info.maxAnisotropy = 1.0f;
     sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
@@ -2293,10 +2224,6 @@ platform::Texture* platform::CreateTexture(
     const SamplerOptions& sampler_options,
     const char* name)
 {
-    if (!data)
-        return nullptr;
-    
-    // Allocate platform texture
     Texture* texture = new Texture{};
     texture->size = {(int)width, (int)height};
     texture->channels = channels;
@@ -2313,35 +2240,28 @@ void platform::BindTexture(Texture* texture, int slot)
 {
     if (!texture)
     {
-        // Bind default texture descriptor set
-        if (g_current_pipeline_layout != VK_NULL_HANDLE)
-        {
-            vkCmdBindDescriptorSets(
-                g_vulkan.command_buffer,
-                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                g_current_pipeline_layout,
-                4,
-                1,
-                &g_vulkan.texture_descriptor_set,
-                0, nullptr
-            );
-        }
+        vkCmdBindDescriptorSets(
+            g_vulkan.command_buffer,
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            g_vulkan.pipeline_layout,
+            4,
+            1,
+            &g_vulkan.texture_descriptor_set,
+            0, nullptr
+        );
         return;
     }
 
     VkDescriptorSet texture_descriptor_set = texture->vk_descriptor_set;
-    if (g_current_pipeline_layout != VK_NULL_HANDLE)
-    {
-        vkCmdBindDescriptorSets(
-            g_vulkan.command_buffer,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            g_current_pipeline_layout,
-            4,
-            1,
-            &texture_descriptor_set,
-            0, nullptr
-        );
-    }
+    vkCmdBindDescriptorSets(
+        g_vulkan.command_buffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        g_vulkan.pipeline_layout,
+        4,
+        1,
+        &texture_descriptor_set,
+        0, nullptr
+    );
 }
 
 void platform::BeginRenderPass(Color clear_color)

@@ -54,7 +54,6 @@ set(SOURCE_FILES
     src/render/mesh.cpp
     src/render/font.cpp
     src/render/texture.cpp
-    src/render/sampler_factory.cpp
     src/render/shader.cpp
     src/render/render_buffer.cpp
     src/render/renderer.cpp

@@ -41,8 +41,7 @@ enum TextureFilter
 enum TextureClamp
 {
     TEXTURE_CLAMP_REPEAT,
-    TEXTURE_CLAMP_CLAMP,
-    TEXTURE_CLAMP_REPEAT_MIRRORED
+    TEXTURE_CLAMP_CLAMP
 };
 
 enum TextureFormat
