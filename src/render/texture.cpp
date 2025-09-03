@@ -2,9 +2,16 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include "../internal.h"
+#include "../platform.h"
+
 struct TextureImpl : Texture
 {
     //SDL_GPUTexture* handle;
+    platform::Image* platform_image = nullptr;
+    platform::ImageView* platform_image_view = nullptr;
+    platform::Memory* platform_memory = nullptr;
+    platform::Sampler* platform_sampler = nullptr;
     SamplerOptions sampler_options;
     Vec2Int size;
 };
@@ -89,9 +96,17 @@ static void CreateTexture(
         return;
     }
 
-    // Create transfer buffer for pixel data
-    const size_t pitch = width * channels;
-    const size_t size = pitch * height;
+    // Use platform abstraction to create the texture
+    if (!platform::CreatePlatformTexture(impl, data, width, height, channels, name->value))
+    {
+        if (allocated_rgba)
+            free(rgba_data);
+        return;
+    }
+    
+    // Clean up temporary RGBA data if we allocated it
+    if (allocated_rgba)
+        free(rgba_data);
 
 #if 0
     SDL_GPUTransferBufferCreateInfo transfer_info = {};
@@ -376,3 +391,4 @@ int GetBytesPerPixel(TextureFormat format)
         return 4; // Default to RGBA
     }
 }
+

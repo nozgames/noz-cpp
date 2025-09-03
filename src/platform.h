@@ -14,6 +14,10 @@ namespace platform
     struct Buffer {};
     struct BufferMemory {};
     struct ShaderModule {};
+    struct Image {};
+    struct ImageView {};
+    struct Memory {};
+    struct Sampler {};
 
     Vec2 GetMousePosition();
     Vec2 GetCachedMousePosition();
@@ -45,6 +49,12 @@ namespace platform
     void BindIndexBuffer(Buffer* buffer);
     void DrawIndexed(size_t index_count);
     void BindTexture(Texture* texture, int slot);
+    
+    // Texture creation functions
+    bool CreatePlatformTexture(Texture* texture, void* data, size_t width, size_t height, int channels, const char* name);
+    void DestroyPlatformTexture(Texture* texture);
+    ImageView* GetTextureImageView(Texture* texture);
+    Sampler* GetTextureSampler(Texture* texture);
     
     // Shader functions
     ShaderModule* CreateShaderModule(const void* spirv_code, size_t code_size, const char* name = nullptr);

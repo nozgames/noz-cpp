@@ -3,8 +3,6 @@
 //
 #pragma once
 
-//#include <SDL3/SDL.h>
-
 struct RenderCamera
 {
     Vec2 position;

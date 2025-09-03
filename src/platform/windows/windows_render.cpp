@@ -5,6 +5,17 @@
 #include "../../platform.h"
 #include "windows_vulkan.h"
 
+// TextureImpl structure to access Vulkan objects
+struct TextureImpl : Texture
+{
+    VkImage vk_image;
+    VkImageView vk_image_view;
+    VkDeviceMemory vk_memory;
+    VkSampler vk_sampler;
+    SamplerOptions sampler_options;
+    Vec2Int size;
+};
+
 extern platform::ShaderModule* GetVertexShader(Shader* shader);
 extern platform::ShaderModule* GetFragmentShader(Shader* shader);
 
@@ -82,7 +93,7 @@ static VkPipelineLayout g_current_pipeline_layout = VK_NULL_HANDLE;
 static HMODULE vulkan_library = nullptr;
 
 // Helper function to find suitable memory type
-static uint32_t FindMemoryType(uint32_t type_filter, VkMemoryPropertyFlags properties) {
+uint32_t FindMemoryType(uint32_t type_filter, VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties mem_properties;
     vkGetPhysicalDeviceMemoryProperties(g_vulkan.physical_device, &mem_properties);
 
@@ -1351,6 +1362,16 @@ VkRenderPass GetVulkanRenderPass()
     return g_vulkan.render_pass;
 }
 
+VkCommandPool GetVulkanCommandPool()
+{
+    return g_vulkan.command_pool;
+}
+
+VkQueue GetVulkanGraphicsQueue()
+{
+    return g_vulkan.graphics_queue;
+}
+
 platform::Pipeline* platform::CreatePipeline(Shader* shader)
 {
     if (!g_vulkan.device)
@@ -1849,18 +1870,275 @@ void platform::DrawIndexed(size_t index_count)
     vkCmdDrawIndexed(g_vulkan.command_buffer, index_count, 1, 0, 0, 0);
 }
 
+bool platform::CreatePlatformTexture(Texture* texture, void* data, size_t width, size_t height, int channels, const char* name)
+{
+    if (!texture || !data)
+        return false;
+    
+    TextureImpl* impl = static_cast<TextureImpl*>(texture);
+    const size_t size = width * height * channels;
+
+    // Create staging buffer for texture data upload
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_buffer_memory;
+    VkBufferCreateInfo buffer_info = {};
+    buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_info.size = size;
+    buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(g_vulkan.device, &buffer_info, nullptr, &staging_buffer) != VK_SUCCESS)
+        return false;
+
+    VkMemoryRequirements mem_requirements;
+    vkGetBufferMemoryRequirements(g_vulkan.device, staging_buffer, &mem_requirements);
+
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = mem_requirements.size;
+    alloc_info.memoryTypeIndex = FindMemoryType(mem_requirements.memoryTypeBits, 
+                                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    if (vkAllocateMemory(g_vulkan.device, &alloc_info, nullptr, &staging_buffer_memory) != VK_SUCCESS)
+    {
+        vkDestroyBuffer(g_vulkan.device, staging_buffer, nullptr);
+        return false;
+    }
+
+    vkBindBufferMemory(g_vulkan.device, staging_buffer, staging_buffer_memory, 0);
+
+    // Map staging buffer and copy texture data
+    void* mapped_data;
+    vkMapMemory(g_vulkan.device, staging_buffer_memory, 0, size, 0, &mapped_data);
+    memcpy(mapped_data, data, size);
+    vkUnmapMemory(g_vulkan.device, staging_buffer_memory);
+
+    // Create VkImage
+    VkImageCreateInfo image_info = {};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.extent.width = width;
+    image_info.extent.height = height;
+    image_info.extent.depth = 1;
+    image_info.mipLevels = 1;
+    image_info.arrayLayers = 1;
+    image_info.format = (channels == 1) ? VK_FORMAT_R8_UNORM : VK_FORMAT_R8G8B8A8_UNORM;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateImage(g_vulkan.device, &image_info, nullptr, &impl->vk_image) != VK_SUCCESS)
+    {
+        vkFreeMemory(g_vulkan.device, staging_buffer_memory, nullptr);
+        vkDestroyBuffer(g_vulkan.device, staging_buffer, nullptr);
+        return false;
+    }
+
+    // Allocate memory for image
+    VkMemoryRequirements image_mem_requirements;
+    vkGetImageMemoryRequirements(g_vulkan.device, impl->vk_image, &image_mem_requirements);
+
+    VkMemoryAllocateInfo image_alloc_info = {};
+    image_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    image_alloc_info.allocationSize = image_mem_requirements.size;
+    image_alloc_info.memoryTypeIndex = FindMemoryType(image_mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    if (vkAllocateMemory(g_vulkan.device, &image_alloc_info, nullptr, &impl->vk_memory) != VK_SUCCESS)
+    {
+        vkDestroyImage(g_vulkan.device, impl->vk_image, nullptr);
+        vkFreeMemory(g_vulkan.device, staging_buffer_memory, nullptr);
+        vkDestroyBuffer(g_vulkan.device, staging_buffer, nullptr);
+        return false;
+    }
+
+    vkBindImageMemory(g_vulkan.device, impl->vk_image, impl->vk_memory, 0);
+
+    // Create command buffer for texture upload
+    VkCommandBufferAllocateInfo cmd_alloc_info = {};
+    cmd_alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cmd_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cmd_alloc_info.commandPool = g_vulkan.command_pool;
+    cmd_alloc_info.commandBufferCount = 1;
+
+    VkCommandBuffer command_buffer;
+    vkAllocateCommandBuffers(g_vulkan.device, &cmd_alloc_info, &command_buffer);
+
+    VkCommandBufferBeginInfo begin_info = {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(command_buffer, &begin_info);
+
+    // Transition image to transfer destination layout
+    VkImageMemoryBarrier barrier = {};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = impl->vk_image;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+
+    vkCmdPipelineBarrier(command_buffer,
+                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    // Copy buffer to image
+    VkBufferImageCopy region = {};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {(uint32_t)width, (uint32_t)height, 1};
+
+    vkCmdCopyBufferToImage(command_buffer, staging_buffer, impl->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    // Transition image to shader read optimal layout
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    
+    vkCmdPipelineBarrier(command_buffer,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                         0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    vkEndCommandBuffer(command_buffer);
+
+    // Submit command buffer
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffer;
+
+    vkQueueSubmit(g_vulkan.graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(g_vulkan.graphics_queue);
+
+    // Cleanup staging buffer
+    vkFreeMemory(g_vulkan.device, staging_buffer_memory, nullptr);
+    vkDestroyBuffer(g_vulkan.device, staging_buffer, nullptr);
+
+    // Create image view
+    VkImageViewCreateInfo view_info = {};
+    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    view_info.image = impl->vk_image;
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.format = (channels == 1) ? VK_FORMAT_R8_UNORM : VK_FORMAT_R8G8B8A8_UNORM;
+    view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    view_info.subresourceRange.baseMipLevel = 0;
+    view_info.subresourceRange.levelCount = 1;
+    view_info.subresourceRange.baseArrayLayer = 0;
+    view_info.subresourceRange.layerCount = 1;
+
+    if (vkCreateImageView(g_vulkan.device, &view_info, nullptr, &impl->vk_image_view) != VK_SUCCESS)
+    {
+        vkFreeMemory(g_vulkan.device, impl->vk_memory, nullptr);
+        vkDestroyImage(g_vulkan.device, impl->vk_image, nullptr);
+        return false;
+    }
+
+    // Create sampler based on texture filtering options
+    SamplerOptions sampler_opts = GetSamplerOptions(texture);
+    VkSamplerCreateInfo sampler_info = {};
+    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_info.magFilter = (sampler_opts.mag_filter == TEXTURE_FILTER_LINEAR) ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+    sampler_info.minFilter = (sampler_opts.min_filter == TEXTURE_FILTER_LINEAR) ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+    sampler_info.addressModeU = (sampler_opts.clamp_u == TEXTURE_CLAMP_REPEAT) ? VK_SAMPLER_ADDRESS_MODE_REPEAT : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_info.addressModeV = (sampler_opts.clamp_v == TEXTURE_CLAMP_REPEAT) ? VK_SAMPLER_ADDRESS_MODE_REPEAT : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_info.addressModeW = (sampler_opts.clamp_w == TEXTURE_CLAMP_REPEAT) ? VK_SAMPLER_ADDRESS_MODE_REPEAT : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_info.anisotropyEnable = VK_FALSE;
+    sampler_info.maxAnisotropy = 1.0f;
+    sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    sampler_info.unnormalizedCoordinates = VK_FALSE;
+    sampler_info.compareEnable = VK_FALSE;
+    sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
+    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    sampler_info.mipLodBias = 0.0f;
+    sampler_info.minLod = 0.0f;
+    sampler_info.maxLod = 0.0f;
+
+    if (vkCreateSampler(g_vulkan.device, &sampler_info, nullptr, &impl->vk_sampler) != VK_SUCCESS)
+    {
+        vkDestroyImageView(g_vulkan.device, impl->vk_image_view, nullptr);
+        vkFreeMemory(g_vulkan.device, impl->vk_memory, nullptr);
+        vkDestroyImage(g_vulkan.device, impl->vk_image, nullptr);
+        return false;
+    }
+
+    return true;
+}
+
+void platform::DestroyPlatformTexture(Texture* texture)
+{
+    if (!texture)
+        return;
+        
+    TextureImpl* impl = static_cast<TextureImpl*>(texture);
+    
+    if (impl->vk_sampler != VK_NULL_HANDLE)
+        vkDestroySampler(g_vulkan.device, impl->vk_sampler, nullptr);
+    if (impl->vk_image_view != VK_NULL_HANDLE)
+        vkDestroyImageView(g_vulkan.device, impl->vk_image_view, nullptr);
+    if (impl->vk_memory != VK_NULL_HANDLE)
+        vkFreeMemory(g_vulkan.device, impl->vk_memory, nullptr);
+    if (impl->vk_image != VK_NULL_HANDLE)
+        vkDestroyImage(g_vulkan.device, impl->vk_image, nullptr);
+        
+    impl->vk_sampler = VK_NULL_HANDLE;
+    impl->vk_image_view = VK_NULL_HANDLE;
+    impl->vk_memory = VK_NULL_HANDLE;
+    impl->vk_image = VK_NULL_HANDLE;
+}
+
+platform::ImageView* platform::GetTextureImageView(Texture* texture)
+{
+    if (!texture)
+        return nullptr;
+    TextureImpl* impl = static_cast<TextureImpl*>(texture);
+    return (platform::ImageView*)impl->vk_image_view;
+}
+
+platform::Sampler* platform::GetTextureSampler(Texture* texture)
+{
+    if (!texture)
+        return nullptr;
+    TextureImpl* impl = static_cast<TextureImpl*>(texture);
+    return (platform::Sampler*)impl->vk_sampler;
+}
+
 void platform::BindTexture(Texture* texture, int slot)
 {
     // Validate slot is in valid range
     if (slot < 0 || slot >= 4)
         return;
     
-    // For now, all textures will use the default white texture and sampler
-    // TODO: Extract actual Vulkan texture/sampler from texture when texture system is implemented
     VkDescriptorImageInfo image_info = {};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info.imageView = g_vulkan.default_texture_view;
-    image_info.sampler = g_vulkan.default_sampler;
+    
+    // Use actual texture if available, otherwise fall back to default white texture
+    VkImageView texture_view = (VkImageView)GetTextureImageView(texture);
+    VkSampler sampler = (VkSampler)GetTextureSampler(texture);
+    
+    if (texture_view != VK_NULL_HANDLE && sampler != VK_NULL_HANDLE)
+    {
+        image_info.imageView = texture_view;
+        image_info.sampler = sampler;
+        // Using actual texture
+    }
+    else
+    {
+        // Fall back to default white texture
+        image_info.imageView = g_vulkan.default_texture_view;
+        image_info.sampler = g_vulkan.default_sampler;
+    }
     
     VkWriteDescriptorSet descriptor_write = {};
     descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
