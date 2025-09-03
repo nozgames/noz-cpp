@@ -108,6 +108,7 @@ target_link_libraries(noz
         version       # For GetFileVersionInfo* functions (SDL3)
         imm32         # For Imm* functions (SDL3 IME support)
         dxcompiler    # For DxcCreateInstance (SDL3_shadercross)
+        Shcore        # For DPI awareness functions
 )
 
 add_subdirectory(editor)

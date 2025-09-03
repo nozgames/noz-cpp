@@ -108,11 +108,11 @@ Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos)
     // Convert to view space with camera size scaling
     Vec2 view {
         (screen_pos.x - screen_center.x) * impl->render.size.x / screen_center.x,
-        (screen_center.y - screen_pos.y) * impl->render.size.y / screen_center.y
+        (screen_pos.y - screen_center.y) * impl->render.size.y / screen_center.y
     };
 
     // Apply inverse rotation
-    Vec2 cs = impl->render.rotation;
+    const Vec2& cs = impl->render.rotation;
     return impl->render.position + Vec2{
         view.x * cs.y - view.y * cs.x,
         view.x * cs.x + view.y * cs.y

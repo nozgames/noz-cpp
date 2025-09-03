@@ -19,7 +19,7 @@ static Input g_input = {};
 
 void UpdateInput()
 {
-    g_input.mouse_position = platform::GetMousePosition();
+    g_input.mouse_position = platform::GetCachedMousePosition();
     UpdateInputState((InputSet*)GetBack(g_input.active_sets));
 }
 

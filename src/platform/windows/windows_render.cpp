@@ -882,11 +882,7 @@ static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFor
 
 static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
-    for (const auto& availablePresentMode : availablePresentModes)
-    {
-        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
-            return availablePresentMode;
-    }
+    // Force VSync by always returning FIFO mode (guaranteed to be available)
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 

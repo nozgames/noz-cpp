@@ -47,7 +47,7 @@ float4 transform_to_screen(float2 vertex_pos)
     // Convert to NDC (-1 to 1 range)
     return float4(
         view.x / cam_size.x,
-        -view.y / cam_size.y,
+        view.y / cam_size.y,
         0.0,
         1.0
     );

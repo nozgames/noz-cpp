@@ -16,6 +16,7 @@ namespace platform
     struct ShaderModule {};
 
     Vec2 GetMousePosition();
+    Vec2 GetCachedMousePosition();
     
     // @window
     Window* CreatePlatformWindow(const ApplicationTraits* traits);

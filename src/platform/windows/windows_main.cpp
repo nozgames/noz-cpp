@@ -7,12 +7,14 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shellapi.h>
+#include <shellscalingapi.h>
 
 void InitVulkan(const RendererTraits* traits, platform::Window* window);
 void ResizeVulkan();
 void ShutdownVulkan();
 
 static Vec2Int g_screen_size;
+static Vec2 g_cached_mouse_position = {0, 0};
 
 void thread_sleep_ms(int milliseconds)
 {
@@ -36,12 +38,37 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             EndPaint(hwnd, &ps);
         }
         return 0;
+    case WM_SIZE:
+        {
+            // Update global screen size when window is resized
+            RECT rect;
+            GetClientRect(hwnd, &rect);
+            Vec2Int new_size = { rect.right - rect.left, rect.bottom - rect.top };
+            if (g_screen_size != new_size)
+            {
+                g_screen_size = new_size;
+                ResizeVulkan();
+            }
+        }
+        return 0;
+    case WM_MOUSEMOVE:
+        {
+            // Cache mouse position for smooth tracking
+            int x = LOWORD(lParam);
+            int y = HIWORD(lParam);
+            g_cached_mouse_position.x = static_cast<f32>(x);
+            g_cached_mouse_position.y = static_cast<f32>(y);
+        }
+        return 0;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
 platform::Window* platform::CreatePlatformWindow(const ApplicationTraits* traits)
 {
+    // Set process to be DPI aware (per-monitor DPI awareness)
+    SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+    
     HINSTANCE hInstance = GetModuleHandle(NULL);
 
     // Register window class
@@ -114,7 +141,7 @@ bool platform::ProcessWindowEvents(Window* window, bool& has_focus, Vec2Int& scr
     HWND active_window = GetActiveWindow();
     has_focus = (active_window == (HWND)window);
 
-    // Update screen size
+    // Update screen size - get actual physical pixels for DPI awareness
     if (window)
     {
         RECT rect;
@@ -143,6 +170,11 @@ Vec2Int platform::GetWindowSize(Window* window)
 void platform::ShowCursor(bool show)
 {
     ::ShowCursor(show ? TRUE : FALSE);
+}
+
+Vec2 platform::GetCachedMousePosition()
+{
+    return g_cached_mouse_position;
 }
     
 extern int main(int argc, char* argv[]);
