@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include "../platform.h"
+
 void InputActiveInputSetList(LinkedList& list);
 void InitInputCodes();
 void UpdateInputState(InputSet* input_set);
@@ -17,12 +19,7 @@ static Input g_input = {};
 
 void UpdateInput()
 {
-    // Always update the mouse position
-    float x;
-    float y;
-    SDL_GetMouseState(&x, &y);
-    g_input.mouse_position = Vec2(x, y);
-
+    g_input.mouse_position = platform::GetMousePosition();
     UpdateInputState((InputSet*)GetBack(g_input.active_sets));
 }
 

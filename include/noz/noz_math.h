@@ -67,11 +67,16 @@ int RandomInt(int min, int max);
 bool RandomBool();
 bool RandomBool(float probability);
 
+struct Vec3;
+struct Vec4;
+
 struct Mat4
 {
     f32 m[16];
 
-    Mat4 operator*(const Mat4& other) const;
+    Mat4 operator*(const Mat4& m) const;
+    Vec3 operator*(const Vec3& v) const;
+    Vec4 operator*(const Vec4& v) const;
 };
 
 struct Mat3
@@ -114,6 +119,8 @@ struct Vec4
     f32 y;
     f32 z;
     f32 w;
+
+    Vec4 operator/=(f32 scalar) { x /= scalar; y /= scalar; z /= scalar; w /= scalar; return *this; }
 };
 
 struct Vec2Int
@@ -183,29 +190,40 @@ constexpr Vec4 VEC4_ZERO = { 0,0,0,0 };
 constexpr Vec4 VEC4_ONE = { 1,1,1,1 };
 
 constexpr Vec2 VEC2_ZERO = { 0,0 };
-constexpr Vec2 VEC2_ONE = { 1,1 };
+constexpr Vec2 VEC2_ONE = { 1, 1 };
+constexpr Vec2 VEC2_UP = { 0, -1 };
+constexpr Vec2 VEC2_DOWN = { 0, 1 };
+constexpr Vec2 VEC2_RIGHT = { 1, 0 };
+constexpr Vec2 VEC2_LEFT = { -1, 0 };
 
 constexpr f32 F32_MAX = 3.402823466e+38F;
 constexpr f32 F32_MIN = -3.402823466e+38F;
 
+// @bounds3
 Bounds3 ToBounds(const Vec3* positions, u32 count);
 bool Contains(const Bounds3& bounds, const Vec3& point);
 bool Intersects(const Bounds3& bounds, const Bounds3& point);
 Bounds3 Expand(const Bounds3& bounds, const Vec3& point);
 Bounds3 Expand(const Bounds3& bounds, const Bounds3& other);
 
+// @bounds2
+Bounds2 ToBounds(const Vec2* positions, u32 count);
 
 // @mat4
-Mat4 Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
-Mat4 Ortho(f32 top, f32 bottom, f32 near, f32 far);
+extern Mat4 Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
+extern Mat4 Ortho(f32 top, f32 bottom, f32 near, f32 far);
+extern Mat4 Inverse(const Mat4& m);
 
 // @mat3
 extern Mat3 TRS(const Vec2& translation, f32 rotation, const Vec2& scale);
 extern Mat3 Translate(const Vec2& translation);
+extern Mat3 Inverse(const Mat3& m);
 
 // @vec2
+extern f32 Length(const Vec2& v);
 extern Vec2 Reflect(const Vec2& v, const Vec2& normal);
 extern Vec2 Normalize(const Vec2& v);
+inline Vec2 Cross(const Vec2& a, const Vec2& b) { return Vec2{ -a.y, a.x }; }
 
 // @vec2d
 extern f64 Length(const Vec2Double& v);
@@ -216,6 +234,7 @@ extern f32 Length(const Vec3& v);
 extern Vec3 Normalize(const Vec3& v);
 extern Vec3 Cross(const Vec3& a, const Vec3& b);
 
+inline f32 Dot(const Vec2& a, const Vec2& b) { return a.x * b.x + a.y * b.y; }
 inline f32 Dot(const Vec3& a, const Vec3& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 inline f64 Dot(const Vec2Double& a, const Vec2Double& b) { return a.x * b.x + a.y * b.y; }
 
@@ -235,17 +254,21 @@ inline float Degrees(float radians) { return radians * 180.0f / noz::PI; }
 inline i32 Min(i32 v1, i32 v2) { return v1 < v2 ? v1 : v2; }
 inline u32 Min(u32 v1, u32 v2) { return v1 < v2 ? v1 : v2; }
 inline f32 Min(f32 v1, f32 v2) { return v1 < v2 ? v1 : v2; }
-inline Vec3 Min(const Vec3& m1, const Vec3& m2) { return Vec3{ Min(m1.x, m2.x), Min(m1.y, m2.y), Min(m1.z, m2.z) }; }
+inline Vec2 Min(const Vec2& m1, const Vec2& m2) { return { Min(m1.x, m2.x), Min(m1.y, m2.y) }; }
+inline Vec3 Min(const Vec3& m1, const Vec3& m2) { return { Min(m1.x, m2.x), Min(m1.y, m2.y), Min(m1.z, m2.z) }; }
 
 inline i32 Max(i32 v1, i32 v2) { return v1 > v2 ? v1 : v2; }
 inline f32 Max(f32 v1, f32 v2) { return v1 > v2 ? v1 : v2; }
-inline Vec3 Max(const Vec3& m1, const Vec3& m2) { return Vec3{ Max(m1.x, m2.x), Max(m1.y, m2.y), Max(m1.z, m2.z) }; }
+inline Vec2 Max(const Vec2& m1, const Vec2& m2) { return { Max(m1.x, m2.x), Max(m1.y, m2.y) }; }
+inline Vec3 Max(const Vec3& m1, const Vec3& m2) { return { Max(m1.x, m2.x), Max(m1.y, m2.y), Max(m1.z, m2.z) }; }
 
 inline i32 Abs(i32 v) { return v < 0 ? -v : v; }
 inline f32 Abs(f32 v) { return v < 0 ? -v : v; }
 inline f64 Abs(f64 v) { return v < 0 ? -v : v; }
 
 inline f32 Sqrt(f32 v) { return sqrtf(v); }
+inline f32 Cos(f32 v) { return cosf(v); }
+inline f32 Sin(f32 v) { return sinf(v); }
 
 constexpr Vec2Int RoundToNearest(const Vec2Int& v)
 {

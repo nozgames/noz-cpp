@@ -19,15 +19,15 @@ struct cgltf_accessor;
 struct GLTFBone
 {
     std::string name;
-    int index;
-    int parent_index;
     Mat4 world_to_local;
     Mat4 local_to_world;
     Vec3 position;
-    quat rotation;
     Vec3 scale;
-    float length;
     Vec3 direction;
+    int index;
+    int parent_index;
+    float rotation;
+    float length;
 };
 
 struct GLTFAnimation

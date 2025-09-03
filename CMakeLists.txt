@@ -14,7 +14,6 @@ target_precompile_headers(noz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.h)
 # Explicitly list all source files
 set(SOURCE_FILES
     src/application.cpp
-    src/bounds3.cpp
     src/asset.cpp
     src/collections/list.cpp
     src/collections/linked_list.cpp
@@ -37,6 +36,8 @@ set(SOURCE_FILES
     src/memory/allocator.cpp
     src/memory/pool_allocator.cpp
     src/memory/arena_allocator.cpp
+    src/math/bounds2.cpp
+    src/math/bounds3.cpp
     src/math/mat3.cpp
     src/math/mat4.cpp
     src/math/vec2.cpp
@@ -72,7 +73,10 @@ set(SOURCE_FILES
 
 # Add platform-specific files
 if(WIN32)
-    list(APPEND SOURCE_FILES src/platform/windows/windows_main.cpp)
+    list(APPEND SOURCE_FILES
+        src/platform/windows/windows_main.cpp
+        src/platform/windows/windows_input.cpp
+    )
 else()
 endif()
 

@@ -11,7 +11,7 @@ struct VertexOutput
 VertexOutput vs(VertexInput input)
 {
     VertexOutput output;
-    output.position = mul(mul(vp, m), float4(input.position, 1.0));
+    output.position = transform_to_screen(input.position);
     output.uv0 = input.uv0;
     return output;
 }

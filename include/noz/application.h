@@ -36,6 +36,7 @@ void Exit(const char* format, ...);
 void ExitOutOfMemory(const char* message=nullptr);
 
 Vec2Int GetScreenSize();
+Vec2 GetScreenCenter();
 float GetScreenAspectRatio();
 
 void ShowCursor(bool show);

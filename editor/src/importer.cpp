@@ -261,8 +261,8 @@ bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers)
                     }
                     catch (const std::exception& e)
                     {
-                        std::cout << job.source_path.string() << ": error: " << e.what() << std::endl;
-                        continue; // Skip to next job
+                        LogError("%s: %s", job.source_path.string().c_str(), e.what());;
+                        continue;
                     }
                 }
                 made_progress = true;

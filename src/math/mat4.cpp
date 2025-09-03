@@ -57,5 +57,153 @@ Mat4 Mat4::operator*(const Mat4& o) const
     return result;
 }
 
+Vec3 Mat4::operator*(const Vec3& v) const
+{
+    return Vec3{
+        m[0] * v.x + m[4] * v.y + m[8] * v.z + m[12],
+        m[1] * v.x + m[5] * v.y + m[9] * v.z + m[13],
+        m[2] * v.x + m[6] * v.y + m[10] * v.z + m[14]
+    };
+}
 
+Vec4 Mat4::operator*(const Vec4& v) const
+{
+    return Vec4{
+        m[0] * v.x + m[4] * v.y + m[8] * v.z + m[12] * v.w,
+        m[1] * v.x + m[5] * v.y + m[9] * v.z + m[13] * v.w,
+        m[2] * v.x + m[6] * v.y + m[10] * v.z + m[14] * v.w,
+        m[3] * v.x + m[7] * v.y + m[11] * v.z + m[15] * v.w
+    };
+}
+
+Mat4 Inverse(const Mat4& m)
+{
+    Mat4 result;
+    const f32* mat = m.m;
+    f32* inv = result.m;
+
+    inv[0] = mat[5] * mat[10] * mat[15] - 
+             mat[5] * mat[11] * mat[14] - 
+             mat[9] * mat[6] * mat[15] + 
+             mat[9] * mat[7] * mat[14] +
+             mat[13] * mat[6] * mat[11] - 
+             mat[13] * mat[7] * mat[10];
+
+    inv[4] = -mat[4] * mat[10] * mat[15] + 
+              mat[4] * mat[11] * mat[14] + 
+              mat[8] * mat[6] * mat[15] - 
+              mat[8] * mat[7] * mat[14] - 
+              mat[12] * mat[6] * mat[11] + 
+              mat[12] * mat[7] * mat[10];
+
+    inv[8] = mat[4] * mat[9] * mat[15] - 
+             mat[4] * mat[11] * mat[13] - 
+             mat[8] * mat[5] * mat[15] + 
+             mat[8] * mat[7] * mat[13] + 
+             mat[12] * mat[5] * mat[11] - 
+             mat[12] * mat[7] * mat[9];
+
+    inv[12] = -mat[4] * mat[9] * mat[14] + 
+               mat[4] * mat[10] * mat[13] +
+               mat[8] * mat[5] * mat[14] - 
+               mat[8] * mat[6] * mat[13] - 
+               mat[12] * mat[5] * mat[10] + 
+               mat[12] * mat[6] * mat[9];
+
+    inv[1] = -mat[1] * mat[10] * mat[15] + 
+              mat[1] * mat[11] * mat[14] + 
+              mat[9] * mat[2] * mat[15] - 
+              mat[9] * mat[3] * mat[14] - 
+              mat[13] * mat[2] * mat[11] + 
+              mat[13] * mat[3] * mat[10];
+
+    inv[5] = mat[0] * mat[10] * mat[15] - 
+             mat[0] * mat[11] * mat[14] - 
+             mat[8] * mat[2] * mat[15] + 
+             mat[8] * mat[3] * mat[14] + 
+             mat[12] * mat[2] * mat[11] - 
+             mat[12] * mat[3] * mat[10];
+
+    inv[9] = -mat[0] * mat[9] * mat[15] + 
+              mat[0] * mat[11] * mat[13] + 
+              mat[8] * mat[1] * mat[15] - 
+              mat[8] * mat[3] * mat[13] - 
+              mat[12] * mat[1] * mat[11] + 
+              mat[12] * mat[3] * mat[9];
+
+    inv[13] = mat[0] * mat[9] * mat[14] - 
+              mat[0] * mat[10] * mat[13] - 
+              mat[8] * mat[1] * mat[14] + 
+              mat[8] * mat[2] * mat[13] + 
+              mat[12] * mat[1] * mat[10] - 
+              mat[12] * mat[2] * mat[9];
+
+    inv[2] = mat[1] * mat[6] * mat[15] - 
+             mat[1] * mat[7] * mat[14] - 
+             mat[5] * mat[2] * mat[15] + 
+             mat[5] * mat[3] * mat[14] + 
+             mat[13] * mat[2] * mat[7] - 
+             mat[13] * mat[3] * mat[6];
+
+    inv[6] = -mat[0] * mat[6] * mat[15] + 
+              mat[0] * mat[7] * mat[14] + 
+              mat[4] * mat[2] * mat[15] - 
+              mat[4] * mat[3] * mat[14] - 
+              mat[12] * mat[2] * mat[7] + 
+              mat[12] * mat[3] * mat[6];
+
+    inv[10] = mat[0] * mat[5] * mat[15] - 
+              mat[0] * mat[7] * mat[13] - 
+              mat[4] * mat[1] * mat[15] + 
+              mat[4] * mat[3] * mat[13] + 
+              mat[12] * mat[1] * mat[7] - 
+              mat[12] * mat[3] * mat[5];
+
+    inv[14] = -mat[0] * mat[5] * mat[14] + 
+               mat[0] * mat[6] * mat[13] + 
+               mat[4] * mat[1] * mat[14] - 
+               mat[4] * mat[2] * mat[13] - 
+               mat[12] * mat[1] * mat[6] + 
+               mat[12] * mat[2] * mat[5];
+
+    inv[3] = -mat[1] * mat[6] * mat[11] + 
+              mat[1] * mat[7] * mat[10] + 
+              mat[5] * mat[2] * mat[11] - 
+              mat[5] * mat[3] * mat[10] - 
+              mat[9] * mat[2] * mat[7] + 
+              mat[9] * mat[3] * mat[6];
+
+    inv[7] = mat[0] * mat[6] * mat[11] - 
+             mat[0] * mat[7] * mat[10] - 
+             mat[4] * mat[2] * mat[11] + 
+             mat[4] * mat[3] * mat[10] + 
+             mat[8] * mat[2] * mat[7] - 
+             mat[8] * mat[3] * mat[6];
+
+    inv[11] = -mat[0] * mat[5] * mat[11] + 
+               mat[0] * mat[7] * mat[9] + 
+               mat[4] * mat[1] * mat[11] - 
+               mat[4] * mat[3] * mat[9] - 
+               mat[8] * mat[1] * mat[7] + 
+               mat[8] * mat[3] * mat[5];
+
+    inv[15] = mat[0] * mat[5] * mat[10] - 
+              mat[0] * mat[6] * mat[9] - 
+              mat[4] * mat[1] * mat[10] + 
+              mat[4] * mat[2] * mat[9] + 
+              mat[8] * mat[1] * mat[6] - 
+              mat[8] * mat[2] * mat[5];
+
+    f32 det = mat[0] * inv[0] + mat[1] * inv[4] + mat[2] * inv[8] + mat[3] * inv[12];
+
+    if (det == 0)
+        return MAT4_IDENTITY;
+
+    det = 1.0f / det;
+
+    for (int i = 0; i < 16; i++)
+        inv[i] = inv[i] * det;
+
+    return result;
+}
 

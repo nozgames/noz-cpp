@@ -10,46 +10,67 @@ struct MeshImpl : Mesh
     SDL_GPUBuffer* index_buffer;
     SDL_GPUTransferBuffer* vertex_transfer;
     SDL_GPUTransferBuffer* index_transfer;
-    mesh_vertex* vertices;
+    MeshVertex* vertices;
     uint16_t* indices;
-    Bounds3 bounds;
+    Bounds2 bounds;
 };
 
 static SDL_GPUDevice* g_device = nullptr;
 
 static void UploadMesh(MeshImpl* impl, const Name* name);
-static void mesh_destroy_impl(MeshImpl* impl);
+
+static void MeshDestructor(void* p)
+{
+    MeshImpl* impl = (MeshImpl*)p;
+
+    if (impl->index_transfer)
+        SDL_ReleaseGPUTransferBuffer(g_device, impl->index_transfer);
+
+    if (impl->index_buffer)
+        SDL_ReleaseGPUBuffer(g_device, impl->index_buffer);
+
+    if (impl->vertex_transfer)
+        SDL_ReleaseGPUTransferBuffer(g_device, impl->vertex_transfer);
+
+    if (impl->vertex_buffer)
+        SDL_ReleaseGPUBuffer(g_device, impl->vertex_buffer);
+
+    impl->index_buffer = nullptr;
+    impl->index_transfer = nullptr;
+    impl->vertex_buffer = nullptr;
+    impl->vertex_transfer = nullptr;
+}
 
 inline size_t GetMeshImplSize(size_t vertex_count, size_t index_count)
 {
     return
         sizeof(MeshImpl) +
-        sizeof(mesh_vertex) * vertex_count +
+        sizeof(MeshVertex) * vertex_count +
         sizeof(uint16_t) * index_count;
 }
 
 static MeshImpl* CreateMesh(Allocator* allocator, size_t vertex_count, size_t index_count, const Name* name)
 {
-    MeshImpl* mesh = (MeshImpl*)Alloc(allocator, GetMeshImplSize(vertex_count, index_count));
+    MeshImpl* mesh = (MeshImpl*)Alloc(allocator, GetMeshImplSize(vertex_count, index_count), MeshDestructor);
     if (!mesh)
         return nullptr;
 
     mesh->name = name;
     mesh->vertex_count = vertex_count;
     mesh->index_count = index_count;
-    mesh->vertices = (mesh_vertex*)((u8*)mesh + sizeof(MeshImpl));
-    mesh->indices = (uint16_t*)((u8*)mesh->vertices + sizeof(mesh_vertex) * vertex_count);
+    mesh->vertices = (MeshVertex*)((u8*)mesh + sizeof(MeshImpl));
+    mesh->indices = (uint16_t*)((u8*)mesh->vertices + sizeof(MeshVertex) * vertex_count);
     return mesh;
 }
 
 Mesh* CreateMesh(
     Allocator* allocator,
-    size_t vertex_count,
-    Vec3* positions,
-    Vec3* normals,
-    Vec2* uvs,
+    u16 vertex_count,
+    const Vec2* positions,
+    const Vec2* normals,
+    const Vec2* uvs,
     u8* bone_indices,
-    size_t index_count,
+    u16 index_count,
     u16* indices,
     const Name* name)
 {
@@ -92,40 +113,19 @@ Mesh* CreateMesh(
 
 Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
 {
-    // Read bounds
-    Bounds3 bounds = {};
-    ReadBytes(stream, &bounds, sizeof(Bounds3));
-
-    // counts
-    auto vertex_count = ReadU32(stream);
-    auto index_count = ReadU32(stream);
+    Bounds2 bounds = ReadStruct<Bounds2>(stream);
+    u16 vertex_count = ReadU16(stream);
+    u16 index_count = ReadU16(stream);
 
     MeshImpl* mesh = CreateMesh(allocator, vertex_count, index_count, name);
     if (!mesh)
         return nullptr;
 
-    ReadBytes(stream, mesh->vertices, sizeof(mesh_vertex) * mesh->vertex_count);
+    ReadBytes(stream, mesh->vertices, sizeof(MeshVertex) * mesh->vertex_count);
     ReadBytes(stream, mesh->indices, sizeof(uint16_t) * mesh->index_count);
     UploadMesh(mesh, name);
     return mesh;
 }
-
-#if 0
-static void mesh_destroy_impl(MeshImpl* impl)
-{
-    if (impl->index_transfer)
-        SDL_ReleaseGPUTransferBuffer(g_device, impl->index_transfer);
-
-    if (impl->index_buffer)
-        SDL_ReleaseGPUBuffer(g_device, impl->index_buffer);
-
-    if (impl->vertex_transfer)
-        SDL_ReleaseGPUTransferBuffer(g_device, impl->vertex_transfer);
-
-    if (impl->vertex_buffer)
-        SDL_ReleaseGPUBuffer(g_device, impl->vertex_buffer);
-}
-#endif
 
 void DrawMeshGPU(Mesh* mesh, SDL_GPURenderPass* pass)
 {
@@ -159,7 +159,7 @@ static void UploadMesh(MeshImpl* impl, const Name* name)
     // Create vertex buffer
     SDL_GPUBufferCreateInfo vertex_info = {0};
     vertex_info.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-    vertex_info.size = (uint32_t)(sizeof(mesh_vertex) * vertex_count);
+    vertex_info.size = (uint32_t)(sizeof(MeshVertex) * vertex_count);
     vertex_info.props = SDL_CreateProperties();
     SDL_SetStringProperty(vertex_info.props, SDL_PROP_GPU_BUFFER_CREATE_NAME_STRING, name ? name->value : "mesh");
     impl->vertex_buffer = SDL_CreateGPUBuffer(g_device, &vertex_info);
@@ -223,7 +223,7 @@ size_t GetIndexCount(Mesh* mesh)
     return static_cast<MeshImpl*>(mesh)->index_count;
 }
 
-Bounds3 GetBounds(Mesh* mesh)
+Bounds2 GetBounds(Mesh* mesh)
 {
     return static_cast<MeshImpl*>(mesh)->bounds;
 }

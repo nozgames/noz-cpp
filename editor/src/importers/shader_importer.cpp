@@ -37,7 +37,7 @@ static void WriteCompiledShader(
     size_t vertex_spirv_size = 0;
     void* vertex_spirv = SDL_ShaderCross_CompileSPIRVFromHLSL(&vertex_info, &vertex_spirv_size);
     if (!vertex_spirv)
-        throw std::runtime_error(std::string("Failed to compile vertex shader: ") + SDL_GetError());
+        throw std::runtime_error(SDL_GetError());
 
     // Setup HLSL info for fragment shader
     SDL_ShaderCross_HLSL_Info fragment_info = {};

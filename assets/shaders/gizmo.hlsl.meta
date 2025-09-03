@@ -1,7 +1,0 @@
-[Pipeline]
-depth_test=true
-depth_write=true
-blend_enabled=false
-src_blend_factor=one
-dst_blend_factor=zero
-cull_mode=none

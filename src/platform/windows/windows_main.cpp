@@ -2,8 +2,6 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-#ifdef _WIN32
-
 #include <noz/noz.h>
 #include <noz/platform.h>
 #include <windows.h>
@@ -30,5 +28,3 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     char* args[1] = { (char*)".exe" };
     return main(1, args);
 }
-
-#endif

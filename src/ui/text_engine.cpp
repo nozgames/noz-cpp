@@ -57,10 +57,10 @@ static void AddGlyph(
     auto glyph_height = glyph->size.y * scale;
 
     // Add vertices for this glyph quad
-    AddVertex(builder, {glyph_x, glyph_y, 0.0f}, {0.0f, 0.0f, 1.0f}, {glyph->uv_min.x, glyph->uv_min.y});
-    AddVertex(builder, {glyph_x + glyph_width, glyph_y, 0.0f}, {0.0f, 0.0f, 1.0f}, {glyph->uv_max.x, glyph->uv_min.y});
-    AddVertex(builder, {glyph_x + glyph_width, glyph_y + glyph_height, 0.0f}, {0.0f, 0.0f, 1.0f}, {glyph->uv_max.x, glyph->uv_max.y});
-    AddVertex(builder, {glyph_x, glyph_y + glyph_height, 0.0f}, {0.0f, 0.0f, 1.0f}, {glyph->uv_min.x, glyph->uv_max.y});
+    AddVertex(builder, {glyph_x, glyph_y}, {0.0f, 1.0f}, {glyph->uv_min.x, glyph->uv_min.y});
+    AddVertex(builder, {glyph_x + glyph_width, glyph_y}, {0.0f, 1.0f}, {glyph->uv_max.x, glyph->uv_min.y});
+    AddVertex(builder, {glyph_x + glyph_width, glyph_y + glyph_height}, {0.0f, 1.0f}, {glyph->uv_max.x, glyph->uv_max.y});
+    AddVertex(builder, {glyph_x, glyph_y + glyph_height}, {0.0f, 1.0f}, {glyph->uv_min.x, glyph->uv_max.y});
 
     // Add indices for this glyph quad
     AddTriangle(builder, vertex_offset, vertex_offset + 1, vertex_offset + 2);

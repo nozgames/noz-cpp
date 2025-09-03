@@ -174,10 +174,10 @@ SDL_GPUGraphicsPipeline* GetGPUPipeline(Shader* shader, bool msaa, bool shadow)
 
     // Create new pipeline
     SDL_GPUVertexAttribute attributes[] = {
-        {0, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3, 0},                 // position : POSITION (semantic 0)
-        {1, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2, sizeof(float) * 3}, // uv0 : TEXCOORD1 (semantic 2)
-        {2, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3, sizeof(float) * 5}, // normal : TEXCOORD2 (semantic 1)
-        {3, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT, sizeof(float) * 8}   // bone_index : TEXCOORD3 (semantic 3)
+        {0, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2, 0},                 // position : POSITION (semantic 0)
+        {1, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2, sizeof(float) * 2}, // uv0 : TEXCOORD1 (semantic 2)
+        {2, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2, sizeof(float) * 4}, // normal : TEXCOORD2 (semantic 1)
+        {3, 0, SDL_GPU_VERTEXELEMENTFORMAT_FLOAT, sizeof(float) * 6}   // bone_index : TEXCOORD3 (semantic 3)
     };
 
     SDL_GPUGraphicsPipeline* gpu_pipeline = CreateGPUPipeline(shader, attributes, 4, msaa, shadow);

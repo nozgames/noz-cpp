@@ -12,12 +12,8 @@ struct VertexOutput
 
 VertexOutput vs(VertexInput input)
 {
-    float4x4 bone = bones[input.bone_index % 32];
-    float4 skinned_position = mul(bone, float4(input.position, 1.0));
-    float4 world_position = mul(m, skinned_position);
-    
     VertexOutput output;
-    output.position = mul(vp, world_position);;
+    output.position = transform_to_screen(input.position);
     output.uv0 = float2(input.uv0.x, input.uv0.y);
     return output;
 }
@@ -41,3 +37,4 @@ float4 ps(PixelInput input) : SV_TARGET
 }
 
 //@ END
+

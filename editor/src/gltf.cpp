@@ -9,11 +9,38 @@
 #define CGLTF_IMPLEMENTATION
 #include <cgltf.h>
 
-// Conversion helpers
-static Vec3 convert_vector3(float* vector3);
-static Vec2 convert_vector2(float* vector2);  
-static Vec2 convert_uv(float* vector2);
-static quat convert_quaternion(float* quaternion);
+static Vec2 Vector2ToVec2(float* vector2)
+{
+    if (!vector2)
+        return Vec2(0.0f);
+
+    return Vec2(vector2[0], vector2[1]);
+}
+
+static Vec3 Vector3ToVec3(float* vector3)
+{
+    if (!vector3)
+        return VEC3_ZERO;
+
+    return { vector3[0], vector3[2], vector3[1] };
+}
+
+static float QuaternionToYRotation(float* quaternion)
+{
+    if (!quaternion)
+        return 0.0f;
+
+    // quaternion format: [x, y, z, w]
+    float x = quaternion[0];
+    float y = quaternion[1];
+    float z = quaternion[2];
+    float w = quaternion[3];
+
+    // Extract yaw (Y-axis rotation) from quaternion
+    return atan2f(
+        2.0f * (w * y + x * z),
+        1.0f - 2.0f * (y * y + z * z));
+}
 
 // @file
 bool GLTFLoader::open(const std::filesystem::path& file_path)
@@ -59,10 +86,10 @@ std::vector<GLTFBone> GLTFLoader::read_bones(const GLTFBoneFilter& filter)
         return bones;
     
     // Find the root node (usually named "root")
-    struct cgltf_node* root_node = nullptr;
+    cgltf_node* root_node = nullptr;
     for (size_t i = 0; i < data->nodes_count; ++i)
     {
-        struct cgltf_node* node = &data->nodes[i];
+        cgltf_node* node = &data->nodes[i];
         if (node->name && std::string(node->name) == "root")
         {
             root_node = node;
@@ -130,16 +157,21 @@ void GLTFLoader::process_bone_recursive(struct cgltf_node* node, std::vector<GLT
     if (node->has_matrix)
     {
         // TODO: Extract position, rotation, scale from matrix
-        bone.position = Vec3(node->matrix[12], node->matrix[13], node->matrix[14]);
-        bone.rotation = quat(1.0f, 0.0f, 0.0f, 0.0f);
-        bone.scale = Vec3(1.0f, 1.0f, 1.0f);
+        bone.position = { node->matrix[12], node->matrix[13] };
+        bone.rotation = 0.0f;
+        bone.scale = { 1.0f, 1.0f };
     }
     else
     {
-        // Extract from individual components
-        bone.position = node->has_translation ? convert_vector3(node->translation) : Vec3(0.0f);
-        bone.rotation = node->has_rotation ? convert_quaternion(node->rotation) : quat(1.0f, 0.0f, 0.0f, 0.0f);
-        bone.scale = node->has_scale ? convert_vector3(node->scale) : Vec3(1.0f);
+        bone.position = node->has_translation
+            ? Vector3ToVec3(node->translation)
+            : VEC3_ZERO;
+        bone.rotation = node->has_rotation
+            ? QuaternionToYRotation(node->rotation)
+            : 0.0f;
+        bone.scale = node->has_scale
+            ? Vector3ToVec3(node->scale)
+            : VEC3_ONE;
     }
     
     bones.push_back(bone);
@@ -181,7 +213,7 @@ GLTFMesh GLTFLoader::read_mesh(const std::vector<GLTFBone>& bones)
                     float* positions_float = (float*)buffer_data;
                     for (size_t pos_idx = 0; pos_idx < accessor->count; ++pos_idx)
                     {
-                        mesh.positions[pos_idx] = convert_vector3(&positions_float[pos_idx * 3]);
+                        mesh.positions[pos_idx] = Vector3ToVec3(&positions_float[pos_idx * 3]);
                     }
                 }
             }
@@ -197,7 +229,7 @@ GLTFMesh GLTFLoader::read_mesh(const std::vector<GLTFBone>& bones)
                     float* normals_float = (float*)buffer_data;
                     for (size_t norm_idx = 0; norm_idx < accessor->count; ++norm_idx)
                     {
-                        mesh.normals[norm_idx] = convert_vector3(&normals_float[norm_idx * 3]);
+                        mesh.normals[norm_idx] = Vector3ToVec3(&normals_float[norm_idx * 3]);
                     }
                 }
             }
@@ -213,7 +245,7 @@ GLTFMesh GLTFLoader::read_mesh(const std::vector<GLTFBone>& bones)
                     float* uvs_float = (float*)buffer_data;
                     for (size_t uv_idx = 0; uv_idx < accessor->count; ++uv_idx)
                     {
-                        mesh.uvs[uv_idx] = convert_uv(&uvs_float[uv_idx * 2]);
+                        mesh.uvs[uv_idx] = Vector2ToVec2(&uvs_float[uv_idx * 2]);
                     }
                 }
             }
@@ -280,7 +312,7 @@ GLTFAnimation GLTFLoader::read_animation(const std::vector<GLTFBone>& bones, con
     // Find maximum frame count across all channels
     for (size_t i = 0; i < cgltf_anim->channels_count; ++i)
     {
-        struct cgltf_animation_channel* channel = &cgltf_anim->channels[i];
+        cgltf_animation_channel* channel = &cgltf_anim->channels[i];
         if (channel->sampler && channel->sampler->input)
         {
             int frames = static_cast<int>(channel->sampler->input->count);
@@ -298,7 +330,7 @@ GLTFAnimation GLTFLoader::read_animation(const std::vector<GLTFBone>& bones, con
     // Process each animation channel
     for (size_t i = 0; i < cgltf_anim->channels_count; ++i)
     {
-        struct cgltf_animation_channel* channel = &cgltf_anim->channels[i];
+        cgltf_animation_channel* channel = &cgltf_anim->channels[i];
         if (!channel->sampler || !channel->target_node || !channel->target_node->name)
             continue;
             
@@ -316,15 +348,15 @@ GLTFAnimation GLTFLoader::read_animation(const std::vector<GLTFBone>& bones, con
         if (bone_index == -1)
             continue;
             
-        struct cgltf_animation_sampler* sampler = channel->sampler;
+        cgltf_animation_sampler* sampler = channel->sampler;
         if (!sampler->input || !sampler->output)
             continue;
             
-        // Get the output data
-        uint8_t* output_buffer = (uint8_t*)sampler->output->buffer_view->buffer->data + 
-                                sampler->output->buffer_view->offset + sampler->output->offset;
+        uint8_t* output_buffer =
+            (uint8_t*)sampler->output->buffer_view->buffer->data +
+            sampler->output->buffer_view->offset +
+            sampler->output->offset;
         
-        // Process based on target path
         for (size_t frame = 0; frame < sampler->input->count && frame < static_cast<size_t>(animation.frame_count); ++frame)
         {
             size_t frame_offset = frame * animation.frame_stride + bone_index * 10;
@@ -332,27 +364,22 @@ GLTFAnimation GLTFLoader::read_animation(const std::vector<GLTFBone>& bones, con
             if (channel->target_path == cgltf_animation_path_type_translation)
             {
                 float* translation = (float*)(output_buffer + frame * 3 * sizeof(float));
-                Vec3 pos = convert_vector3(translation);
+                Vec3 pos = Vector3ToVec3(translation);
                 animation.data[frame_offset + 0] = pos.x;
                 animation.data[frame_offset + 1] = pos.y;
-                animation.data[frame_offset + 2] = pos.z;
             }
             else if (channel->target_path == cgltf_animation_path_type_rotation)
             {
-                float* rotation = (float*)(output_buffer + frame * 4 * sizeof(float));
-                quat rot = convert_quaternion(rotation);
-                animation.data[frame_offset + 3] = rot.x;
-                animation.data[frame_offset + 4] = rot.y;
-                animation.data[frame_offset + 5] = rot.z;
-                animation.data[frame_offset + 6] = rot.w;
+                f32* rotation = (float*)(output_buffer + frame * 4 * sizeof(float));
+                f32 rot = QuaternionToYRotation(rotation);
+                animation.data[frame_offset + 2] = rot;
             }
             else if (channel->target_path == cgltf_animation_path_type_scale)
             {
                 float* scale = (float*)(output_buffer + frame * 3 * sizeof(float));
-                Vec3 scl = convert_vector3(scale);
-                animation.data[frame_offset + 7] = scl.x;
-                animation.data[frame_offset + 8] = scl.y;
-                animation.data[frame_offset + 9] = scl.z;
+                Vec3 scl = Vector3ToVec3(scale);
+                animation.data[frame_offset + 3] = scl.x;
+                animation.data[frame_offset + 4] = scl.y;
             }
         }
     }
@@ -367,36 +394,3 @@ GLTFBoneFilter GLTFLoader::load_bone_filter_from_meta(const std::filesystem::pat
     return filter;
 }
 
-
-// Helper functions for vector conversion
-static Vec3 convert_vector3(float* vector3)
-{
-    if (!vector3)
-        return Vec3(0.0f);
-
-    return Vec3(vector3[0], vector3[2], vector3[1]);
-}
-
-static Vec2 convert_vector2(float* vector2)
-{
-    if (!vector2)
-        return Vec2(0.0f);
-
-    return Vec2(vector2[0], vector2[1]);
-}
-
-static Vec2 convert_uv(float* vector2)
-{
-    if (!vector2)
-        return Vec2(0.0f);
-
-    return Vec2(vector2[0], vector2[1]);
-}
-
-static quat convert_quaternion(float* quaternion)
-{
-    if (!quaternion)
-        return quat(1.0f, 0.0f, 0.0f, 0.0f);
-
-    return quat(quaternion[3], quaternion[0], quaternion[1], quaternion[2]);
-}

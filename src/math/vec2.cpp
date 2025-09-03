@@ -2,6 +2,11 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+f32 Length(const Vec2& v)
+{
+    return sqrtf(v.x * v.x + v.y * v.y);
+}
+
 Vec2 Reflect(const Vec2& v, const Vec2& normal)
 {
     f32 dot = v.x * normal.x + v.y * normal.y;

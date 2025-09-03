@@ -4,27 +4,30 @@
 #pragma once
 
 #include <SDL3/SDL.h>
-#include <noz/noz.h>
-#include <noz/color.h>
 
-#include "editor/editor_client.h"
+struct RenderCamera
+{
+    Vec2 position;
+    Vec2 size;
+    Vec2 rotation;
+    Vec2 padding;
+};
 
 // @mesh
-typedef struct mesh_vertex
+struct MeshVertex
 {
-    Vec3 position;
+    Vec2 position;
     Vec2 uv0;
-    Vec3 normal;
+    Vec2 normal;
     float bone;
-} mesh_vertex;
+};
 
-
-typedef struct bone_transform
+struct BoneTransform
 {
     Vec3 position;
     Vec3 scale;
     quat rotation;
-} bone_transform_t;
+};
 
 typedef struct bone
 {
@@ -33,7 +36,7 @@ typedef struct bone
     int parentIndex;
     Mat4 world_to_local;
     Mat4 local_to_world;
-    bone_transform_t transform;
+    BoneTransform transform;
     float length;
     Vec3 direction;
 } bone_t;
@@ -196,7 +199,7 @@ void animation_evaluate_frame(
     float time,
     bone_t* bones,
     size_t bone_count,
-    bone_transform_t* transforms,
+    BoneTransform* transforms,
     size_t transform_count);
 
 // @helpers

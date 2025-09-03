@@ -32,6 +32,7 @@ struct Element
 
 struct UI
 {
+    Camera* camera;
     Mesh* element_quad;
     Material* element_material;
     Font* default_font;
@@ -69,10 +70,10 @@ void RenderElementQuad(const Color& color, Texture* texture)
 static Mesh* CreateElementQuad(Allocator* allocator)
 {
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddVertex(builder, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, 0);
-    AddVertex(builder, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}, 0);
-    AddVertex(builder, {1.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}, 0);
-    AddVertex(builder, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, 0);
+    AddVertex(builder, {0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, 0);
+    AddVertex(builder, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}, 0);
+    AddVertex(builder, {1.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, 0);
+    AddVertex(builder, {0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 1.0f}, 0);
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
     auto mesh = CreateMesh(allocator, builder, GetName("element"));
@@ -180,16 +181,16 @@ void EndCanvas()
 
 void RenderCanvas(const Element& e)
 {
-    Mat4 camera_projection = Ortho(0, e.style.width.value, e.style.height.value, 0, -1.0f, 1.0f);
-    BindCamera(MAT4_IDENTITY, camera_projection);
+    SetSize(g_ui.camera, {e.style.width.value, e.style.height.value});
+    SetPosition(g_ui.camera, {e.style.width.value * 0.5f, e.style.height.value * 0.5f});
+    BindCamera(g_ui.camera);
 }
 
 void RenderElement(const Element& e)
 {
     if (e.style.background_color.value.a > 0)
     {
-        Mat4 t = TRS({e.bounds.x, e.bounds.y}, 0.0f, {e.bounds.width, e.bounds.height});
-        BindTransform(t);
+        BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {e.bounds.width, e.bounds.height});
         RenderElementQuad(e.style.background_color.value, nullptr);
     }
 
@@ -201,8 +202,7 @@ void RenderElement(const Element& e)
 
         case ELEMENT_TYPE_LABEL:
         {
-            Mat4 t = TRS({e.bounds.x, e.bounds.y}, 0.0f, {1,1});
-            BindTransform(t);
+            BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {1,1});
             BindColor(e.style.color.value);
             BindMaterial(e.material);
             DrawMesh(GetMesh((TextMesh*)e.resource));
@@ -639,6 +639,7 @@ void Label(const char* text, const Name* id)
 
 void InitUI()
 {
+    g_ui.camera = CreateCamera(ALLOCATOR_DEFAULT);
     g_ui.element_quad = CreateElementQuad(ALLOCATOR_DEFAULT);
     g_ui.default_font = g_core_assets.fonts.fallback;
     g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, g_core_assets.shaders.ui);

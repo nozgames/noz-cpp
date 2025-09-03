@@ -4,6 +4,8 @@
 
 SDL_GPURenderPass* BeginUIPassGPU();
 
+extern RenderCamera GetRenderCamera(Camera* camera);
+
 // todo: we can build a single bone buffer to upload and just add bone_offset to the model buffer for each mesh
 
 enum RenderCommandType
@@ -31,15 +33,14 @@ struct BindMaterialData
 
 struct BindTransformData
 {
-    Mat4 transform;
+    Vec2 position;
+    Vec2 scale;
+    float rotation;
 };
 
 struct BindCameraData
 {
-    Mat4 view;
-    Mat4 projection;
-    Mat4 view_projection;
-    Mat4 light_view_projection;
+    RenderCamera camera;
 };
 
 struct BindBonesData
@@ -114,7 +115,7 @@ struct RenderBuffer
 {
     RenderCommand* commands;
     size_t command_count;
-    Mat4* transforms;
+    Mat3* transforms;
     size_t transform_count;
     size_t command_count_max;
     size_t transform_count_max;
@@ -140,9 +141,7 @@ void ClearRenderCommands()
     g_render_buffer->transform_count = 0;
     g_render_buffer->is_shadow_pass = false;
     g_render_buffer->is_full = false;
-    
-    // add identity transform by default for all meshes with no bones
-    g_render_buffer->transforms[0] = MAT4_IDENTITY;
+    g_render_buffer->transforms[0] = MAT3_IDENTITY;
     g_render_buffer->transform_count = 1;
 }
 
@@ -165,7 +164,7 @@ void BeginUIPass()
     AddRenderCommand(&cmd);
 }
 
-void BeginShadowPass(Mat4 light_view, Mat4 light_projection)
+void BeginShadowPass(Mat3 light_view, Mat4 light_projection)
 {
     RenderCommand cmd = {.type = command_type_begin_shadow_pass};
     AddRenderCommand(&cmd);
@@ -187,17 +186,15 @@ void BindDefaultTexture(int texture_index)
     AddRenderCommand(&cmd);
 }
 
-void BindCamera(const Mat4& view, const Mat4& projection)
+void BindCamera(Camera* camera)
 {
-    Mat4 view_projection = projection * view;
     RenderCommand cmd = {
         .type = command_type_bind_camera,
         .data = {
             .bind_camera = {
-                .view=view,
-                .projection=projection,
-                .view_projection=view_projection,
-                .light_view_projection=view_projection}}};
+                .camera = GetRenderCamera(camera)}
+        }
+    };
     AddRenderCommand(&cmd);
 }
 
@@ -214,27 +211,19 @@ void BindMaterial(Material* material)
     AddRenderCommand(&cmd);
 }
 
-void BindTransform(const Mat3& transform)
+void BindTransform(const Vec2& position, float rotation, const Vec2& scale)
 {
     RenderCommand cmd = {
         .type = command_type_bind_transform,
         .data = {
             .bind_transform = {
-                .transform = (Mat4)transform}} };
+                .position = position,
+                .scale = scale,
+                .rotation = rotation }}};
     AddRenderCommand(&cmd);
 }
 
-void BindTransform(const Mat4& transform)
-{
-    RenderCommand cmd = {
-        .type = command_type_bind_transform,
-        .data = {
-            .bind_transform = {
-                .transform = transform}} };
-    AddRenderCommand(&cmd);
-}
-
-void BindBoneTransforms(const Mat4* bones, size_t bone_count)
+void BindBoneTransforms(const Mat3* bones, size_t bone_count)
 {
     if (bone_count == 0)
         return;
@@ -255,7 +244,7 @@ void BindBoneTransforms(const Mat4* bones, size_t bone_count)
     memcpy(
         g_render_buffer->transforms + g_render_buffer->transform_count,
         bones,
-        bone_count * sizeof(Mat4));
+        bone_count * sizeof(Mat3));
     g_render_buffer->transform_count += bone_count;
 
     AddRenderCommand(&cmd);
@@ -303,15 +292,7 @@ void ExecuteRenderCommands(SDL_GPUCommandBuffer* cb)
 
         case command_type_bind_camera:
         {
-            SDL_PushGPUVertexUniformData(cb, vertex_register_camera, &command->data, sizeof(BindCameraData));
-
-            // Store for legacy compatibility (still needed by bindTransform for ObjectBuffer)
-            //_view = data.view;
-            //_view_projection = data.view_projection;
-
-            // if (_shadowPassActive)
-            //     _lightViewProjectionMatrix = _view_projection;
-
+            SDL_PushGPUVertexUniformData(cb, vertex_register_camera, &command->data.bind_camera.camera, sizeof(RenderCamera));
             break;
         }
 
@@ -419,7 +400,7 @@ void ExecuteRenderCommands(SDL_GPUCommandBuffer* cb)
 void InitRenderBuffer(RendererTraits* traits)
 {
     size_t commands_size = traits->max_frame_commands * sizeof(RenderCommand);
-    size_t transforms_size = traits->max_frame_transforms * sizeof(Mat4);
+    size_t transforms_size = traits->max_frame_transforms * sizeof(Mat3);
     size_t buffer_size = sizeof(RenderBuffer) + commands_size + transforms_size;
     
     g_render_buffer = (RenderBuffer*)malloc(buffer_size);
@@ -431,7 +412,7 @@ void InitRenderBuffer(RendererTraits* traits)
 
     memset(g_render_buffer, 0, buffer_size);
     g_render_buffer->commands = (RenderCommand*)((char*)g_render_buffer + sizeof(RenderBuffer));
-    g_render_buffer->transforms = (Mat4*)((char*)g_render_buffer->commands + commands_size);
+    g_render_buffer->transforms = (Mat3*)((char*)g_render_buffer->commands + commands_size);
     g_render_buffer->command_count_max = traits->max_frame_commands;
     g_render_buffer->transform_count_max = traits->max_frame_transforms;
 }

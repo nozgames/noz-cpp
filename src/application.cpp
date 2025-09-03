@@ -3,6 +3,7 @@
 //
 
 #include <cstdio>
+#include "editor/editor_client.h"
 
 static constexpr int FRAME_HISTORY_SIZE = 60;
 
@@ -247,6 +248,11 @@ bool UpdateApplication()
 Vec2Int GetScreenSize()
 {
     return g_app.screen_size;
+}
+
+Vec2 GetScreenCenter()
+{
+    return {(f32)g_app.screen_size.x * 0.5f, (f32)g_app.screen_size.y * 0.5f};
 }
 
 float GetScreenAspectRatio()

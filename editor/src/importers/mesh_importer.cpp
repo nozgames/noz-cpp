@@ -72,23 +72,28 @@ static void WriteMeshData(
     header.flags = 0;
     WriteAssetHeader(stream, &header);
 
+    std::vector<Vec2> positions;
+    positions.reserve(mesh->positions.size());
+    for (const Vec3& pos : mesh->positions)
+        positions.push_back({pos.x, pos.y});
+
     // header
-    Bounds3 bounds = ToBounds(mesh->positions.data(), mesh->positions.size());
-    WriteBytes(stream, &bounds, sizeof(Bounds3));
-    WriteU32(stream, static_cast<uint32_t>(mesh->positions.size()));
-    WriteU32(stream, static_cast<uint32_t>(mesh->indices.size()));
+    Bounds2 bounds = ToBounds(positions.data(), positions.size());
+    WriteStruct(stream, bounds);
+    WriteU16(stream, static_cast<u16>(mesh->positions.size()));
+    WriteU16(stream, static_cast<u16>(mesh->indices.size()));
 
     // verts
     for (size_t i = 0; i < mesh->positions.size(); ++i)
     {
-        mesh_vertex vertex = {};
-        vertex.position = mesh->positions[i];
+        MeshVertex vertex = {};
+        vertex.position = positions[i];
         vertex.uv0 = {0, 0};
         vertex.bone = 0;
-        vertex.normal = {0, 1, 0};
+        vertex.normal = {0, 1};
         
         if (mesh->normals.size() == mesh->positions.size() && i < mesh->normals.size())
-            vertex.normal = mesh->normals[i];
+            vertex.normal = { mesh->normals[i].x, mesh->normals[i].y };
             
         if (mesh->uvs.size() == mesh->positions.size() && i < mesh->uvs.size())
             vertex.uv0 = mesh->uvs[i];
@@ -96,7 +101,7 @@ static void WriteMeshData(
         if (mesh->bone_indices.size() == mesh->positions.size() && i < mesh->bone_indices.size())
             vertex.bone = static_cast<float>(mesh->bone_indices[i]);
             
-        WriteBytes(stream, &vertex, sizeof(mesh_vertex));
+        WriteBytes(stream, &vertex, sizeof(MeshVertex));
     }
     
     // indices

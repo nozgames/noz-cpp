@@ -2,125 +2,143 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-#if 0
-
-void DrawMeshRenderers(Camera* camera);
-
-struct CameraImpl : Entity
+struct CameraImpl : Camera
 {
-    ivec2 view_size;
-    mat4 projection;
-    mat4 view_projection;
-    u64 render_layer_mask;
-    bool orthographic;
+    Vec2 position;
+    Vec2 view_size;
+    Vec2Int last_screen_size;
+    float rotation;
+    bool dirty;
+    RenderCamera render;
 };
 
-static CameraImpl* Impl(Camera* c) { return (CameraImpl*)Cast(c, TYPE_CAMERA); }
-
-Camera* CreateCamera(Allocator* allocator)
+static bool IsDirty(CameraImpl* impl)
 {
-    CameraImpl* camera = Impl((Camera*)CreateEntity(allocator, sizeof(CameraImpl), TYPE_CAMERA));
-    camera->view_size = { 800, 600 };
-    camera->render_layer_mask = 0xFFFFFFFFFFFFFFFF;
-    return (Camera*)camera;
+    if (impl->dirty)
+        return true;
+
+    Vec2Int current_screen_size = GetScreenSize();
+    return current_screen_size.x != impl->last_screen_size.x ||
+           current_screen_size.y != impl->last_screen_size.y;
 }
 
-const mat4& GetProjection(Camera* camera)
+static CameraImpl* UpdateIfDirty(Camera* camera)
 {
-    return Impl(camera)->projection;
+    CameraImpl* impl = static_cast<CameraImpl*>(camera);
+    if (IsDirty(impl))
+        UpdateCamera(camera);
+
+    return impl;
 }
 
-const mat4& GetViewProjection(Camera* camera)
+void UpdateCamera(Camera* camera)
 {
-    auto impl = Impl(camera);
-    impl->view_projection = GetProjection(camera) * inverse(GetLocalToWorld(camera));
-    return Impl(camera)->view_projection;
-}
+    CameraImpl* impl = static_cast<CameraImpl*>(camera);
+    
+    if (!IsDirty(impl))
+        return;
 
-void SetOrthographic(Camera* camera, float left, float right, float top, float bottom, float near, float far)
-{
-    auto impl = Impl(camera);
-    impl->projection = glm::ortho(left, right, top, bottom, near, far);
-    impl->orthographic = true;
-}
-
-void SetOrthographic(Camera* camera, float view_height, float near, float far)
-{
-    float half_height = view_height * 0.5f;
-    float half_width = half_height * GetScreenAspectRatio();
-    SetOrthographic(camera, -half_width, half_width, -half_height, half_height, near, far);
-}
-
-bool IsOrthographic(Camera* camera)
-{
-    return Impl(camera)->orthographic;
-}
-
-vec3 ScreenToWorld(Camera* camera, const vec2& screen_pos)
-{
-    auto impl = Impl(camera);
-    if (!impl->orthographic)
-    {
-        // TODO: Implement perspective projection screenToWorld
-        return vec3(0.0f);
+    // Calculate projection matrix based on which dimensions are specified
+    float screen_aspect = GetScreenAspectRatio();
+    float final_width;
+    float final_height;
+    
+    if (impl->view_size.x > 0.0f && impl->view_size.y > 0.0f) {
+        // SetSize mode - both width and height specified, fit both on screen
+        float view_aspect = impl->view_size.x / impl->view_size.y;
+        
+        if (view_aspect > screen_aspect) {
+            // View is wider than screen - fit width, adjust height
+            final_width = impl->view_size.x;
+            final_height = final_width / screen_aspect;
+        } else {
+            // View is taller than screen - fit height, adjust width
+            final_height = impl->view_size.y;
+            final_width = final_height * screen_aspect;
+        }
+    } else if (impl->view_size.y > 0.0f) {
+        // SetHeight mode - height specified, auto-calculate width
+        final_height = impl->view_size.y;
+        final_width = final_height * screen_aspect;
+    } else if (impl->view_size.x > 0.0f) {
+        // SetWidth mode - width specified, auto-calculate height  
+        final_width = impl->view_size.x;
+        final_height = final_width / screen_aspect;
+    } else {
+        // Default fallback - use reasonable defaults
+        final_height = 20.0f;
+        final_width = final_height * screen_aspect;
     }
-
-    // Get screen dimensions from Application
-    auto screen_size = GetScreenSize();
-
-    // Convert screen coordinates to NDC (-1 to 1)
-    float ndc_x = (2.0f * screen_pos.x / screen_size.x) - 1.0f;
-    float ndc_y = 1.0f - (2.0f * screen_pos.y / screen_size.y); // Flip Y for screen coordinates
-
-    // Create NDC point at world Y=0 plane (z doesn't matter for orthographic)
-    auto ndc_point = vec4(ndc_x, ndc_y, 0.0f, 1.0f);
-
-    // Get inverse view-projection matrix
-    auto inv_vp = inverse(GetViewProjection(camera));
-
-    // Transform NDC to world space
-    auto world_point = inv_vp * ndc_point;
-    world_point /= world_point.w; // Perspective divide
-
-    // For orthographic top-down view, we want the result at Y=0
-    return vec3(world_point.x, 0.0f, world_point.z);
+    
+    impl->render.position = impl->position;
+    impl->render.rotation = { Sin(impl->rotation), Cos(impl->rotation) };
+    impl->render.size = { final_width * 0.5f, final_height * 0.5f };
+    impl->last_screen_size = GetScreenSize();
+    impl->dirty = false;
 }
 
-vec2 WorldToScreen(Camera* camera, const vec3& world_pos)
+void SetPosition(Camera* camera, const Vec2& position)
 {
-    auto impl = Impl(camera);
-    if (!impl->orthographic)
-    {
-        // TODO: Implement perspective projection worldToScreen
-        return vec2(0.0f);
-    }
+    CameraImpl* impl = static_cast<CameraImpl*>(camera);
+    impl->position = position;
+    impl->dirty = true;
+}
 
-    // Transform world position to clip space
-    vec4 clipPos = GetViewProjection(camera) * vec4(world_pos, 1.0f);
-    clipPos /= clipPos.w; // Perspective divide
+void SetRotation(Camera* camera, float rotation)
+{
+    CameraImpl* impl = static_cast<CameraImpl*>(camera);
+    impl->rotation = rotation;
+    impl->dirty = true;
+}
 
-    // Convert NDC to screen coordinates
-    auto screen_size = GetScreenSize();
-    return {
-        (clipPos.x + 1.0f) * 0.5f * screen_size.x,
-        (1.0f - clipPos.y) * 0.5f * screen_size.y
+void SetSize(Camera* camera, const Vec2& size)
+{
+    CameraImpl* impl = static_cast<CameraImpl*>(camera);
+    impl->view_size = size;
+    impl->dirty = true;
+}
+
+Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos)
+{
+    UpdateIfDirty(camera);
+
+    CameraImpl* impl = static_cast<CameraImpl*>(camera);
+    Vec2 screen_center = GetScreenCenter();
+    Vec2 view { screen_pos.x - screen_center.x, screen_center.y - screen_pos.y };
+    Vec2 cs = impl->render.rotation;
+    return impl->render.position + Vec2{
+        view.x * cs.x + view.y * cs.y,
+        -view.x * cs.y + view.y * cs.x
     };
 }
 
-void SetRenderLayerMask(Camera* camera, u64 mask)
+Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos)
 {
-    Impl(camera)->render_layer_mask = mask;
+    UpdateIfDirty(camera);
+
+    CameraImpl* impl = static_cast<CameraImpl*>(camera);
+    Vec2 screen_center = GetScreenCenter();
+    Vec2 translated = world_pos - impl->render.position;
+    Vec2 cs = impl->render.rotation;
+    Vec2 view {
+        Dot(translated, Vec2(cs.x, -cs.y)),  // cos, -sin
+        Dot(translated, cs)                   // cos, sin
+    };
+    return {view.x + screen_center.x, screen_center.y - view.y};
 }
 
-u64 GetRenderLayerMask(Camera* camera)
+RenderCamera GetRenderCamera(Camera* camera)
 {
-    return Impl(camera)->render_layer_mask;
+    return UpdateIfDirty(camera)->render;
 }
 
-void Render(Camera* camera)
+Camera* CreateCamera(Allocator* allocator)
 {
-    BindCamera(camera);
-    DrawMeshRenderers(camera);
+    CameraImpl* impl = (CameraImpl*)Alloc(allocator, sizeof(CameraImpl));
+    impl->view_size = { 800, 600 };
+    impl->position = VEC2_ZERO;
+    impl->rotation = 0.0f;
+    impl->dirty = true;
+    impl->last_screen_size = {0, 0};
+    return impl;
 }
-
-#endif

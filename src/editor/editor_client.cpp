@@ -5,6 +5,7 @@
 #ifdef NOZ_EDITOR
 
 #include "editor_messages.h"
+#include "editor_client.h"
 #include "noz/editor.h"
 #include <enet/enet.h>
 

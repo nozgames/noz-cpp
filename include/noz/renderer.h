@@ -5,7 +5,7 @@
 #pragma once
 
 // @types
-struct Camera;
+struct Camera {};
 struct Texture : Asset {};
 struct Material : Asset {};
 struct Font : Asset {};
@@ -66,12 +66,12 @@ struct Mesh : Asset { };
 
 Mesh* CreateMesh(
     Allocator* allocator,
-    size_t vertex_count,
-    Vec3* positions,
-    Vec3* normals,
-    Vec2* uvs,
+    u16 vertex_count,
+    const Vec2* positions,
+    const Vec2* normals,
+    const Vec2* uvs,
     u8* bone_indices,
-    size_t index_count,
+    u16 index_count,
     u16* indices,
     const Name* name);
 Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name);
@@ -79,13 +79,13 @@ Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name);
 // @mesh_builder
 MeshBuilder* CreateMeshBuilder(Allocator* allocator, int max_vertices, int max_indices);
 void Clear(MeshBuilder* builder);
-Vec3* GetPositions(MeshBuilder* builder);
-Vec3* GetNormals(MeshBuilder* builder);
-Vec2* GetUvs(MeshBuilder* builder);
-u8* GetBoneIndices(MeshBuilder* builder);
-u16* GetIndices(MeshBuilder* builder);
-size_t GetVertexCount(MeshBuilder* builder);
-size_t GetIndexCount(MeshBuilder* builder);
+const Vec2* GetPositions(MeshBuilder* builder);
+const Vec2* GetNormals(MeshBuilder* builder);
+const Vec2* GetUvs(MeshBuilder* builder);
+const u8* GetBoneIndices(MeshBuilder* builder);
+const u16* GetIndices(MeshBuilder* builder);
+u32 GetVertexCount(MeshBuilder* builder);
+u32 GetIndexCount(MeshBuilder* builder);
 void AddIndex(MeshBuilder* builder, uint16_t index);
 void AddTriangle(MeshBuilder* builder, uint16_t a, uint16_t b, uint16_t c);
 void AddTriangle(MeshBuilder* builder, const Vec3& a, const Vec3& b, const Vec3& c, uint8_t bone_index);
@@ -93,33 +93,33 @@ void AddPyramid(MeshBuilder* builder, const Vec3& start, const Vec3& end, float 
 void AddCube(MeshBuilder* builder, const Vec3& center, const Vec3& size, uint8_t bone_index);
 void AddRaw(
     MeshBuilder* builder,
-    size_t vertex_count,
-    const Vec3* positions,
-    const Vec3* normals,
+    i16 vertex_count,
+    const Vec2* positions,
+    const Vec2* normals,
     const Vec2* uv0,
     u8 bone_index,
-    size_t index_count,
-    const uint16_t* indices);
+    i16 index_count,
+    const u16* indices);
 void AddQuad(
     MeshBuilder* builder,
-    const Vec3& forward,
-    const Vec3& right,
+    const Vec2& forward,
+    const Vec2& right,
     f32 width,
     f32 height,
     const Vec2& color_uv);
 void AddQuad(
     MeshBuilder* builder,
-    const Vec3& a,
-    const Vec3& b,
-    const Vec3& c,
-    const Vec3& d,
+    const Vec2& a,
+    const Vec2& b,
+    const Vec2& c,
+    const Vec2& d,
     const Vec2& uv_color,
-    const Vec3& normal,
+    const Vec2& normal,
     uint8_t bone_index=0);
 void AddVertex(
     MeshBuilder* builder,
-    const Vec3& position,
-    const Vec3& normal,
+    const Vec2& position,
+    const Vec2& normal,
     const Vec2& uv,
     uint8_t bone_index=0);
 
@@ -127,9 +127,7 @@ void AddVertex(
 void BindDefaultTexture(int texture_index);
 void BindColor(Color color);
 void BindCamera(Camera* camera);
-void BindCamera(const Mat4& view, const Mat4& projection);
-void BindTransform(const Mat3& transform);
-void BindTransform(const Mat4& transform);
+void BindTransform(const Vec2& position, float rotation, const Vec2& scale);
 void BindMaterial(Material* material);
 void DrawMesh(Mesh* mesh);
 
@@ -148,3 +146,13 @@ float GetBaseline(Font* font);
 Material* GetMaterial(Font* font);
 const FontGlyph* GetGlyph(Font* font, char ch);
 float GetKerning(Font* font, char first, char second);
+
+// @camera
+Camera* CreateCamera(Allocator* allocator);
+void SetPosition(Camera* camera, const Vec2& position);
+void SetRotation(Camera* camera, float rotation);
+void SetSize(Camera* camera, const Vec2& size);
+Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos);
+Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos);
+void UpdateCamera(Camera* camera);
+

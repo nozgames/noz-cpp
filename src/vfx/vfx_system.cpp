@@ -357,7 +357,7 @@ void DrawVfx()
         float size = Mix(p->size_start, p->size_end, EvaluateCurve(p->size_curve, t));
         Color col = Mix(p->color_start, p->color_end, EvaluateCurve(p->color_curve, t));
 
-        BindTransform(TRS(p->position, p->rotation, {size, size}));
+        BindTransform(p->position, p->rotation, {size, size});
         BindColor(col);
         BindMaterial(g_vfx.material);
         DrawMesh(g_vfx.meshes[VFX_MESH_SQUARE]);
@@ -496,7 +496,7 @@ void InitVfx()
     g_vfx.material = CreateMaterial(ALLOCATOR_DEFAULT, g_core_assets.shaders.vfx);
 
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddQuad(builder, VEC3_UP, VEC3_RIGHT, 1, 1, {0,0});
+    AddQuad(builder, VEC2_UP, VEC2_RIGHT, 1, 1, {0,0});
     g_vfx.meshes[VFX_MESH_SQUARE] = CreateMesh(ALLOCATOR_DEFAULT, builder, GetName("vfx_square"));
     Free(builder);
 }
