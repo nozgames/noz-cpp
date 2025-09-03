@@ -3,6 +3,7 @@
 //
 
 #include <cstdio>
+#include "platform.h"
 #include "editor/editor_client.h"
 
 static constexpr int FRAME_HISTORY_SIZE = 60;
@@ -13,6 +14,8 @@ void InitUI();
 void InitEvent(ApplicationTraits* traits);
 void InitName(ApplicationTraits* traits);
 void InitVfx();
+void InitRenderer(const RendererTraits* traits);
+void ShutdownRenderer();
 void ShutdownEvent();
 void ShutdownUI();
 void ShutdownName();
@@ -51,7 +54,7 @@ static ApplicationTraits g_default_traits =
 // @impl
 struct Application
 {
-//    SDL_Window* window;
+    WindowHandle window;
     bool has_focus;
     bool vsync;
     Vec2Int screen_size;
@@ -108,13 +111,11 @@ void ExitOutOfMemory(const char* message)
 
 static void UpdateScreenSize()
 {
-#if 0
-    int w;
-    int h;
-    SDL_GetWindowSize(g_app.window, &w, &h);
-    g_app.screen_size = { w, h };
-    g_app.screen_aspect_ratio = (float)w / (float)h;
-#endif
+    if (g_app.window)
+    {
+        g_app.screen_size = platform::GetWindowSize(g_app.window);
+        g_app.screen_aspect_ratio = (float)g_app.screen_size.x / (float)g_app.screen_size.y;
+    }
 }
 
 #ifdef NOZ_EDITOR
@@ -137,27 +138,19 @@ void InitApplication(ApplicationTraits* traits)
     InitRandom();
     InitEvent(traits);
 
-#if 0
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD) != 1)
-        return;
-
-    Uint32 windowFlags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
-
     memset(&g_app, 0, sizeof(Application));
     g_app.title = traits->title;
-    g_app.window = SDL_CreateWindow(traits->title, traits->width, traits->height, windowFlags);
-    if (!g_app.window)
-    {
-        SDL_Quit();
-        return;
-    }
-
     g_app.traits = *traits;
+    
+    // Create platform window
+    g_app.window = platform::CreatePlatformWindow(traits);
+    if (!g_app.window)
+        return;
 
     UpdateScreenSize();
 
     InitInput();
-    InitRenderer(&traits->renderer, g_app.window);
+    InitRenderer(&traits->renderer);
     InitTime();
     InitPhysics();
 
@@ -166,7 +159,7 @@ void InitApplication(ApplicationTraits* traits)
     if (traits->load_assets)
         traits->load_assets(g_app.asset_allocator);
 
-    LoadRendererAssets(g_app.asset_allocator);
+    // TODO: LoadRendererAssets(g_app.asset_allocator);
 
 #ifdef NOZ_EDITOR
     SetHotloadCallback(OnHotload);
@@ -175,7 +168,6 @@ void InitApplication(ApplicationTraits* traits)
 
     InitVfx();
     InitUI();
-#endif
 
 }
 
@@ -202,6 +194,14 @@ void ShutdownApplication()
     ShutdownTime();
     //ShutdownRenderer();
     ShutdownInput();
+    
+    // Destroy platform window
+    if (g_app.window)
+    {
+        platform::DestroyPlatformWindow(g_app.window);
+        g_app.window = nullptr;
+    }
+    
     ShutdownEvent();
     ShutdownName();
     ShutdownAllocator();
@@ -226,21 +226,19 @@ static void UpdateFPS()
 // @update
 bool UpdateApplication()
 {
-#if 0
-    SDL_Event event;
-    while (SDL_PollEvent(&event))
+    // Process platform events
+    bool running = true;
+    if (g_app.window)
     {
-        if (event.type == SDL_EVENT_QUIT)
-            return false;
-
-        if (event.type == SDL_EVENT_WINDOW_FOCUS_GAINED)
-            g_app.has_focus = true;
-        else if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST)
-            g_app.has_focus = false;
-        else if (event.type == SDL_EVENT_WINDOW_RESIZED)
-            UpdateScreenSize();
+        Vec2Int old_size = g_app.screen_size;
+        running = platform::ProcessWindowEvents(g_app.window, g_app.has_focus, g_app.screen_size);
+        
+        // Update aspect ratio if screen size changed
+        if (old_size.x != g_app.screen_size.x || old_size.y != g_app.screen_size.y)
+        {
+            g_app.screen_aspect_ratio = (float)g_app.screen_size.x / (float)g_app.screen_size.y;
+        }
     }
-#endif
 
     UpdateTime();
     UpdateInput();
@@ -251,7 +249,7 @@ bool UpdateApplication()
 
     UpdateFPS();
 
-    return true;
+    return running;
 }
 
 // @screen
@@ -273,12 +271,7 @@ float GetScreenAspectRatio()
 
 void ShowCursor(bool cursor)
 {
-#if 0
-    if (cursor)
-        SDL_ShowCursor();
-    else
-        SDL_HideCursor();
-#endif
+    platform::ShowCursor(cursor);
 }
 
 float GetCurrentFPS()

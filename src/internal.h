@@ -13,6 +13,13 @@ struct RenderCamera
     Vec2 padding;
 };
 
+struct RenderTransform
+{
+    Vec2 position;
+    Vec2 scale;
+    float rotation;
+};
+
 // @mesh
 struct MeshVertex
 {
@@ -121,8 +128,6 @@ void ShutdownTime();
 void UpdateTime();
 
 // @renderer
-//void InitRenderer(RendererTraits* traits, SDL_Window* window);
-void ShutdownRenderer();
 void BeginFrameGPU();
 void EndFrameGPU();
 //SDL_GPURenderPass* BeginPassGPU(bool clear, Color clear_color, bool msaa, Texture* target);
@@ -135,8 +140,6 @@ void BindShaderGPU(Shader* shader);
 void BindDefaultTextureGPU(int texture_index);
 
 // @render_buffer
-void InitRenderBuffer(RendererTraits* traits);
-void ShutdownRenderBuffer();
 void BeginGammaPass();
 void ClearRenderCommands();
 //void ExecuteRenderCommands(SDL_GPUCommandBuffer* cb);

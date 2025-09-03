@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include "../platform.h"
+
 extern void DrawUI();
 extern void DrawVfx();
 extern void BeginRenderPass();
@@ -9,10 +11,11 @@ extern void ClearRenderCommands();
 extern void BeginRenderPass(bool clear, Color clear_color, bool msaa, Texture* target=nullptr);
 extern void BeginShadowPass(Mat4 light_view, Mat4 light_projection);
 extern void EndRenderPass();
+extern void InitRenderBuffer(const RendererTraits* traits);
+extern void ShutdownRenderBuffer();
 
 static void ResetRenderState();
 static void UpdateBackBuffer();
-static void InitShadowPass(const RendererTraits* traits);
 
 struct Renderer
 {
@@ -389,71 +392,69 @@ void LoadRendererAssets(Allocator* allocator)
     g_core_assets.textures.white = CreateTexture(nullptr, &color32_white, 1, 1, TEXTURE_FORMAT_RGBA8, GetName("white"));
 }
 
-#if 0
-void InitRenderer(RendererTraits* traits, SDL_Window* window)
+void InitRenderer(const RendererTraits* traits)
 {
-    g_renderer.window = window;
-    g_renderer.traits = *traits;
-
-    // Create GPU device
-    g_renderer.device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, nullptr);
-    if (!g_renderer.device)
-        Exit(SDL_GetError());
-
-    if (!SDL_ClaimWindowForGPUDevice(g_renderer.device, window))
-    {
-        SDL_DestroyGPUDevice(g_renderer.device);
-        Exit(SDL_GetError());
-    }
-
-    SDL_SetWindowSurfaceVSync(window, traits->vsync);
-
-    SDL_SetGPUSwapchainParameters(
-        g_renderer.device,
-        window,
-        SDL_GPU_SWAPCHAINCOMPOSITION_SDR_LINEAR,
-        traits->vsync == 0 ? SDL_GPU_PRESENTMODE_IMMEDIATE : SDL_GPU_PRESENTMODE_VSYNC);
-
-    InitTexture(traits, g_renderer.device);
-    InitShader(traits, g_renderer.device);
-    InitFont(traits, g_renderer.device);
-    InitMesh(traits, g_renderer.device);
+    // g_renderer.window = window;
+    // g_renderer.traits = *traits;
+    //
+    // // Create GPU device
+    // g_renderer.device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, nullptr);
+    // if (!g_renderer.device)
+    //     Exit(SDL_GetError());
+    //
+    // if (!SDL_ClaimWindowForGPUDevice(g_renderer.device, window))
+    // {
+    //     SDL_DestroyGPUDevice(g_renderer.device);
+    //     Exit(SDL_GetError());
+    // }
+    //
+    // SDL_SetWindowSurfaceVSync(window, traits->vsync);
+    //
+    // SDL_SetGPUSwapchainParameters(
+    //     g_renderer.device,
+    //     window,
+    //     SDL_GPU_SWAPCHAINCOMPOSITION_SDR_LINEAR,
+    //     traits->vsync == 0 ? SDL_GPU_PRESENTMODE_IMMEDIATE : SDL_GPU_PRESENTMODE_VSYNC);
+    //
+    // InitTexture(traits, g_renderer.device);
+    // InitShader(traits, g_renderer.device);
+    // InitFont(traits, g_renderer.device);
+    // InitMesh(traits, g_renderer.device);
     InitRenderBuffer(traits);
-    InitSamplerFactory(traits, g_renderer.device);
-    InitPipelineFactory(traits, window, g_renderer.device);
-    InitShadowPass(traits);
+    // InitSamplerFactory(traits, g_renderer.device);
+    // InitPipelineFactory(traits, window, g_renderer.device);
+    // InitShadowPass(traits);
 }
 
 void ShutdownRenderer()
 {
-    assert(g_renderer.device);
+//    assert(g_renderer.device);
 
-    ShutdownPipelineFactory();
-    ShutdownSamplerFactory();
+    // ShutdownPipelineFactory();
+    // ShutdownSamplerFactory();
     ShutdownRenderBuffer();
-    ShutdownMesh();
-    ShutdownFont();
-    ShutdownShader();
-    ShutdownTexture();
-
-    if (g_renderer.depth_texture)
-        SDL_ReleaseGPUTexture(g_renderer.device, g_renderer.depth_texture);
-
-    if (g_renderer.msaa_color_texture)
-        SDL_ReleaseGPUTexture(g_renderer.device, g_renderer.msaa_color_texture);
-
-    if (g_renderer.msaa_depth_texture)
-        SDL_ReleaseGPUTexture(g_renderer.device, g_renderer.msaa_depth_texture);
-
-    // Release shadow resources
-    if (g_renderer.shadow_map)
-        SDL_ReleaseGPUTexture(g_renderer.device, g_renderer.shadow_map);
-
-    if (g_renderer.shadow_sampler)
-        SDL_ReleaseGPUSampler(g_renderer.device, g_renderer.shadow_sampler);
-
-    SDL_DestroyGPUDevice(g_renderer.device);
+    // ShutdownMesh();
+    // ShutdownFont();
+    // ShutdownShader();
+    // ShutdownTexture();
+    //
+    // if (g_renderer.depth_texture)
+    //     SDL_ReleaseGPUTexture(g_renderer.device, g_renderer.depth_texture);
+    //
+    // if (g_renderer.msaa_color_texture)
+    //     SDL_ReleaseGPUTexture(g_renderer.device, g_renderer.msaa_color_texture);
+    //
+    // if (g_renderer.msaa_depth_texture)
+    //     SDL_ReleaseGPUTexture(g_renderer.device, g_renderer.msaa_depth_texture);
+    //
+    // // Release shadow resources
+    // if (g_renderer.shadow_map)
+    //     SDL_ReleaseGPUTexture(g_renderer.device, g_renderer.shadow_map);
+    //
+    // if (g_renderer.shadow_sampler)
+    //     SDL_ReleaseGPUSampler(g_renderer.device, g_renderer.shadow_sampler);
+    //
+    // SDL_DestroyGPUDevice(g_renderer.device);
 
     g_renderer = {};
 }
-#endif
