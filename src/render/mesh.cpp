@@ -233,17 +233,3 @@ Bounds2 GetBounds(Mesh* mesh)
 {
     return static_cast<MeshImpl*>(mesh)->bounds;
 }
-
-#if 0
-void InitMesh(RendererTraits* traits, SDL_GPUDevice* device)
-{
-    g_device = device;
-}
-
-void ShutdownMesh()
-{
-    g_device = nullptr;
-}
-
-
-#endif

@@ -94,10 +94,10 @@ SDL_GPUSampler* GetGPUSampler(Texture* texture)
     sampler->gpu_sampler = gpu_sampler;
     return sampler->gpu_sampler;
 }
+*/
 
-void InitSamplerFactory(RendererTraits* traits, SDL_GPUDevice* dev)
+void InitSamplerFactory(const RendererTraits* traits)
 {
-    g_device = dev;
     g_cache_keys = (u64*)Alloc(nullptr, sizeof(u64) * traits->max_samplers);
     g_cache_samplers = (Sampler*)Alloc(nullptr, sizeof(Sampler*) * traits->max_samplers);
     Init(g_cache, g_cache_keys, g_cache_samplers, traits->max_samplers, sizeof(Sampler));
@@ -114,6 +114,5 @@ void ShutdownSamplerFactory()
     g_cache_samplers = nullptr;
     g_cache_keys = nullptr;
     g_cache = {};
-    g_device = nullptr;
 }
-*/
+

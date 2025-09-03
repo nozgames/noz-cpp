@@ -4,27 +4,30 @@
 
 #pragma once
 
-typedef void* WindowHandle;
 
 namespace platform
 {
+    struct Window {};
+    struct Pipeline {};
+    struct PipelineLayout {};
+
     Vec2 GetMousePosition();
     
     // @window
-    WindowHandle CreatePlatformWindow(const ApplicationTraits* traits);
-    void DestroyPlatformWindow(WindowHandle window);
-    bool ProcessWindowEvents(WindowHandle window, bool& has_focus, Vec2Int& screen_size);
-    Vec2Int GetWindowSize(WindowHandle window);
+    Window* CreatePlatformWindow(const ApplicationTraits* traits);
+    void DestroyPlatformWindow(Window* window);
+    bool ProcessWindowEvents(Window* window, bool& has_focus, Vec2Int& screen_size);
+    Vec2Int GetWindowSize(Window* window);
     void ShowCursor(bool show);
     
     // @render
-    void SetRendererWindow(WindowHandle window);
+    void SetRendererWindow(Window* window);
+    Pipeline* CreatePipeline(Shader* shader, bool msaa, bool shadow);
+    void BindPipeline(Pipeline* pipeline);
+    void DestroyPipeline(Pipeline* pipeline);
 
     // @time
     u64 GetPerformanceCounter();
     u64 GetPerformanceFrequency();
 }
 
-// Global renderer functions
-void SetVulkanWindow(WindowHandle window);
-void HandleVulkanWindowResize();

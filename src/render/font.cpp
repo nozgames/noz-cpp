@@ -201,16 +201,3 @@ Material* GetMaterial(Font* font)
 
     return impl->material;
 }
-
-/*
-void InitFont(RendererTraits* traits, SDL_GPUDevice* device)
-{
-    g_device = device;
-}
-
-void ShutdownFont()
-{
-    g_device = nullptr;
-}
-
-*/

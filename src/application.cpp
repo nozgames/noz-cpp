@@ -54,7 +54,7 @@ static ApplicationTraits g_default_traits =
 // @impl
 struct Application
 {
-    WindowHandle window;
+    platform::Window* window;
     bool has_focus;
     bool vsync;
     Vec2Int screen_size;
@@ -150,7 +150,6 @@ void InitApplication(ApplicationTraits* traits)
     UpdateScreenSize();
 
     InitInput();
-    platform::SetRendererWindow(g_app.window);
     InitRenderer(&traits->renderer);
     InitTime();
     InitPhysics();
@@ -240,7 +239,6 @@ bool UpdateApplication()
             g_app.screen_aspect_ratio = (float)g_app.screen_size.x / (float)g_app.screen_size.y;
             
             // Notify the Vulkan renderer to recreate the swapchain
-            HandleVulkanWindowResize();
         }
     }
 

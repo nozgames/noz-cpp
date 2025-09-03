@@ -196,6 +196,9 @@ constexpr Vec2 VEC2_DOWN = { 0, 1 };
 constexpr Vec2 VEC2_RIGHT = { 1, 0 };
 constexpr Vec2 VEC2_LEFT = { -1, 0 };
 
+constexpr Vec2Int VEC2INT_ZERO = { 0,0 };
+constexpr Vec2Int VEC2INT_ONE = { 1,1 };
+
 constexpr f32 F32_MAX = 3.402823466e+38F;
 constexpr f32 F32_MIN = -3.402823466e+38F;
 

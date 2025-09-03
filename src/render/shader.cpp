@@ -254,15 +254,4 @@ void PushUniformDataGPU(Shader* shader, SDL_GPUCommandBuffer* cb, u8* data)
             size);
     }
 }
-
-void InitShader(RendererTraits* traits, SDL_GPUDevice* device)
-{
-    g_device = device;
-}
-
-void ShutdownShader()
-{
-    assert(g_device);
-    g_device = nullptr;
-}
 #endif

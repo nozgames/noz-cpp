@@ -144,24 +144,10 @@ void BeginGammaPass();
 void ClearRenderCommands();
 //void ExecuteRenderCommands(SDL_GPUCommandBuffer* cb);
 
-// @sampler_factory
-//void InitSamplerFactory(RendererTraits* traits, SDL_GPUDevice* device);
-void ShutdownSamplerFactory();
-//SDL_GPUSampler* GetGPUSampler(Texture* texture);
-
-// @pipeline_factory
-//void InitPipelineFactory(RendererTraits* traits, SDL_Window* window, SDL_GPUDevice* device);
-void ShutdownPipelineFactory();
-//SDL_GPUGraphicsPipeline* GetGPUPipeline(Shader* shader, bool msaa, bool shadow);
-
 // @mesh
-//void InitMesh(RendererTraits* traits, SDL_GPUDevice* device);
-void ShutdownMesh();
 //void DrawMeshGPU(Mesh* mesh, SDL_GPURenderPass* pass);
 
 // @texture
-//void InitTexture(RendererTraits* traits, SDL_GPUDevice* device);
-void ShutdownTexture();
 //SDL_GPUTexture* GetGPUTexture(Texture* texture);
 SamplerOptions GetSamplerOptions(Texture* texture);
 
@@ -172,8 +158,6 @@ struct ShaderUniformBuffer
     u32 offset;
 };
 
-//void InitShader(RendererTraits* traits, SDL_GPUDevice* device);
-void ShutdownShader();
 const char* GetGPUName(Shader* shader);
 
 //SDL_GPUShader* GetGPUVertexShader(Shader* shader);
@@ -193,8 +177,6 @@ ShaderUniformBuffer GetVertexUniformBuffer(Shader* shader, int index);
 ShaderUniformBuffer GetFragmentUniformBuffer(Shader* shader, int index);
 
 // @font
-//void InitFont(RendererTraits* traits, SDL_GPUDevice* device);
-void ShutdownFont();
 
 // @animation
 void animation_evaluate_frame(

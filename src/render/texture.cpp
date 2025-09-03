@@ -376,16 +376,3 @@ int GetBytesPerPixel(TextureFormat format)
         return 4; // Default to RGBA
     }
 }
-
-#if 0
-void InitTexture(RendererTraits* traits, SDL_GPUDevice* device)
-{
-    g_device = device;
-}
-
-void ShutdownTexture()
-{
-    g_device = nullptr;
-}
-
-#endif

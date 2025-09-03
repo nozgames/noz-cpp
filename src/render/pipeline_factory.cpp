@@ -3,26 +3,29 @@
 //
 
 #define INITIAL_CACHE_SIZE 64
+#include "../platform.h"
 
 struct Pipeline
 {
-//    SDL_GPUGraphicsPipeline* gpu_pipeline;
+    platform::Pipeline* platform_pipeline;
+    platform::PipelineLayout* platform_layout;
 };
 
 static Map g_cache = {};
 static u64* g_cache_keys = nullptr;
 static Pipeline* g_cache_pipelines = nullptr;
-//static SDL_GPUDevice* g_device = nullptr;
-//static SDL_Window* g_window = nullptr;
+// static SDL_GPUDevice* g_device = nullptr;
+// static SDL_Window* g_window = nullptr;
 
 static uint64_t MakeKey(Shader* shader, bool msaa, bool shadow)
 {
-    struct {
+    struct
+    {
         void* shader_ptr;
         bool msaa;
         bool shadow;
     } key_data = {shader, msaa, shadow};
-    
+
     return Hash(&key_data, sizeof(key_data));
 }
 
@@ -192,13 +195,37 @@ SDL_GPUGraphicsPipeline* GetGPUPipeline(Shader* shader, bool msaa, bool shadow)
     pipeline->gpu_pipeline = gpu_pipeline;
     return pipeline->gpu_pipeline;
 }
+#endif
 
-void InitPipelineFactory(RendererTraits* traits, SDL_Window* win, SDL_GPUDevice* dev)
+platform::Pipeline* GetGPUPipeline(Shader* shader, bool msaa, bool shadow)
 {
-    assert(!g_device);
+    assert(shader);
 
-    g_window = win;
-    g_device = dev;
+    auto key = MakeKey(shader, msaa, shadow);
+    auto* pipeline = (Pipeline*)GetValue(g_cache, key);
+    if (pipeline != nullptr)
+        return pipeline->platform_pipeline;
+
+    // Create new platform pipeline
+    platform::Pipeline* platform_pipeline = platform::CreatePipeline(shader, msaa, shadow);
+    if (!platform_pipeline)
+        return nullptr;
+
+    pipeline = (Pipeline*)SetValue(g_cache, key, nullptr);
+    if (!pipeline)
+    {
+        // Clean up the pipeline if we can't cache it
+        platform::DestroyPipeline(platform_pipeline);
+        ExitOutOfMemory("pipeline limit exceeded");
+    }
+
+    pipeline->platform_pipeline = platform_pipeline;
+    pipeline->platform_layout = nullptr; // TODO: Store actual layout when implemented
+    return pipeline->platform_pipeline;
+}
+
+void InitPipelineFactory(const RendererTraits* traits)
+{
     g_cache_keys = (u64*)Alloc(nullptr, sizeof(u64) * traits->max_pipelines);
     g_cache_pipelines = (Pipeline*)Alloc(nullptr, sizeof(Pipeline) * traits->max_pipelines);
     Init(g_cache, g_cache_keys, g_cache_pipelines, traits->max_pipelines, sizeof(Pipeline));
@@ -206,11 +233,7 @@ void InitPipelineFactory(RendererTraits* traits, SDL_Window* win, SDL_GPUDevice*
 
 void ShutdownPipelineFactory()
 {
-    assert(g_device);
     Free(g_cache_keys);
     Free(g_cache_pipelines);
     g_cache = {};
-    g_window = nullptr;
-    g_device = nullptr;
 }
-#endif
