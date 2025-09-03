@@ -2,14 +2,14 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include "../platform.h"
+
 struct MeshImpl : Mesh
 {
     size_t vertex_count;
     size_t index_count;
-    // SDL_GPUBuffer* vertex_buffer;
-    // SDL_GPUBuffer* index_buffer;
-    // SDL_GPUTransferBuffer* vertex_transfer;
-    // SDL_GPUTransferBuffer* index_transfer;
+    platform::Buffer* vertex_buffer;
+    platform::Buffer* index_buffer;
     MeshVertex* vertices;
     uint16_t* indices;
     Bounds2 bounds;
@@ -153,70 +153,12 @@ void DrawMeshGPU(Mesh* mesh, SDL_GPURenderPass* pass)
 
 static void UploadMesh(MeshImpl* impl, const Name* name)
 {
-#if 0
     assert(impl);
     assert(!impl->vertex_buffer);
-    assert(g_device);
 
-    size_t vertex_count = impl->vertex_count;
-    size_t index_count = impl->index_count;
-
-    // Create vertex buffer
-    SDL_GPUBufferCreateInfo vertex_info = {0};
-    vertex_info.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-    vertex_info.size = (uint32_t)(sizeof(MeshVertex) * vertex_count);
-    vertex_info.props = SDL_CreateProperties();
-    SDL_SetStringProperty(vertex_info.props, SDL_PROP_GPU_BUFFER_CREATE_NAME_STRING, name ? name->value : "mesh");
-    impl->vertex_buffer = SDL_CreateGPUBuffer(g_device, &vertex_info);
-    SDL_DestroyProperties(vertex_info.props);
-
-    SDL_GPUTransferBufferCreateInfo vertex_transfer_info = {};
-    vertex_transfer_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
-    vertex_transfer_info.size = vertex_info.size;
-    vertex_transfer_info.props = 0;
-    impl->vertex_transfer = SDL_CreateGPUTransferBuffer(g_device, &vertex_transfer_info);
-
-    SDL_GPUTransferBufferLocation vertex_source = {impl->vertex_transfer, 0};
-    SDL_GPUBufferRegion vertex_dest = {impl->vertex_buffer, 0, vertex_info.size};
-    void* vertex_mapped = SDL_MapGPUTransferBuffer(g_device, impl->vertex_transfer, false);
-
-    SDL_memcpy(vertex_mapped, impl->vertices, vertex_info.size);
-    SDL_UnmapGPUTransferBuffer(g_device, impl->vertex_transfer);
-
-    SDL_GPUCommandBuffer* vertex_upload_cmd = SDL_AcquireGPUCommandBuffer(g_device);
-    SDL_GPUCopyPass* vertex_copy_pass = SDL_BeginGPUCopyPass(vertex_upload_cmd);
-    SDL_UploadToGPUBuffer(vertex_copy_pass, &vertex_source, &vertex_dest, false);
-    SDL_EndGPUCopyPass(vertex_copy_pass);
-    SDL_SubmitGPUCommandBuffer(vertex_upload_cmd);
-
-    // Create index buffer
-    SDL_GPUBufferCreateInfo index_info = {0};
-    index_info.usage = SDL_GPU_BUFFERUSAGE_INDEX;
-    index_info.size = (uint32_t)(sizeof(uint16_t) * index_count);
-    index_info.props = SDL_CreateProperties();
-    SDL_SetStringProperty(vertex_info.props, SDL_PROP_GPU_BUFFER_CREATE_NAME_STRING, name ? name->value : "mesh");
-    impl->index_buffer = SDL_CreateGPUBuffer(g_device, &index_info);
-    SDL_DestroyProperties(index_info.props);
-
-    SDL_GPUTransferBufferCreateInfo index_transfer_info = {};
-    index_transfer_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
-    index_transfer_info.size = index_info.size;
-    index_transfer_info.props = 0;
-    impl->index_transfer = SDL_CreateGPUTransferBuffer(g_device, &index_transfer_info);
-
-    SDL_GPUTransferBufferLocation index_source = {impl->index_transfer, 0};
-    SDL_GPUBufferRegion index_dest = {impl->index_buffer, 0, index_info.size};
-    void* index_mapped = SDL_MapGPUTransferBuffer(g_device, impl->index_transfer, false);
-
-    SDL_memcpy(index_mapped, impl->indices, index_info.size);
-    SDL_UnmapGPUTransferBuffer(g_device, impl->index_transfer);
-
-    SDL_GPUCommandBuffer* index_upload_cmd = SDL_AcquireGPUCommandBuffer(g_device);
-    SDL_GPUCopyPass* index_copy_pass = SDL_BeginGPUCopyPass(index_upload_cmd);
-    SDL_UploadToGPUBuffer(index_copy_pass, &index_source, &index_dest, false);
-    SDL_EndGPUCopyPass(index_copy_pass);
-    SDL_SubmitGPUCommandBuffer(index_upload_cmd);
-#endif
+    // Create vertex buffer using platform API
+    impl->vertex_buffer = platform::CreateVertexBuffer(impl->vertices, impl->vertex_count);
+    impl->index_buffer = platform::CreateIndexBuffer(impl->indices, impl->index_count);
 }
 
 size_t GetVertexCount(Mesh* mesh)
@@ -232,4 +174,13 @@ size_t GetIndexCount(Mesh* mesh)
 Bounds2 GetBounds(Mesh* mesh)
 {
     return static_cast<MeshImpl*>(mesh)->bounds;
+}
+
+void RenderMesh(Mesh* mesh)
+{
+    assert(mesh);
+    MeshImpl* impl = static_cast<MeshImpl*>(mesh);
+    platform::BindVertexBuffer(impl->vertex_buffer);
+    platform::BindIndexBuffer(impl->index_buffer);
+    platform::DrawIndexed(impl->index_count);
 }

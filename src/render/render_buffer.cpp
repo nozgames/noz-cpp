@@ -2,27 +2,23 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-//SDL_GPURenderPass* BeginUIPassGPU();
+#include "../platform.h"
 
 extern RenderCamera GetRenderCamera(Camera* camera);
-
-// todo: we can build a single bone buffer to upload and just add bone_offset to the model buffer for each mesh
+extern void RenderMesh(Mesh* mesh);
+extern void BindMaterialInternal(Material* material);
 
 enum RenderCommandType
 {
-    command_type_bind_material,
+    RENDER_COMMAND_TYPE_BIND_MATERIAL,
     command_type_bind_light,
     command_type_bind_transform,
     command_type_bind_camera,
     command_type_bind_bones,
     command_type_bind_default_texture,
     command_type_bind_color,
-    command_type_set_viewport,
-    command_type_set_scissor,
     command_type_draw_mesh,
-    command_type_begin_pass,
-    command_type_begin_ui_pass,
-    command_type_begin_shadow_pass,
+    RENDER_COMMAND_TYPE_BEGIN_PASS,
     command_type_end_pass,
 };
 
@@ -54,17 +50,6 @@ struct BindLightData
     Vec3 diffuse_color;
     float diffuse_intensity;
     Vec3 direction;
-    float shadow_bias;
-};
-
-struct SetViewportData
-{
-//    SDL_GPUViewport gpu_viewport;
-};
-
-struct SetScissorData
-{
-//    SDL_Rect rect;
 };
 
 struct BindColorData
@@ -79,10 +64,7 @@ struct DrawMeshData
 
 struct BeginPassData
 {
-    bool clear;
-    Color color;
-    bool msaa;
-    Texture* target;
+    Color clear_color;
 };
 
 struct BindDefaultTextureData
@@ -102,8 +84,6 @@ struct RenderCommand
         BindBonesData bind_bones;
         BindColorData bind_color;
         BindDefaultTextureData bind_default_texture;
-        SetViewportData set_viewport;
-        SetScissorData set_scissor;
         BeginPassData begin_pass;
         DrawMeshData draw_mesh;
     } data;
@@ -117,7 +97,6 @@ struct RenderBuffer
     size_t transform_count;
     size_t command_count_max;
     size_t transform_count_max;
-    bool is_shadow_pass;
     bool is_full;
 };
 
@@ -137,34 +116,18 @@ void ClearRenderCommands()
 {
     g_render_buffer->command_count = 0;
     g_render_buffer->transform_count = 0;
-    g_render_buffer->is_shadow_pass = false;
     g_render_buffer->is_full = false;
     g_render_buffer->transforms[0] = { VEC2_ZERO, VEC2_ONE, 0.0f };
     g_render_buffer->transform_count = 1;
 }
 
-void BeginRenderPass(bool clear, Color clear_color, bool msaa, Texture* target)
+void BeginRenderPass(Color clear_color)
 {
     RenderCommand cmd = {
-        .type = command_type_begin_pass,
+        .type = RENDER_COMMAND_TYPE_BEGIN_PASS,
         .data = {
             .begin_pass = {
-                .clear = clear,
-                .color = clear_color,
-                .msaa = msaa,
-                .target = target}}};
-    AddRenderCommand(&cmd);
-}
-
-void BeginUIPass()
-{
-    RenderCommand cmd = { .type = command_type_begin_ui_pass };
-    AddRenderCommand(&cmd);
-}
-
-void BeginShadowPass(Mat3 light_view, Mat4 light_projection)
-{
-    RenderCommand cmd = {.type = command_type_begin_shadow_pass};
+                .clear_color = clear_color}}};
     AddRenderCommand(&cmd);
 }
 
@@ -201,7 +164,7 @@ void BindMaterial(Material* material)
     assert(material);
 
     RenderCommand cmd = {
-        .type = command_type_bind_material,
+        .type = RENDER_COMMAND_TYPE_BIND_MATERIAL,
         .data = {
             .bind_material = {
                 .material = material}} };
@@ -271,58 +234,48 @@ void DrawMesh(Mesh* mesh)
     AddRenderCommand(&cmd);
 }
 
-#if 0
-void ExecuteRenderCommands(SDL_GPUCommandBuffer* cb)
+void ExecuteRenderCommands()
 {
-    SDL_GPURenderPass* pass = nullptr;
-
     RenderCommand* commands = g_render_buffer->commands;
     size_t command_count = g_render_buffer->command_count;
+    
     for (size_t command_index=0; command_index < command_count; ++command_index)
     {
         RenderCommand* command = commands + command_index;
         switch (command->type)
         {
-        case command_type_bind_material:
-            BindMaterialGPU(command->data.bind_material.material, cb);
+        case RENDER_COMMAND_TYPE_BIND_MATERIAL:
+            BindMaterialInternal(command->data.bind_material.material);
             break;
 
         case command_type_bind_transform:
-            SDL_PushGPUVertexUniformData(cb, vertex_register_object, &command->data, sizeof(BindTransformData));
+            platform::BindTransform(&command->data.bind_transform.transform);
             break;
 
         case command_type_bind_camera:
-        {
-            SDL_PushGPUVertexUniformData(cb, vertex_register_camera, &command->data.bind_camera.camera, sizeof(RenderCamera));
+            platform::BindCamera(&command->data.bind_camera.camera);
             break;
-        }
 
         case command_type_bind_bones:
-            SDL_PushGPUVertexUniformData(
-                cb,
-                vertex_register_bone,
+            platform::BindBoneTransforms(
                 g_render_buffer->transforms + command->data.bind_bones.offset,
-                (Uint32)command->data.bind_bones.count);
+                (int)command->data.bind_bones.count);
             break;
 
         case command_type_bind_light:
-            SDL_PushGPUFragmentUniformData(cb, fragment_register_light, &command->data, sizeof(BindLightData));
+            platform::BindLight(&command->data.bind_light);
             break;
 
         case command_type_bind_color:
-            SDL_PushGPUFragmentUniformData(cb, fragment_register_color, &command->data, sizeof(BindColorData));
+            platform::BindColor(&command->data.bind_color);
             break;
 
         case command_type_draw_mesh:
-            DrawMeshGPU(command->data.draw_mesh.mesh, pass);
+            RenderMesh(command->data.draw_mesh.mesh);
             break;
 
-        case command_type_begin_pass:
-            pass = BeginPassGPU(
-                command->data.begin_pass.clear,
-                command->data.begin_pass.color,
-                command->data.begin_pass.msaa,
-                command->data.begin_pass.target);
+        case RENDER_COMMAND_TYPE_BEGIN_PASS:
+            platform::BeginRenderPass(command->data.begin_pass.clear_color);
             break;
 
         case command_type_bind_default_texture:
@@ -330,75 +283,11 @@ void ExecuteRenderCommands(SDL_GPUCommandBuffer* cb)
             break;
 
         case command_type_end_pass:
-            EndRenderPassGPU();
-            pass = nullptr;
-            break;
-
-        case command_type_begin_ui_pass:
-            pass = BeginUIPassGPU();
-            break;
-
-        case command_type_begin_shadow_pass:
-            pass = BeginShadowPassGPU();
-            break;
-
-        case command_type_set_viewport:
-        {
-            SDL_SetGPUViewport(pass, &command->data.set_viewport.gpu_viewport);
-            break;
-        }
-
-        case command_type_set_scissor:
-            SDL_SetGPUScissor(pass, &command->data.set_scissor.rect);
+            platform::EndRenderPass();
             break;
         }
     }
 }
-
-#if 0
-
-
-
-
-    void render_buffer::bind_light(
-        const vec3& direction,
-        float ambient_intensity,
-        const vec3& ambient_color,
-        float diffuse_intensity,
-        const vec3& diffuse_color,
-        float shadow_bias)
-    {
-        impl()->commands.emplace_back
-        (
-            command_type_bind_light,
-            command::bind_light
-            {
-                ambient_color,
-                ambient_intensity,
-                diffuse_color,
-                diffuse_intensity,
-                direction,
-                shadow_bias
-            });
-    }
-
-
-
-
-
-    void render_buffer::set_viewport(int x, int y, int width, int height)
-    {
-        impl()->commands.emplace_back(command_type_set_viewport, command::set_viewport { x, y, width, height });
-    }
-
-    void render_buffer::set_scissor(int x, int y, int width, int height)
-    {
-        impl()->commands.emplace_back(command_type_set_scissor, command::set_scissor { x, y, width, height });
-    }
-
-#endif
-
-#endif
 
 void InitRenderBuffer(const RendererTraits* traits)
 {

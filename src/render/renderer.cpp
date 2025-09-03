@@ -9,23 +9,22 @@ extern void InitPipelineFactory(const RendererTraits* traits);
 extern void DrawUI();
 extern void DrawVfx();
 extern void BeginRenderPass();
-extern void ClearRenderCommands();
-extern void BeginRenderPass(bool clear, Color clear_color, bool msaa, Texture* target=nullptr);
-extern void BeginShadowPass(Mat4 light_view, Mat4 light_projection);
 extern void EndRenderPass();
+extern void ClearRenderCommands();
+extern void BeginRenderPass(Color clear_color);
+extern void BeginShadowPass(Mat4 light_view, Mat4 light_projection);
 extern void InitRenderBuffer(const RendererTraits* traits);
 extern void ShutdownVulkan();
 extern void ShutdownPipelineFactory();
 extern void ShutdownSamplerFactory();
 extern void ShutdownRenderBuffer();
+extern void ExecuteRenderCommands();
+extern platform::Pipeline* GetPipeline(Shader* shader, bool msaa);
 
 static void ResetRenderState();
-static void UpdateBackBuffer();
 
 struct Renderer
 {
-    // SDL_GPUDevice* device;
-    // SDL_Window* window;
     // SDL_GPUCommandBuffer* command_buffer;
     // SDL_GPURenderPass* render_pass;
 
@@ -41,28 +40,22 @@ struct Renderer
     // SDL_GPUTexture* msaa_color_texture;
     // SDL_GPUTexture* msaa_depth_texture;
 
-    Texture* linear_back_buffer;
     // SDL_GPUTexture* swap_chain_texture;
-    // SDL_GPUTexture* shadow_map;
-    // SDL_GPUSampler* shadow_sampler;
-    Shader* shadow_shader;
     bool shadow_pass;
     bool msaa;
-    // SDL_GPUGraphicsPipeline* pipeline;
+    platform::Pipeline* pipeline;
 };
 
 static Renderer g_renderer = {};
 
-// Forward to platform Vulkan renderer
-extern void VulkanBeginRenderFrame(Color clear_color);
-extern void VulkanEndRenderFrame();
-
 void BeginRenderFrame(Color clear_color)
 {
-    VulkanBeginRenderFrame(clear_color);
-#if 0
+    platform::BeginRenderFrame();
     ClearRenderCommands();
-    UpdateBackBuffer();
+    ResetRenderState();
+    BeginRenderPass(clear_color);
+
+#if 0
 
     SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(g_renderer.device);
     //SDL_GPUTexture* backbuffer = nullptr;
@@ -173,21 +166,21 @@ void BeginRenderFrame(Color clear_color)
 
     g_renderer.command_buffer = cmd;
 
-    BeginRenderPass(clear_color.a >= 1.0f, clear_color, g_renderer.traits.msaa, nullptr);
 #endif
+
 }
 
 void EndRenderFrame()
 {
-    VulkanEndRenderFrame();
+    EndRenderPass();
+    ExecuteRenderCommands();
+    platform::EndRenderFrame();
 #if 0
     assert(!g_renderer.render_pass);
 
     if (!g_renderer.command_buffer)
         return;
 
-    EndRenderPass();
-    ExecuteRenderCommands(g_renderer.command_buffer);
     SDL_SubmitGPUCommandBuffer(g_renderer.command_buffer);
 
     g_renderer.command_buffer = nullptr;
@@ -263,24 +256,28 @@ SDL_GPURenderPass* BeginPassGPU(bool clear, Color clear_color, bool msaa, Textur
 }
 #endif
 
-void EndRenderPassGPU()
-{
-#if 0
-    assert(g_renderer.render_pass);
-
-    SDL_EndGPURenderPass(g_renderer.render_pass);
-    g_renderer.render_pass = nullptr;
-    g_renderer.shadow_pass = false;
-    g_renderer.msaa = false;
-#endif
-}
-
 void BindDefaultTextureGPU(int index)
 {
 #if 0
     assert(g_renderer.device);
     BindTextureGPU(g_core_assets.textures.white, g_renderer.command_buffer, sampler_register_user0 + index);
 #endif
+}
+
+void BindShaderInternal(Shader* shader)
+{
+    assert(shader);
+
+    platform::Pipeline* pipeline = GetPipeline(shader, g_renderer.msaa);
+    if (!pipeline)
+        return;
+
+    // Only bind if pipeline changed
+    if (g_renderer.pipeline == pipeline)
+        return;
+
+    platform::BindPipeline(pipeline);
+    g_renderer.pipeline = pipeline;
 }
 
 #if 0
@@ -299,102 +296,19 @@ void BindTextureGPU(Texture* texture, SDL_GPUCommandBuffer* cb, int index)
     SDL_BindGPUFragmentSamplers(g_renderer.render_pass, index, &binding, 1);
 }
 
-void BindShaderGPU(Shader* shader)
-{
-    assert(shader);
-
-    SDL_GPUGraphicsPipeline* pipeline = GetGPUPipeline(
-        g_renderer.shadow_pass
-            ? g_renderer.shadow_shader
-            : shader,
-        g_renderer.msaa,
-        g_renderer.shadow_pass);
-    if (!pipeline)
-        return;
-
-    // Only bind if pipeline changed
-    if (g_renderer.pipeline == pipeline)
-        return;
-
-    SDL_BindGPUGraphicsPipeline(g_renderer.render_pass, pipeline);
-    g_renderer.pipeline = pipeline;
-}
-
-void BindTransformGPU(const Mat4* transform)
-{
-    SDL_PushGPUVertexUniformData(
-        g_renderer.command_buffer,
-        vertex_register_object,
-        transform,
-        sizeof(Mat4));
-}
-
-void BindBoneTransformsGPU(const Mat4* bones, int count)
-{
-    assert(bones);
-    assert(count > 0);
-
-    SDL_PushGPUVertexUniformData(
-        g_renderer.command_buffer,
-        vertex_register_bone,
-        bones,
-        (Uint32)(count * sizeof(Mat4)));
-}
-
-SDL_GPURenderPass* BeginUIPassGPU()
-{
-    assert(!g_renderer.render_pass);
-    assert(g_renderer.command_buffer);
-
-    return BeginPassGPU(g_renderer.swap_chain_texture, false, COLOR_BLACK);
-}
-
-SDL_GPURenderPass* BeginShadowPassGPU()
-{
-    assert(!g_renderer.render_pass);
-    assert(g_renderer.command_buffer);
-
-    // Start shadow pass using depth-only rendering
-    SDL_GPUDepthStencilTargetInfo depth_info = {0};
-    depth_info.texture = g_renderer.shadow_map;
-    depth_info.clear_depth = 1.0f;
-    depth_info.clear_stencil = 0;
-    depth_info.load_op = SDL_GPU_LOADOP_CLEAR;
-    depth_info.store_op = SDL_GPU_STOREOP_STORE;
-
-    g_renderer.render_pass = SDL_BeginGPURenderPass(g_renderer.command_buffer, nullptr, 0, &depth_info);
-    g_renderer.shadow_pass = true;
-    ResetRenderState();
-
-    return g_renderer.render_pass;
-}
 #endif
 
 static void ResetRenderState()
 {
-#if 0
     // Reset all state tracking variables to force rebinding
     g_renderer.pipeline = nullptr;
 
+#if 0
     static Mat4 identity = MAT4_IDENTITY;
     BindBoneTransformsGPU(&identity, 1);
 
     for (int i = 0; i < (int)(sampler_register_count); i++)
         BindTextureGPU(g_core_assets.textures.white, g_renderer.command_buffer, i);
-#endif
-}
-
-static void UpdateBackBuffer()
-{
-#if 0
-    // is the back buffer the correct size?
-    assert(g_renderer.device);
-    Vec2Int size = GetScreenSize();
-    if (g_renderer.linear_back_buffer && GetSize(g_renderer.linear_back_buffer) == size)
-        return;
-
-    g_renderer.linear_back_buffer =
-        CreateTexture(nullptr, size.x, size.y, TEXTURE_FORMAT_RGBA16F, GetName("linear"));
 #endif
 }
 

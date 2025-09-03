@@ -7,7 +7,6 @@
 Element* CreateRootElement(Allocator* allocator, Canvas* canvas, const Name* id);
 void WriteInspectorElement(Stream* stream, Element* element);
 void RenderElements(Element* element, const mat4& canvas_transform, const vec2& canvas_size, bool is_dirty);
-void BeginUIPass();
 
 struct CanvasImpl : Entity
 {
@@ -72,7 +71,6 @@ void DrawScreenCanvases()
 {
     auto screen_size = GetScreenSize();
 
-    BeginUIPass();
 
     for (auto canvas = (Canvas*)GetFront(g_screen_render); canvas; canvas = (Canvas*)GetNext(g_screen_render, canvas))
     {
@@ -112,8 +110,6 @@ void DrawScreenCanvases()
         RenderElements(impl->root, identity, impl->size, impl->dirty);
         impl->dirty = false;
     }
-
-    EndRenderPass();
 }
 
 void DrawWorldCanvases(Camera* camera)

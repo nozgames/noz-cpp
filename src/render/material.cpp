@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+void BindShaderInternal(Shader* shader);
+
 struct MaterialImpl : Material
 {    
     int vertex_uniform_count;
@@ -14,9 +16,9 @@ struct MaterialImpl : Material
 
 Material* CreateMaterial(Allocator* allocator, Shader* shader)
 {
-    auto texture_count = 0; // GetSamplerCount(shader);
+    auto texture_count = GetSamplerCount(shader);
     auto textures_size = texture_count * sizeof(Texture*);
-    auto uniform_data_size = 0; // GetUniformDataSize(shader);
+    auto uniform_data_size = GetUniformDataSize(shader);
     auto material_size =
         sizeof(MaterialImpl) +
         textures_size +
@@ -28,8 +30,8 @@ Material* CreateMaterial(Allocator* allocator, Shader* shader)
 
     MaterialImpl* impl = static_cast<MaterialImpl*>(material);
     impl->shader = shader;
-    // impl->vertex_uniform_count = GetVertexUniformCount(shader);
-    // impl->fragment_uniform_count = GetFragmentUniformCount(shader);
+    impl->vertex_uniform_count = GetVertexUniformCount(shader);
+    impl->fragment_uniform_count = GetFragmentUniformCount(shader);
     impl->texture_count = texture_count;
     impl->textures = (Texture**)(impl + 1);
     impl->uniforms_data = (u8*)(impl->textures + texture_count);
@@ -43,19 +45,22 @@ Shader* GetShader(Material* material)
 
 void SetTexture(Material* material, Texture* texture, size_t index)
 {
-    // MaterialImpl* impl = static_cast<MaterialImpl*>(material);
-    // assert(index < impl->texture_count);
-    // impl->textures[index] = texture;
+    MaterialImpl* impl = static_cast<MaterialImpl*>(material);
+    assert(index < impl->texture_count);
+    impl->textures[index] = texture;
 }
 
-/*
-void BindMaterialGPU(Material* material, SDL_GPUCommandBuffer* cb)
+void BindMaterialInternal(Material* material)
 {
     MaterialImpl* impl = static_cast<MaterialImpl*>(material);
-    BindShaderGPU(impl->shader);
-    PushUniformDataGPU(impl->shader, cb, impl->uniforms_data);
+    
+    // Bind the shader (pipeline)
+    BindShaderInternal(impl->shader);
+    
+    // TODO: Implement uniform data binding when uniform system is ready
+    // PushUniformDataGPU(impl->shader, impl->uniforms_data);
 
-    for (size_t i = 0, c = impl->texture_count; i < c; ++i)
-        BindTextureGPU(impl->textures[i], cb, static_cast<int>(i) + static_cast<int>(sampler_register_user0));
+    // TODO: Implement texture binding when texture system is ready
+    // for (size_t i = 0, c = impl->texture_count; i < c; ++i)
+    //     BindTextureGPU(impl->textures[i], static_cast<int>(i) + static_cast<int>(sampler_register_user0));
 }
-*/

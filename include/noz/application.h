@@ -29,7 +29,7 @@ void Init(ApplicationTraits& traits);
 void InitApplication(ApplicationTraits* traits);
 void ShutdownApplication();
 bool UpdateApplication();
-void BeginRenderFrame(Color color);
+void BeginRenderFrame(Color clear_color);
 void EndRenderFrame();
 
 void Exit(const char* format, ...);

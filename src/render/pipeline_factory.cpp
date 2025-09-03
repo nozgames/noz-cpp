@@ -17,14 +17,13 @@ static Pipeline* g_cache_pipelines = nullptr;
 // static SDL_GPUDevice* g_device = nullptr;
 // static SDL_Window* g_window = nullptr;
 
-static uint64_t MakeKey(Shader* shader, bool msaa, bool shadow)
+static uint64_t MakeKey(Shader* shader, bool msaa)
 {
     struct
     {
         void* shader_ptr;
         bool msaa;
-        bool shadow;
-    } key_data = {shader, msaa, shadow};
+    } key_data = {shader, msaa};
 
     return Hash(&key_data, sizeof(key_data));
 }
@@ -197,17 +196,17 @@ SDL_GPUGraphicsPipeline* GetGPUPipeline(Shader* shader, bool msaa, bool shadow)
 }
 #endif
 
-platform::Pipeline* GetGPUPipeline(Shader* shader, bool msaa, bool shadow)
+platform::Pipeline* GetPipeline(Shader* shader, bool msaa)
 {
     assert(shader);
 
-    auto key = MakeKey(shader, msaa, shadow);
+    auto key = MakeKey(shader, msaa);
     auto* pipeline = (Pipeline*)GetValue(g_cache, key);
     if (pipeline != nullptr)
         return pipeline->platform_pipeline;
 
     // Create new platform pipeline
-    platform::Pipeline* platform_pipeline = platform::CreatePipeline(shader, msaa, shadow);
+    platform::Pipeline* platform_pipeline = platform::CreatePipeline(shader, msaa);
     if (!platform_pipeline)
         return nullptr;
 

@@ -229,9 +229,9 @@ static void DrawStatusBar(const RectInt& rect)
         }
 
         char fps_value[32];
-        sprintf(fps_value, "%d", Min(9999, g_editor.fps));
-        WriteScreen(eol - 9, line, fps, TCOLOR_BLACK);
-        WriteScreen(eol - 4, line, fps_value, TCOLOR_BLACK);
+        sprintf(fps_value, "%d", Min(99999, g_editor.fps));
+        WriteScreen(eol - 10, line, fps, TCOLOR_BLACK);
+        WriteScreen(eol - 5, line, fps_value, TCOLOR_BLACK);
     }
     else
         g_editor.stats_requested = false;
