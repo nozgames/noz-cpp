@@ -10,25 +10,27 @@ struct Time
     float delta;
     float fixed;
     float total;
-    Uint64 start_time;
-    Uint64 last_frame_time;
+    u64 start_time;
+    u64 last_frame_time;
 };
 
 static Time g_time = {};
 
 void UpdateTime()
 {
-    Uint64 current = SDL_GetPerformanceCounter();
-    Uint64 frequency = SDL_GetPerformanceFrequency();
+#if 0
+    u64 current = SDL_GetPerformanceCounter();
+    u64 frequency = SDL_GetPerformanceFrequency();
 
     // Calculate delta time
-    Uint64 delta_ticks = current - g_time.last_frame_time;
+    u64 delta_ticks = current - g_time.last_frame_time;
     g_time.last_frame_time = current;
     g_time.delta = (float)delta_ticks / (float)frequency;
 
     // Calculate total time
-    Uint64 total_ticks = current - g_time.start_time;
+    u64 total_ticks = current - g_time.start_time;
     g_time.total = (float)total_ticks / (float)frequency;
+#endif
 }
 
 float GetFrameTime()
@@ -55,8 +57,8 @@ void SetFixedTimeRate(int rate)
 
 void InitTime()
 {
-    g_time.start_time = g_time.last_frame_time = SDL_GetPerformanceCounter();
-    SetFixedTimeRate(DEFAULT_FIXED_RATE);
+    // g_time.start_time = g_time.last_frame_time = SDL_GetPerformanceCounter();
+    // SetFixedTimeRate(DEFAULT_FIXED_RATE);
 }
 
 void ShutdownTime()

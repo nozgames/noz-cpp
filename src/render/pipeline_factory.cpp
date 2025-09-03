@@ -6,14 +6,14 @@
 
 struct Pipeline
 {
-    SDL_GPUGraphicsPipeline* gpu_pipeline;
+//    SDL_GPUGraphicsPipeline* gpu_pipeline;
 };
 
 static Map g_cache = {};
 static u64* g_cache_keys = nullptr;
 static Pipeline* g_cache_pipelines = nullptr;
-static SDL_GPUDevice* g_device = nullptr;
-static SDL_Window* g_window = nullptr;
+//static SDL_GPUDevice* g_device = nullptr;
+//static SDL_Window* g_window = nullptr;
 
 static uint64_t MakeKey(Shader* shader, bool msaa, bool shadow)
 {
@@ -26,6 +26,7 @@ static uint64_t MakeKey(Shader* shader, bool msaa, bool shadow)
     return Hash(&key_data, sizeof(key_data));
 }
 
+#if 0
 static uint32_t GetVertexStride(const SDL_GPUVertexAttribute* attributes, size_t attribute_count)
 {
     if (attribute_count == 0) 
@@ -212,3 +213,4 @@ void ShutdownPipelineFactory()
     g_window = nullptr;
     g_device = nullptr;
 }
+#endif

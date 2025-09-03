@@ -4,21 +4,21 @@
 
 struct ShaderImpl : Shader
 {
-    SDL_GPUShader* vertex;
-    SDL_GPUShader* fragment;
+    // SDL_GPUShader* vertex;
+    // SDL_GPUShader* fragment;
     int vertex_uniform_count;
     int fragment_uniform_count;
     int sampler_count;
     shader_flags_t flags;
-    SDL_GPUBlendFactor src_blend;
-    SDL_GPUBlendFactor dst_blend;
-    SDL_GPUCullMode cull;
+    // SDL_GPUBlendFactor src_blend;
+    // SDL_GPUBlendFactor dst_blend;
+    // SDL_GPUCullMode cull;
     const Name* name;
     size_t uniform_data_size;
     ShaderUniformBuffer* uniforms;
 };
 
-static SDL_GPUDevice* g_device = nullptr;
+//static SDL_GPUDevice* g_device = nullptr;
 
 // todo: destructor
 #if 0
@@ -55,6 +55,7 @@ Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, con
     if (!shader)
         return nullptr;
 
+#if 0
     ShaderImpl* impl = static_cast<ShaderImpl*>(shader);
     impl->vertex = nullptr;
     impl->fragment = nullptr;
@@ -144,9 +145,11 @@ Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, con
     if (!impl->vertex)
         return nullptr;
 
+#endif
     return shader;
 }
 
+#if 0
 SDL_GPUShader* GetGPUVertexShader(Shader* shader)
 {
     return static_cast<ShaderImpl*>(shader)->vertex;
@@ -262,3 +265,4 @@ void ShutdownShader()
     assert(g_device);
     g_device = nullptr;
 }
+#endif

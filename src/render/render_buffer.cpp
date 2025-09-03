@@ -2,7 +2,7 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-SDL_GPURenderPass* BeginUIPassGPU();
+//SDL_GPURenderPass* BeginUIPassGPU();
 
 extern RenderCamera GetRenderCamera(Camera* camera);
 
@@ -61,12 +61,12 @@ struct BindLightData
 
 struct SetViewportData
 {
-    SDL_GPUViewport gpu_viewport;
+//    SDL_GPUViewport gpu_viewport;
 };
 
 struct SetScissorData
 {
-    SDL_Rect rect;
+//    SDL_Rect rect;
 };
 
 struct BindColorData
@@ -271,6 +271,7 @@ void DrawMesh(Mesh* mesh)
     AddRenderCommand(&cmd);
 }
 
+#if 0
 void ExecuteRenderCommands(SDL_GPUCommandBuffer* cb)
 {
     SDL_GPURenderPass* pass = nullptr;
@@ -423,3 +424,4 @@ void ShutdownRenderBuffer()
     free(g_render_buffer);
     g_render_buffer = nullptr;
 }
+#endif

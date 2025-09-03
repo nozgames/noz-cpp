@@ -2,6 +2,7 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#if 0
 static InputCode g_scancode_to_input_code[SDL_SCANCODE_COUNT];
 static SDL_Scancode g_input_code_to_scancode[INPUT_CODE_COUNT];
 
@@ -169,9 +170,10 @@ InputCode InputCodeFromMouseButton(int button)
     default: return INPUT_CODE_COUNT;
     }
 }
+#endif
 
 void InitInputCodes()
 {
-    InitScanCodeTable(g_scancode_to_input_code);
-    load_InputCode_table(g_input_code_to_scancode);
+    // InitScanCodeTable(g_scancode_to_input_code);
+    // load_InputCode_table(g_input_code_to_scancode);
 }

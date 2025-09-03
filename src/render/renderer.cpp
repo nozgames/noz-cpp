@@ -16,80 +16,38 @@ static void InitShadowPass(const RendererTraits* traits);
 
 struct Renderer
 {
-    SDL_GPUDevice* device;
-    SDL_Window* window;
-    SDL_GPUCommandBuffer* command_buffer;
-    SDL_GPURenderPass* render_pass;
-    Mat4 view_projection;
-    Mat4 view;
-    
+    // SDL_GPUDevice* device;
+    // SDL_Window* window;
+    // SDL_GPUCommandBuffer* command_buffer;
+    // SDL_GPURenderPass* render_pass;
+
     // Renderer configuration
     RendererTraits traits;
 
     // Depth buffer support
-    SDL_GPUTexture* depth_texture;
+    //SDL_GPUTexture* depth_texture;
     int depth_width;
     int depth_height;
 
     // MSAA support
-    SDL_GPUTexture* msaa_color_texture;
-    SDL_GPUTexture* msaa_depth_texture;
-
-    // Light view projection matrix for shadow mapping
-    Mat4 light_view;
+    // SDL_GPUTexture* msaa_color_texture;
+    // SDL_GPUTexture* msaa_depth_texture;
 
     Texture* linear_back_buffer;
-    SDL_GPUTexture* swap_chain_texture;
-    SDL_GPUTexture* shadow_map;
-    SDL_GPUSampler* shadow_sampler;
+    // SDL_GPUTexture* swap_chain_texture;
+    // SDL_GPUTexture* shadow_map;
+    // SDL_GPUSampler* shadow_sampler;
     Shader* shadow_shader;
     bool shadow_pass;
     bool msaa;
-    SDL_GPUGraphicsPipeline* pipeline;
+    // SDL_GPUGraphicsPipeline* pipeline;
 };
 
 static Renderer g_renderer = {};
 
-void InitShadowPass(const RendererTraits* traits)
-{
-    if (!traits->shadow_map_size)
-        return;
-
-    // Create shadow map using D32_FLOAT format for depth writing and sampling
-    SDL_GPUTextureCreateInfo shadow_info = {};
-    shadow_info.type = SDL_GPU_TEXTURETYPE_2D;
-    shadow_info.format = SDL_GPU_TEXTUREFORMAT_D32_FLOAT; // Depth format for depth-stencil target
-    shadow_info.usage = SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET | SDL_GPU_TEXTUREUSAGE_SAMPLER;
-    shadow_info.width = traits->shadow_map_size;
-    shadow_info.height = traits->shadow_map_size;
-    shadow_info.layer_count_or_depth = 1;
-    shadow_info.num_levels = 1;
-    shadow_info.sample_count = SDL_GPU_SAMPLECOUNT_1;
-    shadow_info.props = SDL_CreateProperties();
-    SDL_SetStringProperty(shadow_info.props, SDL_PROP_GPU_TEXTURE_CREATE_NAME_STRING, "ShadowMap");
-    g_renderer.shadow_map = SDL_CreateGPUTexture(g_renderer.device, &shadow_info);
-    SDL_DestroyProperties(shadow_info.props);
-    if (!g_renderer.shadow_map)
-        Exit(SDL_GetError());
-
-    // Create shadow sampler with depth comparison
-    SDL_GPUSamplerCreateInfo shadow_sampler_info = {};
-    shadow_sampler_info.min_filter = SDL_GPU_FILTER_LINEAR;
-    shadow_sampler_info.mag_filter = SDL_GPU_FILTER_LINEAR;
-    shadow_sampler_info.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_LINEAR;
-    shadow_sampler_info.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
-    shadow_sampler_info.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
-    shadow_sampler_info.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
-    shadow_sampler_info.enable_compare = true;
-    shadow_sampler_info.compare_op = SDL_GPU_COMPAREOP_LESS_OR_EQUAL;
-    g_renderer.shadow_sampler = SDL_CreateGPUSampler(g_renderer.device, &shadow_sampler_info);
-    SDL_DestroyProperties(shadow_info.props);
-    if (!g_renderer.shadow_sampler)
-        Exit(SDL_GetError());
-}
-
 void BeginRenderFrame(Color clear_color)
 {
+#if 0
     ClearRenderCommands();
     UpdateBackBuffer();
 
@@ -203,10 +161,12 @@ void BeginRenderFrame(Color clear_color)
     g_renderer.command_buffer = cmd;
 
     BeginRenderPass(clear_color.a >= 1.0f, clear_color, g_renderer.traits.msaa, nullptr);
+#endif
 }
 
 void EndRenderFrame()
 {
+#if 0
     assert(!g_renderer.render_pass);
 
     if (!g_renderer.command_buffer)
@@ -218,8 +178,10 @@ void EndRenderFrame()
 
     g_renderer.command_buffer = nullptr;
     g_renderer.render_pass = nullptr;
+#endif
 }
 
+#if 0
 SDL_GPURenderPass* BeginPassGPU(SDL_GPUTexture* target, bool clear, Color clear_color)
 {
     SDL_GPUColorTargetInfo color_target = {};
@@ -285,23 +247,29 @@ SDL_GPURenderPass* BeginPassGPU(bool clear, Color clear_color, bool msaa, Textur
     return g_renderer.render_pass;
 
 }
+#endif
 
 void EndRenderPassGPU()
 {
+#if 0
     assert(g_renderer.render_pass);
 
     SDL_EndGPURenderPass(g_renderer.render_pass);
     g_renderer.render_pass = nullptr;
     g_renderer.shadow_pass = false;
     g_renderer.msaa = false;
+#endif
 }
 
 void BindDefaultTextureGPU(int index)
 {
+#if 0
     assert(g_renderer.device);
     BindTextureGPU(g_core_assets.textures.white, g_renderer.command_buffer, sampler_register_user0 + index);
+#endif
 }
 
+#if 0
 void BindTextureGPU(Texture* texture, SDL_GPUCommandBuffer* cb, int index)
 {
     if (g_renderer.shadow_pass)
@@ -386,9 +354,11 @@ SDL_GPURenderPass* BeginShadowPassGPU()
 
     return g_renderer.render_pass;
 }
+#endif
 
 static void ResetRenderState()
 {
+#if 0
     // Reset all state tracking variables to force rebinding
     g_renderer.pipeline = nullptr;
 
@@ -397,10 +367,12 @@ static void ResetRenderState()
 
     for (int i = 0; i < (int)(sampler_register_count); i++)
         BindTextureGPU(g_core_assets.textures.white, g_renderer.command_buffer, i);
+#endif
 }
 
 static void UpdateBackBuffer()
 {
+#if 0
     // is the back buffer the correct size?
     assert(g_renderer.device);
     Vec2Int size = GetScreenSize();
@@ -409,6 +381,7 @@ static void UpdateBackBuffer()
 
     g_renderer.linear_back_buffer =
         CreateTexture(nullptr, size.x, size.y, TEXTURE_FORMAT_RGBA16F, GetName("linear"));
+#endif
 }
 
 void LoadRendererAssets(Allocator* allocator)
@@ -416,6 +389,7 @@ void LoadRendererAssets(Allocator* allocator)
     g_core_assets.textures.white = CreateTexture(nullptr, &color32_white, 1, 1, TEXTURE_FORMAT_RGBA8, GetName("white"));
 }
 
+#if 0
 void InitRenderer(RendererTraits* traits, SDL_Window* window)
 {
     g_renderer.window = window;
@@ -482,3 +456,4 @@ void ShutdownRenderer()
 
     g_renderer = {};
 }
+#endif

@@ -20,10 +20,11 @@ namespace platform
             return Vec2{ static_cast<f32>(cursor_pos.x), static_cast<f32>(cursor_pos.y) };
             */
 
-        f32 x;
-        f32 y;
-        SDL_GetMouseState(&x, &y);
+        // f32 x;
+        // f32 y;
+        // SDL_GetMouseState(&x, &y);
 
-        return { x, y};
+        //return { x, y};
+        return {0,0};
     }
 }

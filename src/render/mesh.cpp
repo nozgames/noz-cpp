@@ -6,16 +6,16 @@ struct MeshImpl : Mesh
 {
     size_t vertex_count;
     size_t index_count;
-    SDL_GPUBuffer* vertex_buffer;
-    SDL_GPUBuffer* index_buffer;
-    SDL_GPUTransferBuffer* vertex_transfer;
-    SDL_GPUTransferBuffer* index_transfer;
+    // SDL_GPUBuffer* vertex_buffer;
+    // SDL_GPUBuffer* index_buffer;
+    // SDL_GPUTransferBuffer* vertex_transfer;
+    // SDL_GPUTransferBuffer* index_transfer;
     MeshVertex* vertices;
     uint16_t* indices;
     Bounds2 bounds;
 };
 
-static SDL_GPUDevice* g_device = nullptr;
+//static SDL_GPUDevice* g_device = nullptr;
 
 static void UploadMesh(MeshImpl* impl, const Name* name);
 
@@ -23,6 +23,7 @@ static void MeshDestructor(void* p)
 {
     MeshImpl* impl = (MeshImpl*)p;
 
+#if 0
     if (impl->index_transfer)
         SDL_ReleaseGPUTransferBuffer(g_device, impl->index_transfer);
 
@@ -39,6 +40,7 @@ static void MeshDestructor(void* p)
     impl->index_transfer = nullptr;
     impl->vertex_buffer = nullptr;
     impl->vertex_transfer = nullptr;
+#endif
 }
 
 inline size_t GetMeshImplSize(size_t vertex_count, size_t index_count)
@@ -127,6 +129,7 @@ Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const
     return mesh;
 }
 
+#if 0
 void DrawMeshGPU(Mesh* mesh, SDL_GPURenderPass* pass)
 {
     assert(pass);
@@ -146,9 +149,11 @@ void DrawMeshGPU(Mesh* mesh, SDL_GPURenderPass* pass)
 
     SDL_DrawGPUIndexedPrimitives(pass, (uint32_t)impl->index_count, 1, 0, 0, 0);
 }
+#endif
 
 static void UploadMesh(MeshImpl* impl, const Name* name)
 {
+#if 0
     assert(impl);
     assert(!impl->vertex_buffer);
     assert(g_device);
@@ -211,6 +216,7 @@ static void UploadMesh(MeshImpl* impl, const Name* name)
     SDL_UploadToGPUBuffer(index_copy_pass, &index_source, &index_dest, false);
     SDL_EndGPUCopyPass(index_copy_pass);
     SDL_SubmitGPUCommandBuffer(index_upload_cmd);
+#endif
 }
 
 size_t GetVertexCount(Mesh* mesh)
@@ -228,6 +234,7 @@ Bounds2 GetBounds(Mesh* mesh)
     return static_cast<MeshImpl*>(mesh)->bounds;
 }
 
+#if 0
 void InitMesh(RendererTraits* traits, SDL_GPUDevice* device)
 {
     g_device = device;
@@ -238,3 +245,5 @@ void ShutdownMesh()
     g_device = nullptr;
 }
 
+
+#endif

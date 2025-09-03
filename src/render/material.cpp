@@ -14,9 +14,9 @@ struct MaterialImpl : Material
 
 Material* CreateMaterial(Allocator* allocator, Shader* shader)
 {
-    auto texture_count = GetSamplerCount(shader);
+    auto texture_count = 0; // GetSamplerCount(shader);
     auto textures_size = texture_count * sizeof(Texture*);
-    auto uniform_data_size = GetUniformDataSize(shader);
+    auto uniform_data_size = 0; // GetUniformDataSize(shader);
     auto material_size =
         sizeof(MaterialImpl) +
         textures_size +
@@ -28,8 +28,8 @@ Material* CreateMaterial(Allocator* allocator, Shader* shader)
 
     MaterialImpl* impl = static_cast<MaterialImpl*>(material);
     impl->shader = shader;
-    impl->vertex_uniform_count = GetVertexUniformCount(shader);
-    impl->fragment_uniform_count = GetFragmentUniformCount(shader);
+    // impl->vertex_uniform_count = GetVertexUniformCount(shader);
+    // impl->fragment_uniform_count = GetFragmentUniformCount(shader);
     impl->texture_count = texture_count;
     impl->textures = (Texture**)(impl + 1);
     impl->uniforms_data = (u8*)(impl->textures + texture_count);
@@ -48,6 +48,7 @@ void SetTexture(Material* material, Texture* texture, size_t index)
     impl->textures[index] = texture;
 }
 
+/*
 void BindMaterialGPU(Material* material, SDL_GPUCommandBuffer* cb)
 {
     MaterialImpl* impl = static_cast<MaterialImpl*>(material);
@@ -57,3 +58,4 @@ void BindMaterialGPU(Material* material, SDL_GPUCommandBuffer* cb)
     for (size_t i = 0, c = impl->texture_count; i < c; ++i)
         BindTextureGPU(impl->textures[i], cb, static_cast<int>(i) + static_cast<int>(sampler_register_user0));
 }
+*/

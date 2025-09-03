@@ -6,10 +6,10 @@
 
 struct Sampler
 {
-    SDL_GPUSampler* gpu_sampler;
+    //SDL_GPUSampler* gpu_sampler;
 };
 
-static SDL_GPUDevice* g_device = nullptr;
+//static SDL_GPUDevice* g_device = nullptr;
 static Sampler* g_cache_samplers = nullptr;
 static u64* g_cache_keys = nullptr;
 static Map g_cache = {};
@@ -19,6 +19,7 @@ static u64 Hash(const SamplerOptions* options)
     return Hash((void*)options, sizeof(SamplerOptions));
 }
 
+/*
 SDL_GPUFilter ToSDL(TextureFilter filter)
 {
     switch (filter)
@@ -115,3 +116,4 @@ void ShutdownSamplerFactory()
     g_cache = {};
     g_device = nullptr;
 }
+*/

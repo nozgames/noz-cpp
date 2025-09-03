@@ -51,7 +51,7 @@ static ApplicationTraits g_default_traits =
 // @impl
 struct Application
 {
-    SDL_Window* window;
+//    SDL_Window* window;
     bool has_focus;
     bool vsync;
     Vec2Int screen_size;
@@ -76,7 +76,8 @@ void Init(ApplicationTraits& traits)
 void Exit(const char* format, ...)
 {
     char buffer[1024];
-    
+
+#if 0
     if (format)
     {
         va_list args;
@@ -92,6 +93,7 @@ void Exit(const char* format, ...)
         fprintf(stderr, "error: unknown error\n");
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, g_app.title, "unknown error", NULL);
     }
+#endif
     
     exit(1);
 }
@@ -106,11 +108,13 @@ void ExitOutOfMemory(const char* message)
 
 static void UpdateScreenSize()
 {
+#if 0
     int w;
     int h;
     SDL_GetWindowSize(g_app.window, &w, &h);
     g_app.screen_size = { w, h };
     g_app.screen_aspect_ratio = (float)w / (float)h;
+#endif
 }
 
 #ifdef NOZ_EDITOR
@@ -133,6 +137,7 @@ void InitApplication(ApplicationTraits* traits)
     InitRandom();
     InitEvent(traits);
 
+#if 0
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD) != 1)
         return;
 
@@ -170,6 +175,8 @@ void InitApplication(ApplicationTraits* traits)
 
     InitVfx();
     InitUI();
+#endif
+
 }
 
 // @shutdown
@@ -193,7 +200,7 @@ void ShutdownApplication()
     ShutdownVfx();
     ShutdownPhysics();
     ShutdownTime();
-    ShutdownRenderer();
+    //ShutdownRenderer();
     ShutdownInput();
     ShutdownEvent();
     ShutdownName();
@@ -219,6 +226,7 @@ static void UpdateFPS()
 // @update
 bool UpdateApplication()
 {
+#if 0
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
@@ -232,6 +240,7 @@ bool UpdateApplication()
         else if (event.type == SDL_EVENT_WINDOW_RESIZED)
             UpdateScreenSize();
     }
+#endif
 
     UpdateTime();
     UpdateInput();
@@ -264,10 +273,12 @@ float GetScreenAspectRatio()
 
 void ShowCursor(bool cursor)
 {
+#if 0
     if (cursor)
         SDL_ShowCursor();
     else
         SDL_HideCursor();
+#endif
 }
 
 float GetCurrentFPS()

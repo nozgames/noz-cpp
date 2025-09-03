@@ -4,24 +4,25 @@
 
 struct TextureImpl : Texture
 {
-    SDL_GPUTexture* handle;
+    //SDL_GPUTexture* handle;
     SamplerOptions sampler_options;
     Vec2Int size;
 };
 
-static SDL_GPUDevice* g_device = nullptr;
+//static SDL_GPUDevice* g_device = nullptr;
 static SamplerOptions g_default_sampler_options = {
     TEXTURE_FILTER_LINEAR,
     TEXTURE_FILTER_LINEAR,
     TEXTURE_CLAMP_CLAMP,
     TEXTURE_CLAMP_CLAMP,
     TEXTURE_CLAMP_CLAMP,
-    SDL_GPU_COMPAREOP_INVALID
+//    SDL_GPU_COMPAREOP_INVALID
 };
 
 static void texture_destroy_impl(TextureImpl* impl);
 int GetBytesPerPixel(TextureFormat format);
 
+#if 0
 SDL_GPUTextureFormat ToSDL(const TextureFormat format)
 {
     switch (format)
@@ -36,6 +37,7 @@ SDL_GPUTextureFormat ToSDL(const TextureFormat format)
         return SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
     }
 }
+#endif
 
 static void CreateTexture(
     TextureImpl* impl,
@@ -91,6 +93,7 @@ static void CreateTexture(
     const size_t pitch = width * channels;
     const size_t size = pitch * height;
 
+#if 0
     SDL_GPUTransferBufferCreateInfo transfer_info = {};
     transfer_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
     transfer_info.size = (Uint32)size;
@@ -175,6 +178,7 @@ static void CreateTexture(
 
     if (allocated_rgba)
         free(rgba_data);
+#endif
 }
 
 Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const Name* name)
@@ -182,7 +186,7 @@ Texture* CreateTexture(Allocator* allocator, int width, int height, TextureForma
     assert(width > 0);
     assert(height > 0);
     assert(name);
-    assert(g_device);
+//    assert(g_device);
 
     auto* texture = (Texture*)Alloc(allocator, sizeof(TextureImpl));
     if (!texture)
@@ -194,6 +198,7 @@ Texture* CreateTexture(Allocator* allocator, int width, int height, TextureForma
     impl->name = name;
     impl->sampler_options = g_default_sampler_options;
 
+#if 0
     SDL_GPUTextureCreateInfo texture_info = {};
     texture_info.type = SDL_GPU_TEXTURETYPE_2D;
     texture_info.format = ToSDL(format);
@@ -208,6 +213,7 @@ Texture* CreateTexture(Allocator* allocator, int width, int height, TextureForma
     SDL_SetStringProperty(texture_info.props, SDL_PROP_GPU_TEXTURE_CREATE_NAME_STRING, name->value);
     impl->handle = SDL_CreateGPUTexture(g_device, &texture_info);
     SDL_DestroyProperties(texture_info.props);
+#endif
 
     return texture;
 }
@@ -258,10 +264,12 @@ int GetHeight(Texture* texture)
     return static_cast<TextureImpl*>(texture)->size.y;
 }
 
+/*
 SDL_GPUTexture* GetGPUTexture(Texture* texture)
 {
     return static_cast<TextureImpl*>(texture)->handle;
 }
+*/
 
 SamplerOptions GetSamplerOptions(Texture* texture)
 {
@@ -291,7 +299,7 @@ Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, co
     if (!impl)
         return nullptr;
 
-    impl->handle = nullptr;
+//    impl->handle = nullptr;
     impl->size.x = width;
     impl->size.y = height;
 
@@ -369,6 +377,7 @@ int GetBytesPerPixel(TextureFormat format)
     }
 }
 
+#if 0
 void InitTexture(RendererTraits* traits, SDL_GPUDevice* device)
 {
     g_device = device;
@@ -378,3 +387,5 @@ void ShutdownTexture()
 {
     g_device = nullptr;
 }
+
+#endif

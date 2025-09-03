@@ -76,6 +76,9 @@ if(WIN32)
     list(APPEND SOURCE_FILES
         src/platform/windows/windows_main.cpp
         src/platform/windows/windows_input.cpp
+        src/platform/windows/windows_audio.cpp
+        src/platform/windows/windows_time.cpp
+        src/platform/windows/windows_render.cpp
     )
 else()
 endif()

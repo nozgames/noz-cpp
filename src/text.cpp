@@ -3,6 +3,7 @@
 //
 
 #include <cctype>
+#include <cstdarg>
 #include <cstdio>
 
 void SetValue(text_t& dst, const text_t& src)

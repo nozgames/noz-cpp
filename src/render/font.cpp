@@ -23,7 +23,7 @@ struct FontImpl : Font
     uint16_t kerning_count;                // Number of kerning pairs
 };
 
-static SDL_GPUDevice* g_device = nullptr;
+//static SDL_GPUDevice* g_device = nullptr;
 
 #if 0
 static void font_destroy_impl(FontImpl* impl)
@@ -202,6 +202,7 @@ Material* GetMaterial(Font* font)
     return impl->material;
 }
 
+/*
 void InitFont(RendererTraits* traits, SDL_GPUDevice* device)
 {
     g_device = device;
@@ -212,3 +213,4 @@ void ShutdownFont()
     g_device = nullptr;
 }
 
+*/
