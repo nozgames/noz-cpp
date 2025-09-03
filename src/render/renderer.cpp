@@ -212,8 +212,6 @@ void EndRenderFrame()
     if (!g_renderer.command_buffer)
         return;
 
-    DrawVfx();
-    DrawUI();
     EndRenderPass();
     ExecuteRenderCommands(g_renderer.command_buffer);
     SDL_SubmitGPUCommandBuffer(g_renderer.command_buffer);
