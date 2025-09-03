@@ -119,46 +119,23 @@ Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const
     u16 vertex_count = ReadU16(stream);
     u16 index_count = ReadU16(stream);
 
-    MeshImpl* mesh = CreateMesh(allocator, vertex_count, index_count, name);
-    if (!mesh)
+    MeshImpl* impl = CreateMesh(allocator, vertex_count, index_count, name);
+    if (!impl)
         return nullptr;
 
-    ReadBytes(stream, mesh->vertices, sizeof(MeshVertex) * mesh->vertex_count);
-    ReadBytes(stream, mesh->indices, sizeof(uint16_t) * mesh->index_count);
-    UploadMesh(mesh, name);
-    return mesh;
+    impl->bounds = bounds;
+    ReadBytes(stream, impl->vertices, sizeof(MeshVertex) * impl->vertex_count);
+    ReadBytes(stream, impl->indices, sizeof(uint16_t) * impl->index_count);
+    UploadMesh(impl, name);
+    return impl;
 }
-
-#if 0
-void DrawMeshGPU(Mesh* mesh, SDL_GPURenderPass* pass)
-{
-    assert(pass);
-
-    MeshImpl* impl = static_cast<MeshImpl*>(mesh);
-    if (!impl->vertex_buffer)
-        return;
-
-    SDL_GPUBufferBinding vertex_binding = {0};
-    vertex_binding.buffer = impl->vertex_buffer;
-    vertex_binding.offset = 0;
-    SDL_BindGPUVertexBuffers(pass, 0, &vertex_binding, 1);
-
-    SDL_GPUBufferBinding index_binding = {0};
-    index_binding.buffer = impl->index_buffer;
-    SDL_BindGPUIndexBuffer(pass, &index_binding, SDL_GPU_INDEXELEMENTSIZE_16BIT);
-
-    SDL_DrawGPUIndexedPrimitives(pass, (uint32_t)impl->index_count, 1, 0, 0, 0);
-}
-#endif
 
 static void UploadMesh(MeshImpl* impl, const Name* name)
 {
     assert(impl);
     assert(!impl->vertex_buffer);
-
-    // Create vertex buffer using platform API
-    impl->vertex_buffer = platform::CreateVertexBuffer(impl->vertices, impl->vertex_count);
-    impl->index_buffer = platform::CreateIndexBuffer(impl->indices, impl->index_count);
+    impl->vertex_buffer = platform::CreateVertexBuffer(impl->vertices, impl->vertex_count, name ? name->value : nullptr);
+    impl->index_buffer = platform::CreateIndexBuffer(impl->indices, impl->index_count, name ? name->value : nullptr);
 }
 
 size_t GetVertexCount(Mesh* mesh)

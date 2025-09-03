@@ -19,30 +19,13 @@ extern void ShutdownPipelineFactory();
 extern void ShutdownSamplerFactory();
 extern void ShutdownRenderBuffer();
 extern void ExecuteRenderCommands();
-extern platform::Pipeline* GetPipeline(Shader* shader, bool msaa);
+extern platform::Pipeline* GetPipeline(Shader* shader);
 
 static void ResetRenderState();
 
 struct Renderer
 {
-    // SDL_GPUCommandBuffer* command_buffer;
-    // SDL_GPURenderPass* render_pass;
-
-    // Renderer configuration
     RendererTraits traits;
-
-    // Depth buffer support
-    //SDL_GPUTexture* depth_texture;
-    int depth_width;
-    int depth_height;
-
-    // MSAA support
-    // SDL_GPUTexture* msaa_color_texture;
-    // SDL_GPUTexture* msaa_depth_texture;
-
-    // SDL_GPUTexture* swap_chain_texture;
-    bool shadow_pass;
-    bool msaa;
     platform::Pipeline* pipeline;
 };
 
@@ -175,17 +158,6 @@ void EndRenderFrame()
     EndRenderPass();
     ExecuteRenderCommands();
     platform::EndRenderFrame();
-#if 0
-    assert(!g_renderer.render_pass);
-
-    if (!g_renderer.command_buffer)
-        return;
-
-    SDL_SubmitGPUCommandBuffer(g_renderer.command_buffer);
-
-    g_renderer.command_buffer = nullptr;
-    g_renderer.render_pass = nullptr;
-#endif
 }
 
 #if 0
@@ -268,7 +240,7 @@ void BindShaderInternal(Shader* shader)
 {
     assert(shader);
 
-    platform::Pipeline* pipeline = GetPipeline(shader, g_renderer.msaa);
+    platform::Pipeline* pipeline = GetPipeline(shader);
     if (!pipeline)
         return;
 

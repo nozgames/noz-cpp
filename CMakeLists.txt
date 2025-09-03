@@ -79,6 +79,7 @@ if(WIN32)
         src/platform/windows/windows_audio.cpp
         src/platform/windows/windows_time.cpp
         src/platform/windows/windows_render.cpp
+        src/platform/windows/windows_vulkan.cpp
     )
 else()
 endif()

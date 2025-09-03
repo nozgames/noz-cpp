@@ -3,21 +3,10 @@
 //
 
 #include "../../platform.h"
-#include <noz/noz.h>
+#include "windows_vulkan.h"
 
-// Forward declarations for shader functions
 extern platform::ShaderModule* GetVertexShader(Shader* shader);
 extern platform::ShaderModule* GetFragmentShader(Shader* shader);
-
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#define VK_NO_PROTOTYPES
-#include <vulkan/vulkan.h>
-#include <vulkan/vulkan_win32.h>
-
-#include <algorithm>
-#include <vector>
 
 struct VulkanRenderer
 {
@@ -45,11 +34,29 @@ struct VulkanRenderer
     VkSemaphore render_finished_semaphore;
     VkFence in_flight_fence;
 
-    // Uniform buffer storage
-    VkBuffer uniform_buffer;
-    VkDeviceMemory uniform_buffer_memory;
-    void* uniform_buffer_mapped;
-    size_t uniform_buffer_size;
+    // Uniform buffers for different register slots
+    VkBuffer camera_uniform_buffer;          // vertex_register_camera (0)
+    VkDeviceMemory camera_uniform_memory;
+    void* camera_uniform_mapped;
+    
+    VkBuffer transform_uniform_buffer;       // vertex_register_object (1) 
+    VkDeviceMemory transform_uniform_memory;
+    void* transform_uniform_mapped;
+    
+    VkBuffer bones_uniform_buffer;           // vertex_register_bone (2)
+    VkDeviceMemory bones_uniform_memory;
+    void* bones_uniform_mapped;
+    
+    VkBuffer color_uniform_buffer;           // fragment_register_color (0)
+    VkDeviceMemory color_uniform_memory;
+    void* color_uniform_mapped;
+
+    // Descriptor sets for uniform buffers - separate sets for different spaces
+    VkDescriptorSetLayout vertex_descriptor_set_layout;    // space1 - vertex uniforms
+    VkDescriptorSetLayout fragment_descriptor_set_layout;  // space3 - fragment uniforms
+    VkDescriptorPool descriptor_pool;
+    VkDescriptorSet vertex_descriptor_set;    // space1 - camera, transform, bones
+    VkDescriptorSet fragment_descriptor_set;  // space3 - color, light
 
     platform::Window* window;
     RendererTraits traits;
@@ -64,172 +71,238 @@ struct SwapchainSupportDetails
 
 static VulkanRenderer g_vulkan = {};
 static uint32_t g_current_image_index = 0;
+static VkPipelineLayout g_current_pipeline_layout = VK_NULL_HANDLE;
 static HMODULE vulkan_library = nullptr;
 
 // Helper function to find suitable memory type
-static uint32_t FindMemoryType(uint32_t type_filter) {
-    // For now, just return the first available memory type
-    // TODO: Implement proper memory type selection with properties
+static uint32_t FindMemoryType(uint32_t type_filter, VkMemoryPropertyFlags properties) {
+    VkPhysicalDeviceMemoryProperties mem_properties;
+    vkGetPhysicalDeviceMemoryProperties(g_vulkan.physical_device, &mem_properties);
+
+    for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++) {
+        if ((type_filter & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+    
+    // Fallback: just find any available type
     for (uint32_t i = 0; i < 32; i++) {
         if (type_filter & (1 << i)) {
             return i;
         }
     }
-    return 0; // fallback
+    return 0;
 }
 
-// Global function pointers
-static PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = nullptr;
-static PFN_vkCreateInstance vkCreateInstance = nullptr;
-static PFN_vkDestroyInstance vkDestroyInstance = nullptr;
-static PFN_vkEnumerateInstanceLayerProperties vkEnumerateInstanceLayerProperties = nullptr;
-static PFN_vkEnumeratePhysicalDevices vkEnumeratePhysicalDevices = nullptr;
-static PFN_vkGetPhysicalDeviceQueueFamilyProperties vkGetPhysicalDeviceQueueFamilyProperties = nullptr;
-static PFN_vkGetPhysicalDeviceSurfaceSupportKHR vkGetPhysicalDeviceSurfaceSupportKHR = nullptr;
-static PFN_vkEnumerateDeviceExtensionProperties vkEnumerateDeviceExtensionProperties = nullptr;
-static PFN_vkCreateDevice vkCreateDevice = nullptr;
-static PFN_vkDestroyDevice vkDestroyDevice = nullptr;
-static PFN_vkGetDeviceQueue vkGetDeviceQueue = nullptr;
-static PFN_vkDeviceWaitIdle vkDeviceWaitIdle = nullptr;
-static PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR = nullptr;
-static PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR = nullptr;
-static PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
-static PFN_vkGetPhysicalDeviceSurfaceFormatsKHR vkGetPhysicalDeviceSurfaceFormatsKHR = nullptr;
-static PFN_vkGetPhysicalDeviceSurfacePresentModesKHR vkGetPhysicalDeviceSurfacePresentModesKHR = nullptr;
-static PFN_vkCreateSwapchainKHR vkCreateSwapchainKHR = nullptr;
-static PFN_vkDestroySwapchainKHR vkDestroySwapchainKHR = nullptr;
-static PFN_vkGetSwapchainImagesKHR vkGetSwapchainImagesKHR = nullptr;
-static PFN_vkCreateImageView vkCreateImageView = nullptr;
-static PFN_vkDestroyImageView vkDestroyImageView = nullptr;
-static PFN_vkCreateRenderPass vkCreateRenderPass = nullptr;
-static PFN_vkDestroyRenderPass vkDestroyRenderPass = nullptr;
-static PFN_vkCreateFramebuffer vkCreateFramebuffer = nullptr;
-static PFN_vkDestroyFramebuffer vkDestroyFramebuffer = nullptr;
-static PFN_vkCreateCommandPool vkCreateCommandPool = nullptr;
-static PFN_vkDestroyCommandPool vkDestroyCommandPool = nullptr;
-static PFN_vkAllocateCommandBuffers vkAllocateCommandBuffers = nullptr;
-static PFN_vkBeginCommandBuffer vkBeginCommandBuffer = nullptr;
-static PFN_vkEndCommandBuffer vkEndCommandBuffer = nullptr;
-static PFN_vkCmdBeginRenderPass vkCmdBeginRenderPass = nullptr;
-static PFN_vkCmdEndRenderPass vkCmdEndRenderPass = nullptr;
-static PFN_vkCmdSetViewport vkCmdSetViewport = nullptr;
-static PFN_vkCmdSetScissor vkCmdSetScissor = nullptr;
-static PFN_vkCreateBuffer vkCreateBuffer = nullptr;
-static PFN_vkDestroyBuffer vkDestroyBuffer = nullptr;
-static PFN_vkGetBufferMemoryRequirements vkGetBufferMemoryRequirements = nullptr;
-static PFN_vkAllocateMemory vkAllocateMemory = nullptr;
-static PFN_vkFreeMemory vkFreeMemory = nullptr;
-static PFN_vkBindBufferMemory vkBindBufferMemory = nullptr;
-static PFN_vkMapMemory vkMapMemory = nullptr;
-static PFN_vkUnmapMemory vkUnmapMemory = nullptr;
-static PFN_vkCmdBindVertexBuffers vkCmdBindVertexBuffers = nullptr;
-static PFN_vkCmdBindIndexBuffer vkCmdBindIndexBuffer = nullptr;
-static PFN_vkCmdDrawIndexed vkCmdDrawIndexed = nullptr;
-static PFN_vkCmdDraw vkCmdDraw = nullptr;
-static PFN_vkCreateSemaphore vkCreateSemaphore = nullptr;
-static PFN_vkDestroySemaphore vkDestroySemaphore = nullptr;
-static PFN_vkCreateFence vkCreateFence = nullptr;
-static PFN_vkDestroyFence vkDestroyFence = nullptr;
-static PFN_vkWaitForFences vkWaitForFences = nullptr;
-static PFN_vkResetFences vkResetFences = nullptr;
-static PFN_vkAcquireNextImageKHR vkAcquireNextImageKHR = nullptr;
-static PFN_vkQueueSubmit vkQueueSubmit = nullptr;
-static PFN_vkQueuePresentKHR vkQueuePresentKHR = nullptr;
-
-// Pipeline functions
-static PFN_vkCreateGraphicsPipelines vkCreateGraphicsPipelines = nullptr;
-static PFN_vkDestroyPipeline vkDestroyPipeline = nullptr;
-static PFN_vkCreatePipelineLayout vkCreatePipelineLayout = nullptr;
-static PFN_vkDestroyPipelineLayout vkDestroyPipelineLayout = nullptr;
-static PFN_vkCreateShaderModule vkCreateShaderModule = nullptr;
-static PFN_vkDestroyShaderModule vkDestroyShaderModule = nullptr;
-static PFN_vkCmdBindPipeline vkCmdBindPipeline = nullptr;
-
-static bool LoadVulkanLibrary()
+static bool CreateUniformBuffer(size_t size, VkBuffer* buffer, VkDeviceMemory* memory, void** mapped_ptr, const char* name = nullptr)
 {
-    vulkan_library = LoadLibraryA("vulkan-1.dll");
-    if (!vulkan_library)
+    // Create buffer
+    VkBufferCreateInfo buffer_info = {};
+    buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_info.size = size;
+    buffer_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    
+    if (vkCreateBuffer(g_vulkan.device, &buffer_info, nullptr, buffer) != VK_SUCCESS)
         return false;
-
-    vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)GetProcAddress(vulkan_library, "vkGetInstanceProcAddr");
-    if (!vkGetInstanceProcAddr)
+    
+    // Allocate memory
+    VkMemoryRequirements mem_requirements;
+    vkGetBufferMemoryRequirements(g_vulkan.device, *buffer, &mem_requirements);
+    
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = mem_requirements.size;
+    alloc_info.memoryTypeIndex = FindMemoryType(mem_requirements.memoryTypeBits, 
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    
+    if (vkAllocateMemory(g_vulkan.device, &alloc_info, nullptr, memory) != VK_SUCCESS)
+    {
+        vkDestroyBuffer(g_vulkan.device, *buffer, nullptr);
         return false;
-
-    // Load global functions
-    vkCreateInstance = (PFN_vkCreateInstance)vkGetInstanceProcAddr(nullptr, "vkCreateInstance");
-    vkEnumerateInstanceLayerProperties = (PFN_vkEnumerateInstanceLayerProperties)vkGetInstanceProcAddr(nullptr, "vkEnumerateInstanceLayerProperties");
-
-    return vkCreateInstance && vkEnumerateInstanceLayerProperties;
+    }
+    
+    vkBindBufferMemory(g_vulkan.device, *buffer, *memory, 0);
+    
+    // Map memory persistently
+    if (vkMapMemory(g_vulkan.device, *memory, 0, size, 0, mapped_ptr) != VK_SUCCESS)
+    {
+        vkFreeMemory(g_vulkan.device, *memory, nullptr);
+        vkDestroyBuffer(g_vulkan.device, *buffer, nullptr);
+        return false;
+    }
+    
+    // Set debug name for RenderDoc/debugging tools
+    if (name && g_vulkan.device && vkSetDebugUtilsObjectNameEXT)
+    {
+        VkDebugUtilsObjectNameInfoEXT name_info = {};
+        name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        name_info.objectType = VK_OBJECT_TYPE_BUFFER;
+        name_info.objectHandle = (uint64_t)*buffer;
+        name_info.pObjectName = name;
+        
+        vkSetDebugUtilsObjectNameEXT(g_vulkan.device, &name_info);
+    }
+    
+    return true;
 }
 
-static void LoadInstanceFunctions(VkInstance instance)
+static void CreateDescriptorSetLayout()
 {
-    vkDestroyInstance = (PFN_vkDestroyInstance)vkGetInstanceProcAddr(instance, "vkDestroyInstance");
-    vkEnumeratePhysicalDevices = (PFN_vkEnumeratePhysicalDevices)vkGetInstanceProcAddr(instance, "vkEnumeratePhysicalDevices");
-    vkGetPhysicalDeviceQueueFamilyProperties = (PFN_vkGetPhysicalDeviceQueueFamilyProperties)vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyProperties");
-    vkGetPhysicalDeviceSurfaceSupportKHR = (PFN_vkGetPhysicalDeviceSurfaceSupportKHR)vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceSupportKHR");
-    vkEnumerateDeviceExtensionProperties = (PFN_vkEnumerateDeviceExtensionProperties)vkGetInstanceProcAddr(instance, "vkEnumerateDeviceExtensionProperties");
-    vkCreateDevice = (PFN_vkCreateDevice)vkGetInstanceProcAddr(instance, "vkCreateDevice");
-    vkDestroySurfaceKHR = (PFN_vkDestroySurfaceKHR)vkGetInstanceProcAddr(instance, "vkDestroySurfaceKHR");
-    vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(instance, "vkCreateWin32SurfaceKHR");
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR = (PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR)vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
-    vkGetPhysicalDeviceSurfaceFormatsKHR = (PFN_vkGetPhysicalDeviceSurfaceFormatsKHR)vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceFormatsKHR");
-    vkGetPhysicalDeviceSurfacePresentModesKHR = (PFN_vkGetPhysicalDeviceSurfacePresentModesKHR)vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfacePresentModesKHR");
+    // Create vertex descriptor set layout (space1)
+    VkDescriptorSetLayoutBinding vertex_bindings[3] = {};
+    
+    // vertex_register_camera (0) - Camera uniform
+    vertex_bindings[0].binding = 0;
+    vertex_bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    vertex_bindings[0].descriptorCount = 1;
+    vertex_bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    vertex_bindings[0].pImmutableSamplers = nullptr;
+    
+    // vertex_register_object (1) - Transform uniform
+    vertex_bindings[1].binding = 1;
+    vertex_bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    vertex_bindings[1].descriptorCount = 1;
+    vertex_bindings[1].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    vertex_bindings[1].pImmutableSamplers = nullptr;
+    
+    // vertex_register_bone (2) - Bones uniform
+    vertex_bindings[2].binding = 2;
+    vertex_bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    vertex_bindings[2].descriptorCount = 1;
+    vertex_bindings[2].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    vertex_bindings[2].pImmutableSamplers = nullptr;
+    
+    VkDescriptorSetLayoutCreateInfo vertex_layout_info = {};
+    vertex_layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    vertex_layout_info.bindingCount = 3;
+    vertex_layout_info.pBindings = vertex_bindings;
+    
+    if (vkCreateDescriptorSetLayout(g_vulkan.device, &vertex_layout_info, nullptr, &g_vulkan.vertex_descriptor_set_layout) != VK_SUCCESS)
+        Exit("Failed to create vertex descriptor set layout");
+    
+    // Create fragment descriptor set layout (space3)
+    VkDescriptorSetLayoutBinding fragment_bindings[1] = {};
+    
+    // fragment_register_color (0) - Color uniform
+    fragment_bindings[0].binding = 0;
+    fragment_bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    fragment_bindings[0].descriptorCount = 1;
+    fragment_bindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragment_bindings[0].pImmutableSamplers = nullptr;
+    
+    VkDescriptorSetLayoutCreateInfo fragment_layout_info = {};
+    fragment_layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    fragment_layout_info.bindingCount = 1;
+    fragment_layout_info.pBindings = fragment_bindings;
+    
+    if (vkCreateDescriptorSetLayout(g_vulkan.device, &fragment_layout_info, nullptr, &g_vulkan.fragment_descriptor_set_layout) != VK_SUCCESS)
+        Exit("Failed to create fragment descriptor set layout");
 }
 
-static void LoadDeviceFunctions(VkDevice device)
+static void CreateDescriptorPool()
 {
-    vkDestroyDevice = (PFN_vkDestroyDevice)vkGetInstanceProcAddr(g_vulkan.instance, "vkDestroyDevice");
-    vkGetDeviceQueue = (PFN_vkGetDeviceQueue)vkGetInstanceProcAddr(g_vulkan.instance, "vkGetDeviceQueue");
-    vkDeviceWaitIdle = (PFN_vkDeviceWaitIdle)vkGetInstanceProcAddr(g_vulkan.instance, "vkDeviceWaitIdle");
-    vkCreateSwapchainKHR = (PFN_vkCreateSwapchainKHR)vkGetInstanceProcAddr(g_vulkan.instance, "vkCreateSwapchainKHR");
-    vkDestroySwapchainKHR = (PFN_vkDestroySwapchainKHR)vkGetInstanceProcAddr(g_vulkan.instance, "vkDestroySwapchainKHR");
-    vkGetSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)vkGetInstanceProcAddr(g_vulkan.instance, "vkGetSwapchainImagesKHR");
-    vkCreateImageView = (PFN_vkCreateImageView)vkGetInstanceProcAddr(g_vulkan.instance, "vkCreateImageView");
-    vkDestroyImageView = (PFN_vkDestroyImageView)vkGetInstanceProcAddr(g_vulkan.instance, "vkDestroyImageView");
-    vkCreateRenderPass = (PFN_vkCreateRenderPass)vkGetInstanceProcAddr(g_vulkan.instance, "vkCreateRenderPass");
-    vkDestroyRenderPass = (PFN_vkDestroyRenderPass)vkGetInstanceProcAddr(g_vulkan.instance, "vkDestroyRenderPass");
-    vkCreateFramebuffer = (PFN_vkCreateFramebuffer)vkGetInstanceProcAddr(g_vulkan.instance, "vkCreateFramebuffer");
-    vkDestroyFramebuffer = (PFN_vkDestroyFramebuffer)vkGetInstanceProcAddr(g_vulkan.instance, "vkDestroyFramebuffer");
-    vkCreateCommandPool = (PFN_vkCreateCommandPool)vkGetInstanceProcAddr(g_vulkan.instance, "vkCreateCommandPool");
-    vkDestroyCommandPool = (PFN_vkDestroyCommandPool)vkGetInstanceProcAddr(g_vulkan.instance, "vkDestroyCommandPool");
-    vkAllocateCommandBuffers = (PFN_vkAllocateCommandBuffers)vkGetInstanceProcAddr(g_vulkan.instance, "vkAllocateCommandBuffers");
-    vkBeginCommandBuffer = (PFN_vkBeginCommandBuffer)vkGetInstanceProcAddr(g_vulkan.instance, "vkBeginCommandBuffer");
-    vkEndCommandBuffer = (PFN_vkEndCommandBuffer)vkGetInstanceProcAddr(g_vulkan.instance, "vkEndCommandBuffer");
-    vkCmdBeginRenderPass = (PFN_vkCmdBeginRenderPass)vkGetInstanceProcAddr(g_vulkan.instance, "vkCmdBeginRenderPass");
-    vkCmdEndRenderPass = (PFN_vkCmdEndRenderPass)vkGetInstanceProcAddr(g_vulkan.instance, "vkCmdEndRenderPass");
-    vkCmdSetViewport = (PFN_vkCmdSetViewport)vkGetInstanceProcAddr(g_vulkan.instance, "vkCmdSetViewport");
-    vkCmdSetScissor = (PFN_vkCmdSetScissor)vkGetInstanceProcAddr(g_vulkan.instance, "vkCmdSetScissor");
-    vkCreateBuffer = (PFN_vkCreateBuffer)vkGetInstanceProcAddr(g_vulkan.instance, "vkCreateBuffer");
-    vkDestroyBuffer = (PFN_vkDestroyBuffer)vkGetInstanceProcAddr(g_vulkan.instance, "vkDestroyBuffer");
-    vkGetBufferMemoryRequirements = (PFN_vkGetBufferMemoryRequirements)vkGetInstanceProcAddr(g_vulkan.instance, "vkGetBufferMemoryRequirements");
-    vkAllocateMemory = (PFN_vkAllocateMemory)vkGetInstanceProcAddr(g_vulkan.instance, "vkAllocateMemory");
-    vkFreeMemory = (PFN_vkFreeMemory)vkGetInstanceProcAddr(g_vulkan.instance, "vkFreeMemory");
-    vkBindBufferMemory = (PFN_vkBindBufferMemory)vkGetInstanceProcAddr(g_vulkan.instance, "vkBindBufferMemory");
-    vkMapMemory = (PFN_vkMapMemory)vkGetInstanceProcAddr(g_vulkan.instance, "vkMapMemory");
-    vkUnmapMemory = (PFN_vkUnmapMemory)vkGetInstanceProcAddr(g_vulkan.instance, "vkUnmapMemory");
-    vkCmdBindVertexBuffers = (PFN_vkCmdBindVertexBuffers)vkGetInstanceProcAddr(g_vulkan.instance, "vkCmdBindVertexBuffers");
-    vkCmdBindIndexBuffer = (PFN_vkCmdBindIndexBuffer)vkGetInstanceProcAddr(g_vulkan.instance, "vkCmdBindIndexBuffer");
-    vkCmdDrawIndexed = (PFN_vkCmdDrawIndexed)vkGetInstanceProcAddr(g_vulkan.instance, "vkCmdDrawIndexed");
-    vkCmdDraw = (PFN_vkCmdDraw)vkGetInstanceProcAddr(g_vulkan.instance, "vkCmdDraw");
-    vkCreateSemaphore = (PFN_vkCreateSemaphore)vkGetInstanceProcAddr(g_vulkan.instance, "vkCreateSemaphore");
-    vkDestroySemaphore = (PFN_vkDestroySemaphore)vkGetInstanceProcAddr(g_vulkan.instance, "vkDestroySemaphore");
-    vkCreateFence = (PFN_vkCreateFence)vkGetInstanceProcAddr(g_vulkan.instance, "vkCreateFence");
-    vkDestroyFence = (PFN_vkDestroyFence)vkGetInstanceProcAddr(g_vulkan.instance, "vkDestroyFence");
-    vkWaitForFences = (PFN_vkWaitForFences)vkGetInstanceProcAddr(g_vulkan.instance, "vkWaitForFences");
-    vkResetFences = (PFN_vkResetFences)vkGetInstanceProcAddr(g_vulkan.instance, "vkResetFences");
-    vkAcquireNextImageKHR = (PFN_vkAcquireNextImageKHR)vkGetInstanceProcAddr(g_vulkan.instance, "vkAcquireNextImageKHR");
-    vkQueueSubmit = (PFN_vkQueueSubmit)vkGetInstanceProcAddr(g_vulkan.instance, "vkQueueSubmit");
-    vkQueuePresentKHR = (PFN_vkQueuePresentKHR)vkGetInstanceProcAddr(g_vulkan.instance, "vkQueuePresentKHR");
+    VkDescriptorPoolSize pool_size = {};
+    pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    pool_size.descriptorCount = 4; // 4 uniform buffers total
+    
+    VkDescriptorPoolCreateInfo pool_info = {};
+    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.poolSizeCount = 1;
+    pool_info.pPoolSizes = &pool_size;
+    pool_info.maxSets = 2; // Two descriptor sets: vertex (space1) and fragment (space3)
+    
+    if (vkCreateDescriptorPool(g_vulkan.device, &pool_info, nullptr, &g_vulkan.descriptor_pool) != VK_SUCCESS)
+        Exit("Failed to create descriptor pool");
+}
 
-    // Pipeline functions
-    vkCreateGraphicsPipelines = (PFN_vkCreateGraphicsPipelines)vkGetInstanceProcAddr(g_vulkan.instance, "vkCreateGraphicsPipelines");
-    vkDestroyPipeline = (PFN_vkDestroyPipeline)vkGetInstanceProcAddr(g_vulkan.instance, "vkDestroyPipeline");
-    vkCreatePipelineLayout = (PFN_vkCreatePipelineLayout)vkGetInstanceProcAddr(g_vulkan.instance, "vkCreatePipelineLayout");
-    vkDestroyPipelineLayout = (PFN_vkDestroyPipelineLayout)vkGetInstanceProcAddr(g_vulkan.instance, "vkDestroyPipelineLayout");
-    vkCreateShaderModule = (PFN_vkCreateShaderModule)vkGetInstanceProcAddr(g_vulkan.instance, "vkCreateShaderModule");
-    vkDestroyShaderModule = (PFN_vkDestroyShaderModule)vkGetInstanceProcAddr(g_vulkan.instance, "vkDestroyShaderModule");
-    vkCmdBindPipeline = (PFN_vkCmdBindPipeline)vkGetInstanceProcAddr(g_vulkan.instance, "vkCmdBindPipeline");
+static void CreateDescriptorSets()
+{
+    // Allocate both descriptor sets
+    VkDescriptorSetLayout layouts[2] = {g_vulkan.vertex_descriptor_set_layout, g_vulkan.fragment_descriptor_set_layout};
+    VkDescriptorSet descriptor_sets[2];
+    
+    VkDescriptorSetAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    alloc_info.descriptorPool = g_vulkan.descriptor_pool;
+    alloc_info.descriptorSetCount = 2;
+    alloc_info.pSetLayouts = layouts;
+    
+    if (vkAllocateDescriptorSets(g_vulkan.device, &alloc_info, descriptor_sets) != VK_SUCCESS)
+        Exit("Failed to allocate descriptor sets");
+    
+    g_vulkan.vertex_descriptor_set = descriptor_sets[0];
+    g_vulkan.fragment_descriptor_set = descriptor_sets[1];
+    
+    // Update vertex descriptor set (space1) - camera, transform, bones
+    VkDescriptorBufferInfo vertex_buffer_infos[3] = {};
+    
+    // Camera buffer (binding 0)
+    vertex_buffer_infos[0].buffer = g_vulkan.camera_uniform_buffer;
+    vertex_buffer_infos[0].offset = 0;
+    vertex_buffer_infos[0].range = sizeof(RenderCamera);
+    
+    // Transform buffer (binding 1)
+    vertex_buffer_infos[1].buffer = g_vulkan.transform_uniform_buffer;
+    vertex_buffer_infos[1].offset = 0;
+    vertex_buffer_infos[1].range = sizeof(RenderTransform);
+    
+    // Bones buffer (binding 2)
+    vertex_buffer_infos[2].buffer = g_vulkan.bones_uniform_buffer;
+    vertex_buffer_infos[2].offset = 0;
+    vertex_buffer_infos[2].range = sizeof(RenderTransform) * 64;
+    
+    VkWriteDescriptorSet vertex_writes[3] = {};
+    for (int i = 0; i < 3; i++)
+    {
+        vertex_writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        vertex_writes[i].dstSet = g_vulkan.vertex_descriptor_set;
+        vertex_writes[i].dstBinding = i;
+        vertex_writes[i].dstArrayElement = 0;
+        vertex_writes[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        vertex_writes[i].descriptorCount = 1;
+        vertex_writes[i].pBufferInfo = &vertex_buffer_infos[i];
+    }
+    
+    // Update fragment descriptor set (space3) - color
+    VkDescriptorBufferInfo fragment_buffer_info = {};
+    fragment_buffer_info.buffer = g_vulkan.color_uniform_buffer;
+    fragment_buffer_info.offset = 0;
+    fragment_buffer_info.range = 16;
+    
+    VkWriteDescriptorSet fragment_write = {};
+    fragment_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    fragment_write.dstSet = g_vulkan.fragment_descriptor_set;
+    fragment_write.dstBinding = 0;
+    fragment_write.dstArrayElement = 0;
+    fragment_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    fragment_write.descriptorCount = 1;
+    fragment_write.pBufferInfo = &fragment_buffer_info;
+    
+    // Update both descriptor sets
+    VkWriteDescriptorSet all_writes[4];
+    memcpy(all_writes, vertex_writes, sizeof(vertex_writes));
+    all_writes[3] = fragment_write;
+    
+    vkUpdateDescriptorSets(g_vulkan.device, 4, all_writes, 0, nullptr);
+    
+    // Set debug names for descriptor sets
+    if (g_vulkan.device && vkSetDebugUtilsObjectNameEXT)
+    {
+        VkDebugUtilsObjectNameInfoEXT name_info = {};
+        name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        name_info.objectType = VK_OBJECT_TYPE_DESCRIPTOR_SET;
+        
+        // Vertex descriptor set (space1)
+        name_info.objectHandle = (uint64_t)g_vulkan.vertex_descriptor_set;
+        name_info.pObjectName = "VertexUniforms";
+        vkSetDebugUtilsObjectNameEXT(g_vulkan.device, &name_info);
+        
+        // Fragment descriptor set (space3)
+        name_info.objectHandle = (uint64_t)g_vulkan.fragment_descriptor_set;
+        name_info.pObjectName = "FragmenUniforms";
+        vkSetDebugUtilsObjectNameEXT(g_vulkan.device, &name_info);
+    }
 }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
@@ -479,7 +552,7 @@ static void CreateLogicalDevice()
         Exit("Failed to create logical device");
 
     // Load device-specific functions
-    LoadDeviceFunctions(g_vulkan.device);
+    LoadDeviceFunctions(g_vulkan.instance);
 
     vkGetDeviceQueue(g_vulkan.device, indices.graphics_family, 0, &g_vulkan.graphics_queue);
     vkGetDeviceQueue(g_vulkan.device, indices.present_family, 0, &g_vulkan.present_queue);
@@ -774,6 +847,17 @@ void InitVulkan(const RendererTraits* traits, platform::Window* window)
     CreateCommandPool();
     CreateCommandBuffer();
     CreateSyncObjects();
+    
+    // Create uniform buffers
+    CreateUniformBuffer(sizeof(RenderCamera), &g_vulkan.camera_uniform_buffer, &g_vulkan.camera_uniform_memory, &g_vulkan.camera_uniform_mapped, "CameraUniformBuffer");
+    CreateUniformBuffer(sizeof(RenderTransform), &g_vulkan.transform_uniform_buffer, &g_vulkan.transform_uniform_memory, &g_vulkan.transform_uniform_mapped, "TransformUniformBuffer");
+    CreateUniformBuffer(sizeof(RenderTransform) * 64, &g_vulkan.bones_uniform_buffer, &g_vulkan.bones_uniform_memory, &g_vulkan.bones_uniform_mapped, "BonesUniformBuffer"); // Max 64 bones
+    CreateUniformBuffer(16, &g_vulkan.color_uniform_buffer, &g_vulkan.color_uniform_memory, &g_vulkan.color_uniform_mapped, "ColorUniformBuffer"); // Color data
+
+    // Create descriptor set layout, pool, and sets
+    CreateDescriptorSetLayout();
+    CreateDescriptorPool();
+    CreateDescriptorSets();
 
     printf("Vulkan renderer initialized successfully\n");
 }
@@ -982,19 +1066,22 @@ VkRenderPass GetVulkanRenderPass()
     return g_vulkan.render_pass;
 }
 
-platform::Pipeline* platform::CreatePipeline(Shader* shader, bool msaa)
+platform::Pipeline* platform::CreatePipeline(Shader* shader)
 {
     if (!g_vulkan.device)
         return nullptr;
 
-    // TODO: Get actual shader modules from shader object
-    // For now, this is a placeholder that will need shader integration
-
-    // Create basic pipeline layout (no uniforms for now)
+    VkDescriptorSetLayout layouts[4] = {
+        VK_NULL_HANDLE,                               // space0 - unused
+        g_vulkan.vertex_descriptor_set_layout,       // space1 - vertex uniforms
+        VK_NULL_HANDLE,                               // space2 - textures/samplers (placeholder)
+        g_vulkan.fragment_descriptor_set_layout      // space3 - fragment uniforms
+    };
+    
     VkPipelineLayoutCreateInfo layout_info = {};
     layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    layout_info.setLayoutCount = 0;
-    layout_info.pSetLayouts = nullptr;
+    layout_info.setLayoutCount = 4;
+    layout_info.pSetLayouts = layouts;
     layout_info.pushConstantRangeCount = 0;
     layout_info.pPushConstantRanges = nullptr;
 
@@ -1064,7 +1151,7 @@ platform::Pipeline* platform::CreatePipeline(Shader* shader, bool msaa)
     VkPipelineMultisampleStateCreateInfo multisampling = {};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
-    multisampling.rasterizationSamples = msaa ? VK_SAMPLE_COUNT_4_BIT : VK_SAMPLE_COUNT_1_BIT;
+    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
 
     // Depth stencil
     VkPipelineDepthStencilStateCreateInfo depth_stencil = {};
@@ -1137,6 +1224,25 @@ platform::Pipeline* platform::CreatePipeline(Shader* shader, bool msaa)
         return nullptr;
     }
 
+    // Set debug name for the pipeline
+    if (shader && g_vulkan.device && vkSetDebugUtilsObjectNameEXT)
+    {
+        const Name* shader_name = GetName(shader);
+        const char* name_string = GetValue(shader_name, "UnnamedPipeline");
+        
+        VkDebugUtilsObjectNameInfoEXT name_info = {};
+        name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        name_info.objectType = VK_OBJECT_TYPE_PIPELINE;
+        name_info.objectHandle = (uint64_t)pipeline;
+        name_info.pObjectName = name_string;
+        
+        vkSetDebugUtilsObjectNameEXT(g_vulkan.device, &name_info);
+    }
+
+    // Store the layout globally so we can access it for descriptor set binding
+    // TODO: Redesign API to properly associate layouts with pipelines
+    g_current_pipeline_layout = layout;
+    
     // Return the VkPipeline cast as PlatformPipeline (opaque handle)
     return (Pipeline*)pipeline;
 }
@@ -1155,6 +1261,18 @@ void platform::BindPipeline(Pipeline* pipeline)
     assert(g_vulkan.command_buffer);
 
     vkCmdBindPipeline(g_vulkan.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, (VkPipeline)pipeline);
+    
+    // Bind descriptor sets after pipeline is bound
+    if (g_current_pipeline_layout != VK_NULL_HANDLE)
+    {
+        // Bind vertex uniforms to space1
+        vkCmdBindDescriptorSets(g_vulkan.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
+                               g_current_pipeline_layout, 1, 1, &g_vulkan.vertex_descriptor_set, 0, nullptr);
+        
+        // Bind fragment uniforms to space3  
+        vkCmdBindDescriptorSets(g_vulkan.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, 
+                               g_current_pipeline_layout, 3, 1, &g_vulkan.fragment_descriptor_set, 0, nullptr);
+    }
 }
 
 void platform::BeginRenderFrame()
@@ -1228,58 +1346,86 @@ void platform::EndRenderFrame()
     vkQueuePresentKHR(g_vulkan.present_queue, &vk_parent_info);
 }
 
-// GPU command implementations
 void platform::BindTransform(const RenderTransform* transform)
 {
     assert(transform);
-    // assert(g_vulkan.uniform_buffer_mapped);
-
-    // size_t offset = sizeof(RenderCamera);
-    // char* buffer_ptr = (char*)g_vulkan.uniform_buffer_mapped;
-    // memcpy(buffer_ptr + offset, transform, sizeof(RenderTransform));
+    assert(g_vulkan.transform_uniform_mapped);
+    
+    // Copy transform data to vertex_register_object (1) uniform buffer
+    memcpy(g_vulkan.transform_uniform_mapped, transform, sizeof(RenderTransform));
+    
+    // Flush memory to make sure GPU sees the changes
+    VkMappedMemoryRange memory_range = {};
+    memory_range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    memory_range.memory = g_vulkan.transform_uniform_memory;
+    memory_range.offset = 0;
+    memory_range.size = sizeof(RenderTransform);
+    vkFlushMappedMemoryRanges(g_vulkan.device, 1, &memory_range);
 }
 
 void platform::BindCamera(const RenderCamera* camera)
 {
     assert(camera);
-    //assert(g_vulkan.uniform_buffer_mapped);
-    //memcpy(g_vulkan.uniform_buffer_mapped, camera, sizeof(RenderCamera));
+    assert(g_vulkan.camera_uniform_mapped);
+    
+    // Copy camera data to vertex_register_camera (0) uniform buffer
+    memcpy(g_vulkan.camera_uniform_mapped, camera, sizeof(RenderCamera));
+    
+    // Flush memory to make sure GPU sees the changes
+    VkMappedMemoryRange memory_range = {};
+    memory_range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    memory_range.memory = g_vulkan.camera_uniform_memory;
+    memory_range.offset = 0;
+    memory_range.size = sizeof(RenderCamera);
+    vkFlushMappedMemoryRanges(g_vulkan.device, 1, &memory_range);
 }
 
 void platform::BindBoneTransforms(const RenderTransform* bones, int count)
 {
     assert(bones);
     assert(count > 0);
-    // assert(g_vulkan.uniform_buffer_mapped);
-    //
-    // size_t offset = sizeof(RenderCamera) + sizeof(RenderTransform);
-    // size_t bone_size = sizeof(RenderTransform) * count;
-    // char* buffer_ptr = (char*)g_vulkan.uniform_buffer_mapped;
-    // memcpy(buffer_ptr + offset, bones, bone_size);
+    assert(count <= 64); // Max bone count
+    assert(g_vulkan.bones_uniform_mapped);
+    
+    // Copy bone transforms to vertex_register_bone (2) uniform buffer
+    size_t bone_size = sizeof(RenderTransform) * count;
+    memcpy(g_vulkan.bones_uniform_mapped, bones, bone_size);
+    
+    // Flush memory to make sure GPU sees the changes
+    VkMappedMemoryRange memory_range = {};
+    memory_range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    memory_range.memory = g_vulkan.bones_uniform_memory;
+    memory_range.offset = 0;
+    memory_range.size = bone_size;
+    vkFlushMappedMemoryRanges(g_vulkan.device, 1, &memory_range);
 }
 
 void platform::BindLight(const void* light)
 {
     assert(light);
-    assert(g_vulkan.uniform_buffer_mapped);
-
-    // size_t vertex_section_size = sizeof(RenderCamera) + sizeof(RenderTransform) + (sizeof(RenderTransform) * 64);
-    // size_t light_offset = vertex_section_size + 16;
-    // char* buffer_ptr = (char*)g_vulkan.uniform_buffer_mapped;
-    // memcpy(buffer_ptr + light_offset, light, 64);
+    
+    // TODO: Create light uniform buffer when needed for fragment_register_light (1)
+    (void)light; // Suppress unused parameter warning for now
 }
 
 void platform::BindColor(const void* color)
 {
     assert(color);
-    assert(g_vulkan.uniform_buffer_mapped);
-
-    // size_t vertex_section_size = sizeof(RenderCamera) + sizeof(RenderTransform) + (sizeof(RenderTransform) * 64);
-    // char* buffer_ptr = (char*)g_vulkan.uniform_buffer_mapped;
-    // memcpy(buffer_ptr + vertex_section_size, color, 16);
+    assert(g_vulkan.color_uniform_mapped);
+    
+    // Copy color data to fragment_register_color (0) uniform buffer
+    memcpy(g_vulkan.color_uniform_mapped, color, 16); // Assume 16-byte color structure
+    
+    // Flush memory to make sure GPU sees the changes
+    VkMappedMemoryRange memory_range = {};
+    memory_range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    memory_range.memory = g_vulkan.color_uniform_memory;
+    memory_range.offset = 0;
+    memory_range.size = 16;
+    vkFlushMappedMemoryRanges(g_vulkan.device, 1, &memory_range);
 }
 
-platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, size_t vertex_count)
+platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, size_t vertex_count, const char* name)
 {
     assert(vertices);
     assert(vertex_count > 0);
@@ -1301,7 +1447,8 @@ platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, size_
     VkMemoryAllocateInfo vk_alloc_info = {};
     vk_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     vk_alloc_info.allocationSize = vk_mem_reqs.size;
-    vk_alloc_info.memoryTypeIndex = FindMemoryType(vk_mem_reqs.memoryTypeBits);
+    vk_alloc_info.memoryTypeIndex = FindMemoryType(vk_mem_reqs.memoryTypeBits, 
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     
     VkDeviceMemory vk_vertex_memory = VK_NULL_HANDLE;
     if (vkAllocateMemory(g_vulkan.device, &vk_alloc_info, nullptr, &vk_vertex_memory) != VK_SUCCESS)
@@ -1320,10 +1467,22 @@ platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, size_
         vkUnmapMemory(g_vulkan.device, vk_vertex_memory);
     }
     
+    // Set debug name for RenderDoc/debugging tools
+    if (name && g_vulkan.device && vkSetDebugUtilsObjectNameEXT)
+    {
+        VkDebugUtilsObjectNameInfoEXT name_info = {};
+        name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        name_info.objectType = VK_OBJECT_TYPE_BUFFER;
+        name_info.objectHandle = (uint64_t)vf_vertex_buffer;
+        name_info.pObjectName = name;
+        
+        vkSetDebugUtilsObjectNameEXT(g_vulkan.device, &name_info);
+    }
+    
     return (Buffer*)vf_vertex_buffer;
 }
 
-platform::Buffer* platform::CreateIndexBuffer(const uint16_t* indices, size_t index_count)
+platform::Buffer* platform::CreateIndexBuffer(const uint16_t* indices, size_t index_count, const char* name)
 {
     assert(indices);
     assert(index_count > 0);
@@ -1344,7 +1503,8 @@ platform::Buffer* platform::CreateIndexBuffer(const uint16_t* indices, size_t in
     VkMemoryAllocateInfo vk_alloc_info = {};
     vk_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     vk_alloc_info.allocationSize = vk_mem_reqs.size;
-    vk_alloc_info.memoryTypeIndex = FindMemoryType(vk_mem_reqs.memoryTypeBits);
+    vk_alloc_info.memoryTypeIndex = FindMemoryType(vk_mem_reqs.memoryTypeBits, 
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     
     VkDeviceMemory index_memory = VK_NULL_HANDLE;
     if (vkAllocateMemory(g_vulkan.device, &vk_alloc_info, nullptr, &index_memory) != VK_SUCCESS)
@@ -1360,6 +1520,18 @@ platform::Buffer* platform::CreateIndexBuffer(const uint16_t* indices, size_t in
     {
         memcpy(data, indices, vk_buffer_info.size);
         vkUnmapMemory(g_vulkan.device, index_memory);
+    }
+    
+    // Set debug name for RenderDoc/debugging tools
+    if (name && g_vulkan.device && vkSetDebugUtilsObjectNameEXT)
+    {
+        VkDebugUtilsObjectNameInfoEXT name_info = {};
+        name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        name_info.objectType = VK_OBJECT_TYPE_BUFFER;
+        name_info.objectHandle = (uint64_t)index_buffer;
+        name_info.pObjectName = name;
+        
+        vkSetDebugUtilsObjectNameEXT(g_vulkan.device, &name_info);
     }
     
     return (Buffer*)index_buffer;
@@ -1431,6 +1603,10 @@ void platform::BeginRenderPass(Color clear_color)
     scissor.offset = {0, 0};
     scissor.extent = g_vulkan.swapchain_extent;
     vkCmdSetScissor(g_vulkan.command_buffer, 0, 1, &scissor);
+    
+    // Bind descriptor sets with uniform buffers - this needs to be done after a pipeline is bound
+    // For now, we'll bind it here but ideally should be bound after pipeline binding
+    // vkCmdBindDescriptorSets(g_vulkan.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &g_vulkan.descriptor_set, 0, nullptr);
 }
 
 void platform::EndRenderPass()
@@ -1438,7 +1614,7 @@ void platform::EndRenderPass()
     vkCmdEndRenderPass(g_vulkan.command_buffer);
 }
 
-platform::ShaderModule* platform::CreateShaderModule(const void* spirv_code, size_t code_size)
+platform::ShaderModule* platform::CreateShaderModule(const void* spirv_code, size_t code_size, const char* name)
 {
     if (!spirv_code || code_size == 0)
         return nullptr;
@@ -1451,6 +1627,18 @@ platform::ShaderModule* platform::CreateShaderModule(const void* spirv_code, siz
     VkShaderModule shader_module;
     if (vkCreateShaderModule(g_vulkan.device, &create_info, nullptr, &shader_module) != VK_SUCCESS)
         return nullptr;
+    
+    // Set debug name for RenderDoc/debugging tools
+    if (name && g_vulkan.device && vkSetDebugUtilsObjectNameEXT)
+    {
+        VkDebugUtilsObjectNameInfoEXT name_info = {};
+        name_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        name_info.objectType = VK_OBJECT_TYPE_SHADER_MODULE;
+        name_info.objectHandle = (uint64_t)shader_module;
+        name_info.pObjectName = name;
+        
+        vkSetDebugUtilsObjectNameEXT(g_vulkan.device, &name_info);
+    }
         
     return (ShaderModule*)shader_module;
 }

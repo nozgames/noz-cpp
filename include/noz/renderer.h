@@ -156,4 +156,3 @@ void SetSize(Camera* camera, const Vec2& size);
 Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos);
 Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos);
 void UpdateCamera(Camera* camera);
-

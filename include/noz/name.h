@@ -11,3 +11,5 @@ inline const char* GetValue(const Name* name, const char* default_value = "")
 {
     return name && name->value ? name->value : default_value;
 }
+
+extern Name* NAME_NONE;

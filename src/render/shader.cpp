@@ -15,7 +15,6 @@ struct ShaderImpl : Shader
     int src_blend;
     int dst_blend;
     int cull;
-    const Name* name;
     size_t uniform_data_size;
     ShaderUniformBuffer* uniforms;
 };
@@ -99,7 +98,7 @@ Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, con
     // Note: stream destruction handled by caller
 
     // Create fragment shader using platform API
-    impl->fragment = platform::CreateShaderModule(fragment_bytecode, fragment_bytecode_length);
+    impl->fragment = platform::CreateShaderModule(fragment_bytecode, fragment_bytecode_length, name->value);
     if (!impl->fragment)
     {
         Free(vertex_bytecode);
@@ -108,7 +107,7 @@ Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, con
     }
 
     // Create vertex shader using platform API
-    impl->vertex = platform::CreateShaderModule(vertex_bytecode, vertex_bytecode_length);
+    impl->vertex = platform::CreateShaderModule(vertex_bytecode, vertex_bytecode_length, name->value);
     
     Free(vertex_bytecode);
     Free(fragment_bytecode);
@@ -198,4 +197,9 @@ ShaderUniformBuffer GetFragmentUniformBuffer(Shader* shader, int index)
     auto impl = static_cast<ShaderImpl*>(shader);
     assert(index >=0 && index < impl->fragment_uniform_count);
     return impl->uniforms[index + impl->vertex_uniform_count];
+}
+
+const Name* GetName(Shader* shader)
+{
+    return shader->name;
 }

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <vector>
 
 namespace platform
 {
@@ -25,7 +26,7 @@ namespace platform
     
     // @render
     void SetRendererWindow(Window* window);
-    Pipeline* CreatePipeline(Shader* shader, bool msaa);
+    Pipeline* CreatePipeline(Shader* shader);
     void BindPipeline(Pipeline* pipeline);
     void DestroyPipeline(Pipeline* pipeline);
     void BeginRenderFrame();
@@ -37,14 +38,14 @@ namespace platform
     void BindBoneTransforms(const RenderTransform* bones, int count);
     void BindLight(const void* light);
     void BindColor(const void* color);
-    Buffer* CreateVertexBuffer(const MeshVertex* vertices, size_t vertex_count);
-    Buffer* CreateIndexBuffer(const uint16_t* indices, size_t index_count);
+    Buffer* CreateVertexBuffer(const MeshVertex* vertices, size_t vertex_count, const char* name = nullptr);
+    Buffer* CreateIndexBuffer(const uint16_t* indices, size_t index_count, const char* name = nullptr);
     void BindVertexBuffer(Buffer* buffer);
     void BindIndexBuffer(Buffer* buffer);
     void DrawIndexed(size_t index_count);
     
     // Shader functions
-    ShaderModule* CreateShaderModule(const void* spirv_code, size_t code_size);
+    ShaderModule* CreateShaderModule(const void* spirv_code, size_t code_size, const char* name = nullptr);
     void DestroyShaderModule(ShaderModule* module);
 
     // @time
