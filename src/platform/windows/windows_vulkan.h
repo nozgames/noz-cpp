@@ -90,6 +90,17 @@ extern PFN_vkGetPhysicalDeviceMemoryProperties vkGetPhysicalDeviceMemoryProperti
 // Debug functions
 extern PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT;
 
+// Image/Texture functions
+extern PFN_vkCreateImage vkCreateImage;
+extern PFN_vkDestroyImage vkDestroyImage;
+extern PFN_vkGetImageMemoryRequirements vkGetImageMemoryRequirements;
+extern PFN_vkBindImageMemory vkBindImageMemory;
+extern PFN_vkCreateSampler vkCreateSampler;
+extern PFN_vkDestroySampler vkDestroySampler;
+extern PFN_vkCmdPipelineBarrier vkCmdPipelineBarrier;
+extern PFN_vkCmdCopyBufferToImage vkCmdCopyBufferToImage;
+extern PFN_vkQueueWaitIdle vkQueueWaitIdle;
+
 // Function loading
 bool LoadVulkanLibrary();
 void LoadInstanceFunctions(VkInstance instance);

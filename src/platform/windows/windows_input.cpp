@@ -2,28 +2,31 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include "../../platform.h"
 #include <windows.h>
+
+platform::Window* GetWindow();
 
 namespace platform
 {
     Vec2 GetMousePosition()
     {
-        /*
-        SDL_SysWMinfo wmInfo;
-        SDL_VERSION(&wmInfo.version);
-
-        if (SDL_GetWindowWMInfo(window, &wmInfo))
-
+        platform::Window* window = ::GetWindow();
+        if (!window)
+            return Vec2{0, 0};
+            
+        HWND hwnd = (HWND)window;
+        
         POINT cursor_pos;
         if (GetCursorPos(&cursor_pos))
-            return Vec2{ static_cast<f32>(cursor_pos.x), static_cast<f32>(cursor_pos.y) };
-            */
-
-        // f32 x;
-        // f32 y;
-        // SDL_GetMouseState(&x, &y);
-
-        //return { x, y};
-        return {0,0};
+        {
+            // Convert screen coordinates to client coordinates
+            if (ScreenToClient(hwnd, &cursor_pos))
+            {
+                return Vec2{static_cast<f32>(cursor_pos.x), static_cast<f32>(cursor_pos.y)};
+            }
+        }
+        
+        return Vec2{0, 0};
     }
 }

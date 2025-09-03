@@ -2,6 +2,9 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include "../internal.h"
+#include "../platform.h"
+
 void BindShaderInternal(Shader* shader);
 
 struct MaterialImpl : Material
@@ -60,7 +63,15 @@ void BindMaterialInternal(Material* material)
     // TODO: Implement uniform data binding when uniform system is ready
     // PushUniformDataGPU(impl->shader, impl->uniforms_data);
 
-    // TODO: Implement texture binding when texture system is ready
-    // for (size_t i = 0, c = impl->texture_count; i < c; ++i)
-    //     BindTextureGPU(impl->textures[i], static_cast<int>(i) + static_cast<int>(sampler_register_user0));
+    // Bind textures to sampler registers
+    for (size_t i = 0, c = impl->texture_count; i < c; ++i)
+    {
+        if (impl->textures[i])
+        {
+            // Map to correct sampler register slot
+            // sampler_register_user0 = 1, user1 = 2, user2 = 3 (shadow = 0)
+            int slot = static_cast<int>(sampler_register_user0) + static_cast<int>(i);
+            platform::BindTexture(impl->textures[i], slot);
+        }
+    }
 }

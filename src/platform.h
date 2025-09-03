@@ -43,6 +43,7 @@ namespace platform
     void BindVertexBuffer(Buffer* buffer);
     void BindIndexBuffer(Buffer* buffer);
     void DrawIndexed(size_t index_count);
+    void BindTexture(Texture* texture, int slot);
     
     // Shader functions
     ShaderModule* CreateShaderModule(const void* spirv_code, size_t code_size, const char* name = nullptr);

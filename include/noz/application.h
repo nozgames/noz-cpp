@@ -6,6 +6,11 @@
 
 struct Allocator;
 
+namespace platform 
+{
+    struct Window;
+}
+
 struct ApplicationTraits
 {
     const char* title;
@@ -40,6 +45,8 @@ Vec2 GetScreenCenter();
 float GetScreenAspectRatio();
 
 void ShowCursor(bool show);
+
+platform::Window* GetWindow();
 
 // @time
 float GetFrameTime();

@@ -33,7 +33,7 @@ struct PixelInput
 float4 ps(PixelInput input) : SV_TARGET
 {
     float4 texColor = Texture.Sample(Sampler, input.uv0);
-    return float4(texColor.rgb, 1);
+    return float4(1,1,1,1); //  float4(texColor.rgb, 1);
 }
 
 //@ END

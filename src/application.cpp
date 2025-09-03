@@ -6,7 +6,7 @@
 #include "platform.h"
 #include "editor/editor_client.h"
 
-static constexpr int FRAME_HISTORY_SIZE = 60;
+static constexpr int FRAME_HISTORY_SIZE = 240;
 
 void LoadRendererAssets(Allocator* allocator);
 void InitRandom();
@@ -274,6 +274,11 @@ float GetScreenAspectRatio()
 void ShowCursor(bool cursor)
 {
     platform::ShowCursor(cursor);
+}
+
+platform::Window* GetWindow()
+{
+    return g_app.window;
 }
 
 float GetCurrentFPS()

@@ -91,6 +91,17 @@ PFN_vkGetPhysicalDeviceMemoryProperties vkGetPhysicalDeviceMemoryProperties = nu
 // Debug functions
 PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT = nullptr;
 
+// Image/Texture functions
+PFN_vkCreateImage vkCreateImage = nullptr;
+PFN_vkDestroyImage vkDestroyImage = nullptr;
+PFN_vkGetImageMemoryRequirements vkGetImageMemoryRequirements = nullptr;
+PFN_vkBindImageMemory vkBindImageMemory = nullptr;
+PFN_vkCreateSampler vkCreateSampler = nullptr;
+PFN_vkDestroySampler vkDestroySampler = nullptr;
+PFN_vkCmdPipelineBarrier vkCmdPipelineBarrier = nullptr;
+PFN_vkCmdCopyBufferToImage vkCmdCopyBufferToImage = nullptr;
+PFN_vkQueueWaitIdle vkQueueWaitIdle = nullptr;
+
 bool LoadVulkanLibrary()
 {
     vulkan_library = LoadLibraryA("vulkan-1.dll");
@@ -185,6 +196,17 @@ void LoadDeviceFunctions(VkInstance instance)
     vkAllocateDescriptorSets = (PFN_vkAllocateDescriptorSets)vkGetInstanceProcAddr(instance, "vkAllocateDescriptorSets");
     vkUpdateDescriptorSets = (PFN_vkUpdateDescriptorSets)vkGetInstanceProcAddr(instance, "vkUpdateDescriptorSets");
     vkFlushMappedMemoryRanges = (PFN_vkFlushMappedMemoryRanges)vkGetInstanceProcAddr(instance, "vkFlushMappedMemoryRanges");
+    
+    // Image/Texture functions
+    vkCreateImage = (PFN_vkCreateImage)vkGetInstanceProcAddr(instance, "vkCreateImage");
+    vkDestroyImage = (PFN_vkDestroyImage)vkGetInstanceProcAddr(instance, "vkDestroyImage");
+    vkGetImageMemoryRequirements = (PFN_vkGetImageMemoryRequirements)vkGetInstanceProcAddr(instance, "vkGetImageMemoryRequirements");
+    vkBindImageMemory = (PFN_vkBindImageMemory)vkGetInstanceProcAddr(instance, "vkBindImageMemory");
+    vkCreateSampler = (PFN_vkCreateSampler)vkGetInstanceProcAddr(instance, "vkCreateSampler");
+    vkDestroySampler = (PFN_vkDestroySampler)vkGetInstanceProcAddr(instance, "vkDestroySampler");
+    vkCmdPipelineBarrier = (PFN_vkCmdPipelineBarrier)vkGetInstanceProcAddr(instance, "vkCmdPipelineBarrier");
+    vkCmdCopyBufferToImage = (PFN_vkCmdCopyBufferToImage)vkGetInstanceProcAddr(instance, "vkCmdCopyBufferToImage");
+    vkQueueWaitIdle = (PFN_vkQueueWaitIdle)vkGetInstanceProcAddr(instance, "vkQueueWaitIdle");
     
     // Debug functions (optional)
     vkSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(instance, "vkSetDebugUtilsObjectNameEXT");
