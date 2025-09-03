@@ -150,6 +150,7 @@ void InitApplication(ApplicationTraits* traits)
     UpdateScreenSize();
 
     InitInput();
+    platform::SetRendererWindow(g_app.window);
     InitRenderer(&traits->renderer);
     InitTime();
     InitPhysics();
@@ -237,6 +238,9 @@ bool UpdateApplication()
         if (old_size.x != g_app.screen_size.x || old_size.y != g_app.screen_size.y)
         {
             g_app.screen_aspect_ratio = (float)g_app.screen_size.x / (float)g_app.screen_size.y;
+            
+            // Notify the Vulkan renderer to recreate the swapchain
+            HandleVulkanWindowResize();
         }
     }
 
@@ -278,3 +282,4 @@ float GetCurrentFPS()
 {
     return (float)g_app.average_fps;
 }
+

@@ -16,4 +16,11 @@ namespace platform
     bool ProcessWindowEvents(WindowHandle window, bool& has_focus, Vec2Int& screen_size);
     Vec2Int GetWindowSize(WindowHandle window);
     void ShowCursor(bool show);
+    
+    // Renderer integration
+    void SetRendererWindow(WindowHandle window);
 }
+
+// Global renderer functions
+void SetVulkanWindow(WindowHandle window);
+void HandleVulkanWindowResize();

@@ -88,6 +88,7 @@ target_include_directories(noz PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/vulkan
         ${CMAKE_CURRENT_SOURCE_DIR}/external
         ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

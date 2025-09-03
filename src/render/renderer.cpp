@@ -4,6 +4,8 @@
 
 #include "../platform.h"
 
+extern void InitVulkan(const RendererTraits* traits);
+extern void ShutdownVulkan();
 extern void DrawUI();
 extern void DrawVfx();
 extern void BeginRenderPass();
@@ -48,8 +50,13 @@ struct Renderer
 
 static Renderer g_renderer = {};
 
+// Forward to platform Vulkan renderer
+extern void VulkanBeginRenderFrame(Color clear_color);
+extern void VulkanEndRenderFrame();
+
 void BeginRenderFrame(Color clear_color)
 {
+    VulkanBeginRenderFrame(clear_color);
 #if 0
     ClearRenderCommands();
     UpdateBackBuffer();
@@ -169,6 +176,7 @@ void BeginRenderFrame(Color clear_color)
 
 void EndRenderFrame()
 {
+    VulkanEndRenderFrame();
 #if 0
     assert(!g_renderer.render_pass);
 
@@ -392,8 +400,12 @@ void LoadRendererAssets(Allocator* allocator)
     g_core_assets.textures.white = CreateTexture(nullptr, &color32_white, 1, 1, TEXTURE_FORMAT_RGBA8, GetName("white"));
 }
 
+// TODO: This is replaced by platform-specific renderer implementation
+// void InitRenderer(const RendererTraits* traits)
 void InitRenderer(const RendererTraits* traits)
 {
+    InitVulkan(traits);
+
     // g_renderer.window = window;
     // g_renderer.traits = *traits;
     //
@@ -426,6 +438,8 @@ void InitRenderer(const RendererTraits* traits)
     // InitShadowPass(traits);
 }
 
+// TODO: This is replaced by platform-specific renderer implementation
+// void ShutdownRenderer()
 void ShutdownRenderer()
 {
 //    assert(g_renderer.device);
@@ -433,6 +447,7 @@ void ShutdownRenderer()
     // ShutdownPipelineFactory();
     // ShutdownSamplerFactory();
     ShutdownRenderBuffer();
+    ShutdownVulkan();
     // ShutdownMesh();
     // ShutdownFont();
     // ShutdownShader();

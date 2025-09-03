@@ -131,6 +131,12 @@ namespace platform
     {
         ::ShowCursor(show ? TRUE : FALSE);
     }
+    
+    void SetRendererWindow(WindowHandle window)
+    {
+        // Forward to Vulkan renderer function (declared in platform.h)
+        SetVulkanWindow(window);
+    }
 }
 
 extern int main(int argc, char* argv[]);
