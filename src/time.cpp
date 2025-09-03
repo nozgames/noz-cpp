@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include "platform.h"
+
 const int DEFAULT_FIXED_RATE = 50;
 
 struct Time
@@ -18,9 +20,8 @@ static Time g_time = {};
 
 void UpdateTime()
 {
-#if 0
-    u64 current = SDL_GetPerformanceCounter();
-    u64 frequency = SDL_GetPerformanceFrequency();
+    u64 current = platform::GetPerformanceCounter();
+    u64 frequency = platform::GetPerformanceFrequency();
 
     // Calculate delta time
     u64 delta_ticks = current - g_time.last_frame_time;
@@ -30,7 +31,6 @@ void UpdateTime()
     // Calculate total time
     u64 total_ticks = current - g_time.start_time;
     g_time.total = (float)total_ticks / (float)frequency;
-#endif
 }
 
 float GetFrameTime()
@@ -57,8 +57,8 @@ void SetFixedTimeRate(int rate)
 
 void InitTime()
 {
-    // g_time.start_time = g_time.last_frame_time = SDL_GetPerformanceCounter();
-    // SetFixedTimeRate(DEFAULT_FIXED_RATE);
+     g_time.start_time = g_time.last_frame_time = platform::GetPerformanceCounter();
+     SetFixedTimeRate(DEFAULT_FIXED_RATE);
 }
 
 void ShutdownTime()
