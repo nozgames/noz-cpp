@@ -10,7 +10,7 @@
 #include <vulkan/vulkan_win32.h>
 #include "windows_vulkan.h"
 
-static HMODULE vulkan_library = nullptr;
+static HMODULE g_vulkan_library = nullptr;
 
 // Global function pointers
 PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = nullptr;
@@ -105,11 +105,11 @@ PFN_vkQueueWaitIdle vkQueueWaitIdle = nullptr;
 
 bool LoadVulkanLibrary()
 {
-    vulkan_library = LoadLibraryA("vulkan-1.dll");
-    if (!vulkan_library)
+    g_vulkan_library = LoadLibraryA("vulkan-1.dll");
+    if (!g_vulkan_library)
         return false;
 
-    vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)GetProcAddress(vulkan_library, "vkGetInstanceProcAddr");
+    vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)GetProcAddress(g_vulkan_library, "vkGetInstanceProcAddr");
     if (!vkGetInstanceProcAddr)
         return false;
 
@@ -216,10 +216,10 @@ void LoadDeviceFunctions(VkInstance instance)
 
 void UnloadVulkanLibrary()
 {
-    if (vulkan_library)
+    if (g_vulkan_library)
     {
-        FreeLibrary(vulkan_library);
-        vulkan_library = nullptr;
+        FreeLibrary(g_vulkan_library);
+        g_vulkan_library = nullptr;
     }
 }
 

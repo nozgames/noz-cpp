@@ -4,7 +4,6 @@
 
 #include "../platform.h"
 
-extern void InitPipelineFactory(const RendererTraits* traits);
 extern void DrawUI();
 extern void DrawVfx();
 extern void BeginRenderPass();
@@ -14,7 +13,6 @@ extern void BeginRenderPass(Color clear_color);
 extern void BeginShadowPass(Mat4 light_view, Mat4 light_projection);
 extern void InitRenderBuffer(const RendererTraits* traits);
 extern void ShutdownVulkan();
-extern void ShutdownPipelineFactory();
 extern void ShutdownRenderBuffer();
 extern void ExecuteRenderCommands();
 extern platform::Pipeline* GetPipeline(Shader* shader);
@@ -230,24 +228,8 @@ void BindDefaultTextureGPU(int index)
 {
 #if 0
     assert(g_renderer.device);
-    BindTextureGPU(g_core_assets.textures.white, g_renderer.command_buffer, sampler_register_user0 + index);
+    BindTextureGPU(g_core_assets.textures.white, g_renderer.command_buffer, SAMPLER_REGISTER_TEX0 + index);
 #endif
-}
-
-void BindShaderInternal(Shader* shader)
-{
-    assert(shader);
-
-    platform::Pipeline* pipeline = GetPipeline(shader);
-    if (!pipeline)
-        return;
-
-    // Only bind if pipeline changed
-    if (g_renderer.pipeline == pipeline)
-        return;
-
-    platform::BindPipeline(pipeline);
-    g_renderer.pipeline = pipeline;
 }
 
 #if 0
@@ -290,12 +272,10 @@ void LoadRendererAssets(Allocator* allocator)
 void InitRenderer(const RendererTraits* traits)
 {
     InitRenderBuffer(traits);
-    InitPipelineFactory(traits);
 }
 
 void ShutdownRenderer()
 {
-    ShutdownPipelineFactory();
     ShutdownRenderBuffer();
 
     g_renderer = {};

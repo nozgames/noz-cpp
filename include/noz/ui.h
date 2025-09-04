@@ -110,7 +110,6 @@ void MergeStyles(Style& dst, const Style& src, bool apply_defaults=false);
 const Style& GetStyle(StyleSheet* sheet, const Name* name, PseudoState pseudo_state);
 bool GetStyle(StyleSheet* sheet, const Name* id, PseudoState pseudo_state, Style* result);
 bool HasStyle(StyleSheet* sheet, const Name* name, PseudoState pseudo_state);
-const Name* GetName(StyleSheet* sheet);
 
 // @style_length
 inline bool IsAuto(const StyleLength& length) { return length.unit == STYLE_LENGTH_UNIT_AUTO; }

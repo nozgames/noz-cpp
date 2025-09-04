@@ -50,7 +50,6 @@ set(SOURCE_FILES
     src/rect.cpp
     src/render/material.cpp
     src/render/mesh_builder.cpp
-    src/render/pipeline_factory.cpp
     src/render/mesh.cpp
     src/render/font.cpp
     src/render/texture.cpp
@@ -86,7 +85,7 @@ endif()
 target_sources(noz PRIVATE ${SOURCE_FILES})
 target_include_directories(noz PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl/include
+#        ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/vulkan
         ${CMAKE_CURRENT_SOURCE_DIR}/external
@@ -99,15 +98,9 @@ target_link_libraries(noz
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/box2d.lib
         ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/enet.lib
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl/SDL3-static.lib
         ws2_32
         winmm
-        setupapi      # For SetupDi* functions (SDL3)
-        cfgmgr32      # For CM_* functions (SDL3)
-        version       # For GetFileVersionInfo* functions (SDL3)
-        imm32         # For Imm* functions (SDL3 IME support)
-        dxcompiler    # For DxcCreateInstance (SDL3_shadercross)
-        Shcore        # For DPI awareness functions
+        Shcore
 )
 
 add_subdirectory(editor)

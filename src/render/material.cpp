@@ -71,7 +71,7 @@ void BindMaterialInternal(Material* material)
         {
             // Map to correct sampler register slot
             // sampler_register_user0 = 1, user1 = 2, user2 = 3 (shadow = 0)
-            int slot = static_cast<int>(sampler_register_user0) + static_cast<int>(i);
+            int slot = static_cast<int>(SAMPLER_REGISTER_TEX0) + static_cast<int>(i);
             BindTextureInternal(impl->textures[i], slot);
         }
     }

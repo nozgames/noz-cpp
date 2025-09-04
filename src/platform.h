@@ -13,12 +13,12 @@ namespace platform
     struct PipelineLayout {};
     struct Buffer {};
     struct BufferMemory {};
-    struct ShaderModule {};
+    struct Shader;
     struct Image {};
     struct ImageView {};
     struct Memory {};
     struct Sampler {};
-    struct Texture;  // Forward declaration - defined in platform implementation
+    struct Texture;
 
     Vec2 GetMousePosition();
     Vec2 GetCachedMousePosition();
@@ -32,9 +32,6 @@ namespace platform
     
     // @render
     void SetRendererWindow(Window* window);
-    Pipeline* CreatePipeline(Shader* shader);
-    void BindPipeline(Pipeline* pipeline);
-    void DestroyPipeline(Pipeline* pipeline);
     void BeginRenderFrame();
     void EndRenderFrame();
     void BeginRenderPass(Color clear_color);
@@ -56,8 +53,14 @@ namespace platform
     void DestroyTexture(Texture* texture);
 
     // @shader
-    ShaderModule* CreateShaderModule(const void* spirv_code, size_t code_size, const char* name = nullptr);
-    void DestroyShaderModule(ShaderModule* module);
+    Shader* CreateShader(
+        const void* vertex_code,
+        u32 vertex_code_size,
+        const void* fragment_code,
+        u32 fragment_code_size,
+        const char* name = nullptr);
+    void DestroyShader(Shader* module);
+    void BindShader(Shader* shader);
 
     // @time
     u64 GetPerformanceCounter();

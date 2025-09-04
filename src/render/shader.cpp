@@ -6,8 +6,7 @@
 
 struct ShaderImpl : Shader
 {
-    platform::ShaderModule* vertex;
-    platform::ShaderModule* fragment;
+    platform::Shader* platform;
     int vertex_uniform_count;
     int fragment_uniform_count;
     int sampler_count;
@@ -56,8 +55,6 @@ Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, con
     if (!shader)
         return nullptr;
     ShaderImpl* impl = static_cast<ShaderImpl*>(shader);
-    impl->vertex = nullptr;
-    impl->fragment = nullptr;
     impl->vertex_uniform_count = vertex_uniform_count;
     impl->fragment_uniform_count = fragment_uniform_count;
     impl->sampler_count = sampler_count;
@@ -95,40 +92,18 @@ Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, con
     if (uniform_count > 0)
         impl->uniform_data_size = impl->uniforms[uniform_count-1].offset + impl->uniforms[uniform_count-1].size;
 
-    // Note: stream destruction handled by caller
+    impl->platform = platform::CreateShader(vertex_bytecode, vertex_bytecode_length, fragment_bytecode, fragment_bytecode_length, name->value);
 
-    // Create fragment shader using platform API
-    impl->fragment = platform::CreateShaderModule(fragment_bytecode, fragment_bytecode_length, name->value);
-    if (!impl->fragment)
-    {
-        Free(vertex_bytecode);
-        Free(fragment_bytecode);
-        return nullptr;
-    }
-
-    // Create vertex shader using platform API
-    impl->vertex = platform::CreateShaderModule(vertex_bytecode, vertex_bytecode_length, name->value);
-    
     Free(vertex_bytecode);
     Free(fragment_bytecode);
 
-    if (!impl->vertex)
+    if (!impl->platform)
     {
-        platform::DestroyShaderModule(impl->fragment);
+        Free(shader);
         return nullptr;
     }
 
     return shader;
-}
-
-platform::ShaderModule* GetVertexShader(Shader* shader)
-{
-    return static_cast<ShaderImpl*>(shader)->vertex;
-}
-
-platform::ShaderModule* GetFragmentShader(Shader* shader)
-{
-    return static_cast<ShaderImpl*>(shader)->fragment;
 }
 
 int GetCullMode(Shader* shader)
@@ -176,11 +151,6 @@ int GetSamplerCount(Shader* shader)
     return static_cast<ShaderImpl*>(shader)->sampler_count;
 }
 
-const char* GetShaderName(Shader* shader)
-{
-    return static_cast<ShaderImpl*>(shader)->name->value;
-}
-
 size_t GetUniformDataSize(Shader* shader)
 {
     return static_cast<ShaderImpl*>(shader)->uniform_data_size;
@@ -199,7 +169,8 @@ ShaderUniformBuffer GetFragmentUniformBuffer(Shader* shader, int index)
     return impl->uniforms[index + impl->vertex_uniform_count];
 }
 
-const Name* GetName(Shader* shader)
+void BindShaderInternal(Shader* shader)
 {
-    return shader->name;
+    assert(shader);
+    platform::BindShader(static_cast<ShaderImpl*>(shader)->platform);
 }

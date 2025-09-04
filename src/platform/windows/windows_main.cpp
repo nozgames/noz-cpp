@@ -10,7 +10,7 @@
 #include <shellscalingapi.h>
 
 void InitVulkan(const RendererTraits* traits, platform::Window* window);
-void ResizeVulkan();
+void ResizeVulkan(const Vec2Int& screen_size);
 void ShutdownVulkan();
 
 static Vec2Int g_screen_size;
@@ -47,7 +47,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             if (g_screen_size != new_size)
             {
                 g_screen_size = new_size;
-                ResizeVulkan();
+                ResizeVulkan(new_size);
             }
         }
         return 0;
@@ -149,10 +149,10 @@ bool platform::ProcessWindowEvents(Window* window, bool& has_focus, Vec2Int& scr
         screen_size.x = rect.right - rect.left;
         screen_size.y = rect.bottom - rect.top;
 
-        if (g_screen_size!= screen_size)
+        if (g_screen_size!= screen_size && screen_size != VEC2INT_ZERO)
         {
             g_screen_size = screen_size;
-            ResizeVulkan();
+            ResizeVulkan(screen_size);
         }
     }
 

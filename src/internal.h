@@ -64,40 +64,22 @@ typedef enum shader_flags
     shader_flags_blend = 1 << 2
 } shader_flags_t;
 
-// Register enums (C99 versions)
-typedef enum vertex_register 
+enum VertexRegister
 {
-    vertex_register_camera = 0,
-    vertex_register_object = 1,
-    vertex_register_bone = 2,
-    vertex_register_user0 = 3,
-    vertex_register_user1 = 4,
-    vertex_register_user2 = 5,
-    vertex_register_count
-} vertex_register_t;
+    VERTEX_REGISTER_CAMERA = 0,
+    VERTEX_REGISTER_OBJECT = 1,
+    VERTEX_REGISTER_BONE = 2
+};
 
-
-typedef enum fragment_register 
+enum FragmentRegsiter
 {
-    fragment_register_color = 0,
-    fragment_register_light = 1,
-    fragment_register_user0 = 2,
-    fragment_register_user1 = 3,
-    fragment_register_user2 = 4,
-    fragment_register_count
-} fragment_register_t;
+    FRAGMENT_REGISTER_COLOR = 0
+};
 
-typedef enum sampler_register 
+enum SampleRegister
 {
-    sampler_register_shadow_map = 0,
-    sampler_register_user0 = 1,
-    sampler_register_user1 = 2,
-    sampler_register_user2 = 3,
-    sampler_register_count
-} sampler_register_t;
-
-// Function to convert texture format to SDL format
-//SDL_GPUTextureFormat texture_format_to_sdl(TextureFormat format);
+    SAMPLER_REGISTER_TEX0 = 0
+};
 
 typedef enum animation_track_type
 {
