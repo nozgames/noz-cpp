@@ -166,7 +166,7 @@ static bool CreateUniformBuffer(size_t size, VkBuffer* buffer, VkDeviceMemory* m
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
     };
 
-    if (vkAllocateMemory(g_vulkan.device, &alloc_info, nullptr, memory) != VK_SUCCESS)
+    if (VK_SUCCESS != vkAllocateMemory(g_vulkan.device, &alloc_info, nullptr, memory))
     {
         vkDestroyBuffer(g_vulkan.device, *buffer, nullptr);
         return false;
@@ -174,14 +174,14 @@ static bool CreateUniformBuffer(size_t size, VkBuffer* buffer, VkDeviceMemory* m
     
     vkBindBufferMemory(g_vulkan.device, *buffer, *memory, 0);
     
-    if (vkMapMemory(g_vulkan.device, *memory, 0, size, 0, mapped_ptr) != VK_SUCCESS)
+    if (VK_SUCCESS != vkMapMemory(g_vulkan.device, *memory, 0, size, 0, mapped_ptr))
     {
         vkFreeMemory(g_vulkan.device, *memory, nullptr);
         vkDestroyBuffer(g_vulkan.device, *buffer, nullptr);
         return false;
     }
     
-    SetVulkanObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)*buffer, name);
+    SetVulkanObjectName(VK_OBJECT_TYPE_BUFFER, (u64)*buffer, name);
     
     return true;
 }
@@ -201,7 +201,7 @@ static bool InitializeUniformBuffer(VulkanUniformBuffer* uniform_buffer)
     VkDescriptorSetAllocateInfo alloc_info = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .descriptorPool = g_vulkan.descriptor_pool,
-        .descriptorSetCount = 2,
+        .descriptorSetCount = 1,
         .pSetLayouts = &g_vulkan.vertex_descriptor_set_layout
     };
 
@@ -231,10 +231,12 @@ static bool InitializeUniformBuffer(VulkanUniformBuffer* uniform_buffer)
 
 static VulkanUniformBuffer* AcquireUniformBuffer()
 {
-    if (g_vulkan.uniform_buffer_pool_count <= 0)
+    assert(g_vulkan.uniform_buffer_pool_count <= MAX_UNIFORM_BUFFERS);
+    if (g_vulkan.uniform_buffer_pool_count == 0)
         return nullptr;
 
     g_vulkan.uniform_buffer_pool_count--;
+    assert(g_vulkan.uniform_buffer_pool_count <= MAX_UNIFORM_BUFFERS);
     VulkanUniformBuffer* buffer = &g_vulkan.uniform_buffer_pool[g_vulkan.uniform_buffer_pool_count];
     if (buffer->buffer != VK_NULL_HANDLE)
         return buffer;
