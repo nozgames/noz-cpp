@@ -32,24 +32,6 @@ static int GetBytesPerPixel(TextureFormat format)
     }
 }
 
-
-#if 0
-SDL_GPUTextureFormat ToSDL(const TextureFormat format)
-{
-    switch (format)
-    {
-    case TEXTURE_FORMAT_RGBA8:
-        return SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
-    case TEXTURE_FORMAT_RGBA16F:
-        return SDL_GPU_TEXTUREFORMAT_R16G16B16A16_FLOAT;
-    case TEXTURE_FORMAT_R8:
-        return SDL_GPU_TEXTUREFORMAT_R8_UNORM;
-    default:
-        return SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
-    }
-}
-#endif
-
 static void CreateTexture(
     TextureImpl* impl,
     void* data,
@@ -64,10 +46,7 @@ static void CreateTexture(
     assert(width > 0);
     assert(height > 0);
 
-    // Use platform abstraction to create the texture
     impl->platform_texture = platform::CreateTexture(data, width, height, GetBytesPerPixel(format), impl->sampler_options, name->value);
-    if (!impl->platform_texture)
-        return;
 }
 
 Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const Name* name)
@@ -104,8 +83,8 @@ Texture* CreateTexture(
     if (!impl)
         return nullptr;
 
-    CreateTexture(impl, data, width, height, format, false, name);
     impl->sampler_options = g_default_sampler_options;
+    CreateTexture(impl, data, width, height, format, false, name);
     return impl;
 }
 
@@ -166,5 +145,8 @@ Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, co
 
 void BindTextureInternal(Texture* texture, i32 slot)
 {
+    if (!texture)
+        texture = g_core_assets.textures.white;
+
     return platform::BindTexture(static_cast<TextureImpl*>(texture)->platform_texture, slot);
 }

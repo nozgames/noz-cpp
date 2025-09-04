@@ -14,12 +14,17 @@ void InitUI();
 void InitEvent(ApplicationTraits* traits);
 void InitName(ApplicationTraits* traits);
 void InitVfx();
+void InitTime();
 void InitRenderer(const RendererTraits* traits);
+void InitAllocator(ApplicationTraits* traits);
+void UpdateTime();
 void ShutdownRenderer();
 void ShutdownEvent();
 void ShutdownUI();
 void ShutdownName();
 void ShutdownVfx();
+void ShutdownTime();
+void ShutdownAllocator();
 
 // @traits
 static ApplicationTraits g_default_traits = 

@@ -55,30 +55,28 @@ struct SamplerOptions
 // Function to compare sampler options
 bool sampler_options_equals(SamplerOptions* a, SamplerOptions* b);
 
-// Shader flags enum (C99 version)
-typedef enum shader_flags 
-{
-    shader_flags_none = 0,
-    shader_flags_depth_test = 1 << 0,
-    shader_flags_depth_write = 1 << 1,
-    shader_flags_blend = 1 << 2
-} shader_flags_t;
+typedef u32 ShaderFlags;
+constexpr ShaderFlags SHADER_FLAGS_NONE = 0;
+constexpr ShaderFlags SHADER_FLAGS_BLEND = 1 << 0;
 
 enum VertexRegister
 {
     VERTEX_REGISTER_CAMERA = 0,
     VERTEX_REGISTER_OBJECT = 1,
-    VERTEX_REGISTER_BONE = 2
+    //VERTEX_REGISTER_BONE = 2,
+    VERTEX_REGISTER_COUNT
 };
 
 enum FragmentRegsiter
 {
-    FRAGMENT_REGISTER_COLOR = 0
+    FRAGMENT_REGISTER_COLOR = 0,
+    FRAGMENT_REGISTER_COUNT
 };
 
 enum SampleRegister
 {
-    SAMPLER_REGISTER_TEX0 = 0
+    SAMPLER_REGISTER_TEX0 = 0,
+    SAMPLER_REGISTER_COUNT
 };
 
 typedef enum animation_track_type
@@ -95,65 +93,7 @@ typedef struct animation_track
     int data_offset;
 } animation_track_t;
 
-// @allocator
-void InitAllocator(ApplicationTraits* traits);
-void ShutdownAllocator();
-
-// @time
-void InitTime();
-void ShutdownTime();
-void UpdateTime();
-
-// @renderer
-void BeginFrameGPU();
-void EndFrameGPU();
-//SDL_GPURenderPass* BeginPassGPU(bool clear, Color clear_color, bool msaa, Texture* target);
-//SDL_GPURenderPass* BeginShadowPassGPU();
-//SDL_GPURenderPass* BeginGammaPassGPU();
-void EndRenderPassGPU();
-//void BindTextureGPU(Texture* texture, SDL_GPUCommandBuffer* cb, int index);
-void BindShaderGPU(Shader* shader);
-//void BindMaterialGPU(Material* material, SDL_GPUCommandBuffer* cb);
-void BindDefaultTextureGPU(int texture_index);
-
 // @render_buffer
-void BeginGammaPass();
-void ClearRenderCommands();
-//void ExecuteRenderCommands(SDL_GPUCommandBuffer* cb);
-
-// @mesh
-//void DrawMeshGPU(Mesh* mesh, SDL_GPURenderPass* pass);
-
-// @texture
-//SDL_GPUTexture* GetGPUTexture(Texture* texture);
-SamplerOptions GetSamplerOptions(Texture* texture);
-
-// @shader
-struct ShaderUniformBuffer
-{
-    u32 size;
-    u32 offset;
-};
-
-const char* GetGPUName(Shader* shader);
-
-//SDL_GPUShader* GetGPUVertexShader(Shader* shader);
-//SDL_GPUShader* GetGPUFragmentShader(Shader* shader);
-//SDL_GPUCullMode GetGPUCullMode(Shader* shader);
-bool IsBlendEnabled(Shader* shader);
-//SDL_GPUBlendFactor GetGPUSrcBlend(Shader* shader);
-//SDL_GPUBlendFactor GetGPUDstBlend(Shader* shader);
-bool IsDepthTestEnabled(Shader* shader);
-bool IsDepthWriteEnabled(Shader* shader);
-int GetVertexUniformCount(Shader* shader);
-int GetFragmentUniformCount(Shader* shader);
-int GetSamplerCount(Shader* shader);
-size_t GetUniformDataSize(Shader* shader);
-//void PushUniformDataGPU(Shader* shader, SDL_GPUCommandBuffer* cb, u8* data);
-ShaderUniformBuffer GetVertexUniformBuffer(Shader* shader, int index);
-ShaderUniformBuffer GetFragmentUniformBuffer(Shader* shader, int index);
-
-// @font
 
 // @animation
 void animation_evaluate_frame(
@@ -163,19 +103,6 @@ void animation_evaluate_frame(
     size_t bone_count,
     BoneTransform* transforms,
     size_t transform_count);
-
-// @helpers
-/*
-inline SDL_FColor ColorToSDL(Color color)
-{
-    SDL_FColor result;
-    result.r = color.r;
-    result.g = color.g;
-    result.b = color.b;
-    result.a = color.a;
-    return result;
-}
-*/
 
 // @input
 void InitInput();

@@ -1,4 +1,4 @@
-cbuffer ColorBuffer : register(b0, space2)
+layout(set = 2, binding = 2) uniform ColorBuffer
 {
-    float4 color;
+    vec4 color;
 };

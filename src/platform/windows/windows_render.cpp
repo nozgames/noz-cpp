@@ -47,11 +47,11 @@ struct VulkanUniformBuffer
     VkBuffer buffer;
     VkDeviceMemory memory;
     void* mapped_ptr;
-    VkDescriptorSet descriptor_set;
 };
 
 struct VulkanRenderer
 {
+    RendererTraits traits;
     platform::Window* window;
     HMODULE library;
     VkInstance instance;
@@ -60,23 +60,18 @@ struct VulkanRenderer
     VkDevice device;
     VkQueue graphics_queue;
     VkQueue present_queue;
-
     VkSwapchainKHR swapchain;
     std::vector<VkImage> swapchain_images;
     std::vector<VkImageView> swapchain_image_views;
     VkFormat swapchain_image_format;
     VkExtent2D swapchain_extent;
-
     VkRenderPass render_pass;
     std::vector<VkFramebuffer> swapchain_framebuffers;
-
     VkCommandPool command_pool;
     VkCommandBuffer command_buffer;
-
     VkSemaphore image_available_semaphore;
     VkSemaphore render_finished_semaphore;
     VkFence in_flight_fence;
-
     VkDescriptorSetLayout vertex_descriptor_set_layout;
     VkDescriptorSetLayout texture_descriptor_set_layout;
     VkDescriptorSetLayout fragment_descriptor_set_layout;
@@ -84,13 +79,9 @@ struct VulkanRenderer
     VkDescriptorSet texture_descriptor_set;
     VkDescriptorSet fragment_descriptor_set;
     VkDescriptorPool descriptor_pool;
-
     VulkanUniformBuffer uniform_buffer_pool[MAX_UNIFORM_BUFFERS];
     int uniform_buffer_pool_count;
-
-    RendererTraits traits;
     VkPipelineLayout pipeline_layout;
-
     u32 current_image_index;
 
 #ifdef _DEBUG
@@ -109,7 +100,7 @@ static VulkanRenderer g_vulkan = {};
 
 static SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice device);
 static void RecreateSwapchainObjects();
-static VulkanUniformBuffer* AcquireUniformBuffer();
+static VulkanUniformBuffer* AcquireUniformBuffer(u32 binding, VkDescriptorSet descriptor_set);
 
 static void SetVulkanObjectName(VkObjectType object_type, uint64_t object_handle, const char* name)
 {
@@ -143,21 +134,21 @@ u32 FindMemoryType(u32 type_filter, VkMemoryPropertyFlags properties)
     return 0;
 }
 
-static bool CreateUniformBuffer(size_t size, VkBuffer* buffer, VkDeviceMemory* memory, void** mapped_ptr, const char* name = nullptr)
+static bool CreateUniformBuffer(VulkanUniformBuffer* ubuffer, const char* name, u32 binding, VkDescriptorSet descriptor_set)
 {
     VkBufferCreateInfo buffer_info = {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size = size,
+        .size = UNIFORM_BUFFER_SIZE,
         .usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE
     };
 
-    if (VK_SUCCESS != vkCreateBuffer(g_vulkan.device, &buffer_info, nullptr, buffer))
+    if (VK_SUCCESS != vkCreateBuffer(g_vulkan.device, &buffer_info, nullptr, &ubuffer->buffer))
         return false;
 
     VkMemoryRequirements mem_requirements;
-    vkGetBufferMemoryRequirements(g_vulkan.device, *buffer, &mem_requirements);
-    
+    vkGetBufferMemoryRequirements(g_vulkan.device, ubuffer->buffer, &mem_requirements);
+
     VkMemoryAllocateInfo alloc_info = {
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         .allocationSize = mem_requirements.size,
@@ -166,82 +157,78 @@ static bool CreateUniformBuffer(size_t size, VkBuffer* buffer, VkDeviceMemory* m
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
     };
 
-    if (VK_SUCCESS != vkAllocateMemory(g_vulkan.device, &alloc_info, nullptr, memory))
+    if (VK_SUCCESS != vkAllocateMemory(g_vulkan.device, &alloc_info, nullptr, &ubuffer->memory))
     {
-        vkDestroyBuffer(g_vulkan.device, *buffer, nullptr);
+        vkDestroyBuffer(g_vulkan.device, ubuffer->buffer, nullptr);
         return false;
     }
-    
-    vkBindBufferMemory(g_vulkan.device, *buffer, *memory, 0);
-    
-    if (VK_SUCCESS != vkMapMemory(g_vulkan.device, *memory, 0, size, 0, mapped_ptr))
+
+    vkBindBufferMemory(g_vulkan.device, ubuffer->buffer, ubuffer->memory, 0);
+
+    if (VK_SUCCESS != vkMapMemory(g_vulkan.device, ubuffer->memory, 0, UNIFORM_BUFFER_SIZE, 0, &ubuffer->mapped_ptr))
     {
-        vkFreeMemory(g_vulkan.device, *memory, nullptr);
-        vkDestroyBuffer(g_vulkan.device, *buffer, nullptr);
+        vkFreeMemory(g_vulkan.device, ubuffer->memory, nullptr);
+        vkDestroyBuffer(g_vulkan.device, ubuffer->buffer, nullptr);
         return false;
     }
-    
-    SetVulkanObjectName(VK_OBJECT_TYPE_BUFFER, (u64)*buffer, name);
-    
-    return true;
-}
 
-static bool InitializeUniformBuffer(VulkanUniformBuffer* uniform_buffer)
-{
-    if (!CreateUniformBuffer(
-        UNIFORM_BUFFER_SIZE,
-        &uniform_buffer->buffer,
-        &uniform_buffer->memory,
-        &uniform_buffer->mapped_ptr,
-        "UniformBuffer"))
-    {
-        return false;
-    }
-    
-    VkDescriptorSetAllocateInfo alloc_info = {
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-        .descriptorPool = g_vulkan.descriptor_pool,
-        .descriptorSetCount = 1,
-        .pSetLayouts = &g_vulkan.vertex_descriptor_set_layout
-    };
+    SetVulkanObjectName(VK_OBJECT_TYPE_BUFFER, (u64)ubuffer->buffer, name);
 
-    if (vkAllocateDescriptorSets(g_vulkan.device, &alloc_info, &uniform_buffer->descriptor_set) != VK_SUCCESS)
-        return false;
-
-    VkDescriptorBufferInfo buffer_info = {
-        .buffer = uniform_buffer->buffer,
+    // Update the persistent vertex descriptor set to point to this buffer  
+    VkDescriptorBufferInfo desc_buffer_info = {
+        .buffer = ubuffer->buffer,
         .offset = 0,
         .range = VK_WHOLE_SIZE
     };
 
-    VkWriteDescriptorSet write = {
+    VkWriteDescriptorSet desc_write = {
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = uniform_buffer->descriptor_set,
-        .dstBinding = 0,
+        .dstSet = descriptor_set,
+        .dstBinding = binding,
         .dstArrayElement = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = &buffer_info,
+        .pBufferInfo = &desc_buffer_info,
     };
 
-    vkUpdateDescriptorSets(g_vulkan.device, 1, &write, 0, nullptr);
+    vkUpdateDescriptorSets(g_vulkan.device, 1, &desc_write, 0, nullptr);
     
     return true;
 }
 
-static VulkanUniformBuffer* AcquireUniformBuffer()
+static VulkanUniformBuffer* AcquireUniformBuffer(u32 binding, VkDescriptorSet descriptor_set)
 {
-    assert(g_vulkan.uniform_buffer_pool_count <= MAX_UNIFORM_BUFFERS);
     if (g_vulkan.uniform_buffer_pool_count == 0)
         return nullptr;
 
-    g_vulkan.uniform_buffer_pool_count--;
-    assert(g_vulkan.uniform_buffer_pool_count <= MAX_UNIFORM_BUFFERS);
-    VulkanUniformBuffer* buffer = &g_vulkan.uniform_buffer_pool[g_vulkan.uniform_buffer_pool_count];
-    if (buffer->buffer != VK_NULL_HANDLE)
-        return buffer;
+    VulkanUniformBuffer* buffer = &g_vulkan.uniform_buffer_pool[--g_vulkan.uniform_buffer_pool_count];
+    if (VK_NULL_HANDLE != buffer->buffer)
+    {
+        // Update the persistent vertex descriptor set to point to this buffer
+        VkDescriptorBufferInfo desc_buffer_info = {
+            .buffer = buffer->buffer,
+            .offset = 0,
+            .range = VK_WHOLE_SIZE
+        };
 
-    return InitializeUniformBuffer(buffer) ? buffer : nullptr;
+        VkWriteDescriptorSet desc_write = {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = descriptor_set,
+            .dstBinding = binding,
+            .dstArrayElement = 0,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .pBufferInfo = &desc_buffer_info,
+        };
+
+        vkUpdateDescriptorSets(g_vulkan.device, 1, &desc_write, 0, nullptr);
+        return buffer;
+    }
+
+    if (!CreateUniformBuffer(buffer, "Uniform", binding, descriptor_set))
+        return nullptr;
+
+    return buffer;
 }
 
 static void CreateDescriptorSetLayout()
@@ -778,6 +765,12 @@ static void CreateImageViews()
 
         if (VK_SUCCESS != vkCreateImageView(g_vulkan.device, &vk_image_create_info, nullptr, &g_vulkan.swapchain_image_views[i]))
             Exit("Failed to create image views");
+        
+        // Set debug names
+        char image_name[32];
+        snprintf(image_name, sizeof(image_name), "Swapchain%zu", i);
+        SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE, (uint64_t)g_vulkan.swapchain_images[i], image_name);
+        SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)g_vulkan.swapchain_image_views[i], image_name);
     }
 }
 
@@ -1091,6 +1084,12 @@ void RecreateSwapchainObjects()
         };
 
         vkCreateImageView(g_vulkan.device, &create_info, nullptr, &g_vulkan.swapchain_image_views[i]);
+        
+        // Set debug names
+        char image_name[32];
+        snprintf(image_name, sizeof(image_name), "Swapchain%zu", i);
+        SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE, (uint64_t)g_vulkan.swapchain_images[i], image_name);
+        SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)g_vulkan.swapchain_image_views[i], image_name);
     }
 
     // frame buffers
@@ -1205,7 +1204,7 @@ void platform::BindTransform(const RenderTransform* transform)
 {
     assert(transform);
     
-    VulkanUniformBuffer* buffer = AcquireUniformBuffer();
+    VulkanUniformBuffer* buffer = AcquireUniformBuffer(VERTEX_REGISTER_OBJECT, g_vulkan.vertex_descriptor_set);
     if (!buffer)
         return;
     
@@ -1215,8 +1214,8 @@ void platform::BindTransform(const RenderTransform* transform)
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         g_vulkan.pipeline_layout,
         VK_SPACE_VERTEX_UNIFORM,
-        VERTEX_REGISTER_OBJECT,
-        &buffer->descriptor_set,
+        1,
+        &g_vulkan.vertex_descriptor_set,
         0,
         nullptr
     );
@@ -1226,7 +1225,7 @@ void platform::BindCamera(const RenderCamera* camera)
 {
     assert(camera);
 
-    VulkanUniformBuffer* buffer = AcquireUniformBuffer();
+    VulkanUniformBuffer* buffer = AcquireUniformBuffer(VERTEX_REGISTER_CAMERA, g_vulkan.vertex_descriptor_set);
     if (!buffer)
         return;
     
@@ -1236,8 +1235,8 @@ void platform::BindCamera(const RenderCamera* camera)
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         g_vulkan.pipeline_layout,
         VK_SPACE_VERTEX_UNIFORM,
-        VERTEX_REGISTER_CAMERA,
-        &buffer->descriptor_set,
+        1,
+        &g_vulkan.vertex_descriptor_set,
         0, nullptr
     );
 }
@@ -1248,7 +1247,7 @@ void platform::BindBoneTransforms(const RenderTransform* bones, int count)
     assert(count > 0);
     assert(count <= 64); // Max bone count
 
-    VulkanUniformBuffer* buffer = AcquireUniformBuffer();
+    VulkanUniformBuffer* buffer = AcquireUniformBuffer(FRAGMENT_REGISTER_COLOR, g_vulkan.fragment_descriptor_set);
     if (!buffer)
         return;
 
@@ -1268,7 +1267,7 @@ void platform::BindColor(const void* color)
 {
     assert(color);
 
-    VulkanUniformBuffer* buffer = AcquireUniformBuffer();
+    VulkanUniformBuffer* buffer = AcquireUniformBuffer(FRAGMENT_REGISTER_COLOR, g_vulkan.fragment_descriptor_set);
     if (!buffer)
         return;
 
@@ -1278,8 +1277,8 @@ void platform::BindColor(const void* color)
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         g_vulkan.pipeline_layout,
         VK_SPACE_FRAGMENT_UNIFORM,
-        FRAGMENT_REGISTER_COLOR,
-        &buffer->descriptor_set,
+        1,
+        &g_vulkan.fragment_descriptor_set,
         0,
         nullptr
     );
@@ -1680,9 +1679,10 @@ void platform::BindTexture(Texture* texture, int slot)
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         g_vulkan.pipeline_layout,
         VK_SPACE_TEXTURE,
-        0,
+        1,
         &texture_descriptor_set,
-        0, nullptr
+        0,
+        nullptr
     );
 }
 
@@ -1757,6 +1757,7 @@ static bool CreateShaderInternal(
     u32 vertex_code_size,
     const void* fragment_code,
     u32 fragment_code_size,
+    ShaderFlags flags,
     const char* name)
 {
     assert(vertex_code);
@@ -1819,14 +1820,14 @@ static bool CreateShaderInternal(
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
             .module = shader->vertex_module,
-            .pName = "vs",
+            .pName = "main",
         },
         // Fragment
         {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
             .module = shader->fragment_module,
-            .pName = "ps"
+            .pName = "main"
         }
     };
 
@@ -1866,10 +1867,24 @@ static bool CreateShaderInternal(
         .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL,
     };
 
-    VkPipelineColorBlendAttachmentState color_blend_attachment = {
-        .blendEnable = VK_FALSE,
-        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
-    };
+    VkPipelineColorBlendAttachmentState color_blend_attachment = {};
+    if (flags & SHADER_FLAGS_BLEND)
+    {
+        // Standard alpha blending: (src_alpha * src_color) + ((1 - src_alpha) * dst_color)
+        color_blend_attachment.blendEnable = VK_TRUE;
+        color_blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        color_blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        color_blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
+        color_blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        color_blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+        color_blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
+        color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    }
+    else
+    {
+        color_blend_attachment.blendEnable = VK_FALSE;
+        color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    }
 
     VkPipelineColorBlendStateCreateInfo color_blending = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
@@ -1911,10 +1926,11 @@ platform::Shader* platform::CreateShader(
     u32 vertex_code_size,
     const void* fragment_code,
     u32 fragment_code_size,
+    ShaderFlags flags,
     const char* name)
 {
     Shader* shader = (Shader*)Alloc(ALLOCATOR_DEFAULT, sizeof(Shader));
-    if (!CreateShaderInternal(shader, vertex_code, vertex_code_size, fragment_code, fragment_code_size, name))
+    if (!CreateShaderInternal(shader, vertex_code, vertex_code_size, fragment_code, fragment_code_size, flags, name))
     {
         DestroyShader(shader);
         return nullptr;

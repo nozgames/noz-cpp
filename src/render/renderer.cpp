@@ -8,13 +8,13 @@ extern void DrawUI();
 extern void DrawVfx();
 extern void BeginRenderPass();
 extern void EndRenderPass();
-extern void ClearRenderCommands();
 extern void BeginRenderPass(Color clear_color);
 extern void BeginShadowPass(Mat4 light_view, Mat4 light_projection);
 extern void InitRenderBuffer(const RendererTraits* traits);
 extern void ShutdownVulkan();
 extern void ShutdownRenderBuffer();
 extern void ExecuteRenderCommands();
+extern void ClearRenderCommands();
 extern platform::Pipeline* GetPipeline(Shader* shader);
 
 static void ResetRenderState();
@@ -155,100 +155,6 @@ void EndRenderFrame()
     ExecuteRenderCommands();
     platform::EndRenderFrame();
 }
-
-#if 0
-SDL_GPURenderPass* BeginPassGPU(SDL_GPUTexture* target, bool clear, Color clear_color)
-{
-    SDL_GPUColorTargetInfo color_target = {};
-    color_target.texture = target;
-    color_target.clear_color = ColorToSDL(clear_color);
-    color_target.load_op = clear ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD;
-    color_target.store_op = SDL_GPU_STOREOP_STORE;
-
-    SDL_GPUDepthStencilTargetInfo depth_target = {};
-    depth_target.texture = g_renderer.depth_texture;
-    depth_target.clear_depth = 1.0f;
-    depth_target.clear_stencil = 0;
-    depth_target.load_op = SDL_GPU_LOADOP_CLEAR;
-    depth_target.store_op = SDL_GPU_STOREOP_STORE;
-
-    g_renderer.render_pass = SDL_BeginGPURenderPass(g_renderer.command_buffer, &color_target, 1, &depth_target);
-    assert(g_renderer.render_pass);
-
-    ResetRenderState();
-
-    return g_renderer.render_pass;
-}
-
-SDL_GPURenderPass* BeginPassGPU(bool clear, Color clear_color, bool msaa, Texture* target)
-{
-    assert(!g_renderer.render_pass);
-
-    SDL_GPUTexture* gpu_texture = target
-        ? GetGPUTexture(target)
-        : g_renderer.swap_chain_texture;
-
-    // Use MSAA if requested and MSAA textures are available
-    if (msaa && g_renderer.msaa_color_texture && g_renderer.msaa_depth_texture && !target)
-    {
-        g_renderer.msaa = true;
-        
-        SDL_GPUColorTargetInfo color_target = {};
-        color_target.texture = g_renderer.msaa_color_texture;
-        color_target.clear_color = ColorToSDL(clear_color);
-        color_target.load_op = clear ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD;
-        color_target.store_op = SDL_GPU_STOREOP_RESOLVE; // Resolve MSAA to backbuffer
-        color_target.resolve_texture = gpu_texture; // Resolve target
-        color_target.resolve_mip_level = 0;
-        color_target.resolve_layer = 0;
-
-        SDL_GPUDepthStencilTargetInfo depth_target = {};
-        depth_target.texture = g_renderer.msaa_depth_texture;
-        depth_target.clear_depth = 1.0f;
-        depth_target.clear_stencil = 0;
-        depth_target.load_op = SDL_GPU_LOADOP_CLEAR;
-        depth_target.store_op = SDL_GPU_STOREOP_DONT_CARE; // Don't need to store MSAA depth
-
-        g_renderer.render_pass = SDL_BeginGPURenderPass(g_renderer.command_buffer, &color_target, 1, &depth_target);
-        assert(g_renderer.render_pass);
-
-        ResetRenderState();
-        return g_renderer.render_pass;
-    }
-    
-    // Standard rendering without MSAA
-    g_renderer.msaa = false;
-    BeginPassGPU(gpu_texture, clear, clear_color);
-    return g_renderer.render_pass;
-
-}
-#endif
-
-void BindDefaultTextureGPU(int index)
-{
-#if 0
-    assert(g_renderer.device);
-    BindTextureGPU(g_core_assets.textures.white, g_renderer.command_buffer, SAMPLER_REGISTER_TEX0 + index);
-#endif
-}
-
-#if 0
-void BindTextureGPU(Texture* texture, SDL_GPUCommandBuffer* cb, int index)
-{
-    if (g_renderer.shadow_pass)
-        return;
-
-    // Get the actual texture to bind (use default if none provided)
-    Texture* actual_texture = texture ? texture : g_core_assets.textures.white;
-
-    // Main pass: bind diffuse texture and shadow map
-    SDL_GPUTextureSamplerBinding binding = {0};
-    binding.sampler = GetGPUSampler(actual_texture);
-    binding.texture = GetGPUTexture(actual_texture);
-    SDL_BindGPUFragmentSamplers(g_renderer.render_pass, index, &binding, 1);
-}
-
-#endif
 
 static void ResetRenderState()
 {

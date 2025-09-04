@@ -9,7 +9,8 @@
 namespace fs = std::filesystem;
 
 static std::string ExtractStage(const std::string& source, const std::string& stage);
-static std::vector<uint32_t> CompileGLSLToSPIRV(const std::string& source, glslang_stage_t stage, const std::string& filename);
+static std::string ProcessIncludes(const std::string& source, const fs::path& base_dir);
+static std::vector<u32> CompileGLSLToSPIRV(const std::string& source, glslang_stage_t stage, const std::string& filename);
 
 static void WriteCompiledShader(
     const std::string& vertex_shader,
@@ -20,19 +21,18 @@ static void WriteCompiledShader(
     const fs::path& include_dir,
     const std::string& source_path)
 {
-    // Compile GLSL shaders to SPIR-V using glslang
-    std::vector<uint32_t> vertex_spirv = CompileGLSLToSPIRV(vertex_shader, GLSLANG_STAGE_VERTEX, source_path + ".vert");
+    // Preprocess includes and compile GLSL shaders to SPIR-V using glslang
+    fs::path base_dir = include_dir;
+    std::string processed_vertex = ProcessIncludes(vertex_shader, base_dir);
+    std::string processed_fragment = ProcessIncludes(fragment_shader, base_dir);
+    
+    std::vector<u32> vertex_spirv = CompileGLSLToSPIRV(processed_vertex, GLSLANG_STAGE_VERTEX, source_path + ".vert");
     if (vertex_spirv.empty())
         throw std::runtime_error("Failed to compile vertex shader");
 
-    std::vector<uint32_t> fragment_spirv = CompileGLSLToSPIRV(fragment_shader, GLSLANG_STAGE_FRAGMENT, source_path + ".frag");
+    std::vector<u32> fragment_spirv = CompileGLSLToSPIRV(processed_fragment, GLSLANG_STAGE_FRAGMENT, source_path + ".frag");
     if (fragment_spirv.empty())
         throw std::runtime_error("Failed to compile fragment shader");
-
-    // Hardcoded uniform buffer layout (no reflection needed)
-    int vertex_uniform_count = 2;    // Camera + Transform
-    int fragment_uniform_count = 1;  // Color
-    int sampler_count = 1;           // Texture sampler
 
     // Write asset header
     AssetHeader header = {};
@@ -41,66 +41,18 @@ static void WriteCompiledShader(
     header.flags = 0;
     WriteAssetHeader(output_stream, &header);
 
-    WriteI32(output_stream, vertex_uniform_count);
-    WriteI32(output_stream, fragment_uniform_count);
-    WriteI32(output_stream, sampler_count);
-
     // Write bytecode sizes and data
-    WriteU32(output_stream, (uint32_t)(vertex_spirv.size() * sizeof(uint32_t)));
-    WriteBytes(output_stream, vertex_spirv.data(), vertex_spirv.size() * sizeof(uint32_t));
-    WriteU32(output_stream, (uint32_t)(fragment_spirv.size() * sizeof(uint32_t)));
-    WriteBytes(output_stream, fragment_spirv.data(), fragment_spirv.size() * sizeof(uint32_t));
+    WriteU32(output_stream, (u32)(vertex_spirv.size() * sizeof(u32)));
+    WriteBytes(output_stream, vertex_spirv.data(), vertex_spirv.size() * sizeof(u32));
+    WriteU32(output_stream, (u32)(fragment_spirv.size() * sizeof(u32)));
+    WriteBytes(output_stream, fragment_spirv.data(), fragment_spirv.size() * sizeof(u32));
 
     // Parse shader flags from meta file
-    shader_flags_t flags = shader_flags_none;
-    if (meta.GetBool("shader", "depth_test", true))
-        flags = (shader_flags_t)(flags | shader_flags_depth_test);
-    if (meta.GetBool("shader", "depth_write", true))
-        flags = (shader_flags_t)(flags | shader_flags_depth_write);
-    if (meta.GetBool("shader", "blend_enabled", false))
-        flags = (shader_flags_t)(flags | shader_flags_blend);
+    ShaderFlags flags = SHADER_FLAGS_NONE;
+    if (meta.GetBool("shader", "blend", false))
+        flags |= SHADER_FLAGS_BLEND;
     
-    // Parse blend factors from meta file  
-    std::string src_blend = meta.GetString("shader", "src_blend_factor", "one");
-    uint32_t src_blend_factor = 1; // One
-    if (src_blend == "zero") src_blend_factor = 0;
-    else if (src_blend == "one") src_blend_factor = 1;
-    else if (src_blend == "src_alpha") src_blend_factor = 5;
-    else if (src_blend == "one_minus_src_alpha") src_blend_factor = 6;
-    
-    std::string dst_blend = meta.GetString("shader", "dst_blend_factor", "zero");
-    uint32_t dst_blend_factor = 0; // Zero
-    if (dst_blend == "zero") dst_blend_factor = 0;
-    else if (dst_blend == "one") dst_blend_factor = 1;
-    else if (dst_blend == "src_alpha") dst_blend_factor = 5;
-    else if (dst_blend == "one_minus_src_alpha") dst_blend_factor = 6;
-    
-    // Parse cull mode from meta file
-    std::string cull = meta.GetString("shader", "cull", "none");
-    uint32_t cull_mode = 0; // None
-    if (cull == "none") cull_mode = 0;
-    else if (cull == "front") cull_mode = 1;
-    else if (cull == "back") cull_mode = 2;
-    
-    WriteU8(output_stream, (uint8_t)flags);
-    WriteU32(output_stream, (uint32_t)src_blend_factor);
-    WriteU32(output_stream, (uint32_t)dst_blend_factor);
-    WriteU32(output_stream, (uint32_t)cull_mode);
-
-    // Write hardcoded vertex uniform buffer information
-    // Camera uniform buffer
-    WriteU32(output_stream, 128);  // size (mat4 view + mat4 projection = 64+64)
-    WriteU32(output_stream, 0);    // offset
-    
-    // Transform uniform buffer  
-    WriteU32(output_stream, 64);   // size (mat4 model = 64)
-    WriteU32(output_stream, 128);  // offset
-
-    // Write hardcoded fragment uniform buffer information
-    // Color uniform buffer
-    WriteU32(output_stream, 16);   // size (vec4 color = 16)
-    WriteU32(output_stream, 192);  // offset
-
+    WriteU8(output_stream, (u8)flags);
 }
 
 void ImportShader(const fs::path& source_path, Stream* output_stream, Props* config, Props* meta)
@@ -193,7 +145,7 @@ static std::string ExtractStage(const std::string& source, const std::string& st
     return result;
 }
 
-static uint32_t GetTypeSize(const std::string& type_name)
+static u32 GetTypeSize(const std::string& type_name)
 {
     // HLSL built-in type sizes (in bytes)
     if (type_name == "float" || type_name == "int" || type_name == "uint") return 4;
@@ -221,9 +173,9 @@ static std::string ReadIncludeFile(const fs::path& include_path)
     return buffer.str();
 }
 
-static std::vector<uint32_t> ParseUniformBufferSizes(const std::string& hlsl_source, const fs::path& include_dir, int depth)
+static std::vector<u32> ParseUniformBufferSizes(const std::string& hlsl_source, const fs::path& include_dir, int depth)
 {
-    std::vector<uint32_t> buffer_sizes;
+    std::vector<u32> buffer_sizes;
     
     std::string indent(depth * 2, ' ');
     
@@ -286,8 +238,8 @@ static std::vector<uint32_t> ParseUniformBufferSizes(const std::string& hlsl_sou
         if (!found_brace)
             continue;
 
-        uint32_t buffer_size = 0;
-        uint32_t current_offset = 0;
+        u32 buffer_size = 0;
+        u32 current_offset = 0;
         
         // Parse cbuffer contents
         while (NextToken(tokenizer, &token))
@@ -309,8 +261,8 @@ static std::vector<uint32_t> ParseUniformBufferSizes(const std::string& hlsl_sou
             std::string var_name(token.value, token.length);
             std::cout << "    " << type_name << " " << var_name;
             
-            uint32_t type_size = GetTypeSize(type_name);
-            uint32_t array_size = 1;
+            u32 type_size = GetTypeSize(type_name);
+            u32 array_size = 1;
             
             // Check for array declaration [size]
             if (NextToken(tokenizer, &token) && IsValue(token, "["))
@@ -375,7 +327,7 @@ AssetImporterTraits* GetShaderImporterTraits()
     return &g_shader_importer_traits;
 }
 
-static std::vector<uint32_t> CompileGLSLToSPIRV(const std::string& source, glslang_stage_t stage, const std::string& filename)
+static std::vector<u32> CompileGLSLToSPIRV(const std::string& source, glslang_stage_t stage, const std::string& filename)
 {
     // Initialize glslang if not already done
     static bool initialized = false;
@@ -511,27 +463,21 @@ static std::vector<uint32_t> CompileGLSLToSPIRV(const std::string& source, glsla
 
     // Create shader and parse
     glslang_shader_t* shader = glslang_shader_create(&input);
-    if (!glslang_shader_preprocess(shader, &input)) {
-        printf("GLSL preprocessing failed for %s:\n%s\n", filename.c_str(), glslang_shader_get_info_log(shader));
-        glslang_shader_delete(shader);
-        return {};
-    }
+    if (!glslang_shader_preprocess(shader, &input))
+        throw std::runtime_error(std::string(glslang_shader_get_info_log(shader)));
 
-    if (!glslang_shader_parse(shader, &input)) {
-        printf("GLSL parsing failed for %s:\n%s\n", filename.c_str(), glslang_shader_get_info_log(shader));
-        glslang_shader_delete(shader);
-        return {};
-    }
+    if (!glslang_shader_parse(shader, &input))
+        throw std::runtime_error(std::string(glslang_shader_get_info_log(shader)));
 
     // Create program and link
     glslang_program_t* program = glslang_program_create();
     glslang_program_add_shader(program, shader);
 
     if (!glslang_program_link(program, GLSLANG_MSG_SPV_RULES_BIT | GLSLANG_MSG_VULKAN_RULES_BIT)) {
-        printf("GLSL linking failed for %s:\n%s\n", filename.c_str(), glslang_program_get_info_log(program));
+        std::string error_msg = std::string(glslang_program_get_info_log(program));
         glslang_program_delete(program);
         glslang_shader_delete(shader);
-        return {};
+        throw std::runtime_error(error_msg);
     }
 
     // Generate SPIR-V
@@ -543,13 +489,73 @@ static std::vector<uint32_t> CompileGLSLToSPIRV(const std::string& source, glsla
 
     // Get SPIR-V data
     size_t spirv_size = glslang_program_SPIRV_get_size(program);
-    const uint32_t* spirv_data = glslang_program_SPIRV_get_ptr(program);
+    const u32* spirv_data = glslang_program_SPIRV_get_ptr(program);
     
-    std::vector<uint32_t> spirv(spirv_data, spirv_data + spirv_size);
+    std::vector spirv(spirv_data, spirv_data + spirv_size);
 
     // Cleanup
     glslang_program_delete(program);
     glslang_shader_delete(shader);
 
     return spirv;
+}
+
+static std::string ProcessIncludes(const std::string& source, const fs::path& base_dir)
+{
+    std::string result;
+    result.reserve(source.size() * 2); // Reserve some space
+    
+    std::istringstream input(source);
+    std::string line;
+    
+    while (std::getline(input, line))
+    {
+        // Trim whitespace from the beginning
+        size_t start = line.find_first_not_of(" \t");
+        if (start != std::string::npos)
+        {
+            // Check if this is an #include line
+            if (line.substr(start, 8) == "#include")
+            {
+                // Find the filename in quotes
+                size_t quote1 = line.find('"', start + 8);
+                if (quote1 != std::string::npos)
+                {
+                    size_t quote2 = line.find('"', quote1 + 1);
+                    if (quote2 != std::string::npos)
+                    {
+                        std::string filename = line.substr(quote1 + 1, quote2 - quote1 - 1);
+                        fs::path include_path = base_dir / filename;
+                        
+                        // Read the include file
+                        std::ifstream include_file(include_path);
+                        if (include_file.is_open())
+                        {
+                            std::string include_content((std::istreambuf_iterator<char>(include_file)),
+                                                       std::istreambuf_iterator<char>());
+                            
+                            // Recursively process includes in the included file
+                            std::string processed_include = ProcessIncludes(include_content, include_path.parent_path());
+                            
+                            result += processed_include;
+                            result += "\n";
+                        }
+                        else
+                        {
+                            std::string clean_path = include_path.string();
+                            std::replace(clean_path.begin(), clean_path.end(), '\\', '/');
+                            throw std::runtime_error("Could not open include file: " + clean_path);
+                        }
+                        continue; // Skip adding the original #include line
+                    }
+                }
+            }
+        }
+        
+        // Add the original line if it's not an #include
+        result += line;
+        result += "\n";
+    }
+    
+    return result;
 }

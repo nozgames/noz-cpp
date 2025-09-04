@@ -3,6 +3,7 @@
 //
 
 #include "views.h"
+#include "../tokenizer.h"
 
 constexpr int MAX_LOG_MESSAGES = 1024;
 constexpr int MAX_LOG_MESSAGE_LENGTH = 1024;
@@ -15,11 +16,30 @@ struct LogMessage
 
 void AddMessage(LogView* view, const char* str)
 {
-    if (IsFull(view->messages))
-        PopFront(view->messages);
+    Tokenizer tok;
+    Init(tok, str);
+    
+    Token line_token = {};
+    
+    while (ReadLine(tok, &line_token))
+    {
+        // Add each line as a separate log message
+        if (IsFull(view->messages))
+            PopFront(view->messages);
 
-    LogMessage* item = (LogMessage*)PushBack(view->messages);
-    item->length = CStringToTChar(str, item->value, MAX_LOG_MESSAGE_LENGTH);
+        LogMessage* item = (LogMessage*)PushBack(view->messages);
+        
+        // Copy the line content (null-terminate the token value)
+        char temp_buffer[MAX_LOG_MESSAGE_LENGTH];
+        size_t copy_length = line_token.length;
+        if (copy_length >= MAX_LOG_MESSAGE_LENGTH)
+            copy_length = MAX_LOG_MESSAGE_LENGTH - 1;
+        
+        strncpy(temp_buffer, line_token.value, copy_length);
+        temp_buffer[copy_length] = '\0';
+        
+        item->length = CStringToTChar(temp_buffer, item->value, MAX_LOG_MESSAGE_LENGTH);
+    }
 }
 
 void LogViewRender(View* view, const RectInt& rect)

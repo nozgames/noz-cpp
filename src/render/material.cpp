@@ -10,23 +10,16 @@ extern void BindTextureInternal(Texture* texture, i32 slot);
 
 struct MaterialImpl : Material
 {    
-    int vertex_uniform_count;
-    int fragment_uniform_count;
     Shader* shader;
     Texture** textures;
     size_t texture_count;
-    u8* uniforms_data;
 };
 
 Material* CreateMaterial(Allocator* allocator, Shader* shader)
 {
-    auto texture_count = GetSamplerCount(shader);
+    auto texture_count = 1;
     auto textures_size = texture_count * sizeof(Texture*);
-    auto uniform_data_size = GetUniformDataSize(shader);
-    auto material_size =
-        sizeof(MaterialImpl) +
-        textures_size +
-        uniform_data_size;
+    auto material_size = sizeof(MaterialImpl) + textures_size;
 
     auto material = (Material*)Alloc(allocator, material_size);
     if (!material)
@@ -34,11 +27,8 @@ Material* CreateMaterial(Allocator* allocator, Shader* shader)
 
     MaterialImpl* impl = static_cast<MaterialImpl*>(material);
     impl->shader = shader;
-    impl->vertex_uniform_count = GetVertexUniformCount(shader);
-    impl->fragment_uniform_count = GetFragmentUniformCount(shader);
     impl->texture_count = texture_count;
     impl->textures = (Texture**)(impl + 1);
-    impl->uniforms_data = (u8*)(impl->textures + texture_count);
     return impl;
 }
 
@@ -58,21 +48,11 @@ void BindMaterialInternal(Material* material)
 {
     MaterialImpl* impl = static_cast<MaterialImpl*>(material);
     
-    // Bind the shader (pipeline)
     BindShaderInternal(impl->shader);
     
-    // TODO: Implement uniform data binding when uniform system is ready
-    // PushUniformDataGPU(impl->shader, impl->uniforms_data);
-
-    // Bind textures to sampler registers
     for (size_t i = 0, c = impl->texture_count; i < c; ++i)
     {
-        if (impl->textures[i])
-        {
-            // Map to correct sampler register slot
-            // sampler_register_user0 = 1, user1 = 2, user2 = 3 (shadow = 0)
-            int slot = static_cast<int>(SAMPLER_REGISTER_TEX0) + static_cast<int>(i);
-            BindTextureInternal(impl->textures[i], slot);
-        }
+        int slot = static_cast<int>(SAMPLER_REGISTER_TEX0) + static_cast<int>(i);
+        BindTextureInternal(impl->textures[i], slot);
     }
 }

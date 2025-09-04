@@ -9,6 +9,20 @@
 
 namespace fs = std::filesystem;
 
+static std::string CleanPath(const std::string& path)
+{
+    std::string result = path;
+    
+    // Replace all backslashes with forward slashes
+    for (char& c : result)
+    {
+        if (c == '\\')
+            c = '/';
+    }
+    
+    return result;
+}
+
 extern AssetImporterTraits* GetShaderImporterTraits();
 extern AssetImporterTraits* GetTextureImporterTraits();
 extern AssetImporterTraits* GetFontImporterTraits();
@@ -261,7 +275,7 @@ bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers)
                     }
                     catch (const std::exception& e)
                     {
-                        LogError("%s: %s", job.source_path.string().c_str(), e.what());;
+                        LogError("%s: %s", CleanPath(job.source_path.string()).c_str(), e.what());
                         continue;
                     }
                 }

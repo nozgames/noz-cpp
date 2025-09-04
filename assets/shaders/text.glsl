@@ -1,41 +1,35 @@
 //@ VERTEX
 
-#include "../../shader_include/mesh.hlsl"
+#include "../../shader_include/mesh.glsl"
 
-struct VertexOutput
-{
-    float2 uv0 : TEXCOORD0;
-    float4 position : SV_POSITION;
-};
+layout(location = 0) out vec2 v_uv0;
 
-VertexOutput vs(VertexInput input)
+void main()
 {
-    VertexOutput output;
-    output.position = transform_to_screen(input.position);
-    output.uv0 = input.uv0;
-    return output;
+    gl_Position = transform_to_screen(position);
+    v_uv0 = uv0;
 }
 
 //@ END
 
 //@ FRAGMENT
 
-#include "../../shader_include/color.hlsl"
-
-Texture2D<float4> Texture : register(t0, space1);
-SamplerState Sampler : register(s0, space1);
-
-struct PixelInput
+layout(set = 2, binding = 0) uniform ColorBuffer
 {
-    float2 uv0 : TEXCOORD0;
-};
+    vec4 color;
+} colorData;
 
-float4 ps(PixelInput input) : SV_TARGET
+layout(set = 1, binding = 0) uniform sampler2D mainTexture;
+
+layout(location = 0) in vec2 v_uv0;
+layout(location = 0) out vec4 FragColor;
+
+void main()
 {
-    float distance = Texture.Sample(Sampler, input.uv0).r;
+    float distance = texture(mainTexture, v_uv0).r;
     float width = fwidth(distance);
     float alpha = smoothstep(0.5 - width, 0.5 + width, distance);
-    return float4(color.rgb, alpha * color.a);
+    FragColor = vec4(colorData.color.rgb, alpha * colorData.color.a);
 }
 
 //@ END

@@ -1,53 +1,51 @@
-cbuffer CameraBuffer : register(b0, space0)
+layout(set = 0, binding = 0) uniform CameraBuffer
 {
-    float2 cam_pos;
-    float2 cam_size;
-    float2 cam_rot;
-};
+    vec2 cam_pos;
+    vec2 cam_size;
+    vec2 cam_rot;
+} camera;
 
-cbuffer ObjectBuffer : register(b1, space0)
+layout(set = 0, binding = 1) uniform ObjectBuffer
 {
-    float2 obj_pos;
-    float2 obj_scale;
+    vec2 obj_pos;
+    vec2 obj_scale;
     float obj_rot;
-};
+} object;
 
-cbuffer BoneBuffer : register(b2, space0)
+layout(set = 0, binding = 2) uniform BoneBuffer
 {
-    float3x3 bones[32];
-};
+    mat3 bones[32];
+} boneData;
 
-struct VertexInput
-{
-    float2 position : POSITION;
-    float2 uv0 : TEXCOORD0;
-    float2 normal : TEXCOORD1;
-    float bone_index : TEXCOORD2;
-};
+// Vertex input attributes
+layout(location = 0) in vec2 position;
+layout(location = 1) in vec2 uv0;
+layout(location = 2) in vec2 normal;
+layout(location = 3) in float bone_index;
 
-float4 transform_to_screen(float2 vertex_pos)
+vec4 transform_to_screen(vec2 vertex_pos)
 {
     // Scale and rotate the vertex
-    float2 scaled = vertex_pos * obj_scale;
-    float obj_cos = cos(obj_rot);
-    float obj_sin = sin(obj_rot);
-    float2 rotated = float2(
-        dot(scaled, float2(obj_cos, -obj_sin)),
-        dot(scaled, float2(obj_sin, obj_cos))
+    vec2 scaled = vertex_pos * object.obj_scale;
+    float obj_cos = cos(object.obj_rot);
+    float obj_sin = sin(object.obj_rot);
+    vec2 rotated = vec2(
+        dot(scaled, vec2(obj_cos, -obj_sin)),
+        dot(scaled, vec2(obj_sin, obj_cos))
     );
 
     // Position in world, then transform by camera
-    float2 world = rotated + obj_pos;
-    float2 translated = world - cam_pos;
-    float2 view = float2(
-        dot(translated, float2(cam_rot.y, -cam_rot.x)),
-        dot(translated, cam_rot)
+    vec2 world = rotated + object.obj_pos;
+    vec2 translated = world - camera.cam_pos;
+    vec2 view = vec2(
+        dot(translated, vec2(camera.cam_rot.y, -camera.cam_rot.x)),
+        dot(translated, camera.cam_rot)
     );
 
     // Convert to NDC (-1 to 1 range)
-    return float4(
-        view.x / cam_size.x,
-        view.y / cam_size.y,
+    return vec4(
+        view.x / camera.cam_size.x,
+        view.y / camera.cam_size.y,
         0.0,
         1.0
     );

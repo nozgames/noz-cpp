@@ -1,39 +1,32 @@
-// SDL3 requires space1 for all cbuffer declarations
+#version 450
 
 //@ VERTEX
 
-#include "../../shader_include/mesh.hlsl"
+#include "../../shader_include/mesh.glsl"
 
-struct VertexOutput
-{
-    float2 uv0 : TEXCOORD0;
-    float4 position : SV_POSITION;
-};
+layout(location = 0) out vec2 fragTexCoord;
 
-VertexOutput vs(VertexInput input)
+void main()
 {
-    VertexOutput output;
-    output.position = transform_to_screen(input.position);
-    output.uv0 = input.uv0;
-    return output;
+    gl_Position = transform_to_screen(position);
+    fragTexCoord = uv0;
 }
 
 //@ END
 
 //@ FRAGMENT
 
-Texture2D<float4> Texture : register(t0, space2);
-SamplerState Sampler : register(s0, space2);
-
-struct PixelInput
+layout(location = 0) in vec2 fragTexCoord;
+layout(location = 0) out vec4 outColor;
+layout(set = 1, binding = 0) uniform sampler2D mainTexture;
+layout(set = 2, binding = 0) uniform ColorBuffer
 {
-    float2 uv0 : TEXCOORD0;
-};
+    vec4 color;
+} colorData;
 
-float4 ps(PixelInput input) : SV_TARGET
+void main()
 {
-    float4 texColor = Texture.Sample(Sampler, input.uv0);
-    return float4(texColor.rgb, 1);
+    outColor = texture(mainTexture, fragTexCoord);
 }
 
 //@ END

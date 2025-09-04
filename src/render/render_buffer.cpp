@@ -7,6 +7,7 @@
 extern RenderCamera GetRenderCamera(Camera* camera);
 extern void RenderMesh(Mesh* mesh);
 extern void BindMaterialInternal(Material* material);
+extern void BindTextureInternal(Texture* texture, i32 slot);
 
 enum RenderCommandType
 {
@@ -15,7 +16,7 @@ enum RenderCommandType
     command_type_bind_transform,
     command_type_bind_camera,
     command_type_bind_bones,
-    command_type_bind_default_texture,
+    RENDER_COMMAND_TYPE_BIND_DEFAULT_TEXTURE,
     command_type_bind_color,
     command_type_draw_mesh,
     RENDER_COMMAND_TYPE_BEGIN_PASS,
@@ -140,7 +141,7 @@ void EndRenderPass()
 void BindDefaultTexture(int texture_index)
 {
     RenderCommand cmd = {
-        .type = command_type_bind_default_texture,
+        .type = RENDER_COMMAND_TYPE_BIND_DEFAULT_TEXTURE,
         .data = {
             .bind_default_texture = {
                 .index = texture_index}} };
@@ -278,8 +279,8 @@ void ExecuteRenderCommands()
             platform::BeginRenderPass(command->data.begin_pass.clear_color);
             break;
 
-        case command_type_bind_default_texture:
-            BindDefaultTextureGPU(command->data.bind_default_texture.index);
+        case RENDER_COMMAND_TYPE_BIND_DEFAULT_TEXTURE:
+            BindTextureInternal(g_core_assets.textures.white, command->data.bind_default_texture.index);
             break;
 
         case command_type_end_pass:

@@ -7,7 +7,6 @@
 
 struct FontImpl : Font
 {
-    const Name* name;
     Material* material;
     Texture* texture;
     float baseline;
@@ -25,17 +24,15 @@ struct FontImpl : Font
 
 //static SDL_GPUDevice* g_device = nullptr;
 
-#if 0
-static void font_destroy_impl(FontImpl* impl)
+void FontDestructor(void* p)
 {
+    FontImpl* impl = (FontImpl*)p;
     assert(impl);
-    // Free dynamic kerning values array
-    if (impl->kerning_values) {
-        free(impl->kerning_values);
-        impl->kerning_values = nullptr;
-    }
+
+    Free(impl->kerning_values);
+    Free(impl->material);
+    Free(impl->texture);
 }
-#endif
 
 Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
 {
@@ -88,33 +85,29 @@ Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const
     // Read kerning count and kerning data
     impl->kerning_count = ReadU16(stream);
 
-    if (impl->kerning_count > 0) {
-        // Allocate kerning values array
-        impl->kerning_values = (float*)malloc(impl->kerning_count * sizeof(float));
-        if (!impl->kerning_values) {
-            impl->kerning_count = 0;
-        }
-        else {
-            // Read all kerning pairs
-            for (uint16_t i = 0; i < impl->kerning_count; ++i)
-            {
-                uint32_t first = ReadU32(stream);
-                uint32_t second = ReadU32(stream);
-                float amount = ReadFloat(stream);
+    if (impl->kerning_count > 0)
+    {
+        impl->kerning_values = (float*)Alloc(allocator, impl->kerning_count * sizeof(float));
 
-                // Store in sparse representation
-                if (first < MAX_GLYPHS && second < MAX_GLYPHS) {
-                    uint32_t index = first * MAX_GLYPHS + second;
-                    impl->kerning_index[index] = i;
-                    impl->kerning_values[i] = amount;
-                }
+        // Read all kerning pairs
+        for (uint16_t i = 0; i < impl->kerning_count; ++i)
+        {
+            uint32_t first = ReadU32(stream);
+            uint32_t second = ReadU32(stream);
+            float amount = ReadFloat(stream);
+
+            // Store in sparse representation
+            if (first < MAX_GLYPHS && second < MAX_GLYPHS) {
+                uint32_t index = first * MAX_GLYPHS + second;
+                impl->kerning_index[index] = i;
+                impl->kerning_values[i] = amount;
             }
         }
     }
 
     // Read atlas data
     uint32_t atlas_data_size = impl->atlas_width * impl->atlas_height; // R8 format
-    uint8_t* atlas_data = (uint8_t*)malloc(atlas_data_size);
+    uint8_t* atlas_data = (uint8_t*)Alloc(ALLOCATOR_SCRATCH, atlas_data_size);
     if (!atlas_data)
     {
         // todo: free without allocator, stuff allocator with destructor?
@@ -123,10 +116,9 @@ Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const
     }
 
     ReadBytes(stream, atlas_data, atlas_data_size);
-    // Note: stream destruction handled by caller
 
     impl->texture = CreateTexture(allocator, atlas_data, impl->atlas_width, impl->atlas_height, TEXTURE_FORMAT_R8, name);
-    free(atlas_data);
+    Free(atlas_data);
 
     if (!impl->texture)
     {
@@ -172,15 +164,13 @@ float GetKerning(Font* font, char first, char second)
 {
     FontImpl* impl = static_cast<FontImpl*>(font);
     
-    auto f = (unsigned char)first;
-    auto s = (unsigned char)second;
-    if (f < MAX_GLYPHS && s < MAX_GLYPHS)
-    {
-        uint32_t index = f * MAX_GLYPHS + s;
-        uint16_t value_index = impl->kerning_index[index];
-        if (value_index != 0xFFFF && value_index < impl->kerning_count) 
-            return impl->kerning_values[value_index];
-    }
+    u8 f = (u8)first;
+    u8 s = (u8)second;
+
+    uint32_t index = f * MAX_GLYPHS + s;
+    uint16_t value_index = impl->kerning_index[index];
+    if (value_index != 0xFFFF && value_index < impl->kerning_count)
+        return impl->kerning_values[value_index];
 
     return 0.0f;
 }
