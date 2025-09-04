@@ -29,17 +29,17 @@ namespace noz::msdf
 {
     void generateSDF(
         std::vector<uint8_t>& output,
-        int outputStride,
-        const Vec2Int& outputPosition,
-        const Vec2Int& outputSize,
+        int output_stride,
+        const Vec2Int& output_pos,
+        const Vec2Int& output_size,
         const Shape& shape,
         double range,
         const Vec2Double& scale,
         const Vec2Double& translate)
     {
         int contourCount = (int)shape.contours.size();
-        int w = outputSize.x;
-        int h = outputSize.y;
+        int w = output_size.x;
+        int h = output_size.y;
 
         std::vector<int> windings;
         windings.resize(contourCount);
@@ -55,7 +55,9 @@ namespace noz::msdf
             for (int x = 0; x < w; ++x)
             {
                 auto dummy = 0.0;
-                auto p = Vec2Double(x + .5, y + .5) / scale - translate;
+                auto p = Vec2Double(
+                    (x + .5) / (f64)w * scale.x + translate.x,
+                    (y + .5) / (f64)h * scale.y + translate.y);
                 auto negDist = -SignedDistance::Infinite.distance;
                 auto posDist = SignedDistance::Infinite.distance;
                 int winding = 0;
@@ -103,14 +105,14 @@ namespace noz::msdf
                 sd = Clamp(sd, -0.5, 0.5);
                 sd = sd + 0.5;
 
-                output[x + outputPosition.x + (row + outputPosition.y) * outputStride] =
-                    (uint8_t)(sd * 255.0f);
+                u8& pixel = output[x + output_pos.x + (row + output_pos.y) * output_stride];
+                pixel = (u8)(sd * 255.0f);
             }
         }
     }
 
-    void renderGlyph(
-        const ttf::TrueTypeFont::Glyph* glyph,
+    void RenderShape(
+        Shape* shape,
         std::vector<uint8_t>& output,
         int outputStride,
         const Vec2Int& outputPosition,
@@ -119,8 +121,6 @@ namespace noz::msdf
         const Vec2Double& scale,
         const Vec2Double& translate)
     {
-        auto shape = Shape::fromGlyph(glyph, true);
-
         generateSDF(
             output,
             outputStride,
@@ -131,7 +131,5 @@ namespace noz::msdf
             scale,
             translate
         );
-
-        delete shape;
     }
 }

@@ -10,148 +10,154 @@
 
 namespace noz::msdf
 {
-	bool Shape::validate()
-	{
-		for(auto& contour : contours)
-		{
-			if (contour->edges.size() == 0)
-				continue;
+    Shape::~Shape()
+    {
+        for(auto contour : contours)
+            delete contour;
+    }
 
-			auto corner = contour->edges.back()->point(1.0);
-			for(auto& edge : contour->edges)
-			{
-				auto compare = edge->point(0.0);
-				if (compare != corner)
-					return false;
+    bool Shape::validate()
+    {
+        for(auto& contour : contours)
+        {
+            if (contour->edges.size() == 0)
+                continue;
 
-				corner = edge->point(1.0);
-			}
-		}
+            auto corner = contour->edges.back()->point(1.0);
+            for(auto& edge : contour->edges)
+            {
+                auto compare = edge->point(0.0);
+                if (compare != corner)
+                    return false;
 
-		return true;
-	}
+                corner = edge->point(1.0);
+            }
+        }
 
-	void Shape::normalize()
-	{
-		for(auto contour : contours)
-		{
-			if (contour->edges.size() != 1)
-				continue;
+        return true;
+    }
 
-			auto edge = contour->edges[0];
-			contour->edges.clear();
-			edge->splitInThirds(contour->edges);
-			delete edge;
-		}
-	}
+    void Shape::normalize()
+    {
+        for(auto contour : contours)
+        {
+            if (contour->edges.size() != 1)
+                continue;
 
-	void Shape::bounds(double& l, double& b, double& r, double& t)
-	{
-		for(auto contour : contours)
-			contour->bounds(l, b, r, t);
-	}
+            auto edge = contour->edges[0];
+            contour->edges.clear();
+            edge->splitInThirds(contour->edges);
+            delete edge;
+        }
+    }
 
-	Shape* Shape::fromGlyph(const ttf::TrueTypeFont::Glyph* glyph, bool invertYAxis)
-	{
-		if (nullptr == glyph)
-			return nullptr;
+    void Shape::bounds(double& l, double& b, double& r, double& t)
+    {
+        for(auto contour : contours)
+            contour->bounds(l, b, r, t);
+    }
 
-		auto shape = new Shape{};
-		shape->contours.resize(glyph->contours.size());
+    Shape* Shape::fromGlyph(const ttf::TrueTypeFont::Glyph* glyph, bool invertYAxis)
+    {
+        if (nullptr == glyph)
+            return nullptr;
 
-		for (size_t i = 0; i < glyph->contours.size(); i++)
-		{
-			auto glyphContour = glyph->contours[i];
-			auto last = glyph->points[glyphContour.start].xy;
-			auto start = last;
+        auto shape = new Shape{};
+        shape->contours.resize(glyph->contours.size());
 
-			std::vector<Edge*> edges;
+        for (size_t i = 0; i < glyph->contours.size(); i++)
+        {
+            auto glyphContour = glyph->contours[i];
+            auto last = glyph->points[glyphContour.start].xy;
+            auto start = last;
 
-			for (int p = 1; p < glyphContour.length;)
-			{
-				auto glyphPoint = glyph->points[glyphContour.start + p++];
+            std::vector<Edge*> edges;
 
-				// Quadratic edge?
-				if (glyphPoint.curve == ttf::TrueTypeFont::CurveType::Conic)
-				{
-					auto control = glyphPoint.xy;
+            for (int p = 1; p < glyphContour.length;)
+            {
+                auto glyphPoint = glyph->points[glyphContour.start + p++];
 
-					for (; p < glyphContour.length;)
-					{
-						glyphPoint = glyph->points[glyphContour.start + p++];
+                // Quadratic edge?
+                if (glyphPoint.curve == ttf::TrueTypeFont::CurveType::Conic)
+                {
+                    auto control = glyphPoint.xy;
 
-						if (glyphPoint.curve != ttf::TrueTypeFont::CurveType::Conic)
-						{
-							edges.push_back(new QuadraticEdge(
-								Vec2Double(last.x, last.y),
-								Vec2Double(control.x, control.y),
-								Vec2Double(glyphPoint.xy.x, glyphPoint.xy.y)
-								));
-							last = glyphPoint.xy;
-							break;
-						}
+                    for (; p < glyphContour.length;)
+                    {
+                        glyphPoint = glyph->points[glyphContour.start + p++];
 
-						auto middle = Vec2Double((control.x + glyphPoint.xy.x) / 2, (control.y + glyphPoint.xy.y) / 2);
+                        if (glyphPoint.curve != ttf::TrueTypeFont::CurveType::Conic)
+                        {
+                            edges.push_back(new QuadraticEdge(
+                                Vec2Double(last.x, last.y),
+                                Vec2Double(control.x, control.y),
+                                Vec2Double(glyphPoint.xy.x, glyphPoint.xy.y)
+                                ));
+                            last = glyphPoint.xy;
+                            break;
+                        }
 
-						edges.push_back(new QuadraticEdge(
-							Vec2Double(last.x, last.y),
-							Vec2Double(control.x, control.y),
-							Vec2Double(middle.x, middle.y)
-							));
+                        auto middle = Vec2Double((control.x + glyphPoint.xy.x) / 2, (control.y + glyphPoint.xy.y) / 2);
 
-						last = middle;
-						control = glyphPoint.xy;
-					}
+                        edges.push_back(new QuadraticEdge(
+                            Vec2Double(last.x, last.y),
+                            Vec2Double(control.x, control.y),
+                            Vec2Double(middle.x, middle.y)
+                            ));
 
-					if (p == glyphContour.length)
-					{
-						if (glyph->points[glyphContour.start + glyphContour.length - 1].curve == ttf::TrueTypeFont::CurveType::Conic)
-						{
-							edges.push_back(new QuadraticEdge(
-								Vec2Double(last.x, last.y),
-								Vec2Double(control.x, control.y),
-								Vec2Double(start.x, start.y)
-								));
-						}
-						else
-						{
-							edges.push_back(new LinearEdge(
-								Vec2Double(last.x, last.y),
-								Vec2Double(start.x, start.y)
-								));
-						}
-					}
-				}
-				else
-				{
-					edges.push_back(new LinearEdge(
-						Vec2Double(last.x, last.y),
-						Vec2Double(glyphPoint.xy.x, glyphPoint.xy.y)
-						));
+                        last = middle;
+                        control = glyphPoint.xy;
+                    }
+
+                    if (p == glyphContour.length)
+                    {
+                        if (glyph->points[glyphContour.start + glyphContour.length - 1].curve == ttf::TrueTypeFont::CurveType::Conic)
+                        {
+                            edges.push_back(new QuadraticEdge(
+                                Vec2Double(last.x, last.y),
+                                Vec2Double(control.x, control.y),
+                                Vec2Double(start.x, start.y)
+                                ));
+                        }
+                        else
+                        {
+                            edges.push_back(new LinearEdge(
+                                Vec2Double(last.x, last.y),
+                                Vec2Double(start.x, start.y)
+                                ));
+                        }
+                    }
+                }
+                else
+                {
+                    edges.push_back(new LinearEdge(
+                        Vec2Double(last.x, last.y),
+                        Vec2Double(glyphPoint.xy.x, glyphPoint.xy.y)
+                        ));
 
 
-					last = glyphPoint.xy;
+                    last = glyphPoint.xy;
 
-					// If we ended on a linear then finish on a linear
-					if (p == glyphContour.length)
-						edges.push_back(new LinearEdge(
-							Vec2Double(last.x, last.y),
-							Vec2Double(start.x, start.y)
-						));
-				}
-			}
+                    // If we ended on a linear then finish on a linear
+                    if (p == glyphContour.length)
+                        edges.push_back(new LinearEdge(
+                            Vec2Double(last.x, last.y),
+                            Vec2Double(start.x, start.y)
+                        ));
+                }
+            }
 
-			auto contour = new Contour{};
-			contour->edges = edges;
-			shape->contours[i] = contour;
-		}
+            auto contour = new Contour{};
+            contour->edges = edges;
+            shape->contours[i] = contour;
+        }
 
-		if (!shape->validate())
-			throw std::exception("Invalid shape data in glyph");
+        if (!shape->validate())
+            throw std::exception("Invalid shape data in glyph");
 
-		shape->normalize();
-		shape->inverseYAxis = invertYAxis;
+        shape->normalize();
+        shape->inverseYAxis = invertYAxis;
 
-		return shape;
-	}
+        return shape;
+    }
 }

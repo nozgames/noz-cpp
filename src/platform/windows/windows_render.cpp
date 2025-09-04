@@ -79,8 +79,10 @@ struct VulkanRenderer
     VkDescriptorSet texture_descriptor_set;
     VkDescriptorSet fragment_descriptor_set;
     VkDescriptorPool descriptor_pool;
-    VulkanUniformBuffer uniform_buffer_pool[MAX_UNIFORM_BUFFERS];
-    int uniform_buffer_pool_count;
+    VulkanUniformBuffer vertex_uniform_buffer_pool[MAX_UNIFORM_BUFFERS];
+    VulkanUniformBuffer fragment_uniform_buffer_pool[MAX_UNIFORM_BUFFERS];
+    int vertex_uniform_buffer_pool_count;
+    int fragment_uniform_buffer_pool_count;
     VkPipelineLayout pipeline_layout;
     u32 current_image_index;
 
@@ -196,12 +198,12 @@ static bool CreateUniformBuffer(VulkanUniformBuffer* ubuffer, const char* name, 
     return true;
 }
 
-static VulkanUniformBuffer* AcquireUniformBuffer(u32 binding, VkDescriptorSet descriptor_set)
+static VulkanUniformBuffer* AcquireUniformBuffer(u32 binding)
 {
-    if (g_vulkan.uniform_buffer_pool_count == 0)
+    if (g_vulkan.vertex_uniform_buffer_pool_count == 0)
         return nullptr;
 
-    VulkanUniformBuffer* buffer = &g_vulkan.uniform_buffer_pool[--g_vulkan.uniform_buffer_pool_count];
+    VulkanUniformBuffer* buffer = &g_vulkan.vertex_uniform_buffer_pool[--g_vulkan.vertex_uniform_buffer_pool_count];
     if (VK_NULL_HANDLE != buffer->buffer)
     {
         // Update the persistent vertex descriptor set to point to this buffer
@@ -213,7 +215,7 @@ static VulkanUniformBuffer* AcquireUniformBuffer(u32 binding, VkDescriptorSet de
 
         VkWriteDescriptorSet desc_write = {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet = descriptor_set,
+            .dstSet = g_vulkan.vertex_descriptor_set,
             .dstBinding = binding,
             .dstArrayElement = 0,
             .descriptorCount = 1,
@@ -225,7 +227,41 @@ static VulkanUniformBuffer* AcquireUniformBuffer(u32 binding, VkDescriptorSet de
         return buffer;
     }
 
-    if (!CreateUniformBuffer(buffer, "Uniform", binding, descriptor_set))
+    if (!CreateUniformBuffer(buffer, "Uniform", binding, g_vulkan.vertex_descriptor_set))
+        return nullptr;
+
+    return buffer;
+}
+
+static VulkanUniformBuffer* AcquireFragmentUniformBuffer(u32 binding)
+{
+    if (g_vulkan.fragment_uniform_buffer_pool_count == 0)
+        return nullptr;
+
+    VulkanUniformBuffer* buffer = &g_vulkan.fragment_uniform_buffer_pool[--g_vulkan.fragment_uniform_buffer_pool_count];
+    if (VK_NULL_HANDLE != buffer->buffer)
+    {
+        VkDescriptorBufferInfo desc_buffer_info = {
+            .buffer = buffer->buffer,
+            .offset = 0,
+            .range = VK_WHOLE_SIZE
+        };
+
+        VkWriteDescriptorSet desc_write = {
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = g_vulkan.fragment_descriptor_set,
+            .dstBinding = binding,
+            .dstArrayElement = 0,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .pBufferInfo = &desc_buffer_info,
+        };
+
+        vkUpdateDescriptorSets(g_vulkan.device, 1, &desc_write, 0, nullptr);
+        return buffer;
+    }
+
+    if (!CreateUniformBuffer(buffer, "FragmentUniform", binding, g_vulkan.fragment_descriptor_set))
         return nullptr;
 
     return buffer;
@@ -1126,7 +1162,8 @@ void ResizeVulkan(const Vec2Int& size)
 
 void platform::BeginRenderFrame()
 {
-    g_vulkan.uniform_buffer_pool_count = MAX_UNIFORM_BUFFERS;
+    g_vulkan.vertex_uniform_buffer_pool_count = MAX_UNIFORM_BUFFERS;
+    g_vulkan.fragment_uniform_buffer_pool_count = MAX_UNIFORM_BUFFERS;
 
     vkWaitForFences(g_vulkan.device, 1, &g_vulkan.in_flight_fence, VK_TRUE, UINT64_MAX);
     vkResetFences(g_vulkan.device, 1, &g_vulkan.in_flight_fence);
@@ -1204,7 +1241,7 @@ void platform::BindTransform(const RenderTransform* transform)
 {
     assert(transform);
     
-    VulkanUniformBuffer* buffer = AcquireUniformBuffer(VERTEX_REGISTER_OBJECT, g_vulkan.vertex_descriptor_set);
+    VulkanUniformBuffer* buffer = AcquireUniformBuffer(VERTEX_REGISTER_OBJECT);
     if (!buffer)
         return;
     
@@ -1225,7 +1262,7 @@ void platform::BindCamera(const RenderCamera* camera)
 {
     assert(camera);
 
-    VulkanUniformBuffer* buffer = AcquireUniformBuffer(VERTEX_REGISTER_CAMERA, g_vulkan.vertex_descriptor_set);
+    VulkanUniformBuffer* buffer = AcquireUniformBuffer(VERTEX_REGISTER_CAMERA);
     if (!buffer)
         return;
     
@@ -1247,9 +1284,9 @@ void platform::BindBoneTransforms(const RenderTransform* bones, int count)
     assert(count > 0);
     assert(count <= 64); // Max bone count
 
-    VulkanUniformBuffer* buffer = AcquireUniformBuffer(FRAGMENT_REGISTER_COLOR, g_vulkan.fragment_descriptor_set);
-    if (!buffer)
-        return;
+    // VulkanUniformBuffer* buffer = AcquireUniformBuffer(FRAGMENT_REGISTER_COLOR, g_vulkan.fragment_descriptor_set);
+    // if (!buffer)
+    //     return;
 
     // memcpy(buffer->mapped_ptr, bones, sizeof(RenderTransform) * count);
     // g_vulkan.current_camera_buffer = buffer;
@@ -1263,15 +1300,13 @@ void platform::BindLight(const void* light)
     (void)light; // Suppress unused parameter warning for now
 }
 
-void platform::BindColor(const void* color)
+void platform::BindColor(const Color& color)
 {
-    assert(color);
-
-    VulkanUniformBuffer* buffer = AcquireUniformBuffer(FRAGMENT_REGISTER_COLOR, g_vulkan.fragment_descriptor_set);
+    VulkanUniformBuffer* buffer = AcquireFragmentUniformBuffer(FRAGMENT_REGISTER_COLOR);
     if (!buffer)
         return;
 
-    memcpy(buffer->mapped_ptr, color, sizeof(Color));
+    memcpy(buffer->mapped_ptr, &color, sizeof(Color));
     vkCmdBindDescriptorSets(
         g_vulkan.command_buffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1766,11 +1801,6 @@ static bool CreateShaderInternal(
     assert(fragment_code_size > 0);
     assert(name);
 
-    VkVertexInputBindingDescription binding_desc = {
-        .binding = 0,
-        .stride = sizeof(float) * 7,
-        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
-    };
 
     VkVertexInputAttributeDescription attr_descs[] = {
         // Position
@@ -1794,13 +1824,26 @@ static bool CreateShaderInternal(
             .format = VK_FORMAT_R32G32_SFLOAT,
             .offset = sizeof(float) * 4
         },
-        // Bone index
+        // Color
         {
             .location = 3,
             .binding = 0,
-            .format = VK_FORMAT_R32_SFLOAT,
+            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
             .offset = sizeof(float) * 6
+        },
+        // Bone index
+        {
+            .location = 4,
+            .binding = 0,
+            .format = VK_FORMAT_R32_SFLOAT,
+            .offset = sizeof(float) * 10
         }
+    };
+
+    VkVertexInputBindingDescription binding_desc = {
+        .binding = 0,
+        .stride = sizeof(float) * 11,
+        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
     };
 
     VkPipelineVertexInputStateCreateInfo vertex_input = {

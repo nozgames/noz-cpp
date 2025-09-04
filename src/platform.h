@@ -41,7 +41,7 @@ namespace platform
     void BindCamera(const RenderCamera* camera);
     void BindBoneTransforms(const RenderTransform* bones, int count);
     void BindLight(const void* light);
-    void BindColor(const void* color);
+    void BindColor(const Color& color);
     Buffer* CreateVertexBuffer(const MeshVertex* vertices, size_t vertex_count, const char* name = nullptr);
     Buffer* CreateIndexBuffer(const uint16_t* indices, size_t index_count, const char* name = nullptr);
     void BindVertexBuffer(Buffer* buffer);

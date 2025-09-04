@@ -24,6 +24,7 @@ struct MeshVertex
     Vec2 position;
     Vec2 uv0;
     Vec2 normal;
+    Color color;
     float bone;
 };
 

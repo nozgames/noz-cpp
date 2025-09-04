@@ -268,7 +268,7 @@ void ExecuteRenderCommands()
             break;
 
         case command_type_bind_color:
-            platform::BindColor(&command->data.bind_color);
+            platform::BindColor(command->data.bind_color.color);
             break;
 
         case command_type_draw_mesh:

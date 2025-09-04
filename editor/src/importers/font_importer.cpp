@@ -5,6 +5,7 @@
 #include "../rect_packer.h"
 #include "../ttf/TrueTypeFont.h"
 #include "../msdf/msdf.h"
+#include "../msdf/shape.h"
 
 namespace fs = std::filesystem;
 
@@ -174,8 +175,9 @@ void ImportFont(const fs::path& source_path, Stream* output_stream, Props* confi
         if (glyph.ttf->contours.size() == 0)
             continue;
 
-        msdf::renderGlyph(
-            glyph.ttf,
+        msdf::Shape* shape = msdf::Shape::fromGlyph(glyph.ttf, true);
+        msdf::RenderShape(
+            shape,
             image,
             imageSize.x,
             {
@@ -193,6 +195,8 @@ void ImportFont(const fs::path& source_path, Stream* output_stream, Props* confi
                 glyph.ttf->size.y - glyph.ttf->bearing.y + sdf_range
             }
         );
+
+        delete shape;
     }
 
     WriteFontData(output_stream, ttf.get(), image, imageSize, glyphs, font_size);

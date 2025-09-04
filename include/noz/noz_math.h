@@ -143,6 +143,7 @@ struct Vec2Double
 
     Vec2Double operator*(f64 scalar) const { return { x * scalar, y * scalar }; }
     Vec2Double operator/(f64 scalar) const { return { x / scalar, y / scalar }; }
+    Vec2Double operator*(const Vec2Double& v) const { return { x * v.x, y * v.y }; }
     Vec2Double operator/(const Vec2Double& v) const { return { x / v.x, y / v.y }; }
     Vec2Double operator*=(f64 scalar) const { return { x * scalar, y * scalar }; }
     Vec2Double operator+(const Vec2Double& v) const { return { x + v.x, y + v.y }; }

@@ -4,8 +4,10 @@
 
 namespace noz::msdf
 {
-    void renderGlyph(
-	const ttf::TrueTypeFont::Glyph* glyph,
+    struct Shape;
+
+    void RenderShape(
+        Shape* shape,
 	std::vector<uint8_t>& output,
 	int outputStride,
 	const Vec2Int& outputPosition,

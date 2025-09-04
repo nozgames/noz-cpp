@@ -13,6 +13,7 @@ struct MeshImpl : Mesh
     MeshVertex* vertices;
     uint16_t* indices;
     Bounds2 bounds;
+    Texture* texture;
 };
 
 //static SDL_GPUDevice* g_device = nullptr;
@@ -115,17 +116,27 @@ Mesh* CreateMesh(
 
 Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
 {
-    Bounds2 bounds = ReadStruct<Bounds2>(stream);
+    //Bounds2 bounds = ReadStruct<Bounds2>(stream);
     u16 vertex_count = ReadU16(stream);
     u16 index_count = ReadU16(stream);
+    u32 tex_width = ReadU32(stream);
+    u32 tex_height = ReadU32(stream);
 
     MeshImpl* impl = CreateMesh(allocator, vertex_count, index_count, name);
     if (!impl)
         return nullptr;
 
-    impl->bounds = bounds;
+
+
+//    impl->bounds = bounds;
     ReadBytes(stream, impl->vertices, sizeof(MeshVertex) * impl->vertex_count);
     ReadBytes(stream, impl->indices, sizeof(uint16_t) * impl->index_count);
+
+    void* tex_data = Alloc(ALLOCATOR_SCRATCH, tex_width * tex_height);
+    ReadBytes(stream, tex_data, tex_width * tex_height);
+    impl->texture = CreateTexture(allocator, tex_data, tex_width, tex_height, TEXTURE_FORMAT_R8, name);
+    Free(tex_data);
+
     UploadMesh(impl, name);
     return impl;
 }
@@ -153,11 +164,15 @@ Bounds2 GetBounds(Mesh* mesh)
     return static_cast<MeshImpl*>(mesh)->bounds;
 }
 
+extern void BindTextureInternal(Texture* texture, int slot);
+
 void RenderMesh(Mesh* mesh)
 {
     assert(mesh);
     MeshImpl* impl = static_cast<MeshImpl*>(mesh);
     platform::BindVertexBuffer(impl->vertex_buffer);
     platform::BindIndexBuffer(impl->index_buffer);
+    BindTextureInternal(impl->texture, 0);
+    platform::BindColor(COLOR_GREEN);
     platform::DrawIndexed(impl->index_count);
 }

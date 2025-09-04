@@ -1,8 +1,8 @@
 /*
 
-	NoZ Game Engine
+    NoZ Game Engine
 
-	Copyright(c) 2025 NoZ Games, LLC
+    Copyright(c) 2025 NoZ Games, LLC
 
 */
 
@@ -12,13 +12,13 @@
 
 namespace noz::msdf
 {
-	struct Contour
-	{
-		~Contour();
+    struct Contour
+    {
+        ~Contour();
 
-		void bounds(double& l, double& b, double& r, double& t);
-		int winding();
+        void bounds(double& l, double& b, double& r, double& t);
+        int winding();
 
-		std::vector<Edge*> edges;
-	};
+        std::vector<Edge*> edges;
+    };
 }

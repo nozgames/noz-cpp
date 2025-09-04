@@ -10,15 +10,17 @@
 
 namespace noz::msdf
 {
-	struct Shape
-	{
-		bool validate();
-		void normalize();
-		void bounds(double& l, double& b, double& r, double& t);
-		
-		static Shape* fromGlyph(const ttf::TrueTypeFont::Glyph* glyph, bool invertYAxis);
+    struct Shape
+    {
+        bool validate();
+        void normalize();
+        void bounds(double& l, double& b, double& r, double& t);
 
-		std::vector<Contour*> contours;
-		bool inverseYAxis = false;
-	};
+        ~Shape();
+
+        static Shape* fromGlyph(const ttf::TrueTypeFont::Glyph* glyph, bool invertYAxis);
+
+        std::vector<Contour*> contours;
+        bool inverseYAxis = false;
+    };
 }

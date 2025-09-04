@@ -4,10 +4,17 @@
 // @STL
 
 #include "gltf.h"
-#include "../../src/internal.h"
 
 #define CGLTF_IMPLEMENTATION
 #include <cgltf.h>
+
+static Color Vector4ToColor(float* v)
+{
+    if (!v)
+        return COLOR_WHITE;
+
+    return {v[0], v[1], v[2], v[3]};
+}
 
 static Vec2 Vector2ToVec2(float* vector2)
 {
@@ -22,7 +29,7 @@ static Vec3 Vector3ToVec3(float* vector3)
     if (!vector3)
         return VEC3_ZERO;
 
-    return { vector3[0], vector3[2], vector3[1] };
+    return { vector3[0], vector3[1], vector3[2] };
 }
 
 static float QuaternionToYRotation(float* quaternion)
@@ -246,6 +253,58 @@ GLTFMesh GLTFLoader::read_mesh(const std::vector<GLTFBone>& bones)
                     for (size_t uv_idx = 0; uv_idx < accessor->count; ++uv_idx)
                     {
                         mesh.uvs[uv_idx] = Vector2ToVec2(&uvs_float[uv_idx * 2]);
+                    }
+                }
+            }
+            else if (primitive->attributes[i].type == cgltf_attribute_type_color)
+            {
+                cgltf_accessor* accessor = primitive->attributes[i].data;
+                if (accessor && accessor->count > 0)
+                {
+                    mesh.colors.resize(accessor->count);
+                    uint8_t* buffer_data = (uint8_t*)accessor->buffer_view->buffer->data + accessor->buffer_view->offset + accessor->offset;
+                    
+                    // Handle different component types for color data
+                    if (accessor->component_type == cgltf_component_type_r_32f)
+                    {
+                        // Float (GL_FLOAT)
+                        float* color_float = (float*)buffer_data;
+                        for (size_t color_index = 0; color_index < accessor->count; ++color_index)
+                            mesh.colors[color_index] = Vector4ToColor(&color_float[color_index * 4]);
+                    }
+                    else if (accessor->component_type == cgltf_component_type_r_16u)
+                    {
+                        // Unsigned short (GL_UNSIGNED_SHORT) - normalized to [0,1]
+                        uint16_t* color_ushort = (uint16_t*)buffer_data;
+                        for (size_t color_index = 0; color_index < accessor->count; ++color_index)
+                        {
+                            float color_vec4[4];
+                            for (int c = 0; c < 4; ++c)
+                                color_vec4[c] = color_ushort[color_index * 4 + c] / 65535.0f;
+                            mesh.colors[color_index] = Vector4ToColor(color_vec4);
+                        }
+                    }
+                    else if (accessor->component_type == cgltf_component_type_r_8u)
+                    {
+                        // Unsigned byte (GL_UNSIGNED_BYTE) - normalized to [0,1]
+                        uint8_t* color_ubyte = (uint8_t*)buffer_data;
+                        for (size_t color_index = 0; color_index < accessor->count; ++color_index)
+                        {
+                            float color_vec4[4];
+                            for (int c = 0; c < 4; ++c)
+                                color_vec4[c] = color_ubyte[color_index * 4 + c] / 255.0f;
+                            mesh.colors[color_index] = Vector4ToColor(color_vec4);
+                        }
+                    }
+                    else
+                    {
+                        // Unsupported component type - use fallback
+                        LogWarning("Unsupported color component type %d, using white", accessor->component_type);
+                        for (size_t color_index = 0; color_index < accessor->count; ++color_index)
+                        {
+                            float white[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+                            mesh.colors[color_index] = Vector4ToColor(white);
+                        }
                     }
                 }
             }
