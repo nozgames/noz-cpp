@@ -154,7 +154,6 @@ const FontGlyph* GetGlyph(Font* font, char ch)
         {0.0f, 0.0f},   // size
         0.0f,           // advance
         {0.0f, 0.0f},   // bearing
-        {0.0f, 0.0f}    // sdf_offset
     };
 
     return &default_glyph;

@@ -1,18 +1,10 @@
 //
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
-// @STL
 
-#include <noz/asset.h>
-#include <noz/noz.h>
-#include <noz/noz_math.h>
 #include "../rect_packer.h"
 #include "../ttf/TrueTypeFont.h"
 #include "../msdf/msdf.h"
-#include <filesystem>
-#include <fstream>
-#include <string>
-#include <vector>
 
 namespace fs = std::filesystem;
 
@@ -21,19 +13,19 @@ using namespace noz;
 struct ImportFontGlyph
 {
     const ttf::TrueTypeFont::Glyph* ttf;
-    Vec2Int size;
+    Vec2Double size;
     Vec2Double scale;
-    Vec2Int packedSize;
-    Vec2Int advance;
-    rect_packer::BinRect packedRect;
-    Vec2Int bearing;
+    Vec2Double advance;
+    Vec2Double bearing;
+    Vec2Int packed_size;
+    rect_packer::BinRect packed_rect;
     char ascii;
 };
 
 struct FontKerning
 {
-    uint32_t first;
-    uint32_t second;
+    u32 first;
+    u32 second;
     float amount;
 };
 
@@ -48,53 +40,41 @@ struct FontMetrics
 static void WriteFontData(
     Stream* stream,
     const ttf::TrueTypeFont* ttf,
-    const std::vector<unsigned char>& atlasData,
-    const Vec2Int& atlasSize,
+    const std::vector<unsigned char>& atlas_data,
+    const Vec2Int& atlas_size,
     const std::vector<ImportFontGlyph>& glyphs,
     int font_size)
 {
-    // Write asset header
+    float font_size_inv = 1.0f / (f32)font_size;
+
     AssetHeader header = {};
     header.signature = ASSET_SIGNATURE_FONT;
     header.version = 1;
     header.flags = 0;
     WriteAssetHeader(stream, &header);
 
-    // Write font size (this is important for runtime scaling)
-    WriteU32(stream, static_cast<uint32_t>(font_size));
-
-    // Write atlas dimensions
-    WriteU32(stream, static_cast<uint32_t>(atlasSize.x));
-    WriteU32(stream, static_cast<uint32_t>(atlasSize.y));
-
-    // Write font metrics
-    auto font_size_inv = 1.0f / (float)font_size;
-    WriteFloat(stream, (float)ttf->ascent() * font_size_inv);
-    WriteFloat(stream, (float)ttf->descent() * font_size_inv);
-    WriteFloat(stream, (float)ttf->height() * font_size_inv);
-    WriteFloat(stream, 0.0f);  // Baseline should be 0 (reference point)
+    WriteU32(stream, static_cast<u32>(font_size));
+    WriteU32(stream, static_cast<u32>(atlas_size.x));
+    WriteU32(stream, static_cast<u32>(atlas_size.y));
+    WriteFloat(stream, (f32)ttf->ascent() * font_size_inv);
+    WriteFloat(stream, (f32)ttf->descent() * font_size_inv);
+    WriteFloat(stream, (f32)ttf->height() * font_size_inv);
+    WriteFloat(stream, 0.0f);
 
     // Write glyph count and glyph data
     WriteU16(stream, static_cast<uint16_t>(glyphs.size()));
     for (const auto& glyph : glyphs)
     {
         WriteU32(stream, glyph.ascii);
-        WriteFloat(stream, (float)glyph.packedRect.x / (float)atlasSize.x);
-        WriteFloat(stream, (float)glyph.packedRect.y / (float)atlasSize.y);
-        WriteFloat(stream, (float)(glyph.packedRect.x + glyph.packedRect.w) / (float)atlasSize.x);
-        WriteFloat(stream, (float)(glyph.packedRect.y + glyph.packedRect.h) / (float)atlasSize.y);
-        WriteFloat(stream, (float)glyph.size.x * font_size_inv);
-        WriteFloat(stream, (float)glyph.size.y * font_size_inv);
-        WriteFloat(stream, (float)glyph.advance.x * font_size_inv);
-        float bearing_x = (float)glyph.bearing.x * font_size_inv;
-        // Use original TTF size for bearing calculation, not SDF padded size
-        float bearing_y = (float)(glyph.ttf->size.y - glyph.ttf->bearing.y) * font_size_inv;
-        
-               
-        WriteFloat(stream, bearing_x);
-        WriteFloat(stream, bearing_y);
-        WriteFloat(stream, 0.0f);  // sdf_offset.x
-        WriteFloat(stream, 0.0f);  // sdf_offset.y
+        WriteFloat(stream, (f32)glyph.packed_rect.x / (f32)atlas_size.x);
+        WriteFloat(stream, (f32)glyph.packed_rect.y / (f32)atlas_size.y);
+        WriteFloat(stream, (f32)(glyph.packed_rect.x + glyph.packed_rect.w) / (f32)atlas_size.x);
+        WriteFloat(stream, (f32)(glyph.packed_rect.y + glyph.packed_rect.h) / (f32)atlas_size.y);
+        WriteFloat(stream, (f32)glyph.size.x * font_size_inv);
+        WriteFloat(stream, (f32)glyph.size.y * font_size_inv);
+        WriteFloat(stream, (f32)glyph.advance.x * font_size_inv);
+        WriteFloat(stream, (f32)glyph.bearing.x * font_size_inv);
+        WriteFloat(stream, (f32)(glyph.ttf->size.y - glyph.ttf->bearing.y) * font_size_inv);
     }
 
     // Write kerning count and kerning data
@@ -106,14 +86,15 @@ static void WriteFontData(
         WriteFloat(stream, k.value);
     }
 
-    WriteBytes(stream, (void*)atlasData.data(), atlasData.size());
+    WriteBytes(stream, atlas_data.data(), atlas_data.size());
 }
+
 void ImportFont(const fs::path& source_path, Stream* output_stream, Props* config, Props* meta)
 {
     // Parse font properties from meta props (with defaults)
     int font_size = meta->GetInt("font", "size", 48);
     std::string characters = meta->GetString("font", "characters", " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~");
-    int sdf_padding = meta->GetInt("sdf", "padding", 8) / 2;
+    float sdf_range = meta->GetFloat("sdf", "range", 8);
     int padding = meta->GetInt("font", "padding", 1);
 
     // Load font file
@@ -146,19 +127,17 @@ void ImportFont(const fs::path& source_path, Stream* output_stream, Props* confi
         ImportFontGlyph iglyph{};
         iglyph.ascii = characters[i];
         iglyph.ttf = ttfGlyph;
-
-        iglyph.size = RoundToNearest(ttfGlyph->size + Vec2Double(sdf_padding * 2));
-        iglyph.scale = Vec2Double(iglyph.size.x, iglyph.size.y) / ttfGlyph->size;
-        iglyph.packedSize = iglyph.size + (padding + sdf_padding) * 2;
-        iglyph.bearing = RoundToNearest(ttfGlyph->bearing);
-        iglyph.advance.x = RoundToNearest((float)ttfGlyph->advance);
-        
+        iglyph.size = ttfGlyph->size + Vec2Double{sdf_range * 2, sdf_range * 2};
+        iglyph.scale = {1,1};
+        iglyph.packed_size = RoundToNearest(iglyph.size + Vec2Double{padding * 2.0, padding * 2.0});
+        iglyph.bearing = ttfGlyph->bearing - Vec2Double{sdf_range, sdf_range};
+        iglyph.advance.x = (f32)ttfGlyph->advance;
 
         glyphs.push_back(iglyph);
     }
 
     // Pack the glyphs
-    int minHeight = (int)noz::NextPowerOf2((uint32_t)(font_size + 2 + sdf_padding * 2 + padding * 2));
+    int minHeight = (int)NextPowerOf2((u32)(font_size + 2 + sdf_range * 2 + padding * 2));
     rect_packer packer(minHeight, minHeight);
 
     while (packer.empty())
@@ -168,7 +147,7 @@ void ImportFont(const fs::path& source_path, Stream* output_stream, Props* confi
             if (glyph.ttf->contours.size() == 0)
                 continue;
 
-            if (-1 == packer.Insert(glyph.packedSize, rect_packer::method::BestLongSideFit, glyph.packedRect))
+            if (-1 == packer.Insert(glyph.packed_size, rect_packer::method::BestLongSideFit, glyph.packed_rect))
             {
                 rect_packer::BinSize size = packer.size();
                 if (size.w <= size.h)
@@ -200,18 +179,18 @@ void ImportFont(const fs::path& source_path, Stream* output_stream, Props* confi
             image,
             imageSize.x,
             {
-                glyph.packedRect.x + padding,
-                glyph.packedRect.y + padding
+                glyph.packed_rect.x + padding,
+                glyph.packed_rect.y + padding
             },
             {
-                glyph.packedRect.w - padding * 2,
-                glyph.packedRect.h - padding * 2
+                glyph.packed_rect.w - padding * 2,
+                glyph.packed_rect.h - padding * 2
             },
-            sdf_padding,
-            glyph.scale,
+            sdf_range * 0.5f,
+            {1,1},
             {
-                -glyph.ttf->bearing.x + sdf_padding,
-                (glyph.ttf->size.y - glyph.ttf->bearing.y) + sdf_padding
+                -glyph.ttf->bearing.x + sdf_range,
+                glyph.ttf->size.y - glyph.ttf->bearing.y + sdf_range
             }
         );
     }

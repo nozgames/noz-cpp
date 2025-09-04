@@ -139,7 +139,6 @@ struct FontGlyph
     Vec2 size;
     float advance;
     Vec2 bearing;
-    Vec2 sdf_offset;
 };
 
 float GetBaseline(Font* font);
