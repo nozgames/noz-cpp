@@ -29,6 +29,7 @@ extern AssetImporterTraits* GetFontImporterTraits();
 extern AssetImporterTraits* GetMeshImporterTraits();
 extern AssetImporterTraits* GetStyleSheetImporterTraits();
 extern AssetImporterTraits* GetVfxImporterTraits();
+extern AssetImporterTraits* GetSoundImporterTraits();
 
 
 struct ImportJob
@@ -307,7 +308,8 @@ static int RunImporterLoop()
         GetFontImporterTraits(),
         GetMeshImporterTraits(),
         GetStyleSheetImporterTraits(),
-        GetVfxImporterTraits()
+        GetVfxImporterTraits(),
+        GetSoundImporterTraits()
     };
 
     // Set up signal handler for Ctrl-C

@@ -296,7 +296,12 @@ static void process_file(const char* file_path, uint64_t modified_time, uint64_t
     {
         // File already tracked, check for modifications
         FileInfo& existing = it->second;
-        if (existing.modified_time != modified_time)
+        // Use tolerance for timestamp comparison to avoid precision issues
+        uint64_t time_diff = existing.modified_time > modified_time ? 
+            existing.modified_time - modified_time : 
+            modified_time - existing.modified_time;
+            
+        if (time_diff > 2) // 2ms tolerance to account for timestamp precision
         {
             // File was modified
             queue_event(existing.path, FILE_CHANGE_TYPE_MODIFIED);

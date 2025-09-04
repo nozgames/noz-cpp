@@ -43,6 +43,7 @@ set(SOURCE_FILES
     src/importers/style_sheet_importer.cpp
     src/importers/vfx_importer.cpp
     src/importers/texture_importer.cpp
+    src/importers/sound_importer.cpp
     src/msdf/Contour.cpp
     src/msdf/Edge.cpp
     src/msdf/Shape.cpp

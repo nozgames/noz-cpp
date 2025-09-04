@@ -49,6 +49,7 @@ Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const
 Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
 Asset* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
 Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
+Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
 
 // @macros
 #define NOZ_LOAD_SHADER(allocator, path, member) \

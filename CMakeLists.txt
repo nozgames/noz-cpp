@@ -67,6 +67,8 @@ set(SOURCE_FILES
     src/ui/style.cpp
     src/vfx/vfx.cpp
     src/vfx/vfx_system.cpp
+    src/audio/audio.cpp
+    src/audio/sound.cpp
 )
 
 # Add platform-specific files
@@ -101,6 +103,8 @@ target_link_libraries(noz
         ws2_32
         winmm
         Shcore
+        xaudio2
+        ole32
 )
 
 add_subdirectory(editor)
