@@ -70,6 +70,9 @@ Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, cons
 #define NOZ_LOAD_VFX(allocator, path, member) \
     member = (Vfx*)LoadAsset(allocator, path, ASSET_SIGNATURE_VFX, LoadVfx);
 
+#define NOZ_LOAD_SOUND(allocator, path, member) \
+    member = (Sound*)LoadAsset(allocator, path, ASSET_SIGNATURE_SOUND, LoadSound);
+
 // @hotload
 #ifdef _HOTLOAD
 void ReloadAsset(const Name* name, Asset* asset);

@@ -17,6 +17,7 @@ void InitVfx();
 void InitTime();
 void InitRenderer(const RendererTraits* traits);
 void InitAllocator(ApplicationTraits* traits);
+void InitAudio();
 void UpdateTime();
 void ShutdownRenderer();
 void ShutdownEvent();
@@ -25,6 +26,7 @@ void ShutdownName();
 void ShutdownVfx();
 void ShutdownTime();
 void ShutdownAllocator();
+void ShutdownAudio();
 
 // @traits
 static ApplicationTraits g_default_traits = 
@@ -155,6 +157,7 @@ void InitApplication(ApplicationTraits* traits)
     UpdateScreenSize();
 
     InitInput();
+    InitAudio();
     InitRenderer(&traits->renderer);
     InitTime();
     InitPhysics();
@@ -197,7 +200,8 @@ void ShutdownApplication()
     ShutdownVfx();
     ShutdownPhysics();
     ShutdownTime();
-    //ShutdownRenderer();
+    ShutdownAudio();
+    ShutdownRenderer();
     ShutdownInput();
     
     // Destroy platform window

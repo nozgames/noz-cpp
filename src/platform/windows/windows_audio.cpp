@@ -280,6 +280,24 @@ namespace platform
         }
     }
     
+    void SetAudioSourcePitch(u32 source_id, float pitch)
+    {
+        if (source_id >= g_audio_sources.size())
+        {
+            LogError("Invalid audio source ID: %u", source_id);
+            return;
+        }
+        
+        // Clamp pitch to XAudio2 limits (0.5 to 2.0 for frequency ratio)
+        pitch = pitch < 0.5f ? 0.5f : (pitch > 2.0f ? 2.0f : pitch);
+        
+        AudioSource& source = g_audio_sources[source_id];
+        if (source.voice)
+        {
+            source.voice->SetFrequencyRatio(pitch);
+        }
+    }
+    
     float GetAudioSourceVolume(u32 source_id)
     {
         if (source_id >= g_audio_sources.size())
