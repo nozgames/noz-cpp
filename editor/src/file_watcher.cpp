@@ -3,7 +3,10 @@
 //
 
 #include "file_watcher.h"
-#include <SDL3/SDL.h>
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <chrono>
 // std headers (filesystem, vector, map, string, algorithm, chrono) now in PCH
 
 #ifndef nullptr
@@ -27,7 +30,7 @@ struct FileQueue
     size_t head;
     size_t tail;
     size_t count;
-    SDL_Mutex* mutex;
+    std::mutex mutex;
 };
 
 // Global file watcher state
@@ -37,16 +40,16 @@ struct FileWatcher
     std::vector<std::filesystem::path> watched_dirs;
     std::map<std::string, FileInfo> file_map;
     FileQueue queue;
-    SDL_Thread* thread;
-    SDL_AtomicInt should_stop;
-    SDL_Mutex* dirs_mutex;
+    std::thread thread;
+    std::atomic<bool> should_stop;
+    std::mutex dirs_mutex;
     bool initialized;
     bool running;
 };
 
-static FileWatcher g_watcher = {};
+static FileWatcher g_watcher;
 
-static int FileWatcherThread(void* data);
+static void FileWatcherThread();
 static void scan_directory_recursive(const char* dir_path);
 static void process_file(const char* file_path, uint64_t modified_time, uint64_t size);
 static void queue_event(const std::filesystem::path& path, FileChangeType type);
@@ -61,16 +64,16 @@ void InitFileWatcher(int poll_interval_ms)
     g_watcher.poll_interval_ms = poll_interval_ms > 0 ? poll_interval_ms : 1000;
     
     // Initialize STL containers (they're automatically initialized)
+    g_watcher.watched_dirs.clear();
+    g_watcher.file_map.clear();
     
     // Initialize queue
     g_watcher.queue.head = 0;
     g_watcher.queue.tail = 0;
     g_watcher.queue.count = 0;
-    g_watcher.queue.mutex = SDL_CreateMutex();
     
     // Initialize synchronization
-    SDL_SetAtomicInt(&g_watcher.should_stop, 0);
-    g_watcher.dirs_mutex = SDL_CreateMutex();
+    g_watcher.should_stop = false;
     
     g_watcher.initialized = true;
     g_watcher.running = false;
@@ -82,31 +85,19 @@ void ShutdownFileWatcher()
         return;
 
     // Signal thread to stop
-    SDL_SetAtomicInt(&g_watcher.should_stop, 1);
+    g_watcher.should_stop = true;
 
     // Wait for thread to finish
-    if (g_watcher.thread)
+    if (g_watcher.thread.joinable())
     {
-        SDL_WaitThread(g_watcher.thread, nullptr);
-        g_watcher.thread = nullptr;
+        g_watcher.thread.join();
     }
     
     // Clean up STL containers (they clean themselves up automatically)
     g_watcher.watched_dirs.clear();
     g_watcher.file_map.clear();
     
-    // Clean up synchronization
-    if (g_watcher.queue.mutex)
-    {
-        SDL_DestroyMutex(g_watcher.queue.mutex);
-        g_watcher.queue.mutex = nullptr;
-    }
-    
-    if (g_watcher.dirs_mutex)
-    {
-        SDL_DestroyMutex(g_watcher.dirs_mutex);
-        g_watcher.dirs_mutex = nullptr;
-    }
+    // STL mutexes clean themselves up automatically
     
     g_watcher.initialized = false;
 }
@@ -122,20 +113,18 @@ bool WatchDirectory(const std::filesystem::path& directory)
     std::string dir_str = directory.string();
     const char* dir_cstr = dir_str.c_str();
     
-    SDL_LockMutex(g_watcher.dirs_mutex);
+    std::lock_guard<std::mutex> lock(g_watcher.dirs_mutex);
     
     // Check if already watching this directory
     auto it = std::find(g_watcher.watched_dirs.begin(), g_watcher.watched_dirs.end(), directory);
     if (it != g_watcher.watched_dirs.end())
     {
-        SDL_UnlockMutex(g_watcher.dirs_mutex);
         return true;  // Already watching
     }
     
     // Add new directory
     if (g_watcher.watched_dirs.size() >= MAX_WATCHED_DIRS)
     {
-        SDL_UnlockMutex(g_watcher.dirs_mutex);
         return false;  // Too many directories
     }
     
@@ -144,7 +133,6 @@ bool WatchDirectory(const std::filesystem::path& directory)
     // Auto-start the watcher when the first directory is added
     bool should_start = !g_watcher.running && g_watcher.watched_dirs.size() == 1;
     
-    SDL_UnlockMutex(g_watcher.dirs_mutex);
     
     if (should_start)
     {
@@ -169,26 +157,19 @@ static bool StartFileWatcher()
     if (g_watcher.watched_dirs.empty())
         return false;  // No directories to watch
 
-    // Do initial scan of all directories
-    SDL_LockMutex(g_watcher.dirs_mutex);
-    for (const auto& dir : g_watcher.watched_dirs)
+    // Do initial scan of all directories (temporarily without locking to debug)
+    std::vector<std::filesystem::path> dirs_copy = g_watcher.watched_dirs;
+    
+    for (const auto& dir : dirs_copy)
     {
         scan_directory_recursive(dir.string().c_str());
     }
-    SDL_UnlockMutex(g_watcher.dirs_mutex);
     
     // Start the watching thread
-    SDL_SetAtomicInt(&g_watcher.should_stop, 0);
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4191) // SDL_CreateThread causes this on Windows
-#endif
-    g_watcher.thread = SDL_CreateThread(FileWatcherThread, "FileWatcher", NULL);
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+    g_watcher.should_stop = false;
+    g_watcher.thread = std::thread(FileWatcherThread);
     
-    if (!g_watcher.thread)
+    if (!g_watcher.thread.joinable())
     {
         return false;
     }
@@ -207,11 +188,10 @@ bool GetFileChangeEvent(FileChangeEvent* event)
         return false;
     }
     
-    SDL_LockMutex(g_watcher.queue.mutex);
+    std::lock_guard<std::mutex> lock(g_watcher.queue.mutex);
     
     if (g_watcher.queue.count == 0)
     {
-        SDL_UnlockMutex(g_watcher.queue.mutex);
         return false;
     }
     
@@ -220,15 +200,13 @@ bool GetFileChangeEvent(FileChangeEvent* event)
     g_watcher.queue.head = (g_watcher.queue.head + 1) % MAX_EVENTS_QUEUE;
     g_watcher.queue.count--;
     
-    SDL_UnlockMutex(g_watcher.queue.mutex);
     return true;
 }
 
-static int FileWatcherThread(void* data)
+static void FileWatcherThread()
 {
-    (void)data;
     
-    while (SDL_GetAtomicInt(&g_watcher.should_stop) == 0)
+    while (!g_watcher.should_stop)
     {
         // Mark all existing files as "not seen"
         for (auto& pair : g_watcher.file_map)
@@ -236,13 +214,13 @@ static int FileWatcherThread(void* data)
             pair.second.size = 0;  // Mark as not seen
         }
         
-        // Scan all watched directories
-        SDL_LockMutex(g_watcher.dirs_mutex);
-        for (const auto& dir : g_watcher.watched_dirs)
+        // Scan all watched directories (temporarily without locking to debug)
+        std::vector<std::filesystem::path> dirs_copy = g_watcher.watched_dirs;
+        
+        for (const auto& dir : dirs_copy)
         {
             scan_directory_recursive(dir.string().c_str());
         }
-        SDL_UnlockMutex(g_watcher.dirs_mutex);
         
         // Check for deleted files (files that weren't seen in this pass)
         auto it = g_watcher.file_map.begin();
@@ -261,10 +239,8 @@ static int FileWatcherThread(void* data)
         }
         
         // Sleep for poll interval
-        SDL_Delay(g_watcher.poll_interval_ms);
+        std::this_thread::sleep_for(std::chrono::milliseconds(g_watcher.poll_interval_ms));
     }
-    
-    return 0;
 }
 
 // Callback function for STL filesystem directory scanning
@@ -345,7 +321,7 @@ static void process_file(const char* file_path, uint64_t modified_time, uint64_t
 // Queue an event
 static void queue_event(const std::filesystem::path& path, FileChangeType type)
 {
-    SDL_LockMutex(g_watcher.queue.mutex);
+    std::lock_guard<std::mutex> lock(g_watcher.queue.mutex);
     
     if (g_watcher.queue.count >= MAX_EVENTS_QUEUE)
     {
@@ -358,11 +334,10 @@ static void queue_event(const std::filesystem::path& path, FileChangeType type)
     FileChangeEvent* event = &g_watcher.queue.events[g_watcher.queue.tail];
     event->path = path;
     event->type = type;
-    event->timestamp = SDL_GetTicks();
+    event->timestamp = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
     
     g_watcher.queue.tail = (g_watcher.queue.tail + 1) % MAX_EVENTS_QUEUE;
     g_watcher.queue.count++;
     
-    SDL_UnlockMutex(g_watcher.queue.mutex);
 }
 

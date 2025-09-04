@@ -5,7 +5,7 @@
 #include "shader_reflect.h"
 #include "../../src/internal.h"
 #include <noz/noz.h>
-#include <spirv_cross_c.h>
+// TODO: Implement proper reflection using glslang or SPIRV-Cross
 
 static std::vector<ShaderUniformBuffer> ExtractUniformBuffers(spvc_context context, spvc_compiler compiler)
 {
