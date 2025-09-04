@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include "../platform.h"
+
 constexpr u8 BUTTON_STATE_PRESSED = 1 << 0;
 constexpr u8 BUTTON_STATE_RELEASED = 1 << 1;
 constexpr u8 BUTTON_STATE_DOWN = 1 << 2;
@@ -11,8 +13,8 @@ constexpr u8 BUTTON_STATE_ENABLED = 1 << 4;
 struct InputSetImpl : InputSet
 {
     u8 buttons[INPUT_CODE_COUNT];
-    //SDL_Scancode scancodes[SDL_SCANCODE_COUNT];
-    u32 scancode_count;
+    InputCode enabled_codes[INPUT_CODE_COUNT];
+    u32 enabled_count;
     LinkedListNode node_active;
 };
 
@@ -36,7 +38,7 @@ void EnableButton(InputSet* input_set, InputCode code)
     InputSetImpl* impl = static_cast<InputSetImpl*>(input_set);
     if (IsButtonEnabled(impl->buttons[code]))
         return;
-    //impl->scancodes[impl->scancode_count++] = InputCodeToScanCode(code);
+    impl->enabled_codes[impl->enabled_count++] = code;
     impl->buttons[code] |= BUTTON_STATE_ENABLED;
 }
 
@@ -46,18 +48,17 @@ void DisableButton(InputSet* input_set, InputCode code)
     if (!IsButtonEnabled(impl->buttons[code]))
         return;
 
-    /*
-    auto scancode = InputCodeToScanCode(code);
-    for (int i=0; i<impl->scancode_count; i++)
-        if (impl->scancodes[i] == scancode)
+    for (u32 i = 0; i < impl->enabled_count; i++)
+    {
+        if (impl->enabled_codes[i] == code)
         {
-            impl->scancodes[i] = impl->scancodes[impl->scancode_count - 1];
-            impl->scancode_count--;
+            impl->enabled_codes[i] = impl->enabled_codes[impl->enabled_count - 1];
+            impl->enabled_count--;
             break;
         }
-        */
+    }
 
-    impl->buttons[code] = (impl->buttons[code]&BUTTON_STATE_ENABLED) | BUTTON_STATE_RESET;
+    impl->buttons[code] = (impl->buttons[code] & ~BUTTON_STATE_ENABLED) | BUTTON_STATE_RESET;
 }
 
 void UpdateButtonState(InputSetImpl* impl, InputCode code, bool new_state, bool reset)
@@ -101,27 +102,41 @@ void UpdateMouseButtonState(InputSetImpl* impl, SDL_MouseButtonFlags mouse_flags
 
 void UpdateMouseState(InputSetImpl* impl, bool reset)
 {
-#if 0
-    float mouse_x = 0.0f;
-    float mouse_y = 0.0f;
-    auto mouse_flags = SDL_GetMouseState(&mouse_x, &mouse_y);
-    UpdateMouseButtonState(impl, mouse_flags, SDL_BUTTON_LMASK, MOUSE_LEFT, reset);
-    UpdateMouseButtonState(impl, mouse_flags, SDL_BUTTON_RMASK, MOUSE_RIGHT, reset);
-    UpdateMouseButtonState(impl, mouse_flags, SDL_BUTTON_MMASK, MOUSE_MIDDLE, reset);
-#endif
+    for (u32 i = 0; i < impl->enabled_count; i++)
+    {
+        InputCode code = impl->enabled_codes[i];
+        if (IsMouse(code) && IsButton(code))
+        {
+            bool button_down = platform::IsInputButtonDown(code);
+            UpdateButtonState(impl, code, button_down, reset);
+        }
+    }
 }
 
 void UpdateKeyboardSate(InputSetImpl* impl, bool reset)
 {
-#if 0
-    const bool* key_states = SDL_GetKeyboardState(nullptr);
-    for (u32 i = 0; i < impl->scancode_count; i++)
+    for (u32 i = 0; i < impl->enabled_count; i++)
     {
-        auto scancode = impl->scancodes[i];
-        auto code = ScanCodeToInputCode(scancode);
-        UpdateButtonState(impl, code, key_states[scancode], reset);
+        InputCode code = impl->enabled_codes[i];
+        if (IsKeyboard(code))
+        {
+            bool key_down = platform::IsInputButtonDown(code);
+            UpdateButtonState(impl, code, key_down, reset);
+        }
     }
-#endif
+}
+
+void UpdateGamepadState(InputSetImpl* impl, bool reset)
+{
+    for (u32 i = 0; i < impl->enabled_count; i++)
+    {
+        InputCode code = impl->enabled_codes[i];
+        if (IsGamepad(code) && IsButton(code))
+        {
+            bool button_down = platform::IsInputButtonDown(code);
+            UpdateButtonState(impl, code, button_down, reset);
+        }
+    }
 }
 
 void UpdateInputState(InputSet* input_set)
@@ -129,12 +144,16 @@ void UpdateInputState(InputSet* input_set)
     if (nullptr == input_set)
         return;
 
+    // Update platform input state first
+    platform::UpdateInputState();
+
     InputSetImpl* impl = static_cast<InputSetImpl*>(input_set);
     for (int i = 0; i < INPUT_CODE_COUNT; i++)
         impl->buttons[i] &= ~(BUTTON_STATE_PRESSED | BUTTON_STATE_RELEASED);
 
     UpdateKeyboardSate(impl, false);
     UpdateMouseState(impl, false);
+    UpdateGamepadState(impl, false);
 }
 
 bool IsButtonDown(InputSet* input_set, InputCode code)
@@ -163,6 +182,7 @@ void ResetInputState(InputSet* input_set)
 
     UpdateKeyboardSate(impl, true);
     UpdateMouseState(impl, true);
+    UpdateGamepadState(impl, true);
 }
 
 void InputActiveInputSetList(LinkedList& list)
@@ -173,6 +193,7 @@ void InputActiveInputSetList(LinkedList& list)
 InputSet* CreateInputSet(Allocator* allocator)
 {
     InputSetImpl* impl = (InputSetImpl*)Alloc(allocator, sizeof(InputSetImpl));
+    impl->enabled_count = 0;
     ResetInputState(impl);
     return impl;
 }

@@ -164,7 +164,7 @@ void InitApplication(ApplicationTraits* traits)
     if (traits->load_assets)
         traits->load_assets(g_app.asset_allocator);
 
-    // TODO: LoadRendererAssets(g_app.asset_allocator);
+    LoadRendererAssets(g_app.asset_allocator);
 
 #ifdef NOZ_EDITOR
     SetHotloadCallback(OnHotload);

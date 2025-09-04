@@ -56,10 +56,12 @@ Vec2 GetMousePosition()
 
 void InitInput()
 {
+    platform::InitializeInput();
     InitInputCodes();
     InputActiveInputSetList(g_input.active_sets);
 }
 
 void ShutdownInput()
 {
+    platform::ShutdownInput();
 }

@@ -174,6 +174,6 @@ InputCode InputCodeFromMouseButton(int button)
 
 void InitInputCodes()
 {
-    // InitScanCodeTable(g_scancode_to_input_code);
-    // load_InputCode_table(g_input_code_to_scancode);
+    // Input codes are now handled directly by platform layer
+    // No need for SDL scancode translation tables
 }

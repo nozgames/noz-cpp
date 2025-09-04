@@ -6,6 +6,8 @@
 
 #include <vector>
 
+enum InputCode;
+
 namespace platform
 {
     struct Window {};
@@ -66,5 +68,12 @@ namespace platform
     // @time
     u64 GetPerformanceCounter();
     u64 GetPerformanceFrequency();
+    
+    // @input
+    bool IsInputButtonDown(InputCode code);
+    float GetInputAxisValue(InputCode code);
+    void UpdateInputState();
+    void InitializeInput();
+    void ShutdownInput();
 }
 

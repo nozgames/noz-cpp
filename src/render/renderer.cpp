@@ -158,16 +158,7 @@ void EndRenderFrame()
 
 static void ResetRenderState()
 {
-    // Reset all state tracking variables to force rebinding
     g_renderer.pipeline = nullptr;
-
-#if 0
-    static Mat4 identity = MAT4_IDENTITY;
-    BindBoneTransformsGPU(&identity, 1);
-
-    for (int i = 0; i < (int)(sampler_register_count); i++)
-        BindTextureGPU(g_core_assets.textures.white, g_renderer.command_buffer, i);
-#endif
 }
 
 void LoadRendererAssets(Allocator* allocator)
