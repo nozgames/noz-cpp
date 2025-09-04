@@ -4,7 +4,7 @@
 
 #pragma once
 
-u64 Hash(void* data, size_t size);
+u64 Hash(const void* data, size_t size);
 u64 Hash(const char* str);
 inline u64 Hash(const Name* name) { return (u64)name; }
 

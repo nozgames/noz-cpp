@@ -70,8 +70,8 @@ void main()
     float alpha = smoothstep(0.485 - width, 0.485 + width, distance);
     
     // Combine base color with lighting
-    vec3 litColor = f_color.rgb * lighting;
-    
+    vec3 litColor = f_color.rgb;
+
     FragColor = vec4(litColor, alpha * f_color.a);
 }
 

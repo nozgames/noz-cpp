@@ -8,7 +8,8 @@
 #include "../msdf/msdf.h"
 #include "../msdf/shape.h"
 #include <algorithm>
-#include <cfloat>
+
+constexpr int TEX_SIZE = 64;
 
 namespace fs = std::filesystem;
 
@@ -208,8 +209,7 @@ void GenerateNormalMapWithSDF(const GLTFMesh& mesh, std::vector<uint8_t>& output
     float size_y = bounds.max.y - bounds.min.y;
     float scale = (size_x > size_y) ? size_x : size_y;
 
-    // Output buffer: RGBA, 128x128 per color, arranged horizontally
-    output.resize(128 * 128 * 4 * colors.size());
+    output.resize(TEX_SIZE * TEX_SIZE * 4 * colors.size());
     memset(output.data(), 0, output.size());
 
     // Generate SDF directly to alpha channel using new RenderShape overload
@@ -219,9 +219,9 @@ void GenerateNormalMapWithSDF(const GLTFMesh& mesh, std::vector<uint8_t>& output
         RenderShape(
             color.second.shape,
             output,
-            128 * colors.size() * 4, // RGBA stride
+            TEX_SIZE * colors.size() * 4, // RGBA stride
             {offset, 0},
-            {128, 128},
+            {TEX_SIZE, TEX_SIZE},
             0.05f,
             {scale + padding * 2, scale + padding * 2},
             {
@@ -231,43 +231,121 @@ void GenerateNormalMapWithSDF(const GLTFMesh& mesh, std::vector<uint8_t>& output
             4, // Component stride (RGBA = 4 bytes per pixel)
             3  // Component offset (A = 3rd offset, 0-based)
         );
-        offset += 128;
+        offset += TEX_SIZE;
     }
 
-    // Now generate normals from SDF and write to RGB channels
+#if 0
     int color_offset = 0;
     for (auto& color : colors)
     {
-        for (int y = 0; y < 128; y++)
+        for (int y = 0; y < TEX_SIZE; y++)
         {
-            for (int x = 0; x < 128; x++)
+            for (int x = 0; x < TEX_SIZE; x++)
             {
-                // Get current pixel index in RGBA buffer
-                int pixel_index = ((y * 128 * colors.size() + color_offset * 128 + x) * 4);
-                
-                // Sample neighboring SDF values from alpha channel for gradient
-                float sdf_center = output[pixel_index + 3] / 255.0f;
-                float sdf_right = (x < 127) ? output[pixel_index + 4 + 3] / 255.0f : sdf_center;
-                float sdf_left = (x > 0) ? output[pixel_index - 4 + 3] / 255.0f : sdf_center;
-                float sdf_up = (y > 0) ? output[pixel_index - (128 * colors.size() * 4) + 3] / 255.0f : sdf_center;
-                float sdf_down = (y < 127) ? output[pixel_index + (128 * colors.size() * 4) + 3] / 255.0f : sdf_center;
-                
-                // Compute gradient
-                float dx = (sdf_right - sdf_left) * 0.5f;
-                float dy = (sdf_down - sdf_up) * 0.5f;
-                
-                // Create normal from gradient
-                Vec3 normal = Normalize(Vec3{dx * 2.0f, dy * 2.0f, 1.0f}); // Amplify XY for visibility
-                
-                // Convert to texture normal (0-1 range) and write to RGB
-                output[pixel_index + 0] = (uint8_t)((normal.x * 0.5f + 0.5f) * 255.0f); // R
-                output[pixel_index + 1] = (uint8_t)((normal.y * 0.5f + 0.5f) * 255.0f); // G
-                output[pixel_index + 2] = (uint8_t)((normal.z * 0.5f + 0.5f) * 255.0f); // B
-                // Alpha already has SDF from RenderShape
+                Vec3 normal = {};
+                i32 normal_count = 0;
+
+                // Process each triangle of this color
+                for (int i = 0; i < mesh.indices.size(); i += 3)
+                {
+                    i32 i0 = mesh.indices[i + 0];
+                    Color c0 = mesh.colors[i0];
+                    u64 ch = Hash(&c0, sizeof(Color));
+
+                    if (color.first != ch)
+                        continue;
+
+                    i32 i1 = mesh.indices[i + 1];
+                    i32 i2 = mesh.indices[i + 2];
+
+                    const Vec3& v0 = mesh.positions[i0];
+                    const Vec3& v1 = mesh.positions[i1];
+                    const Vec3& v2 = mesh.positions[i2];
+
+                    const Vec3& n0 = mesh.normals[i0];
+                    const Vec3& n1 = mesh.normals[i1];
+                    const Vec3& n2 = mesh.normals[i2];
+
+                    // Convert pixel coordinates to world space
+                    float world_x = bounds.min.x - padding + (scale + padding * 2) * (x / (f32)TEX_SIZE);
+                    float world_y = bounds.min.y - padding + (scale + padding * 2) * (y / (f32)TEX_SIZE);
+
+                    Vec2 p = {world_x, world_y};
+                    Vec2 a = {v0.x, v0.y};
+                    Vec2 b = {v1.x, v1.y};
+                    Vec2 c = {v2.x, v2.y};
+
+                    // Compute barycentric coordinates
+                    Vec2 v0_2d = b - a;
+                    Vec2 v1_2d = c - a;
+                    Vec2 v2_2d = p - a;
+
+                    float dot00 = Dot(v0_2d, v0_2d);
+                    float dot01 = Dot(v0_2d, v1_2d);
+                    float dot02 = Dot(v0_2d, v2_2d);
+                    float dot11 = Dot(v1_2d, v1_2d);
+                    float dot12 = Dot(v1_2d, v2_2d);
+
+                    float inv_denom = 1.0f / (dot00 * dot11 - dot01 * dot01);
+                    float u = (dot11 * dot02 - dot01 * dot12) * inv_denom;
+                    float v = (dot00 * dot12 - dot01 * dot02) * inv_denom;
+
+                    // Check if point is inside triangle
+                    if (u >= 0 && v >= 0 && u + v <= 1)
+                    {
+                        // Interpolate normal using barycentric coordinates
+                        float w = 1.0f - u - v;
+                        Vec3 interpolated_normal = Vec3{
+                            w * n0.x + u * n1.x + v * n2.x,
+                            w * n0.y + u * n1.y + v * n2.y,
+                            w * n0.z + u * n1.z + v * n2.z
+                        };
+
+                        normal += interpolated_normal;
+                        normal_count++;
+                        if (normal_count > 1)
+                            normal_count = normal_count;
+                    }
+                }
+
+                normal *= (1.0f / (float)normal_count);
+
+                int pixel_index = ((y * TEX_SIZE * colors.size() + color_offset * TEX_SIZE + x) * 4);
+                output[pixel_index + 0] = (uint8_t)(normal.x * 255.0f); // R
+                output[pixel_index + 1] = (uint8_t)(normal.y * 255.0f); // G
+                output[pixel_index + 2] = (uint8_t)(normal.z * 255.0f); // B
             }
         }
         color_offset++;
     }
+#endif
+}
+
+u64 GetColorHash(const Color& color)
+{
+    return Hash(&color, sizeof(Color));
+}
+
+Color GetLitColor(const Color& color, const Vec3& normal)
+{
+    // Top-right light direction (normalized)
+    Vec3 light_dir = Normalize(Vec3{0.7f, -0.7f, 0.2f});
+    
+    // Basic lighting calculation
+    float NdotL = std::max(Dot(normal, light_dir), 0.0f);
+    
+    // Ambient + diffuse lighting
+    float ambient = 0.3f;
+    float diffuse = 0.7f * NdotL;
+    float lighting = ambient + diffuse;
+    
+    Color lit_color;
+    lit_color.r = color.r * lighting;
+    lit_color.g = color.g * lighting;
+    lit_color.b = color.b * lighting;
+    lit_color.a = color.a;
+    
+    return lit_color;
 }
 
 void CreateSDF(const GLTFMesh& mesh, Stream* stream)
@@ -277,8 +355,8 @@ void CreateSDF(const GLTFMesh& mesh, Stream* stream)
     for (int i = 0; i < mesh.indices.size(); i += 3)
     {
         i32 i0 = mesh.indices[i + 0];
-        Color c0 = mesh.colors[i0];
-        u64 ch = Hash(&c0, sizeof(Color));
+        Color c0 = GetLitColor(mesh.colors[i0], mesh.normals[i0]);
+        u64 ch = GetColorHash(c0);
         colors[ch] = { .color = c0 };
     }
 
@@ -295,8 +373,8 @@ void CreateSDF(const GLTFMesh& mesh, Stream* stream)
             Vec3 v1 = mesh.positions[i1];
             Vec3 v2 = mesh.positions[i2];
 
-            Color c0 = mesh.colors[i0];
-            u64 ch = Hash(&c0, sizeof(Color));
+            Color c0 = GetLitColor(mesh.colors[i0], mesh.normals[i0]);
+            u64 ch = GetColorHash(c0);
 
             if (color.first != ch)
                 continue;
@@ -406,8 +484,8 @@ void CreateSDF(const GLTFMesh& mesh, Stream* stream)
     // Write mesh data with RGBA texture
     WriteU16(stream, (u16)vertices.size());
     WriteU16(stream, (u16)indices.size());
-    WriteU32(stream, 128 * colors.size()); // Width: 128 per color section
-    WriteU32(stream, 128);                 // Height: 128
+    WriteU32(stream, TEX_SIZE * colors.size());
+    WriteU32(stream, TEX_SIZE);
     WriteBytes(stream, vertices.data(), vertices.size() * sizeof(MeshVertex));
     WriteBytes(stream, indices.data(), indices.size() * sizeof(u16));
     WriteBytes(stream, rgba_output.data(), rgba_output.size());

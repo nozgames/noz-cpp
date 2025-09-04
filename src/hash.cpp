@@ -7,7 +7,7 @@
 #define XXH_IMPLEMENTATION
 #include <xxhash.h>
 
-u64 Hash(void* data, size_t size) 
+u64 Hash(const void* data, size_t size)
 {
     return XXH64(data, size, 0);
 }
