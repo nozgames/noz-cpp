@@ -233,6 +233,41 @@ void GenerateNormalMapWithSDF(const GLTFMesh& mesh, std::vector<uint8_t>& output
         );
         offset += 128;
     }
+
+    // Now generate normals from SDF and write to RGB channels
+    int color_offset = 0;
+    for (auto& color : colors)
+    {
+        for (int y = 0; y < 128; y++)
+        {
+            for (int x = 0; x < 128; x++)
+            {
+                // Get current pixel index in RGBA buffer
+                int pixel_index = ((y * 128 * colors.size() + color_offset * 128 + x) * 4);
+                
+                // Sample neighboring SDF values from alpha channel for gradient
+                float sdf_center = output[pixel_index + 3] / 255.0f;
+                float sdf_right = (x < 127) ? output[pixel_index + 4 + 3] / 255.0f : sdf_center;
+                float sdf_left = (x > 0) ? output[pixel_index - 4 + 3] / 255.0f : sdf_center;
+                float sdf_up = (y > 0) ? output[pixel_index - (128 * colors.size() * 4) + 3] / 255.0f : sdf_center;
+                float sdf_down = (y < 127) ? output[pixel_index + (128 * colors.size() * 4) + 3] / 255.0f : sdf_center;
+                
+                // Compute gradient
+                float dx = (sdf_right - sdf_left) * 0.5f;
+                float dy = (sdf_down - sdf_up) * 0.5f;
+                
+                // Create normal from gradient
+                Vec3 normal = Normalize(Vec3{dx * 2.0f, dy * 2.0f, 1.0f}); // Amplify XY for visibility
+                
+                // Convert to texture normal (0-1 range) and write to RGB
+                output[pixel_index + 0] = (uint8_t)((normal.x * 0.5f + 0.5f) * 255.0f); // R
+                output[pixel_index + 1] = (uint8_t)((normal.y * 0.5f + 0.5f) * 255.0f); // G
+                output[pixel_index + 2] = (uint8_t)((normal.z * 0.5f + 0.5f) * 255.0f); // B
+                // Alpha already has SDF from RenderShape
+            }
+        }
+        color_offset++;
+    }
 }
 
 void CreateSDF(const GLTFMesh& mesh, Stream* stream)

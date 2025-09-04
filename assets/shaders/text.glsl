@@ -30,19 +30,16 @@ layout(set = 2, binding = 0) uniform ColorBuffer
 
 void main()
 {
-    // Sample SDF texture
-    float distance = texture(mainTexture, f_uv0).a;
+    // Sample RGBA texture: RGB = normal map, A = SDF
+    vec4 texSample = texture(mainTexture, f_uv0);
+    vec3 normalMapRGB = texSample.rgb;
+    float distance = texSample.a;
     
-    // Compute normal from SDF gradient
-    vec2 texelSize = 1.0 / textureSize(mainTexture, 0);
-    float sdf_right = texture(mainTexture, f_uv0 + vec2(texelSize.x, 0.0)).a;
-    float sdf_left = texture(mainTexture, f_uv0 + vec2(-texelSize.x, 0.0)).a;
-    float sdf_up = texture(mainTexture, f_uv0 + vec2(0.0, -texelSize.y)).a;
-    float sdf_down = texture(mainTexture, f_uv0 + vec2(0.0, texelSize.y)).a;
+    // Convert normal map from [0,1] range back to [-1,1] range
+    vec3 normal = normalize(normalMapRGB * 2.0 - 1.0);
     
-    // Calculate gradient (normal points toward higher SDF values)
-    vec2 gradient = vec2(sdf_right - sdf_left, sdf_down - sdf_up) * 0.5;
-    vec3 normal = normalize(vec3(gradient, 1.0)); // Z=1 for subtle 3D effect
+    // Debug: visualize normals by outputting them as colors (uncomment to debug)
+    // FragColor = vec4(normalMapRGB, 1.0); return;
     
     // Light setup - positioned at top-right of screen in 2D space
     vec2 screenPos = gl_FragCoord.xy / vec2(1920, 1080); // Assuming 1080p, adjust as needed
@@ -52,16 +49,21 @@ void main()
     // Basic lighting calculations
     float NdotL = max(dot(normal, lightDir), 0.0);
     
-    // Ambient + diffuse lighting
-    float ambient = 0.1;
-    float diffuse = 0.9 * NdotL;
+    // More dramatic lighting
+    float ambient = 0.3;
+    float diffuse = 0.8 * NdotL;
     float lighting = ambient + diffuse;
     
-    // Optional: Add specular highlight
+    // More prominent specular highlight
     vec3 viewDir = vec3(0.0, 0.0, 1.0); // Looking straight at 2D surface
     vec3 reflectDir = reflect(-lightDir, normal);
-    float specular = pow(max(dot(viewDir, reflectDir), 0.0), 32.0) * 0.5;
+    float specular = pow(max(dot(viewDir, reflectDir), 0.0), 32.0) * 0.6;
     lighting += specular;
+    
+    // Additional rim lighting for more dramatic effect
+    float rimDot = 1.0 - max(dot(normal, vec3(0.0, 0.0, 1.0)), 0.0);
+    float rimLight = pow(rimDot, 2.0) * 0.4;
+    lighting += rimLight;
     
     // Apply SDF for text rendering
     float width = fwidth(distance);
