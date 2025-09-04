@@ -660,7 +660,7 @@ static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFor
 static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
     // Force VSync by always returning FIFO mode (guaranteed to be available)
-    return VK_PRESENT_MODE_FIFO_KHR;
+    return g_vulkan.traits.vsync == 0 ? VK_PRESENT_MODE_IMMEDIATE_KHR : VK_PRESENT_MODE_FIFO_KHR;
 }
 
 static VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)

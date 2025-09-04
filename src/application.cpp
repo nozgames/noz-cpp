@@ -51,7 +51,7 @@ static ApplicationTraits g_default_traits =
         .max_frame_objects = 128,
         .max_frame_transforms = 1024,
         .shadow_map_size = 2048,
-        .vsync = 0,
+        .vsync = 1,
         .msaa = true
     }
 };
