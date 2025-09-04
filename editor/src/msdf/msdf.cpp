@@ -35,7 +35,10 @@ namespace noz::msdf
         const Shape& shape,
         double range,
         const Vec2Double& scale,
-        const Vec2Double& translate)
+        const Vec2Double& translate,
+        int component_stride,
+        int component_offset)
+
     {
         int contourCount = (int)shape.contours.size();
         int w = output_size.x;
@@ -105,11 +108,12 @@ namespace noz::msdf
                 sd = Clamp(sd, -0.5, 0.5);
                 sd = sd + 0.5;
 
-                u8& pixel = output[x + output_pos.x + (row + output_pos.y) * output_stride];
+                u8& pixel = output[(x + output_pos.x) * component_stride + component_offset + (row + output_pos.y) * output_stride];
                 pixel = (u8)(sd * 255.0f);
             }
         }
     }
+
 
     void RenderShape(
         Shape* shape,
@@ -119,7 +123,9 @@ namespace noz::msdf
         const Vec2Int& outputSize,
         double range,
         const Vec2Double& scale,
-        const Vec2Double& translate)
+        const Vec2Double& translate,
+        int componentStride,
+        int componentOffset)
     {
         generateSDF(
             output,
@@ -129,7 +135,9 @@ namespace noz::msdf
             *shape,
             range,
             scale,
-            translate
+            translate,
+            componentStride,
+            componentOffset
         );
     }
 }
