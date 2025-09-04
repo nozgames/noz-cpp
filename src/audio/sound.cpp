@@ -2,6 +2,7 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include "../platform.h"
 #include "noz/noz.h"
 
 struct SoundHeader
@@ -12,19 +13,11 @@ struct SoundHeader
     u32 data_size;
 };
 
-struct Sound : Asset
+struct SoundImpl : Sound
 {
     SoundHeader header;
-    void* data;
-    
-    Sound() = default;
-    ~Sound() = default;
+    platform::Sound* platform;
 };
-
-Sound* GetSound(Allocator* allocator, const Name* name)
-{
-    return (Sound*)LoadAsset(allocator, name, ASSET_SIGNATURE_SOUND, LoadSound);
-}
 
 Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
 {
@@ -32,39 +25,54 @@ Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, cons
     assert(name);
     assert(header);
 
-    Sound* sound = (Sound*)Alloc(allocator, sizeof(Sound));
+    SoundImpl* sound = (SoundImpl*)Alloc(allocator, sizeof(SoundImpl));
     sound->name = name;
     sound->header.sample_rate = ReadU32(stream);
     sound->header.channels = ReadU32(stream);
     sound->header.bits_per_sample = ReadU32(stream);
     sound->header.data_size = ReadU32(stream);
-    sound->data = Alloc(allocator, sound->header.data_size);
-    ReadBytes(stream, sound->data, sound->header.data_size);
+
+    void* data = Alloc(ALLOCATOR_SCRATCH, sound->header.data_size);
+    ReadBytes(stream, data, sound->header.data_size);
+    sound->platform = platform::CreateSound(
+        data,
+        sound->header.data_size,
+        sound->header.sample_rate,
+        sound->header.channels,
+        sound->header.bits_per_sample);
+    Free(data);
 
     return sound;
 }
 
-u32 GetSoundSampleRate(Sound* sound)
+bool IsPlaying(const SoundHandle& handle)
 {
-    return sound ? sound->header.sample_rate : 0;
+    return platform::IsSoundPlaying({handle.value});
 }
 
-u32 GetSoundChannels(Sound* sound)
+float GetSoundVolume(const SoundHandle& handle)
 {
-    return sound ? sound->header.channels : 0;
+    return platform::GetSoundVolume({handle.value});
 }
 
-u32 GetSoundBitsPerSample(Sound* sound)
+float GetSoundPitch(const SoundHandle& handle)
 {
-    return sound ? sound->header.bits_per_sample : 0;
+    return platform::GetSoundVolume({handle.value});
 }
 
-u32 GetSoundDataSize(Sound* sound)
+void SetSoundVolume(const SoundHandle& handle, float volume)
 {
-    return sound ? sound->header.data_size : 0;
+    platform::SetSoundVolume({handle.value}, volume);
 }
 
-void* GetSoundData(Sound* sound)
+SoundHandle Play(Sound* sound, float volume, float pitch, bool loop)
 {
-    return sound ? sound->data : nullptr;
+    SoundImpl* impl = (SoundImpl*)sound;
+    platform::SoundHandle handle = platform::PlaySound(impl->platform, volume, pitch, loop);
+    return { handle.value };
+}
+
+void Stop(const SoundHandle& handle)
+{
+    platform::StopSound({handle.value});
 }

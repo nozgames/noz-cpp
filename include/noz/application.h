@@ -6,7 +6,7 @@
 
 struct Allocator;
 
-namespace platform 
+namespace platform
 {
     struct Window;
 }

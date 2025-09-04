@@ -21,17 +21,16 @@ namespace platform
     struct Memory {};
     struct Sampler {};
     struct Texture;
+    struct Sound {};
+    struct SoundHandle { u64 value;};
 
-    Vec2 GetMousePosition();
-    Vec2 GetCachedMousePosition();
-    
     // @window
     Window* CreatePlatformWindow(const ApplicationTraits* traits);
     void DestroyPlatformWindow(Window* window);
     bool ProcessWindowEvents(Window* window, bool& has_focus, Vec2Int& screen_size);
     Vec2Int GetWindowSize(Window* window);
     void ShowCursor(bool show);
-    
+
     // @render
     void SetRendererWindow(Window* window);
     void BeginRenderFrame();
@@ -49,7 +48,7 @@ namespace platform
     void BindIndexBuffer(Buffer* buffer);
     void DrawIndexed(size_t index_count);
     void BindTexture(Texture* texture, int slot);
-    
+
     // @texture
     Texture* CreateTexture(void* data, size_t width, size_t height, int channels, const SamplerOptions& sampler_options, const char* name);
     void DestroyTexture(Texture* texture);
@@ -68,12 +67,28 @@ namespace platform
     // @time
     u64 GetPerformanceCounter();
     u64 GetPerformanceFrequency();
-    
+
     // @input
     bool IsInputButtonDown(InputCode code);
     float GetInputAxisValue(InputCode code);
     void UpdateInputState();
     void InitializeInput();
     void ShutdownInput();
-}
+    Vec2 GetMousePosition();
+    Vec2 GetCachedMousePosition();
 
+    // @audio
+    void InitializeAudio();
+    void ShutdownAudio();
+    Sound* CreateSound(void* data, u32 data_size, u32 sample_rate, u32 channels, u32 bits_per_sample);
+    void DestroySound(Sound*);
+    SoundHandle PlaySound(Sound* sound, float volume, float pitch, bool loop);
+    void StopSound(const SoundHandle& handle);
+    void SetSoundVolume(const SoundHandle& handle, float volume);
+    void SetSoundPitch(const SoundHandle& handle, float pitch);
+    bool IsSoundPlaying(const SoundHandle& handle);
+    float GetSoundVolume(const SoundHandle& handle);
+    float GetSoundPitch(const SoundHandle& handle);
+    void SetMasterVolume(float volume);
+    float GetMasterVolume();
+}
