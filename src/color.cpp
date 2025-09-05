@@ -20,20 +20,20 @@ static uint8_t float_to_uint8(float value)
 }
 
 // Color32 functions
-color32_t color32_create(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+Color32 color32_create(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
-    color32_t color = {r, g, b, a};
+    Color32 color = {r, g, b, a};
     return color;
 }
 
-color32_t color32_from_color(const Color* color)
+Color32 color32_from_color(const Color* color)
 {
     if (!color) 
     {
         return color32_create(0, 0, 0, 255);
     }
     
-    color32_t result = 
+    Color32 result = 
     {
         float_to_uint8(color->r),
         float_to_uint8(color->g),
@@ -43,7 +43,7 @@ color32_t color32_from_color(const Color* color)
     return result;
 }
 
-color32_t color32_from_color24(const color24_t* color, uint8_t alpha)
+Color32 color32_from_color24(const Color24* color, uint8_t alpha)
 {
     if (!color) 
     {
@@ -53,37 +53,37 @@ color32_t color32_from_color24(const color24_t* color, uint8_t alpha)
     return color32_create(color->r, color->g, color->b, alpha);
 }
 
-bool color32_is_transparent(const color32_t* color)
+bool color32_is_transparent(const Color32* color)
 {
     return color && color->a == 0;
 }
 
-bool color32_is_opaque(const color32_t* color)
+bool color32_is_opaque(const Color32* color)
 {
     return color && color->a == 255;
 }
 
-bool color32_equals(const color32_t* a, const color32_t* b)
+bool color32_equals(const Color32* a, const Color32* b)
 {
     if (!a || !b) return a == b;
     return a->r == b->r && a->g == b->g && a->b == b->b && a->a == b->a;
 }
 
 // Color24 functions
-color24_t color24_create(uint8_t r, uint8_t g, uint8_t b)
+Color24 color24_create(uint8_t r, uint8_t g, uint8_t b)
 {
-    color24_t color = {r, g, b};
+    Color24 color = {r, g, b};
     return color;
 }
 
-color24_t color24_from_color(const Color* color)
+Color24 color24_from_color(const Color* color)
 {
     if (!color) 
     {
         return color24_create(0, 0, 0);
     }
     
-    color24_t result = 
+    Color24 result = 
     {
         float_to_uint8(color->r),
         float_to_uint8(color->g),
@@ -92,7 +92,7 @@ color24_t color24_from_color(const Color* color)
     return result;
 }
 
-color24_t color24_from_color32(const color32_t* color)
+Color24 color24_from_color32(const Color32* color)
 {
     if (!color) 
     {
@@ -102,7 +102,7 @@ color24_t color24_from_color32(const color32_t* color)
     return color24_create(color->r, color->g, color->b);
 }
 
-bool color24_equals(const color24_t* a, const color24_t* b)
+bool color24_equals(const Color24* a, const Color24* b)
 {
     if (!a || !b) return a == b;
     return a->r == b->r && a->g == b->g && a->b == b->b;
@@ -115,7 +115,7 @@ Color color_create(float r, float g, float b, float a)
     return color;
 }
 
-Color color_from_color32(const color32_t* color)
+Color color_from_color32(const Color32* color)
 {
     if (!color) 
     {
@@ -132,7 +132,7 @@ Color color_from_color32(const color32_t* color)
     return result;
 }
 
-Color color_from_color24(const color24_t* color, float alpha)
+Color color_from_color24(const Color24* color, float alpha)
 {
     if (!color) 
     {
@@ -241,19 +241,19 @@ Color color_lerp(const Color* a, const Color* b, float t)
 }
 
 // @color32
-color32_t color32_black = {0, 0, 0, 255};
-color32_t color32_white = {255, 255, 255, 255};
-color32_t color32_red = {255, 0, 0, 255};
-color32_t color32_green = {0, 255, 0, 255};
-color32_t color32_blue = {0, 0, 255, 255};
-color32_t color32_transparent = {0, 0, 0, 0};
+Color32 color32_black = {0, 0, 0, 255};
+Color32 color32_white = {255, 255, 255, 255};
+Color32 color32_red = {255, 0, 0, 255};
+Color32 color32_green = {0, 255, 0, 255};
+Color32 color32_blue = {0, 0, 255, 255};
+Color32 color32_transparent = {0, 0, 0, 0};
 
 // @color24
-color24_t color24_black = {0, 0, 0};
-color24_t color24_white = {255, 255, 255};
-color24_t color24_red = {255, 0, 0};
-color24_t color24_green = {0, 255, 0};
-color24_t color24_blue = {0, 0, 255};
+Color24 color24_black = {0, 0, 0};
+Color24 color24_white = {255, 255, 255};
+Color24 color24_red = {255, 0, 0};
+Color24 color24_green = {0, 255, 0};
+Color24 color24_blue = {0, 0, 255};
 
 // @color
 Color COLOR_BLACK = {0.0f, 0.0f, 0.0f, 1.0f};

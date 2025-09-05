@@ -27,7 +27,7 @@ TStringBuilder& TStringBuilder::Add(const std::string& text)
     if (!_color_stack.empty())
     {
         // Use current color from stack
-        const color24_t& color = _color_stack.back();
+        const Color24& color = _color_stack.back();
         return Add(text, color.r, color.g, color.b);
     }
 
@@ -42,7 +42,7 @@ TStringBuilder& TStringBuilder::Add(const char* text)
     return *this;
 }
 
-TStringBuilder& TStringBuilder::Add(const std::string& text, const color24_t& color)
+TStringBuilder& TStringBuilder::Add(const std::string& text, const Color24& color)
 {
     return Add(text, color.r, color.g, color.b);
 }
@@ -73,7 +73,7 @@ TStringBuilder& TStringBuilder::Add(const std::string& text, int tcolor)
     return *this;
 }
 
-TStringBuilder& TStringBuilder::PushColor(const color24_t& color)
+TStringBuilder& TStringBuilder::PushColor(const Color24& color)
 {
     _color_stack.push_back(color);
     return *this;
@@ -81,7 +81,7 @@ TStringBuilder& TStringBuilder::PushColor(const color24_t& color)
 
 TStringBuilder& TStringBuilder::PushColor(int r, int g, int b)
 {
-    _color_stack.push_back(color24_t{static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b)});
+    _color_stack.push_back(Color24{static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b)});
     return *this;
 }
 
@@ -178,7 +178,7 @@ TStringBuilder& TStringBuilder::Add(const vec4& v)
     return *this;
 }
 
-TStringBuilder& TStringBuilder::Add(const color24_t& color)
+TStringBuilder& TStringBuilder::Add(const Color24& color)
 {
     char hex[8];
     snprintf(hex, sizeof(hex), "#%02X%02X%02X", color.r, color.g, color.b);
@@ -195,7 +195,7 @@ TStringBuilder& TStringBuilder::Add(const color24_t& color)
 TStringBuilder& TStringBuilder::Add(const color_t& color)
 {
     // Convert color_t to color24_t
-    color24_t color24;
+    Color24 color24;
     color24.r = static_cast<uint8_t>(color.r * 255);
     color24.g = static_cast<uint8_t>(color.g * 255);
     color24.b = static_cast<uint8_t>(color.b * 255);

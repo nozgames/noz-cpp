@@ -29,6 +29,7 @@ static void LoadVfxInternal(VfxImpl* impl, Allocator* allocator, Stream* stream)
         particle_def->size = ReadStruct<VfxFloatCurve>(stream);
         particle_def->speed = ReadStruct<VfxFloatCurve>(stream);
         particle_def->color = ReadStruct<VfxColorCurve>(stream);
+        particle_def->opacity = ReadStruct<VfxFloatCurve>(stream);
         particle_def->gravity = ReadStruct<VfxVec2>(stream);
         particle_def->drag = ReadStruct<VfxFloat>(stream);
         particle_def->rotation = ReadStruct<VfxFloatCurve>(stream);

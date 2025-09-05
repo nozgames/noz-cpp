@@ -63,6 +63,7 @@ struct VfxParticleDef
     VfxFloatCurve size;
     VfxFloatCurve speed;
     VfxColorCurve color;
+    VfxFloatCurve opacity;
     VfxFloatCurve rotation;
 };
 

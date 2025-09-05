@@ -4,11 +4,7 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
-
-// 32-bit RGBA color (0-255 per component)
-struct color32_t
+struct Color32
 {
     u8 r;
     u8 g;
@@ -16,15 +12,13 @@ struct color32_t
     u8 a;
 };
 
-// 24-bit RGB color (0-255 per component)
-struct color24_t
+struct Color24
 {
     u8 r;
     u8 g;
     u8 b;
 };
 
-// Floating point RGBA color (0.0-1.0 per component)
 struct Color
 {
     float r;
@@ -34,23 +28,23 @@ struct Color
 };
 
 // Color32 functions
-color32_t color32_create(u8 r, u8 g, u8 b, u8 a);
-color32_t color32_from_color(Color* color);
-color32_t color32_from_color24(color24_t* color, u8 alpha);
-bool color32_is_transparent(color32_t* color);
-bool color32_is_opaque(color32_t* color);
-bool color32_equals(color32_t* a, color32_t* b);
+Color32 color32_create(u8 r, u8 g, u8 b, u8 a);
+Color32 color32_from_color(Color* color);
+Color32 color32_from_color24(Color24* color, u8 alpha);
+bool color32_is_transparent(Color32* color);
+bool color32_is_opaque(Color32* color);
+bool color32_equals(Color32* a, Color32* b);
 
 // Color24 functions
-color24_t color24_create(u8 r, u8 g, u8 b);
-color24_t color24_from_color(Color* color);
-color24_t color24_from_color32(color32_t* color);
-bool color24_equals(color24_t* a, color24_t* b);
+Color24 color24_create(u8 r, u8 g, u8 b);
+Color24 color24_from_color(Color* color);
+Color24 color24_from_color32(Color32* color);
+bool color24_equals(Color24* a, Color24* b);
 
 // Color functions
 Color color_create(float r, float g, float b, float a);
-Color color_from_color32(color32_t* color);
-Color color_from_color24(color24_t* color, float alpha);
+Color color_from_color32(Color32* color);
+Color color_from_color24(Color24* color, float alpha);
 bool color_is_transparent(Color* color);
 bool color_is_opaque(Color* color);
 Color color_clamped(Color* color);
@@ -59,7 +53,11 @@ Color color_add(Color* a, Color* b);
 Color color_subtract(Color* a, Color* b);
 Color color_multiply_scalar(Color* color, float scalar);
 Color color_multiply(Color* a, Color* b);
-Color color_lerp(Color* a, Color* b, float t);
+
+inline Color SetAlpha(const Color& color, float alpha)
+{
+    return { color.r, color.g, color.b, alpha };
+}
 
 inline Color Mix(const Color& a, const Color& b, float t)
 {
@@ -72,18 +70,18 @@ inline Color Mix(const Color& a, const Color& b, float t)
 }
 
 // Predefined colors
-extern color32_t color32_black;
-extern color32_t color32_white;
-extern color32_t color32_red;
-extern color32_t color32_green;
-extern color32_t color32_blue;
-extern color32_t color32_transparent;
+extern Color32 color32_black;
+extern Color32 color32_white;
+extern Color32 color32_red;
+extern Color32 color32_green;
+extern Color32 color32_blue;
+extern Color32 color32_transparent;
 
-extern color24_t color24_black;
-extern color24_t color24_white;
-extern color24_t color24_red;
-extern color24_t color24_green;
-extern color24_t color24_blue;
+extern Color24 color24_black;
+extern Color24 color24_white;
+extern Color24 color24_red;
+extern Color24 color24_green;
+extern Color24 color24_blue;
 
 extern Color COLOR_BLACK;
 extern Color COLOR_WHITE;

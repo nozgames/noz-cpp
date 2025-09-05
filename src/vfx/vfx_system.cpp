@@ -28,6 +28,9 @@ struct VfxParticle
     VfxCurveType size_curve;
     float size_start;
     float size_end;
+    VfxCurveType opacity_curve;
+    float opacity_start;
+    float opacity_end;
     VfxCurveType speed_curve;
     float speed_start;
     float speed_end;
@@ -173,6 +176,9 @@ static VfxParticle* EmitParticle(VfxEmitter* emitter)
     p->position = GetRandom(emitter->def->spawn) + instance->position;
     p->size_start = GetRandom(def.size.start);
     p->size_end = GetRandom(def.size.end);
+    p->opacity_curve = def.opacity.type;
+    p->opacity_start = GetRandom(def.opacity.start);
+    p->opacity_end = GetRandom(def.opacity.end);
     p->size_curve = def.size.type;
     p->speed_start = GetRandom(def.speed.start);
     p->speed_end = GetRandom(def.speed.end);
@@ -357,10 +363,11 @@ void DrawVfx()
 
         float t = p->elapsed / p->lifetime;
         float size = Mix(p->size_start, p->size_end, EvaluateCurve(p->size_curve, t));
+        float opacity = Mix(p->opacity_start, p->opacity_end, EvaluateCurve(p->opacity_curve, t));
         Color col = Mix(p->color_start, p->color_end, EvaluateCurve(p->color_curve, t));
 
         BindTransform(p->position, p->rotation, {size, size});
-        BindColor(col);
+        BindColor(SetAlpha(col, opacity));
         BindMaterial(g_vfx.material);
         DrawMesh(g_vfx.meshes[VFX_MESH_SQUARE]);
 

@@ -347,6 +347,7 @@ void ImportVfx(const fs::path& source_path, Stream* output_stream, Props* config
         WriteStruct(output_stream, ParseFloatCurve(source->GetString(particle_section.c_str(), "size", "1.0"), VFX_FLOAT_CURVE_ONE));
         WriteStruct(output_stream, ParseFloatCurve(source->GetString(particle_section.c_str(), "speed", "0"), VFX_FLOAT_CURVE_ZERO));
         WriteStruct(output_stream, ParseColorCurve(source->GetString(particle_section.c_str(), "color", "white"), VFX_COLOR_CURVE_WHITE));
+        WriteStruct(output_stream, ParseFloatCurve(source->GetString(particle_section.c_str(), "opacity", "1.0"), VFX_FLOAT_CURVE_ONE));
         WriteStruct(output_stream, ParseVec2(source->GetString(particle_section.c_str(), "gravity", "(0, 0, 0)"), VFX_VEC2_ZERO));
         WriteStruct(output_stream, ParseFloat(source->GetString(particle_section.c_str(), "drag", "0"), VFX_FLOAT_ZERO));
         WriteStruct(output_stream, ParseFloatCurve(source->GetString(particle_section.c_str(), "rotation", "0.0"), VFX_FLOAT_CURVE_ZERO));
