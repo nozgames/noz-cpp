@@ -124,19 +124,10 @@ Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const
     if (!impl)
         return nullptr;
 
-    #if 1
+    impl->bounds = bounds;
+
     ReadBytes(stream, impl->vertices, sizeof(MeshVertex) * impl->vertex_count);
     ReadBytes(stream, impl->indices, sizeof(uint16_t) * impl->index_count);
-
-#else
-    u32 tex_width = ReadU32(stream);
-    u32 tex_height = ReadU32(stream);
-
-    void* tex_data = Alloc(ALLOCATOR_DEFAULT, tex_width * tex_height * 4);
-    ReadBytes(stream, tex_data, tex_width * tex_height * 4);
-    impl->texture = CreateTexture(allocator, tex_data, tex_width, tex_height, TEXTURE_FORMAT_RGBA8, name);
-    Free(tex_data);
-#endif
 
     UploadMesh(impl, name);
     return impl;
@@ -173,9 +164,5 @@ void RenderMesh(Mesh* mesh)
     MeshImpl* impl = static_cast<MeshImpl*>(mesh);
     platform::BindVertexBuffer(impl->vertex_buffer);
     platform::BindIndexBuffer(impl->index_buffer);
-#if 0
-    BindTextureInternal(impl->texture, 0);
-    platform::BindColor(COLOR_GREEN);
-#endif
     platform::DrawIndexed(impl->index_count);
 }

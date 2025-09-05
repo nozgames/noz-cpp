@@ -87,6 +87,7 @@ extern PFN_vkAllocateDescriptorSets vkAllocateDescriptorSets;
 extern PFN_vkUpdateDescriptorSets vkUpdateDescriptorSets;
 extern PFN_vkFlushMappedMemoryRanges vkFlushMappedMemoryRanges;
 extern PFN_vkGetPhysicalDeviceMemoryProperties vkGetPhysicalDeviceMemoryProperties;
+extern PFN_vkGetPhysicalDeviceProperties vkGetPhysicalDeviceProperties;
 
 // Debug functions
 extern PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT;

@@ -88,6 +88,7 @@ PFN_vkAllocateDescriptorSets vkAllocateDescriptorSets = nullptr;
 PFN_vkUpdateDescriptorSets vkUpdateDescriptorSets = nullptr;
 PFN_vkFlushMappedMemoryRanges vkFlushMappedMemoryRanges = nullptr;
 PFN_vkGetPhysicalDeviceMemoryProperties vkGetPhysicalDeviceMemoryProperties = nullptr;
+PFN_vkGetPhysicalDeviceProperties vkGetPhysicalDeviceProperties = nullptr;
 
 // Debug functions
 PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT = nullptr;
@@ -134,6 +135,7 @@ void LoadInstanceFunctions(VkInstance instance)
     vkGetPhysicalDeviceSurfaceFormatsKHR = (PFN_vkGetPhysicalDeviceSurfaceFormatsKHR)vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfaceFormatsKHR");
     vkGetPhysicalDeviceSurfacePresentModesKHR = (PFN_vkGetPhysicalDeviceSurfacePresentModesKHR)vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceSurfacePresentModesKHR");
     vkGetPhysicalDeviceMemoryProperties = (PFN_vkGetPhysicalDeviceMemoryProperties)vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceMemoryProperties");
+    vkGetPhysicalDeviceProperties = (PFN_vkGetPhysicalDeviceProperties)vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties");
 }
 
 void LoadDeviceFunctions(VkInstance instance)

@@ -66,6 +66,10 @@ struct VulkanRenderer
     std::vector<VkImageView> swapchain_image_views;
     VkFormat swapchain_image_format;
     VkExtent2D swapchain_extent;
+    VkSampleCountFlagBits msaa_samples;
+    VkImage msaa_color_image;
+    VkDeviceMemory msaa_color_image_memory;
+    VkImageView msaa_color_image_view;
     VkRenderPass render_pass;
     std::vector<VkFramebuffer> swapchain_framebuffers;
     VkCommandPool command_pool;
@@ -104,6 +108,9 @@ static VulkanRenderer g_vulkan = {};
 static SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice device);
 static void RecreateSwapchainObjects();
 static VulkanUniformBuffer* AcquireUniformBuffer(u32 binding, VkDescriptorSet descriptor_set);
+static VkSampleCountFlagBits GetMaxUsableSampleCount();
+static void CreateColorResources();
+static void CleanupColorResources();
 
 static void SetVulkanObjectName(VkObjectType object_type, uint64_t object_handle, const char* name)
 {
@@ -815,22 +822,37 @@ static void CreateRenderPass()
 {
     VkAttachmentDescription colorAttachment = {};
     colorAttachment.format = g_vulkan.swapchain_image_format;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.samples = g_vulkan.msaa_samples;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentDescription colorAttachmentResolve = {};
+    colorAttachmentResolve.format = g_vulkan.swapchain_image_format;
+    colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     VkAttachmentReference colorAttachmentRef = {};
     colorAttachmentRef.attachment = 0;
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+    VkAttachmentReference colorAttachmentResolveRef = {};
+    colorAttachmentResolveRef.attachment = 1;
+    colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
     VkSubpassDescription subpass = {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
+    subpass.pResolveAttachments = &colorAttachmentResolveRef;
 
     VkSubpassDependency dependency = {};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -840,10 +862,11 @@ static void CreateRenderPass()
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
+    VkAttachmentDescription attachments[] = {colorAttachment, colorAttachmentResolve};
     VkRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.attachmentCount = 2;
+    renderPassInfo.pAttachments = attachments;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
     renderPassInfo.dependencyCount = 1;
@@ -860,12 +883,12 @@ static void CreateFramebuffers()
 
     for (size_t i = 0; i < g_vulkan.swapchain_image_views.size(); i++)
     {
-        VkImageView vk_attachments[] = {g_vulkan.swapchain_image_views[i]};
+        VkImageView vk_attachments[] = {g_vulkan.msaa_color_image_view, g_vulkan.swapchain_image_views[i]};
 
         VkFramebufferCreateInfo vk_frame_buffer_info = {};
         vk_frame_buffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         vk_frame_buffer_info.renderPass = g_vulkan.render_pass;
-        vk_frame_buffer_info.attachmentCount = 1;
+        vk_frame_buffer_info.attachmentCount = 2;
         vk_frame_buffer_info.pAttachments = vk_attachments;
         vk_frame_buffer_info.width = g_vulkan.swapchain_extent.width;
         vk_frame_buffer_info.height = g_vulkan.swapchain_extent.height;
@@ -961,10 +984,12 @@ void InitVulkan(const RendererTraits* traits, platform::Window* window)
     SetupDebugMessenger();
     CreateSurface();
     PickPhysicalDevice();
+    g_vulkan.msaa_samples = g_vulkan.traits.msaa ? GetMaxUsableSampleCount() : VK_SAMPLE_COUNT_1_BIT;
     CreateLogicalDevice();
     CreateSwapchain();
     CreateImageViews();
     CreateRenderPass();
+    CreateColorResources();
     CreateFramebuffers();
     CreateCommandPool();
     CreateCommandBuffer();
@@ -994,6 +1019,9 @@ void ShutdownVulkan()
         {
             vkDestroyFramebuffer(g_vulkan.device, framebuffer, nullptr);
         }
+
+        // Cleanup MSAA resources
+        CleanupColorResources();
 
         // Cleanup render pass
         vkDestroyRenderPass(g_vulkan.device, g_vulkan.render_pass, nullptr);
@@ -1040,6 +1068,8 @@ void RecreateSwapchainObjects()
 
     for (auto framebuffer : g_vulkan.swapchain_framebuffers)
         vkDestroyFramebuffer(g_vulkan.device, framebuffer, nullptr);
+
+    CleanupColorResources();
 
     for (auto image_view : g_vulkan.swapchain_image_views)
         vkDestroyImageView(g_vulkan.device, image_view, nullptr);
@@ -1129,15 +1159,18 @@ void RecreateSwapchainObjects()
         SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)g_vulkan.swapchain_image_views[i], image_name);
     }
 
+    // Recreate color resources for MSAA
+    CreateColorResources();
+
     // frame buffers
     g_vulkan.swapchain_framebuffers.resize(g_vulkan.swapchain_image_views.size());
     for (size_t i = 0; i < g_vulkan.swapchain_image_views.size(); i++)
     {
-        VkImageView attachments[] = {g_vulkan.swapchain_image_views[i]};
+        VkImageView attachments[] = {g_vulkan.msaa_color_image_view, g_vulkan.swapchain_image_views[i]};
         VkFramebufferCreateInfo frame_buffer_info = {
             .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
             .renderPass = g_vulkan.render_pass,
-            .attachmentCount = 1,
+            .attachmentCount = 2,
             .pAttachments = attachments,
             .width = g_vulkan.swapchain_extent.width,
             .height = g_vulkan.swapchain_extent.height,
@@ -1917,7 +1950,7 @@ static bool CreateShaderInternal(
 
     VkPipelineMultisampleStateCreateInfo multisampling = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        .rasterizationSamples = VK_SAMPLE_COUNT_8_BIT,
+        .rasterizationSamples = g_vulkan.msaa_samples,
         .sampleShadingEnable = VK_FALSE,
     };
 
@@ -1980,6 +2013,100 @@ static bool CreateShaderInternal(
     };
 
     return vkCreateGraphicsPipelines(g_vulkan.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &shader->pipeline) == VK_SUCCESS;
+}
+
+static VkSampleCountFlagBits GetMaxUsableSampleCount()
+{
+    VkPhysicalDeviceProperties physical_device_properties;
+    vkGetPhysicalDeviceProperties(g_vulkan.physical_device, &physical_device_properties);
+
+    VkSampleCountFlags counts = physical_device_properties.limits.framebufferColorSampleCounts & 
+                                physical_device_properties.limits.framebufferDepthSampleCounts;
+
+    if (counts & VK_SAMPLE_COUNT_64_BIT) return VK_SAMPLE_COUNT_64_BIT;
+    if (counts & VK_SAMPLE_COUNT_32_BIT) return VK_SAMPLE_COUNT_32_BIT;
+    if (counts & VK_SAMPLE_COUNT_16_BIT) return VK_SAMPLE_COUNT_16_BIT;
+    if (counts & VK_SAMPLE_COUNT_8_BIT)  return VK_SAMPLE_COUNT_8_BIT;
+    if (counts & VK_SAMPLE_COUNT_4_BIT)  return VK_SAMPLE_COUNT_4_BIT;
+    if (counts & VK_SAMPLE_COUNT_2_BIT)  return VK_SAMPLE_COUNT_2_BIT;
+
+    return VK_SAMPLE_COUNT_1_BIT;
+}
+
+static void CreateColorResources()
+{
+    VkFormat color_format = g_vulkan.swapchain_image_format;
+
+    VkImageCreateInfo image_info = {};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.extent.width = g_vulkan.swapchain_extent.width;
+    image_info.extent.height = g_vulkan.swapchain_extent.height;
+    image_info.extent.depth = 1;
+    image_info.mipLevels = 1;
+    image_info.arrayLayers = 1;
+    image_info.format = color_format;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_info.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_info.samples = g_vulkan.msaa_samples;
+    image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateImage(g_vulkan.device, &image_info, nullptr, &g_vulkan.msaa_color_image) != VK_SUCCESS)
+        Exit("Failed to create MSAA color image");
+
+    VkMemoryRequirements mem_requirements;
+    vkGetImageMemoryRequirements(g_vulkan.device, g_vulkan.msaa_color_image, &mem_requirements);
+
+    VkMemoryAllocateInfo alloc_info = {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .allocationSize = mem_requirements.size,
+        .memoryTypeIndex = FindMemoryType(mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+    };
+
+    if (vkAllocateMemory(g_vulkan.device, &alloc_info, nullptr, &g_vulkan.msaa_color_image_memory) != VK_SUCCESS)
+        Exit("Failed to allocate MSAA color image memory");
+
+    vkBindImageMemory(g_vulkan.device, g_vulkan.msaa_color_image, g_vulkan.msaa_color_image_memory, 0);
+
+    VkImageViewCreateInfo view_info = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image = g_vulkan.msaa_color_image,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = color_format,
+        .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        }
+    };
+
+    if (vkCreateImageView(g_vulkan.device, &view_info, nullptr, &g_vulkan.msaa_color_image_view) != VK_SUCCESS)
+        Exit("Failed to create MSAA color image view");
+
+    SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE, (uint64_t)g_vulkan.msaa_color_image, "MSAA Color");
+    SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)g_vulkan.msaa_color_image_view, "MSAA Color");
+}
+
+static void CleanupColorResources()
+{
+    if (g_vulkan.msaa_color_image_view != VK_NULL_HANDLE)
+    {
+        vkDestroyImageView(g_vulkan.device, g_vulkan.msaa_color_image_view, nullptr);
+        g_vulkan.msaa_color_image_view = VK_NULL_HANDLE;
+    }
+    if (g_vulkan.msaa_color_image != VK_NULL_HANDLE)
+    {
+        vkDestroyImage(g_vulkan.device, g_vulkan.msaa_color_image, nullptr);
+        g_vulkan.msaa_color_image = VK_NULL_HANDLE;
+    }
+    if (g_vulkan.msaa_color_image_memory != VK_NULL_HANDLE)
+    {
+        vkFreeMemory(g_vulkan.device, g_vulkan.msaa_color_image_memory, nullptr);
+        g_vulkan.msaa_color_image_memory = VK_NULL_HANDLE;
+    }
 }
 
 platform::Shader* platform::CreateShader(

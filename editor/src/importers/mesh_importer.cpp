@@ -5,12 +5,6 @@
 
 #include "../gltf.h"
 #include "../../../src/internal.h"
-#include "../msdf/msdf.h"
-#include "../msdf/shape.h"
-#include <algorithm>
-
-constexpr int TEX_SIZE = 2048;
-constexpr int TRI_SIZE = 256;
 
 namespace fs = std::filesystem;
 
@@ -80,9 +74,6 @@ static void WriteMeshData(
     header.flags = 0;
     WriteAssetHeader(stream, &header);
 
-#if 0
-    CreateSDF(*mesh, stream);
-#else
     std::vector<Vec2> positions;
     positions.reserve(mesh->positions.size());
     for (const Vec3& pos : mesh->positions)
@@ -117,7 +108,6 @@ static void WriteMeshData(
     
     // indices
     WriteBytes(stream, const_cast<uint16_t*>(mesh->indices.data()), mesh->indices.size() * sizeof(uint16_t));
-#endif
 }
 
 void ImportMesh(const fs::path& source_path, Stream* output_stream, Props* config, Props* meta)
@@ -149,8 +139,8 @@ void ImportMesh(const fs::path& source_path, Stream* output_stream, Props* confi
     }
     
     // Apply flatten if requested
-    // if (meta->GetBool("mesh", "flatten", config->GetBool("mesh.defaults", "flatten", false)))
-    //     FlattenMesh(&mesh);
+    if (meta->GetBool("mesh", "flatten", config->GetBool("mesh.defaults", "flatten", false)))
+        FlattenMesh(&mesh);
 
     // Write mesh data to stream
     WriteMeshData(output_stream, &mesh, meta);
@@ -181,243 +171,4 @@ static AssetImporterTraits g_mesh_importer_traits = {
 AssetImporterTraits* GetMeshImporterTraits()
 {
     return &g_mesh_importer_traits;
-}
-
-
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../external/stb_image_write.h"
-
-struct MyEdge
-{
-    i32 v0;
-    i32 v1;
-    i32 count;
-};
-
-struct MyColor
-{
-    Color color;
-    std::map<u64, MyEdge> edges;
-    msdf::Shape* shape;
-};
-
-void GenerateNormalMapWithSDF(const GLTFMesh& mesh, std::vector<uint8_t>& output, 
-                               const std::map<u64, MyColor>& colors,
-                               const Bounds3& bounds, float padding)
-{
-    float size_x = bounds.max.x - bounds.min.x;
-    float size_y = bounds.max.y - bounds.min.y;
-    float scale = (size_x > size_y) ? size_x : size_y;
-
-    output.resize(TEX_SIZE * TEX_SIZE * 4);
-    memset(output.data(), 0, output.size());
-
-    // Generate SDF directly to alpha channel using new RenderShape overload
-    Vec2Int offset = {};
-    for (auto& color : colors)
-    {
-        RenderShape(
-            color.second.shape,
-            output,
-            TEX_SIZE * 4, // RGBA stride
-            offset,
-            {TRI_SIZE, TRI_SIZE},
-            0.05f,
-            {scale + padding * 2, scale + padding * 2},
-            {
-                bounds.min.x - padding,
-                bounds.min.y - padding
-            },
-            4, // Component stride (RGBA = 4 bytes per pixel)
-            3  // Component offset (A = 3rd offset, 0-based)
-        );
-
-        offset.x += TRI_SIZE;
-        if (offset.x >= TEX_SIZE)
-        {
-            offset.y += TRI_SIZE;
-            offset.x = 0;
-        }
-    }
-}
-
-u64 GetColorHash(const Color& color)
-{
-    return Hash(&color, sizeof(Color));
-}
-
-Color GetLitColor(const Color& color, const Vec3& normal)
-{
-    // Top-right light direction (normalized)
-    Vec3 light_dir = Normalize(Vec3{0.7f, -0.7f, 0.2f});
-    
-    // Basic lighting calculation
-    float NdotL = std::max(Dot(normal, light_dir), 0.0f);
-    
-    // Ambient + diffuse lighting
-    float ambient = 0.3f;
-    float diffuse = 0.7f * NdotL;
-    float lighting = ambient + diffuse;
-    
-    Color lit_color;
-    lit_color.r = color.r * lighting;
-    lit_color.g = color.g * lighting;
-    lit_color.b = color.b * lighting;
-    lit_color.a = color.a;
-    
-    return lit_color;
-}
-
-void CreateSDF(const GLTFMesh& mesh, Stream* stream)
-{
-    // Group triangles by color hash
-    std::map<u64, MyColor> colors;
-    for (int i = 0; i < mesh.indices.size(); i += 3)
-    {
-        i32 i0 = mesh.indices[i + 0];
-        Color c0 = GetLitColor(mesh.colors[i0], mesh.normals[i0]);
-        u64 ch = i; // GetColorHash(c0);
-        colors[ch] = { .color = c0 };
-    }
-
-    // Build edge data for each color (for MSDF)
-    for (auto& color : colors)
-    {
-        for (int i = 0; i < mesh.indices.size(); i += 3)
-        {
-            i32 i0 = mesh.indices[i + 0];
-            i32 i1 = mesh.indices[i + 1];
-            i32 i2 = mesh.indices[i + 2];
-
-            Vec3 v0 = mesh.positions[i0];
-            Vec3 v1 = mesh.positions[i1];
-            Vec3 v2 = mesh.positions[i2];
-
-            Color c0 = GetLitColor(mesh.colors[i0], mesh.normals[i0]);
-            u64 ch = i; // GetColorHash(c0);
-
-            if (color.first != ch)
-                continue;
-
-            i32 v0i = (i32)(v0.x * 10000.0f) ^ (i32)(v0.y * 10000.0f);
-            i32 v1i = (i32)(v1.x * 10000.0f) ^ (i32)(v1.y * 10000.0f);
-            i32 v2i = (i32)(v2.x * 10000.0f) ^ (i32)(v2.y * 10000.0f);
-
-            auto e0 = (u64)Min(v0i, v1i) + ((u64)Max(v0i, v1i) << 32);
-            auto e1 = (u64)Min(v1i, v2i) + ((u64)Max(v1i, v2i) << 32);
-            auto e2 = (u64)Min(v2i, v0i) + ((u64)Max(v2i, v0i) << 32);
-
-            auto& ve0 = color.second.edges[e0];
-            ve0.v0 = mesh.indices[i + 0];
-            ve0.v1 = mesh.indices[i + 1];
-            ve0.count++;
-
-            auto& ve1 = color.second.edges[e1];
-            ve1.v0 = mesh.indices[i + 1];
-            ve1.v1 = mesh.indices[i + 2];
-            ve1.count++;
-
-            auto& ve2 = color.second.edges[e2];
-            ve2.v0 = mesh.indices[i + 2];
-            ve2.v1 = mesh.indices[i + 0];
-            ve2.count++;
-        }
-    }
-
-    // Create MSDF shapes for each color
-    for (auto& color : colors)
-    {
-        color.second.shape = new msdf::Shape();
-
-        msdf::Contour* contour = new msdf::Contour();
-        for (auto& e : color.second.edges)
-        {
-            if (e.second.count > 1)
-                continue;
-
-            contour->edges.push_back(
-                new msdf::LinearEdge(
-                    Vec2Double(mesh.positions[e.second.v1].x, mesh.positions[e.second.v1].y),
-                    Vec2Double(mesh.positions[e.second.v0].x, mesh.positions[e.second.v0].y)
-                ));
-        }
-
-        color.second.shape->contours.push_back(contour);
-    }
-    
-    // Calculate bounds and padding
-    Bounds3 bounds = ToBounds(mesh.positions.data(), mesh.positions.size());
-    float size_x = bounds.max.x - bounds.min.x;
-    float size_y = bounds.max.y - bounds.min.y;
-    float scale = (size_x > size_y) ? size_x : size_y;
-    float padding = scale * 0.1f;
-
-    // Generate RGBA texture data (RGB = normals, A = SDF using MSDF)
-    std::vector<uint8_t> rgba_output;
-    GenerateNormalMapWithSDF(mesh, rgba_output, colors, bounds, padding);
-
-    // Create vertex data
-    std::vector<MeshVertex> vertices;
-    std::vector<u16> indices;
-
-    Vec2Int offset = {};
-    f32 uvw = (f32)TRI_SIZE / (f32)TEX_SIZE;
-    for (auto& color : colors)
-    {
-        f32 uvx = (f32)offset.x / (f32)TEX_SIZE;
-        f32 uvy = (f32)offset.y / (f32)TEX_SIZE;
-        f32 stx = (f32)(offset.x + TRI_SIZE) / (f32)TEX_SIZE;
-        f32 sty = (f32)(offset.y + TRI_SIZE) / (f32)TEX_SIZE;
-
-        u16 vindex = (u16)vertices.size();
-        vertices.push_back({
-            .position = {-0.5f, -0.5f},
-            .uv0 = {uvx, uvy},
-            .normal = {0, 1},
-            .color = color.second.color
-        });
-        vertices.push_back({
-            .position = { 0.5f, -0.5f},
-            .uv0 = {stx, uvy},
-            .normal = {0, 1},
-            .color = color.second.color
-        });
-        vertices.push_back({
-            .position = { 0.5f,  0.5f},
-            .uv0 = {stx, sty},
-            .normal = {0, 1},
-            .color = color.second.color
-        });
-        vertices.push_back({
-            .position = {-0.5f,  0.5f},
-            .uv0 = {uvx, sty},
-            .normal = {0, 1},
-            .color = color.second.color
-        });
-
-        indices.push_back(vindex + 0);
-        indices.push_back(vindex + 1);
-        indices.push_back(vindex + 2);
-
-        indices.push_back(vindex + 0);
-        indices.push_back(vindex + 2);
-        indices.push_back(vindex + 3);
-
-        offset.x += TRI_SIZE;
-        if (offset.x >= TEX_SIZE)
-        {
-            offset.y += TRI_SIZE;
-            offset.x = 0;
-        }
-    }
-
-    // Write mesh data with RGBA texture
-    WriteU16(stream, (u16)vertices.size());
-    WriteU16(stream, (u16)indices.size());
-    WriteU32(stream, TEX_SIZE);
-    WriteU32(stream, TEX_SIZE);
-    WriteBytes(stream, vertices.data(), vertices.size() * sizeof(MeshVertex));
-    WriteBytes(stream, indices.data(), indices.size() * sizeof(u16));
-    WriteBytes(stream, rgba_output.data(), rgba_output.size());
 }
