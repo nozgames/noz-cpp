@@ -66,7 +66,7 @@ static bool ParseVec2(Tokenizer& tk, VfxVec2* value)
     if (!ExpectChar(tk, ']'))
         return false;
 
-    *value = { min, max };
+    *value = { Min(min,max), Max(min,max) };
     return true;
 }
 
@@ -117,7 +117,7 @@ static bool ParseFloat(Tokenizer& tk, VfxFloat* value)
     if (!ExpectChar(tk, ']'))
         return false;
 
-    *value = { min, max };
+    *value = { Min(min, max), Max(min, max) };
     return true;
 }
 
@@ -207,7 +207,7 @@ VfxInt ParseInt(const std::string& value, VfxInt default_value)
     if (!ExpectChar(tk, ']'))
         return default_value;
 
-    return { min, max };
+    return { Min(min,max), Max(min,max) };
 }
 
 static bool ParseColor(Tokenizer& tk, VfxColor* value)

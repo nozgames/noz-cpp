@@ -57,6 +57,7 @@ struct VfxInstance
     Vec2 position;
     int particle_count;
     u32 version;
+    bool loop;
 };
 
 struct VfxSystem
@@ -77,7 +78,7 @@ static VfxInstance* CreateInstance(Vfx* vfx, const Vec2& position);
 static VfxEmitter* CreateEmitter(VfxInstance* instance, const VfxEmitterDef& def);
 static VfxParticle* EmitParticle(VfxEmitter* emitter);
 
-float EvaluateCurve(VfxCurveType curve, float t)
+static float EvaluateCurve(VfxCurveType curve, float t)
 {
     t = Max(0.0f, Min(1.0f, t));
 
@@ -145,6 +146,7 @@ static VfxInstance* CreateInstance(Vfx* vfx, const Vec2& position)
     assert(instance);
     instance->position = position;
     instance->vfx = vfx;
+    instance->loop = ((VfxImpl*)vfx)->loop;
 
     g_vfx.instance_count++;
     return instance;
@@ -509,3 +511,37 @@ void ShutdownVfx()
 
     g_vfx = {};
 }
+
+#ifdef NOZ_EDITOR
+void RestartVfx(Vfx* vfx)
+{
+    for (u32 i=0; i<MAX_EMITTERS; i++)
+    {
+        VfxEmitter* e = (VfxEmitter*)GetAt(g_vfx.emitter_pool, i);
+        if (e->instance_index == INVALID_INDEX)
+            continue;
+
+        assert(e->def);
+        if (e->def->vfx != vfx)
+            continue;
+
+        // Make sure it is one of the old emitters
+        VfxImpl* impl = static_cast<VfxImpl*>(vfx);
+        bool match = false;
+        for (u32 j=0; !match && j<impl->emitter_count; j++)
+            match = e->def == &impl->emitters[j];
+
+        if (!match)
+            continue;
+
+        VfxInstance* instance = GetInstance(e);
+        if (!instance)
+            continue;
+
+        Vec2 position = instance->position;
+        Stop(GetHandle(instance));
+
+        Play(vfx, position);
+    }
+}
+#endif

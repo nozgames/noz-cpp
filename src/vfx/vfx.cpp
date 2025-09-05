@@ -4,11 +4,8 @@
 
 #include "vfx_internal.h"
 
-Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
+static void LoadVfxInternal(VfxImpl* impl, Allocator* allocator, Stream* stream)
 {
-    Vfx* vfx = (Vfx*)Alloc(allocator, sizeof(VfxImpl));
-    VfxImpl* impl = static_cast<VfxImpl*>(vfx);
-    impl->name = name;
     impl->duration = ReadStruct<VfxFloat>(stream);
     impl->loop = ReadBool(stream);
     impl->emitter_count = ReadU32(stream);
@@ -35,7 +32,41 @@ Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const 
         particle_def->gravity = ReadStruct<VfxVec2>(stream);
         particle_def->drag = ReadStruct<VfxFloat>(stream);
         particle_def->rotation = ReadStruct<VfxFloatCurve>(stream);
+
+        emitter_def->vfx = impl;
     }
 
+}
+
+Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
+{
+    Vfx* vfx = (Vfx*)Alloc(allocator, sizeof(VfxImpl));
+    VfxImpl* impl = static_cast<VfxImpl*>(vfx);
+    impl->name = name;
+    LoadVfxInternal(impl, allocator, stream);
     return vfx;
 }
+
+#ifdef NOZ_EDITOR
+
+void RestartVfx(Vfx* vfx);
+
+void ReloadVfx(Asset* asset, Stream* stream)
+{
+    assert(asset);
+    assert(stream);
+
+    VfxImpl* impl = static_cast<VfxImpl*>(asset);
+
+    VfxEmitterDef* old_emitters = impl->emitters;
+
+    LoadVfxInternal(impl, ALLOCATOR_DEFAULT, stream);
+
+    RestartVfx(impl);
+
+    // We can free the emitters now that we restarted the vfx
+    if (old_emitters)
+        Free(old_emitters);
+}
+
+#endif

@@ -78,16 +78,20 @@ Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, cons
 #define NOZ_RELOAD_TEXTURE(asset_name, asset)
 #define NOZ_RELOAD_MESH(asset_name, asset)
 #define NOZ_RELOAD_FONT(asset_name, asset)
-#define NOZ_RELOAD_VFX(asset_name, asset)
 #define NOZ_RELOAD_SOUND(asset_name, asset)
 
 #ifdef NOZ_EDITOR
 void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void (*reload)(Asset*, Stream*));
 void ReloadStyleSheet(Asset* sheet, Stream* stream);
+void ReloadVfx(Asset* asset, Stream* stream);
 
 #define NOZ_RELOAD_STYLE_SHEET(asset_name, asset) \
     if(asset_name == incoming_name) { ReloadAsset(asset_name, ASSET_SIGNATURE_STYLE_SHEET, asset, ReloadStyleSheet); return; }
 
+#define NOZ_RELOAD_VFX(asset_name, asset) \
+    if(asset_name == incoming_name) { ReloadAsset(asset_name, ASSET_SIGNATURE_VFX, asset, ReloadVfx); return; }
+
 #else
 #define NOZ_RELOAD_STYLE_SHEET(asset)
+#define NOZ_RELOAD_VFX(asset_name, asset)
 #endif

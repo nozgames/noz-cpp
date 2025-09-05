@@ -75,6 +75,7 @@ struct VfxEmitterDef
     VfxFloat radius;
     VfxVec2  spawn;
     VfxParticleDef particle_def;
+    Vfx* vfx;
 };
 
 struct VfxImpl : Vfx
