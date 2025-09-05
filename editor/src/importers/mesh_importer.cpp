@@ -248,9 +248,15 @@ static Vec2 CalculateNeighborNormal(const MyEdge& neighbor, u64 shared_vertex, c
     return CalculateEdgeNormal(dir);
 }
 
-static void AddOutlineVertices(GLTFMesh* mesh, const Vec3& p0, const Vec3& p1, 
-                              const Vec2& normal_p0, const Vec2& normal_p1,
-                              float width_p0, float width_p1, float offset)
+static void AddOutlineVertices(
+    GLTFMesh* mesh,
+    const Vec3& p0,
+    const Vec3& p1,
+    const Vec2& normal_p0,
+    const Vec2& normal_p1,
+    float width_p0,
+    float width_p1,
+    float offset)
 {
     float inner_offset_p0 = -width_p0 * (0.5f + offset * 0.5f);
     float outer_offset_p0 = width_p0 * (0.5f - offset * 0.5f);

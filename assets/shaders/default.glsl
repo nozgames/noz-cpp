@@ -44,7 +44,7 @@ layout(set = 2, binding = 0) uniform ColorBuffer
 
 void main()
 {
-    vec3 lightDir = normalize(vec3(-1, -1, -1));
+    vec3 lightDir = normalize(vec3(-0.5,-0.5, -1));
     float diffuse = max(dot(f_normal, -lightDir), 0.0);
     float lighting = 0.3 + 0.7 * diffuse;
     vec4 texColor = texture(mainTexture, f_uv);
