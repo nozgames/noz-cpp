@@ -68,6 +68,7 @@ set(SOURCE_FILES
     src/vfx/vfx_system.cpp
     src/audio/audio.cpp
     src/audio/sound.cpp
+    src/prefs.cpp
 )
 
 # Add platform-specific files

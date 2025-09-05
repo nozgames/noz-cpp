@@ -36,6 +36,7 @@
 #include "core_assets.h"
 #include "vfx.h"
 #include "audio.h"
+#include "prefs.h"
 
 #ifdef NOZ_EDITOR
 #include "editor.h"

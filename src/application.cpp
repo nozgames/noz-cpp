@@ -31,6 +31,7 @@ void ShutdownAudio();
 // @traits
 static ApplicationTraits g_default_traits = 
 {
+    .name = "noz",
     .title = "noz",
     .width = 800,
     .height = 600,
@@ -61,7 +62,6 @@ static ApplicationTraits g_default_traits =
 // @impl
 struct Application
 {
-    platform::Window* window;
     bool has_focus;
     bool vsync;
     Vec2Int screen_size;
@@ -118,11 +118,12 @@ void ExitOutOfMemory(const char* message)
 
 static void UpdateScreenSize()
 {
-    if (g_app.window)
-    {
-        g_app.screen_size = platform::GetWindowSize(g_app.window);
-        g_app.screen_aspect_ratio = (float)g_app.screen_size.x / (float)g_app.screen_size.y;
-    }
+    Vec2Int size = platform::GetScreenSize();
+    if (size == VEC2INT_ZERO || size == g_app.screen_size)
+        return;
+
+    g_app.screen_size = size;
+    g_app.screen_aspect_ratio = (float)g_app.screen_size.x / (float)g_app.screen_size.y;
 }
 
 #ifdef NOZ_EDITOR
@@ -140,19 +141,21 @@ void InitApplication(ApplicationTraits* traits)
 {
     traits = traits ? traits : &g_default_traits;
 
-    InitAllocator(traits);
-    InitName(traits);
-    InitRandom();
-    InitEvent(traits);
-
     memset(&g_app, 0, sizeof(Application));
     g_app.title = traits->title;
     g_app.traits = *traits;
-    
-    // Create platform window
-    g_app.window = platform::CreatePlatformWindow(traits);
-    if (!g_app.window)
-        return;
+    platform::InitApplication(&g_app.traits);
+
+    InitAllocator(traits);
+    InitName(traits);
+    InitRandom();
+    LoadPrefs();
+    InitEvent(traits);
+
+    g_app.traits.width = GetPrefInt(GetName("window.width"), g_app.traits.width);
+    g_app.traits.height = GetPrefInt(GetName("window.height"), g_app.traits.height);
+
+    platform::InitWindow();
 
     UpdateScreenSize();
 
@@ -182,6 +185,9 @@ void InitApplication(ApplicationTraits* traits)
 // @shutdown
 void ShutdownApplication()
 {
+    SetPrefInt(GetName("window.width"), g_app.screen_size.x);
+    SetPrefInt(GetName("window.height"), g_app.screen_size.y);
+
 #ifdef NOZ_EDITOR
     // Shutdown editor client
     ShutdownEditorClient();
@@ -203,16 +209,10 @@ void ShutdownApplication()
     ShutdownAudio();
     ShutdownRenderer();
     ShutdownInput();
-    
-    // Destroy platform window
-    if (g_app.window)
-    {
-        platform::DestroyPlatformWindow(g_app.window);
-        g_app.window = nullptr;
-    }
-    
+    platform::ShutdownApplication();
     ShutdownEvent();
     ShutdownName();
+    SavePrefs();
     ShutdownAllocator();
 }
 
@@ -236,21 +236,11 @@ static void UpdateFPS()
 bool UpdateApplication()
 {
     // Process platform events
-    bool running = true;
-    if (g_app.window)
-    {
-        Vec2Int old_size = g_app.screen_size;
-        running = platform::ProcessWindowEvents(g_app.window, g_app.has_focus, g_app.screen_size);
-        
-        // Update aspect ratio if screen size changed
-        if (old_size.x != g_app.screen_size.x || old_size.y != g_app.screen_size.y)
-        {
-            g_app.screen_aspect_ratio = (float)g_app.screen_size.x / (float)g_app.screen_size.y;
-            
-            // Notify the Vulkan renderer to recreate the swapchain
-        }
-    }
+    bool running = platform::UpdateApplication(g_app.has_focus);
+    if (!running)
+        return false;
 
+    UpdateScreenSize();
     UpdateTime();
     UpdateInput();
 
@@ -260,7 +250,7 @@ bool UpdateApplication()
 
     UpdateFPS();
 
-    return running;
+    return true;
 }
 
 // @screen
@@ -279,15 +269,14 @@ float GetScreenAspectRatio()
     return g_app.screen_aspect_ratio;
 }
 
-
 void ShowCursor(bool cursor)
 {
     platform::ShowCursor(cursor);
 }
 
-platform::Window* GetWindow()
+const ApplicationTraits* GetApplicationTraits()
 {
-    return g_app.window;
+    return &g_app.traits;
 }
 
 float GetCurrentFPS()

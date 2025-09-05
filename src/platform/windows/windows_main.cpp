@@ -8,13 +8,22 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <shellscalingapi.h>
+#include <shlobj.h>
+#include <filesystem>
 
-void InitVulkan(const RendererTraits* traits, platform::Window* window);
+void InitVulkan(const RendererTraits* traits, HWND hwnd);
 void ResizeVulkan(const Vec2Int& screen_size);
 void ShutdownVulkan();
 
-static Vec2Int g_screen_size;
-static Vec2 g_cached_mouse_position = {0, 0};
+struct WindowsApp
+{
+    const ApplicationTraits* traits;
+    Vec2Int screen_size;
+    Vec2 cached_mouse_position;
+    HWND hwnd;
+};
+
+static WindowsApp g_windows = {};
 
 void thread_sleep_ms(int milliseconds)
 {
@@ -44,9 +53,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             RECT rect;
             GetClientRect(hwnd, &rect);
             Vec2Int new_size = { rect.right - rect.left, rect.bottom - rect.top };
-            if (g_screen_size != new_size)
+            if (g_windows.screen_size != new_size)
             {
-                g_screen_size = new_size;
+                g_windows.screen_size = new_size;
                 ResizeVulkan(new_size);
             }
         }
@@ -56,15 +65,23 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             // Cache mouse position for smooth tracking
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
-            g_cached_mouse_position.x = static_cast<f32>(x);
-            g_cached_mouse_position.y = static_cast<f32>(y);
+            g_windows.cached_mouse_position = {
+                static_cast<f32>(x),
+                static_cast<f32>(y)
+            };
         }
         return 0;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-platform::Window* platform::CreatePlatformWindow(const ApplicationTraits* traits)
+void platform::InitApplication(const ApplicationTraits* traits)
+{
+    g_windows = {};
+    g_windows.traits = traits;
+}
+
+void platform::InitWindow()
 {
     // Set process to be DPI aware (per-monitor DPI awareness)
     SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
@@ -86,40 +103,40 @@ platform::Window* platform::CreatePlatformWindow(const ApplicationTraits* traits
     HWND hwnd = ::CreateWindowEx(
         0,                          // Optional window styles
         CLASS_NAME,                 // Window class
-        traits->title,              // Window text
+        g_windows.traits->title,              // Window text
         WS_OVERLAPPEDWINDOW,        // Window style
-        CW_USEDEFAULT, CW_USEDEFAULT, traits->width, traits->height,
+        CW_USEDEFAULT, CW_USEDEFAULT,
+        g_windows.traits->width,
+        g_windows.traits->height,
         NULL,       // Parent window
         NULL,       // Menu
         hInstance,  // Instance handle
         NULL        // Additional data
     );
 
+    g_windows.hwnd = hwnd;
+
     // Initial screen size
     RECT rect;
     GetClientRect(hwnd, &rect);
-    g_screen_size = { rect.right - rect.left, rect.bottom - rect.top };
+    g_windows.screen_size = { rect.right - rect.left, rect.bottom - rect.top };
 
-    InitVulkan(&traits->renderer, (Window*)hwnd);
+    InitVulkan(&g_windows.traits->renderer, hwnd);
 
     if (hwnd != NULL)
     {
         ShowWindow(hwnd, SW_SHOW);
         UpdateWindow(hwnd);
     }
-
-    return (Window*)hwnd;
 }
 
-void platform::DestroyPlatformWindow(Window* window)
+void platform::ShutdownApplication()
 {
-    if (!window)
-        return;
-
-    ::DestroyWindow((HWND)window);
+    if (g_windows.hwnd)
+        ::DestroyWindow((HWND)g_windows.hwnd);
 }
 
-bool platform::ProcessWindowEvents(Window* window, bool& has_focus, Vec2Int& screen_size)
+bool platform::UpdateApplication(bool& has_focus)
 {
     MSG msg = {};
     bool running = true;
@@ -137,34 +154,28 @@ bool platform::ProcessWindowEvents(Window* window, bool& has_focus, Vec2Int& scr
         }
     }
 
-    // Update focus state
     HWND active_window = GetActiveWindow();
-    has_focus = (active_window == (HWND)window);
+    has_focus = (active_window == g_windows.hwnd);
 
-    // Update screen size - get actual physical pixels for DPI awareness
-    if (window)
+    RECT rect;
+    GetClientRect(g_windows.hwnd, &rect);
+    Vec2Int screen_size = {
+        rect.right - rect.left,
+        rect.bottom - rect.top
+    };
+
+    if (g_windows.screen_size != screen_size && screen_size != VEC2INT_ZERO)
     {
-        RECT rect;
-        GetClientRect((HWND)window, &rect);
-        screen_size.x = rect.right - rect.left;
-        screen_size.y = rect.bottom - rect.top;
-
-        if (g_screen_size!= screen_size && screen_size != VEC2INT_ZERO)
-        {
-            g_screen_size = screen_size;
-            ResizeVulkan(screen_size);
-        }
+        g_windows.screen_size = screen_size;
+        ResizeVulkan(screen_size);
     }
 
     return running;
 }
 
-Vec2Int platform::GetWindowSize(Window* window)
+Vec2Int platform::GetScreenSize()
 {
-    if (!window)
-        return VEC2INT_ZERO;
-
-    return g_screen_size;
+    return g_windows.screen_size;
 }
     
 void platform::ShowCursor(bool show)
@@ -172,9 +183,47 @@ void platform::ShowCursor(bool show)
     ::ShowCursor(show ? TRUE : FALSE);
 }
 
-Vec2 platform::GetCachedMousePosition()
+// Vec2 platform::GetMousePosition()
+// {
+//     platform::Window* window = ::GetWindow();
+//     if (!window)
+//         return Vec2{0, 0};
+//
+//     HWND hwnd = (HWND)window;
+//
+//     POINT cursor_pos;
+//     if (!GetCursorPos(&cursor_pos))
+//         return VEC2_ZERO;
+//
+//     if (!ScreenToClient(hwnd, &cursor_pos))
+//         return VEC2_ZERO;
+//
+//     return Vec2{static_cast<f32>(cursor_pos.x), static_cast<f32>(cursor_pos.y)};
+// }
+
+
+Vec2 platform::GetMousePosition()
 {
-    return g_cached_mouse_position;
+    return g_windows.cached_mouse_position;
+}
+
+std::filesystem::path platform::GetSaveGamePath()
+{
+    PWSTR appdata_path;
+    if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, NULL, &appdata_path)))
+    {
+        std::filesystem::path save_path = appdata_path;
+        CoTaskMemFree(appdata_path);
+        
+        save_path /= g_windows.traits->name;
+        
+        std::error_code ec;
+        std::filesystem::create_directories(save_path, ec);
+        
+        return save_path;
+    }
+    
+    return std::filesystem::path(".");
 }
     
 extern int main(int argc, char* argv[]);

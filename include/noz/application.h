@@ -13,6 +13,7 @@ namespace platform
 
 struct ApplicationTraits
 {
+    const char* name;
     const char* title;
     int width;
     int height;
@@ -47,6 +48,7 @@ float GetScreenAspectRatio();
 void ShowCursor(bool show);
 
 platform::Window* GetWindow();
+const ApplicationTraits* GetApplicationTraits();
 
 // @time
 float GetFrameTime();

@@ -11,7 +11,6 @@ void ResetInputState(InputSet* input_set);
 
 struct Input
 {
-    Vec2 mouse_position;
     LinkedList active_sets;
 };
 
@@ -19,7 +18,6 @@ static Input g_input = {};
 
 void UpdateInput()
 {
-    g_input.mouse_position = platform::GetCachedMousePosition();
     UpdateInputState((InputSet*)GetBack(g_input.active_sets));
 }
 
@@ -47,11 +45,6 @@ void SetInputSet(InputSet* input_set)
     ResetInputState((InputSet*)GetBack(g_input.active_sets));
     Clear(g_input.active_sets);
     PushInputSet(input_set);
-}
-
-Vec2 GetMousePosition()
-{
-    return g_input.mouse_position;
 }
 
 void InitInput()

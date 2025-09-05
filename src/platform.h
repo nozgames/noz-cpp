@@ -5,12 +5,12 @@
 #pragma once
 
 #include <vector>
+#include <filesystem>
 
 enum InputCode;
 
 namespace platform
 {
-    struct Window {};
     struct Pipeline {};
     struct PipelineLayout {};
     struct Buffer {};
@@ -24,15 +24,15 @@ namespace platform
     struct Sound {};
     struct SoundHandle { u64 value;};
 
-    // @window
-    Window* CreatePlatformWindow(const ApplicationTraits* traits);
-    void DestroyPlatformWindow(Window* window);
-    bool ProcessWindowEvents(Window* window, bool& has_focus, Vec2Int& screen_size);
-    Vec2Int GetWindowSize(Window* window);
+    // @app
+    void InitApplication(const ApplicationTraits* traits);
+    void ShutdownApplication();
+    void InitWindow();
+    bool UpdateApplication(bool& has_focus);
+    Vec2Int GetScreenSize();
     void ShowCursor(bool show);
 
     // @render
-    void SetRendererWindow(Window* window);
     void BeginRenderFrame();
     void EndRenderFrame();
     void BeginRenderPass(Color clear_color);
@@ -77,7 +77,9 @@ namespace platform
     void InitializeInput();
     void ShutdownInput();
     Vec2 GetMousePosition();
-    Vec2 GetCachedMousePosition();
+
+    // @filesystem
+    std::filesystem::path GetSaveGamePath();
 
     // @audio
     void InitializeAudio();

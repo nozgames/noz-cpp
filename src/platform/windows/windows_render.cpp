@@ -53,7 +53,7 @@ struct VulkanUniformBuffer
 struct VulkanRenderer
 {
     RendererTraits traits;
-    platform::Window* window;
+    HWND hwnd;
     HMODULE library;
     VkInstance instance;
     VkSurfaceKHR surface;
@@ -522,7 +522,7 @@ static void CreateSurface()
     VkWin32SurfaceCreateInfoKHR createInfo = {
         .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
         .hinstance = GetModuleHandle(nullptr),
-        .hwnd = (HWND)g_vulkan.window,
+        .hwnd = g_vulkan.hwnd,
     };
 
     VkResult result = vkCreateWin32SurfaceKHR(g_vulkan.instance, &createInfo, nullptr, &g_vulkan.surface);
@@ -712,21 +712,17 @@ static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR
 static VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 {
     if (capabilities.currentExtent.width != UINT32_MAX)
-    {
         return capabilities.currentExtent;
-    }
-    else
-    {
-        Vec2Int screen_size = platform::GetWindowSize(g_vulkan.window);
-        VkExtent2D actualExtent = {static_cast<u32>(screen_size.x), static_cast<u32>(screen_size.y)};
 
-        actualExtent.width = std::max(capabilities.minImageExtent.width,
-                                      std::min(capabilities.maxImageExtent.width, actualExtent.width));
-        actualExtent.height = std::max(capabilities.minImageExtent.height,
-                                       std::min(capabilities.maxImageExtent.height, actualExtent.height));
+    Vec2Int screen_size = platform::GetScreenSize();
+    VkExtent2D actualExtent = {static_cast<u32>(screen_size.x), static_cast<u32>(screen_size.y)};
 
-        return actualExtent;
-    }
+    actualExtent.width = std::max(capabilities.minImageExtent.width,
+                                  std::min(capabilities.maxImageExtent.width, actualExtent.width));
+    actualExtent.height = std::max(capabilities.minImageExtent.height,
+                                   std::min(capabilities.maxImageExtent.height, actualExtent.height));
+
+    return actualExtent;
 }
 
 static void CreateSwapchain()
@@ -969,11 +965,11 @@ static void CreatePipelineLayout()
     vkCreatePipelineLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.pipeline_layout);
 }
 
-void InitVulkan(const RendererTraits* traits, platform::Window* window)
+void InitVulkan(const RendererTraits* traits, HWND hwnd)
 {
     g_vulkan = {};
     g_vulkan.traits = *traits;
-    g_vulkan.window = window;
+    g_vulkan.hwnd = hwnd;
 
     // Load Vulkan library dynamically
     if (!LoadVulkanLibrary())
@@ -1185,7 +1181,7 @@ void RecreateSwapchainObjects()
 void ResizeVulkan(const Vec2Int& size)
 {
     assert(g_vulkan.device);
-    assert(g_vulkan.window);
+    assert(g_vulkan.hwnd);
     assert(g_vulkan.swapchain);
     assert(size.x > 0);
     assert(size.y > 0);
