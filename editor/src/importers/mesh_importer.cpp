@@ -80,7 +80,7 @@ static void WriteMeshData(
     header.flags = 0;
     WriteAssetHeader(stream, &header);
 
-#if 1
+#if 0
     CreateSDF(*mesh, stream);
 #else
     std::vector<Vec2> positions;

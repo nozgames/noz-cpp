@@ -14,6 +14,7 @@ static std::vector<u32> CompileGLSLToSPIRV(const std::string& source, glslang_st
 
 static void WriteCompiledShader(
     const std::string& vertex_shader,
+    const std::string& geometry_shader,
     const std::string& fragment_shader,
     const std::string& original_source,
     const Props& meta,
@@ -30,6 +31,22 @@ static void WriteCompiledShader(
     if (vertex_spirv.empty())
         throw std::runtime_error("Failed to compile vertex shader");
 
+    // Compile geometry shader if present (ExtractStage already trims whitespace)
+    std::vector<u32> geometry_spirv;
+    if (!geometry_shader.empty())
+    {
+        // Validate that geometry shader has required layout declarations
+        if (geometry_shader.find("layout(") == std::string::npos)
+        {
+            throw std::runtime_error("Geometry shader is missing required layout declarations (e.g., 'layout(triangles) in;' and 'layout(...) out;')");
+        }
+        
+        std::string processed_geometry = ProcessIncludes(geometry_shader, base_dir);
+        geometry_spirv = CompileGLSLToSPIRV(processed_geometry, GLSLANG_STAGE_GEOMETRY, source_path + ".geom");
+        if (geometry_spirv.empty())
+            throw std::runtime_error("Failed to compile geometry shader");
+    }
+
     std::vector<u32> fragment_spirv = CompileGLSLToSPIRV(processed_fragment, GLSLANG_STAGE_FRAGMENT, source_path + ".frag");
     if (fragment_spirv.empty())
         throw std::runtime_error("Failed to compile fragment shader");
@@ -44,6 +61,12 @@ static void WriteCompiledShader(
     // Write bytecode sizes and data
     WriteU32(output_stream, (u32)(vertex_spirv.size() * sizeof(u32)));
     WriteBytes(output_stream, vertex_spirv.data(), vertex_spirv.size() * sizeof(u32));
+    
+    // Write geometry shader bytecode (0 size if no geometry shader)
+    WriteU32(output_stream, (u32)(geometry_spirv.size() * sizeof(u32)));
+    if (!geometry_spirv.empty())
+        WriteBytes(output_stream, geometry_spirv.data(), geometry_spirv.size() * sizeof(u32));
+    
     WriteU32(output_stream, (u32)(fragment_spirv.size() * sizeof(u32)));
     WriteBytes(output_stream, fragment_spirv.data(), fragment_spirv.size() * sizeof(u32));
 
@@ -69,10 +92,11 @@ void ImportShader(const fs::path& source_path, Stream* output_stream, Props* con
 
     // Extract each stage and write the shader
     std::string vertex_shader = ExtractStage(source, "VERTEX_SHADER");
+    std::string geometry_shader = ExtractStage(source, "GEOMETRY_SHADER");
     std::string fragment_shader = ExtractStage(source, "FRAGMENT_SHADER");
     fs::path include_dir = source_path.parent_path();
-    
-    WriteCompiledShader(vertex_shader, fragment_shader, source, *meta, output_stream, include_dir, source_path.string());
+
+    WriteCompiledShader(vertex_shader, geometry_shader, fragment_shader, source, *meta, output_stream, include_dir, source_path.string());
 }
 
 bool DoesShaderDependOn(const fs::path& source_path, const fs::path& dependency_path)
@@ -123,24 +147,47 @@ static std::string ExtractStage(const std::string& source, const std::string& st
     std::string result = source;
     
     // Convert custom stage directives to #ifdef blocks based on current stage
-    // Format: //@ VERTEX ... //@ END and //@ FRAGMENT ... //@ END
+    // Format: //@ VERTEX ... //@ END, //@ GEOMETRY ... //@ END and //@ FRAGMENT ... //@ END
     
     // Use [\s\S] instead of . to match newlines (equivalent to dotall)
     std::regex vertex_pattern(R"(//@ VERTEX\s*\n([\s\S]*?)//@ END)");
+    std::regex geometry_pattern(R"(//@ GEOMETRY\s*\n([\s\S]*?)//@ END)");
     std::regex fragment_pattern(R"(//@ FRAGMENT\s*\n([\s\S]*?)//@ END)");
     
     if (stage == "VERTEX_SHADER")
     {
-        // Keep vertex shader blocks, remove fragment shader blocks
+        // Keep vertex shader blocks, remove other shader blocks
         result = std::regex_replace(result, vertex_pattern, "$1");
+        result = std::regex_replace(result, geometry_pattern, "");
         result = std::regex_replace(result, fragment_pattern, "");
+    }
+    else if (stage == "GEOMETRY_SHADER")
+    {
+        // Check if geometry shader block actually exists
+        if (std::regex_search(result, geometry_pattern))
+        {
+            // Keep geometry shader blocks, remove other shader blocks
+            result = std::regex_replace(result, geometry_pattern, "$1");
+            result = std::regex_replace(result, vertex_pattern, "");
+            result = std::regex_replace(result, fragment_pattern, "");
+        }
+        else
+        {
+            // No geometry shader block found, return empty string
+            result = "";
+        }
     }
     else if (stage == "FRAGMENT_SHADER")
     {
-        // Keep fragment shader blocks, remove vertex shader blocks
+        // Keep fragment shader blocks, remove other shader blocks
         result = std::regex_replace(result, fragment_pattern, "$1");
         result = std::regex_replace(result, vertex_pattern, "");
+        result = std::regex_replace(result, geometry_pattern, "");
     }
+    
+    // Trim whitespace from the result
+    result.erase(0, result.find_first_not_of(" \t\n\r"));
+    result.erase(result.find_last_not_of(" \t\n\r") + 1);
     
     return result;
 }

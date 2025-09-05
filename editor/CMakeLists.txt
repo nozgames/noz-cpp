@@ -5,20 +5,6 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-include(FetchContent)
-
-# glslang for GLSL -> SPIR-V compilation (pre-built)
-
-# cgltf
-FetchContent_Declare(cgltf
-    GIT_REPOSITORY https://github.com/jkuhlmann/cgltf.git
-    GIT_TAG master
-)
-FetchContent_MakeAvailable(cgltf)
-
-# Create cgltf library target
-add_library(cgltf_lib INTERFACE)
-target_include_directories(cgltf_lib INTERFACE ${cgltf_SOURCE_DIR})
 
 # Terminal support (Windows uses custom implementation, Unix uses ncurses)
 if(NOT WIN32)
@@ -81,7 +67,6 @@ target_include_directories(nozed  PRIVATE
 # Link libraries
 target_link_libraries(nozed PRIVATE
     noz
-    cgltf_lib
     debug ${CMAKE_CURRENT_SOURCE_DIR}/../external/glslang/glslangd.lib
     debug ${CMAKE_CURRENT_SOURCE_DIR}/../external/glslang/SPIRVd.lib
     debug ${CMAKE_CURRENT_SOURCE_DIR}/../external/glslang/SPVRemapperd.lib

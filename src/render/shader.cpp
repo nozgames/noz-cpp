@@ -35,20 +35,40 @@ Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, con
         return nullptr;
     ReadBytes(stream, vertex_bytecode, vertex_bytecode_length);
 
+    // Read geometry shader (optional)
+    auto geometry_bytecode_length = ReadU32(stream);
+    u8* geometry_bytecode = nullptr;
+    if (geometry_bytecode_length > 0)
+    {
+        geometry_bytecode = (u8*)Alloc(ALLOCATOR_SCRATCH, geometry_bytecode_length);
+        if (!geometry_bytecode)
+        {
+            Free(vertex_bytecode);
+            return nullptr;
+        }
+        ReadBytes(stream, geometry_bytecode, geometry_bytecode_length);
+    }
+
     // Read the fragment shader
     auto fragment_bytecode_length = ReadU32(stream);
     auto* fragment_bytecode = (u8*)Alloc(ALLOCATOR_SCRATCH, fragment_bytecode_length);
     if (!fragment_bytecode) 
     {
         Free(vertex_bytecode);
+        if (geometry_bytecode) Free(geometry_bytecode);
         return nullptr;
     }
     ReadBytes(stream, fragment_bytecode, fragment_bytecode_length);
 
     impl->flags = (ShaderFlags)ReadU8(stream);
-    impl->platform = platform::CreateShader(vertex_bytecode, vertex_bytecode_length, fragment_bytecode, fragment_bytecode_length, impl->flags, name->value);
+    impl->platform = platform::CreateShader(
+        vertex_bytecode, vertex_bytecode_length, 
+        geometry_bytecode, geometry_bytecode_length,
+        fragment_bytecode, fragment_bytecode_length, 
+        impl->flags, name->value);
 
     Free(vertex_bytecode);
+    if (geometry_bytecode) Free(geometry_bytecode);
     Free(fragment_bytecode);
 
     if (!impl->platform)

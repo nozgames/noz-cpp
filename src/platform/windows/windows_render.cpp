@@ -37,6 +37,7 @@ struct platform::Texture
 struct platform::Shader
 {
     VkShaderModule vertex_module;
+    VkShaderModule geometry_module;
     VkShaderModule fragment_module;
     VkPipeline pipeline;
     PipelineLayout* platform_layout;
@@ -1790,6 +1791,8 @@ static bool CreateShaderInternal(
     platform::Shader* shader,
     const void* vertex_code,
     u32 vertex_code_size,
+    const void* geometry_code,
+    u32 geometry_code_size,
     const void* fragment_code,
     u32 fragment_code_size,
     ShaderFlags flags,
@@ -1800,6 +1803,7 @@ static bool CreateShaderInternal(
     assert(fragment_code);
     assert(fragment_code_size > 0);
     assert(name);
+    // geometry_code can be nullptr for non-geometry shaders
 
 
     VkVertexInputAttributeDescription attr_descs[] = {
@@ -1855,24 +1859,38 @@ static bool CreateShaderInternal(
     };
 
     shader->vertex_module = CreateShaderModule(vertex_code, vertex_code_size, name);
+    shader->geometry_module = geometry_code ? CreateShaderModule(geometry_code, geometry_code_size, name) : VK_NULL_HANDLE;
     shader->fragment_module = CreateShaderModule(fragment_code, fragment_code_size, name);
 
-    VkPipelineShaderStageCreateInfo shader_stages[] = {
-        // Vertex
-        {
+    // Build shader stages array dynamically based on what shaders are present
+    std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
+    
+    // Vertex shader (always present)
+    shader_stages.push_back({
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+        .stage = VK_SHADER_STAGE_VERTEX_BIT,
+        .module = shader->vertex_module,
+        .pName = "main",
+    });
+    
+    // Geometry shader (optional)
+    if (shader->geometry_module != VK_NULL_HANDLE)
+    {
+        shader_stages.push_back({
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .module = shader->vertex_module,
+            .stage = VK_SHADER_STAGE_GEOMETRY_BIT,
+            .module = shader->geometry_module,
             .pName = "main",
-        },
-        // Fragment
-        {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .module = shader->fragment_module,
-            .pName = "main"
-        }
-    };
+        });
+    }
+    
+    // Fragment shader (always present)
+    shader_stages.push_back({
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+        .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+        .module = shader->fragment_module,
+        .pName = "main"
+    });
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
@@ -1899,7 +1917,7 @@ static bool CreateShaderInternal(
 
     VkPipelineMultisampleStateCreateInfo multisampling = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        .rasterizationSamples = VK_SAMPLE_COUNT_4_BIT,
+        .rasterizationSamples = VK_SAMPLE_COUNT_8_BIT,
         .sampleShadingEnable = VK_FALSE,
     };
 
@@ -1946,8 +1964,8 @@ static bool CreateShaderInternal(
 
     VkGraphicsPipelineCreateInfo pipeline_info = {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-        .stageCount = sizeof(shader_stages) / sizeof(VkPipelineShaderStageCreateInfo),
-        .pStages = shader_stages,
+        .stageCount = static_cast<uint32_t>(shader_stages.size()),
+        .pStages = shader_stages.data(),
         .pVertexInputState = &vertex_input,
         .pInputAssemblyState = &input_assembly,
         .pViewportState = &viewport_state,
@@ -1967,13 +1985,15 @@ static bool CreateShaderInternal(
 platform::Shader* platform::CreateShader(
     const void* vertex_code,
     u32 vertex_code_size,
+    const void* geometry_code,
+    u32 geometry_code_size,
     const void* fragment_code,
     u32 fragment_code_size,
     ShaderFlags flags,
     const char* name)
 {
     Shader* shader = (Shader*)Alloc(ALLOCATOR_DEFAULT, sizeof(Shader));
-    if (!CreateShaderInternal(shader, vertex_code, vertex_code_size, fragment_code, fragment_code_size, flags, name))
+    if (!CreateShaderInternal(shader, vertex_code, vertex_code_size, geometry_code, geometry_code_size, fragment_code, fragment_code_size, flags, name))
     {
         DestroyShader(shader);
         return nullptr;
@@ -1993,6 +2013,8 @@ void platform::DestroyShader(Shader* shader)
     assert(g_vulkan.device);
     if (shader->fragment_module != VK_NULL_HANDLE)
         vkDestroyShaderModule(g_vulkan.device, (VkShaderModule)shader->fragment_module, nullptr);
+    if (shader->geometry_module != VK_NULL_HANDLE)
+        vkDestroyShaderModule(g_vulkan.device, (VkShaderModule)shader->geometry_module, nullptr);
     if (shader->vertex_module != VK_NULL_HANDLE)
         vkDestroyShaderModule(g_vulkan.device, (VkShaderModule)shader->vertex_module, nullptr);
     if (shader->pipeline)

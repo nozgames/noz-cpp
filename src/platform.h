@@ -57,6 +57,8 @@ namespace platform
     Shader* CreateShader(
         const void* vertex_code,
         u32 vertex_code_size,
+        const void* geometry_code,
+        u32 geometry_code_size,
         const void* fragment_code,
         u32 fragment_code_size,
         ShaderFlags flags,

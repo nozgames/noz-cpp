@@ -4,7 +4,6 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-include(FetchContent)
 
 add_library(noz STATIC include/noz/noz_math.h
         src/collections/free_list.cpp)
