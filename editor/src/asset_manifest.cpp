@@ -45,8 +45,9 @@ static std::string PathToVarName(const std::string& path);
 static std::string PathToNameVar(const std::string& path);
 static void OrganizeAssetsByType(ManifestGenerator* generator);
 static void ScanAssetFile(const fs::path& file_path, ManifestGenerator* generator);
-static const char* ToStringFromSignature(asset_signature_t signature, const std::vector<AssetImporterTraits*>& importers);
-static const char* ToMacroFromSignature(asset_signature_t signature, const std::vector<AssetImporterTraits*>& importers);
+static const char* ToStringFromSignature(AssetSignature signature, const std::vector<AssetImporterTraits*>& importers);
+static const char* ToMacroFromSignature(AssetSignature signature, const std::vector<AssetImporterTraits*>& importers);
+static const char* ToReloadMacroFromSignature(AssetSignature signature, const std::vector<AssetImporterTraits*>& importers);
 static void GenerateCoreAssetAssignments(ManifestGenerator* generator, Stream* stream, Props* config);
 static void GenerateHotloadNames(ManifestGenerator* generator, Stream* stream);
 static void GenerateHotloadFunction(ManifestGenerator* generator, Stream* stream, Props* config);
@@ -260,8 +261,8 @@ static void GenerateAssetsHeader(ManifestGenerator* generator, const fs::path& h
     WriteCSTR(header_stream, "extern LoadedCoreAssets g_core_assets;\n\n");
     WriteCSTR(header_stream, "bool LoadAssets(Allocator* allocator);\n");
     WriteCSTR(header_stream, "void UnloadAssets();\n\n");
-    WriteCSTR(header_stream, "#ifdef _HOTLOAD\n");
-    WriteCSTR(header_stream, "void HotloadAsset(const name_t* incoming_name);\n");
+    WriteCSTR(header_stream, "#ifdef NOZ_EDITOR\n");
+    WriteCSTR(header_stream, "void HotloadAsset(const Name* incoming_name);\n");
     WriteCSTR(header_stream, "#endif\n");
     
     // Save header file
@@ -535,9 +536,9 @@ static void OrganizeAssetsByType(ManifestGenerator* generator)
 }
 
 
-static const char* ToMacroFromSignature(asset_signature_t signature, const std::vector<AssetImporterTraits*>& importers)
+static const char* ToMacroFromSignature(AssetSignature signature, const std::vector<AssetImporterTraits*>& importers)
 {
-    static std::map<asset_signature_t, std::string> macro_cache;
+    static std::map<AssetSignature, std::string> macro_cache;
     
     for (const auto* importer : importers)
     {
@@ -575,7 +576,47 @@ static const char* ToMacroFromSignature(asset_signature_t signature, const std::
     return nullptr;
 }
 
-static const char* ToStringFromSignature(asset_signature_t signature, const std::vector<AssetImporterTraits*>& importers)
+static const char* ToReloadMacroFromSignature(AssetSignature signature, const std::vector<AssetImporterTraits*>& importers)
+{
+    static std::map<AssetSignature, std::string> reload_macro_cache;
+    
+    for (const auto* importer : importers)
+    {
+        if (importer && importer->signature == signature)
+        {
+            // Check cache first
+            if (reload_macro_cache.find(signature) != reload_macro_cache.end())
+                return reload_macro_cache[signature].c_str();
+
+            // Build macro name: NOZ_RELOAD_ + uppercase type name
+            std::string type_name = importer->type_name;
+            std::string macro_name = "NOZ_RELOAD_";
+            
+            // Convert type name to uppercase and handle special cases
+            for (char c : type_name)
+            {
+                if (std::islower(c))
+                    macro_name += std::toupper(c);
+                else if (std::isupper(c))
+                {
+                    // Insert underscore before uppercase letters (except first)
+                    if (macro_name.size() > 11) // 11 = length of "NOZ_RELOAD_"
+                        macro_name += '_';
+                    macro_name += c;
+                }
+                else
+                    macro_name += c;
+            }
+            
+            // Cache and return
+            reload_macro_cache[signature] = macro_name;
+            return reload_macro_cache[signature].c_str();
+        }
+    }
+    return nullptr;
+}
+
+static const char* ToStringFromSignature(AssetSignature signature, const std::vector<AssetImporterTraits*>& importers)
 {
     for (const auto* importer : importers)
         if (importer && importer->signature == signature)
@@ -652,7 +693,7 @@ static void GenerateHotloadNames(ManifestGenerator* generator, Stream* stream)
 
 static void GenerateHotloadFunction(ManifestGenerator* generator, Stream* stream, Props* config)
 {
-    WriteCSTR(stream, "#ifdef _HOTLOAD\n\n");
+    WriteCSTR(stream, "#ifdef NOZ_EDITOR\n\n");
     WriteCSTR(stream, "void HotloadAsset(const Name* incoming_name)\n");
     WriteCSTR(stream, "{\n");
     
@@ -696,14 +737,20 @@ static void GenerateHotloadFunction(ManifestGenerator* generator, Stream* stream
             std::string var_name = PathToVarName(asset_path.filename().replace_extension("").string());
             access_path += "." + var_name;
             
-            WriteCSTR(stream, "    NOZ_HOTLOAD_ASSET(%s, %s);\n",
-                name_var.c_str(),
-                access_path.c_str());
+            // Get type-specific reload macro
+            const char* reload_macro = ToReloadMacroFromSignature(entry.signature, *generator->importers);
+            if (reload_macro)
+            {
+                WriteCSTR(stream, "    %s(%s, %s);\n",
+                    reload_macro,
+                    name_var.c_str(),
+                    access_path.c_str());
+            }
         }
         
         WriteCSTR(stream, "\n");
     }
     
     WriteCSTR(stream, "}\n");
-    WriteCSTR(stream, "#endif // _HOTLOAD\n\n");
+    WriteCSTR(stream, "#endif // NOZ_EDITOR\n\n");
 }

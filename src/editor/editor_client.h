@@ -6,11 +6,8 @@
 
 #ifdef NOZ_EDITOR
 
-typedef void (*HotloadCallbackFunc)(const char* asset_name);
-
 void InitEditorClient(const char* host, int port);
 void ShutdownEditorClient();
 void UpdateEditorClient();
-void SetHotloadCallback(HotloadCallbackFunc func);
 
 #endif

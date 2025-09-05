@@ -137,37 +137,12 @@ void UpdateEditorServer()
 // @broadcast
 void BroadcastAssetChange(const std::string& asset_name)
 {
-
-#if 0
-    if (!g_server || g_clients.empty())
+    if (!HasConnectedClient())
         return;
-    EditorMessage hotload_msg = CreateHotloadMessage(asset_name);
-    
-    const size_t buffer_size = sizeof(uint32_t) * 2 + hotload_msg.data_size;
-    uint8_t* buffer = new uint8_t[buffer_size];
-    size_t serialized_size = SerializeMessage(hotload_msg, buffer, buffer_size);
-    
-    if (serialized_size > 0)
-    {
-        ENetPacket* packet = enet_packet_create(buffer, serialized_size, ENET_PACKET_FLAG_RELIABLE);
-        if (packet)
-        {
-            // Send to all connected clients
-            for (ENetPeer* client : g_clients)
-            {
-                enet_peer_send(client, 0, packet);
-            }
-            
-            // Flush to ensure the packet is sent immediately
-            enet_host_flush(g_server);
-            
-            LogInfo("Broadcasted hotload for asset: %s", asset_name.c_str());
-        }
-    }
-    
-    delete[] buffer;
-    FreeMessage(hotload_msg);
-#endif
+
+    auto msg = CreateEditorMessage(EDITOR_MESSAGE_HOTLOAD);
+    WriteString(msg, asset_name.c_str());
+    SendEditorMessage(msg);
 }
 
 void SendInspectRequest(const std::string& search_filter)

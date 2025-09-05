@@ -3,16 +3,6 @@
 //
 // @STL
 
-#include <algorithm>
-#include <filesystem>
-#include <fstream>
-#include <noz/asset.h>
-#include <noz/noz.h>
-#include <noz/ui.h>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
 using namespace std;
 using namespace noz;
 
@@ -172,7 +162,7 @@ static void ParseStyles(Props* source, Props* meta, StyleDictionary& styles)
 
         auto style_key = ParseStyleKey(group_name);
 
-        Style style {};
+        Style style = GetDefaultStyle();
         auto style_keys = source->GetKeys(group_name.c_str());
         for (const auto& key_name : style_keys)
             ParseParameter(group_name, key_name, source, style);

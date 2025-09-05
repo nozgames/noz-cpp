@@ -6,10 +6,6 @@
 
 #include <filesystem>
 
-#ifdef _HOTLOAD
-void ReloadStyleSheet(Object* asset, Stream* stream, const AssetHeader* header, const Name* name);
-#endif
-
 LoadedCoreAssets g_core_assets = {};
 
 bool ReadAssetHeader(Stream* stream, AssetHeader* header)
@@ -42,42 +38,7 @@ bool ValidateAssetHeader(AssetHeader* header, uint32_t expected_signature)
     return header->signature == expected_signature;
 }
 
-#if 0
-type_t ToType(asset_signature_t signature)
-{
-    switch (signature)
-    {
-        case ASSET_SIGNATURE_TEXTURE:  return TYPE_TEXTURE;
-        case ASSET_SIGNATURE_MESH:     return TYPE_MESH;
-        case ASSET_SIGNATURE_SOUND:    return TYPE_SOUND;
-        case ASSET_SIGNATURE_SHADER:   return TYPE_SHADER;
-        case ASSET_SIGNATURE_MATERIAL: return TYPE_MATERIAL;
-        case ASSET_SIGNATURE_FONT:     return TYPE_FONT;
-        case ASSET_SIGNATURE_STYLE_SHEET:     return TYPE_STYLE_SHEET;
-        case ASSET_SIGNATURE_VFX: return TYPE_VFX;
-        default:                       return TYPE_UNKNOWN;
-    }
-}
-
-static asset_signature_t AssetSignatureFromType(type_t type)
-{
-    switch (type)
-    {
-    case TYPE_TEXTURE:  return ASSET_SIGNATURE_TEXTURE;
-    case TYPE_MESH:     return ASSET_SIGNATURE_MESH;
-    case TYPE_SOUND:    return ASSET_SIGNATURE_SOUND;
-    case TYPE_SHADER:   return ASSET_SIGNATURE_SHADER;
-    case TYPE_MATERIAL: return ASSET_SIGNATURE_MATERIAL;
-    case TYPE_FONT:     return ASSET_SIGNATURE_FONT;
-    case TYPE_VFX: return ASSET_SIGNATURE_VFX;
-    case TYPE_STYLE_SHEET:     return ASSET_SIGNATURE_STYLE_SHEET;
-    default:
-        return ASSET_SIGNATURE_UNKNOWN;
-    }
-}
-#endif
-
-const char* GetExtensionFromSignature(asset_signature_t signature)
+const char* GetExtensionFromSignature(AssetSignature signature)
 {
     // Convert signature to 4 character string (little endian to big endian)
     static char ext[6];  // ".xxxx\0"
@@ -91,31 +52,18 @@ const char* GetExtensionFromSignature(asset_signature_t signature)
     return ext;
 }
 
-Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, asset_signature_t signature)
+Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetSignature signature)
 {
     assert(asset_name);
 
-    //const char* base_path = SDL_GetCurrentDirectory();
-    const char* base_path = ""; //  SDL_GetCurrentDirectory();
-    std::filesystem::path asset_path;
-    
-    if (!base_path)
-    {
-        asset_path = "assets";
-    }
-    else
-    {
-        asset_path = base_path;
-        asset_path /= "assets";
-    }
-    
+    std::filesystem::path asset_path = "assets";
     asset_path /= asset_name->value;
     asset_path += GetExtensionFromSignature(signature);
 
     return LoadStream(allocator, asset_path);
 }
 
-Asset* LoadAsset(Allocator* allocator, const Name* asset_name, asset_signature_t signature, AssetLoaderFunc loader)
+Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader)
 {
     if (!asset_name || !loader)
         return nullptr;
@@ -137,41 +85,26 @@ Asset* LoadAsset(Allocator* allocator, const Name* asset_name, asset_signature_t
     return asset;
 }
 
+#ifdef NOZ_EDITOR
 
-#ifdef _HOTLOAD
-void ReloadAsset(const Name* name, Object* asset)
+void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void (*reload)(Asset*, Stream*))
 {
     assert(name);
-    assert(asset);
-    auto type = GetType(asset);
-    auto signature = AssetSignatureFromType(type);
 
-    if (signature == ASSET_SIGNATURE_UNKNOWN)
-        return;
-
-    // only certain types support hotload right now
-    if (type != TYPE_STYLE_SHEET)
-        return;
-
-    auto stream = LoadAssetStream(GetAllocator(asset), name, signature);
+    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, name, signature);
     if (!stream)
         return;
 
     AssetHeader header = {};
     if (!ReadAssetHeader(stream, &header) || !ValidateAssetHeader(&header, signature))
     {
-        Destroy(stream);
+        Free(stream);
         return;
     }
 
-    switch (type)
-    {
-    case TYPE_STYLE_SHEET:
-        ReloadStyleSheet(asset, stream, &header, name);
-        break;
+    reload(asset, stream);
 
-    default:
-        break;
-    }
+    Free(stream);
 }
+
 #endif

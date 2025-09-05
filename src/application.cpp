@@ -127,10 +127,11 @@ static void UpdateScreenSize()
 }
 
 #ifdef NOZ_EDITOR
-void OnHotload(const char* asset_name)
+static void HandleHotload(EventId id, const void* data)
 {
+    const HotloadEvent* hotload_event = (const HotloadEvent*)data;
+    const char* asset_name = hotload_event->asset_name;
     auto name = GetName(asset_name);
-
     if (g_app.traits.hotload_asset)
         g_app.traits.hotload_asset(name);
 }
@@ -173,7 +174,7 @@ void InitApplication(ApplicationTraits* traits)
     LoadRendererAssets(g_app.asset_allocator);
 
 #ifdef NOZ_EDITOR
-    SetHotloadCallback(OnHotload);
+    Listen(EVENT_HOTLOAD, HandleHotload);
     InitEditorClient("127.0.0.1", 8080);
 #endif // NOZ_EDITOR
 

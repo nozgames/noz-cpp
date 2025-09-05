@@ -20,7 +20,6 @@ struct EditorClient
 };
 
 static EditorClient g_client = {};
-static HotloadCallbackFunc g_callback = nullptr;
 static inspect_ack_callback_t g_inspect_ack_callback = nullptr;
 
 Stream* CreateEditorMessage(EditorMessage event)
@@ -38,16 +37,24 @@ void SendEditorMessage(Stream* stream)
     Free(stream);
 }
 
+static void HandleHotload(Stream* input_stream)
+{
+    assert(input_stream);
+
+    char asset_name[256];
+    ReadString(input_stream, asset_name, sizeof(asset_name));
+    HotloadEvent event = {
+        .asset_name = asset_name
+    };
+    Send(EVENT_HOTLOAD, &event);
+}
+
 static void HandleStats(Stream* input_stream)
 {
     assert(input_stream);
     auto stream = CreateEditorMessage(EDITOR_MESSAGE_STATS_ACK);
     WriteI32(stream, GetCurrentFPS());
     SendEditorMessage(stream);
-}
-void SetHotloadCallback(HotloadCallbackFunc callback)
-{
-    g_callback = callback;
 }
 
 void SetInspectAckCallback(inspect_ack_callback_t callback)
@@ -111,6 +118,7 @@ static void HandleEditorMessage(void* data, size_t data_size)
     switch (ReadEditorMessage(stream))
     {
     case EDITOR_MESSAGE_HOTLOAD:
+        HandleHotload(stream);
         break;
 
     case EDITOR_MESSAGE_INSPECT:
