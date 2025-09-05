@@ -201,15 +201,7 @@ struct Edge
     }
 };
 
-constexpr Vec2 ColorUV(int col, int row = 0)
-{
-    float u = (col * 8 + 4) / 1024.0f;
-    float v = (row * 8 + 4) / 1024.0f;
-    return Vec2(u, v);
-}
-
 constexpr Vec2 OUTLINE_COLOR = ColorUV(10, 0);
-
 
 struct MyEdge
 {
