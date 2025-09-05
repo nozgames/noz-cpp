@@ -620,6 +620,8 @@ static void PickPhysicalDevice()
 
     if (g_vulkan.physical_device == VK_NULL_HANDLE)
         Exit("Failed to find a suitable GPU");
+
+    g_vulkan.msaa_samples = g_vulkan.traits.msaa ? GetMaxUsableSampleCount() : VK_SAMPLE_COUNT_1_BIT;
 }
 
 static void CreateLogicalDevice()
@@ -984,7 +986,6 @@ void InitVulkan(const RendererTraits* traits, platform::Window* window)
     SetupDebugMessenger();
     CreateSurface();
     PickPhysicalDevice();
-    g_vulkan.msaa_samples = g_vulkan.traits.msaa ? GetMaxUsableSampleCount() : VK_SAMPLE_COUNT_1_BIT;
     CreateLogicalDevice();
     CreateSwapchain();
     CreateImageViews();

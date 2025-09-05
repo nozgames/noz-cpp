@@ -43,7 +43,7 @@ static void FlattenMesh(GLTFMesh* mesh)
     std::sort(triangles.begin(), triangles.end(),
         [](const TriangleInfo& a, const TriangleInfo& b)
         {
-            return a.maxZ > b.maxZ;
+            return a.maxZ < b.maxZ;
         });
 
     // Rebuild the indices array with sorted triangles
@@ -56,9 +56,9 @@ static void FlattenMesh(GLTFMesh* mesh)
         mesh->indices[t * 3 + 1] = tri.i1;
         mesh->indices[t * 3 + 2] = tri.i2;
 
-        mesh->positions[tri.i0].z = ii * 0.001f;
-        mesh->positions[tri.i1].z = ii * 0.001f;
-        mesh->positions[tri.i2].z = ii * 0.001f;
+        // mesh->positions[tri.i0].z = ii * 0.001f;
+        // mesh->positions[tri.i1].z = ii * 0.001f;
+        // mesh->positions[tri.i2].z = ii * 0.001f;
     }
 }
 
