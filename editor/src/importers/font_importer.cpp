@@ -176,8 +176,8 @@ void ImportFont(const fs::path& source_path, Stream* output_stream, Props* confi
             continue;
 
         msdf::Shape* shape = msdf::Shape::fromGlyph(glyph.ttf, true);
-        msdf::RenderShape(
-            shape,
+        msdf::renderGlyph(
+            glyph.ttf,
             image,
             imageSize.x,
             {

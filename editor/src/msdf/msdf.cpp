@@ -29,20 +29,17 @@ namespace noz::msdf
 {
     void generateSDF(
         std::vector<uint8_t>& output,
-        int output_stride,
-        const Vec2Int& output_pos,
-        const Vec2Int& output_size,
+        int outputStride,
+        const Vec2Int& outputPosition,
+        const Vec2Int& outputSize,
         const Shape& shape,
         double range,
         const Vec2Double& scale,
-        const Vec2Double& translate,
-        int component_stride,
-        int component_offset)
-
+        const Vec2Double& translate)
     {
         int contourCount = (int)shape.contours.size();
-        int w = output_size.x;
-        int h = output_size.y;
+        int w = outputSize.x;
+        int h = outputSize.y;
 
         std::vector<int> windings;
         windings.resize(contourCount);
@@ -58,9 +55,7 @@ namespace noz::msdf
             for (int x = 0; x < w; ++x)
             {
                 auto dummy = 0.0;
-                auto p = Vec2Double(
-                    (x + .5) / (f64)w * scale.x + translate.x,
-                    (y + .5) / (f64)h * scale.y + translate.y);
+                auto p = Vec2Double(x + .5, y + .5) / scale - translate;
                 auto negDist = -SignedDistance::Infinite.distance;
                 auto posDist = SignedDistance::Infinite.distance;
                 int winding = 0;
@@ -108,25 +103,24 @@ namespace noz::msdf
                 sd = Clamp(sd, -0.5, 0.5);
                 sd = sd + 0.5;
 
-                u8& pixel = output[(x + output_pos.x) * component_stride + component_offset + (row + output_pos.y) * output_stride];
-                pixel = (u8)(sd * 255.0f);
+                output[x + outputPosition.x + (row + outputPosition.y) * outputStride] =
+                    (uint8_t)(sd * 255.0f);
             }
         }
     }
 
-
-    void RenderShape(
-        Shape* shape,
+    void renderGlyph(
+        const ttf::TrueTypeFont::Glyph* glyph,
         std::vector<uint8_t>& output,
         int outputStride,
         const Vec2Int& outputPosition,
         const Vec2Int& outputSize,
         double range,
         const Vec2Double& scale,
-        const Vec2Double& translate,
-        int componentStride,
-        int componentOffset)
+        const Vec2Double& translate)
     {
+        auto shape = Shape::fromGlyph(glyph, true);
+
         generateSDF(
             output,
             outputStride,
@@ -135,9 +129,9 @@ namespace noz::msdf
             *shape,
             range,
             scale,
-            translate,
-            componentStride,
-            componentOffset
+            translate
         );
+
+        delete shape;
     }
 }
