@@ -13,7 +13,6 @@ platform::Window* GetWindow();
 
 struct WindowsInput
 {
-    Vec2 mouse;
     Vec2 mouse_scroll;
     bool mouse_states[5];
     bool key_states[256];
@@ -221,8 +220,8 @@ float platform::GetInputAxisValue(InputCode code)
     {
         switch (code)
         {
-            case MOUSE_X: return g_input.mouse.x;
-            case MOUSE_Y: return g_input.mouse.y;
+            case MOUSE_X: return GetMousePosition().x;
+            case MOUSE_Y: return GetMousePosition().y;
             case MOUSE_SCROLL_X: return g_input.mouse_scroll.x;
             case MOUSE_SCROLL_Y: return g_input.mouse_scroll.y;
             default: return 0.0f;
@@ -310,11 +309,6 @@ void platform::UpdateInputState()
     g_input.mouse_states[2] = (GetAsyncKeyState(VK_MBUTTON) & 0x8000) != 0; // Middle mouse
     g_input.mouse_states[3] = (GetAsyncKeyState(VK_XBUTTON1) & 0x8000) != 0; // Mouse button 4
     g_input.mouse_states[4] = (GetAsyncKeyState(VK_XBUTTON2) & 0x8000) != 0; // Mouse button 5
-
-    // Update mouse position
-    Vec2 mouse_pos = GetMousePosition();
-    g_input.mouse.x = mouse_pos.x;
-    g_input.mouse.y = mouse_pos.y;
 
     // Update gamepad states
     for (int i = 0; i < XUSER_MAX_COUNT; i++)

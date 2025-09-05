@@ -47,6 +47,11 @@ void SetInputSet(InputSet* input_set)
     PushInputSet(input_set);
 }
 
+Vec2 GetMousePosition()
+{
+    return platform::GetMousePosition();
+}
+
 void InitInput()
 {
     platform::InitializeInput();

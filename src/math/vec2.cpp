@@ -22,6 +22,18 @@ Vec2 Normalize(const Vec2& v)
     return Vec2{ 0.0f, 0.0f };
 }
 
+Vec2 Rotate(const Vec2& v, f32 degrees)
+{
+    f32 radians = degrees * noz::DEG_TO_RAD;
+    f32 cos_angle = cosf(radians);
+    f32 sin_angle = sinf(radians);
+    
+    return Vec2{
+        v.x * cos_angle - v.y * sin_angle,
+        v.x * sin_angle + v.y * cos_angle
+    };
+}
+
 f64 Length(const Vec2Double& v)
 {
     return sqrt(v.x * v.x + v.y * v.y);

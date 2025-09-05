@@ -322,6 +322,13 @@ GLTFMesh GLTFLoader::read_mesh(const std::vector<GLTFBone>& bones)
             }
         }
     }
+
+    if (mesh.outlines.size() == 0)
+    {
+        mesh.outlines.resize(mesh.positions.size());
+        for (size_t i = 0; i < mesh.outlines.size(); ++i)
+            mesh.outlines[i] = 1.0f;
+    }
     
     // Read indices if present
     if (primitive->indices)

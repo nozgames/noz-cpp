@@ -227,6 +227,7 @@ extern Mat3 Inverse(const Mat3& m);
 extern f32 Length(const Vec2& v);
 extern Vec2 Reflect(const Vec2& v, const Vec2& normal);
 extern Vec2 Normalize(const Vec2& v);
+extern Vec2 Rotate(const Vec2& v, f32 degrees);
 inline Vec2 Cross(const Vec2& a, const Vec2& b) { return Vec2{ -a.y, a.x }; }
 
 // @vec2d
