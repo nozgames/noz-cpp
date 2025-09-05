@@ -44,6 +44,7 @@ struct GLTFMesh
     std::vector<Vec3> normals;
     std::vector<Vec2> uvs;
     std::vector<Color> colors;
+    std::vector<float> outlines;
     std::vector<uint32_t> bone_indices;
     std::vector<uint16_t> indices;
 };

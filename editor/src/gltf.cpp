@@ -214,7 +214,7 @@ GLTFMesh GLTFLoader::read_mesh(const std::vector<GLTFBone>& bones)
                 if (accessor && accessor->count > 0)
                 {
                     mesh.positions.resize(accessor->count);
-                    uint8_t* buffer_data = (uint8_t*)accessor->buffer_view->buffer->data + accessor->buffer_view->offset + accessor->offset;
+                    u8* buffer_data = (u8*)accessor->buffer_view->buffer->data + accessor->buffer_view->offset + accessor->offset;
                     
                     // Convert each position vector
                     float* positions_float = (float*)buffer_data;
@@ -230,7 +230,7 @@ GLTFMesh GLTFLoader::read_mesh(const std::vector<GLTFBone>& bones)
                 if (accessor && accessor->count > 0)
                 {
                     mesh.normals.resize(accessor->count);
-                    uint8_t* buffer_data = (uint8_t*)accessor->buffer_view->buffer->data + accessor->buffer_view->offset + accessor->offset;
+                    u8* buffer_data = (u8*)accessor->buffer_view->buffer->data + accessor->buffer_view->offset + accessor->offset;
                     
                     // Convert each normal vector
                     float* normals_float = (float*)buffer_data;
@@ -246,7 +246,7 @@ GLTFMesh GLTFLoader::read_mesh(const std::vector<GLTFBone>& bones)
                 if (accessor && accessor->count > 0)
                 {
                     mesh.uvs.resize(accessor->count);
-                    uint8_t* buffer_data = (uint8_t*)accessor->buffer_view->buffer->data + accessor->buffer_view->offset + accessor->offset;
+                    u8* buffer_data = (u8*)accessor->buffer_view->buffer->data + accessor->buffer_view->offset + accessor->offset;
                     
                     // Convert each UV coordinate
                     float* uvs_float = (float*)buffer_data;
@@ -262,7 +262,7 @@ GLTFMesh GLTFLoader::read_mesh(const std::vector<GLTFBone>& bones)
                 if (accessor && accessor->count > 0)
                 {
                     mesh.colors.resize(accessor->count);
-                    uint8_t* buffer_data = (uint8_t*)accessor->buffer_view->buffer->data + accessor->buffer_view->offset + accessor->offset;
+                    u8* buffer_data = (u8*)accessor->buffer_view->buffer->data + accessor->buffer_view->offset + accessor->offset;
                     
                     // Handle different component types for color data
                     if (accessor->component_type == cgltf_component_type_r_32f)
@@ -287,7 +287,7 @@ GLTFMesh GLTFLoader::read_mesh(const std::vector<GLTFBone>& bones)
                     else if (accessor->component_type == cgltf_component_type_r_8u)
                     {
                         // Unsigned byte (GL_UNSIGNED_BYTE) - normalized to [0,1]
-                        uint8_t* color_ubyte = (uint8_t*)buffer_data;
+                        u8* color_ubyte = (u8*)buffer_data;
                         for (size_t color_index = 0; color_index < accessor->count; ++color_index)
                         {
                             float color_vec4[4];
@@ -308,6 +308,18 @@ GLTFMesh GLTFLoader::read_mesh(const std::vector<GLTFBone>& bones)
                     }
                 }
             }
+            else if (primitive->attributes[i].type == cgltf_attribute_type_custom && strcmp(primitive->attributes[i].name,"_OUTLINE") == 0)
+            {
+                cgltf_accessor* accessor = primitive->attributes[i].data;
+                if (!accessor || accessor->count <= 0)
+                    continue;
+
+                mesh.outlines.resize(accessor->count);
+                u8* buffer_data = (u8*)accessor->buffer_view->buffer->data + accessor->buffer_view->offset + accessor->offset;
+                float* color_float = (float*)buffer_data;
+                for (size_t index = 0; index < accessor->count; ++index)
+                    mesh.outlines[index] = color_float[index];
+            }
         }
     }
     
@@ -318,7 +330,7 @@ GLTFMesh GLTFLoader::read_mesh(const std::vector<GLTFBone>& bones)
         if (accessor && accessor->count > 0)
         {
             mesh.indices.resize(accessor->count);
-            uint8_t* buffer_data = (uint8_t*)accessor->buffer_view->buffer->data + accessor->buffer_view->offset + accessor->offset;
+            u8* buffer_data = (u8*)accessor->buffer_view->buffer->data + accessor->buffer_view->offset + accessor->offset;
             
             // Handle different index types
             if (accessor->component_type == cgltf_component_type_r_16u)
@@ -411,8 +423,8 @@ GLTFAnimation GLTFLoader::read_animation(const std::vector<GLTFBone>& bones, con
         if (!sampler->input || !sampler->output)
             continue;
             
-        uint8_t* output_buffer =
-            (uint8_t*)sampler->output->buffer_view->buffer->data +
+        u8* output_buffer =
+            (u8*)sampler->output->buffer_view->buffer->data +
             sampler->output->buffer_view->offset +
             sampler->output->offset;
         

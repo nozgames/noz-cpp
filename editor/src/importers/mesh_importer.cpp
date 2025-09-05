@@ -18,7 +18,6 @@ struct OutlineConfig
 };
 
 void GenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config = {});
-void MyGenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config);
 
 static void FlattenMesh(GLTFMesh* mesh)
 {
@@ -141,17 +140,17 @@ void ImportMesh(const fs::path& source_path, Stream* output_stream, Props* confi
     {
         throw std::runtime_error("No mesh data found");
     }
-    
-    // Apply flatten if requested
-    if (meta->GetBool("mesh", "flatten", config->GetBool("mesh.defaults", "flatten", false)))
-        FlattenMesh(&mesh);
 
     if (meta->GetBool("mesh", "outline", config->GetBool("mesh.defaults", "outline", false)))
-        MyGenerateMeshOutline(&mesh, {
+        GenerateMeshOutline(&mesh, {
             .width = meta->GetFloat("outline", "width", config->GetFloat("mesh.defaults.outline", "width", 0.02f)),
             .offset = meta->GetFloat("outline", "offset", config->GetFloat("mesh.defaults.outline", "offset", 0.5f)),
             .boundary_taper = meta->GetFloat("outline", "taper", config->GetFloat("mesh.defaults.outline", "taper", 0.01f))
         });
+
+    // Apply flatten if requested
+    if (meta->GetBool("mesh", "flatten", config->GetBool("mesh.defaults", "flatten", false)))
+        FlattenMesh(&mesh);
 
     // Write mesh data to stream
     WriteMeshData(output_stream, &mesh, meta);
@@ -201,7 +200,7 @@ struct Edge
     }
 };
 
-constexpr Vec2 OUTLINE_COLOR = ColorUV(10, 0);
+constexpr Vec2 OUTLINE_COLOR = ColorUV(0, 10);
 
 struct MyEdge
 {
@@ -321,7 +320,7 @@ static void AddOutlineTriangles(GLTFMesh* mesh, uint16_t base_vertex_index)
     mesh->indices.push_back(v1_inner);
 }
 
-void MyGenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
+void GenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
 {
     std::map<u64, Vec3> vert_map;
     std::map<u64, MyEdge> edge_map;
@@ -375,6 +374,11 @@ void MyGenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
         if (edge.second.count > 1)
             continue;
 
+        // Skip edges where either vertex has no outline
+        if (mesh->outlines[edge.second.i0] <= 0.00001f ||
+            mesh->outlines[edge.second.i1] <= 0.00001f)
+            continue;
+
         MyEdge n0 = {};
         MyEdge n1 = {};
 
@@ -390,7 +394,7 @@ void MyGenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
             if (neighbor.second.vh0 == edge.second.vh1 ||
                 neighbor.second.vh1 == edge.second.vh1)
             {
-                if (n0.count == 0) // Only take first neighbor found
+                if (n0.count == 0)
                     n0 = neighbor.second;
             }
             // Check if edge2 shares the first vertex of the current edge (vh0)
@@ -464,169 +468,5 @@ void MyGenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
         AddOutlineVertices(mesh, e0p0, e0p1, normal_p0, normal_p1, width_p0, width_p1, config.offset);
         AddOutlineAttributes(mesh, normal_p0, normal_p1);
         AddOutlineTriangles(mesh, base_vertex);
-    }
-}
-
-void GenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
-{
-    if (mesh->indices.size() % 3 != 0)
-        return; // Invalid triangle mesh
-    
-    // Step 1: Find all edges and count their occurrences
-    std::map<Edge, std::vector<int>> edge_triangles;
-    
-    for (size_t i = 0; i < mesh->indices.size(); i += 3)
-    {
-        int triangle_idx = static_cast<int>(i / 3);
-        uint16_t v0 = mesh->indices[i];
-        uint16_t v1 = mesh->indices[i + 1];
-        uint16_t v2 = mesh->indices[i + 2];
-        
-        // Add all three edges of the triangle (ensure consistent ordering)
-        Edge edges[3] = {
-            {std::min(v0, v1), std::max(v0, v1), triangle_idx},
-            {std::min(v1, v2), std::max(v1, v2), triangle_idx},
-            {std::min(v2, v0), std::max(v2, v0), triangle_idx}
-        };
-        
-        for (const Edge& edge : edges)
-        {
-            edge_triangles[{edge.v0, edge.v1, -1}].push_back(triangle_idx);
-        }
-    }
-    
-    // Step 2: Find boundary edges (edges that belong to only one triangle)
-    std::vector<Edge> boundary_edges;
-    for (const auto& [edge_key, triangles] : edge_triangles)
-    {
-        if (triangles.size() == 1)
-        {
-            boundary_edges.push_back({edge_key.v0, edge_key.v1, triangles[0]});
-        }
-    }
-    
-    if (boundary_edges.empty())
-        return; // No boundary edges found
-    
-    // Step 3: Calculate edge normals and generate outline vertices
-    size_t original_vertex_count = mesh->positions.size();
-    size_t original_index_count = mesh->indices.size();
-    
-    // Reserve space for outline vertices (2 vertices per boundary edge)
-    mesh->positions.reserve(original_vertex_count + boundary_edges.size() * 2);
-    if (!mesh->normals.empty())
-        mesh->normals.reserve(original_vertex_count + boundary_edges.size() * 2);
-    if (!mesh->uvs.empty())
-        mesh->uvs.reserve(original_vertex_count + boundary_edges.size() * 2);
-    
-    // Reserve space for outline indices (6 indices per boundary edge = 2 triangles)
-    mesh->indices.reserve(original_index_count + boundary_edges.size() * 6);
-    
-    for (const Edge& edge : boundary_edges)
-    {
-        Vec3 p0 = mesh->positions[edge.v0];
-        Vec3 p1 = mesh->positions[edge.v1];
-        
-        // Calculate edge direction (in 2D, ignoring Z)
-        Vec2 edge_dir = {p1.x - p0.x, p1.y - p0.y};
-        float edge_length = sqrt(edge_dir.x * edge_dir.x + edge_dir.y * edge_dir.y);
-        
-        if (edge_length < 1e-6f)
-            continue; // Skip degenerate edges
-        
-        edge_dir.x /= edge_length;
-        edge_dir.y /= edge_length;
-        
-        // Calculate perpendicular direction (outward normal)
-        Vec2 perp = {-edge_dir.y, edge_dir.x};
-        
-        // Try to use mesh normals if available for better outline direction
-        Vec2 avg_normal = perp;
-        if (!mesh->normals.empty() && edge.v0 < mesh->normals.size() && edge.v1 < mesh->normals.size())
-        {
-            Vec3 n0 = mesh->normals[edge.v0];
-            Vec3 n1 = mesh->normals[edge.v1];
-            Vec2 normal_2d = {(n0.x + n1.x) * 0.5f, (n0.y + n1.y) * 0.5f};
-            float normal_len = sqrt(normal_2d.x * normal_2d.x + normal_2d.y * normal_2d.y);
-            if (normal_len > 1e-6f)
-            {
-                avg_normal = {normal_2d.x / normal_len, normal_2d.y / normal_len};
-            }
-        }
-        
-        // Calculate outline width for this edge
-        float outline_width = config.width * config.boundary_taper;
-        
-        // Calculate offset positions
-        float inner_offset = -outline_width * (0.5f + config.offset * 0.5f);
-        float outer_offset = outline_width * (0.5f - config.offset * 0.5f);
-        
-        // Generate outline vertices
-        uint16_t v0_inner = static_cast<uint16_t>(mesh->positions.size());
-        uint16_t v0_outer = v0_inner + 1;
-        uint16_t v1_inner = v0_outer + 1;
-        uint16_t v1_outer = v1_inner + 1;
-        
-        // Add vertices for outline quad
-        mesh->positions.push_back({
-            p0.x + avg_normal.x * inner_offset,
-            p0.y + avg_normal.y * inner_offset,
-            p0.z
-        });
-        mesh->positions.push_back({
-            p0.x + avg_normal.x * outer_offset,
-            p0.y + avg_normal.y * outer_offset,
-            p0.z
-        });
-        mesh->positions.push_back({
-            p1.x + avg_normal.x * inner_offset,
-            p1.y + avg_normal.y * inner_offset,
-            p1.z
-        });
-        mesh->positions.push_back({
-            p1.x + avg_normal.x * outer_offset,
-            p1.y + avg_normal.y * outer_offset,
-            p1.z
-        });
-        
-        // Copy normals if they exist
-        if (!mesh->normals.empty())
-        {
-            Vec3 outline_normal = {avg_normal.x, avg_normal.y, 0.0f};
-            mesh->normals.push_back(outline_normal);
-            mesh->normals.push_back(outline_normal);
-            mesh->normals.push_back(outline_normal);
-            mesh->normals.push_back(outline_normal);
-        }
-        
-        // Copy UVs if they exist (interpolate along edge)
-        if (!mesh->uvs.empty() && edge.v0 < mesh->uvs.size() && edge.v1 < mesh->uvs.size())
-        {
-            Vec2 uv0 = mesh->uvs[edge.v0];
-            Vec2 uv1 = mesh->uvs[edge.v1];
-            mesh->uvs.push_back(OUTLINE_COLOR);
-            mesh->uvs.push_back(OUTLINE_COLOR);
-            mesh->uvs.push_back(OUTLINE_COLOR);
-            mesh->uvs.push_back(OUTLINE_COLOR);
-        }
-        else if (!mesh->uvs.empty())
-        {
-            // Add default UVs if UV array exists but indices are out of range
-            mesh->uvs.push_back({0.0f, 0.0f});
-            mesh->uvs.push_back({0.0f, 0.0f});
-            mesh->uvs.push_back({0.0f, 0.0f});
-            mesh->uvs.push_back({0.0f, 0.0f});
-        }
-        
-        // Add triangles for outline quad (2 triangles per edge)
-        // Triangle 1: inner0, outer0, inner1
-        mesh->indices.push_back(v0_inner);
-        mesh->indices.push_back(v0_outer);
-        mesh->indices.push_back(v1_inner);
-        
-        // Triangle 2: outer0, outer1, inner1
-        mesh->indices.push_back(v0_outer);
-        mesh->indices.push_back(v1_outer);
-        mesh->indices.push_back(v1_inner);
     }
 }
