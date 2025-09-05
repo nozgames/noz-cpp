@@ -5,7 +5,7 @@
 struct MeshBuilderImpl : MeshBuilder
 {
     Vec2* positions;
-    Vec2* normals;
+    Vec3* normals;
     Vec2* uv0;
     uint8_t* bones;
     uint16_t* indices;
@@ -40,7 +40,7 @@ MeshBuilder* CreateMeshBuilder(Allocator* allocator, int max_vertices, int max_i
     
     // TODO: do block alloc instead with the object above
     impl->positions = (Vec2*)Alloc(allocator, sizeof(Vec2) * max_vertices);
-    impl->normals = (Vec2*)Alloc(allocator, sizeof(Vec2) * max_vertices);
+    impl->normals = (Vec3*)Alloc(allocator, sizeof(Vec3) * max_vertices);
     impl->uv0 = (Vec2*)Alloc(allocator, sizeof(Vec2) * max_vertices);
     impl->bones = (u8*)Alloc(allocator, sizeof(u8) * max_vertices);
     impl->indices = (u16*)Alloc(allocator, sizeof(u16) * max_indices);
@@ -68,7 +68,7 @@ const Vec2* GetPositions(MeshBuilder* builder)
     return static_cast<MeshBuilderImpl*>(builder)->positions;
 }
 
-const Vec2* GetNormals(MeshBuilder* builder)
+const Vec3* GetNormals(MeshBuilder* builder)
 {
     return static_cast<MeshBuilderImpl*>(builder)->normals;
 }
@@ -101,7 +101,7 @@ u32 GetIndexCount(MeshBuilder* builder)
 void AddVertex(
     MeshBuilder* builder,
     const Vec2& position,
-    const Vec2& normal,
+    const Vec3& normal,
     const Vec2& uv,
     uint8_t bone_index)
 {
@@ -152,7 +152,7 @@ void AddTriangle(
     // Calculate face normal
     Vec2 v1 = b - a;
     Vec2 v2 = c - a;
-    Vec2 normal = Normalize(Cross(v2, v1));
+    Vec3 normal = Normalize(Cross(Vec3{v2.x, v2.y, 0}, Vec3{v1.x, v1.y, 0}));
 
     // Add vertices with computed normal
     uint16_t vertex_index = (uint16_t)static_cast<MeshBuilderImpl*>(builder)->vertex_count;
@@ -172,7 +172,7 @@ void AddQuad(
 {
     f32 hw = width * 0.5f;
     f32 hh = height * 0.5f;
-    Vec2 normal = Cross(forward, right);
+    Vec3 normal = Cross(Vec3{forward.x, forward.y, 0}, Vec3{right.x, right.y, 0});
     Vec2 f = forward * hh;
     Vec2 r = right * hw;
     Vec2 a =  f - r;
@@ -189,7 +189,7 @@ void AddQuad(
     const Vec2& c,
     const Vec2& d,
     const Vec2& uv_color,
-    const Vec2& normal,
+    const Vec3& normal,
     u8 bone_index)
 {
     u16 base_index = (u16)static_cast<MeshBuilderImpl*>(builder)->vertex_count;

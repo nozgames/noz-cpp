@@ -182,7 +182,7 @@ void BindTransform(const Vec2& position, float rotation, const Vec2& scale)
                 .transform = {
                     .position = position,
                     .scale = scale,
-                    .rotation = rotation }}
+                    .rotation = Radians(rotation) }}
         }};
     AddRenderCommand(&cmd);
 }

@@ -1859,7 +1859,7 @@ static bool CreateShaderInternal(
         {
             .location = 2,
             .binding = 0,
-            .format = VK_FORMAT_R32G32_SFLOAT,
+            .format = VK_FORMAT_R32G32B32_SFLOAT,
             .offset = sizeof(float) * 4
         },
         // Bone index
@@ -1867,13 +1867,13 @@ static bool CreateShaderInternal(
             .location = 4,
             .binding = 0,
             .format = VK_FORMAT_R32_SFLOAT,
-            .offset = sizeof(float) * 6
+            .offset = sizeof(float) * 7
         }
     };
 
     VkVertexInputBindingDescription binding_desc = {
         .binding = 0,
-        .stride = sizeof(float) * 7,
+        .stride = sizeof(float) * 8,
         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
     };
 

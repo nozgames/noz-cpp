@@ -99,7 +99,7 @@ static void WriteMeshData(
         vertex.normal = {0, 1};
         
         if (mesh->normals.size() == mesh->positions.size() && i < mesh->normals.size())
-            vertex.normal = { mesh->normals[i].x, mesh->normals[i].y };
+            vertex.normal = mesh->normals[i];
             
         if (mesh->uvs.size() == mesh->positions.size() && i < mesh->uvs.size())
             vertex.uv0 = mesh->uvs[i];
@@ -146,11 +146,12 @@ void ImportMesh(const fs::path& source_path, Stream* output_stream, Props* confi
     if (meta->GetBool("mesh", "flatten", config->GetBool("mesh.defaults", "flatten", false)))
         FlattenMesh(&mesh);
 
-    MyGenerateMeshOutline(&mesh, {
-        .width = meta->GetFloat("mesh", "outline_width", config->GetFloat("mesh.defaults", "outline_width", 0.02f)),
-        .offset = meta->GetFloat("mesh", "outline_offset", config->GetFloat("mesh.defaults", "outline_offset", 0.5f)),
-        .boundary_taper = meta->GetFloat("mesh", "outline_boundary_taper", config->GetFloat("mesh.defaults", "outline_boundary_taper", 0.01f))
-    });
+    if (meta->GetBool("mesh", "outline", config->GetBool("mesh.defaults", "outline", false)))
+        MyGenerateMeshOutline(&mesh, {
+            .width = meta->GetFloat("outline", "width", config->GetFloat("mesh.defaults.outline", "width", 0.02f)),
+            .offset = meta->GetFloat("outline", "offset", config->GetFloat("mesh.defaults.outline", "offset", 0.5f)),
+            .boundary_taper = meta->GetFloat("outline", "taper", config->GetFloat("mesh.defaults.outline", "taper", 0.01f))
+        });
 
     // Write mesh data to stream
     WriteMeshData(output_stream, &mesh, meta);

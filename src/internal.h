@@ -23,7 +23,7 @@ struct MeshVertex
 {
     Vec2 position;
     Vec2 uv0;
-    Vec2 normal;
+    Vec3 normal;
     float bone;
 };
 

@@ -70,7 +70,7 @@ Mesh* CreateMesh(
     Allocator* allocator,
     u16 vertex_count,
     const Vec2* positions,
-    const Vec2* normals,
+    const Vec3* normals,
     const Vec2* uvs,
     u8* bone_indices,
     u16 index_count,

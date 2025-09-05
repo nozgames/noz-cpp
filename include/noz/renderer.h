@@ -68,7 +68,7 @@ Mesh* CreateMesh(
     Allocator* allocator,
     u16 vertex_count,
     const Vec2* positions,
-    const Vec2* normals,
+    const Vec3* normals,
     const Vec2* uvs,
     u8* bone_indices,
     u16 index_count,
@@ -80,7 +80,7 @@ Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name);
 MeshBuilder* CreateMeshBuilder(Allocator* allocator, int max_vertices, int max_indices);
 void Clear(MeshBuilder* builder);
 const Vec2* GetPositions(MeshBuilder* builder);
-const Vec2* GetNormals(MeshBuilder* builder);
+const Vec3* GetNormals(MeshBuilder* builder);
 const Vec2* GetUvs(MeshBuilder* builder);
 const u8* GetBoneIndices(MeshBuilder* builder);
 const u16* GetIndices(MeshBuilder* builder);
@@ -95,7 +95,7 @@ void AddRaw(
     MeshBuilder* builder,
     i16 vertex_count,
     const Vec2* positions,
-    const Vec2* normals,
+    const Vec3* normals,
     const Vec2* uv0,
     u8 bone_index,
     i16 index_count,
@@ -114,12 +114,12 @@ void AddQuad(
     const Vec2& c,
     const Vec2& d,
     const Vec2& uv_color,
-    const Vec2& normal,
+    const Vec3& normal,
     uint8_t bone_index=0);
 void AddVertex(
     MeshBuilder* builder,
     const Vec2& position,
-    const Vec2& normal,
+    const Vec3& normal,
     const Vec2& uv,
     uint8_t bone_index=0);
 
