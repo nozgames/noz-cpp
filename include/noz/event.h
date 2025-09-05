@@ -5,15 +5,14 @@
 #pragma once
 
 
-typedef int event_t;
+typedef int EventId;
 
-constexpr event_t EVENT_TEST = -1;
+constexpr EventId MAX_EVENTS = 512;
+constexpr EventId MAX_CORE_EVENTS = 128;
 
-constexpr event_t MAX_CORE_EVENTS = 128;
+typedef void (*EventCallback)(EventId event, const void* event_data);
 
-typedef void (*EventCallback)(event_t event, const void* event_data);
+void Listen(EventId event, EventCallback callback);
+void Unlisten(EventId event, EventCallback callback);
+void Send(EventId event, const void* event_data);
 
-
-void Listen(event_t event, EventCallback callback);
-void Unlisten(event_t event, EventCallback callback);
-void Send(event_t event, const void* event_data);

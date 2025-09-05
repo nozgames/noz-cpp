@@ -506,7 +506,7 @@ void RenderEditor(const RectInt& rect)
 #endif
 }
 
-void HandleStatsEvents(event_t event, const void* event_data)
+void HandleStatsEvents(EventId event, const void* event_data)
 {
     EditorEventStats* stats = (EditorEventStats*)event_data;
     g_editor.fps = stats->fps;

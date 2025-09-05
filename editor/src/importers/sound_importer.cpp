@@ -103,13 +103,40 @@ void ImportSound(const fs::path& source_path, Stream* output_stream, Props* conf
         input_file.seekg(fmt_chunk.sub_chunk1_size - 16, std::ios::cur);
     }
     
-    // Read data chunk header
+    // Find the data chunk by scanning through any other chunks (like bext)
     WavDataChunk data_chunk;
-    input_file.read(reinterpret_cast<char*>(&data_chunk), sizeof(WavDataChunk));
+    bool found_data_chunk = false;
     
-    if (!ValidateWavDataChunk(&data_chunk))
+    while (!found_data_chunk && input_file.good())
     {
-        throw std::runtime_error("Invalid WAV data chunk");
+        // Read potential chunk header
+        char chunk_id[4];
+        u32 chunk_size;
+        
+        input_file.read(chunk_id, 4);
+        if (input_file.gcount() != 4) break;
+        
+        input_file.read(reinterpret_cast<char*>(&chunk_size), sizeof(u32));
+        if (input_file.gcount() != sizeof(u32)) break;
+        
+        // Check if this is the data chunk
+        if (chunk_id[0] == 'd' && chunk_id[1] == 'a' && chunk_id[2] == 't' && chunk_id[3] == 'a')
+        {
+            // Found data chunk, copy the header info
+            memcpy(data_chunk.sub_chunk2_id, chunk_id, 4);
+            data_chunk.sub_chunk2_size = chunk_size;
+            found_data_chunk = true;
+        }
+        else
+        {
+            // Skip this chunk and continue searching
+            input_file.seekg(chunk_size, std::ios::cur);
+        }
+    }
+    
+    if (!found_data_chunk)
+    {
+        throw std::runtime_error("Could not find WAV data chunk");
     }
     
     // Validate audio parameters

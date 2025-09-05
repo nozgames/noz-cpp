@@ -18,6 +18,7 @@ static Input g_input = {};
 
 void UpdateInput()
 {
+    platform::UpdateInputState();
     UpdateInputState((InputSet*)GetBack(g_input.active_sets));
 }
 

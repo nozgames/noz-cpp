@@ -236,9 +236,18 @@ static void UpdateFPS()
 bool UpdateApplication()
 {
     // Process platform events
-    bool running = platform::UpdateApplication(g_app.has_focus);
+    bool had_focus = platform::HasFocus();
+    bool running = platform::UpdateApplication();
     if (!running)
         return false;
+
+    bool has_focus = platform::HasFocus();
+
+    if (had_focus != has_focus)
+    {
+        FocusChangedEvent event = { has_focus };
+        Send(EVENT_FOCUS_CHANGED, &event);
+    }
 
     UpdateScreenSize();
     UpdateTime();

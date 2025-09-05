@@ -28,9 +28,10 @@ namespace platform
     void InitApplication(const ApplicationTraits* traits);
     void ShutdownApplication();
     void InitWindow();
-    bool UpdateApplication(bool& has_focus);
+    bool UpdateApplication();
     Vec2Int GetScreenSize();
     void ShowCursor(bool show);
+    bool HasFocus();
 
     // @render
     void BeginRenderFrame();

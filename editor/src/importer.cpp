@@ -51,6 +51,7 @@ static std::atomic<bool> g_thread_running{false};
 
 void ProcessFileChange(const fs::path& file_path, FileChangeType change_type, std::vector<AssetImporterTraits*>& importers);
 bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers);
+void CleanupOrphanedAssets(const fs::path& output_dir, const std::vector<AssetImporterTraits*>& importers);
 
 // Helper function to derive file extension from asset signature
 // GetExtensionFromSignature is now provided by asset.h
@@ -297,6 +298,149 @@ bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers)
     return any_imports_processed;
 }
 
+void CleanupOrphanedAssets(const fs::path& output_dir, const std::vector<AssetImporterTraits*>& importers)
+{
+    if (!fs::exists(output_dir) || !fs::is_directory(output_dir))
+        return;
+
+    // Build set of valid imported asset files by scanning source directories
+    std::set<fs::path> valid_asset_files;
+    
+    // Get source directories from config
+    auto source_list = g_config->GetKeys("source");
+    for (const auto& source_dir_str : source_list)
+    {
+        fs::path source_dir(source_dir_str);
+        if (!fs::exists(source_dir) || !fs::is_directory(source_dir))
+            continue;
+
+        try
+        {
+            for (const auto& entry : fs::recursive_directory_iterator(source_dir))
+            {
+                if (!entry.is_regular_file())
+                    continue;
+
+                const fs::path& source_file = entry.path();
+                std::string ext = source_file.extension().string();
+                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+                // Skip .meta files
+                if (ext == ".meta")
+                    continue;
+
+                // Find an importer that can handle this file
+                AssetImporterTraits* selected_importer = nullptr;
+                for (auto* importer : importers)
+                {
+                    if (importer && importer->file_extensions)
+                    {
+                        for (const char** ext_ptr = importer->file_extensions; *ext_ptr != nullptr; ++ext_ptr)
+                        {
+                            if (ext == *ext_ptr)
+                            {
+                                selected_importer = importer;
+                                break;
+                            }
+                        }
+                        if (selected_importer)
+                            break;
+                    }
+                }
+
+                if (!selected_importer)
+                    continue;
+
+                // Build expected output file path
+                fs::path relative_path;
+                std::error_code ec;
+                relative_path = fs::relative(source_file, source_dir, ec);
+                if (ec || relative_path.empty() || relative_path.string().find("..") != std::string::npos)
+                    relative_path = source_file.filename();
+
+                fs::path expected_output = output_dir / relative_path;
+                std::string derived_extension = GetExtensionFromSignature(selected_importer->signature);
+                expected_output.replace_extension(derived_extension);
+
+                valid_asset_files.insert(expected_output);
+            }
+        }
+        catch (const std::exception& e)
+        {
+            LogWarning("Failed to scan source directory '%s': %s", source_dir_str.c_str(), e.what());
+            continue;
+        }
+    }
+
+    // Scan output directory and remove files not in the valid set
+    std::vector<fs::path> files_to_remove;
+    
+    try
+    {
+        for (const auto& entry : fs::recursive_directory_iterator(output_dir))
+        {
+            if (!entry.is_regular_file())
+                continue;
+
+            const fs::path& output_file = entry.path();
+            
+            // Check if this is a recognized asset file by trying to read its header
+            uint32_t signature = 0;
+            bool is_asset_file = false;
+            
+            if (Stream* stream = LoadStream(nullptr, output_file))
+            {
+                AssetHeader header;
+                if (ReadAssetHeader(stream, &header))
+                {
+                    signature = header.signature;
+                    // Check if any importer recognizes this signature
+                    for (const auto* importer : importers)
+                    {
+                        if (importer && importer->signature == signature)
+                        {
+                            is_asset_file = true;
+                            break;
+                        }
+                    }
+                }
+                Free(stream);
+            }
+
+            // If it's an asset file but not in our valid set, mark for removal
+            if (is_asset_file && valid_asset_files.find(output_file) == valid_asset_files.end())
+            {
+                files_to_remove.push_back(output_file);
+            }
+        }
+    }
+    catch (const std::exception& e)
+    {
+        LogWarning("Failed to scan output directory '%s': %s", output_dir.string().c_str(), e.what());
+        return;
+    }
+
+    // Remove orphaned files
+    for (const fs::path& file_to_remove : files_to_remove)
+    {
+        try
+        {
+            fs::remove(file_to_remove);
+            
+            // Convert to relative path for logging
+            fs::path relative_removed = fs::relative(file_to_remove, output_dir);
+            relative_removed.replace_extension("");
+            std::string asset_name = relative_removed.string();
+            std::replace(asset_name.begin(), asset_name.end(), '\\', '/');
+            LogInfo("Removed orphaned asset: \033[38;2;128;128;128m%s", asset_name.c_str());
+        }
+        catch (const std::exception& e)
+        {
+            LogWarning("Failed to remove orphaned file '%s': %s", file_to_remove.string().c_str(), e.what());
+        }
+    }
+}
+
 static int RunImporterLoop()
 {
     if (!LoadConfig())
@@ -354,8 +498,11 @@ static int RunImporterLoop()
         if (!ProcessImportQueue(importers))
             continue;
 
-        // Generate a new asset manifest
+        // Clean up orphaned asset files before generating manifest
         auto output_dir = g_config->GetString("output", "directory", "assets");
+        CleanupOrphanedAssets(fs::path(output_dir), importers);
+
+        // Generate a new asset manifest
         auto manifest_path = g_config->GetString("manifest", "output_file", "src/assets.cpp");
         GenerateAssetManifest(fs::path(output_dir), fs::path(manifest_path), importers, g_config);
 

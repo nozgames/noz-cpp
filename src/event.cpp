@@ -20,19 +20,19 @@ static EventListener* g_event_stack = nullptr;
 static size_t g_event_stack_size = 0;
 static size_t g_event_max_stack_size = 0;
 
-static int GetEventIndex(event_t event)
+static int GetEventIndex(EventId event)
 {
     assert(event + MAX_CORE_EVENTS >= 0);
     assert(event + MAX_CORE_EVENTS < g_max_events);
     return event + MAX_CORE_EVENTS;
 }
 
-static EventRegistry* GetRegistry(event_t event)
+static EventRegistry* GetRegistry(EventId event)
 {
     return (EventRegistry*)(g_events + g_event_stride * GetEventIndex(event));
 }
 
-static EventListener* GetListener(event_t event, size_t index)
+static EventListener* GetListener(EventId event, size_t index)
 {
     assert(index < g_max_listeners);
     return (EventListener*)(GetRegistry(event) + 1) + index;
@@ -56,7 +56,7 @@ void ShutdownEvent()
     Free(g_event_stack);
 }
 
-int FindListener(event_t event, EventCallback callback)
+int FindListener(EventId event, EventCallback callback)
 {
     auto registry = GetRegistry(event);
     auto listener = GetListener(event, 0);
@@ -66,7 +66,7 @@ int FindListener(event_t event, EventCallback callback)
     return -1;
 }
 
-void Listen(event_t event, EventCallback callback)
+void Listen(EventId event, EventCallback callback)
 {
     assert(-1 == FindListener(event, callback));
     auto registry = GetRegistry(event);
@@ -80,7 +80,7 @@ void Listen(event_t event, EventCallback callback)
     listener->callback = callback;
 }
 
-void Unlisten(event_t event, EventCallback callback)
+void Unlisten(EventId event, EventCallback callback)
 {
     int listener_index = FindListener(event, callback);
     if (listener_index == -1)
@@ -94,7 +94,7 @@ void Unlisten(event_t event, EventCallback callback)
     registry->listener_count--;
 }
 
-void Send(event_t event, const void* event_data)
+void Send(EventId event, const void* event_data)
 {
     auto listener_count = GetRegistry(event)->listener_count;
     if (g_event_stack_size + listener_count > g_event_max_stack_size)

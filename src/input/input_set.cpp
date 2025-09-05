@@ -144,9 +144,8 @@ void UpdateInputState(InputSet* input_set)
     if (nullptr == input_set)
         return;
 
-    // Update platform input state first
-    platform::UpdateInputState();
-
+    // Platform input state is now updated in the higher-level UpdateInput() function
+    
     InputSetImpl* impl = static_cast<InputSetImpl*>(input_set);
     for (int i = 0; i < INPUT_CODE_COUNT; i++)
         impl->buttons[i] &= ~(BUTTON_STATE_PRESSED | BUTTON_STATE_RELEASED);

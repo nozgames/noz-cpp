@@ -37,6 +37,7 @@
 #include "vfx.h"
 #include "audio.h"
 #include "prefs.h"
+#include "core_events.h"
 
 #ifdef NOZ_EDITOR
 #include "editor.h"

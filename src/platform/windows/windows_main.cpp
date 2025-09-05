@@ -21,9 +21,16 @@ struct WindowsApp
     Vec2Int screen_size;
     Vec2 cached_mouse_position;
     HWND hwnd;
+    bool has_focus;
 };
 
 static WindowsApp g_windows = {};
+
+// Method to get focus state for input system
+bool GetWindowFocus()
+{
+    return g_windows.has_focus;
+}
 
 void thread_sleep_ms(int milliseconds)
 {
@@ -136,7 +143,12 @@ void platform::ShutdownApplication()
         ::DestroyWindow((HWND)g_windows.hwnd);
 }
 
-bool platform::UpdateApplication(bool& has_focus)
+bool platform::HasFocus()
+{
+    return g_windows.has_focus;
+}
+
+bool platform::UpdateApplication()
 {
     MSG msg = {};
     bool running = true;
@@ -154,8 +166,7 @@ bool platform::UpdateApplication(bool& has_focus)
         }
     }
 
-    HWND active_window = GetActiveWindow();
-    has_focus = (active_window == g_windows.hwnd);
+    g_windows.has_focus = GetActiveWindow() == g_windows.hwnd;
 
     RECT rect;
     GetClientRect(g_windows.hwnd, &rect);

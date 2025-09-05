@@ -9,7 +9,7 @@
 
 #pragma comment(lib, "xinput.lib")
 
-platform::Window* GetWindow();
+extern bool GetWindowFocus();
 
 struct WindowsInput
 {
@@ -298,6 +298,25 @@ float platform::GetInputAxisValue(InputCode code)
 void platform::UpdateInputState()
 {
     // todo: limit to actual input set for performance.
+    
+    if (!HasFocus())
+    {
+        // Clear all input states when window doesn't have focus
+        for (int vk = 0; vk < 256; vk++)
+            g_input.key_states[vk] = false;
+        
+        for (int i = 0; i < 5; i++)
+            g_input.mouse_states[i] = false;
+        
+        g_input.mouse_scroll = {0, 0};
+        
+        for (int i = 0; i < XUSER_MAX_COUNT; i++)
+        {
+            ZeroMemory(&g_input.gamepad_states[i], sizeof(XINPUT_STATE));
+        }
+        
+        return;
+    }
 
     // Update keyboard state
     for (int vk = 0; vk < 256; vk++)
