@@ -67,7 +67,7 @@ void main()
     
     // Apply SDF for text rendering
     float width = fwidth(distance);
-    float alpha = smoothstep(0.485 - width, 0.485 + width, distance);
+    float alpha = smoothstep(0.47 - width, 0.47 + width, distance);
     
     // Combine base color with lighting
     vec3 litColor = f_color.rgb;

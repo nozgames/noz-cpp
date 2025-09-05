@@ -132,7 +132,7 @@ Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const
     ReadBytes(stream, impl->vertices, sizeof(MeshVertex) * impl->vertex_count);
     ReadBytes(stream, impl->indices, sizeof(uint16_t) * impl->index_count);
 
-    void* tex_data = Alloc(ALLOCATOR_SCRATCH, tex_width * tex_height * 4);
+    void* tex_data = Alloc(ALLOCATOR_DEFAULT, tex_width * tex_height * 4);
     ReadBytes(stream, tex_data, tex_width * tex_height * 4);
     impl->texture = CreateTexture(allocator, tex_data, tex_width, tex_height, TEXTURE_FORMAT_RGBA8, name);
     Free(tex_data);
