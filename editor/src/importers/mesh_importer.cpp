@@ -147,9 +147,9 @@ void ImportMesh(const fs::path& source_path, Stream* output_stream, Props* confi
         FlattenMesh(&mesh);
 
     MyGenerateMeshOutline(&mesh, {
-        .width = meta->GetFloat("mesh", "outline_width", config->GetFloat("mesh.defaults", "outline_width", 0.1f)),
-        .offset = meta->GetFloat("mesh", "outline_offset", config->GetFloat("mesh.defaults", "outline_offset", 0.0f)),
-        .boundary_taper = meta->GetFloat("mesh", "outline_boundary_taper", config->GetFloat("mesh.defaults", "outline_boundary_taper", 0.5f))
+        .width = meta->GetFloat("mesh", "outline_width", config->GetFloat("mesh.defaults", "outline_width", 0.01f)),
+        .offset = meta->GetFloat("mesh", "outline_offset", config->GetFloat("mesh.defaults", "outline_offset", 0.5f)),
+        .boundary_taper = meta->GetFloat("mesh", "outline_boundary_taper", config->GetFloat("mesh.defaults", "outline_boundary_taper", 0.01f))
     });
 
     // Write mesh data to stream
@@ -231,6 +231,120 @@ static u64 GetEdgeHash(const Vec3& p0, const Vec3& p1)
     return Hash(Min(h0,h1), Max(h0,h1));
 }
 
+static Vec2 CalculateEdgeDirection(const Vec3& p0, const Vec3& p1)
+{
+    Vec2 edge_dir = {p1.x - p0.x, p1.y - p0.y};
+    float edge_length = sqrt(edge_dir.x * edge_dir.x + edge_dir.y * edge_dir.y);
+    
+    if (edge_length < 1e-6f)
+        return {0.0f, 0.0f}; // Return zero vector for degenerate edges
+        
+    return {edge_dir.x / edge_length, edge_dir.y / edge_length};
+}
+
+static Vec2 CalculateEdgeNormal(const Vec2& edge_dir)
+{
+    return {-edge_dir.y, edge_dir.x};
+}
+
+static Vec2 AverageNormals(const Vec2& normal1, const Vec2& normal2)
+{
+    Vec2 avg = {(normal1.x + normal2.x) * 0.5f, (normal1.y + normal2.y) * 0.5f};
+    float len = sqrt(avg.x * avg.x + avg.y * avg.y);
+    
+    if (len < 1e-6f)
+        return normal1; // Fallback to first normal if averaging results in zero
+        
+    return {avg.x / len, avg.y / len};
+}
+
+static Vec2 CalculateNeighborNormal(const MyEdge& neighbor, u64 shared_vertex, const std::map<u64, Vec3>& vert_map)
+{
+    Vec3 e_p0 = vert_map.at(neighbor.vh0);
+    Vec3 e_p1 = vert_map.at(neighbor.vh1);
+    
+    Vec2 dir;
+    if (neighbor.vh0 == shared_vertex) {
+        dir = CalculateEdgeDirection(e_p0, e_p1);
+    } else {
+        dir = CalculateEdgeDirection(e_p1, e_p0);
+    }
+    
+    return CalculateEdgeNormal(dir);
+}
+
+static void AddOutlineVertices(GLTFMesh* mesh, const Vec3& p0, const Vec3& p1, 
+                              const Vec2& normal_p0, const Vec2& normal_p1,
+                              float width_p0, float width_p1, float offset)
+{
+    float inner_offset_p0 = -width_p0 * (0.5f + offset * 0.5f);
+    float outer_offset_p0 = width_p0 * (0.5f - offset * 0.5f);
+    float inner_offset_p1 = -width_p1 * (0.5f + offset * 0.5f);
+    float outer_offset_p1 = width_p1 * (0.5f - offset * 0.5f);
+    
+    // Add vertices for outline quad
+    mesh->positions.push_back({
+        p0.x + normal_p0.x * inner_offset_p0,
+        p0.y + normal_p0.y * inner_offset_p0,
+        p0.z
+    });
+    mesh->positions.push_back({
+        p0.x + normal_p0.x * outer_offset_p0,
+        p0.y + normal_p0.y * outer_offset_p0,
+        p0.z
+    });
+    mesh->positions.push_back({
+        p1.x + normal_p1.x * inner_offset_p1,
+        p1.y + normal_p1.y * inner_offset_p1,
+        p1.z
+    });
+    mesh->positions.push_back({
+        p1.x + normal_p1.x * outer_offset_p1,
+        p1.y + normal_p1.y * outer_offset_p1,
+        p1.z
+    });
+}
+
+static void AddOutlineAttributes(GLTFMesh* mesh, const Vec2& normal_p0, const Vec2& normal_p1)
+{
+    // Copy normals if they exist
+    if (!mesh->normals.empty())
+    {
+        Vec3 outline_normal_p0 = {normal_p0.x, normal_p0.y, 0.0f};
+        Vec3 outline_normal_p1 = {normal_p1.x, normal_p1.y, 0.0f};
+        mesh->normals.push_back(outline_normal_p0);
+        mesh->normals.push_back(outline_normal_p0);
+        mesh->normals.push_back(outline_normal_p1);
+        mesh->normals.push_back(outline_normal_p1);
+    }
+    
+    // Add UVs for outline vertices
+    if (!mesh->uvs.empty())
+    {
+        mesh->uvs.push_back(OUTLINE_COLOR);
+        mesh->uvs.push_back(OUTLINE_COLOR);
+        mesh->uvs.push_back(OUTLINE_COLOR);
+        mesh->uvs.push_back(OUTLINE_COLOR);
+    }
+}
+
+static void AddOutlineTriangles(GLTFMesh* mesh, uint16_t base_vertex_index)
+{
+    uint16_t v0_inner = base_vertex_index;
+    uint16_t v0_outer = base_vertex_index + 1;
+    uint16_t v1_inner = base_vertex_index + 2;
+    uint16_t v1_outer = base_vertex_index + 3;
+    
+    // Add triangles for outline quad (2 triangles per edge)
+    mesh->indices.push_back(v0_inner);
+    mesh->indices.push_back(v0_outer);
+    mesh->indices.push_back(v1_inner);
+    
+    mesh->indices.push_back(v0_outer);
+    mesh->indices.push_back(v1_outer);
+    mesh->indices.push_back(v1_inner);
+}
+
 void MyGenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
 {
     std::map<u64, Vec3> vert_map;
@@ -288,47 +402,84 @@ void MyGenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
         MyEdge n0 = {};
         MyEdge n1 = {};
 
-        // Find a neighbor
+        // Find neighbors that share vertices with this edge
         for (auto& edge2 : edge_map)
         {
             if (edge2.second.count > 1)
-                continue;
-
+                continue; // Skip non-boundary edges
+                
+            if (edge2.first == edge.first)
+                continue; // Skip self
+            
+            // Check if edge2 shares the second vertex of the current edge (vh1)
             if (edge2.second.vh0 == edge.second.vh1 ||
                 edge2.second.vh1 == edge.second.vh1)
             {
-                n0 = edge2.second;
+                if (n0.count == 0) // Only take first neighbor found
+                    n0 = edge2.second;
             }
+            // Check if edge2 shares the first vertex of the current edge (vh0)
             else if (edge2.second.vh0 == edge.second.vh0 ||
                      edge2.second.vh1 == edge.second.vh0)
             {
-                n1 = edge2.second;
+                if (n1.count == 0) // Only take first neighbor found
+                    n1 = edge2.second;
             }
         }
 
-        if (n0.count == 0 && n1.count == 0)
-            continue;
+        // All boundary edges should get outlines, but we adjust width based on neighbors
 
         Vec3 e0p0 = vert_map[edge.second.vh0];
         Vec3 e0p1 = vert_map[edge.second.vh1];
+        
+        // Calculate main edge direction and normal
+        Vec2 edge_dir = CalculateEdgeDirection(e0p0, e0p1);
+        if (edge_dir.x == 0.0f && edge_dir.y == 0.0f)
+            continue; // Skip degenerate edges
+            
+        Vec2 edge_normal = CalculateEdgeNormal(edge_dir);
+        
+        Vec2 normal_p0 = edge_normal;
+        Vec2 normal_p1 = edge_normal;
+        float width_p0 = config.width;
+        float width_p1 = config.width;
 
-        if (n0.count == 1 && n1.count == 1)
+        // Both edge points have neighbors
+        if (n0.count > 0 && n1.count > 0)
         {
-            Vec3 e1p0 = vert_map[n0.vh0];
-            Vec3 e1p1 = vert_map[n0.vh1];
-            Vec3 e2p0 = vert_map[n1.vh0];
-            Vec3 e2p1 = vert_map[n1.vh1];
+            Vec2 n0_normal = CalculateNeighborNormal(n0, edge.second.vh1, vert_map);
+            Vec2 n1_normal = CalculateNeighborNormal(n1, edge.second.vh0, vert_map);
+            
+            normal_p1 = AverageNormals(edge_normal, n0_normal);
+            normal_p0 = AverageNormals(edge_normal, n1_normal);
         }
-        else if (n0.count == 1)
+        // Only one edge point has a neighbor
+        else if (n0.count > 0)
         {
-            Vec3 e1p0 = vert_map[n0.vh0];
-            Vec3 e1p1 = vert_map[n0.vh1];
+            Vec2 n0_normal = CalculateNeighborNormal(n0, edge.second.vh1, vert_map);
+            normal_p1 = AverageNormals(edge_normal, n0_normal);
+            width_p0 *= config.boundary_taper; // Taper the endpoint without neighbor
+        }
+        // Only one edge point has a neighbor  
+        else if (n1.count > 0)
+        {
+            Vec2 n1_normal = CalculateNeighborNormal(n1, edge.second.vh0, vert_map);
+            normal_p0 = AverageNormals(edge_normal, n1_normal);
+            width_p1 *= config.boundary_taper; // Taper the endpoint without neighbor
         }
         else
         {
-            Vec3 e2p0 = vert_map[n1.vh0];
-            Vec3 e2p1 = vert_map[n1.vh1];
+            // No neighbors - use tapered width for both endpoints
+            width_p0 *= config.boundary_taper;
+            width_p1 *= config.boundary_taper;
         }
+        
+        // Generate outline geometry
+        uint16_t base_vertex = static_cast<uint16_t>(mesh->positions.size());
+        
+        AddOutlineVertices(mesh, e0p0, e0p1, normal_p0, normal_p1, width_p0, width_p1, config.offset);
+        AddOutlineAttributes(mesh, normal_p0, normal_p1);
+        AddOutlineTriangles(mesh, base_vertex);
     }
 }
 
