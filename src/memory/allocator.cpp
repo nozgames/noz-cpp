@@ -64,10 +64,8 @@ void* Alloc(Allocator* a, size_t size, DestructorFunc destructor)
 {
     a = GET_ALLOCATOR(a);
 
-    void* ptr = a->alloc(a, size + sizeof(AllocHeader));
-    ptr = (void*)((u8*)ptr + sizeof(AllocHeader));
-
-    if (!ptr)
+    AllocHeader* header = (AllocHeader*)a->alloc(a, size + sizeof(AllocHeader));
+    if (!header)
     {
         if (a->stats)
         {
@@ -79,7 +77,8 @@ void* Alloc(Allocator* a, size_t size, DestructorFunc destructor)
         return nullptr;
     }
 
-    AllocHeader* header = GetHeader(ptr);
+    void* ptr = header + 1;
+
     header->destructor = destructor;
     header->allocator = a;
 
@@ -115,10 +114,11 @@ void* Realloc(void* ptr, size_t new_size)
     AllocHeader* header = GetHeader(ptr);
     Allocator* a = header->allocator;
     a = GET_ALLOCATOR(a);
-    header = (AllocHeader*)a->realloc(a, header, new_size);
+    header = (AllocHeader*)a->realloc(a, header, new_size + sizeof(AllocHeader));
     ptr = (void*)(header + 1);
 #ifdef _DEBUG
     header->checksum = CreateChecksum(a, ptr);
+    ValidateHeader(ptr);
 #endif
 
     return ptr;

@@ -258,11 +258,14 @@ inline float Degrees(float radians) { return radians * 180.0f / noz::PI; }
 inline i32 Min(i32 v1, i32 v2) { return v1 < v2 ? v1 : v2; }
 inline u32 Min(u32 v1, u32 v2) { return v1 < v2 ? v1 : v2; }
 inline f32 Min(f32 v1, f32 v2) { return v1 < v2 ? v1 : v2; }
+inline u64 Min(u64 v1, u64 v2) { return v1 < v2 ? v1 : v2; }
 inline Vec2 Min(const Vec2& m1, const Vec2& m2) { return { Min(m1.x, m2.x), Min(m1.y, m2.y) }; }
 inline Vec3 Min(const Vec3& m1, const Vec3& m2) { return { Min(m1.x, m2.x), Min(m1.y, m2.y), Min(m1.z, m2.z) }; }
 
 inline i32 Max(i32 v1, i32 v2) { return v1 > v2 ? v1 : v2; }
 inline f32 Max(f32 v1, f32 v2) { return v1 > v2 ? v1 : v2; }
+inline u32 Max(u32 v1, u32 v2) { return v1 > v2 ? v1 : v2; }
+inline u64 Max(u64 v1, u64 v2) { return v1 > v2 ? v1 : v2; }
 inline Vec2 Max(const Vec2& m1, const Vec2& m2) { return { Max(m1.x, m2.x), Max(m1.y, m2.y) }; }
 inline Vec3 Max(const Vec3& m1, const Vec3& m2) { return { Max(m1.x, m2.x), Max(m1.y, m2.y), Max(m1.z, m2.z) }; }
 

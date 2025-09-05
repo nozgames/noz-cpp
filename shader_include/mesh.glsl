@@ -21,7 +21,6 @@ layout(set = 0, binding = 2) uniform BoneBuffer
 layout(location = 0) in vec2 position;
 layout(location = 1) in vec2 uv0;
 layout(location = 2) in vec2 normal;
-layout(location = 3) in vec4 v_color;
 layout(location = 4) in float bone_index;
 
 vec4 transform_to_screen(vec2 vertex_pos)

@@ -23,7 +23,7 @@ void SetValue(text_t& dst, const char* src)
         return;
     }
 
-    dst.length = Min(src_len, TEXT_SIZE - 1);
+    dst.length = Min(src_len, (u32)(TEXT_SIZE - 1));
     memcpy(dst.value, src, src_len + 1);
     dst.length = src_len;
 }
@@ -32,7 +32,7 @@ void Append(text_t& dst, const char* src)
 {
     assert(src);
 
-    u32 src_len = Min((u32)strlen(src), TEXT_SIZE - dst.length - 1);
+    u32 src_len = Min((u32)strlen(src), (u32)(TEXT_SIZE - dst.length - 1));
     if (src_len == 0)
         return;
 
