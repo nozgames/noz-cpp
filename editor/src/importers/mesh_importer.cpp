@@ -12,9 +12,9 @@ using namespace noz;
 
 struct OutlineConfig
 {
-    float width = 0.1f;          // Base outline width
-    float offset = 0.0f;         // Offset: 0=centered, -1=inside, 1=outside
-    float boundary_taper = 0.5f; // Width multiplier for boundary edges
+    float width;
+    float offset;
+    float boundary_taper;
 };
 
 void GenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config = {});
@@ -147,7 +147,7 @@ void ImportMesh(const fs::path& source_path, Stream* output_stream, Props* confi
         FlattenMesh(&mesh);
 
     MyGenerateMeshOutline(&mesh, {
-        .width = meta->GetFloat("mesh", "outline_width", config->GetFloat("mesh.defaults", "outline_width", 0.01f)),
+        .width = meta->GetFloat("mesh", "outline_width", config->GetFloat("mesh.defaults", "outline_width", 0.02f)),
         .offset = meta->GetFloat("mesh", "outline_offset", config->GetFloat("mesh.defaults", "outline_offset", 0.5f)),
         .boundary_taper = meta->GetFloat("mesh", "outline_boundary_taper", config->GetFloat("mesh.defaults", "outline_boundary_taper", 0.01f))
     });
@@ -221,7 +221,9 @@ struct MyEdge
 
 static u64 GetVertHash(const Vec3& pos)
 {
-    return Hash(&pos, sizeof(pos));
+    i32 px = (i32)(pos.x * 10000.0f);
+    i32 py = (i32)(pos.y * 10000.0f);
+    return Hash(Hash(&px, sizeof(px)), Hash(&py, sizeof(py)));
 }
 
 static u64 GetEdgeHash(const Vec3& p0, const Vec3& p1)
@@ -233,13 +235,7 @@ static u64 GetEdgeHash(const Vec3& p0, const Vec3& p1)
 
 static Vec2 CalculateEdgeDirection(const Vec3& p0, const Vec3& p1)
 {
-    Vec2 edge_dir = {p1.x - p0.x, p1.y - p0.y};
-    float edge_length = sqrt(edge_dir.x * edge_dir.x + edge_dir.y * edge_dir.y);
-    
-    if (edge_length < 1e-6f)
-        return {0.0f, 0.0f}; // Return zero vector for degenerate edges
-        
-    return {edge_dir.x / edge_length, edge_dir.y / edge_length};
+    return Normalize(Vec2{p1.x - p0.x, p1.y - p0.y});
 }
 
 static Vec2 CalculateEdgeNormal(const Vec2& edge_dir)
@@ -249,27 +245,14 @@ static Vec2 CalculateEdgeNormal(const Vec2& edge_dir)
 
 static Vec2 AverageNormals(const Vec2& normal1, const Vec2& normal2)
 {
-    Vec2 avg = {(normal1.x + normal2.x) * 0.5f, (normal1.y + normal2.y) * 0.5f};
-    float len = sqrt(avg.x * avg.x + avg.y * avg.y);
-    
-    if (len < 1e-6f)
-        return normal1; // Fallback to first normal if averaging results in zero
-        
-    return {avg.x / len, avg.y / len};
+    return Normalize(normal1 + normal2);
 }
 
 static Vec2 CalculateNeighborNormal(const MyEdge& neighbor, u64 shared_vertex, const std::map<u64, Vec3>& vert_map)
 {
-    Vec3 e_p0 = vert_map.at(neighbor.vh0);
-    Vec3 e_p1 = vert_map.at(neighbor.vh1);
-    
-    Vec2 dir;
-    if (neighbor.vh0 == shared_vertex) {
-        dir = CalculateEdgeDirection(e_p0, e_p1);
-    } else {
-        dir = CalculateEdgeDirection(e_p1, e_p0);
-    }
-    
+    Vec3 np0 = vert_map.at(neighbor.vh0);
+    Vec3 np1 = vert_map.at(neighbor.vh1);
+    Vec2 dir = CalculateEdgeDirection(np0, np1);
     return CalculateEdgeNormal(dir);
 }
 
@@ -403,27 +386,26 @@ void MyGenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
         MyEdge n1 = {};
 
         // Find neighbors that share vertices with this edge
-        for (auto& edge2 : edge_map)
+        for (auto& neighbor : edge_map)
         {
-            if (edge2.second.count > 1)
-                continue; // Skip non-boundary edges
-                
-            if (edge2.first == edge.first)
-                continue; // Skip self
-            
+            if (neighbor.first == edge.first)
+                continue;
+            if (neighbor.second.count > 1)
+                continue;
+
             // Check if edge2 shares the second vertex of the current edge (vh1)
-            if (edge2.second.vh0 == edge.second.vh1 ||
-                edge2.second.vh1 == edge.second.vh1)
+            if (neighbor.second.vh0 == edge.second.vh1 ||
+                neighbor.second.vh1 == edge.second.vh1)
             {
                 if (n0.count == 0) // Only take first neighbor found
-                    n0 = edge2.second;
+                    n0 = neighbor.second;
             }
             // Check if edge2 shares the first vertex of the current edge (vh0)
-            else if (edge2.second.vh0 == edge.second.vh0 ||
-                     edge2.second.vh1 == edge.second.vh0)
+            else if (neighbor.second.vh0 == edge.second.vh0 ||
+                     neighbor.second.vh1 == edge.second.vh0)
             {
                 if (n1.count == 0) // Only take first neighbor found
-                    n1 = edge2.second;
+                    n1 = neighbor.second;
             }
         }
 
@@ -431,7 +413,7 @@ void MyGenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
 
         Vec3 e0p0 = vert_map[edge.second.vh0];
         Vec3 e0p1 = vert_map[edge.second.vh1];
-        
+
         // Calculate main edge direction and normal
         Vec2 edge_dir = CalculateEdgeDirection(e0p0, e0p1);
         if (edge_dir.x == 0.0f && edge_dir.y == 0.0f)
@@ -458,20 +440,29 @@ void MyGenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
         {
             Vec2 n0_normal = CalculateNeighborNormal(n0, edge.second.vh1, vert_map);
             normal_p1 = AverageNormals(edge_normal, n0_normal);
-            width_p0 *= config.boundary_taper; // Taper the endpoint without neighbor
+            
+            // Apply taper only if boundary_taper is significantly different from 1.0
+            if (config.boundary_taper < 0.9f)
+                width_p0 *= config.boundary_taper;
         }
         // Only one edge point has a neighbor  
         else if (n1.count > 0)
         {
             Vec2 n1_normal = CalculateNeighborNormal(n1, edge.second.vh0, vert_map);
             normal_p0 = AverageNormals(edge_normal, n1_normal);
-            width_p1 *= config.boundary_taper; // Taper the endpoint without neighbor
+            
+            // Apply taper only if boundary_taper is significantly different from 1.0
+            if (config.boundary_taper < 0.9f)
+                width_p1 *= config.boundary_taper;
         }
         else
         {
-            // No neighbors - use tapered width for both endpoints
-            width_p0 *= config.boundary_taper;
-            width_p1 *= config.boundary_taper;
+            // No neighbors - apply taper only if boundary_taper is significantly different from 1.0
+            if (config.boundary_taper < 0.9f)
+            {
+                width_p0 *= config.boundary_taper;
+                width_p1 *= config.boundary_taper;
+            }
         }
         
         // Generate outline geometry
