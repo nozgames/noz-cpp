@@ -153,6 +153,7 @@ Camera* CreateCamera(Allocator* allocator);
 void SetPosition(Camera* camera, const Vec2& position);
 void SetRotation(Camera* camera, float rotation);
 void SetSize(Camera* camera, const Vec2& size);
+void SetExtents(Camera* camera, float left, float right, float bottom, float top);
 Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos);
 Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos);
 void UpdateCamera(Camera* camera);

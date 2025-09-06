@@ -1,13 +1,28 @@
 //@ VERTEX
 
-#include "../../shader_include/mesh.glsl"
+layout(set = 0, binding = 0, row_major) uniform CameraBuffer
+{
+    mat3 view_projection;
+} camera;
 
-layout(location = 0) out vec2 v_uv0;
+layout(set = 1, binding = 0, row_major) uniform ObjectBuffer
+{
+    mat3 transform;
+} object;
+
+layout(location = 0) in vec2 v_position;
+layout(location = 1) in vec2 v_uv0;
+
+layout(location = 0) out vec2 f_uv0;
 
 void main()
 {
-    gl_Position = transform_to_screen(position);
-    v_uv0 = uv0;
+    // Position
+    mat3 mvp = object.transform * camera.view_projection;
+    vec3 screen_pos = vec3(v_position, 1.0) * mvp;
+    gl_Position = vec4(screen_pos.xy, 0.0, 1.0);
+
+    f_uv0 = v_uv0;
 }
 
 //@ END
@@ -21,12 +36,13 @@ layout(set = 2, binding = 0) uniform ColorBuffer
 
 layout(set = 3, binding = 0) uniform sampler2D mainTexture;
 
-layout(location = 0) in vec2 v_uv0;
+layout(location = 0) in vec2 f_uv0;
 layout(location = 0) out vec4 FragColor;
 
 void main()
 {
-    FragColor = texture(mainTexture, v_uv0) * colorData.color;
+    FragColor = texture(mainTexture, f_uv0) * colorData.color;
 }
 
 //@ END
+

@@ -4,9 +4,9 @@
 
 struct CameraImpl : Camera
 {
-    Vec2 position;
+    Vec2 position_offset; // Offset from the center of calculated extents
     float rotation;
-    Vec2 size;
+    Vec4 extents; // left, right, bottom, top - F32_MIN/F32_MAX means auto-calculate
     Mat3 view;
     Mat3 inv_view;
     Vec2Int last_screen_size;
@@ -39,55 +39,101 @@ void UpdateCamera(Camera* camera)
         return;
 
     float aspectRatio = GetScreenAspectRatio();
-    float zoomX;
-    float zoomY;
 
-    // Fit both horizontal and vertical
-    if (impl->size.x != 0 && impl->size.y != 0)
+    // Calculate actual extents from smart extents
+    float left = impl->extents.x;
+    float right = impl->extents.y;
+    float bottom = impl->extents.z;
+    float top = impl->extents.w;
+
+    // Handle auto-calculation for each extent
+    bool auto_left = abs(left) >= F32_MAX;
+    bool auto_right = abs(right) >= F32_MAX;
+    bool auto_bottom = abs(bottom) >= F32_MAX;
+    bool auto_top = abs(top) >= F32_MAX;
+
+    // Determine if Y should be flipped
+    bool flip_y = false;
+    if ((auto_bottom && bottom < 0) || (auto_top && top < 0))
     {
-        // Both dimensions specified - ensure both fit
-        // Calculate zoom needed for each dimension
-        float zoomFromWidth = 2.0f / abs(impl->size.x);
-        float zoomFromHeight = 2.0f / abs(impl->size.y);
-
-        // Use the smaller zoom (to fit both dimensions)
-        float zoom = Min(zoomFromWidth, zoomFromHeight / aspectRatio);
-
-        zoomX = zoom;
-        zoomY = zoom * aspectRatio;
-
-        // Handle flipping
-        if (impl->size.x < 0)
-            zoomX = -zoomX;
-        if (impl->size.y < 0)
-            zoomY = -zoomY;
+        flip_y = true;
     }
-    // Horizontal fit
-    else if (impl->size.x != 0)
+
+    // Calculate width and height
+    float width, height;
+
+    if (!auto_left && !auto_right)
     {
-        zoomX = 2.0f / impl->size.x;
-        zoomY = zoomX * aspectRatio;
+        // Width is specified
+        width = right - left;
+        if (!auto_bottom && !auto_top)
+        {
+            // Both width and height specified
+            height = top - bottom;
+        }
+        else
+        {
+            // Width specified, height auto-calculated from aspect ratio
+            height = width / aspectRatio;
+        }
     }
-    // Vertical fit
-    else if (impl->size.y != 0)
+    else if (!auto_bottom && !auto_top)
     {
-        zoomY = 2.0f / impl->size.y;
-        zoomX = zoomY / aspectRatio;
+        // Height is specified, width auto-calculated
+        height = top - bottom;
+        width = height * aspectRatio;
     }
     else
     {
-        zoomX = 1.0f;
-        zoomY = 1.0f;
+        // Both auto - use default
+        width = 2.0f;
+        height = 2.0f / aspectRatio;
     }
+
+    // Now calculate final extent values
+    if (auto_left && auto_right)
+    {
+        // Both horizontal extents auto - center around origin
+        left = -width * 0.5f;
+        right = width * 0.5f;
+    }
+    else if (auto_left)
+    {
+        left = right - width;
+    }
+    else if (auto_right)
+    {
+        right = left + width;
+    }
+
+    if (auto_bottom && auto_top)
+    {
+        // Both vertical extents auto - center around origin
+        bottom = -height * 0.5f;
+    }
+    else if (auto_bottom)
+    {
+        bottom = top - height;
+    }
+    // Note: auto_top case doesn't need to calculate top since we only use bottom for positioning
+
+    // Calculate zoom and position
+    float zoomX = 2.0f / width;
+    float zoomY = flip_y ? -2.0f / height : 2.0f / height;
+
+    // Position camera so that the viewport covers the specified extents
+    Vec2 center;
+    center.x = (left + right) * 0.5f;
+    center.y = bottom + height * 0.5f; // Camera Y = bottom edge + half height
+
+    Vec2 final_position = center + impl->position_offset;
 
     float c = cos(impl->rotation);
     float s = sin(impl->rotation);
 
-    impl->view = Mat3{
-        .m = {
-            c * zoomX, s * zoomX, -(c * impl->position.x + s * impl->position.y) * zoomX,
-            -s * zoomY, c * zoomY, -(-s * impl->position.x + c * impl->position.y) * zoomY,
-            0, 0, 1}};
+    impl->view = Mat3{.m = {c * zoomX, -s * zoomY, 0, s * zoomX, c * zoomY, 0,
+                            -(c * final_position.x + s * final_position.y) * zoomX,
+                            -(-s * final_position.x + c * final_position.y) * zoomY, 1}};
 
     impl->inv_view = Inverse(impl->view);
     impl->last_screen_size = GetScreenSize();
@@ -97,7 +143,7 @@ void UpdateCamera(Camera* camera)
 void SetPosition(Camera* camera, const Vec2& position)
 {
     CameraImpl* impl = static_cast<CameraImpl*>(camera);
-    impl->position = position;
+    impl->position_offset = position;
     impl->dirty = true;
 }
 
@@ -111,7 +157,43 @@ void SetRotation(Camera* camera, float rotation)
 void SetSize(Camera* camera, const Vec2& size)
 {
     CameraImpl* impl = static_cast<CameraImpl*>(camera);
-    impl->size = size;
+
+    // Convert size to extents centered around current position
+    float halfWidth = abs(size.x) * 0.5f;
+    float halfHeight = abs(size.y) * 0.5f;
+
+    if (size.x == 0 && size.y == 0)
+    {
+        // Both dimensions auto - use F32_MAX for all extents
+        impl->extents = Vec4{F32_MAX, F32_MAX, F32_MAX, F32_MAX};
+    }
+    else if (size.x == 0)
+    {
+        // Width auto, height specified
+        float sign_y = (size.y < 0) ? -1.0f : 1.0f;
+        impl->extents = Vec4{F32_MAX, F32_MAX, -halfHeight * sign_y, halfHeight * sign_y};
+    }
+    else if (size.y == 0)
+    {
+        // Height auto, width specified
+        float sign_x = (size.x < 0) ? -1.0f : 1.0f;
+        impl->extents = Vec4{-halfWidth * sign_x, halfWidth * sign_x, F32_MAX, F32_MAX};
+    }
+    else
+    {
+        // Both dimensions specified
+        float sign_x = (size.x < 0) ? -1.0f : 1.0f;
+        float sign_y = (size.y < 0) ? -1.0f : 1.0f;
+        impl->extents = Vec4{-halfWidth * sign_x, halfWidth * sign_x, -halfHeight * sign_y, halfHeight * sign_y};
+    }
+
+    impl->dirty = true;
+}
+
+void SetExtents(Camera* camera, float left, float right, float bottom, float top)
+{
+    CameraImpl* impl = static_cast<CameraImpl*>(camera);
+    impl->extents = Vec4{left, right, bottom, top};
     impl->dirty = true;
 }
 
@@ -162,8 +244,8 @@ const Mat3& GetViewMatrix(Camera* camera)
 Camera* CreateCamera(Allocator* allocator)
 {
     CameraImpl* impl = (CameraImpl*)Alloc(allocator, sizeof(CameraImpl));
-    impl->size = {800, 600};
-    impl->position = VEC2_ZERO;
+    impl->extents = Vec4{-400, 400, -300, 300}; // Default 800x600 centered at origin
+    impl->position_offset = VEC2_ZERO;
     impl->rotation = 0.0f;
     impl->dirty = true;
     impl->last_screen_size = {0, 0};
