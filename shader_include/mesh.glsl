@@ -1,9 +1,9 @@
-layout(set = 0, binding = 0) uniform CameraBuffer
+layout(set = 0, binding = 0, row_major) uniform CameraBuffer
 {
     mat3 view_projection;
 } camera;
 
-layout(set = 0, binding = 1) uniform ObjectBuffer
+layout(set = 0, binding = 1, row_major) uniform ObjectBuffer
 {
     mat3 transform;
 } object;
@@ -24,3 +24,5 @@ vec4 transform_to_screen(vec2 vertex_pos)
 
     return vec4(screenPos.xy, 0.0, 1.0);
 }
+
+

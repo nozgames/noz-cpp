@@ -10,8 +10,8 @@ constexpr int MAX_TEXTURES = 128;
 constexpr int VK_SPACE_VERTEX_UNIFORM = 0;
 constexpr int VK_SPACE_TEXTURE = 1;
 constexpr int VK_SPACE_FRAGMENT_UNIFORM = 2;
-// todo: remove?
-constexpr u32 UNIFORM_BUFFER_SIZE = sizeof(Mat3) * 64;
+
+constexpr u32 UNIFORM_BUFFER_SIZE = sizeof(Mat4);
 
 static VkFilter ToVK(TextureFilter filter)
 {
@@ -49,6 +49,7 @@ struct VulkanUniformBuffer
     VkBuffer buffer;
     VkDeviceMemory memory;
     void* mapped_ptr;
+    int index;
 };
 
 struct VulkanRenderer
@@ -87,8 +88,8 @@ struct VulkanRenderer
     VkDescriptorPool descriptor_pool;
     VulkanUniformBuffer vertex_uniform_buffer_pool[MAX_UNIFORM_BUFFERS];
     VulkanUniformBuffer fragment_uniform_buffer_pool[MAX_UNIFORM_BUFFERS];
-    int vertex_uniform_buffer_pool_count;
-    int fragment_uniform_buffer_pool_count;
+    int vertex_uniform_buffer_count;
+    int fragment_uniform_buffer_count;
     VkPipelineLayout pipeline_layout;
     u32 current_image_index;
 
@@ -108,7 +109,6 @@ static VulkanRenderer g_vulkan = {};
 
 static SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice device);
 static void RecreateSwapchainObjects();
-static VulkanUniformBuffer* AcquireUniformBuffer(u32 binding, VkDescriptorSet descriptor_set);
 static VkSampleCountFlagBits GetMaxUsableSampleCount();
 static void CreateColorResources();
 static void CleanupColorResources();
@@ -145,7 +145,7 @@ u32 FindMemoryType(u32 type_filter, VkMemoryPropertyFlags properties)
     return 0;
 }
 
-static bool CreateUniformBuffer(VulkanUniformBuffer* ubuffer, const char* name, u32 binding, VkDescriptorSet descriptor_set)
+static bool CreateUniformBuffer(VulkanUniformBuffer* ubuffer, const char* name)
 {
     VkBufferCreateInfo buffer_info = {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -185,16 +185,33 @@ static bool CreateUniformBuffer(VulkanUniformBuffer* ubuffer, const char* name, 
 
     SetVulkanObjectName(VK_OBJECT_TYPE_BUFFER, (u64)ubuffer->buffer, name);
 
-    // Update the persistent vertex descriptor set to point to this buffer  
+    return true;
+}
+
+static VulkanUniformBuffer* AcquireVertexUniformBuffer(u32 binding)
+{
+    if (g_vulkan.vertex_uniform_buffer_count == MAX_UNIFORM_BUFFERS)
+        return nullptr;
+
+    i32 descriptor_index = g_vulkan.vertex_uniform_buffer_count++;
+    VulkanUniformBuffer* buffer = &g_vulkan.vertex_uniform_buffer_pool[descriptor_index];
+    if (VK_NULL_HANDLE == buffer->buffer)
+    {
+        if (!CreateUniformBuffer(buffer, "Uniform"))
+            return nullptr;
+
+        return buffer;
+    }
+
     VkDescriptorBufferInfo desc_buffer_info = {
-        .buffer = ubuffer->buffer,
+        .buffer = buffer->buffer,
         .offset = 0,
         .range = VK_WHOLE_SIZE
     };
 
     VkWriteDescriptorSet desc_write = {
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = descriptor_set,
+        .dstSet = g_vulkan.vertex_descriptor_set,
         .dstBinding = binding,
         .dstArrayElement = 0,
         .descriptorCount = 1,
@@ -203,75 +220,62 @@ static bool CreateUniformBuffer(VulkanUniformBuffer* ubuffer, const char* name, 
     };
 
     vkUpdateDescriptorSets(g_vulkan.device, 1, &desc_write, 0, nullptr);
-    
-    return true;
-}
 
-static VulkanUniformBuffer* AcquireUniformBuffer(u32 binding)
-{
-    if (g_vulkan.vertex_uniform_buffer_pool_count == 0)
-        return nullptr;
-
-    VulkanUniformBuffer* buffer = &g_vulkan.vertex_uniform_buffer_pool[--g_vulkan.vertex_uniform_buffer_pool_count];
-    if (VK_NULL_HANDLE != buffer->buffer)
-    {
-        // Update the persistent vertex descriptor set to point to this buffer
-        VkDescriptorBufferInfo desc_buffer_info = {
-            .buffer = buffer->buffer,
-            .offset = 0,
-            .range = VK_WHOLE_SIZE
-        };
-
-        VkWriteDescriptorSet desc_write = {
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet = g_vulkan.vertex_descriptor_set,
-            .dstBinding = binding,
-            .dstArrayElement = 0,
-            .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .pBufferInfo = &desc_buffer_info,
-        };
-
-        vkUpdateDescriptorSets(g_vulkan.device, 1, &desc_write, 0, nullptr);
-        return buffer;
-    }
-
-    if (!CreateUniformBuffer(buffer, "Uniform", binding, g_vulkan.vertex_descriptor_set))
-        return nullptr;
+    vkCmdBindDescriptorSets(
+        g_vulkan.command_buffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        g_vulkan.pipeline_layout,
+        VK_SPACE_VERTEX_UNIFORM,
+        1,
+        &g_vulkan.vertex_descriptor_set,
+        0,
+        nullptr
+    );
 
     return buffer;
 }
 
 static VulkanUniformBuffer* AcquireFragmentUniformBuffer(u32 binding)
 {
-    if (g_vulkan.fragment_uniform_buffer_pool_count == 0)
+    if (g_vulkan.fragment_uniform_buffer_count == MAX_UNIFORM_BUFFERS)
         return nullptr;
 
-    VulkanUniformBuffer* buffer = &g_vulkan.fragment_uniform_buffer_pool[--g_vulkan.fragment_uniform_buffer_pool_count];
-    if (VK_NULL_HANDLE != buffer->buffer)
+    u32 descriptor_index = g_vulkan.fragment_uniform_buffer_count++;
+    VulkanUniformBuffer* buffer = &g_vulkan.fragment_uniform_buffer_pool[descriptor_index];
+    if (VK_NULL_HANDLE == buffer->buffer)
     {
-        VkDescriptorBufferInfo desc_buffer_info = {
-            .buffer = buffer->buffer,
-            .offset = 0,
-            .range = VK_WHOLE_SIZE
-        };
-
-        VkWriteDescriptorSet desc_write = {
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet = g_vulkan.fragment_descriptor_set,
-            .dstBinding = binding,
-            .dstArrayElement = 0,
-            .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .pBufferInfo = &desc_buffer_info,
-        };
-
-        vkUpdateDescriptorSets(g_vulkan.device, 1, &desc_write, 0, nullptr);
-        return buffer;
+        if (!CreateUniformBuffer(buffer, "FragmentUniform"))
+            return nullptr;
     }
 
-    if (!CreateUniformBuffer(buffer, "FragmentUniform", binding, g_vulkan.fragment_descriptor_set))
-        return nullptr;
+    VkDescriptorBufferInfo desc_buffer_info = {
+        .buffer = buffer->buffer,
+        .offset = 0,
+        .range = VK_WHOLE_SIZE
+    };
+
+    VkWriteDescriptorSet desc_write = {
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = g_vulkan.fragment_descriptor_set,
+        .dstBinding = binding,
+        .dstArrayElement = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = &desc_buffer_info,
+    };
+
+    vkUpdateDescriptorSets(g_vulkan.device, 1, &desc_write, 0, nullptr);
+
+    vkCmdBindDescriptorSets(
+        g_vulkan.command_buffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        g_vulkan.pipeline_layout,
+        VK_SPACE_FRAGMENT_UNIFORM,
+        1,
+        &g_vulkan.fragment_descriptor_set,
+        0,
+        nullptr
+    );
 
     return buffer;
 }
@@ -1194,8 +1198,8 @@ void ResizeVulkan(const Vec2Int& size)
 
 void platform::BeginRenderFrame()
 {
-    g_vulkan.vertex_uniform_buffer_pool_count = MAX_UNIFORM_BUFFERS;
-    g_vulkan.fragment_uniform_buffer_pool_count = MAX_UNIFORM_BUFFERS;
+    g_vulkan.vertex_uniform_buffer_count = 0;
+    g_vulkan.fragment_uniform_buffer_count = 0;
 
     vkWaitForFences(g_vulkan.device, 1, &g_vulkan.in_flight_fence, VK_TRUE, UINT64_MAX);
     vkResetFences(g_vulkan.device, 1, &g_vulkan.in_flight_fence);
@@ -1269,65 +1273,39 @@ void platform::EndRenderFrame()
     vkQueuePresentKHR(g_vulkan.present_queue, &vk_parent_info);
 }
 
+static void CopyMat3ToGPU(void* dst, const Mat3& src)
+{
+    float* f = (float*)dst;
+    f[0] = src.m[0]; f[1] = src.m[1]; f[2] = src.m[2]; f[3] = 0;
+    f[4] = src.m[3]; f[5] = src.m[4]; f[6] = src.m[5]; f[7] = 0;
+    f[8] = src.m[6]; f[9] = src.m[7]; f[10] = src.m[8]; f[11] = 0;
+}
+
 void platform::BindTransform(const Mat3& transform)
 {
-    VulkanUniformBuffer* buffer = AcquireUniformBuffer(VERTEX_REGISTER_OBJECT);
+    VulkanUniformBuffer* buffer = AcquireVertexUniformBuffer(VERTEX_REGISTER_OBJECT);
     if (!buffer)
         return;
-    
-    memcpy(buffer->mapped_ptr, &transform, sizeof(transform));
-    vkCmdBindDescriptorSets(
-        g_vulkan.command_buffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        g_vulkan.pipeline_layout,
-        VK_SPACE_VERTEX_UNIFORM,
-        1,
-        &g_vulkan.vertex_descriptor_set,
-        0,
-        nullptr
-    );
+
+    CopyMat3ToGPU(buffer->mapped_ptr, transform);
 }
 
 void platform::BindCamera(const Mat3& view_matrix)
 {
-    VulkanUniformBuffer* buffer = AcquireUniformBuffer(VERTEX_REGISTER_CAMERA);
+    VulkanUniformBuffer* buffer = AcquireVertexUniformBuffer(VERTEX_REGISTER_CAMERA);
     if (!buffer)
         return;
-    
-    memcpy(buffer->mapped_ptr, &view_matrix, sizeof(Mat3));
-    vkCmdBindDescriptorSets(
-        g_vulkan.command_buffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        g_vulkan.pipeline_layout,
-        VK_SPACE_VERTEX_UNIFORM,
-        1,
-        &g_vulkan.vertex_descriptor_set,
-        0, nullptr
-    );
-}
 
-#if 0
-void platform::BindBoneTransforms(const RenderTransform* bones, int count)
-{
-    assert(bones);
-    assert(count > 0);
-    assert(count <= 64); // Max bone count
-
-    // VulkanUniformBuffer* buffer = AcquireUniformBuffer(FRAGMENT_REGISTER_COLOR, g_vulkan.fragment_descriptor_set);
-    // if (!buffer)
-    //     return;
-
-    // memcpy(buffer->mapped_ptr, bones, sizeof(RenderTransform) * count);
-    // g_vulkan.current_camera_buffer = buffer;
-}
-#endif
-
-void platform::BindLight(const void* light)
-{
-    assert(light);
-    
-    // TODO: Create light uniform buffer when needed for fragment_register_light (1)
-    (void)light; // Suppress unused parameter warning for now
+    CopyMat3ToGPU(buffer->mapped_ptr, view_matrix);
+    // vkCmdBindDescriptorSets(
+    //     g_vulkan.command_buffer,
+    //     VK_PIPELINE_BIND_POINT_GRAPHICS,
+    //     g_vulkan.pipeline_layout,
+    //     VK_SPACE_VERTEX_UNIFORM,
+    //     1,
+    //     &g_vulkan.vertex_descriptor_set,
+    //     0, nullptr
+    // );
 }
 
 void platform::BindColor(const Color& color)
@@ -1337,16 +1315,16 @@ void platform::BindColor(const Color& color)
         return;
 
     memcpy(buffer->mapped_ptr, &color, sizeof(Color));
-    vkCmdBindDescriptorSets(
-        g_vulkan.command_buffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        g_vulkan.pipeline_layout,
-        VK_SPACE_FRAGMENT_UNIFORM,
-        1,
-        &g_vulkan.fragment_descriptor_set,
-        0,
-        nullptr
-    );
+    // vkCmdBindDescriptorSets(
+    //     g_vulkan.command_buffer,
+    //     VK_PIPELINE_BIND_POINT_GRAPHICS,
+    //     g_vulkan.pipeline_layout,
+    //     VK_SPACE_FRAGMENT_UNIFORM,
+    //     1,
+    //     &g_vulkan.fragment_descriptor_set,
+    //     0,
+    //     nullptr
+    // );
 }
 
 platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, size_t vertex_count, const char* name)

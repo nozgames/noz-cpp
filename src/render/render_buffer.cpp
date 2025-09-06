@@ -11,7 +11,6 @@ extern void BindTextureInternal(Texture* texture, i32 slot);
 enum RenderCommandType
 {
     RENDER_COMMAND_TYPE_BIND_MATERIAL,
-    command_type_bind_light,
     command_type_bind_transform,
     command_type_bind_camera,
     command_type_bind_bones,
@@ -43,15 +42,6 @@ struct BindBonesData
     size_t offset;
 };
 
-struct BindLightData
-{
-    Vec3 ambient_color;
-    float ambient_intensity;
-    Vec3 diffuse_color;
-    float diffuse_intensity;
-    Vec3 direction;
-};
-
 struct BindColorData
 {
     Color color;
@@ -80,7 +70,6 @@ struct RenderCommand
         BindMaterialData bind_material;
         BindTransformData bind_transform;
         BindCameraData bind_camera;
-        BindLightData bind_light;
         BindBonesData bind_bones;
         BindColorData bind_color;
         BindDefaultTextureData bind_default_texture;
@@ -93,8 +82,6 @@ struct RenderBuffer
 {
     RenderCommand* commands;
     size_t command_count;
-    Mat3* transforms;
-    size_t transform_count;
     size_t command_count_max;
     size_t transform_count_max;
     bool is_full;
@@ -115,10 +102,7 @@ static void AddRenderCommand(RenderCommand* cmd)
 void ClearRenderCommands()
 {
     g_render_buffer->command_count = 0;
-    g_render_buffer->transform_count = 0;
     g_render_buffer->is_full = false;
-    g_render_buffer->transforms[0] = MAT3_IDENTITY;
-    g_render_buffer->transform_count = 1;
 }
 
 void BeginRenderPass(Color clear_color)
@@ -193,33 +177,6 @@ void BindTransform(const Mat3& transform)
     AddRenderCommand(&cmd);
 }
 
-void BindBoneTransforms(const Mat3* bones, size_t bone_count)
-{
-    if (bone_count == 0)
-        return;
-
-    if (g_render_buffer->command_count + bone_count > g_render_buffer->transform_count_max)
-    {
-        g_render_buffer->is_full = true;
-        return;
-    }   
-
-    RenderCommand cmd = {
-        .type = command_type_bind_bones,
-        .data = {
-            .bind_bones = {
-                .count = bone_count,
-                .offset = g_render_buffer->transform_count}} };
-
-    memcpy(
-        g_render_buffer->transforms + g_render_buffer->transform_count,
-        bones,
-        bone_count * sizeof(Mat3));
-    g_render_buffer->transform_count += bone_count;
-
-    AddRenderCommand(&cmd);
-}
-
 void BindColor(Color color)
 {
     RenderCommand cmd = {
@@ -263,16 +220,6 @@ void ExecuteRenderCommands()
             platform::BindCamera(GetViewMatrix(command->data.bind_camera.camera));
             break;
 
-        // case command_type_bind_bones:
-        //     platform::BindBoneTransforms(
-        //         g_render_buffer->transforms + command->data.bind_bones.offset,
-        //         (int)command->data.bind_bones.count);
-        //     break;
-
-        case command_type_bind_light:
-            platform::BindLight(&command->data.bind_light);
-            break;
-
         case command_type_bind_color:
             platform::BindColor(command->data.bind_color.color);
             break;
@@ -299,8 +246,7 @@ void ExecuteRenderCommands()
 void InitRenderBuffer(const RendererTraits* traits)
 {
     size_t commands_size = traits->max_frame_commands * sizeof(RenderCommand);
-    size_t transforms_size = traits->max_frame_transforms * sizeof(Mat3);
-    size_t buffer_size = sizeof(RenderBuffer) + commands_size + transforms_size;
+    size_t buffer_size = sizeof(RenderBuffer) + commands_size;
     
     g_render_buffer = (RenderBuffer*)malloc(buffer_size);
     if (!g_render_buffer)
@@ -311,9 +257,7 @@ void InitRenderBuffer(const RendererTraits* traits)
 
     memset(g_render_buffer, 0, buffer_size);
     g_render_buffer->commands = (RenderCommand*)((char*)g_render_buffer + sizeof(RenderBuffer));
-    g_render_buffer->transforms = (Mat3*)((char*)g_render_buffer->commands + commands_size);
     g_render_buffer->command_count_max = traits->max_frame_commands;
-    g_render_buffer->transform_count_max = traits->max_frame_transforms;
 }
 
 void ShutdownRenderBuffer()

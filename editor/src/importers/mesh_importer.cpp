@@ -90,7 +90,7 @@ static void WriteMeshData(
     std::vector<Vec2> positions;
     positions.reserve(mesh->positions.size());
     for (const Vec3& pos : mesh->positions)
-        positions.push_back({pos.x, -pos.y});
+        positions.push_back({pos.x, pos.y});
 
     // header
     Bounds2 bounds = ToBounds(positions.data(), positions.size());

@@ -19,9 +19,7 @@ static bool IsDirty(CameraImpl* impl)
         return true;
 
     Vec2Int current_screen_size = GetScreenSize();
-    return
-        current_screen_size.x != impl->last_screen_size.x ||
-        current_screen_size.y != impl->last_screen_size.y;
+    return current_screen_size.x != impl->last_screen_size.x || current_screen_size.y != impl->last_screen_size.y;
 }
 
 static CameraImpl* UpdateIfDirty(Camera* camera)
@@ -40,81 +38,60 @@ void UpdateCamera(Camera* camera)
     if (!IsDirty(impl))
         return;
 
-    float c = cos(impl->rotation);
-    float s = sin(impl->rotation);
-
     float aspectRatio = GetScreenAspectRatio();
-    float zoom = 2.0f / impl->size.y;
-    float zoomX = zoom / aspectRatio;
-    float zoomY = zoom;
+    float zoomX;
+    float zoomY;
 
-    impl->view = Mat3 { .m = {
-        c * zoomX,  s * zoomX, -(c * impl->position.x + s * impl->position.y) * zoomX,
-        -s * zoomY, c * zoomY, -(-s * impl->position.x + c * impl->position.y) * zoomY,
-        0,          0,         1
-    }};
-
-    impl->inv_view = Inverse(impl->view);
-
-    impl->last_screen_size = GetScreenSize();
-    impl->dirty = false;
-
-#if 0
-    // Calculate projection matrix based on which dimensions are specified
-    float screen_aspect = GetScreenAspectRatio();
-    float final_width;
-    float final_height;
-
-    Vec2 view_size = impl->view_size;
-    bool y_flip = view_size.y < 0.0f;
-    if (y_flip)
-        view_size.y *= -1.0f;
-    y_flip = false;
-
-    if (impl->view_size.x > 0.0f && impl->view_size.y > 0.0f)
+    // Fit both horizontal and vertical
+    if (impl->size.x != 0 && impl->size.y != 0)
     {
-        // SetSize mode - both width and height specified, fit both on screen
-        float view_aspect = impl->view_size.x / impl->view_size.y;
+        // Both dimensions specified - ensure both fit
+        // Calculate zoom needed for each dimension
+        float zoomFromWidth = 2.0f / abs(impl->size.x);
+        float zoomFromHeight = 2.0f / abs(impl->size.y);
 
-        if (view_aspect > screen_aspect)
-        {
-            // View is wider than screen - fit width, adjust height
-            final_width = impl->view_size.x;
-            final_height = final_width / screen_aspect;
-        }
-        else
-        {
-            // View is taller than screen - fit height, adjust width
-            final_height = impl->view_size.y;
-            final_width = final_height * screen_aspect;
-        }
+        // Use the smaller zoom (to fit both dimensions)
+        float zoom = Min(zoomFromWidth, zoomFromHeight / aspectRatio);
+
+        zoomX = zoom;
+        zoomY = zoom * aspectRatio;
+
+        // Handle flipping
+        if (impl->size.x < 0)
+            zoomX = -zoomX;
+        if (impl->size.y < 0)
+            zoomY = -zoomY;
     }
-    else if (impl->view_size.y > 0.0f)
+    // Horizontal fit
+    else if (impl->size.x != 0)
     {
-        // SetHeight mode - height specified, auto-calculate width
-        final_height = impl->view_size.y;
-        final_width = final_height * screen_aspect;
+        zoomX = 2.0f / impl->size.x;
+        zoomY = zoomX * aspectRatio;
     }
-    else if (impl->view_size.x > 0.0f)
+    // Vertical fit
+    else if (impl->size.y != 0)
     {
-        // SetWidth mode - width specified, auto-calculate height
-        final_width = impl->view_size.x;
-        final_height = final_width / screen_aspect;
+        zoomY = 2.0f / impl->size.y;
+        zoomX = zoomY / aspectRatio;
     }
     else
     {
-        // Default fallback - use reasonable defaults
-        final_height = 20.0f;
-        final_width = final_height * screen_aspect;
+        zoomX = 1.0f;
+        zoomY = 1.0f;
     }
 
-    impl->render.position = impl->position;
-    impl->render.rotation = {Sin(impl->rotation), Cos(impl->rotation)};
-    impl->render.size = {final_width * 0.5f, final_height * 0.5f * (y_flip ? -1.0f : 1.0f)};
+    float c = cos(impl->rotation);
+    float s = sin(impl->rotation);
+
+    impl->view = Mat3{
+        .m = {
+            c * zoomX, s * zoomX, -(c * impl->position.x + s * impl->position.y) * zoomX,
+            -s * zoomY, c * zoomY, -(-s * impl->position.x + c * impl->position.y) * zoomY,
+            0, 0, 1}};
+
+    impl->inv_view = Inverse(impl->view);
     impl->last_screen_size = GetScreenSize();
     impl->dirty = false;
-#endif
-
 }
 
 void SetPosition(Camera* camera, const Vec2& position)
@@ -156,7 +133,6 @@ Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos)
     // Return as Vec2 (assuming homogeneous coordinate is 1)
     return Vec2(worldPos.x / worldPos.z, worldPos.y / worldPos.z);
 }
-
 
 Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos)
 {

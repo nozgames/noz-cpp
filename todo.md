@@ -16,6 +16,7 @@
 - [ ] hot load of textures
 - [ ] hot load of sounds
 - [ ] hot load of shaders
+- [ ] Something causes a spawn of error messages in the editor when client disconnects / reconnects, not sure which
 
 - [X] Bug with default styles in style sheets causing width and height to not be auto
 - [X] Focus gain / lost event

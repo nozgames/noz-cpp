@@ -40,7 +40,6 @@ namespace platform
     void EndRenderPass();
     void BindTransform(const Mat3& transform);
     void BindCamera(const Mat3& view_matrix);
-    void BindLight(const void* light);
     void BindColor(const Color& color);
     Buffer* CreateVertexBuffer(const MeshVertex* vertices, size_t vertex_count, const char* name = nullptr);
     Buffer* CreateIndexBuffer(const uint16_t* indices, size_t index_count, const char* name = nullptr);
