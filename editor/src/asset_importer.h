@@ -14,4 +14,5 @@ struct AssetImporterTraits
     const char** file_extensions;    // NULL-terminated array of supported extensions (e.g. {".png", ".jpg", NULL})
     void (*import_func) (const std::filesystem::path& source_path, Stream* output_stream, Props* config, Props* meta_props);
     bool (*does_depend_on) (const std::filesystem::path& source_path, const std::filesystem::path& dependency_path);
+    bool (*can_import) (const std::filesystem::path& source_path);
 };

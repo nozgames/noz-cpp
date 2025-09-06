@@ -9,20 +9,6 @@
 
 namespace fs = std::filesystem;
 
-static std::string CleanPath(const std::string& path)
-{
-    std::string result = path;
-    
-    // Replace all backslashes with forward slashes
-    for (char& c : result)
-    {
-        if (c == '\\')
-            c = '/';
-    }
-    
-    return result;
-}
-
 extern AssetImporterTraits* GetShaderImporterTraits();
 extern AssetImporterTraits* GetTextureImporterTraits();
 extern AssetImporterTraits* GetFontImporterTraits();
@@ -30,39 +16,38 @@ extern AssetImporterTraits* GetMeshImporterTraits();
 extern AssetImporterTraits* GetStyleSheetImporterTraits();
 extern AssetImporterTraits* GetVfxImporterTraits();
 extern AssetImporterTraits* GetSoundImporterTraits();
-
+extern AssetImporterTraits* GetSkeletonImporterTraits();
 
 struct ImportJob
 {
     fs::path source_path;
-    AssetImporterTraits* importer;
+    const AssetImporterTraits* importer;
 
-    ImportJob(const fs::path& path, AssetImporterTraits* imp)
+    ImportJob(const fs::path& path, const AssetImporterTraits* imp)
         : source_path(path), importer(imp) {}
 };
 
-static std::vector<ImportJob> g_import_queue;
-static Props* g_config = nullptr;
-static std::atomic<bool> g_running{false};
-static std::unique_ptr<std::thread> g_importer_thread;
-static std::atomic<bool> g_thread_running{false};
-
-// Importer uses NoZ logging system
-
-void ProcessFileChange(const fs::path& file_path, FileChangeType change_type, std::vector<AssetImporterTraits*>& importers);
-bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers);
-void CleanupOrphanedAssets(const fs::path& output_dir, const std::vector<AssetImporterTraits*>& importers);
-
-// Helper function to derive file extension from asset signature
-// GetExtensionFromSignature is now provided by asset.h
-
-void signal_handler(int sig)
+struct Importer
 {
-    if (sig != SIGINT)
-        return;
+    std::vector<ImportJob> queue;
+    Props* config;
+    std::atomic<bool> running;
+    std::unique_ptr<std::thread> thread;
+    std::atomic<bool> thread_running;
+    std::vector<AssetImporterTraits*> importers;
+};
 
-    LogInfo("Shutting down...");
-    g_running = false;
+static Importer g_importer = {};
+
+static bool ProcessImportQueue();
+
+static std::string CleanPath(const std::string& path)
+{
+    std::string result = path;
+    for (char& c : result)
+        if (c == '\\')
+            c = '/';
+    return result;
 }
 
 static bool LoadConfig()
@@ -70,24 +55,44 @@ static bool LoadConfig()
     std::filesystem::path config_path = "./editor.cfg";
     if (Stream* config_stream = LoadStream(nullptr, config_path))
     {
-        g_config = Props::Load(config_stream);
+        g_importer.config = Props::Load(config_stream);
         Free(config_stream);
 
-        if (g_config != nullptr)
-        {
-            LogInfo("loaded configuration '%s'", config_path.string().c_str());
+        if (g_importer.config != nullptr)
             return true;
-        }
     }
 
     LogError("missing configuration '%s'", config_path.string().c_str());
     return false;
 }
 
-void ProcessFileChange(const fs::path& file_path, FileChangeType change_type, std::vector<AssetImporterTraits*>& importers)
+const AssetImporterTraits* FindImporter(const fs::path& path)
+{
+    std::string file_ext = path.extension().string();
+    std::transform(file_ext.begin(), file_ext.end(), file_ext.begin(), ::tolower);
+
+    for (auto* importer : g_importer.importers)
+        if (importer && importer->file_extensions)
+            for (const char** ext_ptr = importer->file_extensions; *ext_ptr != nullptr; ++ext_ptr)
+                if (file_ext == *ext_ptr && (!importer->can_import || importer->can_import(path)))
+                    return importer;
+
+    return nullptr;
+}
+
+const AssetImporterTraits* FindImporter(AssetSignature signature)
+{
+    for (const auto* importer : g_importer.importers)
+        if (importer && importer->signature == signature)
+            return importer;
+
+    return nullptr;
+}
+
+void HandleFileChange(const fs::path& file_path, FileChangeType change_type)
 {
     if (change_type == FILE_CHANGE_TYPE_DELETED)
-        return; // Don't process deleted files
+        return;
 
     // Check if this is a .meta file
     std::string ext = file_path.extension().string();
@@ -101,60 +106,35 @@ void ProcessFileChange(const fs::path& file_path, FileChangeType change_type, st
 
         // Check if the associated asset file exists
         if (fs::exists(asset_path) && fs::is_regular_file(asset_path))
-        {
-            ProcessFileChange(asset_path, change_type, importers);
-        }
+            HandleFileChange(asset_path, change_type);
+
         return;
     }
 
-    // Find an importer that can handle this file based on extension
-    AssetImporterTraits* selected_importer = nullptr;
-
-    std::string file_ext = file_path.extension().string();
-    std::transform(file_ext.begin(), file_ext.end(), file_ext.begin(), ::tolower);
-
-    for (auto* importer : importers)
-    {
-        if (importer && importer->file_extensions)
-        {
-            // Check if this importer supports the file extension
-            for (const char** ext_ptr = importer->file_extensions; *ext_ptr != nullptr; ++ext_ptr)
-            {
-                if (file_ext == *ext_ptr)
-                {
-                    selected_importer = importer;
-                    break;
-                }
-            }
-            if (selected_importer)
-                break;
-        }
-    }
-
-    // has an importer?
-    if (!selected_importer)
+    const AssetImporterTraits* importer = FindImporter(file_path);
+    if (!importer)
         return;
 
     // Check if already in the queue
-    auto it = std::find_if(g_import_queue.begin(), g_import_queue.end(),
+    auto it = std::find_if(g_importer.queue.begin(), g_importer.queue.end(),
         [&file_path](const ImportJob& job) {
             return job.source_path == file_path;
         });
 
-    if (it != g_import_queue.end())
+    if (it != g_importer.queue.end())
         return; // Already in queue
 
     // Add new job to queue
-    g_import_queue.emplace_back(file_path, selected_importer);
+    g_importer.queue.emplace_back(file_path, importer);
 }
 
-bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers)
+static bool ProcessImportQueue()
 {
-    if (g_import_queue.empty())
+    if (g_importer.queue.empty())
         return false;
 
     // Get output directory from config
-    auto output_dir = g_config->GetString("output", "directory", "assets");
+    auto output_dir = g_importer.config->GetString("output", "directory", "assets");
 
     // Convert to filesystem::path
     fs::path output_path = fs::absolute(fs::path(output_dir));
@@ -167,12 +147,12 @@ bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers)
     bool any_imports_processed = false;
 
     // Keep processing until no more progress is made
-    while (made_progress && !g_import_queue.empty())
+    while (made_progress && !g_importer.queue.empty())
     {
         made_progress = false;
         remaining_jobs.clear();
 
-        for (const auto& job : g_import_queue)
+        for (const auto& job : g_importer.queue)
         {
             bool can_import_now = true;
 
@@ -180,7 +160,7 @@ bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers)
             if (job.importer->does_depend_on)
             {
                 // Check if any files this one depends on are still in the queue
-                for (const auto& other_job : g_import_queue)
+                for (const auto& other_job : g_importer.queue)
                 {
                     if (&job == &other_job)
                         continue; // Don't check against self
@@ -221,7 +201,7 @@ bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers)
                             meta = new Props();
 
                         // Call the importer
-                        job.importer->import_func(job.source_path, output_stream, g_config, meta);
+                        job.importer->import_func(job.source_path, output_stream, g_importer.config, meta);
 
                         delete meta;
 
@@ -230,7 +210,7 @@ bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers)
                         bool found_relative = false;
 
                         // Get source directories from config and find the relative path
-                        auto source_list = g_config->GetKeys("source");
+                        auto source_list = g_importer.config->GetKeys("source");
                         for (auto& source_dir_str : source_list)
                         {
                             fs::path source_dir(source_dir_str);
@@ -292,13 +272,13 @@ bool ProcessImportQueue(std::vector<AssetImporterTraits*>& importers)
         }
 
         // Swap the queues - remaining_jobs becomes the new import queue
-        g_import_queue = std::move(remaining_jobs);
+        g_importer.queue = std::move(remaining_jobs);
     }
 
     return any_imports_processed;
 }
 
-void CleanupOrphanedAssets(const fs::path& output_dir, const std::vector<AssetImporterTraits*>& importers)
+static void CleanupOrphanedAssets(const fs::path& output_dir)
 {
     if (!fs::exists(output_dir) || !fs::is_directory(output_dir))
         return;
@@ -307,7 +287,7 @@ void CleanupOrphanedAssets(const fs::path& output_dir, const std::vector<AssetIm
     std::set<fs::path> valid_asset_files;
     
     // Get source directories from config
-    auto source_list = g_config->GetKeys("source");
+    auto source_list = g_importer.config->GetKeys("source");
     for (const auto& source_dir_str : source_list)
     {
         fs::path source_dir(source_dir_str);
@@ -323,32 +303,14 @@ void CleanupOrphanedAssets(const fs::path& output_dir, const std::vector<AssetIm
 
                 const fs::path& source_file = entry.path();
                 std::string ext = source_file.extension().string();
-                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
                 // Skip .meta files
                 if (ext == ".meta")
                     continue;
 
-                // Find an importer that can handle this file
-                AssetImporterTraits* selected_importer = nullptr;
-                for (auto* importer : importers)
-                {
-                    if (importer && importer->file_extensions)
-                    {
-                        for (const char** ext_ptr = importer->file_extensions; *ext_ptr != nullptr; ++ext_ptr)
-                        {
-                            if (ext == *ext_ptr)
-                            {
-                                selected_importer = importer;
-                                break;
-                            }
-                        }
-                        if (selected_importer)
-                            break;
-                    }
-                }
 
-                if (!selected_importer)
+                const AssetImporterTraits* importer = FindImporter(source_file);
+                if (!importer)
                     continue;
 
                 // Build expected output file path
@@ -359,7 +321,7 @@ void CleanupOrphanedAssets(const fs::path& output_dir, const std::vector<AssetIm
                     relative_path = source_file.filename();
 
                 fs::path expected_output = output_dir / relative_path;
-                std::string derived_extension = GetExtensionFromSignature(selected_importer->signature);
+                std::string derived_extension = GetExtensionFromSignature(importer->signature);
                 expected_output.replace_extension(derived_extension);
 
                 valid_asset_files.insert(expected_output);
@@ -384,34 +346,17 @@ void CleanupOrphanedAssets(const fs::path& output_dir, const std::vector<AssetIm
 
             const fs::path& output_file = entry.path();
             
-            // Check if this is a recognized asset file by trying to read its header
-            uint32_t signature = 0;
             bool is_asset_file = false;
-            
             if (Stream* stream = LoadStream(nullptr, output_file))
             {
                 AssetHeader header;
-                if (ReadAssetHeader(stream, &header))
-                {
-                    signature = header.signature;
-                    // Check if any importer recognizes this signature
-                    for (const auto* importer : importers)
-                    {
-                        if (importer && importer->signature == signature)
-                        {
-                            is_asset_file = true;
-                            break;
-                        }
-                    }
-                }
+                is_asset_file = ReadAssetHeader(stream, &header) && nullptr != FindImporter(header.signature);
                 Free(stream);
             }
 
             // If it's an asset file but not in our valid set, mark for removal
             if (is_asset_file && valid_asset_files.find(output_file) == valid_asset_files.end())
-            {
                 files_to_remove.push_back(output_file);
-            }
         }
     }
     catch (const std::exception& e)
@@ -441,28 +386,15 @@ void CleanupOrphanedAssets(const fs::path& output_dir, const std::vector<AssetIm
     }
 }
 
-static int RunImporterLoop()
+static int RunImporter()
 {
     if (!LoadConfig())
         return 1;
 
-    std::vector importers = {
-        GetShaderImporterTraits(),
-        GetTextureImporterTraits(),
-        GetFontImporterTraits(),
-        GetMeshImporterTraits(),
-        GetStyleSheetImporterTraits(),
-        GetVfxImporterTraits(),
-        GetSoundImporterTraits()
-    };
-
-    // Set up signal handler for Ctrl-C
-    signal(SIGINT, signal_handler);
-
     InitFileWatcher(500);
 
     // Get source directories from config
-    if (!g_config->HasGroup("source"))
+    if (!g_importer.config->HasGroup("source"))
     {
         LogError("No [source] section found in config");
         ShutdownFileWatcher();
@@ -470,105 +402,70 @@ static int RunImporterLoop()
     }
 
     // Add directories to watch (file watcher will auto-start when first directory is added)
-    LogInfo("Adding directories to watch:");
-    auto source = g_config->GetKeys("source");
+    auto source = g_importer.config->GetKeys("source");
     for (const auto& source_dir_str : source)
-    {
-        LogInfo("  - %s", source_dir_str.c_str());
         if (!WatchDirectory(fs::path(source_dir_str)))
             LogWarning("Failed to add directory '%s'", source_dir_str.c_str());
-    }
 
-    LogInfo("Watching for file changes...");
+    FileChangeEvent event;
 
-    while (g_running)
+    while (g_importer.running)
     {
-        // Dont spin too fast
         thread_sleep_ms(100);
 
-        // Update hotload server
-
-
-        // Enqueue changed files
-        FileChangeEvent event;
         while (GetFileChangeEvent(&event))
-            ProcessFileChange(event.path, event.type, importers);
+            HandleFileChange(event.path, event.type);
 
-        // Process queue
-        if (!ProcessImportQueue(importers))
+        if (!ProcessImportQueue())
             continue;
 
         // Clean up orphaned asset files before generating manifest
-        auto output_dir = g_config->GetString("output", "directory", "assets");
-        CleanupOrphanedAssets(fs::path(output_dir), importers);
+        auto output_dir = g_importer.config->GetString("output", "directory", "assets");
+        CleanupOrphanedAssets(fs::path(output_dir));
 
         // Generate a new asset manifest
-        auto manifest_path = g_config->GetString("manifest", "output_file", "src/assets.cpp");
-        GenerateAssetManifest(fs::path(output_dir), fs::path(manifest_path), importers, g_config);
-
-        // Initialize hotload server after first manifest generation if enabled
-        static bool hotload_initialized = false;
-        if (!hotload_initialized && g_config->HasGroup("hotload"))
-        {
-            int hotload_port = g_config->GetInt("hotload", "port", 8080);
-            if (InitEditorServer(hotload_port))
-            {
-                LogInfo("Hotload server initialized on port %d", hotload_port);
-            }
-            else
-            {
-                LogWarning("Failed to initialize hotload server on port %d", hotload_port);
-            }
-            hotload_initialized = true;
-        }
+        auto manifest_path = g_importer.config->GetString("manifest", "output_file", "src/assets.cpp");
+        GenerateAssetManifest(fs::path(output_dir), fs::path(manifest_path), g_importer.importers, g_importer.config);
     }
 
-    // Clean up
     ShutdownFileWatcher();
-    ShutdownEditorServer();
-    g_import_queue.clear();
+    g_importer.queue.clear();
     return 0;
 }
 
-bool InitImporter()
+void InitImporter()
 {
-    if (g_thread_running)
+    assert(!g_importer.thread_running);
+
+    g_importer.running = true;
+    g_importer.thread_running = true;
+    g_importer.importers = {
+        GetShaderImporterTraits(),
+        GetTextureImporterTraits(),
+        GetFontImporterTraits(),
+        GetMeshImporterTraits(),
+        GetStyleSheetImporterTraits(),
+        GetVfxImporterTraits(),
+        GetSoundImporterTraits(),
+        GetSkeletonImporterTraits()
+    };
+
+    g_importer.thread = std::make_unique<std::thread>([]
     {
-        LogInfo("Importer thread is already running");
-        return true;
-    }
-
-    LogInfo("Starting asset importer thread...");
-    g_running = true;
-    g_thread_running = true;
-
-    g_importer_thread = std::make_unique<std::thread>([](){
-        int result = RunImporterLoop();
-        g_thread_running = false;
-        LogInfo("Importer thread stopped with code: %d", result);
+        RunImporter();
+        g_importer.thread_running = false;
     });
-
-    return true;
 }
 
 void ShutdownImporter()
 {
-    if (!g_thread_running)
-    {
-        LogInfo("Importer thread is not running");
+    if (!g_importer.thread_running)
         return;
-    }
 
-    LogInfo("Shutting down importer thread...");
-    g_running = false;
+    g_importer.running = false;
 
-    if (g_importer_thread && g_importer_thread->joinable())
-        g_importer_thread->join();
+    if (g_importer.thread && g_importer.thread->joinable())
+        g_importer.thread->join();
 
-    g_importer_thread.reset();
-}
-
-bool IsImporterRunning()
-{
-    return g_thread_running;
+    g_importer.thread.reset();
 }

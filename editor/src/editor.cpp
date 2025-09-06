@@ -13,13 +13,14 @@
 
 constexpr int MAX_VIEWS = 16;
 
-extern void UpdateEditorServer();
 extern void InitEvent(ApplicationTraits* traits);
 extern void RequestStats();
+extern void InitEditorServer(Props* config);
+extern void UpdateEditorServer();
+extern void ShutdownEditorServer();
 
-bool InitImporter();
+void InitImporter();
 void ShutdownImporter();
-bool IsImporterRunning();
 
 struct Editor
 {
@@ -30,6 +31,7 @@ struct Editor
     TextInput* search_input;
     bool command_mode;
     bool search_mode;
+    Props* config;
     std::atomic<bool> is_running;
     int fps;
     bool stats_requested;
@@ -318,9 +320,6 @@ static void RunEditor()
     g_main_thread_id = std::this_thread::get_id();
     
     InitLog(HandleLog);
-    LogInfo("NoZ Editor starting...");
-    LogInfo("Auto-starting asset importer...");
-
     InitImporter();
     RenderTerminal();
 
@@ -513,12 +512,31 @@ void HandleStatsEvents(EventId event, const void* event_data)
     g_editor.stats_requested = false;
 }
 
+static void InitConfig()
+{
+    std::filesystem::path config_path = "./editor.cfg";
+    if (Stream* config_stream = LoadStream(nullptr, config_path))
+    {
+        g_editor.config = Props::Load(config_stream);
+        Free(config_stream);
+
+        if (g_editor.config != nullptr)
+            return;
+    }
+
+    g_editor.config = new Props();
+
+    LogError("missing configuration '%s'", config_path.string().c_str());
+}
+
 void InitEditor()
 {
     g_scratch_allocator = CreateArenaAllocator(32 * noz::MB, "scratch");
 
     ApplicationTraits traits = {};
     Init(traits);
+
+    InitConfig();
 
     InitEvent(&traits);
     InitLog(HandleLog);
@@ -532,11 +550,14 @@ void InitEditor()
     g_editor.search_input = CreateTextInput(1, term_height - 1, term_width - 1);
     g_editor.is_running = true;
 
+    InitEditorServer(g_editor.config);
+
     Listen(EDITOR_EVENT_STATS, HandleStatsEvents);
 }
 
 void ShutdownEditor()
 {
+    ShutdownEditorServer();
     Destroy(g_editor.command_input);
     Destroy(g_editor.search_input);
     ShutdownImporter();

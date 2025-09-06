@@ -5,9 +5,7 @@
 #include "inspector_view.h"
 #include "../tui/screen.h"
 #include "../tui/terminal.h"
-#include "../tokenizer.h"
 
-extern void SendInspectRequest(const std::string& search_filter);
 extern bool HasConnectedClient();
 
 InspectorView::InspectorView()
@@ -255,7 +253,6 @@ void InspectorView::Render(const RectInt& rect)
         if (HasConnectedClient())
         {
             // Client connected - send the inspection request
-            SendInspectRequest("");
             _has_requested_data = true;
         }
     }

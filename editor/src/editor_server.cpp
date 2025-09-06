@@ -16,9 +16,6 @@
 
 #include "server.h"
 #include "../../src/editor/editor_messages.h"
-#include "views/inspector_object.h"
-
-void HandleInspectorObject(std::unique_ptr<InspectorObject> object);
 
 // @types
 static ENetHost* g_server = nullptr;
@@ -47,15 +44,6 @@ bool HasConnectedClient()
     return g_client != nullptr;
 }
 
-static void HandleInspectAck(Stream* stream)
-{
-    auto inspectorObject = InspectorObject::CreateFromStream(stream);
-    if (!inspectorObject)
-        return;
-
-    HandleInspectorObject(std::move(inspectorObject));
-}
-
 static void HandleStatsAck(Stream* stream)
 {
     i32 fps = ReadI32(stream);
@@ -70,10 +58,6 @@ static void HandleClientMessage(void* data, size_t data_size)
     auto stream = LoadStream(ALLOCATOR_DEFAULT, (u8*)data, data_size);
     switch (ReadEditorMessage(stream))
     {
-    case EDITOR_MESSAGE_INSPECT_ACK:
-        HandleInspectAck(stream);
-        break;
-
     case EDITOR_MESSAGE_STATS_ACK:
         HandleStatsAck(stream);
         break;
@@ -145,25 +129,20 @@ void BroadcastAssetChange(const std::string& asset_name)
     SendEditorMessage(msg);
 }
 
-void SendInspectRequest(const std::string& search_filter)
-{
-    auto msg = CreateEditorMessage(EDITOR_MESSAGE_INSPECT);
-    WriteString(msg, search_filter.c_str());
-    SendEditorMessage(msg);
-}
-
 void RequestStats()
 {
     SendEditorMessage(CreateEditorMessage(EDITOR_MESSAGE_STATS));
 }
 
 // @init
-bool InitEditorServer(int port)
+void InitEditorServer(Props* config)
 {
+    u16 port = (u16)config->GetInt("server", "port", 8080);
+
     if (enet_initialize() != 0)
     {
-        LogWarning("Failed to initialize ENet");
-        return false;
+        LogWarning("Failed to create server on port %d", port);
+        return;
     }
 
     ENetAddress address;
@@ -174,13 +153,12 @@ bool InitEditorServer(int port)
     g_server = enet_host_create(&address, 32, 2, 0, 0);
     if (!g_server)
     {
-        LogWarning("Failed to create ENet server on port %d", port);
+        LogWarning("Failed to create server on port %d", address.port);
         enet_deinitialize();
-        return false;
+        return;
     }
 
-    LogInfo("Editor server started on port %d", port);
-    return true;
+    LogInfo("Server started on port %d", address.port);
 }
 
 void ShutdownEditorServer()

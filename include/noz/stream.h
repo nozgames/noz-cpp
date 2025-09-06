@@ -49,6 +49,7 @@ float ReadFloat(Stream* stream);
 double ReadDouble(Stream* stream);
 bool ReadBool(Stream* stream);
 int ReadString(Stream* stream, char* buffer, int buffer_size);
+const Name* ReadName(Stream* stream);
 Color ReadColor(Stream* stream);
 Vec3 ReadVec3(Stream* stream);
 Vec2 ReadVec2(Stream* stream);

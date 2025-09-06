@@ -13,20 +13,20 @@ void main()
     f_uv = uv0;
 
     // First rotate normal by object rotation (transposed)
-    float obj_cos = cos(object.obj_rot);
-    float obj_sin = sin(object.obj_rot);
-    vec3 world_normal = vec3(
-    dot(normal.xy, vec2(obj_cos, obj_sin)),    // Transposed: +sin instead of -sin
-    dot(normal.xy, vec2(-obj_sin, obj_cos)),   // Transposed: -sin instead of +sin
-    normal.z
-    );
-
-    // Then rotate by camera rotation (also transposed)
-    f_normal = vec3(
-    dot(world_normal.xy, vec2(camera.cam_rot.y, camera.cam_rot.x)),  // Transposed: +x instead of -x
-    dot(world_normal.xy, vec2(-camera.cam_rot.x, camera.cam_rot.y)), // Transposed: flipped from original
-    world_normal.z
-    );
+//    float obj_cos = cos(object.obj_rot);
+//    float obj_sin = sin(object.obj_rot);
+//    vec3 world_normal = vec3(
+//    dot(normal.xy, vec2(obj_cos, obj_sin)),    // Transposed: +sin instead of -sin
+//    dot(normal.xy, vec2(-obj_sin, obj_cos)),   // Transposed: -sin instead of +sin
+//    normal.z
+//    );
+//
+//    // Then rotate by camera rotation (also transposed)
+//    f_normal = vec3(
+//    dot(world_normal.xy, vec2(camera.cam_rot.y, camera.cam_rot.x)),  // Transposed: +x instead of -x
+//    dot(world_normal.xy, vec2(-camera.cam_rot.x, camera.cam_rot.y)), // Transposed: flipped from original
+//    world_normal.z
+//    );
 }
 
 //@ END

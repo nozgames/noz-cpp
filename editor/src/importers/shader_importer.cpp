@@ -8,9 +8,58 @@
 
 namespace fs = std::filesystem;
 
-static std::string ExtractStage(const std::string& source, const std::string& stage);
 static std::string ProcessIncludes(const std::string& source, const fs::path& base_dir);
 static std::vector<u32> CompileGLSLToSPIRV(const std::string& source, glslang_stage_t stage, const std::string& filename);
+
+static std::string ExtractStage(const std::string& source, const std::string& stage)
+{
+    std::string result = source;
+
+    // Convert custom stage directives to #ifdef blocks based on current stage
+    // Format: //@ VERTEX ... //@ END, //@ GEOMETRY ... //@ END and //@ FRAGMENT ... //@ END
+
+    // Use [\s\S] instead of . to match newlines (equivalent to dotall)
+    std::regex vertex_pattern(R"(//@ VERTEX\s*\n([\s\S]*?)//@ END)");
+    std::regex geometry_pattern(R"(//@ GEOMETRY\s*\n([\s\S]*?)//@ END)");
+    std::regex fragment_pattern(R"(//@ FRAGMENT\s*\n([\s\S]*?)//@ END)");
+
+    if (stage == "VERTEX_SHADER")
+    {
+        // Keep vertex shader blocks, remove other shader blocks
+        result = std::regex_replace(result, vertex_pattern, "$1");
+        result = std::regex_replace(result, geometry_pattern, "");
+        result = std::regex_replace(result, fragment_pattern, "");
+    }
+    else if (stage == "GEOMETRY_SHADER")
+    {
+        // Check if geometry shader block actually exists
+        if (std::regex_search(result, geometry_pattern))
+        {
+            // Keep geometry shader blocks, remove other shader blocks
+            result = std::regex_replace(result, geometry_pattern, "$1");
+            result = std::regex_replace(result, vertex_pattern, "");
+            result = std::regex_replace(result, fragment_pattern, "");
+        }
+        else
+        {
+            // No geometry shader block found, return empty string
+            result = "";
+        }
+    }
+    else if (stage == "FRAGMENT_SHADER")
+    {
+        // Keep fragment shader blocks, remove other shader blocks
+        result = std::regex_replace(result, fragment_pattern, "$1");
+        result = std::regex_replace(result, vertex_pattern, "");
+        result = std::regex_replace(result, geometry_pattern, "");
+    }
+
+    // Trim whitespace from the result
+    result.erase(0, result.find_first_not_of(" \t\n\r"));
+    result.erase(result.find_last_not_of(" \t\n\r") + 1);
+
+    return result;
+}
 
 static void WriteCompiledShader(
     const std::string& vertex_shader,
@@ -102,7 +151,7 @@ void ImportShader(const fs::path& source_path, Stream* output_stream, Props* con
 bool DoesShaderDependOn(const fs::path& source_path, const fs::path& dependency_path)
 {
     std::string ext = dependency_path.extension().string();
-    if (ext != ".glsl" && ext != ".vert" && ext != ".frag")
+    if (ext != ".glsl")
         return false;
 
     try
@@ -142,224 +191,7 @@ bool DoesShaderDependOn(const fs::path& source_path, const fs::path& dependency_
     }
 }
 
-static std::string ExtractStage(const std::string& source, const std::string& stage)
-{
-    std::string result = source;
-    
-    // Convert custom stage directives to #ifdef blocks based on current stage
-    // Format: //@ VERTEX ... //@ END, //@ GEOMETRY ... //@ END and //@ FRAGMENT ... //@ END
-    
-    // Use [\s\S] instead of . to match newlines (equivalent to dotall)
-    std::regex vertex_pattern(R"(//@ VERTEX\s*\n([\s\S]*?)//@ END)");
-    std::regex geometry_pattern(R"(//@ GEOMETRY\s*\n([\s\S]*?)//@ END)");
-    std::regex fragment_pattern(R"(//@ FRAGMENT\s*\n([\s\S]*?)//@ END)");
-    
-    if (stage == "VERTEX_SHADER")
-    {
-        // Keep vertex shader blocks, remove other shader blocks
-        result = std::regex_replace(result, vertex_pattern, "$1");
-        result = std::regex_replace(result, geometry_pattern, "");
-        result = std::regex_replace(result, fragment_pattern, "");
-    }
-    else if (stage == "GEOMETRY_SHADER")
-    {
-        // Check if geometry shader block actually exists
-        if (std::regex_search(result, geometry_pattern))
-        {
-            // Keep geometry shader blocks, remove other shader blocks
-            result = std::regex_replace(result, geometry_pattern, "$1");
-            result = std::regex_replace(result, vertex_pattern, "");
-            result = std::regex_replace(result, fragment_pattern, "");
-        }
-        else
-        {
-            // No geometry shader block found, return empty string
-            result = "";
-        }
-    }
-    else if (stage == "FRAGMENT_SHADER")
-    {
-        // Keep fragment shader blocks, remove other shader blocks
-        result = std::regex_replace(result, fragment_pattern, "$1");
-        result = std::regex_replace(result, vertex_pattern, "");
-        result = std::regex_replace(result, geometry_pattern, "");
-    }
-    
-    // Trim whitespace from the result
-    result.erase(0, result.find_first_not_of(" \t\n\r"));
-    result.erase(result.find_last_not_of(" \t\n\r") + 1);
-    
-    return result;
-}
-
-static u32 GetTypeSize(const std::string& type_name)
-{
-    // HLSL built-in type sizes (in bytes)
-    if (type_name == "float" || type_name == "int" || type_name == "uint") return 4;
-    if (type_name == "float2" || type_name == "int2" || type_name == "uint2") return 8;
-    if (type_name == "float3" || type_name == "int3" || type_name == "uint3") return 12;
-    if (type_name == "float4" || type_name == "int4" || type_name == "uint4") return 16;
-    if (type_name == "matrix" || type_name == "float4x4") return 64;
-    if (type_name == "float3x3") return 36;
-    if (type_name == "float2x2") return 16;
-    if (type_name == "double") return 8;
-    if (type_name == "bool") return 4; // bools are usually padded to 4 bytes in cbuffers
-    
-    // Default to 4 bytes for unknown types
-    return 4;
-}
-
-static std::string ReadIncludeFile(const fs::path& include_path)
-{
-    std::ifstream file(include_path);
-    if (!file.is_open())
-        return "";
-        
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-}
-
-static std::vector<u32> ParseUniformBufferSizes(const std::string& hlsl_source, const fs::path& include_dir, int depth)
-{
-    std::vector<u32> buffer_sizes;
-    
-    std::string indent(depth * 2, ' ');
-    
-    
-    Tokenizer tokenizer = {};
-    Init(tokenizer, hlsl_source.c_str());
-    
-    Token token = {};
-    bool found_any_cbuffer = false;
-    while (NextToken(tokenizer, &token))
-    {
-        
-        // Handle #include statements (# and include will be separate tokens)
-        if (IsValue(token, "#"))
-        {
-            // Look for "include" token next
-            if (!NextToken(tokenizer, &token))
-                continue;
-                
-            if (!IsValue(token, "include"))
-                continue;
-                
-            // Get the filename token (should be quoted string)
-            if (!NextToken(tokenizer, &token))
-                continue;
-                
-            if (token.type != TOKEN_TYPE_STRING)
-                continue;
-                
-            std::string include_filename(token.value, token.length);
-            fs::path include_path = include_dir / include_filename;
-            
-            std::string include_content = ReadIncludeFile(include_path);
-            if (!include_content.empty())
-            {
-                // Recursively parse included file
-                auto included_buffers = ParseUniformBufferSizes(include_content, include_dir, depth + 1);
-                buffer_sizes.insert(buffer_sizes.end(), included_buffers.begin(), included_buffers.end());
-            }
-            continue;
-        }
-        
-        // Look for cbuffer declarations
-        if (token.type != TOKEN_TYPE_STRING || !IsValue(token, "cbuffer"))
-            continue;
-
-        // Skip cbuffer name and find opening brace
-        bool found_brace = false;
-        while (NextToken(tokenizer, &token))
-        {
-            if (token.type == TOKEN_TYPE_EOF)
-                break;
-            if (IsValue(token, "{"))
-            {
-                found_brace = true;
-                break;
-            }
-        }
-        
-        if (!found_brace)
-            continue;
-
-        u32 buffer_size = 0;
-        u32 current_offset = 0;
-        
-        // Parse cbuffer contents
-        while (NextToken(tokenizer, &token))
-        {
-            if (token.type == TOKEN_TYPE_EOF || IsValue(token, "}"))
-                break;
-                
-            if (token.type != TOKEN_TYPE_STRING) // Identifiers are TOKEN_TYPE_STRING
-                continue;
-
-            std::string type_name(token.value, token.length);
-            
-            // Skip variable name
-            if (!NextToken(tokenizer, &token))
-                break;
-            if (token.type != TOKEN_TYPE_STRING) // Identifiers are TOKEN_TYPE_STRING
-                continue;
-                
-            std::string var_name(token.value, token.length);
-            std::cout << "    " << type_name << " " << var_name;
-            
-            u32 type_size = GetTypeSize(type_name);
-            u32 array_size = 1;
-            
-            // Check for array declaration [size]
-            if (NextToken(tokenizer, &token) && IsValue(token, "["))
-            {
-                // Get array size
-                if (NextToken(tokenizer, &token) && token.type == TOKEN_TYPE_NUMBER)
-                {
-                    std::string size_str(token.value, token.length);
-                    array_size = std::stoi(size_str);
-                    std::cout << "[" << array_size << "]";
-                    
-                    // Skip closing bracket
-                    NextToken(tokenizer, &token); // Should be "]"
-                }
-            }
-            
-            type_size *= array_size;
-            std::cout << " = " << type_size << " bytes" << std::endl;
-            
-            // Apply 16-byte alignment for cbuffer packing rules
-            if (current_offset % 16 != 0 && current_offset % 16 + type_size > 16)
-            {
-                current_offset = (current_offset + 15) & ~15; // Align to 16 bytes
-            }
-            
-            current_offset += type_size;
-            buffer_size = current_offset;
-            
-            // Skip to semicolon
-            while (NextToken(tokenizer, &token))
-            {
-                if (IsValue(token, ";") || IsValue(token, "}") || token.type == TOKEN_TYPE_EOF)
-                    break;
-            }
-        }
-        
-        // Pad buffer size to 16-byte boundary (cbuffer requirement)
-        buffer_size = (buffer_size + 15) & ~15;
-        buffer_sizes.push_back(buffer_size > 0 ? buffer_size : 16); // Minimum 16 bytes
-    }
-    
-    return buffer_sizes;
-}
-
-static const char* g_shader_extensions[] = {
-    ".glsl",
-    ".vert",
-    ".frag",
-    nullptr
-};
+static const char* g_shader_extensions[] = { ".glsl", nullptr };
 
 static AssetImporterTraits g_shader_importer_traits = {
     .type_name = "Shader",
@@ -578,7 +410,7 @@ static std::string ProcessIncludes(const std::string& source, const fs::path& ba
                         std::ifstream include_file(include_path);
                         if (include_file.is_open())
                         {
-                            std::string include_content((std::istreambuf_iterator<char>(include_file)),
+                            std::string include_content((std::istreambuf_iterator(include_file)),
                                                        std::istreambuf_iterator<char>());
                             
                             // Recursively process includes in the included file

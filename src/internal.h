@@ -3,21 +3,6 @@
 //
 #pragma once
 
-struct RenderCamera
-{
-    Vec2 position;
-    Vec2 size;
-    Vec2 rotation;
-    Vec2 padding;
-};
-
-struct RenderTransform
-{
-    Vec2 position;
-    Vec2 scale;
-    float rotation;
-};
-
 // @mesh
 struct MeshVertex
 {
@@ -26,25 +11,6 @@ struct MeshVertex
     Vec3 normal;
     float bone;
 };
-
-struct BoneTransform
-{
-    Vec3 position;
-    Vec3 scale;
-    quat rotation;
-};
-
-typedef struct bone
-{
-    char* name;
-    int index;
-    int parentIndex;
-    Mat4 world_to_local;
-    Mat4 local_to_world;
-    BoneTransform transform;
-    float length;
-    Vec3 direction;
-} bone_t;
 
 struct SamplerOptions
 {
@@ -96,13 +62,13 @@ typedef struct animation_track
 // @render_buffer
 
 // @animation
-void animation_evaluate_frame(
-    Animation* animation,
-    float time,
-    bone_t* bones,
-    size_t bone_count,
-    BoneTransform* transforms,
-    size_t transform_count);
+// void animation_evaluate_frame(
+//     Animation* animation,
+//     float time,
+//     bone_t* bones,
+//     size_t bone_count,
+//     BoneTransform* transforms,
+//     size_t transform_count);
 
 // @input
 void InitInput();

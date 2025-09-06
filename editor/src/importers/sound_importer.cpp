@@ -174,19 +174,6 @@ void ImportSound(const fs::path& source_path, Stream* output_stream, Props* conf
     }
     
     WriteBytes(output_stream, audio_data.data(), data_chunk.sub_chunk2_size);
-    
-    LogInfo("Imported WAV file: %s", source_path.string().c_str());
-    LogInfo("  Sample Rate: %u Hz", fmt_chunk.sample_rate);
-    LogInfo("  Channels: %u", fmt_chunk.num_channels);
-    LogInfo("  Bit Depth: %u bits", fmt_chunk.bits_per_sample);
-    LogInfo("  Data Size: %u bytes", data_chunk.sub_chunk2_size);
-}
-
-bool DoesSoundDependOn(const fs::path& source_path, const fs::path& dependency_path)
-{
-    // Check if dependency is the meta file for this sound
-    fs::path meta_path = fs::path(source_path.string() + ".meta");
-    return meta_path == dependency_path;
 }
 
 static const char* g_sound_extensions[] = {
@@ -198,8 +185,7 @@ static AssetImporterTraits g_sound_importer_traits = {
     .type_name = "Sound",
     .signature = ASSET_SIGNATURE_SOUND,
     .file_extensions = g_sound_extensions,
-    .import_func = ImportSound,
-    .does_depend_on = DoesSoundDependOn
+    .import_func = ImportSound
 };
 
 AssetImporterTraits* GetSoundImporterTraits()

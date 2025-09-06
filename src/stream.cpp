@@ -175,6 +175,13 @@ bool IsEOS(Stream* stream)
     return impl->position >= impl->size;
 }
 
+const Name* ReadName(Stream* stream)
+{
+    char name[256];
+    ReadString(stream, name, sizeof(name));
+    return GetName(name);
+}
+
 int ReadString(Stream* stream, char* buffer, int buffer_size)
 {
     auto len = (int)ReadU32(stream);
@@ -268,6 +275,13 @@ float ReadFloat(Stream* stream)
 {
     float value;
     ReadBytes(stream, &value, sizeof(float));
+    return value;
+}
+
+Vec2 ReadVec2(Stream* stream)
+{
+    Vec2 value;
+    ReadBytes(stream, &value, sizeof(Vec2));
     return value;
 }
 
@@ -382,7 +396,7 @@ void WriteVec3(Stream* stream, const Vec3& value)
 
 void WriteVec2(Stream* stream, const Vec2& value)
 {
-    WriteBytes(stream, (void*)&value, sizeof(Vec2));
+    WriteBytes(stream, &value, sizeof(Vec2));
 }
 
 void WriteRect(Stream* stream, const Rect& value)

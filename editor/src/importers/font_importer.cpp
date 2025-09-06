@@ -202,11 +202,6 @@ void ImportFont(const fs::path& source_path, Stream* output_stream, Props* confi
     WriteFontData(output_stream, ttf.get(), image, imageSize, glyphs, font_size);
 }
 
-bool DoesFontDependOn(const fs::path& source_path, const fs::path& dependency_path)
-{
-    return fs::path(source_path.string() + ".meta") == dependency_path;
-}
-
 static const char* g_font_extensions[] = {
     ".ttf",
     ".otf",
@@ -217,8 +212,7 @@ static AssetImporterTraits g_font_importer_traits = {
     .type_name = "Font",
     .signature = ASSET_SIGNATURE_FONT,
     .file_extensions = g_font_extensions,
-    .import_func = ImportFont,
-    .does_depend_on = DoesFontDependOn
+    .import_func = ImportFont
 };
 
 AssetImporterTraits* GetFontImporterTraits()

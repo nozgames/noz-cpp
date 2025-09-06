@@ -1,92 +1,86 @@
-#if 0
-/*
+//
+//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//
 
-	NoZ Game Engine
+#include "../gltf.h"
 
-	Copyright(c) 2025 NoZ Games, LLC
+namespace fs = std::filesystem;
 
-*/
-
-#include <noz/binary_stream.h>
-#include "SkeletonImporter.h"
-#include "../gltf_loader.h"
-
-using namespace noz;
-
-SkeletonImporter::SkeletonImporter(const ImportConfig::ModelConfig& config)
-    : _config(config)
+static float QuaternionToRotation(const Vec4& q)
 {
+    return atan2f(2.0 * (q.w * q.z + q.x * q.y), 1.0 - 2.0 * (q.y * q.y + q.z * q.z));
 }
 
-bool SkeletonImporter::can_import(const string& filePath) const
+void ImportSkeleton(const fs::path& source_path, Stream* output_stream, Props* config, Props* meta)
 {
-    // Check if it's a GLB file
-    if (filePath.length() < 4 || filePath.substr(filePath.length() - 4) != ".glb")
-        return false;
+    const fs::path& src_path = source_path;
 
-    // Check if meta file exists and specifies skeleton import
-    string metaPath = filePath + ".meta";
-    if (!filesystem::exists(metaPath))
-        return false;
+    GLTFLoader gltf;
+    if (!gltf.open(src_path))
+        throw std::runtime_error("Failed to open GLTF/GLB file");
 
-    return meta_file::parse(metaPath).get_bool("Mesh", "importSkeleton", false);
-}
+    auto bones = gltf.ReadBones();
+    gltf.Close();
 
-vector<string> SkeletonImporter::get_supported_extensions() const
-{
-    return { ".glb" };
-}
+    AssetHeader header = {};
+    header.signature = ASSET_SIGNATURE_SKELETON;
+    header.version = 1;
+    header.flags = 0;
+    WriteAssetHeader(output_stream, &header);
 
-string SkeletonImporter::get_name() const
-{
-    return "SkeletonImporter";
-}
-
-void SkeletonImporter::import(const string& source_path, const string& outputDir)
-{
-    filesystem::path sourceFile(source_path);
-    string output_path = outputDir + "/" + sourceFile.stem().string() + ".skeleton";
-
-    gltf_loader loader;
-    if (!loader.open(source_path))
-		throw runtime_error("invalid GLB file");
-
-    auto bones = loader.read_bones(gltf_loader::BoneFilter::fromMetaFile(source_path + ".meta"));
-    loader.close();
-
-    if (bones.empty())
-		throw runtime_error("No bones found");
-
-    write_skeleton(output_path, bones, source_path);
-}
-
-void SkeletonImporter::write_skeleton(
-	const string& output_path,
-	const vector<gltf_bone>& bones,
-	const string& source_path)
-{
-    filesystem::path outputFile(output_path);
-    filesystem::create_directories(outputFile.parent_path());
-
-    binary_stream stream;
-    stream.write_signature("SKEL");
-    stream.write_uint32(1); // Version
-    stream.write_uint32(static_cast<uint32_t>(bones.size()));
+    WriteU8(output_stream, (u8)bones.size());
 
     for (const auto& bone : bones)
     {
-        stream.write_string(bone.name);
-        stream.write_int32(bone.index);
-        stream.write_int32(bone.parent_index);
-		stream.write<mat4>(bone.local_to_world);
-		stream.write<mat4>(bone.world_to_local);
-		stream.write<glm::vec3>(bone.position);
-		stream.write<glm::quat>(bone.rotation);
-		stream.write<glm::vec3>(bone.scale);
-        stream.write_float(bone.length);
-		stream.write<glm::vec3>(bone.direction);
+        Mat3 local_to_world = ToMat3(bone.local_to_world);
+        Mat3 world_to_local = ToMat3(bone.world_to_local);
+
+        WriteString(output_stream, bone.name.c_str());
+        WriteI8(output_stream, (char)bone.index);
+        WriteI8(output_stream, (char)bone.parent_index);
+        WriteStruct(output_stream, local_to_world);
+        WriteStruct(output_stream, world_to_local);
+        WriteVec2(output_stream, Vec2{bone.position.x, bone.position.y});
+        WriteFloat(output_stream, QuaternionToRotation(bone.rotation));
+        WriteVec2(output_stream, Vec2{bone.scale.x, bone.scale.y});
+        WriteFloat(output_stream, bone.length);
+        WriteVec2(output_stream, Vec2{bone.direction.x, bone.direction.y});
+    }
+}
+
+bool CanImportSkeleton(const fs::path& source_path)
+{
+    Stream* stream = LoadStream(ALLOCATOR_DEFAULT, fs::path(source_path.string() + ".meta"));
+    if (!stream)
+        return false;
+    Props* props = Props::Load(stream);
+    if (!props)
+    {
+        Free(stream);
+        return false;
     }
 
-    stream.save(output_path);
+    bool can_import = !props->GetBool("mesh", "skip_skeleton", true);
+    Free(stream);
+    delete props;
+    return can_import;
 }
-#endif
+
+static const char* g_skeleton_extensions[] = {
+    ".glb",
+    nullptr
+};
+
+static AssetImporterTraits g_skeleton_importer_traits = {
+    .type_name = "Skeleton",
+    .signature = ASSET_SIGNATURE_SKELETON,
+    .file_extensions = g_skeleton_extensions,
+    .import_func = ImportSkeleton,
+    .can_import = CanImportSkeleton
+};
+
+AssetImporterTraits* GetSkeletonImporterTraits()
+{
+    return &g_skeleton_importer_traits;
+}
+

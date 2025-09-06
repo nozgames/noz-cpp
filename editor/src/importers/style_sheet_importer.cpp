@@ -218,15 +218,8 @@ void ImportStyleSheet(const fs::path& source_path, Stream* output_stream, Props*
 
 bool DoesStyleSheetDependOn(const fs::path& source_path, const fs::path& dependency_path)
 {
-    // Check if dependency is the meta file for this stylesheet
-    fs::path meta_path = fs::path(source_path.string() + ".meta");
-    
-    if (meta_path == dependency_path)
-        return true;
-    
     // TODO: Add support for stylesheet inheritance dependency checking
     // Need to load meta_props to check inherited files
-    
     return false;
 }
 

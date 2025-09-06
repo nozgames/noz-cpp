@@ -224,6 +224,7 @@ static void GenerateAssetsHeader(ManifestGenerator* generator, const fs::path& h
         "struct Mesh;\n"
         "struct Font;\n"
         "struct Material;\n"
+        "struct Skeleton;\n"
         "struct Sound;\n\n");
     
     // Build directory tree (same as in OrganizeAssetsByType)

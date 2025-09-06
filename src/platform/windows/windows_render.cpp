@@ -10,7 +10,8 @@ constexpr int MAX_TEXTURES = 128;
 constexpr int VK_SPACE_VERTEX_UNIFORM = 0;
 constexpr int VK_SPACE_TEXTURE = 1;
 constexpr int VK_SPACE_FRAGMENT_UNIFORM = 2;
-constexpr u32 UNIFORM_BUFFER_SIZE = sizeof(RenderTransform) * 64;
+// todo: remove?
+constexpr u32 UNIFORM_BUFFER_SIZE = sizeof(Mat3) * 64;
 
 static VkFilter ToVK(TextureFilter filter)
 {
@@ -1268,15 +1269,13 @@ void platform::EndRenderFrame()
     vkQueuePresentKHR(g_vulkan.present_queue, &vk_parent_info);
 }
 
-void platform::BindTransform(const RenderTransform* transform)
+void platform::BindTransform(const Mat3& transform)
 {
-    assert(transform);
-    
     VulkanUniformBuffer* buffer = AcquireUniformBuffer(VERTEX_REGISTER_OBJECT);
     if (!buffer)
         return;
     
-    memcpy(buffer->mapped_ptr, transform, sizeof(RenderTransform));
+    memcpy(buffer->mapped_ptr, &transform, sizeof(transform));
     vkCmdBindDescriptorSets(
         g_vulkan.command_buffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1289,15 +1288,13 @@ void platform::BindTransform(const RenderTransform* transform)
     );
 }
 
-void platform::BindCamera(const RenderCamera* camera)
+void platform::BindCamera(const Mat3& view_matrix)
 {
-    assert(camera);
-
     VulkanUniformBuffer* buffer = AcquireUniformBuffer(VERTEX_REGISTER_CAMERA);
     if (!buffer)
         return;
     
-    memcpy(buffer->mapped_ptr, camera, sizeof(RenderCamera));
+    memcpy(buffer->mapped_ptr, &view_matrix, sizeof(Mat3));
     vkCmdBindDescriptorSets(
         g_vulkan.command_buffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1309,6 +1306,7 @@ void platform::BindCamera(const RenderCamera* camera)
     );
 }
 
+#if 0
 void platform::BindBoneTransforms(const RenderTransform* bones, int count)
 {
     assert(bones);
@@ -1322,6 +1320,7 @@ void platform::BindBoneTransforms(const RenderTransform* bones, int count)
     // memcpy(buffer->mapped_ptr, bones, sizeof(RenderTransform) * count);
     // g_vulkan.current_camera_buffer = buffer;
 }
+#endif
 
 void platform::BindLight(const void* light)
 {

@@ -11,6 +11,7 @@ struct Material : Asset {};
 struct Font : Asset {};
 struct Shader : Asset {};
 struct Animation : Asset {};
+struct Skeleton : Asset {};
 struct MeshBuilder {};
 
 // @renderer_traits
@@ -128,6 +129,7 @@ void BindDefaultTexture(int texture_index);
 void BindColor(Color color);
 void BindCamera(Camera* camera);
 void BindTransform(const Vec2& position, float rotation, const Vec2& scale);
+void BindTransform(const Mat3& transform);
 void BindMaterial(Material* material);
 void DrawMesh(Mesh* mesh);
 
@@ -154,3 +156,9 @@ void SetSize(Camera* camera, const Vec2& size);
 Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos);
 Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos);
 void UpdateCamera(Camera* camera);
+const Mat3& GetViewMatrix(Camera* camera);
+
+// @skeleton
+int GetBoneIndex(Skeleton* skeleton, const Name* name);
+const Mat3& GetLocalToWorld(Skeleton* skeleton, int bone_index);
+const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index);

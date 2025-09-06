@@ -17,6 +17,7 @@ constexpr AssetSignature ASSET_SIGNATURE_MATERIAL    = MAKE_FOURCC('N', 'Z', 'M'
 constexpr AssetSignature ASSET_SIGNATURE_FONT        = MAKE_FOURCC('N', 'Z', 'F', 'T');
 constexpr AssetSignature ASSET_SIGNATURE_STYLE_SHEET = MAKE_FOURCC('N', 'Z', 'S', 'T');
 constexpr AssetSignature ASSET_SIGNATURE_VFX         = MAKE_FOURCC('N', 'Z', 'F', 'X');
+constexpr AssetSignature ASSET_SIGNATURE_SKELETON    = MAKE_FOURCC('N', 'Z', 'S', 'K');
 constexpr AssetSignature ASSET_SIGNATURE_UNKNOWN     = 0xF00DF00D;
 
 struct AssetHeader
@@ -50,6 +51,7 @@ Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const
 Asset* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
 Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
 Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
+Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
 
 // @macros
 #define NOZ_LOAD_SHADER(allocator, path, member) \
@@ -73,12 +75,16 @@ Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, cons
 #define NOZ_LOAD_SOUND(allocator, path, member) \
     member = (Sound*)LoadAsset(allocator, path, ASSET_SIGNATURE_SOUND, LoadSound);
 
+#define NOZ_LOAD_SKELETON(allocator, path, member) \
+    member = (Skeleton*)LoadAsset(allocator, path, ASSET_SIGNATURE_SKELETON, LoadSkeleton);
+
 
 #define NOZ_RELOAD_SHADER(asset_name, asset)
 #define NOZ_RELOAD_TEXTURE(asset_name, asset)
 #define NOZ_RELOAD_MESH(asset_name, asset)
 #define NOZ_RELOAD_FONT(asset_name, asset)
 #define NOZ_RELOAD_SOUND(asset_name, asset)
+#define NOZ_RELOAD_SKELETON(asset_name, asset)
 
 #ifdef NOZ_EDITOR
 void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void (*reload)(Asset*, Stream*));

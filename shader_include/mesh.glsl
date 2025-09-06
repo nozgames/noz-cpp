@@ -1,21 +1,12 @@
 layout(set = 0, binding = 0) uniform CameraBuffer
 {
-    vec2 cam_pos;
-    vec2 cam_size;
-    vec2 cam_rot;
+    mat3 view_projection;
 } camera;
 
 layout(set = 0, binding = 1) uniform ObjectBuffer
 {
-    vec2 obj_pos;
-    vec2 obj_scale;
-    float obj_rot;
+    mat3 transform;
 } object;
-
-layout(set = 0, binding = 2) uniform BoneBuffer
-{
-    mat3 bones[32];
-} boneData;
 
 // Vertex input attributes
 layout(location = 0) in vec2 position;
@@ -25,28 +16,11 @@ layout(location = 4) in float bone_index;
 
 vec4 transform_to_screen(vec2 vertex_pos)
 {
-    // Scale and rotate the vertex
-    vec2 scaled = vertex_pos * object.obj_scale;
-    float obj_cos = cos(object.obj_rot);
-    float obj_sin = sin(object.obj_rot);
-    vec2 rotated = vec2(
-        dot(scaled, vec2(obj_cos, -obj_sin)),
-        dot(scaled, vec2(obj_sin, obj_cos))
-    );
+    // Combined transform: view-projection * object
+    mat3 mvp = camera.view_projection * object.transform;
 
-    // Position in world, then transform by camera
-    vec2 world = rotated + object.obj_pos;
-    vec2 translated = world - camera.cam_pos;
-    vec2 view = vec2(
-        dot(translated, vec2(camera.cam_rot.y, -camera.cam_rot.x)),
-        dot(translated, camera.cam_rot)
-    );
+    // Transform vertex directly to screen space
+    vec3 screenPos = mvp * vec3(vertex_pos, 1.0);
 
-    // Convert to NDC (-1 to 1 range)
-    return vec4(
-        view.x / camera.cam_size.x,
-        view.y / camera.cam_size.y,
-        0.0,
-        1.0
-    );
+    return vec4(screenPos.xy, 0.0, 1.0);
 }

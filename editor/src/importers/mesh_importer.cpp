@@ -7,14 +7,24 @@
 #include "../../../src/internal.h"
 
 namespace fs = std::filesystem;
-
 using namespace noz;
+
+constexpr Vec2 OUTLINE_COLOR = ColorUV(0, 10);
 
 struct OutlineConfig
 {
     float width;
     float offset;
     float boundary_taper;
+};
+
+struct OutlineEdge
+{
+    int count;
+    u16 i0;
+    u16 i1;
+    u64 vh0;
+    u64 vh1;
 };
 
 void GenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config = {});
@@ -116,25 +126,18 @@ static void WriteMeshData(
 void ImportMesh(const fs::path& source_path, Stream* output_stream, Props* config, Props* meta)
 {
     const fs::path& src_path = source_path;
-    
-    // Check if mesh import is enabled in meta file
-    if (meta->GetBool("mesh", "skip_mesh", false))
-        return;
 
     // Load GLTF/GLB file
     GLTFLoader gltf;
     if (!gltf.open(src_path))
-    {
         throw std::runtime_error("Failed to open GLTF/GLB file");
-    }
-    
+
     // Create bone filter from meta file
     fs::path meta_path = fs::path(src_path.string() + ".meta");
-    GLTFBoneFilter bone_filter = gltf.load_bone_filter_from_meta(meta_path);
-    
+
     // Read bones and mesh
-    std::vector<GLTFBone> bones = gltf.read_bones(bone_filter);
-    GLTFMesh mesh = gltf.read_mesh(bones);
+    std::vector<GLTFBone> bones = gltf.ReadBones();
+    GLTFMesh mesh = gltf.ReadMesh(bones);
     
     if (mesh.positions.empty())
     {
@@ -155,61 +158,6 @@ void ImportMesh(const fs::path& source_path, Stream* output_stream, Props* confi
     // Write mesh data to stream
     WriteMeshData(output_stream, &mesh, meta);
 }
-
-bool DoesMeshDependOn(const fs::path& source_path, const fs::path& dependency_path)
-{
-    // Check if dependency is the meta file for this mesh
-    fs::path meta_path = fs::path(source_path.string() + ".meta");
-    
-    return meta_path == dependency_path;
-}
-
-static const char* g_mesh_extensions[] = {
-    ".gltf",
-    ".glb",
-    nullptr
-};
-
-static AssetImporterTraits g_mesh_importer_traits = {
-    .type_name = "Mesh",
-    .signature = ASSET_SIGNATURE_MESH,
-    .file_extensions = g_mesh_extensions,
-    .import_func = ImportMesh,
-    .does_depend_on = DoesMeshDependOn
-};
-
-AssetImporterTraits* GetMeshImporterTraits()
-{
-    return &g_mesh_importer_traits;
-}
-
-struct Edge
-{
-    uint16_t v0, v1;
-    int triangle_index;
-    
-    bool operator<(const Edge& other) const
-    {
-        if (v0 != other.v0) return v0 < other.v0;
-        return v1 < other.v1;
-    }
-    
-    bool operator==(const Edge& other) const
-    {
-        return v0 == other.v0 && v1 == other.v1;
-    }
-};
-
-constexpr Vec2 OUTLINE_COLOR = ColorUV(0, 10);
-
-struct MyEdge
-{
-    int count;
-    u16 i0;
-    u16 i1;
-    u64 vh0;
-    u64 vh1;
-};
 
 static u64 GetVertHash(const Vec3& pos)
 {
@@ -240,7 +188,7 @@ static Vec2 AverageNormals(const Vec2& normal1, const Vec2& normal2)
     return Normalize(normal1 + normal2);
 }
 
-static Vec2 CalculateNeighborNormal(const MyEdge& neighbor, u64 shared_vertex, const std::map<u64, Vec3>& vert_map)
+static Vec2 CalculateNeighborNormal(const OutlineEdge& neighbor, u64 shared_vertex, const std::map<u64, Vec3>& vert_map)
 {
     Vec3 np0 = vert_map.at(neighbor.vh0);
     Vec3 np1 = vert_map.at(neighbor.vh1);
@@ -267,22 +215,22 @@ static void AddOutlineVertices(
     mesh->positions.push_back({
         p0.x + normal_p0.x * inner_offset_p0,
         p0.y + normal_p0.y * inner_offset_p0,
-        p0.z
+        p0.z + 0.001f
     });
     mesh->positions.push_back({
         p0.x + normal_p0.x * outer_offset_p0,
         p0.y + normal_p0.y * outer_offset_p0,
-        p0.z
+        p0.z + 0.001f
     });
     mesh->positions.push_back({
         p1.x + normal_p1.x * inner_offset_p1,
         p1.y + normal_p1.y * inner_offset_p1,
-        p1.z
+        p1.z + 0.001f
     });
     mesh->positions.push_back({
         p1.x + normal_p1.x * outer_offset_p1,
         p1.y + normal_p1.y * outer_offset_p1,
-        p1.z
+        p1.z + 0.001f
     });
 }
 
@@ -329,7 +277,7 @@ static void AddOutlineTriangles(GLTFMesh* mesh, uint16_t base_vertex_index)
 void GenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
 {
     std::map<u64, Vec3> vert_map;
-    std::map<u64, MyEdge> edge_map;
+    std::map<u64, OutlineEdge> edge_map;
 
     for (size_t i = 0; i < mesh->indices.size(); i += 3)
     {
@@ -353,21 +301,21 @@ void GenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
         u64 eh1 = GetEdgeHash(p1, p2);
         u64 eh2 = GetEdgeHash(p2, p0);
 
-        MyEdge& e0 = edge_map[eh0];
+        OutlineEdge& e0 = edge_map[eh0];
         e0.i0 = i0;
         e0.i1 = i1;
         e0.vh0 = ph0;
         e0.vh1 = ph1;
         e0.count++;
 
-        MyEdge& e1 = edge_map[eh1];
+        OutlineEdge& e1 = edge_map[eh1];
         e1.i0 = i1;
         e1.i1 = i2;
         e1.vh0 = ph1;
         e1.vh1 = ph2;
         e1.count++;
 
-        MyEdge& e2 = edge_map[eh2];
+        OutlineEdge& e2 = edge_map[eh2];
         e2.i0 = i2;
         e2.i1 = i0;
         e2.vh0 = ph2;
@@ -385,8 +333,8 @@ void GenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
             mesh->outlines[edge.second.i1] <= 0.00001f)
             continue;
 
-        MyEdge n0 = {};
-        MyEdge n1 = {};
+        OutlineEdge n0 = {};
+        OutlineEdge n1 = {};
 
         // Find neighbors that share vertices with this edge
         for (auto& neighbor : edge_map)
@@ -476,3 +424,37 @@ void GenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
         AddOutlineTriangles(mesh, base_vertex);
     }
 }
+
+bool CanImportMesh(const fs::path& source_path)
+{
+    Stream* stream = LoadStream(ALLOCATOR_DEFAULT, fs::path(source_path.string() + ".meta"));
+    if (!stream)
+        return true;
+    Props* props = Props::Load(stream);
+    if (!props)
+    {
+        Free(stream);
+        return true;
+    }
+
+    bool can_import = !props->GetBool("mesh", "skip_mesh", false);
+    Free(stream);
+    delete props;
+    return can_import;
+}
+
+static const char* g_mesh_extensions[] = { ".glb", nullptr };
+
+static AssetImporterTraits g_mesh_importer_traits = {
+    .type_name = "Mesh",
+    .signature = ASSET_SIGNATURE_MESH,
+    .file_extensions = g_mesh_extensions,
+    .import_func = ImportMesh,
+    .can_import = CanImportMesh
+};
+
+AssetImporterTraits* GetMeshImporterTraits()
+{
+    return &g_mesh_importer_traits;
+}
+

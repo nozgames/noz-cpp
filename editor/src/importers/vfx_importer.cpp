@@ -354,11 +354,6 @@ void ImportVfx(const fs::path& source_path, Stream* output_stream, Props* config
     }
 }
 
-bool DoesVfxDependOn(const std::filesystem::path& paths, const std::filesystem::path& dependency_path)
-{
-    return false;
-}
-
 static const char* g_vfx_extensions[] = {
     ".vfx",
     nullptr
@@ -368,8 +363,7 @@ static AssetImporterTraits g_vfx_importer_traits = {
     .type_name = "Vfx",
     .signature = ASSET_SIGNATURE_VFX,
     .file_extensions = g_vfx_extensions,
-    .import_func = ImportVfx,
-    .does_depend_on = DoesVfxDependOn
+    .import_func = ImportVfx
 };
 
 AssetImporterTraits* GetVfxImporterTraits()

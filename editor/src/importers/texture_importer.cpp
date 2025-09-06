@@ -166,13 +166,6 @@ void ImportTexture(const fs::path& source_path, Stream* output_stream, Props* co
     );
 }
 
-bool DoesTextureDependOn(const fs::path& source_path, const fs::path& dependency_path)
-{
-    // Check if dependency is the meta file for this texture
-    fs::path meta_path = fs::path(source_path.string() + ".meta");
-    return meta_path == dependency_path;
-}
-
 static const char* g_texture_extensions[] = {
     ".png",
     nullptr
@@ -182,8 +175,7 @@ static AssetImporterTraits g_texture_importer_traits = {
     .type_name = "Texture",
     .signature = ASSET_SIGNATURE_TEXTURE,
     .file_extensions = g_texture_extensions,
-    .import_func = ImportTexture,
-    .does_depend_on = DoesTextureDependOn
+    .import_func = ImportTexture
 };
 
 AssetImporterTraits* GetTextureImporterTraits()

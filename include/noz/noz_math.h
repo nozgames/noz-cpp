@@ -69,6 +69,7 @@ bool RandomBool(float probability);
 
 struct Vec3;
 struct Vec4;
+struct Vec2;
 
 struct Mat4
 {
@@ -84,6 +85,8 @@ struct Mat3
     f32 m[9];
     
     operator Mat4() const;
+    Vec2 operator*(const Vec2& v) const;
+    Vec3 operator*(const Vec3& v) const;
 };
 
 struct Vec2
@@ -214,9 +217,11 @@ Bounds3 Expand(const Bounds3& bounds, const Bounds3& other);
 Bounds2 ToBounds(const Vec2* positions, u32 count);
 
 // @mat4
+extern Mat4 TRS(const Vec3& translation, const Vec4& rotation, const Vec3& scale);
 extern Mat4 Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
 extern Mat4 Ortho(f32 top, f32 bottom, f32 near, f32 far);
 extern Mat4 Inverse(const Mat4& m);
+extern Mat3 ToMat3(const Mat4& m);
 
 // @mat3
 extern Mat3 TRS(const Vec2& translation, f32 rotation, const Vec2& scale);

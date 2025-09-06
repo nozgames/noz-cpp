@@ -54,3 +54,20 @@ Mat3 Inverse(const Mat3& m)
 
     return result;
 }
+
+Vec2 Mat3::operator*(const Vec2& v) const
+{
+    return Vec2{
+        m[0] * v.x + m[3] * v.y + m[6],
+        m[1] * v.x + m[4] * v.y + m[7],
+    };
+}
+
+Vec3 Mat3::operator*(const Vec3& v) const
+{
+    Vec3 result;
+    result.x = m[0] * v.x + m[3] * v.y + m[6] * v.z;
+    result.y = m[1] * v.x + m[4] * v.y + m[7] * v.z;
+    result.z = m[2] * v.x + m[5] * v.y + m[8] * v.z;
+    return result;
+}

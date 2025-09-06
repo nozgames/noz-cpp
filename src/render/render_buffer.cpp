@@ -4,7 +4,6 @@
 
 #include "../platform.h"
 
-extern RenderCamera GetRenderCamera(Camera* camera);
 extern void RenderMesh(Mesh* mesh);
 extern void BindMaterialInternal(Material* material);
 extern void BindTextureInternal(Texture* texture, i32 slot);
@@ -30,12 +29,12 @@ struct BindMaterialData
 
 struct BindTransformData
 {
-    RenderTransform transform;
+    Mat3 transform;
 };
 
 struct BindCameraData
 {
-    RenderCamera camera;
+    Camera* camera;
 };
 
 struct BindBonesData
@@ -94,7 +93,7 @@ struct RenderBuffer
 {
     RenderCommand* commands;
     size_t command_count;
-    RenderTransform* transforms;
+    Mat3* transforms;
     size_t transform_count;
     size_t command_count_max;
     size_t transform_count_max;
@@ -118,7 +117,7 @@ void ClearRenderCommands()
     g_render_buffer->command_count = 0;
     g_render_buffer->transform_count = 0;
     g_render_buffer->is_full = false;
-    g_render_buffer->transforms[0] = { VEC2_ZERO, VEC2_ONE, 0.0f };
+    g_render_buffer->transforms[0] = MAT3_IDENTITY;
     g_render_buffer->transform_count = 1;
 }
 
@@ -154,7 +153,8 @@ void BindCamera(Camera* camera)
         .type = command_type_bind_camera,
         .data = {
             .bind_camera = {
-                .camera = GetRenderCamera(camera)}
+                .camera = camera
+            }
         }
     };
     AddRenderCommand(&cmd);
@@ -175,15 +175,21 @@ void BindMaterial(Material* material)
 
 void BindTransform(const Vec2& position, float rotation, const Vec2& scale)
 {
+    Mat3 trs = TRS(position, rotation, scale);
+
     RenderCommand cmd = {
         .type = command_type_bind_transform,
-        .data = {
-            .bind_transform = {
-                .transform = {
-                    .position = position,
-                    .scale = scale,
-                    .rotation = Radians(rotation) }}
-        }};
+        .data = { .bind_transform = { .transform = trs }}
+    };
+    AddRenderCommand(&cmd);
+}
+
+void BindTransform(const Mat3& transform)
+{
+    RenderCommand cmd = {
+        .type = command_type_bind_transform,
+        .data = { .bind_transform = { .transform = transform }}
+    };
     AddRenderCommand(&cmd);
 }
 
@@ -250,18 +256,18 @@ void ExecuteRenderCommands()
             break;
 
         case command_type_bind_transform:
-            platform::BindTransform(&command->data.bind_transform.transform);
+            platform::BindTransform(command->data.bind_transform.transform);
             break;
 
         case command_type_bind_camera:
-            platform::BindCamera(&command->data.bind_camera.camera);
+            platform::BindCamera(GetViewMatrix(command->data.bind_camera.camera));
             break;
 
-        case command_type_bind_bones:
-            platform::BindBoneTransforms(
-                g_render_buffer->transforms + command->data.bind_bones.offset,
-                (int)command->data.bind_bones.count);
-            break;
+        // case command_type_bind_bones:
+        //     platform::BindBoneTransforms(
+        //         g_render_buffer->transforms + command->data.bind_bones.offset,
+        //         (int)command->data.bind_bones.count);
+        //     break;
 
         case command_type_bind_light:
             platform::BindLight(&command->data.bind_light);
@@ -293,7 +299,7 @@ void ExecuteRenderCommands()
 void InitRenderBuffer(const RendererTraits* traits)
 {
     size_t commands_size = traits->max_frame_commands * sizeof(RenderCommand);
-    size_t transforms_size = traits->max_frame_transforms * sizeof(RenderTransform);
+    size_t transforms_size = traits->max_frame_transforms * sizeof(Mat3);
     size_t buffer_size = sizeof(RenderBuffer) + commands_size + transforms_size;
     
     g_render_buffer = (RenderBuffer*)malloc(buffer_size);
@@ -305,7 +311,7 @@ void InitRenderBuffer(const RendererTraits* traits)
 
     memset(g_render_buffer, 0, buffer_size);
     g_render_buffer->commands = (RenderCommand*)((char*)g_render_buffer + sizeof(RenderBuffer));
-    g_render_buffer->transforms = (RenderTransform*)((char*)g_render_buffer->commands + commands_size);
+    g_render_buffer->transforms = (Mat3*)((char*)g_render_buffer->commands + commands_size);
     g_render_buffer->command_count_max = traits->max_frame_commands;
     g_render_buffer->transform_count_max = traits->max_frame_transforms;
 }

@@ -52,7 +52,7 @@ static float QuaternionToYRotation(float* quaternion)
 // @file
 bool GLTFLoader::open(const std::filesystem::path& file_path)
 {
-    close();
+    Close();
     
     cgltf_options options = {};
     struct cgltf_data* gltf_data = nullptr;
@@ -75,7 +75,7 @@ bool GLTFLoader::open(const std::filesystem::path& file_path)
     return true;
 }
 
-void GLTFLoader::close()
+void GLTFLoader::Close()
 {
     if (data)
     {
@@ -86,7 +86,7 @@ void GLTFLoader::close()
 }
 
 // @class_methods
-std::vector<GLTFBone> GLTFLoader::read_bones(const GLTFBoneFilter& filter)
+std::vector<GLTFBone> GLTFLoader::ReadBones()
 {
     std::vector<GLTFBone> bones;
     if (!data || !data->nodes_count)
@@ -121,7 +121,7 @@ std::vector<GLTFBone> GLTFLoader::read_bones(const GLTFBoneFilter& filter)
         return bones;
     
     // Recursively process bones starting from root
-    process_bone_recursive(root_node, bones, -1, filter);
+    ReadBone(root_node, bones, -1);
     
     // Update bone lengths and directions
     for (size_t i = 0; i < bones.size(); ++i)
@@ -140,58 +140,40 @@ std::vector<GLTFBone> GLTFLoader::read_bones(const GLTFBoneFilter& filter)
     return bones;
 }
 
-void GLTFLoader::process_bone_recursive(struct cgltf_node* node, std::vector<GLTFBone>& bones, int parent_index, const GLTFBoneFilter& filter)
+void GLTFLoader::ReadBone(cgltf_node* node, std::vector<GLTFBone>& bones, int parent_index)
 {
     if (!node || !node->name)
         return;
         
     std::string node_name = node->name;
-    
-    // Check if this bone should be excluded
-    for (const auto& exclude_name : filter.exclude_bones)
-    {
-        if (node_name == exclude_name)
-            return;
-    }
-    
+
     // Create the bone
     GLTFBone bone = {};
     bone.name = node_name;
     bone.index = static_cast<int>(bones.size());
     bone.parent_index = parent_index;
-    
-    // Extract transformation data
-    if (node->has_matrix)
-    {
-        // TODO: Extract position, rotation, scale from matrix
-        bone.position = { node->matrix[12], node->matrix[13] };
-        bone.rotation = 0.0f;
-        bone.scale = { 1.0f, 1.0f };
-    }
-    else
-    {
-        bone.position = node->has_translation
-            ? Vector3ToVec3(node->translation)
-            : VEC3_ZERO;
-        bone.rotation = node->has_rotation
-            ? QuaternionToYRotation(node->rotation)
-            : 0.0f;
-        bone.scale = node->has_scale
-            ? Vector3ToVec3(node->scale)
-            : VEC3_ONE;
-    }
-    
+    bone.position = node->has_translation
+        ? Vector3ToVec3(node->translation)
+        : VEC3_ZERO;
+    bone.rotation = Vec4{node->rotation[0], node->rotation[1], node->rotation[2], node->rotation[3]},
+    bone.scale = node->has_scale
+        ? Vector3ToVec3(node->scale)
+        : VEC3_ONE;
+    bone.local_to_world = TRS(bone.position, bone.rotation, bone.scale);
+
+    if (parent_index >= 0)
+        bone.local_to_world = bones[parent_index].local_to_world * bone.local_to_world;
+
+    bone.world_to_local = Inverse(bone.world_to_local);
+
     bones.push_back(bone);
     int current_bone_index = static_cast<int>(bones.size() - 1);
     
-    // Process children
     for (size_t i = 0; i < node->children_count; ++i)
-    {
-        process_bone_recursive(node->children[i], bones, current_bone_index, filter);
-    }
+        ReadBone(node->children[i], bones, current_bone_index);
 }
 
-GLTFMesh GLTFLoader::read_mesh(const std::vector<GLTFBone>& bones)
+GLTFMesh GLTFLoader::ReadMesh(const std::vector<GLTFBone>& bones)
 {
     GLTFMesh mesh;
     if (!data || !data->meshes_count)
@@ -359,7 +341,7 @@ GLTFMesh GLTFLoader::read_mesh(const std::vector<GLTFBone>& bones)
     return mesh;
 }
 
-GLTFAnimation GLTFLoader::read_animation(const std::vector<GLTFBone>& bones, const std::string& animation_name)
+GLTFAnimation GLTFLoader::ReadAnimation(const std::vector<GLTFBone>& bones, const std::string& animation_name)
 {
     GLTFAnimation animation;
     if (!data || !data->animations_count)
@@ -464,11 +446,3 @@ GLTFAnimation GLTFLoader::read_animation(const std::vector<GLTFBone>& bones, con
     
     return animation;
 }
-
-GLTFBoneFilter GLTFLoader::load_bone_filter_from_meta(const std::filesystem::path& meta_path)
-{
-    GLTFBoneFilter filter;
-    // TODO: Implement meta file loading
-    return filter;
-}
-

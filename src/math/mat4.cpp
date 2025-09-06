@@ -76,6 +76,15 @@ Vec4 Mat4::operator*(const Vec4& v) const
     };
 }
 
+Mat3 ToMat3(const Mat4& m)
+{
+    return Mat3 {
+        m.m[0], m.m[1], m.m[12],
+        m.m[4], m.m[5], m.m[13],
+        m.m[12], m.m[13], m.m[15]
+    };
+}
+
 Mat4 Inverse(const Mat4& m)
 {
     Mat4 result;
@@ -207,3 +216,49 @@ Mat4 Inverse(const Mat4& m)
     return result;
 }
 
+Mat4 TRS(const Vec3& translation, const Vec4& rotation, const Vec3& scale)
+{
+    float x = rotation.x;
+    float y = rotation.y;
+    float z = rotation.z;
+    float w = rotation.w;
+
+    float x2 = x + x;
+    float y2 = y + y;
+    float z2 = z + z;
+
+    float xx = x * x2;
+    float xy = x * y2;
+    float xz = x * z2;
+    float yy = y * y2;
+    float yz = y * z2;
+    float zz = z * z2;
+    float wx = w * x2;
+    float wy = w * y2;
+    float wz = w * z2;
+
+    Mat4 result;
+
+    // Column-major order (OpenGL style)
+    result.m[0] = (1.0f - (yy + zz)) * scale.x;
+    result.m[1] = (xy + wz) * scale.x;
+    result.m[2] = (xz - wy) * scale.x;
+    result.m[3] = 0.0f;
+
+    result.m[4] = (xy - wz) * scale.y;
+    result.m[5] = (1.0f - (xx + zz)) * scale.y;
+    result.m[6] = (yz + wx) * scale.y;
+    result.m[7] = 0.0f;
+
+    result.m[8] = (xz + wy) * scale.z;
+    result.m[9] = (yz - wx) * scale.z;
+    result.m[10] = (1.0f - (xx + yy)) * scale.z;
+    result.m[11] = 0.0f;
+
+    result.m[12] = translation.x;
+    result.m[13] = translation.y;
+    result.m[14] = translation.z;
+    result.m[15] = 1.0f;
+
+    return result;
+}

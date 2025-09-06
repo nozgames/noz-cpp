@@ -26,7 +26,7 @@ struct GLTFBone
     Vec3 direction;
     int index;
     int parent_index;
-    float rotation;
+    Vec4 rotation;
     float length;
 };
 
@@ -49,12 +49,6 @@ struct GLTFMesh
     std::vector<uint16_t> indices;
 };
 
-struct GLTFBoneFilter
-{
-    std::vector<std::string> exclude_bones;
-    bool keep_leaf_bones = false;
-};
-
 class GLTFLoader
 {
     cgltf_data* data = nullptr;
@@ -62,7 +56,7 @@ class GLTFLoader
 
 public:
     GLTFLoader() = default;
-    ~GLTFLoader() { close(); }
+    ~GLTFLoader() { Close(); }
     
     // Non-copyable
     GLTFLoader(const GLTFLoader&) = delete;
@@ -78,7 +72,7 @@ public:
     {
         if (this != &other)
         {
-            close();
+            Close();
             data = other.data;
             path = std::move(other.path);
             other.data = nullptr;
@@ -87,15 +81,13 @@ public:
     }
     
     bool open(const std::filesystem::path& file_path);
-    void close();
+    void Close();
     
-    std::vector<GLTFBone> read_bones(const GLTFBoneFilter& filter = {});
-    GLTFMesh read_mesh(const std::vector<GLTFBone>& bones = {});
-    GLTFAnimation read_animation(const std::vector<GLTFBone>& bones, const std::string& animation_name);
-    
-    // Helper methods
-    GLTFBoneFilter load_bone_filter_from_meta(const std::filesystem::path& meta_path);
-    
+    std::vector<GLTFBone> ReadBones();
+    GLTFMesh ReadMesh(const std::vector<GLTFBone>& bones = {});
+    GLTFAnimation ReadAnimation(const std::vector<GLTFBone>& bones, const std::string& animation_name);
+
 private:
-    void process_bone_recursive(struct cgltf_node* node, std::vector<GLTFBone>& bones, int parent_index, const GLTFBoneFilter& filter);
+
+    void ReadBone(struct cgltf_node* node, std::vector<GLTFBone>& bones, int parent_index);
 };
