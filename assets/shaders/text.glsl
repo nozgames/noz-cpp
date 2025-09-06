@@ -19,7 +19,7 @@ layout(set = 2, binding = 0) uniform ColorBuffer
     vec4 color;
 } colorData;
 
-layout(set = 1, binding = 0) uniform sampler2D mainTexture;
+layout(set = 3, binding = 0) uniform sampler2D mainTexture;
 
 layout(location = 0) in vec2 v_uv0;
 layout(location = 0) out vec4 FragColor;

@@ -5,22 +5,20 @@
 #include "../../platform.h"
 #include "windows_vulkan.h"
 
+enum UniformBufferType
+{
+    UNIFORM_BUFFER_CAMERA,
+    UNIFORM_BUFFER_TRANSFORM ,
+    UNIFORM_BUFFER_COLOR,
+    UNIFORM_BUFFER_COUNT
+};
+
 constexpr int MAX_TEXTURES = 128;
-constexpr int VK_SPACE_VERTEX_UNIFORM = 0;
-constexpr int VK_SPACE_TEXTURE = 1;
-constexpr int VK_SPACE_FRAGMENT_UNIFORM = 2;
+constexpr int VK_SPACE_TEXTURE = UNIFORM_BUFFER_COUNT;
 
 constexpr int MAX_UNIFORM_BUFFERS = 4096;
 constexpr u32 UNIFORM_BUFFER_SIZE = sizeof(Mat4);
 constexpr u32 DYNAMIC_UNIFORM_BUFFER_SIZE = UNIFORM_BUFFER_SIZE * MAX_UNIFORM_BUFFERS;
-
-enum UniformBufferType
-{
-    UNIFORM_BUFFER_CAMERA = 0,
-    UNIFORM_BUFFER_TRANSFORM = 1,
-    UNIFORM_BUFFER_COLOR = 2,
-    UNIFORM_BUFFER_COUNT
-};
 
 static VkFilter ToVK(TextureFilter filter)
 {
@@ -61,7 +59,8 @@ struct VulkanDynamicBuffer
     u32 offset;
     u32 alignment;
     u32 size;
-    u32 current_bind_offset;  // Offset for current binding
+    VkDescriptorSetLayout descriptor_set_layout;
+    VkDescriptorSet descriptor_set;
 };
 
 struct VulkanRenderer
@@ -91,14 +90,10 @@ struct VulkanRenderer
     VkSemaphore image_available_semaphore;
     VkSemaphore render_finished_semaphore;
     VkFence in_flight_fence;
-    VkDescriptorSetLayout vertex_descriptor_set_layout;
     VkDescriptorSetLayout texture_descriptor_set_layout;
-    VkDescriptorSetLayout fragment_descriptor_set_layout;
-    VkDescriptorSet vertex_descriptor_set;
     VkDescriptorSet texture_descriptor_set;
-    VkDescriptorSet fragment_descriptor_set;
     VkDescriptorPool descriptor_pool;
-    VulkanDynamicBuffer uniform_buffers[UNIFORM_BUFFER_COUNT];
+    VulkanDynamicBuffer uniform_buffers[UNIFORM_BUFFER_COUNT];  // Now consecutive 0,1,2
     u32 min_uniform_buffer_offset_alignment;
     VkPipelineLayout pipeline_layout;
     u32 current_image_index;
@@ -204,9 +199,8 @@ static bool CreateUniformBuffer(VulkanDynamicBuffer* buffer, const char* name)
 
 static void* AcquireUniformBuffer(UniformBufferType type)
 {
-    if (type >= UNIFORM_BUFFER_COUNT)
-        return nullptr;
-        
+    assert(type >= 0 && type < UNIFORM_BUFFER_COUNT);
+
     u32 aligned_size = (UNIFORM_BUFFER_SIZE + g_vulkan.min_uniform_buffer_offset_alignment - 1) 
                        & ~(g_vulkan.min_uniform_buffer_offset_alignment - 1);
     
@@ -216,86 +210,66 @@ static void* AcquireUniformBuffer(UniformBufferType type)
     if (buffer->offset + aligned_size > buffer->size)
         return nullptr;
 
-    buffer->current_bind_offset = buffer->offset;
-    void* ptr = (char*)buffer->mapped_ptr + buffer->offset;
+    u32 current_offset = buffer->offset;
+    void* ptr = (char*)buffer->mapped_ptr + current_offset;
     buffer->offset += aligned_size;
+    
+    // Uniform buffer enum values now match descriptor spaces directly
+    u32 descriptor_space = (u32)type;
+    
+    vkCmdBindDescriptorSets(
+        g_vulkan.command_buffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        g_vulkan.pipeline_layout,
+        descriptor_space,
+        1,
+        &buffer->descriptor_set,
+        1,
+        &current_offset
+    );
     
     return ptr;
 }
 
-static void BindVertexUniforms()
-{
-    u32 offsets[2] = {
-        g_vulkan.uniform_buffers[UNIFORM_BUFFER_CAMERA].current_bind_offset,
-        g_vulkan.uniform_buffers[UNIFORM_BUFFER_TRANSFORM].current_bind_offset
-    };
-    
-    vkCmdBindDescriptorSets(
-        g_vulkan.command_buffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        g_vulkan.pipeline_layout,
-        VK_SPACE_VERTEX_UNIFORM,
-        1,
-        &g_vulkan.vertex_descriptor_set,
-        2,  // Two dynamic offsets
-        offsets
-    );
-}
-
-static void BindFragmentUniforms()
-{
-    u32 offset = g_vulkan.uniform_buffers[UNIFORM_BUFFER_COLOR].current_bind_offset;
-    
-    vkCmdBindDescriptorSets(
-        g_vulkan.command_buffer,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        g_vulkan.pipeline_layout,
-        VK_SPACE_FRAGMENT_UNIFORM,
-        1,
-        &g_vulkan.fragment_descriptor_set,
-        1,
-        &offset
-    );
-}
 
 static void ResetFrameBuffers()
 {
     for (u32 i = 0; i < UNIFORM_BUFFER_COUNT; i++) {
         g_vulkan.uniform_buffers[i].offset = 0;
-        g_vulkan.uniform_buffers[i].current_bind_offset = 0;
     }
 }
 
 static void CreateDescriptorSetLayout()
 {
-    // Dynamic uniform buffers - vertex (camera and transform)
-    VkDescriptorSetLayoutBinding vertex_binding[] = {
-        // Camera binding 0
-        {
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .pImmutableSamplers = nullptr
-        },
-        // Transform binding 1
-        {
-            .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .pImmutableSamplers = nullptr
-        }
+    // Create descriptor set layouts for each uniform buffer type
+    VkDescriptorSetLayoutBinding uniform_binding = {
+        .binding = 0,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+        .descriptorCount = 1,
+        .stageFlags = 0,  // Will be set per buffer type
+        .pImmutableSamplers = nullptr
     };
 
-    VkDescriptorSetLayoutCreateInfo vertex_layout_info = {
+    VkDescriptorSetLayoutCreateInfo layout_info = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .bindingCount = sizeof(vertex_binding) / sizeof(VkDescriptorSetLayoutBinding),
-        .pBindings = vertex_binding
+        .bindingCount = 1,
+        .pBindings = &uniform_binding
     };
 
-    if (vkCreateDescriptorSetLayout(g_vulkan.device, &vertex_layout_info, nullptr, &g_vulkan.vertex_descriptor_set_layout) != VK_SUCCESS)
-        Exit("Failed to create vertex descriptor set layout");
+    // Camera buffer layout (vertex stage)
+    uniform_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    if (vkCreateDescriptorSetLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.uniform_buffers[UNIFORM_BUFFER_CAMERA].descriptor_set_layout) != VK_SUCCESS)
+        Exit("Failed to create camera descriptor set layout");
+
+    // Transform buffer layout (vertex stage)
+    uniform_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    if (vkCreateDescriptorSetLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.uniform_buffers[UNIFORM_BUFFER_TRANSFORM].descriptor_set_layout) != VK_SUCCESS)
+        Exit("Failed to create transform descriptor set layout");
+
+    // Color buffer layout (fragment stage)
+    uniform_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    if (vkCreateDescriptorSetLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.uniform_buffers[UNIFORM_BUFFER_COLOR].descriptor_set_layout) != VK_SUCCESS)
+        Exit("Failed to create color descriptor set layout");
 
     // texture
     VkDescriptorSetLayoutBinding texture_bindings[] = {
@@ -318,25 +292,6 @@ static void CreateDescriptorSetLayout()
     if (vkCreateDescriptorSetLayout(g_vulkan.device, &texture_layout_info, nullptr, &g_vulkan.texture_descriptor_set_layout) != VK_SUCCESS)
         Exit("Failed to create texture descriptor set layout");
 
-    // Dynamic uniform buffers - fragment
-    VkDescriptorSetLayoutBinding fragment_binding[] = {
-        {
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .pImmutableSamplers = nullptr
-        }
-    };
-
-    VkDescriptorSetLayoutCreateInfo fragment_layout_info = {
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .bindingCount = sizeof(fragment_binding) / sizeof(VkDescriptorSetLayoutBinding),
-        .pBindings = fragment_binding
-    };
-
-    if (vkCreateDescriptorSetLayout(g_vulkan.device, &fragment_layout_info, nullptr, &g_vulkan.fragment_descriptor_set_layout) != VK_SUCCESS)
-        Exit("Failed to create fragment descriptor set layout");
 }
 
 static void CreateDescriptorPool()
@@ -370,55 +325,54 @@ enum DescriptorSpace
 
 static void CreateDescriptorSets()
 {
-    VkDescriptorSetLayout layouts[] = {
-        g_vulkan.vertex_descriptor_set_layout,
-        g_vulkan.texture_descriptor_set_layout,
-        g_vulkan.fragment_descriptor_set_layout
-    };
-
-    VkDescriptorSetAllocateInfo alloc_info = {
-        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-        .descriptorPool = g_vulkan.descriptor_pool,
-        .descriptorSetCount = 3,
-        .pSetLayouts = layouts,
-    };
-
-    VkDescriptorSet descriptor_sets[3];
-    if (vkAllocateDescriptorSets(g_vulkan.device, &alloc_info, descriptor_sets) != VK_SUCCESS)
-        Exit("Failed to allocate descriptor sets");
-
-    g_vulkan.vertex_descriptor_set = descriptor_sets[0];
-    g_vulkan.texture_descriptor_set = descriptor_sets[1];
-    g_vulkan.fragment_descriptor_set = descriptor_sets[2];
-
-    // Update dynamic uniform buffer descriptor sets
-    VkDescriptorBufferInfo buffer_infos[UNIFORM_BUFFER_COUNT];
-    VkWriteDescriptorSet writes[UNIFORM_BUFFER_COUNT];
+    // Create individual descriptor sets for each uniform buffer
+    const char* buffer_names[] = {"CameraBuffer", "TransformBuffer", "ColorBuffer"};
     
+    // Allocate descriptor sets for uniform buffers
     for (u32 i = 0; i < UNIFORM_BUFFER_COUNT; i++) {
-        buffer_infos[i] = {
+        VkDescriptorSetAllocateInfo alloc_info = {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .descriptorPool = g_vulkan.descriptor_pool,
+            .descriptorSetCount = 1,
+            .pSetLayouts = &g_vulkan.uniform_buffers[i].descriptor_set_layout,
+        };
+
+        if (vkAllocateDescriptorSets(g_vulkan.device, &alloc_info, &g_vulkan.uniform_buffers[i].descriptor_set) != VK_SUCCESS)
+            Exit("Failed to allocate uniform buffer descriptor set");
+
+        // Update the descriptor set with the buffer
+        VkDescriptorBufferInfo buffer_info = {
             .buffer = g_vulkan.uniform_buffers[i].buffer,
             .offset = 0,
             .range = UNIFORM_BUFFER_SIZE
         };
-        
-        writes[i] = {
+
+        VkWriteDescriptorSet write = {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet = (i == UNIFORM_BUFFER_COLOR) ? g_vulkan.fragment_descriptor_set : g_vulkan.vertex_descriptor_set,
-            .dstBinding = (i == UNIFORM_BUFFER_TRANSFORM) ? 1u : 0u,  // Transform uses binding 1, others use 0
+            .dstSet = g_vulkan.uniform_buffers[i].descriptor_set,
+            .dstBinding = 0,  // All uniform buffers use binding 0 in their own descriptor set
             .dstArrayElement = 0,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-            .pBufferInfo = &buffer_infos[i],
+            .pBufferInfo = &buffer_info,
         };
-    }
-    
-    vkUpdateDescriptorSets(g_vulkan.device, UNIFORM_BUFFER_COUNT, writes, 0, nullptr);
 
-    // Set debug names for descriptor sets
-    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.vertex_descriptor_set, "VertexUniforms");
+        vkUpdateDescriptorSets(g_vulkan.device, 1, &write, 0, nullptr);
+        SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.uniform_buffers[i].descriptor_set, buffer_names[i]);
+    }
+
+    // Create texture descriptor set separately
+    VkDescriptorSetAllocateInfo texture_alloc_info = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool = g_vulkan.descriptor_pool,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &g_vulkan.texture_descriptor_set_layout,
+    };
+
+    if (vkAllocateDescriptorSets(g_vulkan.device, &texture_alloc_info, &g_vulkan.texture_descriptor_set) != VK_SUCCESS)
+        Exit("Failed to allocate texture descriptor set");
+
     SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.texture_descriptor_set, "Textures");
-    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.fragment_descriptor_set, "FragmentUniforms");
 }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
@@ -956,124 +910,20 @@ static void CreateSyncObjects()
 static void CreatePipelineLayout()
 {
     VkDescriptorSetLayout layouts[] = {
-        g_vulkan.vertex_descriptor_set_layout,
-        g_vulkan.texture_descriptor_set_layout,
-        g_vulkan.fragment_descriptor_set_layout
+        g_vulkan.uniform_buffers[UNIFORM_BUFFER_CAMERA].descriptor_set_layout,     // Set 0: Camera
+        g_vulkan.uniform_buffers[UNIFORM_BUFFER_TRANSFORM].descriptor_set_layout,  // Set 1: Transform  
+        g_vulkan.uniform_buffers[UNIFORM_BUFFER_COLOR].descriptor_set_layout,      // Set 2: Color
+        g_vulkan.texture_descriptor_set_layout                                      // Set 3: Texture
     };
 
     VkPipelineLayoutCreateInfo layout_info = {};
     layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    layout_info.setLayoutCount = 3;
+    layout_info.setLayoutCount = 4;
     layout_info.pSetLayouts = layouts;
     layout_info.pushConstantRangeCount = 0;
     layout_info.pPushConstantRanges = nullptr;
 
     vkCreatePipelineLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.pipeline_layout);
-}
-
-void InitVulkan(const RendererTraits* traits, HWND hwnd)
-{
-    g_vulkan = {};
-    g_vulkan.traits = *traits;
-    g_vulkan.hwnd = hwnd;
-
-    // Load Vulkan library dynamically
-    if (!LoadVulkanLibrary())
-    {
-        Exit("Failed to load Vulkan library. Make sure Vulkan drivers are installed.");
-        return;
-    }
-
-    CreateInstance();
-    SetupDebugMessenger();
-    CreateSurface();
-    PickPhysicalDevice();
-    CreateLogicalDevice();
-    CreateSwapchain();
-    CreateImageViews();
-    CreateRenderPass();
-    CreateColorResources();
-    CreateFramebuffers();
-    CreateCommandPool();
-    CreateCommandBuffer();
-    CreateSyncObjects();
-    
-    // Get device properties for uniform buffer alignment
-    VkPhysicalDeviceProperties device_properties;
-    vkGetPhysicalDeviceProperties(g_vulkan.physical_device, &device_properties);
-    g_vulkan.min_uniform_buffer_offset_alignment = device_properties.limits.minUniformBufferOffsetAlignment;
-    
-    // Create dynamic uniform buffers
-    const char* buffer_names[] = {"CameraBuffer", "TransformBuffer", "ColorBuffer"};
-    for (u32 i = 0; i < UNIFORM_BUFFER_COUNT; i++)
-        if (!CreateUniformBuffer(&g_vulkan.uniform_buffers[i], buffer_names[i]))
-            Exit("Failed to create uniform buffer");
-
-    CreateDescriptorSetLayout();
-    CreateDescriptorPool();
-    CreateDescriptorSets();
-    CreatePipelineLayout();
-}
-
-void ShutdownVulkan()
-{
-    if (g_vulkan.device)
-    {
-        vkDeviceWaitIdle(g_vulkan.device);
-
-        // Cleanup sync objects
-        vkDestroySemaphore(g_vulkan.device, g_vulkan.render_finished_semaphore, nullptr);
-        vkDestroySemaphore(g_vulkan.device, g_vulkan.image_available_semaphore, nullptr);
-        vkDestroyFence(g_vulkan.device, g_vulkan.in_flight_fence, nullptr);
-
-        // Cleanup command pool
-        vkDestroyCommandPool(g_vulkan.device, g_vulkan.command_pool, nullptr);
-
-        // Cleanup framebuffers
-        for (auto framebuffer : g_vulkan.swapchain_framebuffers)
-        {
-            vkDestroyFramebuffer(g_vulkan.device, framebuffer, nullptr);
-        }
-
-        // Cleanup MSAA resources
-        CleanupColorResources();
-
-        // Cleanup render pass
-        vkDestroyRenderPass(g_vulkan.device, g_vulkan.render_pass, nullptr);
-
-        // Cleanup swapchain
-        for (auto imageView : g_vulkan.swapchain_image_views)
-        {
-            vkDestroyImageView(g_vulkan.device, imageView, nullptr);
-        }
-
-        if (g_vulkan.swapchain)
-            vkDestroySwapchainKHR(g_vulkan.device, g_vulkan.swapchain, nullptr);
-
-        vkDestroyDevice(g_vulkan.device, nullptr);
-    }
-
-    if (g_vulkan.surface)
-        vkDestroySurfaceKHR(g_vulkan.instance, g_vulkan.surface, nullptr);
-
-#ifdef _DEBUG
-    if (g_vulkan.debug_messenger)
-    {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
-            g_vulkan.instance,
-            "vkDestroyDebugUtilsMessengerEXT");
-        if (func)
-            func(g_vulkan.instance, g_vulkan.debug_messenger, nullptr);
-    }
-#endif
-
-    if (g_vulkan.instance)
-        vkDestroyInstance(g_vulkan.instance, nullptr);
-
-    if (g_vulkan.library)
-        FreeLibrary(g_vulkan.library);
-
-    g_vulkan = {};
 }
 
 void RecreateSwapchainObjects()
@@ -1248,8 +1098,6 @@ void platform::BeginRenderFrame()
     };
     vkBeginCommandBuffer(g_vulkan.command_buffer, &vg_begin_info);
 
-    BindVertexUniforms();
-    BindFragmentUniforms();
 }
 
 void platform::EndRenderFrame()
@@ -2109,4 +1957,112 @@ void platform::DestroyShader(Shader* shader)
         vkDestroyShaderModule(g_vulkan.device, (VkShaderModule)shader->vertex_module, nullptr);
     if (shader->pipeline)
         vkDestroyPipeline(g_vulkan.device, (VkPipeline)shader->pipeline, nullptr);
+}
+
+void InitVulkan(const RendererTraits* traits, HWND hwnd)
+{
+    g_vulkan = {};
+    g_vulkan.traits = *traits;
+    g_vulkan.hwnd = hwnd;
+
+    // Load Vulkan library dynamically
+    if (!LoadVulkanLibrary())
+    {
+        Exit("Failed to load Vulkan library. Make sure Vulkan drivers are installed.");
+        return;
+    }
+
+    CreateInstance();
+    SetupDebugMessenger();
+    CreateSurface();
+    PickPhysicalDevice();
+    CreateLogicalDevice();
+    CreateSwapchain();
+    CreateImageViews();
+    CreateRenderPass();
+    CreateColorResources();
+    CreateFramebuffers();
+    CreateCommandPool();
+    CreateCommandBuffer();
+    CreateSyncObjects();
+
+    // Get device properties for uniform buffer alignment
+    VkPhysicalDeviceProperties device_properties;
+    vkGetPhysicalDeviceProperties(g_vulkan.physical_device, &device_properties);
+    g_vulkan.min_uniform_buffer_offset_alignment = device_properties.limits.minUniformBufferOffsetAlignment;
+
+    // Create descriptor set layouts first
+    CreateDescriptorSetLayout();
+
+    // Create dynamic uniform buffers with layouts
+    const char* buffer_names[] = {"CameraBuffer", "TransformBuffer", "ColorBuffer"};
+    for (u32 i = 0; i < UNIFORM_BUFFER_COUNT; i++) {
+        if (!CreateUniformBuffer(&g_vulkan.uniform_buffers[i], buffer_names[i]))
+            Exit("Failed to create uniform buffer");
+    }
+
+    CreateDescriptorPool();
+    CreateDescriptorSets();
+    CreatePipelineLayout();
+}
+
+void ShutdownVulkan()
+{
+    if (g_vulkan.device)
+    {
+        vkDeviceWaitIdle(g_vulkan.device);
+
+        // Cleanup sync objects
+        vkDestroySemaphore(g_vulkan.device, g_vulkan.render_finished_semaphore, nullptr);
+        vkDestroySemaphore(g_vulkan.device, g_vulkan.image_available_semaphore, nullptr);
+        vkDestroyFence(g_vulkan.device, g_vulkan.in_flight_fence, nullptr);
+
+        // Cleanup command pool
+        vkDestroyCommandPool(g_vulkan.device, g_vulkan.command_pool, nullptr);
+
+        // Cleanup framebuffers
+        for (auto framebuffer : g_vulkan.swapchain_framebuffers)
+        {
+            vkDestroyFramebuffer(g_vulkan.device, framebuffer, nullptr);
+        }
+
+        // Cleanup MSAA resources
+        CleanupColorResources();
+
+        // Cleanup render pass
+        vkDestroyRenderPass(g_vulkan.device, g_vulkan.render_pass, nullptr);
+
+        // Cleanup swapchain
+        for (auto imageView : g_vulkan.swapchain_image_views)
+        {
+            vkDestroyImageView(g_vulkan.device, imageView, nullptr);
+        }
+
+        if (g_vulkan.swapchain)
+            vkDestroySwapchainKHR(g_vulkan.device, g_vulkan.swapchain, nullptr);
+
+        vkDestroyDevice(g_vulkan.device, nullptr);
+    }
+
+    if (g_vulkan.surface)
+        vkDestroySurfaceKHR(g_vulkan.instance, g_vulkan.surface, nullptr);
+
+#ifdef _DEBUG
+    if (g_vulkan.debug_messenger)
+    {
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+            g_vulkan.instance,
+            "vkDestroyDebugUtilsMessengerEXT");
+        if (func)
+            func(g_vulkan.instance, g_vulkan.debug_messenger, nullptr);
+    }
+#endif
+
+    if (g_vulkan.instance)
+        vkDestroyInstance(g_vulkan.instance, nullptr);
+
+    if (g_vulkan.library)
+        FreeLibrary(g_vulkan.library);
+
+    g_vulkan = {};
 }
