@@ -7,7 +7,6 @@ struct MeshBuilderImpl : MeshBuilder
     Vec2* positions;
     Vec3* normals;
     Vec2* uv0;
-    uint8_t* bones;
     uint16_t* indices;
     size_t vertex_count;
     size_t vertex_max;
@@ -23,7 +22,6 @@ void MeshBuilderDestructor(void* builder)
     Free(impl->positions);
     Free(impl->normals);
     Free(impl->uv0);
-    Free(impl->bones);
     Free(impl->indices);
 }
 
@@ -42,10 +40,9 @@ MeshBuilder* CreateMeshBuilder(Allocator* allocator, int max_vertices, int max_i
     impl->positions = (Vec2*)Alloc(allocator, sizeof(Vec2) * max_vertices);
     impl->normals = (Vec3*)Alloc(allocator, sizeof(Vec3) * max_vertices);
     impl->uv0 = (Vec2*)Alloc(allocator, sizeof(Vec2) * max_vertices);
-    impl->bones = (u8*)Alloc(allocator, sizeof(u8) * max_vertices);
     impl->indices = (u16*)Alloc(allocator, sizeof(u16) * max_indices);
     
-    if (!impl->positions || !impl->normals || !impl->uv0 || !impl->bones || !impl->indices)
+    if (!impl->positions || !impl->normals || !impl->uv0 || !impl->indices)
     {
         Free(impl);
         return nullptr;
@@ -76,11 +73,6 @@ const Vec3* GetNormals(MeshBuilder* builder)
 const Vec2* GetUvs(MeshBuilder* builder)
 {
     return static_cast<MeshBuilderImpl*>(builder)->uv0;
-}
-
-const u8* GetBoneIndices(MeshBuilder* builder)
-{
-    return static_cast<MeshBuilderImpl*>(builder)->bones;
 }
 
 const u16* GetIndices(MeshBuilder* builder)
@@ -115,7 +107,20 @@ void AddVertex(
     impl->positions[index] = position;
     impl->normals[index] = normal;
     impl->uv0[index] = uv;
-    impl->bones[index] = bone_index;
+}
+
+void AddVertex(MeshBuilder* builder, const Vec2& position)
+{
+    MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);
+    impl->is_full = impl->is_full && impl->vertex_count + 1 >= impl->vertex_max;
+    if (impl->is_full)
+        return;
+
+    size_t index = impl->vertex_count;
+    impl->vertex_count++;
+    impl->positions[index] = position;
+    impl->normals[index] = VEC3_FORWARD;
+    impl->uv0[index] = VEC2_ZERO;
 }
 
 void AddIndex(MeshBuilder* builder, uint16_t index)
@@ -277,9 +282,6 @@ void AddRaw(
     memcpy(impl->positions + impl->vertex_count, positions, sizeof(Vec3) * vertex_count);
     memcpy(impl->normals + impl->vertex_count, normals, sizeof(Vec3) * vertex_count);
     memcpy(impl->uv0 + impl->vertex_count, uv0, sizeof(Vec2) * vertex_count);
-
-    for (size_t i = 0; i < vertex_count; ++i)
-        impl->bones[vertex_start + i] = bone_index;
 
     for (size_t i = 0; i < index_count; ++i)
     {
@@ -660,33 +662,8 @@ Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name)
         impl->positions,
         impl->normals,
         impl->uv0,
-        impl->bones,
         impl->index_count,
         impl->indices,
         name
     );
 }
-
-#if 0
-void mesh_builder::add_mesh(mesh mesh, const Vec3& offset)
-{
-    throw std::runtime_error("not implemented");
-
-    assert(mesh);
-
-    auto vertex_count = mesh->vertex_count();
-
-    _positions.reserve(_positions.size() + mesh->positions().size());
-    for (const auto& pos : mesh->positions())
-        _positions.push_back(pos + offset);
-
-    _normals.insert(_normals.end(), mesh->normals().begin(), mesh->normals().end());
-    _uv0.insert(_uv0.end(), mesh->uv0().begin(), mesh->uv0().end());
-    _bones.insert(_bones.end(), mesh->boneIndices().begin(), mesh->boneIndices().end());
-
-    // Adjust indices to account for existing vertices
-    uint32_t baseIndex = static_cast<uint32_t>(_positions.size() - mesh->positions().size());
-    for (const auto& index : mesh->indices())
-        _indices.push_back(static_cast<uint16_t>(index + baseIndex));
-}
-#endif

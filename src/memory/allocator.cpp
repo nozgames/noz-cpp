@@ -92,6 +92,9 @@ void* Alloc(Allocator* a, size_t size, DestructorFunc destructor)
 
 void Free(void* ptr)
 {
+    if (ptr == nullptr)
+        return;
+
 #if _DEBUG
     ValidateHeader(ptr);
 #endif

@@ -22,10 +22,6 @@ set(SOURCE_FILES
     src/color.cpp
     src/editor/editor_client.cpp
     src/editor/editor_messages.cpp
-    src/entity/entity.cpp
-    src/entity/camera.cpp
-    src/entity/component.cpp
-    src/entity/mesh_renderer.cpp
     src/hash.cpp
     src/event.cpp
     src/input/input.cpp
@@ -47,6 +43,7 @@ set(SOURCE_FILES
     src/physics/collider.cpp
     src/random.cpp
     src/rect.cpp
+    src/render/camera.cpp
     src/render/material.cpp
     src/render/mesh_builder.cpp
     src/render/mesh.cpp

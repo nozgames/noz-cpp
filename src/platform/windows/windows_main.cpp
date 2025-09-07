@@ -1,4 +1,4 @@
-//
+    //
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
@@ -19,7 +19,8 @@ struct WindowsApp
 {
     const ApplicationTraits* traits;
     Vec2Int screen_size;
-    Vec2 cached_mouse_position;
+    Vec2 mouse_position;
+    Vec2 mouse_scroll;
     HWND hwnd;
     bool has_focus;
 };
@@ -67,12 +68,20 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             }
         }
         return 0;
+    case WM_MOUSEWHEEL:
+        {
+            // Get wheel delta (positive = forward/up, negative = backward/down)
+            int wheel_delta = GET_WHEEL_DELTA_WPARAM(wParam);
+            // Normalize to a reasonable scroll value (Windows default is 120 per notch)
+            g_windows.mouse_scroll.y += static_cast<f32>(wheel_delta) / 120.0f;
+        }
+        break;
     case WM_MOUSEMOVE:
         {
             // Cache mouse position for smooth tracking
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
-            g_windows.cached_mouse_position = {
+            g_windows.mouse_position = {
                 static_cast<f32>(x),
                 static_cast<f32>(y)
             };
@@ -153,6 +162,8 @@ bool platform::UpdateApplication()
     MSG msg = {};
     bool running = true;
 
+    g_windows.mouse_scroll = {0, 0};
+
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
     {
         if (msg.message == WM_QUIT)
@@ -215,7 +226,12 @@ void platform::ShowCursor(bool show)
 
 Vec2 platform::GetMousePosition()
 {
-    return g_windows.cached_mouse_position;
+    return g_windows.mouse_position;
+}
+
+Vec2 platform::GetMouseScroll()
+{
+    return g_windows.mouse_scroll;
 }
 
 std::filesystem::path platform::GetSaveGamePath()

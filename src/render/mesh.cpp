@@ -76,7 +76,6 @@ Mesh* CreateMesh(
     const Vec2* positions,
     const Vec3* normals,
     const Vec2* uvs,
-    u8* bone_indices,
     u16 index_count,
     u16* indices,
     const Name* name)
@@ -92,25 +91,11 @@ Mesh* CreateMesh(
     MeshImpl* mesh = CreateMesh(allocator, vertex_count, index_count, name);
     mesh->bounds = ToBounds(positions, vertex_count);
 
-    if (bone_indices)
+    for (size_t i = 0; i < vertex_count; i++)
     {
-        for (size_t i = 0; i < vertex_count; i++)
-        {
-            mesh->vertices[i].position = positions[i];
-            mesh->vertices[i].normal = normals[i];
-            mesh->vertices[i].uv0 = uvs[i];
-            mesh->vertices[i].bone = (float)bone_indices[i];
-        }
-    }
-    else
-    {
-        for (size_t i = 0; i < vertex_count; i++)
-        {
-            mesh->vertices[i].position = positions[i];
-            mesh->vertices[i].normal = normals[i];
-            mesh->vertices[i].uv0 = uvs[i];
-            mesh->vertices[i].bone = 0;
-        }
+        mesh->vertices[i].position = positions[i];
+        mesh->vertices[i].normal = normals[i];
+        mesh->vertices[i].uv0 = uvs[i];
     }
 
     memcpy(mesh->indices, indices, sizeof(uint16_t) * index_count);

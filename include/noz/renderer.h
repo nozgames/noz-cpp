@@ -71,7 +71,6 @@ Mesh* CreateMesh(
     const Vec2* positions,
     const Vec3* normals,
     const Vec2* uvs,
-    u8* bone_indices,
     u16 index_count,
     u16* indices,
     const Name* name);
@@ -123,6 +122,7 @@ void AddVertex(
     const Vec3& normal,
     const Vec2& uv,
     uint8_t bone_index=0);
+void AddVertex(MeshBuilder* builder, const Vec2& position);
 
 // @render_buffer
 void BindDefaultTexture(int texture_index);

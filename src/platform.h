@@ -75,6 +75,7 @@ namespace platform
     void InitializeInput();
     void ShutdownInput();
     Vec2 GetMousePosition();
+    Vec2 GetMouseScroll();
 
     // @filesystem
     std::filesystem::path GetSaveGamePath();
