@@ -146,7 +146,7 @@ void RenderMesh(Mesh* mesh)
 }
 
 #ifdef NOZ_EDITOR
-df
+
 void ReloadMesh(Asset* asset, Stream* stream)
 {
     assert(asset);

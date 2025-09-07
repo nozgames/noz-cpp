@@ -33,6 +33,7 @@ static ApplicationTraits g_default_traits =
 {
     .name = "noz",
     .title = "noz",
+    .assets_path = "assets",
     .width = 800,
     .height = 600,
     .asset_memory_size = 32 * noz::MB,

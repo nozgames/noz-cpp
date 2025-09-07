@@ -15,6 +15,7 @@ struct ApplicationTraits
 {
     const char* name;
     const char* title;
+    const char* assets_path;
     int width;
     int height;
     size_t asset_memory_size;

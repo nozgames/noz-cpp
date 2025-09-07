@@ -105,8 +105,6 @@ target_link_libraries(noz
         ole32
 )
 
-add_subdirectory(editor)
-
 
 if(CMAKE_GENERATOR STREQUAL "Ninja")
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

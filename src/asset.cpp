@@ -56,7 +56,7 @@ Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetSigna
 {
     assert(asset_name);
 
-    std::filesystem::path asset_path = "assets";
+    std::filesystem::path asset_path = GetApplicationTraits()->assets_path;
     asset_path /= asset_name->value;
     asset_path += GetExtensionFromSignature(signature);
 
