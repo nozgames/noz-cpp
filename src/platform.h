@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vector>
 #include <filesystem>
 
 enum InputCode;
@@ -42,7 +41,7 @@ namespace platform
     void BindCamera(const Mat3& view_matrix);
     void BindColor(const Color& color);
     Buffer* CreateVertexBuffer(const MeshVertex* vertices, size_t vertex_count, const char* name = nullptr);
-    Buffer* CreateIndexBuffer(const uint16_t* indices, size_t index_count, const char* name = nullptr);
+    Buffer* CreateIndexBuffer(const u16* indices, size_t index_count, const char* name = nullptr);
     void BindVertexBuffer(Buffer* buffer);
     void BindIndexBuffer(Buffer* buffer);
     void DrawIndexed(size_t index_count);

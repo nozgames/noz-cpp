@@ -42,6 +42,7 @@ static ApplicationTraits g_default_traits =
     .max_events = 128,
     .max_event_listeners = 4,
     .max_event_stack = 32,
+    .editor_port = 8080,
     .renderer = 
     {
         .max_textures = 32,
@@ -175,7 +176,7 @@ void InitApplication(ApplicationTraits* traits)
 
 #ifdef NOZ_EDITOR
     Listen(EVENT_HOTLOAD, HandleHotload);
-    InitEditorClient("127.0.0.1", 8080);
+    InitEditorClient("127.0.0.1", g_app.traits.editor_port);
 #endif // NOZ_EDITOR
 
     InitVfx();

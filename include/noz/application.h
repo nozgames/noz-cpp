@@ -24,6 +24,7 @@ struct ApplicationTraits
     size_t max_events;
     size_t max_event_listeners;
     size_t max_event_stack;
+    u16 editor_port;
     RendererTraits renderer;
     bool (*load_assets)(Allocator* allocator);
     void (*unload_assets)();

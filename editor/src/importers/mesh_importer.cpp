@@ -374,8 +374,8 @@ void GenerateMeshOutline(GLTFMesh* mesh, const OutlineConfig& config)
         
         Vec2 normal_p0 = edge_normal;
         Vec2 normal_p1 = edge_normal;
-        float width_p0 = config.width;
-        float width_p1 = config.width;
+        float width_p0 = config.width * mesh->outlines[edge.second.i0];
+        float width_p1 = config.width * mesh->outlines[edge.second.i1];
 
         // Both edge points have neighbors
         if (n0.count > 0 && n1.count > 0)

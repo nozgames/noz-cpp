@@ -18,11 +18,15 @@ struct MeshImpl : Mesh
 
 //static SDL_GPUDevice* g_device = nullptr;
 
-static void UploadMesh(MeshImpl* impl, const Name* name);
+static void UploadMesh(MeshImpl* impl);
 
 static void MeshDestructor(void* p)
 {
     MeshImpl* impl = (MeshImpl*)p;
+    Free(impl->vertices);
+    Free(impl->indices);
+
+// todo: destroy vertex bufffers
 
 #if 0
     if (impl->index_transfer)
@@ -54,15 +58,15 @@ inline size_t GetMeshImplSize(size_t vertex_count, size_t index_count)
 
 static MeshImpl* CreateMesh(Allocator* allocator, size_t vertex_count, size_t index_count, const Name* name)
 {
-    MeshImpl* mesh = (MeshImpl*)Alloc(allocator, GetMeshImplSize(vertex_count, index_count), MeshDestructor);
+    MeshImpl* mesh = (MeshImpl*)Alloc(allocator, sizeof(MeshImpl), MeshDestructor);
     if (!mesh)
         return nullptr;
 
-    mesh->name = name;
+    mesh->name = name ? name : NAME_NONE;
     mesh->vertex_count = vertex_count;
     mesh->index_count = index_count;
-    mesh->vertices = (MeshVertex*)((u8*)mesh + sizeof(MeshImpl));
-    mesh->indices = (uint16_t*)((u8*)mesh->vertices + sizeof(MeshVertex) * vertex_count);
+    mesh->vertices = (MeshVertex*)Alloc(allocator, vertex_count * sizeof(MeshVertex));
+    mesh->indices = (u16*)Alloc(allocator, index_count * sizeof(u16));
     return mesh;
 }
 
@@ -95,7 +99,7 @@ Mesh* CreateMesh(
     }
 
     memcpy(mesh->indices, indices, sizeof(uint16_t) * index_count);
-    UploadMesh(mesh, name);
+    UploadMesh(mesh);
     return mesh;
 }
 
@@ -114,16 +118,16 @@ Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const
     ReadBytes(stream, impl->vertices, sizeof(MeshVertex) * impl->vertex_count);
     ReadBytes(stream, impl->indices, sizeof(uint16_t) * impl->index_count);
 
-    UploadMesh(impl, name);
+    UploadMesh(impl);
     return impl;
 }
 
-static void UploadMesh(MeshImpl* impl, const Name* name)
+static void UploadMesh(MeshImpl* impl)
 {
     assert(impl);
     assert(!impl->vertex_buffer);
-    impl->vertex_buffer = platform::CreateVertexBuffer(impl->vertices, impl->vertex_count, name ? name->value : nullptr);
-    impl->index_buffer = platform::CreateIndexBuffer(impl->indices, impl->index_count, name ? name->value : nullptr);
+    impl->vertex_buffer = platform::CreateVertexBuffer(impl->vertices, impl->vertex_count, impl->name->value);
+    impl->index_buffer = platform::CreateIndexBuffer(impl->indices, impl->index_count, impl->name->value);
 }
 
 size_t GetVertexCount(Mesh* mesh)
@@ -151,3 +155,31 @@ void RenderMesh(Mesh* mesh)
     platform::BindIndexBuffer(impl->index_buffer);
     platform::DrawIndexed(impl->index_count);
 }
+
+#ifdef NOZ_EDITOR
+void ReloadMesh(Asset* asset, Stream* stream)
+{
+    assert(asset);
+    assert(stream);
+    MeshImpl* impl = static_cast<MeshImpl*>(asset);
+
+    Free(impl->indices);
+    Free(impl->vertices);
+
+    // todo: destroy platform buffers
+
+    impl->bounds = ReadStruct<Bounds2>(stream);
+    impl->vertex_count = ReadU16(stream);
+    impl->index_count = ReadU16(stream);
+    impl->vertices = (MeshVertex*)Alloc(ALLOCATOR_DEFAULT, impl->vertex_count * sizeof(MeshVertex));
+    impl->indices = (u16*)Alloc(ALLOCATOR_DEFAULT, impl->index_count * sizeof(u16));
+
+    ReadBytes(stream, impl->vertices, sizeof(MeshVertex) * impl->vertex_count);
+    ReadBytes(stream, impl->indices, sizeof(uint16_t) * impl->index_count);
+
+    impl->vertex_buffer = nullptr;
+    impl->index_buffer = nullptr;
+    UploadMesh(impl);
+
+}
+#endif
