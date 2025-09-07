@@ -60,6 +60,15 @@ Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetSigna
     asset_path /= asset_name->value;
     asset_path += GetExtensionFromSignature(signature);
 
+    Stream* stream = LoadStream(allocator, asset_path);
+    if (stream)
+        return stream;
+
+    asset_path = GetBinaryDirectory();
+    asset_path /= "assets";
+    asset_path /= asset_name->value;
+    asset_path += GetExtensionFromSignature(signature);
+
     return LoadStream(allocator, asset_path);
 }
 

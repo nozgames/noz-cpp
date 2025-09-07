@@ -128,3 +128,4 @@ extern void EndCanvas();
 extern void SetStyleSheet(StyleSheet* sheet);
 extern void DrawUI();
 extern void Label(const char* text, const Name* id);
+extern void Image(Material* material, const Name* id);;

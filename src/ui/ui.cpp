@@ -10,6 +10,7 @@ constexpr ElementType ELEMENT_TYPE_UNKNOWN = 0;
 constexpr ElementType ELEMENT_TYPE_NONE = 1;
 constexpr ElementType ELEMENT_TYPE_CANVAS = 2;
 constexpr ElementType ELEMENT_TYPE_LABEL = 3;
+constexpr ElementType ELEMENT_TYPE_IMAGE = 4;
 
 struct CachedTextMesh
 {
@@ -196,18 +197,28 @@ void RenderElement(const Element& e)
 
     switch (e.type)
     {
-        case ELEMENT_TYPE_CANVAS:
-            RenderCanvas(e);
-            break;
+    case ELEMENT_TYPE_CANVAS:
+        RenderCanvas(e);
+        break;
 
-        case ELEMENT_TYPE_LABEL:
-        {
-            BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {1,1});
-            BindColor(e.style.color.value);
-            BindMaterial(e.material);
-            DrawMesh(GetMesh((TextMesh*)e.resource));
-            break;
-        }
+    case ELEMENT_TYPE_LABEL:
+        BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {1,1});
+        BindColor(e.style.color.value);
+        BindMaterial(e.material);
+        DrawMesh(GetMesh((TextMesh*)e.resource));
+        break;
+
+    case ELEMENT_TYPE_IMAGE:
+    {
+        Material* material = (Material*)e.resource;
+        if (!material)
+            material = g_ui.element_material;
+        BindMaterial(material);
+        BindColor(COLOR_WHITE);
+        BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {e.bounds.width, e.bounds.height});
+        DrawMesh(g_ui.element_quad);
+        break;
+    }
     }
 }
 
@@ -220,6 +231,18 @@ static Vec2 MeasureContent(Element& e, const Vec2& available_size)
     case ELEMENT_TYPE_LABEL:
         if (e.resource != nullptr)
             return GetSize((TextMesh*)e.resource);
+        break;
+
+    case ELEMENT_TYPE_IMAGE:
+        if (e.resource != nullptr)
+        {
+            Texture* texture = GetTexture((Material*)e.resource, 0);
+            if (texture)
+                return ToVec2(GetSize(texture));
+        }
+        break;
+
+    default:
         break;
     }
 
@@ -634,6 +657,14 @@ void Label(const char* text, const Name* id)
         }
     }
 
+    EndElement();
+}
+
+void Image(Material* material, const Name* id)
+{
+    BeginElement(ELEMENT_TYPE_IMAGE, id);
+    Element& e = GetCurrentElement();
+    e.resource = material;
     EndElement();
 }
 

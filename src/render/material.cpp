@@ -37,6 +37,13 @@ Shader* GetShader(Material* material)
     return static_cast<MaterialImpl*>(material)->shader;
 }
 
+Texture* GetTexture(Material* material, size_t index)
+{
+    assert(material);
+    assert(index < static_cast<MaterialImpl*>(material)->texture_count);
+    return static_cast<MaterialImpl*>(material)->textures[index];
+}
+
 void SetTexture(Material* material, Texture* texture, size_t index)
 {
     MaterialImpl* impl = static_cast<MaterialImpl*>(material);

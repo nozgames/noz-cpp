@@ -90,10 +90,14 @@ extern Color COLOR_GREEN;
 extern Color COLOR_BLUE;
 extern Color COLOR_TRANSPARENT;
 
-constexpr Vec2 ColorUV(int col, int row, int atlas_width = 1024, int atlas_height = 1024, int color_size=8)
+constexpr f32 COLOR_UV_ATLAS_WIDTH = 128;
+constexpr f32 COLOR_UV_ATLAS_HEIGHT = 128;
+constexpr f32 COLOR_UV_SIZE = 8;
+
+constexpr Vec2 ColorUV(int col, int row)
 {
     return {
-        ((f32)col * (f32)color_size + (f32)color_size * 0.5f) / (f32)atlas_width,
-        ((f32)row * (f32)color_size + (f32)color_size * 0.5f) / (f32)atlas_height
+        ((f32)col * COLOR_UV_SIZE + COLOR_UV_SIZE * 0.5f) / COLOR_UV_ATLAS_WIDTH,
+        ((f32)row * COLOR_UV_SIZE + COLOR_UV_SIZE * 0.5f) / COLOR_UV_ATLAS_HEIGHT
     };
 }

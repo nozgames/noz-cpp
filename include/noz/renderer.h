@@ -61,6 +61,7 @@ Vec2Int GetSize(Texture* texture);
 Material* CreateMaterial(Allocator* allocator, Shader* shader);
 Shader* GetShader(Material* material);
 void SetTexture(Material* material, Texture* texture, size_t index=0);
+Texture* GetTexture(Material* material, size_t index=0);
 
 // @mesh
 struct Mesh : Asset { };

@@ -241,6 +241,9 @@ inline Vec2 Cross(const Vec2& a, const Vec2& b) { return Vec2{ -a.y, a.x }; }
 extern f64 Length(const Vec2Double& v);
 extern Vec2Double Normalize(const Vec2Double& v);
 
+// @vec2int
+inline Vec2 ToVec2(const Vec2Int& v) { return { (f32)v.x, (f32)v.y }; }
+
 // @vec3
 extern f32 Length(const Vec3& v);
 extern Vec3 Normalize(const Vec3& v);

@@ -3,6 +3,7 @@
 //
 
 #include <cstdio>
+#include <filesystem>
 #include "platform.h"
 #include "editor/editor_client.h"
 
@@ -75,6 +76,8 @@ struct Application
     int frame_index;
     double accumulated_time;
     double average_fps;
+    std::string binary_path;
+    std::string binary_dir;
 };
 
 static Application g_app = {};
@@ -140,13 +143,17 @@ static void HandleHotload(EventId id, const void* data)
 #endif
 
 // @init
-void InitApplication(ApplicationTraits* traits)
+void InitApplication(ApplicationTraits* traits, int argc, const char* argv[])
 {
     traits = traits ? traits : &g_default_traits;
 
     memset(&g_app, 0, sizeof(Application));
     g_app.title = traits->title;
     g_app.traits = *traits;
+
+    g_app.binary_path = argv[0];
+    g_app.binary_dir = std::filesystem::path(argv[0]).parent_path().string();
+
     platform::InitApplication(&g_app.traits);
 
     InitAllocator(traits);
@@ -296,3 +303,7 @@ float GetCurrentFPS()
     return (float)g_app.average_fps;
 }
 
+const char* GetBinaryDirectory()
+{
+    return g_app.binary_dir.c_str();
+}

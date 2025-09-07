@@ -34,12 +34,13 @@ struct ApplicationTraits
 
 void Init(ApplicationTraits& traits);
 
-void InitApplication(ApplicationTraits* traits);
+void InitApplication(ApplicationTraits* traits, int argc, const char* argv[]);
 void ShutdownApplication();
 bool UpdateApplication();
 void BeginRenderFrame(Color clear_color);
 void EndRenderFrame();
 
+const char* GetBinaryDirectory();
 void Exit(const char* format, ...);
 void ExitOutOfMemory(const char* message=nullptr);
 

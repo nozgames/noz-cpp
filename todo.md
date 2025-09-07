@@ -1,14 +1,26 @@
 # Todo
 
-- [ ] edit mode on specific asset with tab
-- [ ] Draw pivot point
+- [ ] Change UI, vertex size, edge size, etc to not scale with the window size
+- [ ] key to hide / show palette
+- [ ] Palette uv is wrong, can see left?
 - [ ] undo / redo (whole mesh)
-- [ ] When opening asset editor open all meshes
-- [ ] save the world canvas position of mesh in the .meta file
-- [ ] experiment with blender s / g / r controls
+- [ ] r - rotate
 - [ ] multi select in the editor
 - [ ] zoom extents
 - [ ] scaled zoom
+- [ ] Save mesh edits
+- [ ] Ctrl-s save
+- [ ] m to merge vertices
+- [ ] x to dissovlve vertices
+- [ ] q to rotate edge
+- [ ] highlight triangle when selected
+- [ ] highlight edge when selected
+- [ ] combined vertex buffer for rendering so we can stream data to it like triangles?  
+- [ ] e for extrude
+- [ ] x to limit move 
+- [ ] y to limit move
+- [ ] color picker to select color
+- [ ] Change palette to be 128x128 which is 256 colors at 8x8 per color
 
 - [ ] Clean importer.cpp
 - [ ] check if importer.cpp is handling meta dependency and remove the code from importers
@@ -22,7 +34,6 @@
 - [ ] Auto generate names from styles and other things that have names in g_names....- [ ] Push / Pop the scratch before each asset load or NAME_*
 - [ ] style sheet inherit not working
 - [ ] Localized strings
-- [ ] hot load of meshes
 - [ ] hot load of textures
 - [ ] hot load of sounds
 - [ ] hot load of shaders
@@ -36,3 +47,10 @@
 - [X] ctrl + drag = snap
 - [X] Move meshz to the editor (--edit to enter edit mode)
 - [x] move nozed to its own repo using the noz library
+- [X] edit mode on specific asset with tab
+- [X] When opening asset editor open all meshes
+- [X] save the world canvas position of mesh in the .meta file
+- [X] hot load of meshes
+- [X] g - move
+- [X] Draw pivot point
+- [X] s - scale
