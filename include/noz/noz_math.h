@@ -215,6 +215,7 @@ Bounds3 Expand(const Bounds3& bounds, const Bounds3& other);
 
 // @bounds2
 Bounds2 ToBounds(const Vec2* positions, u32 count);
+bool Contains(const Bounds2& bounds, const Vec2& point);
 
 // @mat4
 extern Mat4 TRS(const Vec3& translation, const Vec4& rotation, const Vec3& scale);

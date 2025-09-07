@@ -20,3 +20,9 @@ Bounds2 ToBounds(const Vec2* positions, u32 count)
     Vec2 extents = (max_pos - min_pos) * 0.5f;
     return Bounds2(center, extents);
 }
+
+bool Contains(const Bounds2& bounds, const Vec2& point)
+{
+    return point.x >= bounds.min.x && point.x <= bounds.max.x &&
+           point.y >= bounds.min.y && point.y <= bounds.max.y;
+}

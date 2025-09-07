@@ -1,5 +1,6 @@
 # Todo
 
+- [ ] edit mode on specific asset with tab
 - [ ] Draw pivot point
 - [ ] undo / redo (whole mesh)
 - [ ] When opening asset editor open all meshes
