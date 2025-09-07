@@ -241,6 +241,92 @@ const Mat3& GetViewMatrix(Camera* camera)
     return UpdateIfDirty(camera)->view;
 }
 
+Bounds2 GetBounds(Camera* camera)
+{
+    CameraImpl* impl = UpdateIfDirty(camera);
+    
+    // Calculate the actual world bounds from the camera's current state
+    float aspectRatio = GetScreenAspectRatio();
+    
+    // Get current extents
+    float left = impl->extents.x;
+    float right = impl->extents.y;
+    float bottom = impl->extents.z;
+    float top = impl->extents.w;
+    
+    // Handle auto-calculation for each extent (similar to UpdateCamera logic)
+    bool auto_left = abs(left) >= F32_MAX;
+    bool auto_right = abs(right) >= F32_MAX;
+    bool auto_bottom = abs(bottom) >= F32_MAX;
+    bool auto_top = abs(top) >= F32_MAX;
+    
+    // Calculate width and height
+    float width, height;
+    
+    if (!auto_left && !auto_right)
+    {
+        width = right - left;
+        if (!auto_bottom && !auto_top)
+        {
+            height = top - bottom;
+        }
+        else
+        {
+            height = width / aspectRatio;
+        }
+    }
+    else if (!auto_bottom && !auto_top)
+    {
+        height = top - bottom;
+        width = height * aspectRatio;
+    }
+    else
+    {
+        width = 2.0f;
+        height = 2.0f / aspectRatio;
+    }
+    
+    // Calculate final bounds
+    if (auto_left && auto_right)
+    {
+        left = -width * 0.5f;
+        right = width * 0.5f;
+    }
+    else if (auto_left)
+    {
+        left = right - width;
+    }
+    else if (auto_right)
+    {
+        right = left + width;
+    }
+    
+    if (auto_bottom && auto_top)
+    {
+        bottom = -height * 0.5f;
+        top = height * 0.5f;
+    }
+    else if (auto_bottom)
+    {
+        bottom = top - height;
+    }
+    else if (auto_top)
+    {
+        top = bottom + height;
+    }
+    
+    // Apply position offset
+    Vec2 center = Vec2{(left + right) * 0.5f, (bottom + top) * 0.5f} + impl->position_offset;
+    
+    Bounds2 bounds;
+    bounds.min.x = center.x - width * 0.5f;
+    bounds.max.x = center.x + width * 0.5f;
+    bounds.min.y = center.y - height * 0.5f;
+    bounds.max.y = center.y + height * 0.5f;
+    
+    return bounds;
+}
+
 Camera* CreateCamera(Allocator* allocator)
 {
     CameraImpl* impl = (CameraImpl*)Alloc(allocator, sizeof(CameraImpl));
@@ -251,3 +337,4 @@ Camera* CreateCamera(Allocator* allocator)
     impl->last_screen_size = {0, 0};
     return impl;
 }
+

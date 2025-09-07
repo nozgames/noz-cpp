@@ -1,5 +1,11 @@
 # Todo
 
+- [ ] Move meshz to the editor (--edit to enter edit mode)
+- [ ] move nozed to its own repo using the noz library
+- [ ] experiment with blender s / g / r controls
+- [ ] multi select in the editor
+- 
+
 - [ ] Clean importer.cpp
 - [ ] check if importer.cpp is handling meta dependency and remove the code from importers
 - [ ] shader include dependency handling.

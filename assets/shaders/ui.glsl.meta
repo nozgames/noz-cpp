@@ -1,7 +1,2 @@
 [shader]
-depth_test=false
-depth_write=false
-blend_enabled=true
-src_blend_factor=src_alpha
-dst_blend_factor=one_minus_src_alpha
-cull_mode=none
+blend = true

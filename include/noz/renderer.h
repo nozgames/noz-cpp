@@ -158,6 +158,7 @@ Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos);
 Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos);
 void UpdateCamera(Camera* camera);
 const Mat3& GetViewMatrix(Camera* camera);
+Bounds2 GetBounds(Camera* camera);
 
 // @skeleton
 int GetBoneIndex(Skeleton* skeleton, const Name* name);
