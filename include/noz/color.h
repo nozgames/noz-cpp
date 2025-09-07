@@ -90,7 +90,7 @@ extern Color COLOR_GREEN;
 extern Color COLOR_BLUE;
 extern Color COLOR_TRANSPARENT;
 
-constexpr Vec2 ColorUV(int row, int col, int atlas_width = 1024, int atlas_height = 1024, int color_size=8)
+constexpr Vec2 ColorUV(int col, int row, int atlas_width = 1024, int atlas_height = 1024, int color_size=8)
 {
     return {
         ((f32)col * (f32)color_size + (f32)color_size * 0.5f) / (f32)atlas_width,
