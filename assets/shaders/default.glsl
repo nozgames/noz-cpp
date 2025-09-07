@@ -60,7 +60,7 @@ void main()
     float diffuse = max(dot(f_normal, -lightDir), 0.0);
     float lighting = 0.3 + 0.7 * diffuse;
     vec4 texColor = texture(mainTexture, f_uv);
-    outColor = vec4(texColor.rgb * lighting, texColor.a);
+    outColor = vec4(texColor.rgb * lighting * colorData.color.rgb, texColor.a * colorData.color.a);
 }
 
 //@ END

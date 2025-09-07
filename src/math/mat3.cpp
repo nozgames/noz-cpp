@@ -17,6 +17,18 @@ Mat3 TRS(const Vec2& translation, f32 rotation, const Vec2& scale)
     };
 }
 
+Mat3 TRS(const Vec2& translation, const Vec2& direction, const Vec2& scale)
+{
+    Vec2 dir = Normalize(direction);
+    Vec2 right = Vec2{dir.y, -dir.x};
+
+    return Mat3{
+        scale.x * dir.x,   scale.x * dir.y,   0,
+        scale.y * right.x,     scale.y * right.y,     0,
+        translation.x,       translation.y,       1
+    };
+}
+
 Mat3 Translate(const Vec2& translation)
 {
     return Mat3{

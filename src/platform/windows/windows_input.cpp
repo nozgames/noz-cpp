@@ -222,8 +222,8 @@ float platform::GetInputAxisValue(InputCode code)
         {
             case MOUSE_X: return GetMousePosition().x;
             case MOUSE_Y: return GetMousePosition().y;
-            case MOUSE_SCROLL_X: return g_input.mouse_scroll.x;
-            case MOUSE_SCROLL_Y: return g_input.mouse_scroll.y;
+            case MOUSE_SCROLL_X: return GetMouseScroll().x;
+            case MOUSE_SCROLL_Y: return GetMouseScroll().y;
             default: return 0.0f;
         }
     }

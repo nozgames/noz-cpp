@@ -16,7 +16,16 @@ struct InputSetImpl : InputSet
     InputCode enabled_codes[INPUT_CODE_COUNT];
     u32 enabled_count;
     LinkedListNode node_active;
+    bool active;
 };
+
+void SetActive(InputSet* input_set, bool active)
+{
+    InputSetImpl* impl = static_cast<InputSetImpl*>(input_set);
+    if (!impl)
+        return;
+    impl->active = active;
+}
 
 static bool IsButtonEnabled(u8 state)
 {
@@ -90,15 +99,12 @@ void UpdateButtonState(InputSetImpl* impl, InputCode code, bool new_state, bool 
         impl->buttons[int_code] |= BUTTON_STATE_RELEASED;
 }
 
-#if 0
-void UpdateMouseButtonState(InputSetImpl* impl, SDL_MouseButtonFlags mouse_flags, SDL_MouseButtonFlags mask, InputCode code, bool reset)
+float GetAxis(InputSet* set, InputCode code)
 {
-    if (!IsButtonEnabled(impl->buttons[code]))
-        return;
-
-    UpdateButtonState(impl, code, (mouse_flags & mask) != 0, reset);
+    if (!((InputSetImpl*)set)->active)
+        return 0.0f;
+    return platform::GetInputAxisValue(code);
 }
-#endif
 
 void UpdateMouseState(InputSetImpl* impl, bool reset)
 {

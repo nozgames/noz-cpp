@@ -23,4 +23,4 @@ bool WasButtonPressed(InputSet* map, InputCode code);
 bool WasButtonReleased(InputSet* map, InputCode code);
 void EnableButton(InputSet* map, InputCode code);
 void DisableButton(InputSet* map, InputCode code);
-
+float GetAxis(InputSet* set, InputCode code);
