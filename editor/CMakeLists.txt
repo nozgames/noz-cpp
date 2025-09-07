@@ -45,8 +45,6 @@ set(SOURCE_FILES
     src/tui/text_input.cpp
     src/tui/tstring.cpp
     src/tui/windows_terminal.cpp
-    src/views/inspector_object.cpp
-    src/views/inspector_view.cpp
     src/views/log_view.cpp
     src/views/properties_view.cpp
     src/views/tree_view.cpp

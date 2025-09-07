@@ -251,6 +251,15 @@ bool UpdateApplication()
         Send(EVENT_FOCUS_CHANGED, &event);
     }
 
+    // If we're currently resizing, enter a special loop
+    if (platform::IsResizing())
+    {
+        // Only update essential systems during resize
+        UpdateScreenSize();
+        // Skip game logic, physics, etc.
+        return true;
+    }
+
     UpdateScreenSize();
     UpdateTime();
     UpdateInput();

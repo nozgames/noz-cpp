@@ -23,6 +23,7 @@ struct WindowsApp
     Vec2 mouse_scroll;
     HWND hwnd;
     bool has_focus;
+    bool is_resizing;
 };
 
 static WindowsApp g_windows = {};
@@ -67,6 +68,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 ResizeVulkan(new_size);
             }
         }
+        return 0;
+    case WM_ENTERSIZEMOVE:
+        g_windows.is_resizing = true;
+        return 0;
+    case WM_EXITSIZEMOVE:
+        g_windows.is_resizing = false;
         return 0;
     case WM_MOUSEWHEEL:
         {
@@ -155,6 +162,11 @@ void platform::ShutdownApplication()
 bool platform::HasFocus()
 {
     return g_windows.has_focus;
+}
+
+bool platform::IsResizing()
+{
+    return g_windows.is_resizing;
 }
 
 bool platform::UpdateApplication()

@@ -16,36 +16,19 @@ struct MeshImpl : Mesh
     Texture* texture;
 };
 
-//static SDL_GPUDevice* g_device = nullptr;
-
 static void UploadMesh(MeshImpl* impl);
 
 static void MeshDestructor(void* p)
 {
     MeshImpl* impl = (MeshImpl*)p;
-    Free(impl->vertices);
-    Free(impl->indices);
-
-// todo: destroy vertex bufffers
-
-#if 0
-    if (impl->index_transfer)
-        SDL_ReleaseGPUTransferBuffer(g_device, impl->index_transfer);
-
-    if (impl->index_buffer)
-        SDL_ReleaseGPUBuffer(g_device, impl->index_buffer);
-
-    if (impl->vertex_transfer)
-        SDL_ReleaseGPUTransferBuffer(g_device, impl->vertex_transfer);
 
     if (impl->vertex_buffer)
-        SDL_ReleaseGPUBuffer(g_device, impl->vertex_buffer);
+        platform::DestroyBuffer(impl->vertex_buffer);
+    if (impl->index_buffer)
+        platform::DestroyBuffer(impl->index_buffer);
 
-    impl->index_buffer = nullptr;
-    impl->index_transfer = nullptr;
-    impl->vertex_buffer = nullptr;
-    impl->vertex_transfer = nullptr;
-#endif
+    Free(impl->vertices);
+    Free(impl->indices);
 }
 
 inline size_t GetMeshImplSize(size_t vertex_count, size_t index_count)
@@ -126,8 +109,14 @@ static void UploadMesh(MeshImpl* impl)
 {
     assert(impl);
     assert(!impl->vertex_buffer);
-    impl->vertex_buffer = platform::CreateVertexBuffer(impl->vertices, impl->vertex_count, impl->name->value);
-    impl->index_buffer = platform::CreateIndexBuffer(impl->indices, impl->index_count, impl->name->value);
+    impl->vertex_buffer = platform::CreateVertexBuffer(
+        impl->vertices,
+        impl->vertex_count,
+        impl->name->value);
+    impl->index_buffer = platform::CreateIndexBuffer(
+        impl->indices,
+        impl->index_count,
+        impl->name->value);
 }
 
 size_t GetVertexCount(Mesh* mesh)
@@ -157,6 +146,7 @@ void RenderMesh(Mesh* mesh)
 }
 
 #ifdef NOZ_EDITOR
+df
 void ReloadMesh(Asset* asset, Stream* stream)
 {
     assert(asset);
@@ -179,7 +169,9 @@ void ReloadMesh(Asset* asset, Stream* stream)
 
     impl->vertex_buffer = nullptr;
     impl->index_buffer = nullptr;
-    UploadMesh(impl);
 
+    UploadMesh(impl);
 }
+
 #endif
+

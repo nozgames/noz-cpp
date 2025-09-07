@@ -1171,6 +1171,12 @@ void platform::BindColor(const Color& color)
     memcpy(buffer_ptr, &color, sizeof(Color));
 }
 
+void platform::DestroyBuffer(Buffer* buffer)
+{
+    if (buffer)
+        vkDestroyBuffer(g_vulkan.device, (VkBuffer)buffer, nullptr);
+}
+
 platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, size_t vertex_count, const char* name)
 {
     assert(vertices);

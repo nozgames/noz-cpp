@@ -31,6 +31,7 @@ namespace platform
     Vec2Int GetScreenSize();
     void ShowCursor(bool show);
     bool HasFocus();
+    bool IsResizing();
 
     // @render
     void BeginRenderFrame();
@@ -40,15 +41,25 @@ namespace platform
     void BindTransform(const Mat3& transform);
     void BindCamera(const Mat3& view_matrix);
     void BindColor(const Color& color);
-    Buffer* CreateVertexBuffer(const MeshVertex* vertices, size_t vertex_count, const char* name = nullptr);
+    Buffer* CreateVertexBuffer(
+        const MeshVertex* vertices,
+        size_t vertex_count,
+        const char* name = nullptr);
     Buffer* CreateIndexBuffer(const u16* indices, size_t index_count, const char* name = nullptr);
+    void DestroyBuffer(Buffer* buffer);
     void BindVertexBuffer(Buffer* buffer);
     void BindIndexBuffer(Buffer* buffer);
     void DrawIndexed(size_t index_count);
     void BindTexture(Texture* texture, int slot);
 
     // @texture
-    Texture* CreateTexture(void* data, size_t width, size_t height, int channels, const SamplerOptions& sampler_options, const char* name);
+    Texture* CreateTexture(
+        void* data,
+        size_t width,
+        size_t height,
+        int channels,
+        const SamplerOptions& sampler_options,
+        const char* name);
     void DestroyTexture(Texture* texture);
 
     // @shader
