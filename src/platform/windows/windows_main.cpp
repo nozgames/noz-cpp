@@ -65,11 +65,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 g_windows.screen_size = new_size;
                 ResizeVulkan(new_size);
-
-                if(g_windows.traits->test)
-                {
-                    g_windows.traits->test();
-                }
             }
         }
         return 0;

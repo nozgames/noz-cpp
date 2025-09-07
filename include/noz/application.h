@@ -30,7 +30,6 @@ struct ApplicationTraits
     bool (*load_assets)(Allocator* allocator);
     void (*unload_assets)();
     void (*hotload_asset)(const Name* name);
-    void (*test)();
 };
 
 void Init(ApplicationTraits& traits);

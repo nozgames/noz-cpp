@@ -1,14 +1,13 @@
 # Todo
 
+- [ ] Draw pivot point
 - [ ] undo / redo (whole mesh)
-- [ ] ctrl + drag = snap
 - [ ] When opening asset editor open all meshes
 - [ ] save the world canvas position of mesh in the .meta file
-- [ ] Move meshz to the editor (--edit to enter edit mode)
-- [ ] move nozed to its own repo using the noz library
 - [ ] experiment with blender s / g / r controls
 - [ ] multi select in the editor
-- 
+- [ ] zoom extents
+- [ ] scaled zoom
 
 - [ ] Clean importer.cpp
 - [ ] check if importer.cpp is handling meta dependency and remove the code from importers
@@ -33,3 +32,6 @@
 - [X] hot load of style sheets
 - [X] hot load of vfx
 - [X] separate opacity from color in vfx
+- [X] ctrl + drag = snap
+- [X] Move meshz to the editor (--edit to enter edit mode)
+- [x] move nozed to its own repo using the noz library
