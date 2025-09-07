@@ -1,5 +1,9 @@
 # Todo
 
+- [ ] undo / redo (whole mesh)
+- [ ] ctrl + drag = snap
+- [ ] When opening asset editor open all meshes
+- [ ] save the world canvas position of mesh in the .meta file
 - [ ] Move meshz to the editor (--edit to enter edit mode)
 - [ ] move nozed to its own repo using the noz library
 - [ ] experiment with blender s / g / r controls

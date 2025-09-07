@@ -11,9 +11,10 @@
 #include <shlobj.h>
 #include <filesystem>
 
-void InitVulkan(const RendererTraits* traits, HWND hwnd);
-void ResizeVulkan(const Vec2Int& screen_size);
-void ShutdownVulkan();
+extern void InitVulkan(const RendererTraits* traits, HWND hwnd);
+extern void ResizeVulkan(const Vec2Int& screen_size);
+extern void ShutdownVulkan();
+extern void WaitVulkan();
 
 struct WindowsApp
 {
@@ -51,8 +52,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-            // Clear with black for now
-            FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW+1));
             EndPaint(hwnd, &ps);
         }
         return 0;
@@ -66,15 +65,23 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 g_windows.screen_size = new_size;
                 ResizeVulkan(new_size);
+
+                if(g_windows.traits->test)
+                {
+                    g_windows.traits->test();
+                }
             }
         }
         return 0;
+
     case WM_ENTERSIZEMOVE:
         g_windows.is_resizing = true;
-        return 0;
+        break;
+
     case WM_EXITSIZEMOVE:
         g_windows.is_resizing = false;
-        return 0;
+        break;
+
     case WM_MOUSEWHEEL:
         {
             // Get wheel delta (positive = forward/up, negative = backward/down)
@@ -176,7 +183,8 @@ bool platform::UpdateApplication()
 
     g_windows.mouse_scroll = {0, 0};
 
-    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+    int count = 0;
+    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) && count < 10)
     {
         if (msg.message == WM_QUIT)
         {
@@ -187,6 +195,8 @@ bool platform::UpdateApplication()
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
+
+        count++;
     }
 
     g_windows.has_focus = GetActiveWindow() == g_windows.hwnd;

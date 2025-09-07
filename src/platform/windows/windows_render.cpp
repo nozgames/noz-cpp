@@ -1059,12 +1059,17 @@ void ResizeVulkan(const Vec2Int& size)
     RecreateSwapchainObjects();
 }
 
-void platform::BeginRenderFrame()
+void WaitVulkan()
 {
-    ResetFrameBuffers();
-
     vkWaitForFences(g_vulkan.device, 1, &g_vulkan.in_flight_fence, VK_TRUE, UINT64_MAX);
     vkResetFences(g_vulkan.device, 1, &g_vulkan.in_flight_fence);
+}
+
+void platform::BeginRenderFrame()
+{
+    WaitVulkan();
+
+    ResetFrameBuffers();
 
     VkResult result = vkAcquireNextImageKHR(
         g_vulkan.device,
