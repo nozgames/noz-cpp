@@ -363,6 +363,11 @@ Bounds2 GetBounds(Camera* camera)
     return bounds;
 }
 
+const Vec2& GetPosition(Camera* camera)
+{
+    return static_cast<CameraImpl*>(camera)->position_offset;
+}
+
 Camera* CreateCamera(Allocator* allocator)
 {
     CameraImpl* impl = (CameraImpl*)Alloc(allocator, sizeof(CameraImpl));

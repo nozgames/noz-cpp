@@ -2,8 +2,6 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-#ifdef NOZ_EDITOR
-
 #include "editor_messages.h"
 #include "noz/noz.h"
 #include <cstring>
@@ -125,5 +123,4 @@ void FreeMessage(EditorMessage& msg)
     }
     msg.data_size = 0;
 }
-#endif
 #endif

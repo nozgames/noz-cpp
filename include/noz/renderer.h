@@ -151,6 +151,7 @@ float GetKerning(Font* font, char first, char second);
 
 // @camera
 Camera* CreateCamera(Allocator* allocator);
+const Vec2& GetPosition(Camera* camera);
 void SetPosition(Camera* camera, const Vec2& position);
 void SetRotation(Camera* camera, float rotation);
 void SetSize(Camera* camera, const Vec2& size);

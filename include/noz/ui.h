@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "input.h"
+
 // @types
 struct StyleSheet : Asset {};
 
@@ -100,6 +102,16 @@ struct Style
     StyleLength padding_right;
 };
 
+struct ElementInput
+{
+    InputCode button;
+    Vec2 mouse_position;
+    Rect bounds;
+    void* user_data;
+};
+
+typedef bool (*ElementInputFunc)(const ElementInput& input);
+
 const Style& GetDefaultStyle();
 void DeserializeStyle(Stream* stream, Style& style);
 Style DeserializeStyle(Stream* stream);
@@ -119,9 +131,9 @@ inline bool IsPercent(const StyleLength& length) { return length.unit == STYLE_L
 // @ui
 extern void SetDefaultFont(Font* font);
 extern Font* GetDefaultFont();
-extern void BeginUI();
+extern void BeginUI(u32 ref_width, u32 ref_height);
 extern void EndUI();
-extern void BeginCanvas(u32 referenceWidth, u32 referenceHeight);
+extern void BeginCanvas();
 extern void BeginElement(const Name* id);
 extern void EndElement();
 extern void EndCanvas();
@@ -129,3 +141,4 @@ extern void SetStyleSheet(StyleSheet* sheet);
 extern void DrawUI();
 extern void Label(const char* text, const Name* id);
 extern void Image(Material* material, const Name* id);;
+extern void SetInputHandler(ElementInputFunc func, void* user_data = nullptr);

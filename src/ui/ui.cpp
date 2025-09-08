@@ -4,6 +4,8 @@
 
 constexpr int MAX_ELEMENTS = 1024;
 
+extern void UpdateInputState(InputSet* input_set);
+
 typedef u16 ElementType;
 
 constexpr ElementType ELEMENT_TYPE_UNKNOWN = 0;
@@ -29,6 +31,8 @@ struct Element
     u32 child_count;
     void* resource;
     Material* material;
+    void* input_user_data;
+    ElementInputFunc input_func;
 };
 
 struct UI
@@ -45,7 +49,10 @@ struct UI
     u32 element_stack[MAX_ELEMENTS];
     u32 element_stack_count;
     StyleSheet* style_sheet;
+    Vec2Int ref_size;
+    Vec2 ortho_size;
     bool in_frame;
+    InputSet* input;
 };
 
 static UI g_ui = {};
@@ -111,6 +118,13 @@ void SetStyleSheet(StyleSheet* style_sheet)
     g_ui.style_sheet = style_sheet;
 }
 
+void SetInputHandler(ElementInputFunc func, void* user_data)
+{
+    Element& e = GetCurrentElement();
+    e.input_user_data = user_data;
+    e.input_func = func;
+}
+
 static void BeginElement(ElementType type, const Name* id)
 {
     assert(g_ui.in_frame);
@@ -146,36 +160,14 @@ void EndElement()
     g_ui.element_stack_count--;
 }
 
-void BeginCanvas(u32 referenceWidth, u32 referenceHeight)
+void BeginCanvas()
 {
     BeginElement(ELEMENT_TYPE_CANVAS);
 
-    Vec2Int screen_size = GetScreenSize();
-
-    f32 rw = (f32)referenceWidth;
-    f32 rh = (f32)referenceHeight;
-    f32 sw = (f32)screen_size.x;
-    f32 sh = (f32)screen_size.y;
-    f32 sw_rw = sw / rw;
-    f32 sh_rh = sh / rh;
-
-    float ortho_width;
-    float ortho_height;
-    if (Abs(sw_rw - 1.0f) < Abs(sh_rh - 1.0f))
-    {
-        ortho_width = rw;
-        ortho_height = rw * sh / sw;
-    }
-    else
-    {
-        ortho_height = rh;
-        ortho_width = rh * sw / sh;
-    }
-
     // Force the canvas element to fit the reference
     Element& e = GetCurrentElement();
-    e.style.width = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, ortho_width };
-    e.style.height = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, ortho_height };
+    e.style.width = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, g_ui.ortho_size.x };
+    e.style.height = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, g_ui.ortho_size.y };
 }
 
 void EndCanvas()
@@ -185,8 +177,6 @@ void EndCanvas()
 
 void RenderCanvas(const Element& e)
 {
-    SetSize(g_ui.camera, {e.style.width.value, e.style.height.value});
-    SetPosition(g_ui.camera, {e.style.width.value * 0.5f, e.style.height.value * 0.5f});
     BindCamera(g_ui.camera);
 }
 
@@ -341,11 +331,65 @@ u32 MeasureElement(u32 element_index, const Vec2& available_size)
     return element_index;
 }
 
-void BeginUI()
+void BeginUI(u32 ref_width, u32 ref_height)
 {
+    g_ui.ref_size = { (i32)ref_width, (i32)ref_height };
     g_ui.element_stack_count = 0;
     g_ui.element_count = 0;
     g_ui.in_frame = true;
+
+    Vec2Int screen_size = GetScreenSize();
+
+    f32 rw = (f32)g_ui.ref_size.x;
+    f32 rh = (f32)g_ui.ref_size.y;
+    f32 sw = (f32)screen_size.x;
+    f32 sh = (f32)screen_size.y;
+    f32 sw_rw = sw / rw;
+    f32 sh_rh = sh / rh;
+
+    if (Abs(sw_rw - 1.0f) < Abs(sh_rh - 1.0f))
+    {
+        g_ui.ortho_size.x = rw;
+        g_ui.ortho_size.y = rw * sh / sw;
+    }
+    else
+    {
+        g_ui.ortho_size.y = rh;
+        g_ui.ortho_size.x = rh * sw / sh;
+    }
+
+    SetExtents(g_ui.camera, 0, g_ui.ortho_size.x, 0, g_ui.ortho_size.y, false);
+
+    UpdateInputState(g_ui.input);
+}
+
+static void HandleInput()
+{
+    Vec2 mouse = ScreenToWorld(g_ui.camera, GetMousePosition());
+    if (WasButtonPressed(g_ui.input, MOUSE_LEFT))
+    {
+        for (int i=g_ui.element_count; i>0; i--)
+        {
+            Element& e = g_ui.elements[i-1];
+            if (e.type != ELEMENT_TYPE_CANVAS && Contains(e.bounds, mouse))
+            {
+                ConsumeButton(MOUSE_LEFT);
+
+                if (e.input_func != nullptr)
+                {
+                    ElementInput input;
+                    input.button = MOUSE_LEFT;
+                    input.mouse_position = mouse;
+                    input.user_data = e.input_user_data;
+                    input.bounds = e.bounds;
+                    if (e.input_func(input))
+                    {
+                        return;
+                    }
+                }
+            }
+        }
+    }
 }
 
 void EndUI()
@@ -359,6 +403,8 @@ void EndUI()
         element_index = Layout(element_index, screen_bounds);
 
     g_ui.in_frame = false;
+
+    HandleInput();
 }
 
 void DrawUI()
@@ -691,6 +737,8 @@ void InitUI()
     g_ui.element_quad = CreateElementQuad(ALLOCATOR_DEFAULT);
     g_ui.default_font = g_core_assets.fonts.fallback;
     g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, g_core_assets.shaders.ui);
+    g_ui.input = CreateInputSet(ALLOCATOR_DEFAULT);
+    EnableButton(g_ui.input, MOUSE_LEFT);
     SetTexture(g_ui.element_material, g_core_assets.textures.white);
 
     Init(g_ui.text_mesh_cache, g_ui.text_mesh_cache_keys, g_ui.text_mesh_cache_values, 1024, sizeof(CachedTextMesh));

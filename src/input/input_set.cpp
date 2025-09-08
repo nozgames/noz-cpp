@@ -195,10 +195,13 @@ void InputActiveInputSetList(LinkedList& list)
     Init(list, offsetof(InputSetImpl, node_active));
 }
 
-void ConsumeButton(InputSet* set, InputCode code)
+void ConsumeButton(InputCode code)
 {
-    InputSetImpl* impl = static_cast<InputSetImpl*>(set);
-    impl->buttons[code] &= ~(BUTTON_STATE_PRESSED | BUTTON_STATE_RELEASED);
+    InputSetImpl* impl = (InputSetImpl*)GetInputSet();
+    if (!impl)
+        return;
+
+    impl->buttons[code] = (impl->buttons[code] & BUTTON_STATE_ENABLED) | BUTTON_STATE_RESET;
 }
 
 InputSet* CreateInputSet(Allocator* allocator)

@@ -4,8 +4,6 @@
 
 #pragma once
 
-#ifdef NOZ_EDITOR
-
 enum EditorMessage
 {
     EDITOR_MESSAGE_HOTLOAD = 1,
@@ -30,5 +28,3 @@ enum InspectorObjectCommand
 
 void WriteEditorMessage(Stream* stream, EditorMessage event);
 EditorMessage ReadEditorMessage(Stream* stream);
-
-#endif

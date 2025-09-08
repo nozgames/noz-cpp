@@ -32,7 +32,8 @@ inline void SetTop(Rect& rect, f32 value) { rect.y = value; }
 inline void SetBottom(Rect& rect, f32 value) { rect.height = value - rect.y; }
 inline void SetRight(Rect& rect, f32 value) { rect.width = value - rect.x; }
 
-inline bool Contains(const Rect& rect, f32 x, f32 y);
+inline bool Contains(const Rect& rect, f32 x, f32 y) { return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height; }
+inline bool Contains(const Rect& rect, const Vec2& pos) { return Contains(rect, pos.x, pos.y); }
 inline Rect Intersection(const Rect& rect, const Rect& other);
 
 inline i32 GetLeft(const RectInt& rect) { return rect.x; }

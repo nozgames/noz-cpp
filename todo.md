@@ -1,19 +1,22 @@
 # Todo
 
-- [ ] Palette uv is wrong, can see left?
-- [ ] click detection on ui
-- [ ] color picker to select color
+- [ ] Selecting a vertex should select the closest vertex, not the first one it finds
+- [ ] Clicking on a color deselects the verts because the click is making it through
+- [ ] only select points, edges, faces on mouse up if there was no box select
+- [ ] Box select being pushed it making the color go away, is that ok?
+- [ ] When you add a vertex interpolate the height from the neighbors
 - [ ] undo / redo (whole mesh)
-- [ ] m to merge vertices
+- [ ] add face if 3 verts are selected
+- [ ] add vert to center of triangle
+- [ ] m to merge vertices (broken)
 - [ ] x to dissovlve vertices, faces, edges
 - [ ] q to rotate edge
+- [ ] w for normal
 - [ ] highlight triangle when selected
 - [ ] highlight edge when selected
 - [ ] single click to select asset, ctrl to toggle
-- [ ] moving objects in the world should use the g key too
 - [ ] Change UI, vertex size, edge size, etc to not scale with the window size
 - [ ] combined vertex buffer for rendering so we can stream data to it like triangles?  
-- [ ] Change palette to be 128x128 which is 256 colors at 8x8 per color
 - [ ] key to hide / show palette
 - [ ] r - rotate
 - [ ] e for extrude
@@ -61,3 +64,9 @@
 - [x] click on vertex to select vertex
 - [x] click on edge to select edge
 - [x] Ctrl-s save
+- [x] Palette uv is wrong, can see left?
+- [X] click detection on ui
+- [X] color picker to select color
+- [X] converted editable mesh to use vec3 so we can calc normals
+- [X] Change palette to be 128x128 which is 256 colors at 8x8 per color
+- [X] moving objects in the world should use the g key too
