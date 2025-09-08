@@ -1,25 +1,24 @@
 # Todo
 
-- [ ] Notification system in the bottom right (Saving)
-- [ ] single click to select asset, ctrl to toggle
-- [ ] moving objects in the world should use the g key too
-- [ ] Ctrl-s save
+- [ ] Palette uv is wrong, can see left?
+- [ ] click detection on ui
+- [ ] color picker to select color
 - [ ] undo / redo (whole mesh)
 - [ ] m to merge vertices
 - [ ] x to dissovlve vertices, faces, edges
 - [ ] q to rotate edge
-- [ ] Change UI, vertex size, edge size, etc to not scale with the window size
-- [ ] key to hide / show palette
-- [ ] Palette uv is wrong, can see left?
-- [ ] r - rotate
 - [ ] highlight triangle when selected
 - [ ] highlight edge when selected
+- [ ] single click to select asset, ctrl to toggle
+- [ ] moving objects in the world should use the g key too
+- [ ] Change UI, vertex size, edge size, etc to not scale with the window size
 - [ ] combined vertex buffer for rendering so we can stream data to it like triangles?  
-- [ ] e for extrude
-- [ ] x to limit move 
-- [ ] y to limit move
-- [ ] color picker to select color
 - [ ] Change palette to be 128x128 which is 256 colors at 8x8 per color
+- [ ] key to hide / show palette
+- [ ] r - rotate
+- [ ] e for extrude
+- [ ] x to limit move
+- [ ] y to limit move
 
 - [ ] Clean importer.cpp
 - [ ] check if importer.cpp is handling meta dependency and remove the code from importers
@@ -57,3 +56,8 @@
 - [x] scaled zoom
 - [x] edges and vertices not rendering correctly
 - [x] multi-select of objects in the world
+- [x] Notification system in the bottom right (Saving)
+- [x] click on a face to select face
+- [x] click on vertex to select vertex
+- [x] click on edge to select edge
+- [x] Ctrl-s save

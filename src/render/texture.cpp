@@ -9,6 +9,7 @@ struct TextureImpl : Texture
 {
     platform::Texture* platform_texture = nullptr;
     SamplerOptions sampler_options;
+    TextureFormat format;
     Vec2Int size;
 };
 
@@ -38,7 +39,6 @@ static void CreateTexture(
     size_t width,
     size_t height,
     TextureFormat format,
-    bool generate_mipmaps,
     const Name* name)
 {
     assert(impl);
@@ -84,7 +84,7 @@ Texture* CreateTexture(
         return nullptr;
 
     impl->sampler_options = g_default_sampler_options;
-    CreateTexture(impl, data, width, height, format, false, name);
+    CreateTexture(impl, data, width, height, format, name);
     return impl;
 }
 
@@ -117,26 +117,22 @@ Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, co
     assert(name);
     assert(header);
 
-    TextureFormat format = (TextureFormat)ReadU8(stream);
-    uint32_t width = ReadU32(stream);
-    uint32_t height = ReadU32(stream);
-
     TextureImpl* impl = (TextureImpl*)Alloc(allocator, sizeof(TextureImpl));
     if (!impl)
         return nullptr;
 
-    impl->size.x = width;
-    impl->size.y = height;
-
+    impl->format = (TextureFormat)ReadU8(stream);
     impl->sampler_options.filter  = (TextureFilter)ReadU8(stream);
     impl->sampler_options.clamp = (TextureClamp)ReadU8(stream);
+    impl->size.x = ReadU32(stream);
+    impl->size.y = ReadU32(stream);
 
-    const int channels = GetBytesPerPixel(format);
-    const size_t data_size = width * height * channels;
+    const int channels = GetBytesPerPixel(impl->format);
+    const size_t data_size = impl->size.x * impl->size.y * channels;
     if (const auto texture_data = (u8*)Alloc(ALLOCATOR_SCRATCH, data_size))
     {
         ReadBytes(stream, texture_data, data_size);
-        CreateTexture(impl, texture_data, width, height, format, false, GetName(name->value));
+        CreateTexture(impl, texture_data, impl->size.x, impl->size.y, impl->format, GetName(name->value));
         Free(texture_data);
     }
 
