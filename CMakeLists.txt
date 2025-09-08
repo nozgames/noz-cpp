@@ -14,6 +14,7 @@ target_precompile_headers(noz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.h)
 set(SOURCE_FILES
     src/application.cpp
     src/asset.cpp
+    src/string.cpp
     src/collections/list.cpp
     src/collections/linked_list.cpp
     src/collections/map.cpp

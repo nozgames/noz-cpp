@@ -1,5 +1,6 @@
 # Todo
 
+- [ ] Notification system in the bottom right (Saving)
 - [ ] single click to select asset, ctrl to toggle
 - [ ] moving objects in the world should use the g key too
 - [ ] Ctrl-s save

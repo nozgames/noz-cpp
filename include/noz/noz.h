@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include "noz_math.h"
+#include "string.h"
 #include "allocator.h"
 #include "collections.h"
 #include "log.h"

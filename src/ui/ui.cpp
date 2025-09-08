@@ -45,6 +45,7 @@ struct UI
     u32 element_stack[MAX_ELEMENTS];
     u32 element_stack_count;
     StyleSheet* style_sheet;
+    bool in_frame;
 };
 
 static UI g_ui = {};
@@ -112,6 +113,8 @@ void SetStyleSheet(StyleSheet* style_sheet)
 
 static void BeginElement(ElementType type, const Name* id)
 {
+    assert(g_ui.in_frame);
+
     Element& e = g_ui.elements[g_ui.element_count++];
     e.type = type;
     e.bounds = Rect(0,0,0,0);
@@ -342,6 +345,7 @@ void BeginUI()
 {
     g_ui.element_stack_count = 0;
     g_ui.element_count = 0;
+    g_ui.in_frame = true;
 }
 
 void EndUI()
@@ -353,10 +357,14 @@ void EndUI()
         element_index = MeasureElement(element_index, screen_size_f);
     for (u32 element_index=0; element_index < g_ui.element_count; )
         element_index = Layout(element_index, screen_bounds);
+
+    g_ui.in_frame = false;
 }
 
 void DrawUI()
 {
+    assert(!g_ui.in_frame);
+
     for (u32 i = 0; i < g_ui.element_count; i++)
         RenderElement(g_ui.elements[i]);
 }
@@ -647,6 +655,7 @@ void Label(const char* text, const Name* id)
     if (c == nullptr)
     {
         TextMesh* tm = CreateTextMesh(ALLOCATOR_DEFAULT, r);
+        assert(tm);
         if (tm)
         {
             e.resource = tm;
@@ -656,6 +665,14 @@ void Label(const char* text, const Name* id)
             c->text_mesh = tm;
         }
     }
+    else
+    {
+        e.resource = c->text_mesh;
+        e.material = GetMaterial(c->text_mesh);
+    }
+
+    assert(e.resource);
+    assert(e.material);
 
     EndElement();
 }
