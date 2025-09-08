@@ -26,3 +26,16 @@ bool Contains(const Bounds2& bounds, const Vec2& point)
     return point.x >= bounds.min.x && point.x <= bounds.max.x &&
            point.y >= bounds.min.y && point.y <= bounds.max.y;
 }
+
+bool Intersects(const Bounds2& bounds, const Bounds2& other)
+{
+    const Vec2& min = bounds.min;
+    const Vec2& max = bounds.max;
+    return min.x <= other.max.x && max.x >= other.min.x &&
+        min.y <= other.max.y && max.y >= other.min.y;
+}
+
+Bounds2 Union(const Bounds2& a, const Bounds2& b)
+{
+    return { Min(a.min, b.min), Max(a.max, b.max) };
+}

@@ -62,6 +62,8 @@ static InputCode VKToInputCode(int vk)
         case '7': return KEY_7;
         case '8': return KEY_8;
         case '9': return KEY_9;
+        case VK_OEM_PLUS: return KEY_EQUALS;  // = and + key (both handled by same VK)
+        case VK_OEM_MINUS: return KEY_MINUS;  // - and _ key
         case VK_SPACE: return KEY_SPACE;
         case VK_RETURN: return KEY_ENTER;
         case VK_TAB: return KEY_TAB;

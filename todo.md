@@ -1,18 +1,16 @@
 # Todo
 
+- [ ] single click to select asset, ctrl to toggle
+- [ ] moving objects in the world should use the g key too
+- [ ] Ctrl-s save
+- [ ] undo / redo (whole mesh)
+- [ ] m to merge vertices
+- [ ] x to dissovlve vertices, faces, edges
+- [ ] q to rotate edge
 - [ ] Change UI, vertex size, edge size, etc to not scale with the window size
 - [ ] key to hide / show palette
 - [ ] Palette uv is wrong, can see left?
-- [ ] undo / redo (whole mesh)
 - [ ] r - rotate
-- [ ] multi select in the editor
-- [ ] zoom extents
-- [ ] scaled zoom
-- [ ] Save mesh edits
-- [ ] Ctrl-s save
-- [ ] m to merge vertices
-- [ ] x to dissovlve vertices
-- [ ] q to rotate edge
 - [ ] highlight triangle when selected
 - [ ] highlight edge when selected
 - [ ] combined vertex buffer for rendering so we can stream data to it like triangles?  
@@ -54,3 +52,7 @@
 - [X] g - move
 - [X] Draw pivot point
 - [X] s - scale
+- [x] zoom limits
+- [x] scaled zoom
+- [x] edges and vertices not rendering correctly
+- [x] multi-select of objects in the world

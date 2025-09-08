@@ -100,6 +100,8 @@ struct Vec2
     Vec2 operator*(f32 scalar) const { return Vec2{ x * scalar, y * scalar }; }
     Vec2 operator*=(f32 scalar) const { return Vec2{ x * scalar, y * scalar }; }
     Vec2 operator-() const { return { -x, -y }; }
+    bool operator==(const Vec2& o) const { return x == o.x && y == o.y; }
+    bool operator!=(const Vec2& o) const { return x != o.x || y != o.y; }
 };
 
 struct Vec3
@@ -162,6 +164,8 @@ struct Bounds2
 {
     Vec2 min;
     Vec2 max;
+
+    Bounds2 operator+ (const Vec2& offset) const { return { min + offset, max + offset }; }
 };
 
 struct Bounds3
@@ -206,6 +210,22 @@ constexpr Vec2Int VEC2INT_ONE = { 1,1 };
 constexpr f32 F32_MAX = 3.402823466e+38F;
 constexpr f32 F32_MIN = -3.402823466e+38F;
 
+// @min
+inline i32 Min(i32 v1, i32 v2) { return v1 < v2 ? v1 : v2; }
+inline u32 Min(u32 v1, u32 v2) { return v1 < v2 ? v1 : v2; }
+inline f32 Min(f32 v1, f32 v2) { return v1 < v2 ? v1 : v2; }
+inline u64 Min(u64 v1, u64 v2) { return v1 < v2 ? v1 : v2; }
+inline Vec2 Min(const Vec2& m1, const Vec2& m2) { return { Min(m1.x, m2.x), Min(m1.y, m2.y) }; }
+inline Vec3 Min(const Vec3& m1, const Vec3& m2) { return { Min(m1.x, m2.x), Min(m1.y, m2.y), Min(m1.z, m2.z) }; }
+
+// @max
+inline i32 Max(i32 v1, i32 v2) { return v1 > v2 ? v1 : v2; }
+inline f32 Max(f32 v1, f32 v2) { return v1 > v2 ? v1 : v2; }
+inline u32 Max(u32 v1, u32 v2) { return v1 > v2 ? v1 : v2; }
+inline u64 Max(u64 v1, u64 v2) { return v1 > v2 ? v1 : v2; }
+inline Vec2 Max(const Vec2& m1, const Vec2& m2) { return { Max(m1.x, m2.x), Max(m1.y, m2.y) }; }
+inline Vec3 Max(const Vec3& m1, const Vec3& m2) { return { Max(m1.x, m2.x), Max(m1.y, m2.y), Max(m1.z, m2.z) }; }
+
 // @bounds3
 Bounds3 ToBounds(const Vec3* positions, u32 count);
 bool Contains(const Bounds3& bounds, const Vec3& point);
@@ -214,8 +234,13 @@ Bounds3 Expand(const Bounds3& bounds, const Vec3& point);
 Bounds3 Expand(const Bounds3& bounds, const Bounds3& other);
 
 // @bounds2
-Bounds2 ToBounds(const Vec2* positions, u32 count);
-bool Contains(const Bounds2& bounds, const Vec2& point);
+extern Bounds2 ToBounds(const Vec2* positions, u32 count);
+extern bool Contains(const Bounds2& bounds, const Vec2& point);
+extern bool Intersects(const Bounds2& bounds, const Bounds2& other);
+extern Bounds2 Union(const Bounds2& a, const Bounds2& b);
+inline Bounds2 Union(const Bounds2& a, const Vec2& b) { return Bounds2{ Min(a.min, b), Max(a.max, b) }; }
+inline Vec2 GetCenter(const Bounds2& b) { return Vec2{ (b.min.x + b.max.x) * 0.5f, (b.min.y + b.max.y) * 0.5f }; }
+inline Vec2 GetSize(const Bounds2& b) { return Vec2{ b.max.x - b.min.x, b.max.y - b.min.y }; }
 
 // @mat4
 extern Mat4 TRS(const Vec3& translation, const Vec4& rotation, const Vec3& scale);
@@ -266,19 +291,8 @@ inline f64 Clamp(f64 v, f64 min, f64 max) { return v < min ? min : v > max ? max
 inline float Radians(float degrees) { return degrees * noz::PI / 180.0f; }
 inline float Degrees(float radians) { return radians * 180.0f / noz::PI; }
 
-inline i32 Min(i32 v1, i32 v2) { return v1 < v2 ? v1 : v2; }
-inline u32 Min(u32 v1, u32 v2) { return v1 < v2 ? v1 : v2; }
-inline f32 Min(f32 v1, f32 v2) { return v1 < v2 ? v1 : v2; }
-inline u64 Min(u64 v1, u64 v2) { return v1 < v2 ? v1 : v2; }
-inline Vec2 Min(const Vec2& m1, const Vec2& m2) { return { Min(m1.x, m2.x), Min(m1.y, m2.y) }; }
-inline Vec3 Min(const Vec3& m1, const Vec3& m2) { return { Min(m1.x, m2.x), Min(m1.y, m2.y), Min(m1.z, m2.z) }; }
 
-inline i32 Max(i32 v1, i32 v2) { return v1 > v2 ? v1 : v2; }
-inline f32 Max(f32 v1, f32 v2) { return v1 > v2 ? v1 : v2; }
-inline u32 Max(u32 v1, u32 v2) { return v1 > v2 ? v1 : v2; }
-inline u64 Max(u64 v1, u64 v2) { return v1 > v2 ? v1 : v2; }
-inline Vec2 Max(const Vec2& m1, const Vec2& m2) { return { Max(m1.x, m2.x), Max(m1.y, m2.y) }; }
-inline Vec3 Max(const Vec3& m1, const Vec3& m2) { return { Max(m1.x, m2.x), Max(m1.y, m2.y), Max(m1.z, m2.z) }; }
+
 
 inline i32 Abs(i32 v) { return v < 0 ? -v : v; }
 inline f32 Abs(f32 v) { return v < 0 ? -v : v; }
