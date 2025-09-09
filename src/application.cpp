@@ -296,6 +296,8 @@ static void UpdateFPS()
 // @update
 bool UpdateApplication()
 {
+    ClearScratch();
+
     if (IsWindowCreated())
     {
         bool had_focus = platform::HasFocus();

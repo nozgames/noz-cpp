@@ -37,7 +37,6 @@ void* PushFront(RingBuffer* rb, const void* value)
 
 void* PushBack(RingBuffer* rb)
 {
-    auto impl = rb;
     if (rb->count == rb->capacity)
         return nullptr;
 

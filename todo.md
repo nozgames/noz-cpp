@@ -1,24 +1,19 @@
 # Todo
 
-- [ ] Text input by watching WM_CHAR in windows
- 
-- [ ] Alt-tab should not trigger edit mode
+- [ ] undo / redo (whole mesh)
+- [ ] Selecting a vertex should select the closest vertex, not the first one it finds
+- [ ] only select points, edges, faces on mouse up if there was no box select
+
 - [ ] Save window positino as well as size
 - [ ] bug with saving size, sometimes wrong size
-- [ ] : when in asset editor should allow commands to be typed in terminal (forward keys there or something?)
-- [ ] :s to save
 - [ ] :n to make a new file  n <type> <name>
 - [ ] Right click to change light position
 - [ ] Button to disable color and show grey scale
 - [ ] light options
 
-- [ ] outlines
-- [ ] undo / redo (whole mesh)
+- [ ] need way to create new points not on mesh (v, find closest edge,
 - [ ] new mesh format similar to obj
 - [ ] button to set how hard an edge is, soft on a quad will average normals 
-- [ ] need way to create new new points not on mesh (v, find closest edge, 
-- [ ] Selecting a vertex should select the closest vertex, not the first one it finds
-- [ ] only select points, edges, faces on mouse up if there was no box select
 - [ ] Box select being pushed it making the color go away, is that ok?
 - [ ] When you add a vertex interpolate the height from the neighbors
 - [ ] highlight colors of selected triangles in the triangle ui
@@ -96,3 +91,8 @@
 - [X] When window closes uninit renderr and asset editor (only if window is created later)
 - [X] Load asset editor when :e
 - [X] if asset name is specified after :e then focus on it in editor
+- [X] Text input by watching WM_CHAR in windows
+- [X] Alt-tab should not trigger edit mode
+- [X] : when in asset editor should allow commands to be typed in terminal (forward keys there or something?)
+- [X] :s to save
+- [X] outlines

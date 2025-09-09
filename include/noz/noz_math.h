@@ -268,6 +268,7 @@ extern Vec2Double Normalize(const Vec2Double& v);
 
 // @vec2int
 inline Vec2 ToVec2(const Vec2Int& v) { return { (f32)v.x, (f32)v.y }; }
+inline Vec2 ToVec2(const Vec3& v) { return { (f32)v.x, (f32)v.y }; }
 
 // @vec3
 extern f32 Length(const Vec3& v);
