@@ -57,7 +57,7 @@ const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index)
     return impl->bones[bone_index].world_to_local;
 }
 
-Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
+Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
     SkeletonImpl* impl = (SkeletonImpl*)Alloc(allocator, sizeof(SkeletonImpl));
 

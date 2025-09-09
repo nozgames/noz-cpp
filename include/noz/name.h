@@ -1,5 +1,7 @@
 #pragma once
 
+constexpr u32 MAX_NAME_LENGTH = 1024;
+
 struct Name
 {
     const char* value;

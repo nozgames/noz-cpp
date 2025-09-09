@@ -23,8 +23,9 @@ constexpr AssetSignature ASSET_SIGNATURE_UNKNOWN     = 0xF00DF00D;
 struct AssetHeader
 {
     AssetSignature signature;
-    uint32_t version;
-    uint32_t flags;
+    u32 version;
+    u32 flags;
+    u32 names;
 };
 
 struct Asset
@@ -32,10 +33,10 @@ struct Asset
     const Name* name;
 };
 
-typedef Asset* (*AssetLoaderFunc)(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
+typedef Asset* (*AssetLoaderFunc)(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 
 bool ReadAssetHeader(Stream* stream, AssetHeader* header);
-bool WriteAssetHeader(Stream* stream, AssetHeader* header);
+bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** name_table = nullptr);
 bool ValidateAssetHeader(AssetHeader* header, uint32_t expected_signature);
 const char* GetExtensionFromSignature(AssetSignature signature);
 Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader);
@@ -44,14 +45,14 @@ inline const Name* GetName(Asset* asset) { return asset->name; }
 
 
 // @loaders
-Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
-Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
-Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
-Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
-Asset* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
-Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
-Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
-Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name);
+Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+Asset* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 
 // @macros
 #define NOZ_LOAD_SHADER(allocator, path, member) \
@@ -86,10 +87,10 @@ Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, c
 #define NOZ_RELOAD_SKELETON(asset_name, asset)
 
 #ifdef NOZ_EDITOR
-void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void (*reload)(Asset*, Stream*));
-void ReloadStyleSheet(Asset* sheet, Stream* stream);
-void ReloadVfx(Asset* asset, Stream* stream);
-void ReloadMesh(Asset* asset, Stream* stream);
+void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void (*reload)(Asset*, Stream*, const AssetHeader& header, const Name** name_table));
+void ReloadStyleSheet(Asset* sheet, Stream* stream, const AssetHeader& header, const Name** name_table);
+void ReloadVfx(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
+void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
 
 #define NOZ_RELOAD_STYLE_SHEET(asset_name, asset) \
     if(asset_name == incoming_name) { ReloadAsset(asset_name, ASSET_SIGNATURE_STYLE_SHEET, asset, ReloadStyleSheet); return; }

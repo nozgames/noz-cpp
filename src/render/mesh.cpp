@@ -86,7 +86,7 @@ Mesh* CreateMesh(
     return mesh;
 }
 
-Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
+Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
     Bounds2 bounds = ReadStruct<Bounds2>(stream);
     u16 vertex_count = ReadU16(stream);
@@ -147,7 +147,7 @@ void RenderMesh(Mesh* mesh)
 
 #ifdef NOZ_EDITOR
 
-void ReloadMesh(Asset* asset, Stream* stream)
+void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table)
 {
     assert(asset);
     assert(stream);

@@ -6,7 +6,6 @@
 
 #include "editor_messages.h"
 #include "editor_client.h"
-#include "noz/editor.h"
 #include <enet/enet.h>
 
 typedef void (*inspect_ack_callback_t)(Stream* inspector_data);

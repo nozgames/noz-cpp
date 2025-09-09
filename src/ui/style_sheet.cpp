@@ -11,7 +11,7 @@ struct StyleSheetImpl : StyleSheet
 
 static u64 GetStyleKey(const Name* id, PseudoState pseudo_state) { return Hash(Hash(id), pseudo_state); }
 
-static void LoadStyles(StyleSheetImpl* impl, Allocator* allocator, Stream* stream, u32 style_count)
+static void LoadStyles(StyleSheetImpl* impl, Allocator* allocator, Stream* stream, u32 style_count, const Name** name_table)
 {
     impl->styles = (Style*)Alloc(allocator, style_count * sizeof(Style));
     impl->keys = (u64*)Alloc(allocator, style_count * sizeof(u64));
@@ -22,18 +22,17 @@ static void LoadStyles(StyleSheetImpl* impl, Allocator* allocator, Stream* strea
         DeserializeStyle(stream, impl->styles[i]);
     }
 
-    char id[256];
     for (u32 i=0; i < style_count; i++)
     {
-        ReadString(stream, id, 256);
-        auto pseudo_state = (PseudoState)ReadU32(stream);
-        impl->keys[i] = GetStyleKey(GetName(id), pseudo_state);
+        u32 name_index = ReadU32(stream);
+        PseudoState pseudo_state = ReadU32(stream);
+        impl->keys[i] = GetStyleKey(name_table[name_index], pseudo_state);
     }
 
     Init(impl->style_map, impl->keys, impl->styles, style_count, sizeof(Style), style_count);
 }
 
-Asset* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
+Asset* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
     auto style_count = ReadU32(stream);
     auto* sheet = (StyleSheet*)Alloc(allocator, sizeof(StyleSheetImpl));
@@ -43,7 +42,7 @@ Asset* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header,
     StyleSheetImpl* impl = static_cast<StyleSheetImpl*>(sheet);
     impl->name = name;
 
-    LoadStyles(impl, allocator, stream, style_count);
+    LoadStyles(impl, allocator, stream, style_count, name_table);
 
     return sheet;
 }
@@ -78,7 +77,7 @@ bool HasStyle(StyleSheet* sheet, const Name* name, PseudoState pseudo_state)
 
 #ifdef NOZ_EDITOR
 
-void ReloadStyleSheet(Asset* asset, Stream* stream)
+void ReloadStyleSheet(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table)
 {
     assert(asset);
     assert(stream);
@@ -88,7 +87,7 @@ void ReloadStyleSheet(Asset* asset, Stream* stream)
     Free(impl->styles);
     Free(impl->keys);
 
-    LoadStyles(impl, ALLOCATOR_DEFAULT, stream, ReadU32(stream));
+    LoadStyles(impl, ALLOCATOR_DEFAULT, stream, ReadU32(stream), name_table);
 }
 
 #endif

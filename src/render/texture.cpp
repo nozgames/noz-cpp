@@ -111,7 +111,7 @@ SamplerOptions GetSamplerOptions(Texture* texture)
     return static_cast<TextureImpl*>(texture)->sampler_options;
 }
 
-Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
+Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
     assert(stream);
     assert(name);

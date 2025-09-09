@@ -16,7 +16,7 @@ void ShaderDestructor(void* p)
     platform::DestroyShader(impl->platform);
 }
 
-Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
+Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
     assert(stream);
     assert(header);

@@ -16,11 +16,12 @@ bool ReadAssetHeader(Stream* stream, AssetHeader* header)
     header->signature = ReadU32(stream);
     header->version = ReadU32(stream);
     header->flags = ReadU32(stream);
+    header->names = ReadU32(stream);
     
     return !IsEOS(stream);
 }
 
-bool WriteAssetHeader(Stream* stream, AssetHeader* header)
+bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** name_table)
 {
     if (!stream || !header) return false;
     
@@ -28,7 +29,15 @@ bool WriteAssetHeader(Stream* stream, AssetHeader* header)
     WriteU32(stream, header->signature);
     WriteU32(stream, header->version);
     WriteU32(stream, header->flags);
-    
+    WriteU32(stream, header->names);
+
+    if (header->names > 0)
+    {
+        assert(name_table);
+        for (u32 i = 0; i < header->names; i++)
+            WriteString(stream, name_table[i]->value);
+    }
+
     return true;
 }
 
@@ -72,15 +81,25 @@ Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetSigna
     return LoadStream(allocator, asset_path);
 }
 
-Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader)
+static const Name** ReadNameTable(AssetHeader& header, Stream* stream)
 {
-    if (!asset_name || !loader)
-        return nullptr;
+    const Name** name_table = nullptr;
+    if (header.names > 0)
+    {
+        name_table = (const Name**)Alloc(ALLOCATOR_SCRATCH, sizeof(Name*) * header.names);
+        for (u32 i = 0; i < header.names; i++)
+            name_table[i] = ReadName(stream);
+    }
 
-    Stream* stream = LoadAssetStream(allocator, asset_name, signature);
+    return name_table;
+}
+
+static Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader)
+{
+    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, asset_name, signature);
     if (!stream)
         return nullptr;
-    
+
     AssetHeader header = {};
     if (!ReadAssetHeader(stream, &header) || !ValidateAssetHeader(&header, signature))
     {
@@ -88,15 +107,31 @@ Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetSignature si
         return nullptr;
     }
 
-    auto asset = loader(allocator, stream, &header, asset_name);
+    const Name** name_table = ReadNameTable(header, stream);
+
+    Asset* asset = loader(allocator, stream, &header, asset_name, name_table);
+
+    Free(name_table);
     Free(stream);
-    
+
+    return asset;
+}
+
+Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader)
+{
+    if (!asset_name || !loader)
+        return nullptr;
+
+    PushScratch();
+    Asset* asset = LoadAssetInternal(allocator, asset_name, signature, loader);
+    PopScratch();
+
     return asset;
 }
 
 #ifdef NOZ_EDITOR
 
-void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void (*reload)(Asset*, Stream*))
+void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void (*reload)(Asset*, Stream*, const AssetHeader& header, const Name** name_table))
 {
     assert(name);
 
@@ -111,7 +146,9 @@ void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void 
         return;
     }
 
-    reload(asset, stream);
+    const Name** name_table = ReadNameTable(header, stream);
+
+    reload(asset, stream, header, name_table);
 
     Free(stream);
 }

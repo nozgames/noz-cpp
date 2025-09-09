@@ -1,14 +1,19 @@
 # Todo
 
+- [ ] Alt-tab should not trigger edit mode
+- [ ] Save window positino as well as size
+- [ ] bug with saving size, sometimes wrong size
 - [ ] : when in asset editor should allow commands to be typed in terminal (forward keys there or something?)
-- [ ] if asset name is specified after :e then focus on it in editor
 - [ ] :s to save
 - [ ] :n to make a new file  n <type> <name>
 - [ ] Right click to change light position
 - [ ] Button to disable color and show grey scale
 - [ ] light options
 
+- [ ] outlines
 - [ ] undo / redo (whole mesh)
+- [ ] new mesh format similar to obj
+- [ ] button to set how hard an edge is, soft on a quad will average normals 
 - [ ] need way to create new new points not on mesh (v, find closest edge, 
 - [ ] Selecting a vertex should select the closest vertex, not the first one it finds
 - [ ] only select points, edges, faces on mouse up if there was no box select
@@ -32,6 +37,7 @@
 - [ ] x to limit move
 - [ ] y to limit move
 
+- [ ] Auto complete on commands
 - [ ] Job system
 - [ ] Trace a font out with meshes?
 - [ ] Clean importer.cpp
@@ -87,3 +93,4 @@
 - [X] Draw a line from to the center for scale
 - [X] When window closes uninit renderr and asset editor (only if window is created later)
 - [X] Load asset editor when :e
+- [X] if asset name is specified after :e then focus on it in editor

@@ -62,3 +62,43 @@ void Format(char* dst, u32 dst_size, const char* fmt, va_list args)
     if (result < 0 || (u32)result >= dst_size)
         dst[dst_size-1] = 0;
 }
+
+bool Equals(const char* s1, const char* s2, bool ignore_case)
+{
+    if (s1 == s2)
+        return true;
+
+    if (!s1 || !s2)
+        return false;
+
+    while (*s1 && *s2)
+    {
+        char c1 = *s1++;
+        char c2 = *s2++;
+
+        if (ignore_case)
+        {
+            if (c1 >= 'A' && c1 <= 'Z')
+                c1 = (char)(c1 - 'A' + 'a');
+
+            if (c2 >= 'A' && c2 <= 'Z')
+                c2 = (char)(c2 - 'A' + 'a');
+        }
+
+        if (c1 != c2)
+            return false;
+    }
+
+    return *s1 == *s2;
+}
+
+char* CleanPath(char* path)
+{
+    assert(path);
+
+    for (char* s = path; *s ; s++)
+        if (*s == '\\')
+            *s = '/';
+
+    return path;
+}

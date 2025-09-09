@@ -39,7 +39,7 @@ static void LoadVfxInternal(VfxImpl* impl, Allocator* allocator, Stream* stream)
 
 }
 
-Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
+Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
     Vfx* vfx = (Vfx*)Alloc(allocator, sizeof(VfxImpl));
     VfxImpl* impl = static_cast<VfxImpl*>(vfx);
@@ -52,7 +52,7 @@ Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const 
 
 void RestartVfx(Vfx* vfx);
 
-void ReloadVfx(Asset* asset, Stream* stream)
+void ReloadVfx(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table)
 {
     assert(asset);
     assert(stream);

@@ -34,7 +34,7 @@ void FontDestructor(void* p)
     Free(impl->texture);
 }
 
-Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name)
+Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
     if (!stream || !header)
         return nullptr;

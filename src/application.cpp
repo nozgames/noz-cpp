@@ -176,14 +176,10 @@ void InitApplication(ApplicationTraits* traits, int argc, const char* argv[])
 
 static void HandleClose()
 {
-    if (g_app.traits.console)
-    {
+    if (g_app.traits.console && g_app.window_created)
         ShutdownWindow();
-    }
     else
-    {
         g_app.running = false;
-    }
 }
 
 void InitWindow()
