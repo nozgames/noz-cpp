@@ -40,6 +40,7 @@ bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** name_tab
 bool ValidateAssetHeader(AssetHeader* header, uint32_t expected_signature);
 const char* GetExtensionFromSignature(AssetSignature signature);
 Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader);
+const Name** ReadNameTable(const AssetHeader& header, Stream* stream);
 
 inline const Name* GetName(Asset* asset) { return asset->name; }
 

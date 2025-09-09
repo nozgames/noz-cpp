@@ -81,7 +81,7 @@ Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetSigna
     return LoadStream(allocator, asset_path);
 }
 
-static const Name** ReadNameTable(AssetHeader& header, Stream* stream)
+const Name** ReadNameTable(const AssetHeader& header, Stream* stream)
 {
     const Name** name_table = nullptr;
     if (header.names > 0)

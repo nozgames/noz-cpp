@@ -21,6 +21,7 @@ Name* GetName(const char* value)
     auto name_value_len = strlen(value);
     auto name_value = (char*)Alloc(g_name_allocator, name_value_len + 1);
     memcpy(name_value, value, name_value_len + 1);
+    CleanPath(name_value);
     name = (Name*)SetValue(g_names_map, key);
     name->value = name_value;
     return name;;

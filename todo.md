@@ -49,7 +49,6 @@
 - [ ] Border seems to be generating different sizes for different meshes
 - [ ] Trail vfx for individual particles
 - [ ] vfx initial_rotation and rotation over time
-- [ ] Auto generate names from styles and other things that have names in g_names....- [ ] Push / Pop the scratch before each asset load or NAME_*
 - [ ] style sheet inherit not working
 - [ ] Localized strings
 - [ ] hot load of textures
@@ -57,6 +56,7 @@
 - [ ] hot load of shaders
 - [ ] Something causes a spawn of error messages in the editor when client disconnects / reconnects, not sure which
 
+- [X] Auto generate names from styles and other things that have names in g_names....- [ ] Push / Pop the scratch before each asset load or NAME_*
 - [X] Bug with default styles in style sheets causing width and height to not be auto
 - [X] Focus gain / lost event
 - [X] hot load of style sheets
