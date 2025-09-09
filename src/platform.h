@@ -7,6 +7,10 @@
 #include <filesystem>
 
 enum InputCode;
+typedef u32 ShaderFlags;
+struct ApplicationTraits;
+struct MeshVertex;
+struct SamplerOptions;
 
 namespace platform
 {
@@ -26,7 +30,8 @@ namespace platform
     // @app
     void InitApplication(const ApplicationTraits* traits);
     void ShutdownApplication();
-    void InitWindow();
+    void InitWindow(void (*on_close)());
+    void FocusWindow();
     bool UpdateApplication();
     Vec2Int GetScreenSize();
     void ShowCursor(bool show);

@@ -45,6 +45,7 @@ static ApplicationTraits g_default_traits =
     .max_event_listeners = 4,
     .max_event_stack = 32,
     .editor_port = 8080,
+    .console = false,
     .renderer = 
     {
         .max_textures = 32,
@@ -76,6 +77,8 @@ struct Application
     int frame_index;
     double accumulated_time;
     double average_fps;
+    bool window_created;
+    bool running;
     std::string binary_path;
     std::string binary_dir;
 };
@@ -150,7 +153,7 @@ void InitApplication(ApplicationTraits* traits, int argc, const char* argv[])
     memset(&g_app, 0, sizeof(Application));
     g_app.title = traits->title;
     g_app.traits = *traits;
-
+    g_app.running = true;
     g_app.binary_path = argv[0];
     g_app.binary_dir = std::filesystem::path(argv[0]).parent_path().string();
 
@@ -161,46 +164,75 @@ void InitApplication(ApplicationTraits* traits, int argc, const char* argv[])
     InitRandom();
     LoadPrefs();
     InitEvent(traits);
+    InitTime();
+    InitAudio();
 
     g_app.traits.width = GetPrefInt(GetName("window.width"), g_app.traits.width);
     g_app.traits.height = GetPrefInt(GetName("window.height"), g_app.traits.height);
 
-    platform::InitWindow();
+    if (!traits->console)
+        InitWindow();
+}
+
+static void HandleClose()
+{
+    if (g_app.traits.console)
+    {
+        ShutdownWindow();
+    }
+    else
+    {
+        g_app.running = false;
+    }
+}
+
+void InitWindow()
+{
+    assert(!g_app.window_created);
+
+    g_app.window_created = true;
+
+    platform::InitWindow(HandleClose);
 
     UpdateScreenSize();
 
     InitInput();
-    InitAudio();
-    InitRenderer(&traits->renderer);
-    InitTime();
+    InitRenderer(&g_app.traits.renderer);
     InitPhysics();
 
-    g_app.asset_allocator = CreateArenaAllocator(traits->asset_memory_size, "assets");
+    if (g_app.traits.load_assets)
+        g_app.traits.load_assets(g_app.asset_allocator);
 
-    if (traits->load_assets)
-        traits->load_assets(g_app.asset_allocator);
+    g_app.asset_allocator = CreateArenaAllocator(g_app.traits.asset_memory_size, "assets");
 
     LoadRendererAssets(g_app.asset_allocator);
 
 #ifdef NOZ_EDITOR
-    Listen(EVENT_HOTLOAD, HandleHotload);
-    InitEditorClient("127.0.0.1", g_app.traits.editor_port);
+    if (g_app.traits.editor_port != 0)
+    {
+        Listen(EVENT_HOTLOAD, HandleHotload);
+        InitEditorClient("127.0.0.1", g_app.traits.editor_port);
+    }
 #endif // NOZ_EDITOR
 
     InitVfx();
     InitUI();
-
 }
 
-// @shutdown
-void ShutdownApplication()
+void ShutdownWindow()
 {
+    assert(g_app.window_created);
+
     SetPrefInt(GetName("window.width"), g_app.screen_size.x);
     SetPrefInt(GetName("window.height"), g_app.screen_size.y);
 
 #ifdef NOZ_EDITOR
     // Shutdown editor client
-    ShutdownEditorClient();
+    if (g_app.traits.editor_port != 0)
+    {
+        Unlisten(EVENT_HOTLOAD, HandleHotload);
+        ShutdownEditorClient();
+    }
 #endif // NOZ_EDITOR
 
     if (g_app.traits.unload_assets)
@@ -215,15 +247,38 @@ void ShutdownApplication()
     ShutdownUI();
     ShutdownVfx();
     ShutdownPhysics();
+    ShutdownRenderer();
+
+    g_app.window_created = false;
+}
+
+// @shutdown
+void ShutdownApplication()
+{
+    if (g_app.window_created)
+        ShutdownWindow();
+
     ShutdownTime();
     ShutdownAudio();
-    ShutdownRenderer();
     ShutdownInput();
     platform::ShutdownApplication();
     ShutdownEvent();
     ShutdownName();
     SavePrefs();
     ShutdownAllocator();
+}
+
+bool IsWindowCreated()
+{
+    return g_app.window_created;
+}
+
+void FocusWindow()
+{
+    if (!g_app.window_created)
+        return;
+
+    platform::FocusWindow();
 }
 
 static void UpdateFPS()
@@ -245,31 +300,37 @@ static void UpdateFPS()
 // @update
 bool UpdateApplication()
 {
-    // Process platform events
-    bool had_focus = platform::HasFocus();
-    bool running = platform::UpdateApplication();
-    if (!running)
-        return false;
-
-    bool has_focus = platform::HasFocus();
-
-    if (had_focus != has_focus)
+    if (IsWindowCreated())
     {
-        FocusChangedEvent event = { has_focus };
-        Send(EVENT_FOCUS_CHANGED, &event);
-    }
+        bool had_focus = platform::HasFocus();
+        platform::UpdateApplication();
+        if (!IsWindowCreated())
+            return true;
 
-    UpdateScreenSize();
-    UpdateTime();
-    UpdateInput();
+        bool has_focus = platform::HasFocus();
+
+        if (had_focus != has_focus)
+        {
+            FocusChangedEvent event = { has_focus };
+            Send(EVENT_FOCUS_CHANGED, &event);
+        }
+
+        UpdateScreenSize();
+        UpdateTime();
+        UpdateInput();
 
 #ifdef NOZ_EDITOR
-    UpdateEditorClient();
+        UpdateEditorClient();
 #endif
 
-    UpdateFPS();
+        UpdateFPS();
+    }
+    else
+    {
+        UpdateTime();
+    }
 
-    return true;
+    return g_app.running;
 }
 
 // @screen

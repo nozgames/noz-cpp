@@ -26,19 +26,24 @@ struct ApplicationTraits
     size_t max_event_listeners;
     size_t max_event_stack;
     u16 editor_port;
+    bool console;
     RendererTraits renderer;
     bool (*load_assets)(Allocator* allocator);
     void (*unload_assets)();
     void (*hotload_asset)(const Name* name);
 };
 
-void Init(ApplicationTraits& traits);
+extern void Init(ApplicationTraits& traits);
 
-void InitApplication(ApplicationTraits* traits, int argc, const char* argv[]);
-void ShutdownApplication();
-bool UpdateApplication();
-void BeginRenderFrame(Color clear_color);
-void EndRenderFrame();
+extern void InitApplication(ApplicationTraits* traits, int argc, const char* argv[]);
+extern void InitWindow();
+extern void ShutdownApplication();
+extern void ShutdownWindow();
+extern bool IsWindowCreated();
+extern void FocusWindow();
+extern bool UpdateApplication();
+extern void BeginRenderFrame(Color clear_color);
+extern void EndRenderFrame();
 
 const char* GetBinaryDirectory();
 void Exit(const char* format, ...);
@@ -59,3 +64,6 @@ float GetFixedTime();
 void GetFixedTimeRate(int rate);
 float GetTotalTime();
 float GetCurrentFPS();
+
+// @thread
+void thread_sleep_ms(int milliseconds);

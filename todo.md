@@ -1,12 +1,21 @@
 # Todo
 
+- [ ] : when in asset editor should allow commands to be typed in terminal (forward keys there or something?)
+- [ ] if asset name is specified after :e then focus on it in editor
+- [ ] :s to save
+- [ ] :n to make a new file  n <type> <name>
+- [ ] Right click to change light position
+- [ ] Button to disable color and show grey scale
+- [ ] light options
+
+- [ ] undo / redo (whole mesh)
+- [ ] need way to create new new points not on mesh (v, find closest edge, 
 - [ ] Selecting a vertex should select the closest vertex, not the first one it finds
-- [ ] Clicking on a color deselects the verts because the click is making it through
 - [ ] only select points, edges, faces on mouse up if there was no box select
 - [ ] Box select being pushed it making the color go away, is that ok?
 - [ ] When you add a vertex interpolate the height from the neighbors
-- [ ] undo / redo (whole mesh)
-- [ ] add face if 3 verts are selected
+- [ ] highlight colors of selected triangles in the triangle ui
+- [ ] add face if 3 verts are selected and no triangle there
 - [ ] add vert to center of triangle
 - [ ] m to merge vertices (broken)
 - [ ] x to dissovlve vertices, faces, edges
@@ -17,12 +26,14 @@
 - [ ] single click to select asset, ctrl to toggle
 - [ ] Change UI, vertex size, edge size, etc to not scale with the window size
 - [ ] combined vertex buffer for rendering so we can stream data to it like triangles?  
-- [ ] key to hide / show palette
+- [ ] key to hide / show palette (c?)
 - [ ] r - rotate
 - [ ] e for extrude
 - [ ] x to limit move
 - [ ] y to limit move
 
+- [ ] Job system
+- [ ] Trace a font out with meshes?
 - [ ] Clean importer.cpp
 - [ ] check if importer.cpp is handling meta dependency and remove the code from importers
 - [ ] shader include dependency handling.
@@ -70,3 +81,9 @@
 - [X] converted editable mesh to use vec3 so we can calc normals
 - [X] Change palette to be 128x128 which is 256 colors at 8x8 per color
 - [X] moving objects in the world should use the g key too
+- [X] Clicking on a color deselects the verts because the click is making it through
+- [x] hitting zero while doing height should zero it
+- [X] Show a height slider centered around the click point when adjusting height
+- [X] Draw a line from to the center for scale
+- [X] When window closes uninit renderr and asset editor (only if window is created later)
+- [X] Load asset editor when :e

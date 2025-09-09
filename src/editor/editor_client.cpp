@@ -138,6 +138,9 @@ static void HandleEditorMessage(void* data, size_t data_size)
 // @update
 void UpdateEditorClient()
 {
+    if (!g_client.host)
+        return;
+
     ENetEvent event;
     while (enet_host_service(g_client.host, &event, 0) > 0)
     {

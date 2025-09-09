@@ -25,6 +25,7 @@ struct WindowsApp
     HWND hwnd;
     bool has_focus;
     bool is_resizing;
+    void (*on_close) ();
 };
 
 static WindowsApp g_windows = {};
@@ -46,8 +47,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg)
     {
     case WM_DESTROY:
-        PostQuitMessage(0);
+        if (g_windows.on_close)
+            g_windows.on_close();
         return 0;
+
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
@@ -106,7 +109,7 @@ void platform::InitApplication(const ApplicationTraits* traits)
     g_windows.traits = traits;
 }
 
-void platform::InitWindow()
+void platform::InitWindow(void (*on_close)())
 {
     // Set process to be DPI aware (per-monitor DPI awareness)
     SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
@@ -140,6 +143,7 @@ void platform::InitWindow()
     );
 
     g_windows.hwnd = hwnd;
+    g_windows.on_close = on_close;
 
     // Initial screen size
     RECT rect;
@@ -181,16 +185,8 @@ bool platform::UpdateApplication()
     int count = 0;
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) && count < 10)
     {
-        if (msg.message == WM_QUIT)
-        {
-            running = false;
-        }
-        else
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
         count++;
     }
 
@@ -249,6 +245,12 @@ Vec2 platform::GetMousePosition()
 Vec2 platform::GetMouseScroll()
 {
     return g_windows.mouse_scroll;
+}
+
+void platform::FocusWindow()
+{
+    if (g_windows.hwnd)
+        SetForegroundWindow(g_windows.hwnd);
 }
 
 std::filesystem::path platform::GetSaveGamePath()

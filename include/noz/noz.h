@@ -28,7 +28,6 @@
 #include "hash.h"
 #include "stream.h"
 #include "asset.h"
-#include "platform.h"
 #include "renderer.h"
 #include "application.h"
 #include "ui.h"
