@@ -1,5 +1,6 @@
 # Todo
 
+- [ ] Show origin when asset is selected
 - [ ] calculate normals for faces
 
 - [ ] Selecting a vertex should select the closest vertex, not the first one it finds

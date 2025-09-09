@@ -61,7 +61,8 @@ Mesh* CreateMesh(
     const Vec2* uvs,
     u16 index_count,
     u16* indices,
-    const Name* name)
+    const Name* name,
+    bool upload)
 {
     assert(positions);
     assert(normals);
@@ -82,7 +83,10 @@ Mesh* CreateMesh(
     }
 
     memcpy(mesh->indices, indices, sizeof(uint16_t) * index_count);
-    UploadMesh(mesh);
+
+    if (upload)
+        UploadMesh(mesh);
+
     return mesh;
 }
 
@@ -100,14 +104,24 @@ static void UploadMesh(MeshImpl* impl)
         impl->name->value);
 }
 
-size_t GetVertexCount(Mesh* mesh)
+u32 GetVertexCount(Mesh* mesh)
 {
     return static_cast<MeshImpl*>(mesh)->vertex_count;
 }
 
-size_t GetIndexCount(Mesh* mesh)
+u32 GetIndexCount(Mesh* mesh)
 {
     return static_cast<MeshImpl*>(mesh)->index_count;
+}
+
+const MeshVertex* GetVertices(Mesh* mesh)
+{
+    return static_cast<MeshImpl*>(mesh)->vertices;
+}
+
+const u16* GetIndices(Mesh* mesh)
+{
+    return static_cast<MeshImpl*>(mesh)->indices;
 }
 
 Bounds2 GetBounds(Mesh* mesh)

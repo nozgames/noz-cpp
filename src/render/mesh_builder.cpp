@@ -652,7 +652,7 @@ void mesh_builder::add_cone(
 }
 #endif
 
-Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name)
+Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name, bool upload)
 {
     assert(builder);
     MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);
@@ -664,6 +664,7 @@ Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name)
         impl->uv0,
         impl->index_count,
         impl->indices,
-        name
+        name,
+        upload
     );
 }

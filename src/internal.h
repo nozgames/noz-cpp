@@ -3,14 +3,6 @@
 //
 #pragma once
 
-// @mesh
-struct MeshVertex
-{
-    Vec2 position;
-    Vec2 uv0;
-    Vec3 normal;
-};
-
 struct SamplerOptions
 {
     TextureFilter filter;

@@ -66,7 +66,14 @@ Texture* GetTexture(Material* material, size_t index=0);
 // @mesh
 struct Mesh : Asset { };
 
-Mesh* CreateMesh(
+struct MeshVertex
+{
+    Vec2 position;
+    Vec2 uv0;
+    Vec3 normal;
+};
+
+extern Mesh* CreateMesh(
     Allocator* allocator,
     u16 vertex_count,
     const Vec2* positions,
@@ -74,8 +81,13 @@ Mesh* CreateMesh(
     const Vec2* uvs,
     u16 index_count,
     u16* indices,
-    const Name* name);
-Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name);
+    const Name* name,
+    bool upload = true);
+extern Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name, bool upload = true);
+extern u32 GetVertexCount(Mesh* mesh);
+extern u32 GetIndexCount(Mesh* mesh);
+extern const MeshVertex* GetVertices(Mesh* mesh);
+extern const u16* GetIndices(Mesh* mesh);
 
 // @mesh_builder
 MeshBuilder* CreateMeshBuilder(Allocator* allocator, int max_vertices, int max_indices);
