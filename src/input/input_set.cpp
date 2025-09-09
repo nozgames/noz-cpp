@@ -42,6 +42,18 @@ static bool IsButtonReset(u8 state)
     return (state & BUTTON_STATE_RESET) != 0;
 }
 
+void EnableCharacters(InputSet* input_set)
+{
+    for (int i = KEY_A; i <= KEY_Z; i++)
+        EnableButton(input_set, static_cast<InputCode>(i));
+
+    for (int i = KEY_0; i <= KEY_9; i++)
+        EnableButton(input_set, static_cast<InputCode>(i));
+
+    EnableButton(input_set, KEY_SPACE);
+    EnableButton(input_set, KEY_MINUS);
+}
+
 void EnableButton(InputSet* input_set, InputCode code)
 {
     InputSetImpl* impl = static_cast<InputSetImpl*>(input_set);

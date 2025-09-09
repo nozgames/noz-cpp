@@ -5,7 +5,6 @@
 #include "../platform.h"
 
 void InputActiveInputSetList(LinkedList& list);
-void InitInputCodes();
 void UpdateInputState(InputSet* input_set);
 void ResetInputState(InputSet* input_set);
 extern void SetActive(InputSet* input_set, bool active);
@@ -59,10 +58,20 @@ Vec2 GetMousePosition()
     return platform::GetMousePosition();
 }
 
+void ClearTextInput()
+{
+    return platform::ClearTextInput();
+}
+
+const TextInput& GetTextInput()
+{
+    return platform::GetTextInput();
+}
+
 void InitInput()
 {
+    assert(INPUT_CODE_COUNT < 256);
     platform::InitializeInput();
-    InitInputCodes();
     InputActiveInputSetList(g_input.active_sets);
 }
 

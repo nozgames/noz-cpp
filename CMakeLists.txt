@@ -27,7 +27,6 @@ set(SOURCE_FILES
     src/event.cpp
     src/input/input.cpp
     src/input/input_set.cpp
-    src/input/input_code.cpp
     src/log.cpp
     src/memory/allocator.cpp
     src/memory/pool_allocator.cpp

@@ -1,5 +1,7 @@
 # Todo
 
+- [ ] Text input by watching WM_CHAR in windows
+ 
 - [ ] Alt-tab should not trigger edit mode
 - [ ] Save window positino as well as size
 - [ ] bug with saving size, sometimes wrong size

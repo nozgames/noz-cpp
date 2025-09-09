@@ -4,28 +4,40 @@
 
 #pragma once
 
+constexpr int TEXT_INPUT_MAX_LENGTH = 4096;
+
 #include "input_code.h"
 
 // @types
 struct InputSet {};
 
+struct TextInput
+{
+    char value[TEXT_INPUT_MAX_LENGTH];
+    int length;
+    int cursor;
+};
+
 // @input
-void SetInputSet(InputSet* map);
-InputSet* GetInputSet();
-void PushInputSet(InputSet* map);
-void PopInputSet();
-Vec2 GetMousePosition();
+extern void SetInputSet(InputSet* map);
+extern InputSet* GetInputSet();
+extern void PushInputSet(InputSet* map);
+extern void PopInputSet();
+extern Vec2 GetMousePosition();
+extern void ClearTextInput();
+extern const TextInput& GetTextInput();
 
 // @InputSet
-InputSet* CreateInputSet(Allocator* allocator);
-bool IsButtonDown(InputSet* map, InputCode code);
-bool WasButtonPressed(InputSet* map, InputCode code);
-bool WasButtonReleased(InputSet* map, InputCode code);
-void EnableButton(InputSet* map, InputCode code);
-void DisableButton(InputSet* map, InputCode code);
-float GetAxis(InputSet* set, InputCode code);
-void ConsumeButton(InputCode code);
+extern InputSet* CreateInputSet(Allocator* allocator);
+extern bool IsButtonDown(InputSet* map, InputCode code);
+extern bool WasButtonPressed(InputSet* map, InputCode code);
+extern bool WasButtonReleased(InputSet* map, InputCode code);
+extern void EnableButton(InputSet* map, InputCode code);
+extern void EnableCharacters(InputSet* map);
+extern void DisableButton(InputSet* map, InputCode code);
+extern float GetAxis(InputSet* set, InputCode code);
+extern void ConsumeButton(InputCode code);
 
-bool IsButtonDown(InputCode code);
-bool WasButtonPressed(InputCode code);
-bool WasButtonReleased(InputCode code);
+extern bool IsButtonDown(InputCode code);
+extern bool WasButtonPressed(InputCode code);
+extern bool WasButtonReleased(InputCode code);

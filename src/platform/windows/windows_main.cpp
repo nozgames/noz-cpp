@@ -4,6 +4,8 @@
 
 #include "../../platform.h"
 
+constexpr int INPUT_BUFFER_SIZE = 1024;
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shellapi.h>
@@ -15,6 +17,8 @@ extern void InitVulkan(const RendererTraits* traits, HWND hwnd);
 extern void ResizeVulkan(const Vec2Int& screen_size);
 extern void ShutdownVulkan();
 extern void WaitVulkan();
+extern void HandleInputCharacter(char c);
+extern void HandleInputKeyDown(char c);
 
 struct WindowsApp
 {
@@ -26,6 +30,8 @@ struct WindowsApp
     bool has_focus;
     bool is_resizing;
     void (*on_close) ();
+    char input_buffer[INPUT_BUFFER_SIZE];
+    int input_buffer_start;
 };
 
 static WindowsApp g_windows = {};
@@ -99,6 +105,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             };
         }
         return 0;
+
+    case WM_CHAR:
+        HandleInputCharacter((char)wParam);
+        break;
+
+    case WM_KEYDOWN:
+        HandleInputKeyDown((char)wParam);
+        break;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }

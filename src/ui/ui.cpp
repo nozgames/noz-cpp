@@ -195,11 +195,17 @@ void RenderElement(const Element& e)
         break;
 
     case ELEMENT_TYPE_LABEL:
-        BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {1,1});
-        BindColor(e.style.color.value);
-        BindMaterial(e.material);
-        DrawMesh(GetMesh((TextMesh*)e.resource));
+    {
+        Mesh* mesh = GetMesh((TextMesh*)e.resource);
+        if (mesh)
+        {
+            BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {1,1});
+            BindColor(e.style.color.value);
+            BindMaterial(e.material);
+            DrawMesh(mesh);
+        }
         break;
+    }
 
     case ELEMENT_TYPE_IMAGE:
     {

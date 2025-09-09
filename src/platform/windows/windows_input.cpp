@@ -18,6 +18,7 @@ struct WindowsInput
     bool key_states[256];
     XINPUT_STATE gamepad_states[XUSER_MAX_COUNT];
     bool gamepad_connected[XUSER_MAX_COUNT] = {0};
+    TextInput text_input;
 };
 
 static WindowsInput g_input = {};
@@ -64,6 +65,7 @@ static InputCode VKToInputCode(int vk)
         case '9': return KEY_9;
         case VK_OEM_PLUS: return KEY_EQUALS;  // = and + key (both handled by same VK)
         case VK_OEM_MINUS: return KEY_MINUS;  // - and _ key
+        case VK_OEM_1: return KEY_SEMICOLON;
         case VK_SPACE: return KEY_SPACE;
         case VK_RETURN: return KEY_ENTER;
         case VK_TAB: return KEY_TAB;
@@ -349,9 +351,53 @@ void platform::UpdateInputState()
     }
 }
 
+void HandleInputCharacter(char c)
+{
+    if (g_input.text_input.length >= TEXT_INPUT_MAX_LENGTH - 1)
+        return;
+
+    if (c < 32)
+        return;
+
+    g_input.text_input.value[g_input.text_input.length++] = c;
+    g_input.text_input.value[g_input.text_input.length] = 0;
+    g_input.text_input.cursor++;
+}
+
+void HandleInputKeyDown(char c)
+{
+    switch (c)
+    {
+    case VK_BACK:
+        if (g_input.text_input.length > 0 && g_input.text_input.cursor > 0)
+        {
+            // Move characters back one position from cursor
+            for (int i = g_input.text_input.cursor - 1; i < g_input.text_input.length - 1; i++)
+                g_input.text_input.value[i] = g_input.text_input.value[i + 1];
+            g_input.text_input.length--;
+            g_input.text_input.value[g_input.text_input.length] = 0;
+            g_input.text_input.cursor--;
+        }
+        break;
+    }
+}
+
+void platform::ClearTextInput()
+{
+    g_input.text_input.value[0] = 0;
+    g_input.text_input.length = 0;
+    g_input.text_input.cursor = 0;
+}
+
+const TextInput& platform::GetTextInput()
+{
+    return g_input.text_input;
+}
 
 void platform::InitializeInput()
 {
+    ClearTextInput();
+
     for (int i = 0; i < XUSER_MAX_COUNT; i++)
     {
         ZeroMemory(&g_input.gamepad_states[i], sizeof(XINPUT_STATE));
