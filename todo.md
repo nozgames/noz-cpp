@@ -1,11 +1,10 @@
 # Todo
 
-- [ ] undo / redo (whole mesh)
 - [ ] Selecting a vertex should select the closest vertex, not the first one it finds
 - [ ] only select points, edges, faces on mouse up if there was no box select
 
 - [ ] Save window positino as well as size
-- [ ] bug with saving size, sometimes wrong size
+- [ ] bug with saving window size, sometimes wrong size
 - [ ] :n to make a new file  n <type> <name>
 - [ ] Right click to change light position
 - [ ] Button to disable color and show grey scale
@@ -96,3 +95,4 @@
 - [X] : when in asset editor should allow commands to be typed in terminal (forward keys there or something?)
 - [X] :s to save
 - [X] outlines
+- [X] undo / redo (whole mesh)

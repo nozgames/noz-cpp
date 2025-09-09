@@ -109,7 +109,9 @@ bool SaveStream(Stream* stream, const std::filesystem::path& path)
 {
     if (!stream)
         return false;
-    
+
+    std::filesystem::create_directory(path.parent_path());
+
     StreamImpl* impl = static_cast<StreamImpl*>(stream);
     
     FILE* file = fopen(path.string().c_str(), "wb");

@@ -292,8 +292,11 @@ inline f64 Clamp(f64 v, f64 min, f64 max) { return v < min ? min : v > max ? max
 inline float Radians(float degrees) { return degrees * noz::PI / 180.0f; }
 inline float Degrees(float radians) { return radians * 180.0f / noz::PI; }
 
-
-
+inline bool ApproxEqual(f32 a, f32 b, f32 epsilon = 1e-6f) { return fabsf(a - b) <= epsilon; }
+inline bool ApproxEqual(const Vec2& a, const Vec2& b, f32 epsilon = 1e-6f)
+{
+    return ApproxEqual(a.x, b.x, epsilon) && ApproxEqual(a.y, b.y, epsilon);
+}
 
 inline i32 Abs(i32 v) { return v < 0 ? -v : v; }
 inline f32 Abs(f32 v) { return v < 0 ? -v : v; }
