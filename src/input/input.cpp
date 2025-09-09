@@ -58,6 +58,11 @@ Vec2 GetMousePosition()
     return platform::GetMousePosition();
 }
 
+void SetTextInput(const TextInput& text_input)
+{
+    platform::SetTextInput(text_input);
+}
+
 void ClearTextInput()
 {
     return platform::ClearTextInput();

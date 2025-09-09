@@ -13,10 +13,8 @@ Vec2 MeasureText(const text_t& text, Font* font, float font_size)
 {
     assert(font);
 
-    // Calculate text size using glyph data
+    // Calculate text width using glyph data
     float total_width = 0.0f;
-    float max_ascent = 0.0f;
-    float max_descent = 0.0f;
 
     for (size_t i = 0; i < text.length; ++i)
     {
@@ -27,17 +25,12 @@ Vec2 MeasureText(const text_t& text, Font* font, float font_size)
         // Add kerning adjustment for the next character
         if (i + 1 < text.length)
             total_width += GetKerning(font, ch, text.value[i + 1]) * font_size;
-
-        // Calculate glyph extents from baseline
-        // bearing.y is now distance from baseline to glyph bottom
-        float glyph_bottom = -glyph->bearing.y * font_size;
-        float glyph_top = (glyph->size.y - glyph->bearing.y) * font_size;
-
-        max_ascent = Max(max_ascent, glyph_top);
-        max_descent = Min(max_descent, glyph_bottom);
     }
 
-    return Vec2(total_width, max_ascent - max_descent);
+    // Use consistent line height for all text meshes
+    float total_height = GetLineHeight(font) * font_size;
+
+    return Vec2(total_width, total_height);
 }
 
 static void AddGlyph(
@@ -72,47 +65,33 @@ static void AddGlyph(
 static void CreateTextMesh(Allocator* allocator, TextMeshImpl* impl, const TextRequest& request)
 {
     auto& text = request.text;
-
-    // Calculate total bounds
-    float total_width = 0.0f;
-    float max_ascent = 0.0f;
-    float max_descent = 0.0f;
     float font_size = (float)request.font_size;
 
+    // Calculate total width
+    float total_width = 0.0f;
     for (size_t i = 0; i < text.length; ++i)
     {
         char ch = text.value[i];
         auto glyph = GetGlyph(request.font, ch);
-
         total_width += glyph->advance * font_size;
-
-        if (glyph->uv_max.x <= glyph->uv_min.x || glyph->uv_max.y <= glyph->uv_min.y)
-            continue;
 
         // Add kerning adjustment for the next character
         if (i + 1 < text.length)
             total_width += GetKerning(request.font, ch, text.value[i + 1]) * font_size;
-
-        // Calculate glyph extents from baseline
-        // bearing.y is now distance from baseline to glyph bottom
-        float glyph_bottom = -glyph->bearing.y * font_size;
-        float glyph_top = (glyph->size.y - glyph->bearing.y) * font_size;
-
-        max_ascent = Max(max_ascent, glyph_top);
-        max_descent = Min(max_descent, glyph_bottom);
     }
 
-    float total_height = max_ascent - max_descent;
+    // Use consistent line height for all text meshes
+    float total_height = GetLineHeight(request.font) * font_size;
 
 
     // Generate vertices for the text
     float current_x = 0.0f;
     int vertex_offset = 0;
 
-    // Position baseline so that text fits within bounds [0, total_height]
-    // Text extends max_ascent above and max_descent below baseline
-    // To fit in [0, total_height], baseline should be at max_ascent
-    float baseline_y = max_ascent;
+    // Position baseline within the line height bounds
+    // The baseline should be positioned from the top of the text bounds
+    // so that text renders within the [0, total_height] range
+    float baseline_y = total_height - GetBaseline(request.font) * font_size;
 
     // Get the first glyph to adjust starting position
     if (!IsEmpty(text))
@@ -123,7 +102,6 @@ static void CreateTextMesh(Allocator* allocator, TextMeshImpl* impl, const TextR
     {
         char ch = text.value[i];
         auto glyph = GetGlyph(request.font, ch);
-
 
         if (glyph->uv_max.x > glyph->uv_min.x && glyph->uv_max.y > glyph->uv_min.y)
             AddGlyph(builder, glyph, current_x, baseline_y, font_size, vertex_offset);

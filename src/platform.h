@@ -94,6 +94,7 @@ namespace platform
     Vec2 GetMouseScroll();
     const TextInput& GetTextInput();
     void ClearTextInput();
+    extern void SetTextInput(const TextInput& text_input);
 
     // @filesystem
     std::filesystem::path GetSaveGamePath();

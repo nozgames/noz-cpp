@@ -22,6 +22,13 @@ constexpr PseudoState PSEUDO_STATE_FOCUSED  = 1 << 4;
 constexpr PseudoState PSEUDO_STATE_PRESSED  = 1 << 5;
 constexpr PseudoState PSEUDO_STATE_CHECKED  = 1 << 6;
 
+enum TextAlign
+{
+    TEXT_ALIGN_MIN,
+    TEXT_ALIGN_CENTER,
+    TEXT_ALIGN_MAX
+};
+
 enum StyleKeyword
 {
     STYLE_KEYWORD_INHERIT,
@@ -84,6 +91,12 @@ struct StyleFlexDirection
     FlexDirection value;
 };
 
+struct StyleTextAlign
+{
+    StyleParameter parameter;
+    TextAlign value;
+};
+
 struct Style
 {
     StyleFlexDirection flex_direction;
@@ -100,6 +113,8 @@ struct Style
     StyleLength padding_left;
     StyleLength padding_bottom;
     StyleLength padding_right;
+    StyleTextAlign text_align;
+    StyleTextAlign vertical_align;
 };
 
 struct ElementInput

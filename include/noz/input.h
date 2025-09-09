@@ -26,6 +26,7 @@ extern void PopInputSet();
 extern Vec2 GetMousePosition();
 extern void ClearTextInput();
 extern const TextInput& GetTextInput();
+extern void SetTextInput(const TextInput& text_input);
 
 // @InputSet
 extern InputSet* CreateInputSet(Allocator* allocator);

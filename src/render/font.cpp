@@ -162,7 +162,7 @@ const FontGlyph* GetGlyph(Font* font, char ch)
 float GetKerning(Font* font, char first, char second)
 {
     FontImpl* impl = static_cast<FontImpl*>(font);
-    
+#if 0
     u8 f = (u8)first;
     u8 s = (u8)second;
 
@@ -170,13 +170,18 @@ float GetKerning(Font* font, char first, char second)
     uint16_t value_index = impl->kerning_index[index];
     if (value_index != 0xFFFF && value_index < impl->kerning_count)
         return impl->kerning_values[value_index];
-
+#endif
     return 0.0f;
 }
 
 float GetBaseline(Font* font)
 {
     return static_cast<FontImpl*>(font)->baseline;
+}
+
+float GetLineHeight(Font* font)
+{
+    return static_cast<FontImpl*>(font)->line_height;
 }
 
 Material* GetMaterial(Font* font)

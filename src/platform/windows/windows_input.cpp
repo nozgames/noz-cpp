@@ -394,6 +394,11 @@ const TextInput& platform::GetTextInput()
     return g_input.text_input;
 }
 
+void platform::SetTextInput(const TextInput& text_input)
+{
+    g_input.text_input = text_input;
+}
+
 void platform::InitializeInput()
 {
     ClearTextInput();

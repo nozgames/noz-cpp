@@ -199,7 +199,45 @@ void RenderElement(const Element& e)
         Mesh* mesh = GetMesh((TextMesh*)e.resource);
         if (mesh)
         {
-            BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {1,1});
+            Vec2 text_size = GetSize((TextMesh*)e.resource);
+            
+            // Calculate horizontal alignment offset
+            float align_x = 0.0f;
+            if (e.style.text_align.parameter.keyword != STYLE_KEYWORD_INHERIT)
+            {
+                switch (e.style.text_align.value)
+                {
+                case TEXT_ALIGN_MIN:
+                    align_x = 0.0f;
+                    break;
+                case TEXT_ALIGN_CENTER:
+                    align_x = (e.bounds.width - text_size.x) * 0.5f;
+                    break;
+                case TEXT_ALIGN_MAX:
+                    align_x = e.bounds.width - text_size.x;
+                    break;
+                }
+            }
+            
+            // Calculate vertical alignment offset
+            float align_y = 0.0f;
+            if (e.style.vertical_align.parameter.keyword != STYLE_KEYWORD_INHERIT)
+            {
+                switch (e.style.vertical_align.value)
+                {
+                case TEXT_ALIGN_MIN:
+                    align_y = 0.0f;
+                    break;
+                case TEXT_ALIGN_CENTER:
+                    align_y = (e.bounds.height - text_size.y) * 0.5f;
+                    break;
+                case TEXT_ALIGN_MAX:
+                    align_y = e.bounds.height - text_size.y;
+                    break;
+                }
+            }
+            
+            BindTransform({e.bounds.x + align_x, e.bounds.y + align_y}, 0.0f, {1,1});
             BindColor(e.style.color.value);
             BindMaterial(e.material);
             DrawMesh(mesh);

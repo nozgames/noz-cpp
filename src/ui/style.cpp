@@ -18,7 +18,9 @@ static Style g_default_style = {
     .padding_top = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_FIXED, 0.0f },
     .padding_left = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_FIXED, 0.0f },
     .padding_bottom = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_FIXED, 0.0f },
-    .padding_right = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_FIXED, 0.0f }
+    .padding_right = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_FIXED, 0.0f },
+    .text_align = { STYLE_KEYWORD_INHERIT, TEXT_ALIGN_MIN },
+    .vertical_align = { STYLE_KEYWORD_INHERIT, TEXT_ALIGN_MIN }
 };
 
 const Style& GetDefaultStyle()
@@ -32,22 +34,6 @@ static bool DeserializeStyleParameter(Stream* stream, StyleParameter& value)
     return value.keyword == STYLE_KEYWORD_OVERWRITE;
 }
 
-#if 0 // not used yet
-static void DeserializeStyleParameter(Stream* stream, StyleBool* value)
-{
-    if (!DeserializeStyleParameter(stream, (StyleParameter&)value))
-        return;
-
-    value->value = ReadBool(stream);
-}
-static void DeserializeStyleParameter(Stream* stream, StyleFloat* value)
-{
-    if (!DeserializeStyleParameter(stream, (StyleParameter&)value))
-        return;
-    value->value = ReadFloat(stream);
-}
-#endif
-
 static void DeserializeStyleParameter(Stream* stream, StyleInt& value)
 {
     if (!DeserializeStyleParameter(stream, (StyleParameter&)value))
@@ -60,6 +46,13 @@ static void DeserializeStyleParameter(Stream* stream, StyleColor& value)
     if (!DeserializeStyleParameter(stream, (StyleParameter&)value))
         return;
     value.value = ReadColor(stream);
+}
+
+static void DeserializeStyleParameter(Stream* stream, StyleTextAlign& value)
+{
+    if (!DeserializeStyleParameter(stream, (StyleParameter&)value))
+        return;
+    value.value = (TextAlign)ReadU8(stream);
 }
 
 static void DeserializeStyleParameter(Stream* stream, StyleFlexDirection& value)
@@ -94,6 +87,8 @@ void DeserializeStyle(Stream* stream, Style& style)
     DeserializeStyleParameter(stream, style.padding_left);
     DeserializeStyleParameter(stream, style.padding_bottom);
     DeserializeStyleParameter(stream, style.padding_right);
+    DeserializeStyleParameter(stream, style.text_align);
+    DeserializeStyleParameter(stream, style.vertical_align);
 }
 
 Style DeserializeStyle(Stream* stream)
@@ -116,24 +111,6 @@ static void SerializeParameter(Stream* stream, const StyleInt& value)
     WriteI32(stream, value.value);
 }
 
-#if 0
-
-static void style_serialize_bool(Stream* stream, const StyleBool* value)
-{
-    if (!SerializeParameter(stream, (StyleParameter&)value))
-        return;
-    WriteBool(stream, value->value);
-}
-
-static void style_serialize_float(Stream* stream, const StyleFloat* value)
-{
-    if (!SerializeParameter(stream, (StyleParameter&)value))
-        return;
-    WriteFloat(stream, value->value);
-}
-
-#endif
-
 static void SerializeParameter(Stream* stream, const StyleColor& value)
 {
     if (!SerializeParameter(stream, (StyleParameter&)value))
@@ -142,6 +119,13 @@ static void SerializeParameter(Stream* stream, const StyleColor& value)
 }
 
 static void SerializeParameter(Stream* stream, const StyleFlexDirection& value)
+{
+    if (!SerializeParameter(stream, (StyleParameter&)value))
+        return;
+    WriteU8(stream, (uint8_t)value.value);
+}
+
+static void SerializeParameter(Stream* stream, const StyleTextAlign& value)
 {
     if (!SerializeParameter(stream, (StyleParameter&)value))
         return;
@@ -173,6 +157,8 @@ void SerializeStyle(const Style& style, Stream* stream)
     SerializeParameter(stream, style.padding_left);
     SerializeParameter(stream, style.padding_bottom);
     SerializeParameter(stream, style.padding_right);
+    SerializeParameter(stream, style.text_align);
+    SerializeParameter(stream, style.vertical_align);
 }
 
 void MergeStyles(Style& dst, const Style& src, bool apply_defaults)
@@ -192,5 +178,7 @@ void MergeStyles(Style& dst, const Style& src, bool apply_defaults)
     STYLE_MERGE(padding_left);
     STYLE_MERGE(padding_bottom);
     STYLE_MERGE(padding_right);
+    STYLE_MERGE(text_align);
+    STYLE_MERGE(vertical_align);
 #undef STYLE_MERGE
 }

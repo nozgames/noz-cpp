@@ -145,6 +145,7 @@ struct FontGlyph
 };
 
 float GetBaseline(Font* font);
+float GetLineHeight(Font* font);
 Material* GetMaterial(Font* font);
 const FontGlyph* GetGlyph(Font* font, char ch);
 float GetKerning(Font* font, char first, char second);
