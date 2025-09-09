@@ -86,25 +86,6 @@ Mesh* CreateMesh(
     return mesh;
 }
 
-Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
-{
-    Bounds2 bounds = ReadStruct<Bounds2>(stream);
-    u16 vertex_count = ReadU16(stream);
-    u16 index_count = ReadU16(stream);
-
-    MeshImpl* impl = CreateMesh(allocator, vertex_count, index_count, name);
-    if (!impl)
-        return nullptr;
-
-    impl->bounds = bounds;
-
-    ReadBytes(stream, impl->vertices, sizeof(MeshVertex) * impl->vertex_count);
-    ReadBytes(stream, impl->indices, sizeof(uint16_t) * impl->index_count);
-
-    UploadMesh(impl);
-    return impl;
-}
-
 static void UploadMesh(MeshImpl* impl)
 {
     assert(impl);
@@ -143,6 +124,25 @@ void RenderMesh(Mesh* mesh)
     platform::BindVertexBuffer(impl->vertex_buffer);
     platform::BindIndexBuffer(impl->index_buffer);
     platform::DrawIndexed(impl->index_count);
+}
+
+Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
+{
+    Bounds2 bounds = ReadStruct<Bounds2>(stream);
+    u16 vertex_count = ReadU16(stream);
+    u16 index_count = ReadU16(stream);
+
+    MeshImpl* impl = CreateMesh(allocator, vertex_count, index_count, name);
+    if (!impl)
+        return nullptr;
+
+    impl->bounds = bounds;
+
+    ReadBytes(stream, impl->vertices, sizeof(MeshVertex) * impl->vertex_count);
+    ReadBytes(stream, impl->indices, sizeof(uint16_t) * impl->index_count);
+
+    UploadMesh(impl);
+    return impl;
 }
 
 #ifdef NOZ_EDITOR

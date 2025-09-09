@@ -1,5 +1,7 @@
 # Todo
 
+- [ ] calculate normals for faces
+
 - [ ] Selecting a vertex should select the closest vertex, not the first one it finds
 - [ ] only select points, edges, faces on mouse up if there was no box select
 
@@ -11,7 +13,6 @@
 - [ ] light options
 
 - [ ] need way to create new points not on mesh (v, find closest edge,
-- [ ] new mesh format similar to obj
 - [ ] button to set how hard an edge is, soft on a quad will average normals 
 - [ ] Box select being pushed it making the color go away, is that ok?
 - [ ] When you add a vertex interpolate the height from the neighbors
@@ -96,3 +97,4 @@
 - [X] :s to save
 - [X] outlines
 - [X] undo / redo (whole mesh)
+- [x] new mesh format similar to obj
