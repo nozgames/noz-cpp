@@ -132,6 +132,8 @@ static Vec2 GetRandom(const VfxVec2& range)
 static u16 GetIndex(VfxInstance* i) { return GetIndex(g_vfx.instance_pool, i); }
 static u16 GetIndex(VfxEmitter* e) { return GetIndex(g_vfx.emitter_pool, e); }
 static u16 GetIndex(VfxParticle* p) { return GetIndex(g_vfx.particle_pool, p); }
+static VfxParticle* GetParticle(int i) { return (VfxParticle*)GetAt(g_vfx.particle_pool, i); }
+static VfxEmitter* GetEmitter(int i) { return (VfxEmitter*)GetAt(g_vfx.emitter_pool, i); }
 static VfxHandle GetHandle(VfxInstance* instance) { return { GetIndex(instance), instance->version }; }
 static VfxInstance* GetInstance(u32 index) { return static_cast<VfxInstance*>(GetAt(g_vfx.instance_pool, index)); }
 static VfxInstance* GetInstance(const VfxHandle& handle)
@@ -176,7 +178,7 @@ static VfxInstance* CreateInstance(Vfx* vfx, const Vec2& position)
 static void ParticleDestructor(void *ptr)
 {
     VfxParticle* p = (VfxParticle*)ptr;
-    VfxEmitter* e = (VfxEmitter*)GetAt(g_vfx.emitter_pool, p->emitter_index);
+    VfxEmitter* e = GetEmitter(p->emitter_index);
 
     assert(e->particle_count > 0);
     e->particle_count--;
@@ -240,7 +242,7 @@ static void UpdateParticles()
         if (!g_vfx.particle_valid[i])
             continue;
 
-        VfxParticle* p = static_cast<VfxParticle*>(GetAt(g_vfx.particle_pool, i));
+        VfxParticle* p = GetParticle(i);
         p->elapsed += dt;
 
         if (p->elapsed >= p->lifetime)
@@ -267,7 +269,7 @@ static void UpdateParticles()
         if (!g_vfx.particle_valid[i])
             continue;
 
-        VfxParticle* p = static_cast<VfxParticle*>(GetAt(g_vfx.particle_pool, i));
+        VfxParticle* p = GetParticle(i);
         assert(p);
 
         float t = p->elapsed / p->lifetime;
@@ -285,6 +287,8 @@ static void UpdateParticles()
 static void EmitterDestructor(void* ptr)
 {
     VfxEmitter* e = (VfxEmitter*)ptr;
+    assert(e);
+    assert(e->particle_count == 0);
     VfxInstance* i = GetInstance(e);
     assert(i);
     i->emitter_count--;
@@ -326,7 +330,7 @@ static void UpdateEmitters()
         if (!g_vfx.emitter_valid[i])
             continue;
 
-        VfxEmitter* e = (VfxEmitter*)GetAt(g_vfx.emitter_pool, i);
+        VfxEmitter* e = GetEmitter(i);;
         if (e->rate <= 0.0000001f || e->elapsed >= e->duration)
         {
             if (e->particle_count == 0)
@@ -353,7 +357,7 @@ void Stop(const VfxHandle& handle)
     // Stop all the emitters but let existing particles live out their lifetime
     for (u32 i = 0; i < MAX_EMITTERS; ++i)
     {
-        VfxEmitter* e = (VfxEmitter*)GetAt(g_vfx.emitter_pool, i);
+        VfxEmitter* e = GetEmitter(i);
         if (e->instance_index == GetIndex(instance))
             e->rate = 0.0f;
     }
@@ -375,10 +379,10 @@ void Destroy(VfxHandle& handle)
         if (!g_vfx.particle_valid[i])
             continue;
 
-        VfxParticle* p = (VfxParticle*)GetAt(g_vfx.particle_pool, i);
+        VfxParticle* p = GetParticle(i);
         assert(p);
 
-        VfxEmitter* e = (VfxEmitter*)GetAt(g_vfx.emitter_pool, p->emitter_index);
+        VfxEmitter* e = GetEmitter(i);
         assert(e);
 
         if (e->instance_index != index)
@@ -393,7 +397,7 @@ void Destroy(VfxHandle& handle)
         if (!g_vfx.emitter_valid[i])
             continue;
 
-        VfxEmitter* e = (VfxEmitter*)GetAt(g_vfx.emitter_pool, i);
+        VfxEmitter* e = GetEmitter(i);
         assert(e);
 
         if (e->instance_index != index)
@@ -495,7 +499,7 @@ void RestartVfx(Vfx* vfx)
         if (!g_vfx.emitter_valid[i])
             continue;
 
-        VfxEmitter* e = (VfxEmitter*)GetAt(g_vfx.emitter_pool, i);
+        VfxEmitter* e = GetEmitter(i);
         assert(e);
 
         assert(e->def);
