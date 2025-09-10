@@ -65,8 +65,7 @@ layout(set = 4, binding = 0) uniform sampler2D mainTexture;
 
 void main()
 {
-    vec3 lightDir = normalize(vec3(-0.5,-0.5, -1));
-    float diffuse = max(dot(f_normal, -lightDir), 0.0);
+    float diffuse = (dot(f_normal, light.direction) + 1) * 0.5;
     float lighting = 0.3 + 0.7 * diffuse;
     vec4 texColor = texture(mainTexture, f_uv);
     outColor = vec4(texColor.rgb * lighting * colorData.color.rgb, texColor.a * colorData.color.a);
