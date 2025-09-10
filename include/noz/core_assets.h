@@ -10,12 +10,9 @@ struct LoadedCoreAssets
 {
     struct
     {
-        Shader* shadow;
         Shader* ui;
         Shader* text;
         Shader* lit;
-        Shader* gizmo;
-        Shader* gamma;
         Shader* vfx;
     } shaders;
 

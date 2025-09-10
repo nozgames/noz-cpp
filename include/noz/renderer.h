@@ -143,6 +143,7 @@ void BindColor(Color color);
 void BindCamera(Camera* camera);
 void BindTransform(const Vec2& position, float rotation, const Vec2& scale);
 void BindTransform(const Mat3& transform);
+void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color);
 void BindMaterial(Material* material);
 void DrawMesh(Mesh* mesh);
 

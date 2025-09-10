@@ -44,6 +44,7 @@ static void ResetRenderState()
 {
     g_renderer.pipeline = nullptr;
     BindColor(COLOR_WHITE);
+    BindLight(VEC3_FORWARD, COLOR_WHITE, COLOR_BLACK);
 }
 
 void LoadRendererAssets(Allocator* allocator)

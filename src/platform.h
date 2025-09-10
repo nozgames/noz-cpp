@@ -44,6 +44,7 @@ namespace platform
     void BeginRenderPass(Color clear_color);
     void EndRenderPass();
     void BindTransform(const Mat3& transform);
+    void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color);
     void BindCamera(const Mat3& view_matrix);
     void BindColor(const Color& color);
     Buffer* CreateVertexBuffer(

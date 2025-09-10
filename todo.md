@@ -1,10 +1,10 @@
 # Todo
 
+- [ ] improve the height and normals when adding a new vertex
 - [ ] Why isnt it closing? (thread lock)
-- [ ] need way to create new points not on mesh (v, find closest edge,
 - [ ] m to merge vertices (broken)
 - [ ] x to dissovlve vertices, faces, edges
-- [ ] q to rotate edge
+- [ ] r to rotate edge
 - [ ] highlight triangle when selected
 - [ ] highlight edge when selected
 - [ ] Limit height to -1 to 1
@@ -107,3 +107,5 @@
 - [X] only select points, edges, faces on mouse up if there was no box select
 - [X] Left click to finish tool in mesh editor should not deselect
 - [x] Selecting a vertex should select the closest vertex, not the first one it finds
+- [x] when rotating an edge the selected verticies need to change
+- [x] need way to create new points not on mesh (v, find closest edge,

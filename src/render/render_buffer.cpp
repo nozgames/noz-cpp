@@ -11,14 +11,15 @@ extern void BindTextureInternal(Texture* texture, i32 slot);
 enum RenderCommandType
 {
     RENDER_COMMAND_TYPE_BIND_MATERIAL,
-    command_type_bind_transform,
-    command_type_bind_camera,
-    command_type_bind_bones,
+    RENDER_COMMAND_TYPE_BIND_LIGHT,
+    RENDER_COMMAND_TYPE_BIND_TRANSFORM,
+    RENDER_COMMAND_TYPE_BIND_CAMERA,
+    RENDER_COMMAND_TYPE_BIND_BONES,
     RENDER_COMMAND_TYPE_BIND_DEFAULT_TEXTURE,
-    command_type_bind_color,
-    command_type_draw_mesh,
+    RENDER_COMMAND_TYPE_BIND_COLOR,
+    RENDER_COMMAND_TYPE_DRAW_MESH,
     RENDER_COMMAND_TYPE_BEGIN_PASS,
-    command_type_end_pass,
+    RENDER_COMMAND_TYPE_END_PASS,
 };
 
 struct BindMaterialData
@@ -62,6 +63,13 @@ struct BindDefaultTextureData
     int index;
 };
 
+struct BindLightData
+{
+    Vec3 light_dir;
+    Color diffuse_color;
+    Color shadow_color;
+};
+
 struct RenderCommand
 {
     RenderCommandType type;
@@ -72,6 +80,7 @@ struct RenderCommand
         BindCameraData bind_camera;
         BindBonesData bind_bones;
         BindColorData bind_color;
+        BindLightData bind_light;
         BindDefaultTextureData bind_default_texture;
         BeginPassData begin_pass;
         DrawMeshData draw_mesh;
@@ -117,7 +126,7 @@ void BeginRenderPass(Color clear_color)
 
 void EndRenderPass()
 {
-    RenderCommand cmd = { .type = command_type_end_pass };
+    RenderCommand cmd = { .type = RENDER_COMMAND_TYPE_END_PASS };
     AddRenderCommand(&cmd);
 }
 
@@ -134,7 +143,7 @@ void BindDefaultTexture(int texture_index)
 void BindCamera(Camera* camera)
 {
     RenderCommand cmd = {
-        .type = command_type_bind_camera,
+        .type = RENDER_COMMAND_TYPE_BIND_CAMERA,
         .data = {
             .bind_camera = {
                 .camera = camera
@@ -162,8 +171,17 @@ void BindTransform(const Vec2& position, float rotation, const Vec2& scale)
     Mat3 trs = TRS(position, rotation, scale);
 
     RenderCommand cmd = {
-        .type = command_type_bind_transform,
+        .type = RENDER_COMMAND_TYPE_BIND_TRANSFORM,
         .data = { .bind_transform = { .transform = trs }}
+    };
+    AddRenderCommand(&cmd);
+}
+
+void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color)
+{
+    RenderCommand cmd = {
+        .type = RENDER_COMMAND_TYPE_BIND_LIGHT,
+        .data = { .bind_light = { .light_dir = light_dir, .diffuse_color = diffuse_color, .shadow_color = shadow_color } }
     };
     AddRenderCommand(&cmd);
 }
@@ -171,7 +189,7 @@ void BindTransform(const Vec2& position, float rotation, const Vec2& scale)
 void BindTransform(const Mat3& transform)
 {
     RenderCommand cmd = {
-        .type = command_type_bind_transform,
+        .type = RENDER_COMMAND_TYPE_BIND_TRANSFORM,
         .data = { .bind_transform = { .transform = transform }}
     };
     AddRenderCommand(&cmd);
@@ -180,7 +198,7 @@ void BindTransform(const Mat3& transform)
 void BindColor(Color color)
 {
     RenderCommand cmd = {
-        .type = command_type_bind_color,
+        .type = RENDER_COMMAND_TYPE_BIND_COLOR,
         .data = {
             .bind_color = {
                 .color = {color.r, color.g, color.b, color.a}}} };
@@ -191,7 +209,7 @@ void DrawMesh(Mesh* mesh)
 {
     assert(mesh);
     RenderCommand cmd = {
-        .type = command_type_draw_mesh,
+        .type = RENDER_COMMAND_TYPE_DRAW_MESH,
         .data = {
             .draw_mesh = {
                 .mesh = mesh}} };
@@ -212,19 +230,23 @@ void ExecuteRenderCommands()
             BindMaterialInternal(command->data.bind_material.material);
             break;
 
-        case command_type_bind_transform:
+        case RENDER_COMMAND_TYPE_BIND_TRANSFORM:
             platform::BindTransform(command->data.bind_transform.transform);
             break;
 
-        case command_type_bind_camera:
+        case RENDER_COMMAND_TYPE_BIND_LIGHT:
+            platform::BindLight(command->data.bind_light.light_dir, command->data.bind_light.diffuse_color, command->data.bind_light.shadow_color);
+            break;
+
+        case RENDER_COMMAND_TYPE_BIND_CAMERA:
             platform::BindCamera(GetViewMatrix(command->data.bind_camera.camera));
             break;
 
-        case command_type_bind_color:
+        case RENDER_COMMAND_TYPE_BIND_COLOR:
             platform::BindColor(command->data.bind_color.color);
             break;
 
-        case command_type_draw_mesh:
+        case RENDER_COMMAND_TYPE_DRAW_MESH:
             RenderMesh(command->data.draw_mesh.mesh);
             break;
 
@@ -236,7 +258,7 @@ void ExecuteRenderCommands()
             BindTextureInternal(g_core_assets.textures.white, command->data.bind_default_texture.index);
             break;
 
-        case command_type_end_pass:
+        case RENDER_COMMAND_TYPE_END_PASS:
             platform::EndRenderPass();
             break;
         }

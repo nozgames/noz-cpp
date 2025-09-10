@@ -8,7 +8,8 @@
 enum UniformBufferType
 {
     UNIFORM_BUFFER_CAMERA,
-    UNIFORM_BUFFER_TRANSFORM ,
+    UNIFORM_BUFFER_TRANSFORM,
+    UNIFORM_BUFFER_LIGHT,
     UNIFORM_BUFFER_COLOR,
     UNIFORM_BUFFER_COUNT
 };
@@ -19,6 +20,9 @@ constexpr int VK_SPACE_TEXTURE = UNIFORM_BUFFER_COUNT;
 constexpr int MAX_UNIFORM_BUFFERS = 4096;
 constexpr u32 UNIFORM_BUFFER_SIZE = sizeof(Mat4);
 constexpr u32 DYNAMIC_UNIFORM_BUFFER_SIZE = UNIFORM_BUFFER_SIZE * MAX_UNIFORM_BUFFERS;
+
+const char* UNIFORM_BUFFER_NAMES[] = {"CameraBuffer", "TransformBuffer", "LightBuffer", "ColorBuffer"};
+static_assert(sizeof(UNIFORM_BUFFER_NAMES) / sizeof(const char*) == UNIFORM_BUFFER_COUNT);
 
 static VkFilter ToVK(TextureFilter filter)
 {
@@ -266,6 +270,11 @@ static void CreateDescriptorSetLayout()
     if (vkCreateDescriptorSetLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.uniform_buffers[UNIFORM_BUFFER_TRANSFORM].descriptor_set_layout) != VK_SUCCESS)
         Exit("Failed to create transform descriptor set layout");
 
+    // Transform buffer layout (vertex stage)
+    uniform_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    if (vkCreateDescriptorSetLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.uniform_buffers[UNIFORM_BUFFER_LIGHT].descriptor_set_layout) != VK_SUCCESS)
+        Exit("Failed to create light descriptor set layout");
+
     // Color buffer layout (fragment stage)
     uniform_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     if (vkCreateDescriptorSetLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.uniform_buffers[UNIFORM_BUFFER_COLOR].descriptor_set_layout) != VK_SUCCESS)
@@ -299,7 +308,7 @@ static void CreateDescriptorPool()
     VkDescriptorPoolSize pool_sizes[] = {
         {
             .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-            .descriptorCount = 3  // camera + transform + color
+            .descriptorCount = UNIFORM_BUFFER_COUNT
         },
         {
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -311,25 +320,16 @@ static void CreateDescriptorPool()
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     pool_info.poolSizeCount = sizeof(pool_sizes) / sizeof(VkDescriptorPoolSize);
     pool_info.pPoolSizes = pool_sizes;
-    pool_info.maxSets = 3 + MAX_TEXTURES;  // vertex + texture + fragment + textures
+    pool_info.maxSets = UNIFORM_BUFFER_COUNT + MAX_TEXTURES;
     
     if (vkCreateDescriptorPool(g_vulkan.device, &pool_info, nullptr, &g_vulkan.descriptor_pool) != VK_SUCCESS)
         Exit("Failed to create descriptor pool");
 }
 
-enum DescriptorSpace
-{
-    DESCRIPTOR_SPACE_FRAGMENT
-};
-
-
 static void CreateDescriptorSets()
 {
-    // Create individual descriptor sets for each uniform buffer
-    const char* buffer_names[] = {"CameraBuffer", "TransformBuffer", "ColorBuffer"};
-    
-    // Allocate descriptor sets for uniform buffers
-    for (u32 i = 0; i < UNIFORM_BUFFER_COUNT; i++) {
+    for (u32 i = 0; i < UNIFORM_BUFFER_COUNT; i++)
+    {
         VkDescriptorSetAllocateInfo alloc_info = {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
             .descriptorPool = g_vulkan.descriptor_pool,
@@ -350,7 +350,7 @@ static void CreateDescriptorSets()
         VkWriteDescriptorSet write = {
             .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet = g_vulkan.uniform_buffers[i].descriptor_set,
-            .dstBinding = 0,  // All uniform buffers use binding 0 in their own descriptor set
+            .dstBinding = 0,
             .dstArrayElement = 0,
             .descriptorCount = 1,
             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
@@ -358,7 +358,7 @@ static void CreateDescriptorSets()
         };
 
         vkUpdateDescriptorSets(g_vulkan.device, 1, &write, 0, nullptr);
-        SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.uniform_buffers[i].descriptor_set, buffer_names[i]);
+        SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.uniform_buffers[i].descriptor_set, UNIFORM_BUFFER_NAMES[i]);
     }
 
     // Create texture descriptor set separately
@@ -910,15 +910,16 @@ static void CreateSyncObjects()
 static void CreatePipelineLayout()
 {
     VkDescriptorSetLayout layouts[] = {
-        g_vulkan.uniform_buffers[UNIFORM_BUFFER_CAMERA].descriptor_set_layout,     // Set 0: Camera
-        g_vulkan.uniform_buffers[UNIFORM_BUFFER_TRANSFORM].descriptor_set_layout,  // Set 1: Transform  
-        g_vulkan.uniform_buffers[UNIFORM_BUFFER_COLOR].descriptor_set_layout,      // Set 2: Color
-        g_vulkan.texture_descriptor_set_layout                                      // Set 3: Texture
+        g_vulkan.uniform_buffers[UNIFORM_BUFFER_CAMERA].descriptor_set_layout,      // Set 0: Camera
+        g_vulkan.uniform_buffers[UNIFORM_BUFFER_TRANSFORM].descriptor_set_layout,   // Set 1: Transform
+        g_vulkan.uniform_buffers[UNIFORM_BUFFER_LIGHT].descriptor_set_layout,       // Set 2: Light
+        g_vulkan.uniform_buffers[UNIFORM_BUFFER_COLOR].descriptor_set_layout,       // Set 3: Color
+        g_vulkan.texture_descriptor_set_layout                                      // Set 4: Texture
     };
 
     VkPipelineLayoutCreateInfo layout_info = {};
     layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    layout_info.setLayoutCount = 4;
+    layout_info.setLayoutCount = sizeof(layouts) / sizeof(VkDescriptorSetLayout);
     layout_info.pSetLayouts = layouts;
     layout_info.pushConstantRangeCount = 0;
     layout_info.pPushConstantRanges = nullptr;
@@ -1147,6 +1148,27 @@ static void CopyMat3ToGPU(void* dst, const Mat3& src)
     f[0] = src.m[0]; f[1] = src.m[1]; f[2] = src.m[2]; f[3] = 0;
     f[4] = src.m[3]; f[5] = src.m[4]; f[6] = src.m[5]; f[7] = 0;
     f[8] = src.m[6]; f[9] = src.m[7]; f[10] = src.m[8]; f[11] = 0;
+}
+
+void platform::BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color)
+{
+    void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_LIGHT);
+    if (!buffer_ptr)
+        return;
+
+    float* f = (float*)buffer_ptr;
+    f[0] = light_dir.x;
+    f[1] = light_dir.y;
+    f[2] = light_dir.z;
+    f[3] = 0; // Padding
+    f[4] = diffuse_color.r;
+    f[5] = diffuse_color.g;
+    f[6] = diffuse_color.b;
+    f[7] = diffuse_color.a;
+    f[8] = shadow_color.r;
+    f[9] = shadow_color.g;
+    f[10] = shadow_color.b;
+    f[11] = shadow_color.a;
 }
 
 void platform::BindTransform(const Mat3& transform)
@@ -1439,13 +1461,20 @@ static bool CreateTextureInternal(platform::Texture* texture, void* data, const 
 
     vkCmdCopyBufferToImage(command_buffer, staging_buffer, texture->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-    // Transition image to shader read optimal layout
     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    vkCmdPipelineBarrier(command_buffer,
-                         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                         0, 0, nullptr, 0, nullptr, 1, &barrier);
+    vkCmdPipelineBarrier(
+        command_buffer,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        0,
+        0,
+        nullptr,
+        0,
+        nullptr,
+        1,
+        &barrier);
 
     vkEndCommandBuffer(command_buffer);
 
@@ -1665,8 +1694,6 @@ static bool CreateShaderInternal(
     assert(fragment_code);
     assert(fragment_code_size > 0);
     assert(name);
-    // geometry_code can be nullptr for non-geometry shaders
-
 
     VkVertexInputAttributeDescription attr_descs[] = {
         // Position
@@ -1999,9 +2026,8 @@ void InitVulkan(const RendererTraits* traits, HWND hwnd)
     CreateDescriptorSetLayout();
 
     // Create dynamic uniform buffers with layouts
-    const char* buffer_names[] = {"CameraBuffer", "TransformBuffer", "ColorBuffer"};
     for (u32 i = 0; i < UNIFORM_BUFFER_COUNT; i++) {
-        if (!CreateUniformBuffer(&g_vulkan.uniform_buffers[i], buffer_names[i]))
+        if (!CreateUniformBuffer(&g_vulkan.uniform_buffers[i], UNIFORM_BUFFER_NAMES[i]))
             Exit("Failed to create uniform buffer");
     }
 
