@@ -1,36 +1,36 @@
 # Todo
 
-- [ ] Show origin when asset is selected
-- [ ] calculate normals for faces
-
+- [ ] Why isnt it closing?
+- [ ] saving a mesh after initially creating it does not work
+- [ ] need way to create new points not on mesh (v, find closest edge,
 - [ ] Selecting a vertex should select the closest vertex, not the first one it finds
 - [ ] only select points, edges, faces on mouse up if there was no box select
+- [ ] box select is too easy to trigger
+- [ ] m to merge vertices (broken)
+- [ ] x to dissovlve vertices, faces, edges
+- [ ] q to rotate edge
+- [ ] highlight triangle when selected
+- [ ] highlight edge when selected
+- [ ] Limit height to -1 to 1
 
+- [ ] Pressing g or r should stop the previous g or r and start a new one
+- [ ] Shortcut system
+- [ ] calculate normals for faces
 - [ ] Save window positino as well as size
 - [ ] bug with saving window size, sometimes wrong size
-- [ ] :n to make a new file  n <type> <name>
 - [ ] Right click to change light position
 - [ ] Button to disable color and show grey scale
 - [ ] light options
-
-- [ ] need way to create new points not on mesh (v, find closest edge,
 - [ ] button to set how hard an edge is, soft on a quad will average normals 
 - [ ] Box select being pushed it making the color go away, is that ok?
 - [ ] When you add a vertex interpolate the height from the neighbors
 - [ ] highlight colors of selected triangles in the triangle ui
 - [ ] add face if 3 verts are selected and no triangle there
 - [ ] add vert to center of triangle
-- [ ] m to merge vertices (broken)
-- [ ] x to dissovlve vertices, faces, edges
-- [ ] q to rotate edge
-- [ ] w for normal
-- [ ] highlight triangle when selected
-- [ ] highlight edge when selected
 - [ ] single click to select asset, ctrl to toggle
 - [ ] Change UI, vertex size, edge size, etc to not scale with the window size
 - [ ] combined vertex buffer for rendering so we can stream data to it like triangles?  
 - [ ] key to hide / show palette (c?)
-- [ ] r - rotate
 - [ ] e for extrude
 - [ ] x to limit move
 - [ ] y to limit move
@@ -38,13 +38,10 @@
 - [ ] Auto complete on commands
 - [ ] Job system
 - [ ] Trace a font out with meshes?
-- [ ] Clean importer.cpp
-- [ ] check if importer.cpp is handling meta dependency and remove the code from importers
 - [ ] shader include dependency handling.
 - [ ] configurable outline color
 - [ ] Animation / Skeletons
 - [ ] Animator
-- [ ] Border seems to be generating different sizes for different meshes
 - [ ] Trail vfx for individual particles
 - [ ] vfx initial_rotation and rotation over time
 - [ ] style sheet inherit not working
@@ -53,6 +50,7 @@
 - [ ] hot load of sounds
 - [ ] hot load of shaders
 - [ ] Something causes a spawn of error messages in the editor when client disconnects / reconnects, not sure which
+- [ ] Clean importer.cpp
 
 - [X] Auto generate names from styles and other things that have names in g_names....- [ ] Push / Pop the scratch before each asset load or NAME_*
 - [X] Bug with default styles in style sheets causing width and height to not be auto
@@ -99,3 +97,8 @@
 - [X] outlines
 - [X] undo / redo (whole mesh)
 - [x] new mesh format similar to obj
+- [X] Show origin when asset is selected
+- [X] check if importer.cpp is handling meta dependency and remove the code from importers
+- [x] :n to make a new file  n <type> <name>
+- [X] r - rotate
+- [X] Border seems to be generating different sizes for different meshes
