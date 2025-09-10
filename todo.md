@@ -1,14 +1,13 @@
 # Todo
 
-- [ ] improve the height and normals when adding a new vertex
+- [ ] hot load of shaders
 - [ ] Why isnt it closing? (thread lock)
 - [ ] m to merge vertices (broken)
 - [ ] x to dissovlve vertices, faces, edges
-- [ ] r to rotate edge
 - [ ] highlight triangle when selected
 - [ ] highlight edge when selected
-- [ ] Limit height to -1 to 1
-
+- [ ] Light color in the editor config
+- [ ] Save the light position
 - [ ] Use TextInput for typing after move or scale command
 - [ ] Pressing g or r should stop the previous g or r and start a new one
 - [ ] Shortcut system
@@ -45,7 +44,6 @@
 - [ ] Localized strings
 - [ ] hot load of textures
 - [ ] hot load of sounds
-- [ ] hot load of shaders
 - [ ] Something causes a spawn of error messages in the editor when client disconnects / reconnects, not sure which
 - [ ] Clean importer.cpp
 
@@ -109,3 +107,7 @@
 - [x] Selecting a vertex should select the closest vertex, not the first one it finds
 - [x] when rotating an edge the selected verticies need to change
 - [x] need way to create new points not on mesh (v, find closest edge,
+- [X] Adding vertex is creating bad triangles, fix winding
+- [X] improve the height and normals when adding a new vertex
+- [X] r to rotate edge
+- [X] Limit height to -1 to 1

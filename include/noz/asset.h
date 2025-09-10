@@ -81,7 +81,6 @@ Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, c
     member = (Skeleton*)LoadAsset(allocator, path, ASSET_SIGNATURE_SKELETON, LoadSkeleton);
 
 
-#define NOZ_RELOAD_SHADER(asset_name, asset)
 #define NOZ_RELOAD_TEXTURE(asset_name, asset)
 #define NOZ_RELOAD_FONT(asset_name, asset)
 #define NOZ_RELOAD_SOUND(asset_name, asset)
@@ -92,6 +91,7 @@ void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void 
 void ReloadStyleSheet(Asset* sheet, Stream* stream, const AssetHeader& header, const Name** name_table);
 void ReloadVfx(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
 void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
+void ReloadShader(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
 
 #define NOZ_RELOAD_STYLE_SHEET(asset_name, asset) \
     if(asset_name == incoming_name) { ReloadAsset(asset_name, ASSET_SIGNATURE_STYLE_SHEET, asset, ReloadStyleSheet); return; }
@@ -102,8 +102,12 @@ void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const N
 #define NOZ_RELOAD_MESH(asset_name, asset) \
     if(asset_name == incoming_name) { ReloadAsset(asset_name, ASSET_SIGNATURE_MESH, asset, ReloadMesh); return; }
 
+#define NOZ_RELOAD_SHADER(asset_name, asset) \
+    if(asset_name == incoming_name) { ReloadAsset(asset_name, ASSET_SIGNATURE_SHADER, asset, ReloadShader); return; }
+
 #else
 #define NOZ_RELOAD_STYLE_SHEET(asset)
 #define NOZ_RELOAD_VFX(asset_name, asset)
 #define NOZ_RELOAD_MESH(asset_name, asset)
+#define NOZ_RELOAD_SHADER(asset_name, asset)
 #endif

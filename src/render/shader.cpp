@@ -16,6 +16,55 @@ void ShaderDestructor(void* p)
     platform::DestroyShader(impl->platform);
 }
 
+static bool LoadShaderInternal(ShaderImpl* impl, Stream* stream, const AssetHeader& header, const Name** name_table)
+{
+    // Read the vertex shader
+    auto vertex_bytecode_length = ReadU32(stream);
+    auto* vertex_bytecode = (u8*)Alloc(ALLOCATOR_DEFAULT, vertex_bytecode_length);
+    if (!vertex_bytecode)
+        return false;
+
+    ReadBytes(stream, vertex_bytecode, vertex_bytecode_length);
+
+    // Read geometry shader (optional)
+    auto geometry_bytecode_length = ReadU32(stream);
+    u8* geometry_bytecode = nullptr;
+    if (geometry_bytecode_length > 0)
+    {
+        geometry_bytecode = (u8*)Alloc(ALLOCATOR_DEFAULT, geometry_bytecode_length);
+        if (!geometry_bytecode)
+        {
+            Free(vertex_bytecode);
+            return false;
+        }
+        ReadBytes(stream, geometry_bytecode, geometry_bytecode_length);
+    }
+
+    // Read the fragment shader
+    auto fragment_bytecode_length = ReadU32(stream);
+    auto* fragment_bytecode = (u8*)Alloc(ALLOCATOR_DEFAULT, fragment_bytecode_length);
+    if (!fragment_bytecode)
+    {
+        Free(vertex_bytecode);
+        if (geometry_bytecode) Free(geometry_bytecode);
+        return false;
+    }
+    ReadBytes(stream, fragment_bytecode, fragment_bytecode_length);
+
+    impl->flags = (ShaderFlags)ReadU8(stream);
+    impl->platform = platform::CreateShader(
+        vertex_bytecode, vertex_bytecode_length,
+        geometry_bytecode, geometry_bytecode_length,
+        fragment_bytecode, fragment_bytecode_length,
+        impl->flags, impl->name->value);
+
+    Free(vertex_bytecode);
+    if (geometry_bytecode) Free(geometry_bytecode);
+    Free(fragment_bytecode);
+
+    return impl->platform != nullptr;
+}
+
 Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
     assert(stream);
@@ -27,51 +76,7 @@ Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, con
         return nullptr;
 
     impl->name = name;
-
-    // Read the vertex shader
-    auto vertex_bytecode_length = ReadU32(stream);
-    auto* vertex_bytecode = (u8*)Alloc(ALLOCATOR_SCRATCH, vertex_bytecode_length);
-    if (!vertex_bytecode) 
-        return nullptr;
-    ReadBytes(stream, vertex_bytecode, vertex_bytecode_length);
-
-    // Read geometry shader (optional)
-    auto geometry_bytecode_length = ReadU32(stream);
-    u8* geometry_bytecode = nullptr;
-    if (geometry_bytecode_length > 0)
-    {
-        geometry_bytecode = (u8*)Alloc(ALLOCATOR_SCRATCH, geometry_bytecode_length);
-        if (!geometry_bytecode)
-        {
-            Free(vertex_bytecode);
-            return nullptr;
-        }
-        ReadBytes(stream, geometry_bytecode, geometry_bytecode_length);
-    }
-
-    // Read the fragment shader
-    auto fragment_bytecode_length = ReadU32(stream);
-    auto* fragment_bytecode = (u8*)Alloc(ALLOCATOR_SCRATCH, fragment_bytecode_length);
-    if (!fragment_bytecode) 
-    {
-        Free(vertex_bytecode);
-        if (geometry_bytecode) Free(geometry_bytecode);
-        return nullptr;
-    }
-    ReadBytes(stream, fragment_bytecode, fragment_bytecode_length);
-
-    impl->flags = (ShaderFlags)ReadU8(stream);
-    impl->platform = platform::CreateShader(
-        vertex_bytecode, vertex_bytecode_length, 
-        geometry_bytecode, geometry_bytecode_length,
-        fragment_bytecode, fragment_bytecode_length, 
-        impl->flags, name->value);
-
-    Free(vertex_bytecode);
-    if (geometry_bytecode) Free(geometry_bytecode);
-    Free(fragment_bytecode);
-
-    if (!impl->platform)
+    if (!LoadShaderInternal(impl, stream, *header, name_table))
     {
         Free(impl);
         return nullptr;
@@ -85,3 +90,21 @@ void BindShaderInternal(Shader* shader)
     assert(shader);
     platform::BindShader(static_cast<ShaderImpl*>(shader)->platform);
 }
+
+#ifdef NOZ_EDITOR
+
+void ReloadShader(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table)
+{
+    ShaderImpl* impl = static_cast<ShaderImpl*>(asset);
+    assert(impl);
+    assert(stream);
+    assert(header.signature == ASSET_SIGNATURE_SHADER);
+
+    platform::Shader* old_shader = impl->platform;
+    LoadShaderInternal(impl, stream, header, name_table);
+
+    if (old_shader)
+        platform::DestroyShader(old_shader);
+}
+
+#endif
