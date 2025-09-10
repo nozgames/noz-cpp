@@ -51,6 +51,8 @@ struct PoolAllocator : Allocator { };
 PoolAllocator* CreatePoolAllocator(u32 item_size, u32 capacity);
 void* GetAt(PoolAllocator* allocator, u32 index);
 u32 GetIndex(PoolAllocator* allocator, const void* ptr);
+bool IsFull(PoolAllocator* allocator);
+bool IsEmpty(PoolAllocator* allocator);
 
 // @scratch
 void PushScratch();

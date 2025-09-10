@@ -90,3 +90,17 @@ void* GetAt(PoolAllocator* allocator, u32 index)
     assert(index < impl->capacity);
     return (u8*)impl->items + impl->item_size * index + sizeof(AllocHeader);
 }
+
+bool IsFull(PoolAllocator* allocator)
+{
+    assert(allocator);
+    PoolAllocatorImpl* impl = static_cast<PoolAllocatorImpl*>(allocator);
+    return impl->count == impl->capacity;
+}
+
+bool IsEmpty(PoolAllocator* allocator)
+{
+    assert(allocator);
+    PoolAllocatorImpl* impl = static_cast<PoolAllocatorImpl*>(allocator);
+    return impl->count == 0;
+}

@@ -1,6 +1,5 @@
 # Todo
 
-- [ ] hot load of shaders
 - [ ] Why isnt it closing? (thread lock)
 - [ ] m to merge vertices (broken)
 - [ ] x to dissovlve vertices, faces, edges
@@ -111,3 +110,5 @@
 - [X] improve the height and normals when adding a new vertex
 - [X] r to rotate edge
 - [X] Limit height to -1 to 1
+- [x] hot load of shaders
+
