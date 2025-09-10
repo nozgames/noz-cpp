@@ -6,7 +6,7 @@
 
 Mat3 TRS(const Vec2& translation, f32 rotation, const Vec2& scale)
 {
-    rotation = Radians(rotation);
+    rotation = Radians(-rotation);
     f32 c = std::cos(rotation);
     f32 s = std::sin(rotation);
     
@@ -84,5 +84,24 @@ Vec3 Mat3::operator*(const Vec3& v) const
     result.x = m[0] * v.x + m[3] * v.y + m[6] * v.z;
     result.y = m[1] * v.x + m[4] * v.y + m[7] * v.z;
     result.z = m[2] * v.x + m[5] * v.y + m[8] * v.z;
+    return result;
+}
+
+Mat3 Mat3::operator*(const Mat3& m) const
+{
+    Mat3 result;
+    
+    result.m[0] = this->m[0] * m.m[0] + this->m[1] * m.m[3] + this->m[2] * m.m[6];
+    result.m[1] = this->m[0] * m.m[1] + this->m[1] * m.m[4] + this->m[2] * m.m[7];
+    result.m[2] = this->m[0] * m.m[2] + this->m[1] * m.m[5] + this->m[2] * m.m[8];
+    
+    result.m[3] = this->m[3] * m.m[0] + this->m[4] * m.m[3] + this->m[5] * m.m[6];
+    result.m[4] = this->m[3] * m.m[1] + this->m[4] * m.m[4] + this->m[5] * m.m[7];
+    result.m[5] = this->m[3] * m.m[2] + this->m[4] * m.m[5] + this->m[5] * m.m[8];
+    
+    result.m[6] = this->m[6] * m.m[0] + this->m[7] * m.m[3] + this->m[8] * m.m[6];
+    result.m[7] = this->m[6] * m.m[1] + this->m[7] * m.m[4] + this->m[8] * m.m[7];
+    result.m[8] = this->m[6] * m.m[2] + this->m[7] * m.m[5] + this->m[8] * m.m[8];
+    
     return result;
 }

@@ -351,15 +351,10 @@ Bounds2 GetBounds(Camera* camera)
         top = bottom + height;
     }
     
-    // Apply position offset
     Vec2 center = Vec2{(left + right) * 0.5f, (bottom + top) * 0.5f} + impl->position_offset;
-    
-    Bounds2 bounds;
-    bounds.min.x = center.x - width * 0.5f;
-    bounds.max.x = center.x + width * 0.5f;
-    bounds.min.y = center.y - height * 0.5f;
-    bounds.max.y = center.y + height * 0.5f;
-    
+    Vec2 a = {center.x - width * 0.5f, center.y - height * 0.5f};
+    Vec2 b = {center.x + width * 0.5f, center.y + height * 0.5f};
+    Bounds2 bounds { Min(a,b), Max(a,b) };
     return bounds;
 }
 

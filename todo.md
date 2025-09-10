@@ -1,5 +1,7 @@
 # Todo
 
+- [ ] calculate bounds on vfx so we can hide them and select them easier
+- [ ] Draw vfx bounds
 - [ ] Why isnt it closing? (thread lock)
 - [ ] m to merge vertices (broken)
 - [ ] x to dissovlve vertices, faces, edges

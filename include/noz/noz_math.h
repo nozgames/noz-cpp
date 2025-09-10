@@ -87,6 +87,7 @@ struct Mat3
     operator Mat4() const;
     Vec2 operator*(const Vec2& v) const;
     Vec3 operator*(const Vec3& v) const;
+    Mat3 operator*(const Mat3& m) const;
 };
 
 struct Vec2
