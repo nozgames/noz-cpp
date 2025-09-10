@@ -28,6 +28,7 @@ void ShutdownVfx();
 void ShutdownTime();
 void ShutdownAllocator();
 void ShutdownAudio();
+extern void ResetInputState(InputSet* input_set);
 
 // @traits
 static ApplicationTraits g_default_traits = 
@@ -309,6 +310,7 @@ bool UpdateApplication()
 
         if (had_focus != has_focus)
         {
+            ResetInputState(GetInputSet());
             FocusChangedEvent event = { has_focus };
             Send(EVENT_FOCUS_CHANGED, &event);
         }

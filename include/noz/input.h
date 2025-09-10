@@ -31,6 +31,9 @@ extern void SetTextInput(const TextInput& text_input);
 // @InputSet
 extern InputSet* CreateInputSet(Allocator* allocator);
 extern bool IsButtonDown(InputSet* map, InputCode code);
+inline bool IsShiftDown(InputSet* map) { return IsButtonDown(map, KEY_LEFT_SHIFT) || IsButtonDown(map, KEY_RIGHT_SHIFT); }
+inline bool IsAltDown(InputSet* map) { return IsButtonDown(map, KEY_LEFT_ALT) || IsButtonDown(map, KEY_RIGHT_ALT); }
+inline bool IsCtrlDown(InputSet* map) { return IsButtonDown(map, KEY_LEFT_CTRL) || IsButtonDown(map, KEY_RIGHT_CTRL); }
 extern bool WasButtonPressed(InputSet* map, InputCode code);
 extern bool WasButtonReleased(InputSet* map, InputCode code);
 extern void EnableButton(InputSet* map, InputCode code);

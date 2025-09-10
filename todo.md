@@ -1,17 +1,13 @@
 # Todo
 
-- [ ] Left click to finish tool in mesh editor should not deselect
+- [ ] Why isnt it closing? (thread lock)
 - [ ] need way to create new points not on mesh (v, find closest edge,
-- [ ] Selecting a vertex should select the closest vertex, not the first one it finds
-- [ ] only select points, edges, faces on mouse up if there was no box select
-- [ ] box select is too easy to trigger
 - [ ] m to merge vertices (broken)
 - [ ] x to dissovlve vertices, faces, edges
 - [ ] q to rotate edge
 - [ ] highlight triangle when selected
 - [ ] highlight edge when selected
 - [ ] Limit height to -1 to 1
-- [ ] Why isnt it closing?
 
 - [ ] Use TextInput for typing after move or scale command
 - [ ] Pressing g or r should stop the previous g or r and start a new one
@@ -106,3 +102,8 @@
 - [X] saving a mesh after initially creating it does not work
 - [x] panning is resetting
 - [x] panning does not work in mesh editor
+- [x] Shift and ctrl in box select for mesh
+- [x] box select is too easy to trigger
+- [X] only select points, edges, faces on mouse up if there was no box select
+- [X] Left click to finish tool in mesh editor should not deselect
+- [x] Selecting a vertex should select the closest vertex, not the first one it finds
