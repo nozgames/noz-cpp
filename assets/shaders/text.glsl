@@ -10,14 +10,6 @@ layout(set = 1, binding = 0, row_major) uniform ObjectBuffer
     mat3 transform;
 } object;
 
-layout(set = 2, binding = 0, row_major) uniform LightBuffer
-{
-    vec3 direction;
-    float padding;
-    vec4 diffuse_color;
-    vec4 shadow_color;
-} light;
-
 layout(location = 0) in vec2 v_position;
 layout(location = 1) in vec2 v_uv0;
 layout(location = 0) out vec2 f_uv0;
@@ -36,10 +28,18 @@ void main()
 
 //@ FRAGMENT
 
-layout(set = 3, binding = 0) uniform ColorBuffer
+layout(set = 2, binding = 0) uniform ColorBuffer
 {
     vec4 color;
 } colorData;
+
+layout(set = 3, binding = 0, row_major) uniform LightBuffer
+{
+    vec3 direction;
+    float padding;
+    vec4 diffuse_color;
+    vec4 shadow_color;
+} light;
 
 layout(set = 4, binding = 0) uniform sampler2D mainTexture;
 

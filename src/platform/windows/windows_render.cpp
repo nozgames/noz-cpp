@@ -9,8 +9,8 @@ enum UniformBufferType
 {
     UNIFORM_BUFFER_CAMERA,
     UNIFORM_BUFFER_TRANSFORM,
-    UNIFORM_BUFFER_LIGHT,
     UNIFORM_BUFFER_COLOR,
+    UNIFORM_BUFFER_LIGHT,
     UNIFORM_BUFFER_COUNT
 };
 
@@ -21,7 +21,7 @@ constexpr int MAX_UNIFORM_BUFFERS = 4096;
 constexpr u32 UNIFORM_BUFFER_SIZE = sizeof(Mat4);
 constexpr u32 DYNAMIC_UNIFORM_BUFFER_SIZE = UNIFORM_BUFFER_SIZE * MAX_UNIFORM_BUFFERS;
 
-const char* UNIFORM_BUFFER_NAMES[] = {"CameraBuffer", "TransformBuffer", "LightBuffer", "ColorBuffer"};
+const char* UNIFORM_BUFFER_NAMES[] = {"CameraBuffer", "TransformBuffer", "ColorBuffer", "LightBuffer"};
 static_assert(sizeof(UNIFORM_BUFFER_NAMES) / sizeof(const char*) == UNIFORM_BUFFER_COUNT);
 
 static VkFilter ToVK(TextureFilter filter)
@@ -270,8 +270,8 @@ static void CreateDescriptorSetLayout()
     if (vkCreateDescriptorSetLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.uniform_buffers[UNIFORM_BUFFER_TRANSFORM].descriptor_set_layout) != VK_SUCCESS)
         Exit("Failed to create transform descriptor set layout");
 
-    // Transform buffer layout (vertex stage)
-    uniform_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    // Light buffer layout (fragment stage)
+    uniform_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     if (vkCreateDescriptorSetLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.uniform_buffers[UNIFORM_BUFFER_LIGHT].descriptor_set_layout) != VK_SUCCESS)
         Exit("Failed to create light descriptor set layout");
 
@@ -912,8 +912,8 @@ static void CreatePipelineLayout()
     VkDescriptorSetLayout layouts[] = {
         g_vulkan.uniform_buffers[UNIFORM_BUFFER_CAMERA].descriptor_set_layout,      // Set 0: Camera
         g_vulkan.uniform_buffers[UNIFORM_BUFFER_TRANSFORM].descriptor_set_layout,   // Set 1: Transform
-        g_vulkan.uniform_buffers[UNIFORM_BUFFER_LIGHT].descriptor_set_layout,       // Set 2: Light
         g_vulkan.uniform_buffers[UNIFORM_BUFFER_COLOR].descriptor_set_layout,       // Set 3: Color
+        g_vulkan.uniform_buffers[UNIFORM_BUFFER_LIGHT].descriptor_set_layout,       // Set 2: Light
         g_vulkan.texture_descriptor_set_layout                                      // Set 4: Texture
     };
 
