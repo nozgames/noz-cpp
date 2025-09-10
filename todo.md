@@ -1,7 +1,6 @@
 # Todo
 
-- [ ] Why isnt it closing?
-- [ ] saving a mesh after initially creating it does not work
+- [ ] Left click to finish tool in mesh editor should not deselect
 - [ ] need way to create new points not on mesh (v, find closest edge,
 - [ ] Selecting a vertex should select the closest vertex, not the first one it finds
 - [ ] only select points, edges, faces on mouse up if there was no box select
@@ -12,7 +11,9 @@
 - [ ] highlight triangle when selected
 - [ ] highlight edge when selected
 - [ ] Limit height to -1 to 1
+- [ ] Why isnt it closing?
 
+- [ ] Use TextInput for typing after move or scale command
 - [ ] Pressing g or r should stop the previous g or r and start a new one
 - [ ] Shortcut system
 - [ ] calculate normals for faces
@@ -102,3 +103,6 @@
 - [x] :n to make a new file  n <type> <name>
 - [X] r - rotate
 - [X] Border seems to be generating different sizes for different meshes
+- [X] saving a mesh after initially creating it does not work
+- [x] panning is resetting
+- [x] panning does not work in mesh editor

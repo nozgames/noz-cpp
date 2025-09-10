@@ -66,4 +66,5 @@ float GetTotalTime();
 float GetCurrentFPS();
 
 // @thread
-void thread_sleep_ms(int milliseconds);
+void ThreadYield();
+void ThreadSleep(int milliseconds);

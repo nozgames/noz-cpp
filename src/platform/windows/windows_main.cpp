@@ -12,6 +12,7 @@ constexpr int INPUT_BUFFER_SIZE = 1024;
 #include <shellscalingapi.h>
 #include <shlobj.h>
 #include <filesystem>
+#include <thread>
 
 extern void InitVulkan(const RendererTraits* traits, HWND hwnd);
 extern void ResizeVulkan(const Vec2Int& screen_size);
@@ -42,9 +43,14 @@ bool GetWindowFocus()
     return g_windows.has_focus;
 }
 
-void thread_sleep_ms(int milliseconds)
+void ThreadSleep(int milliseconds)
 {
-    Sleep(milliseconds);
+    std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
+
+void ThreadYield()
+{
+    std::this_thread::yield();
 }
 
 // Window procedure
