@@ -136,9 +136,9 @@ static void UpdateScreenSize()
 }
 
 #ifdef NOZ_EDITOR
-static void HandleHotload(EventId id, const void* data)
+static void HandleHotload(EventId event_id, const void* event_data)
 {
-    const HotloadEvent* hotload_event = (const HotloadEvent*)data;
+    const HotloadEvent* hotload_event = (const HotloadEvent*)event_data;
     const char* asset_name = hotload_event->asset_name;
     auto name = GetName(asset_name);
     if (g_app.traits.hotload_asset)

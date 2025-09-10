@@ -94,12 +94,8 @@ const Name** ReadNameTable(const AssetHeader& header, Stream* stream)
     return name_table;
 }
 
-static Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader)
+Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader, Stream* stream)
 {
-    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, asset_name, signature);
-    if (!stream)
-        return nullptr;
-
     AssetHeader header = {};
     if (!ReadAssetHeader(stream, &header) || !ValidateAssetHeader(&header, signature))
     {
@@ -112,6 +108,18 @@ static Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, As
     Asset* asset = loader(allocator, stream, &header, asset_name, name_table);
 
     Free(name_table);
+
+    return asset;
+}
+
+static Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader)
+{
+    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, asset_name, signature);
+    if (!stream)
+        return nullptr;
+
+    Asset* asset = LoadAssetInternal(allocator, asset_name, signature, loader, stream);
+
     Free(stream);
 
     return asset;
