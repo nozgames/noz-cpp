@@ -73,7 +73,6 @@ struct VfxEmitterDef
     VfxInt   burst;
     VfxFloat duration;
     VfxFloat angle;
-    VfxFloat radius;
     VfxVec2  spawn;
     VfxParticleDef particle_def;
     Vfx* vfx;
@@ -84,6 +83,7 @@ struct VfxImpl : Vfx
     VfxFloat duration;
     VfxEmitterDef* emitters;
     u32 emitter_count;
+    Bounds2 bounds;
     bool loop;
 };
 

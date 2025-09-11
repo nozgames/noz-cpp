@@ -1,8 +1,23 @@
 # Todo
 
+- [ ] Undo for color change
+- [ ] Undo for height change
+- [ ] Undo for adding vertex
+- [ ] Hard to see vertices in edit mode because of border color
+- [ ] Selecting a mesh asset should account for border in selection
+- [ ] Alt-drag on asset to create instance  (draw origin in blue and outline a lighter grey)
+- [ ] Calculate the bounds of skeleton
+- [ ] skeleton editor bone rotate tool
+- [ ] skeleton editor bone move tool
+- [ ] skeleton editor bind mesh
+- [ ] Incrase border size
+- [ ] Set border color
+- [ ] Right click to pan instead of space
+- [ ] Middle mouse to set light position
+- [ ] Sort order ([ ])
+- [ ] System cursors (hand for pan, size for scale)
 - [ ] calculate bounds on vfx so we can hide them and select them easier
-- [ ] Draw vfx bounds
-- [ ] Why isnt it closing? (thread lock)
+- [ ] Why isnt it closing? (thread lock) (job system)
 - [ ] m to merge vertices (broken)
 - [ ] x to dissovlve vertices, faces, edges
 - [ ] highlight triangle when selected
@@ -11,19 +26,15 @@
 - [ ] Save the light position
 - [ ] Use TextInput for typing after move or scale command
 - [ ] Pressing g or r should stop the previous g or r and start a new one
-- [ ] Shortcut system
 - [ ] calculate normals for faces
 - [ ] Save window positino as well as size
 - [ ] bug with saving window size, sometimes wrong size
-- [ ] Right click to change light position
 - [ ] Button to disable color and show grey scale
-- [ ] light options
 - [ ] button to set how hard an edge is, soft on a quad will average normals 
 - [ ] Box select being pushed it making the color go away, is that ok?
 - [ ] When you add a vertex interpolate the height from the neighbors
 - [ ] highlight colors of selected triangles in the triangle ui
 - [ ] add face if 3 verts are selected and no triangle there
-- [ ] add vert to center of triangle
 - [ ] single click to select asset, ctrl to toggle
 - [ ] Change UI, vertex size, edge size, etc to not scale with the window size
 - [ ] combined vertex buffer for rendering so we can stream data to it like triangles?  
@@ -113,4 +124,11 @@
 - [X] r to rotate edge
 - [X] Limit height to -1 to 1
 - [x] hot load of shaders
-
+- [X] add vert to center of triangle
+- [X] Right click to change light position
+- [X] Shortcut system
+- [X] Draw vfx bounds (calc vfx bounds)
+- [X] Cant select vertex in mesh edit mode?
+- [X] Frame when in mesh edit mode not working
+- [X] Add vertex to center of quad messed up
+- [X] Bounds renderer

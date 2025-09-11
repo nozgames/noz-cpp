@@ -37,6 +37,7 @@ set(SOURCE_FILES
     src/math/mat4.cpp
     src/math/vec2.cpp
     src/math/vec3.cpp
+    src/math/angle.cpp
     src/name.cpp
     src/physics/physics.cpp
     src/physics/rigid_body.cpp

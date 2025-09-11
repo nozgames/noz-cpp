@@ -6,6 +6,7 @@
 
 static void LoadVfxInternal(VfxImpl* impl, Allocator* allocator, Stream* stream)
 {
+    impl->bounds = ReadStruct<Bounds2>(stream);
     impl->duration = ReadStruct<VfxFloat>(stream);
     impl->loop = ReadBool(stream);
     impl->emitter_count = ReadU32(stream);
@@ -18,7 +19,6 @@ static void LoadVfxInternal(VfxImpl* impl, Allocator* allocator, Stream* stream)
         emitter_def->burst = ReadStruct<VfxInt>(stream);
         emitter_def->duration = ReadStruct<VfxFloat>(stream);
         emitter_def->angle = ReadStruct<VfxFloat>(stream);
-        emitter_def->radius = ReadStruct<VfxFloat>(stream);
         emitter_def->spawn = ReadStruct<VfxVec2>(stream);
 
         VfxParticleDef* particle_def = &emitter_def->particle_def;
@@ -36,7 +36,11 @@ static void LoadVfxInternal(VfxImpl* impl, Allocator* allocator, Stream* stream)
 
         emitter_def->vfx = impl;
     }
+}
 
+Bounds2 GetBounds(Vfx* vfx)
+{
+    return static_cast<VfxImpl*>(vfx)->bounds;
 }
 
 Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)

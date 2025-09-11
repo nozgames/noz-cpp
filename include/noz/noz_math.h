@@ -99,6 +99,7 @@ struct Vec2
     Vec2 operator-(const Vec2& v) const { return Vec2{ x - v.x, y - v.y }; }
     Vec2& operator+=(const Vec2& v) { x += v.x; y += v.y; return *this; }
     Vec2 operator*(f32 scalar) const { return Vec2{ x * scalar, y * scalar }; }
+    Vec2 operator/(f32 scalar) const { return Vec2{ x / scalar, y / scalar }; }
     Vec2 operator*=(f32 scalar) const { return Vec2{ x * scalar, y * scalar }; }
     Vec2 operator-() const { return { -x, -y }; }
     bool operator==(const Vec2& o) const { return x == o.x && y == o.y; }
@@ -210,6 +211,9 @@ constexpr Vec2Int VEC2INT_ONE = { 1,1 };
 
 constexpr f32 F32_MAX = 3.402823466e+38F;
 constexpr f32 F32_MIN = -3.402823466e+38F;
+constexpr f32 F32_EPSILON = 1.192092896e-07F;
+
+constexpr Bounds2 BOUNDS2_ZERO = { VEC2_ZERO, VEC2_ZERO };
 
 // @min
 inline i32 Min(i32 v1, i32 v2) { return v1 < v2 ? v1 : v2; }
@@ -242,6 +246,7 @@ extern Bounds2 Union(const Bounds2& a, const Bounds2& b);
 inline Bounds2 Union(const Bounds2& a, const Vec2& b) { return Bounds2{ Min(a.min, b), Max(a.max, b) }; }
 inline Vec2 GetCenter(const Bounds2& b) { return Vec2{ (b.min.x + b.max.x) * 0.5f, (b.min.y + b.max.y) * 0.5f }; }
 inline Vec2 GetSize(const Bounds2& b) { return Vec2{ b.max.x - b.min.x, b.max.y - b.min.y }; }
+inline Bounds2 Expand(const Bounds2& b, float size) { return Bounds2{ b.min - Vec2{ size, size }, b.max + Vec2{ size, size } }; }
 
 // @mat4
 extern Mat4 TRS(const Vec3& translation, const Vec4& rotation, const Vec3& scale);
@@ -262,6 +267,7 @@ extern Vec2 Reflect(const Vec2& v, const Vec2& normal);
 extern Vec2 Normalize(const Vec2& v);
 extern Vec2 Rotate(const Vec2& v, f32 degrees);
 inline Vec2 Cross(const Vec2& a, const Vec2& b) { return Vec2{ -a.y, a.x }; }
+inline Vec2 Perpendicular(const Vec2& v) { return Vec2{ -v.y, v.x }; }
 
 // @vec2d
 extern f64 Length(const Vec2Double& v);
@@ -275,6 +281,9 @@ inline Vec2 ToVec2(const Vec3& v) { return { (f32)v.x, (f32)v.y }; }
 extern f32 Length(const Vec3& v);
 extern Vec3 Normalize(const Vec3& v);
 extern Vec3 Cross(const Vec3& a, const Vec3& b);
+
+// @angle
+float SignedAngleDelta(const Vec2& a, const Vec2&b);
 
 inline f32 Dot(const Vec2& a, const Vec2& b) { return a.x * b.x + a.y * b.y; }
 inline f32 Dot(const Vec3& a, const Vec3& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
