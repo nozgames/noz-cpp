@@ -35,6 +35,7 @@ namespace platform
     bool UpdateApplication();
     Vec2Int GetScreenSize();
     void ShowCursor(bool show);
+    void SetCursor(SystemCursor cursor);
     bool HasFocus();
     bool IsResizing();
 

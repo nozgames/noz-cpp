@@ -33,6 +33,11 @@ struct WindowsApp
     void (*on_close) ();
     char input_buffer[INPUT_BUFFER_SIZE];
     int input_buffer_start;
+    HCURSOR cursor_default;
+    HCURSOR cursor_wait;
+    HCURSOR cursor_cross;
+    HCURSOR cursor_move;
+    SystemCursor cursor;
 };
 
 static WindowsApp g_windows = {};
@@ -64,24 +69,24 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hwnd, &ps);
-            EndPaint(hwnd, &ps);
-        }
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+        EndPaint(hwnd, &ps);
+    }
         return 0;
     case WM_SIZE:
+    {
+        // Update global screen size when window is resized
+        RECT rect;
+        GetClientRect(hwnd, &rect);
+        Vec2Int new_size = { rect.right - rect.left, rect.bottom - rect.top };
+        if (g_windows.screen_size != new_size)
         {
-            // Update global screen size when window is resized
-            RECT rect;
-            GetClientRect(hwnd, &rect);
-            Vec2Int new_size = { rect.right - rect.left, rect.bottom - rect.top };
-            if (g_windows.screen_size != new_size)
-            {
-                g_windows.screen_size = new_size;
-                ResizeVulkan(new_size);
-            }
+            g_windows.screen_size = new_size;
+            ResizeVulkan(new_size);
         }
+    }
         return 0;
 
     case WM_ENTERSIZEMOVE:
@@ -93,24 +98,32 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_MOUSEWHEEL:
-        {
-            // Get wheel delta (positive = forward/up, negative = backward/down)
-            int wheel_delta = GET_WHEEL_DELTA_WPARAM(wParam);
-            // Normalize to a reasonable scroll value (Windows default is 120 per notch)
-            g_windows.mouse_scroll.y += static_cast<f32>(wheel_delta) / 120.0f;
-        }
+    {
+        // Get wheel delta (positive = forward/up, negative = backward/down)
+        int wheel_delta = GET_WHEEL_DELTA_WPARAM(wParam);
+        // Normalize to a reasonable scroll value (Windows default is 120 per notch)
+        g_windows.mouse_scroll.y += static_cast<f32>(wheel_delta) / 120.0f;
+    }
         break;
     case WM_MOUSEMOVE:
-        {
-            // Cache mouse position for smooth tracking
-            int x = LOWORD(lParam);
-            int y = HIWORD(lParam);
-            g_windows.mouse_position = {
-                static_cast<f32>(x),
-                static_cast<f32>(y)
-            };
-        }
+    {
+        // Cache mouse position for smooth tracking
+        int x = LOWORD(lParam);
+        int y = HIWORD(lParam);
+        g_windows.mouse_position = {
+            static_cast<f32>(x),
+            static_cast<f32>(y)
+        };
         return 0;
+    }
+
+    case WM_SETCURSOR:
+        if (LOWORD(lParam) == HTCLIENT)
+        {
+            SetCursor(g_windows.cursor);
+            return 0;
+        }
+        break;
 
     case WM_CHAR:
         HandleInputCharacter((char)wParam);
@@ -127,6 +140,11 @@ void platform::InitApplication(const ApplicationTraits* traits)
 {
     g_windows = {};
     g_windows.traits = traits;
+    g_windows.cursor = SYSTEM_CURSOR_DEFAULT;
+    g_windows.cursor_default = LoadCursor(nullptr, IDC_ARROW);
+    g_windows.cursor_wait = LoadCursor(nullptr, IDC_WAIT);
+    g_windows.cursor_cross = LoadCursor(nullptr, IDC_CROSS);
+    g_windows.cursor_move = LoadCursor(nullptr, IDC_SIZEALL);
 }
 
 void platform::InitWindow(void (*on_close)())
@@ -232,7 +250,32 @@ Vec2Int platform::GetScreenSize()
 {
     return g_windows.screen_size;
 }
-    
+
+void platform::SetCursor(SystemCursor cursor)
+{
+    g_windows.cursor = cursor;
+
+    switch (cursor)
+    {
+        default:
+        case SYSTEM_CURSOR_DEFAULT:
+            SetCursor(g_windows.cursor_default);
+            break;
+
+        case SYSTEM_CURSOR_MOVE:
+            SetCursor(g_windows.cursor_move);
+            break;
+
+        case SYSTEM_CURSOR_SELECT:
+            SetCursor(g_windows.cursor_cross);
+            break;
+
+        case SYSTEM_CURSOR_WAIT:
+            SetCursor(g_windows.cursor_wait);
+            break;
+    }
+}
+
 void platform::ShowCursor(bool show)
 {
     ::ShowCursor(show ? TRUE : FALSE);

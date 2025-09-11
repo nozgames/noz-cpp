@@ -354,6 +354,11 @@ void ShowCursor(bool cursor)
     platform::ShowCursor(cursor);
 }
 
+void SetCursor(SystemCursor cursor)
+{
+    platform::SetCursor(cursor);
+}
+
 const ApplicationTraits* GetApplicationTraits()
 {
     return &g_app.traits;

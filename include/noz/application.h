@@ -11,6 +11,14 @@ namespace platform
     struct Window;
 }
 
+enum SystemCursor
+{
+    SYSTEM_CURSOR_DEFAULT,
+    SYSTEM_CURSOR_MOVE,
+    SYSTEM_CURSOR_SELECT,
+    SYSTEM_CURSOR_WAIT,
+};
+
 struct ApplicationTraits
 {
     const char* name;
@@ -44,6 +52,8 @@ extern void FocusWindow();
 extern bool UpdateApplication();
 extern void BeginRenderFrame(Color clear_color);
 extern void EndRenderFrame();
+extern void ShowCursor(bool show);
+extern void SetCursor(SystemCursor cursor);
 
 const char* GetBinaryDirectory();
 void Exit(const char* format, ...);
@@ -52,8 +62,6 @@ void ExitOutOfMemory(const char* message=nullptr);
 Vec2Int GetScreenSize();
 Vec2 GetScreenCenter();
 float GetScreenAspectRatio();
-
-void ShowCursor(bool show);
 
 platform::Window* GetWindow();
 const ApplicationTraits* GetApplicationTraits();
