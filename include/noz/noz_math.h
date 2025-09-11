@@ -267,7 +267,7 @@ extern Vec2 Reflect(const Vec2& v, const Vec2& normal);
 extern Vec2 Normalize(const Vec2& v);
 extern Vec2 Rotate(const Vec2& v, f32 degrees);
 inline Vec2 Cross(const Vec2& a, const Vec2& b) { return Vec2{ -a.y, a.x }; }
-inline Vec2 Perpendicular(const Vec2& v) { return Vec2{ -v.y, v.x }; }
+inline Vec2 Perpendicular(const Vec2& v) { return Vec2{ v.y, -v.x }; }
 
 // @vec2d
 extern f64 Length(const Vec2Double& v);

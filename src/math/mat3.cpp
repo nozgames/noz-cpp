@@ -23,8 +23,8 @@ Mat3 TRS(const Vec2& translation, const Vec2& direction, const Vec2& scale)
     Vec2 right = Vec2{dir.y, -dir.x};
 
     return Mat3{
-        scale.x * dir.x,   scale.x * dir.y,   0,
-        scale.y * right.x,     scale.y * right.y,     0,
+        scale.x * right.x,   scale.x * right.y,   0,
+        scale.y * dir.x,     scale.y * dir.y,     0,
         translation.x,       translation.y,       1
     };
 }
