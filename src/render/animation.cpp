@@ -4,12 +4,14 @@
 
 struct AnimationBone
 {
-
+    u8 index;
 };
 
 struct AnimationImpl : Animation
 {
     int bone_count;
+    int frame_count;
+    AnimationBone* bones;
     Mat3* frames;
 };
 
@@ -17,23 +19,16 @@ Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, 
 {
     AnimationImpl* impl = (AnimationImpl*)Alloc(allocator, sizeof(AnimationImpl));
 
-    // impl->bone_count = ReadU8(stream);
-    // impl->bones = (Bone*)Alloc(allocator, sizeof(Bone) * impl->bone_count);
+    u8 bone_count = ReadU8(stream);
+    u8 frame_count = ReadU8(stream);
 
-    // for (uint32_t i = 0; i < impl->bone_count; ++i)
-    // {
-    //     Bone& bone = impl->bones[i];
-    //     bone.name = ReadName(stream);
-    //     bone.index = ReadI8(stream);
-    //     bone.parentIndex = ReadI8(stream);;
-    //     bone.local_to_world= ReadStruct<Mat3>(stream);
-    //     bone.world_to_local = ReadStruct<Mat3>(stream);
-    //     bone.transform.position = ReadVec2(stream);
-    //     bone.transform.rotation = ReadFloat(stream);
-    //     bone.transform.scale = ReadVec2(stream);;
-    //     bone.length = ReadFloat(stream);
-    //     bone.direction = ReadVec2(stream);
-    // }
+    impl->bone_count = bone_count;
+    impl->frame_count = frame_count;
+    impl->bones = (AnimationBone*)Alloc(allocator, sizeof(AnimationBone) * bone_count);
+    impl->frames = (Mat3*)Alloc(allocator, sizeof(Mat3) * bone_count * frame_count);
+
+    ReadBytes(stream, &impl->bones[0], sizeof(AnimationBone) * bone_count);
+    ReadBytes(stream, &impl->frames[0], sizeof(Mat3) * bone_count * frame_count);
 
     return impl;
 }

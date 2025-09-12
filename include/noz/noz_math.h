@@ -201,6 +201,7 @@ constexpr Vec4 VEC4_ONE = { 1,1,1,1 };
 
 constexpr Vec2 VEC2_ZERO = { 0,0 };
 constexpr Vec2 VEC2_ONE = { 1, 1 };
+constexpr Vec2 VEC2_NEGATIVE_ONE = { -1, -1 };
 constexpr Vec2 VEC2_UP = { 0, -1 };
 constexpr Vec2 VEC2_DOWN = { 0, 1 };
 constexpr Vec2 VEC2_RIGHT = { 1, 0 };

@@ -1,14 +1,17 @@
 # Todo
 
-- [ ] Load editor assets in job
+- [ ] Sort order ([ ])
+- [ ] New mesh has no color or edges
+- [ ] Animation / Skeletons
+- [ ] Animator
 - [ ] animation asset
 - [ ] animation editor
+- 
+- [ ] Load editor assets in job
 - [ ] Alt to show names ?
 - [ ] Need way to rename bone (:r bone name
 - [ ] Skeleton bounds should include the meshes
 - [ ] Rotate tool in skeleton editor not working correctly (should rotate the points around center
-- [ ] create bone tool, e ?
-- [ ] New mesh has no color or edges
 - [ ] Clean up mesh dirty flag, just use mesh?
 - [ ] Undo for color change
 - [ ] Undo for height change
@@ -16,14 +19,11 @@
 - [ ] Hard to see vertices in edit mode because of border color
 - [ ] Selecting a mesh asset should account for border in selection
 - [ ] Alt-drag on asset to create instance  (draw origin in blue and outline a lighter grey)
-- [ ] Calculate the bounds of skeleton
 - [ ] skeleton editor bone rotate tool
 - [ ] skeleton editor bone move tool
 - [ ] skeleton editor bind mesh
 - [ ] Incrase border size
 - [ ] Set border color
-- [ ] Sort order ([ ])
-- [ ] calculate bounds on vfx so we can hide them and select them easier
 - [ ] Why isnt it closing? (thread lock) (job system)
 - [ ] m to merge vertices (broken)
 - [ ] x to dissovlve vertices, faces, edges
@@ -49,14 +49,14 @@
 - [ ] e for extrude
 - [ ] x to limit move
 - [ ] y to limit move
+- [ ] Scene asset 
+- [ ] Scene editor
 
 - [ ] Auto complete on commands
 - [ ] Job system
 - [ ] Trace a font out with meshes?
 - [ ] shader include dependency handling.
 - [ ] configurable outline color
-- [ ] Animation / Skeletons
-- [ ] Animator
 - [ ] Trail vfx for individual particles
 - [ ] vfx initial_rotation and rotation over time
 - [ ] style sheet inherit not working
@@ -142,3 +142,6 @@
 - [X] Right click to pan instead of space
 - [X] Middle mouse to set light position
 - [X] System cursors (hand for pan, size for scale)
+- [X] create bone tool, e ?
+- [X] Calculate the bounds of skeleton
+- [X] calculate bounds on vfx so we can hide them and select them easier
