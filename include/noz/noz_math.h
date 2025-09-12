@@ -291,6 +291,11 @@ extern Vec3 Cross(const Vec3& a, const Vec3& b);
 // @angle
 float SignedAngleDelta(const Vec2& a, const Vec2&b);
 
+// @float
+inline f32 Floor(f32 v2) { return floorf(v2); }
+inline f32 Ceil(f32 v2) { return ceilf(v2); }
+
+
 inline f32 Dot(const Vec2& a, const Vec2& b) { return a.x * b.x + a.y * b.y; }
 inline f32 Dot(const Vec3& a, const Vec3& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 inline f64 Dot(const Vec2Double& a, const Vec2Double& b) { return a.x * b.x + a.y * b.y; }

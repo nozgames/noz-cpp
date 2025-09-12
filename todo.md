@@ -1,21 +1,24 @@
 # Todo
 
-- [ ] Save animations in a better format
+- [ ] Play test animation in game
+- [ ] Add skeleton bones as names automatically
+
+- [ ] Saved animation and its loading for Q / R but not play
+- [ ] when moving bones in animation we have to recalculate the local position from the world after delta change
 - [ ] button insert a frame (i)
 - [ ] button to add a frame (o)
 - [ ] button delete a frame
 - [ ] button duplicate a frame
 - [ ] button copy a frame
 - [ ] button paste a frame
+- [ ] Onion skinning (alt-o) toggle ?
 - 
 - [ ] Normalize selection colors to blender colors
 - [ ] Animate bone color to blue like blender
 - [ ] Sort order ([ ])
 - [ ] New mesh has no color or edges
-- [ ] Animation / Skeletons
-- [ ] Animator
-- [ ] animation asset
-- [ ] animation editor
+- [ ] Remove dirty flag from assets
+- [ ] Animation editor should use its own bone selected state not the skeletons
 - 
 - [ ] Load editor assets in job
 - [ ] Alt to show names ?
@@ -155,3 +158,10 @@
 - [X] create bone tool, e ?
 - [X] Calculate the bounds of skeleton
 - [X] calculate bounds on vfx so we can hide them and select them easier
+- [X] Save animations in a better format
+- [X] animation asset
+- [X] Play mode
+- [X] Changes to skinned meshes are not saving
+- [X] Animation / Skeletons
+- [X] Animator
+- [X] animation editor

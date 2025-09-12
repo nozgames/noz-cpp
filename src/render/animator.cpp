@@ -5,61 +5,40 @@
 
 static void EvalulateFrame(Animator& animator)
 {
-#if 0
-    auto impl = animation.impl();
-    assert(!impl->tracks.empty());
-    assert(!impl->data.empty());
-    assert(!bones.empty());
+    assert(animator.skeleton);
+    assert(animator.animation);
+    assert(GetBoneCount(animator.skeleton) == GetBoneCount(animator.animation));
 
-    auto frame_time = time * FRAME_RATE;
-    if (frame_time >= static_cast<float>(impl->frame_count))
-        frame_time = fmod(frame_time, static_cast<float>(impl->frame_count));
+    AnimationImpl* anim_impl = (AnimationImpl*)animator.animation;
+    SkeletonImpl* skel_impl = (SkeletonImpl*)animator.skeleton;
 
-    auto frame1 = static_cast<int>(frame_time);
-    auto frame2 = (frame1 + 1) % impl->frame_count;
-    auto t = frame_time - static_cast<float>(frame1);
-	    auto frame_stride = impl->frame_stride;
-	    auto data = impl->data.data();
+    f32 float_frame = animator.time * ANIMATION_FRAME_RATE;
+    assert(float_frame < anim_impl->frame_count);
+    i32 frame1 = static_cast<i32>(Floor(float_frame));
+    i32 frame2 = (frame1 + 1) % anim_impl->frame_count;
+    f32 t = float_frame - static_cast<f32>(frame1);
+    assert(t >= 0.0f && t < 1.0f);
+    BoneTransform* frames = anim_impl->frames;
 
-    for (const animation_track& track : impl->tracks)
+    for (int i=0; i<anim_impl->bone_count; i++)
     {
-        // Skip if bone index is invalid
-        if (track.bone < 0 || track.bone >= static_cast<int>(bones.size()))
-            continue;
+        auto& bt1 = frames[frame1 * anim_impl->frame_stride + i];
+        auto& bt2 = frames[frame2 * anim_impl->frame_stride + i];
 
-        auto& bone_transform = transforms[track.bone];
-        auto data_offset1 = static_cast<size_t>(frame1) * frame_stride + static_cast<size_t>(track.data_offset);
-        auto data_offset2 = static_cast<size_t>(frame2) * frame_stride + static_cast<size_t>(track.data_offset);
+        Vec2 position = Mix(bt1.position, bt2.position, t) + skel_impl->bones[i].position;
+        float rotation = Mix(bt1.rotation, bt2.rotation, t);
+        float scale = Mix(bt1.scale, bt2.scale, t);
 
-        // Apply the interpolated transform data based on track type
-        switch (track.type)
-        {
-        case animation_track_type::translation:
-        {
-            auto pos1 = (glm::vec3*)(data + data_offset1);
-            auto pos2 = (glm::vec3*)(data + data_offset2);
-            bone_transform.position = glm::mix(*pos1, *pos2, t);
-            break;
-        }
-
-        case animation_track_type::rotation:
-        {
-            auto rot1 = (glm::quat*)(data + data_offset1);
-            auto rot2 = (glm::quat*)(data + data_offset2);
-            bone_transform.rotation = glm::slerp(*rot1, *rot2, t);
-            break;
-        }
-
-        case animation_track_type::scale:
-        {
-            auto scale1 = (glm::vec3*)(data + data_offset1);
-            auto scale2 = (glm::vec3*)(data + data_offset2);
-            bone_transform.scale = glm::mix(*scale1, *scale2, t);
-            break;
-        }
-        }
+        animator.bones[i] = TRS(position, rotation, Vec2{scale, scale});
     }
-#endif
+
+    for (int i=1; i<anim_impl->bone_count; i++)
+    {
+        int parent_index = ((SkeletonImpl*)animator.skeleton)->bones[i].parent_index;
+        animator.bones[i] = animator.bones[parent_index] * animator.bones[i];
+    }
+
+    animator.last_frame = frame1;
 }
 
 void Init(Animator& animator, Skeleton* skeleton)
@@ -73,16 +52,52 @@ void Init(Animator& animator, Skeleton* skeleton)
         animator.bones[i] = MAT3_IDENTITY;
 }
 
-void Play(Animator& animator, Animation* animation, float speed)
+void Stop(Animator& animator)
+{
+    animator.animation = nullptr;
+}
+
+void Play(Animator& animator, Animation* animation, float speed, bool loop)
 {
     animator.animation = animation;
     animator.speed = speed;
     animator.time = 0.0f;
+    animator.loop = loop;
+    EvalulateFrame(animator);
 }
 
 void Update(Animator& animator, float time_scale)
 {
-    animator.time += GetFrameTime() * time_scale * animator.speed;
+    float duration = ((AnimationImpl*)animator.animation)->duration;
 
+    animator.time += GetFrameTime() * time_scale * animator.speed;
+    if (animator.loop)
+        animator.time = fmod(animator.time, duration + ANIMATION_FRAME_RATE_INV);
+    else
+        animator.time = Min(animator.time, duration);
+
+    EvalulateFrame(animator);
 }
 
+bool IsPlaying(Animator& animator)
+{
+    return animator.animation != nullptr;
+}
+
+int GetFrame(Animator& animator)
+{
+    return animator.last_frame;
+}
+
+float GetTime(Animator& animator)
+{
+    return animator.time;
+}
+
+float GetNormalizedTime(Animator& animator)
+{
+    if (!animator.animation)
+        return 0.0f;
+
+    return animator.time / ((AnimationImpl*)animator.animation)->duration;
+}

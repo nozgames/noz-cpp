@@ -186,7 +186,10 @@ extern const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index);
 
 // @animation
 constexpr int MAX_ANIMATION_FRAMES = 64;
+constexpr float ANIMATION_FRAME_RATE = 24.0f;
+constexpr float ANIMATION_FRAME_RATE_INV = 1.0f / ANIMATION_FRAME_RATE;
 
+extern int GetBoneCount(Animation* animation);
 
 // @animator
 struct BoneTransform
@@ -203,9 +206,15 @@ struct Animator
     float time;
     float speed;
     int last_frame;
+    bool loop;
     Mat3 bones[MAX_BONES];
 };
 
 extern void Init(Animator& animator, Skeleton* skeleton);
-extern void Play(Animator& animator, Animation* animation, float speed=1.0f);
+extern void Play(Animator& animator, Animation* animation, float speed=1.0f, bool loop=false);
+extern void Stop(Animator& animator);
 extern void Update(Animator& animator, float time_scale=1.0f);
+extern bool IsPlaying(Animator& animator);
+extern int GetFrame(Animator& animator);
+extern float GetTime(Animator& animator);
+extern float GetNormalizedTime(Animator& animator);

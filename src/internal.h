@@ -91,3 +91,37 @@ Vec2 MeasureText(const text_t& text, Font* font, float font_size);
 Mesh* GetMesh(TextMesh* tm);
 Material* GetMaterial(TextMesh* tm);
 Vec2 GetSize(TextMesh* tm);
+
+
+// @animation
+struct AnimationBone
+{
+    u8 index;
+};
+
+struct AnimationImpl : Animation
+{
+    int bone_count;
+    int frame_count;
+    int frame_stride;
+    float duration;
+    AnimationBone* bones;
+    BoneTransform* frames;
+};
+
+// @skeleton
+struct Bone
+{
+    const Name* name;
+    i32 index;
+    i32 parent_index;
+    Vec2 position;
+    Mat3 world_to_local;
+    Mat3 local_to_world;
+};
+
+struct SkeletonImpl : Skeleton
+{
+    int bone_count;
+    Bone* bones;
+};

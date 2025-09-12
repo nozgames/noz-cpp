@@ -2,22 +2,6 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct Bone
-{
-    const Name* name;
-    i32 index;
-    i32 parent_index;
-    Vec2 position;
-    Mat3 world_to_local;
-    Mat3 local_to_world;
-};
-
-struct SkeletonImpl : Skeleton
-{
-    int bone_count;
-    Bone* bones;
-};
-
 int GetBoneCount(Skeleton* skeleton)
 {
     return ((SkeletonImpl*)skeleton)->bone_count;
@@ -68,6 +52,7 @@ Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, c
         bone.parent_index = ReadI8(stream);;
         bone.local_to_world= ReadStruct<Mat3>(stream);
         bone.world_to_local = ReadStruct<Mat3>(stream);
+        bone.position = ReadStruct<Vec2>(stream);
     }
 
     return impl;

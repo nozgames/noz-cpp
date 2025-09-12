@@ -2,18 +2,10 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct AnimationBone
+int GetBoneCount(Animation* animation)
 {
-    u8 index;
-};
-
-struct AnimationImpl : Animation
-{
-    int bone_count;
-    int frame_count;
-    AnimationBone* bones;
-    BoneTransform* frames;
-};
+    return ((AnimationImpl*)animation)->bone_count;
+}
 
 Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
@@ -26,6 +18,8 @@ Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, 
     impl->frame_count = frame_count;
     impl->bones = (AnimationBone*)Alloc(allocator, sizeof(AnimationBone) * bone_count);
     impl->frames = (BoneTransform*)Alloc(allocator, sizeof(BoneTransform) * bone_count * frame_count);
+    impl->frame_stride = bone_count;
+    impl->duration = (frame_count - 1) * ANIMATION_FRAME_RATE_INV;
 
     ReadBytes(stream, &impl->bones[0], sizeof(AnimationBone) * bone_count);
     ReadBytes(stream, &impl->frames[0], sizeof(BoneTransform) * bone_count * frame_count);
