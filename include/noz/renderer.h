@@ -179,10 +179,33 @@ Bounds2 GetBounds(Camera* camera);
 // @skeleton
 constexpr int MAX_BONES = 64;
 
-int GetBoneIndex(Skeleton* skeleton, const Name* name);
-const Mat3& GetLocalToWorld(Skeleton* skeleton, int bone_index);
-const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index);
+extern int GetBoneCount(Skeleton* skeleton);
+extern int GetBoneIndex(Skeleton* skeleton, const Name* name);
+extern const Mat3& GetLocalToWorld(Skeleton* skeleton, int bone_index);
+extern const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index);
 
 // @animation
-
 constexpr int MAX_ANIMATION_FRAMES = 64;
+
+
+// @animator
+struct BoneTransform
+{
+    Vec2 position;
+    float scale;
+    float rotation;
+};
+
+struct Animator
+{
+    Skeleton* skeleton;
+    Animation* animation;
+    float time;
+    float speed;
+    int last_frame;
+    Mat3 bones[MAX_BONES];
+};
+
+extern void Init(Animator& animator, Skeleton* skeleton);
+extern void Play(Animator& animator, Animation* animation, float speed=1.0f);
+extern void Update(Animator& animator, float time_scale=1.0f);

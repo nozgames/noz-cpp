@@ -2,23 +2,13 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct BoneTransform
-{
-    Vec2 position;
-    Vec2 scale;
-    float rotation;
-};
-
 struct Bone
 {
     const Name* name;
     i32 index;
-    i32 parentIndex;
+    i32 parent_index;
     Mat3 world_to_local;
     Mat3 local_to_world;
-    BoneTransform transform;
-    f32 length;
-    Vec2 direction;
 };
 
 struct SkeletonImpl : Skeleton
@@ -26,6 +16,11 @@ struct SkeletonImpl : Skeleton
     int bone_count;
     Bone* bones;
 };
+
+int GetBoneCount(Skeleton* skeleton)
+{
+    return ((SkeletonImpl*)skeleton)->bone_count;
+}
 
 int GetBoneIndex(Skeleton* skeleton, const Name* name)
 {
@@ -68,15 +63,10 @@ Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, c
     {
         Bone& bone = impl->bones[i];
         bone.name = ReadName(stream);
-        bone.index = ReadI8(stream);
-        bone.parentIndex = ReadI8(stream);;
+        bone.index = i;
+        bone.parent_index = ReadI8(stream);;
         bone.local_to_world= ReadStruct<Mat3>(stream);
         bone.world_to_local = ReadStruct<Mat3>(stream);
-        bone.transform.position = ReadVec2(stream);
-        bone.transform.rotation = ReadFloat(stream);
-        bone.transform.scale = ReadVec2(stream);;
-        bone.length = ReadFloat(stream);
-        bone.direction = ReadVec2(stream);
     }
 
     return impl;

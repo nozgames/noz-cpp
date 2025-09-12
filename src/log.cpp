@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <iostream>
+#include "platform.h"
 
 static LogFunc g_log_callback = nullptr;
 
@@ -13,7 +14,9 @@ static void LogImpl(LogType type, const char* format, va_list args)
     char buffer[2048];
     vsnprintf(buffer, sizeof(buffer), format, args);
     buffer[sizeof(buffer) - 1] = '\0';
-    
+
+    platform::Log(type, buffer);
+
     if (g_log_callback) {
         g_log_callback(type, buffer);
     }

@@ -12,7 +12,7 @@ struct AnimationImpl : Animation
     int bone_count;
     int frame_count;
     AnimationBone* bones;
-    Mat3* frames;
+    BoneTransform* frames;
 };
 
 Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
@@ -25,10 +25,10 @@ Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, 
     impl->bone_count = bone_count;
     impl->frame_count = frame_count;
     impl->bones = (AnimationBone*)Alloc(allocator, sizeof(AnimationBone) * bone_count);
-    impl->frames = (Mat3*)Alloc(allocator, sizeof(Mat3) * bone_count * frame_count);
+    impl->frames = (BoneTransform*)Alloc(allocator, sizeof(BoneTransform) * bone_count * frame_count);
 
     ReadBytes(stream, &impl->bones[0], sizeof(AnimationBone) * bone_count);
-    ReadBytes(stream, &impl->frames[0], sizeof(Mat3) * bone_count * frame_count);
+    ReadBytes(stream, &impl->frames[0], sizeof(BoneTransform) * bone_count * frame_count);
 
     return impl;
 }

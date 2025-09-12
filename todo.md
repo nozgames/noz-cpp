@@ -1,5 +1,15 @@
 # Todo
 
+- [ ] Save animations in a better format
+- [ ] button insert a frame (i)
+- [ ] button to add a frame (o)
+- [ ] button delete a frame
+- [ ] button duplicate a frame
+- [ ] button copy a frame
+- [ ] button paste a frame
+- 
+- [ ] Normalize selection colors to blender colors
+- [ ] Animate bone color to blue like blender
 - [ ] Sort order ([ ])
 - [ ] New mesh has no color or edges
 - [ ] Animation / Skeletons

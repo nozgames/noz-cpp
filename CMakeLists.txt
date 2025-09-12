@@ -55,6 +55,7 @@ set(SOURCE_FILES
     src/render/renderer.cpp
     src/render/skeleton.cpp
     src/render/animation.cpp
+    src/render/animator.cpp
     src/stream.cpp
     src/time.cpp
     src/text.cpp

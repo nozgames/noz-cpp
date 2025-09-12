@@ -38,6 +38,7 @@ namespace platform
     void SetCursor(SystemCursor cursor);
     bool HasFocus();
     bool IsResizing();
+    void Log(LogType type, const char* message);
 
     // @render
     void BeginRenderFrame();
