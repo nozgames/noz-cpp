@@ -127,11 +127,20 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_CHAR:
         HandleInputCharacter((char)wParam);
-        break;
+        return 0;
 
     case WM_KEYDOWN:
         HandleInputKeyDown((char)wParam);
-        break;
+        return 0;
+
+    case WM_SYSCHAR:
+        return 0;
+
+    case WM_SYSKEYDOWN:
+        return 0;
+
+    case WM_KEYUP:
+        return 0;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
