@@ -1,5 +1,15 @@
 # Todo
 
+- [ ] Load editor assets in job
+- [ ] animation asset
+- [ ] animation editor
+- [ ] Alt to show names ?
+- [ ] Need way to rename bone (:r bone name
+- [ ] Skeleton bounds should include the meshes
+- [ ] Rotate tool in skeleton editor not working correctly (should rotate the points around center
+- [ ] create bone tool, e ?
+- [ ] New mesh has no color or edges
+- [ ] Clean up mesh dirty flag, just use mesh?
 - [ ] Undo for color change
 - [ ] Undo for height change
 - [ ] Undo for adding vertex
@@ -12,10 +22,7 @@
 - [ ] skeleton editor bind mesh
 - [ ] Incrase border size
 - [ ] Set border color
-- [ ] Right click to pan instead of space
-- [ ] Middle mouse to set light position
 - [ ] Sort order ([ ])
-- [ ] System cursors (hand for pan, size for scale)
 - [ ] calculate bounds on vfx so we can hide them and select them easier
 - [ ] Why isnt it closing? (thread lock) (job system)
 - [ ] m to merge vertices (broken)
@@ -132,3 +139,6 @@
 - [X] Frame when in mesh edit mode not working
 - [X] Add vertex to center of quad messed up
 - [X] Bounds renderer
+- [X] Right click to pan instead of space
+- [X] Middle mouse to set light position
+- [X] System cursors (hand for pan, size for scale)

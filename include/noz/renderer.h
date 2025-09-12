@@ -177,6 +177,12 @@ const Mat3& GetViewMatrix(Camera* camera);
 Bounds2 GetBounds(Camera* camera);
 
 // @skeleton
+constexpr int MAX_BONES = 64;
+
 int GetBoneIndex(Skeleton* skeleton, const Name* name);
 const Mat3& GetLocalToWorld(Skeleton* skeleton, int bone_index);
 const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index);
+
+// @animation
+
+constexpr int MAX_ANIMATION_FRAMES = 64;

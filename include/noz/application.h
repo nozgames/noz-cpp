@@ -76,3 +76,6 @@ float GetCurrentFPS();
 // @thread
 void ThreadYield();
 void ThreadSleep(int milliseconds);
+
+// @helper
+extern void ThrowError(const char* format, ...);

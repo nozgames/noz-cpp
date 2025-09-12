@@ -345,6 +345,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     if (!argv)
         return 1;
 
-    char* args[1] = { (char*)".exe" };
-    return main(1, args);
+    char **args = new char*[argc];
+    for (int i = 0; i < argc; i++)
+    {
+        // Get required buffer size
+        int size = WideCharToMultiByte(CP_UTF8, 0, argv[i], -1, nullptr, 0, nullptr, nullptr);
+        if (size > 0)
+        {
+            char* buffer = new char[size];
+            WideCharToMultiByte(CP_UTF8, 0, argv[i], -1, buffer, size, nullptr, nullptr);
+            args[i] = buffer;  // or _strdup(buffer) if you need separate ownership
+        }
+        else
+        {
+            args[i] = _strdup("");  // Handle conversion failure
+        }
+    }
+
+    int result = main(argc, args);
+
+    for (int i = 0; i < argc; i++)
+        free(args[i]);
+
+    delete[] args;
+
+    return result;
 }

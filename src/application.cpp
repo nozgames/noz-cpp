@@ -7,6 +7,8 @@
 #include "platform.h"
 #include "editor/editor_client.h"
 
+#include <cstdarg>
+
 static constexpr int FRAME_HISTORY_SIZE = 240;
 
 void LoadRendererAssets(Allocator* allocator);
@@ -372,4 +374,17 @@ float GetCurrentFPS()
 const char* GetBinaryDirectory()
 {
     return g_app.binary_dir.c_str();
+}
+
+void ThrowError(const char* fmt, ...)
+{
+    assert(fmt);
+
+    va_list args;
+    va_start(args, fmt);
+    char error_message[4096];
+    Format(error_message, sizeof(error_message), fmt, args);
+    va_end(args);
+
+    throw std::exception(error_message);
 }

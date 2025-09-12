@@ -213,6 +213,11 @@ constexpr f32 F32_MAX = 3.402823466e+38F;
 constexpr f32 F32_MIN = -3.402823466e+38F;
 constexpr f32 F32_EPSILON = 1.192092896e-07F;
 
+constexpr i32 I32_MAX = 2147483647;
+constexpr i32 I32_MIN = -2147483648;
+constexpr u32 U32_MAX = 0xFFFFFFFF;
+constexpr u32 U32_MIN = 0;
+
 constexpr Bounds2 BOUNDS2_ZERO = { VEC2_ZERO, VEC2_ZERO };
 
 // @min

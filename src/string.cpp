@@ -20,6 +20,21 @@ void Copy(char* dst, u32 dst_size, const char* src)
     dst[i] = 0;
 }
 
+void Copy(char* dst, u32 dst_size, const char* src, u32 length)
+{
+    assert(dst);
+    assert(src);
+
+    if (dst_size == 0)
+        return;
+
+    u32 i=0;
+    for (i=0; i<dst_size-1 && src[i] && length > 0; i++, length--)
+        dst[i] = src[i];
+
+    dst[i] = 0;
+}
+
 u32 Length(const char* str)
 {
     if (!str)
@@ -63,7 +78,7 @@ void Format(char* dst, u32 dst_size, const char* fmt, va_list args)
         dst[dst_size-1] = 0;
 }
 
-bool Equals(const char* s1, const char* s2, bool ignore_case)
+bool Equals(const char* s1, const char* s2, u32 length, bool ignore_case)
 {
     if (s1 == s2)
         return true;
@@ -71,10 +86,10 @@ bool Equals(const char* s1, const char* s2, bool ignore_case)
     if (!s1 || !s2)
         return false;
 
-    while (*s1 && *s2)
+    for ( ; *s1 && *s2 && length > 0; length--, s1++, s2++)
     {
-        char c1 = *s1++;
-        char c2 = *s2++;
+        char c1 = *s1;
+        char c2 = *s2;
 
         if (ignore_case)
         {
@@ -89,7 +104,12 @@ bool Equals(const char* s1, const char* s2, bool ignore_case)
             return false;
     }
 
-    return *s1 == *s2;
+    return length == 0 || *s1 == *s2;
+}
+
+bool Equals(const char* s1, const char* s2, bool ignore_case)
+{
+    return Equals(s1, s2, U32_MAX, ignore_case);
 }
 
 char* CleanPath(char* path)
