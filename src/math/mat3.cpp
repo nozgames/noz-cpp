@@ -100,3 +100,19 @@ Mat3 Mat3::operator*(const Mat3& o) const
     result.m[8] = this->m[2] * o.m[6] + this->m[5] * o.m[7] + this->m[8] * o.m[8];
     return result;
 }
+
+Vec2 TransformPoint(const Mat3& m, const Vec2& point)
+{
+    return Vec2{
+        m.m[0] * point.x + m.m[3] * point.y + m.m[6],
+        m.m[1] * point.x + m.m[4] * point.y + m.m[7],
+    };
+}
+
+Vec2 TransformVector(const Mat3& m, const Vec2& vector)
+{
+    return Vec2{
+        m.m[0] * vector.x + m.m[3] * vector.y,
+        m.m[1] * vector.x + m.m[4] * vector.y,
+    };
+}

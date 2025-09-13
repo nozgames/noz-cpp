@@ -1,5 +1,6 @@
 # Todo
 
+- [ ] stop importing all assets on laod if they havent changed
 - [ ] Render whole bone as selected
 - [ ] Skinned meshes not rendering on skeleton
 - [ ] Need way to handle invalid assets (show invalid or error in editor, animation with missing skeleton for example)
