@@ -51,13 +51,13 @@ namespace platform
     void BindColor(const Color& color);
     Buffer* CreateVertexBuffer(
         const MeshVertex* vertices,
-        size_t vertex_count,
+        u16 vertex_count,
         const char* name = nullptr);
-    Buffer* CreateIndexBuffer(const u16* indices, size_t index_count, const char* name = nullptr);
+    Buffer* CreateIndexBuffer(const u16* indices, u16 index_count, const char* name = nullptr);
     void DestroyBuffer(Buffer* buffer);
     void BindVertexBuffer(Buffer* buffer);
     void BindIndexBuffer(Buffer* buffer);
-    void DrawIndexed(size_t index_count);
+    void DrawIndexed(u16 index_count);
     void BindTexture(Texture* texture, int slot);
 
     // @texture

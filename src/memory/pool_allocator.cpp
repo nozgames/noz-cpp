@@ -12,7 +12,7 @@ struct PoolAllocatorImpl : PoolAllocator
     void* items;
 };
 
-void* PoolAlloc(Allocator* a, size_t size)
+static void* PoolAlloc(Allocator* a, u32 size)
 {
     assert(a);
 
@@ -20,9 +20,9 @@ void* PoolAlloc(Allocator* a, size_t size)
     if (impl->count >= impl->capacity)
         return nullptr;
 
-    assert((u32)size == impl->item_size);
+    assert(size == impl->item_size);
 
-    for (int i=0; i<impl->capacity; i++)
+    for (u32 i=0; i<impl->capacity; i++)
     {
         if (!impl->items_used[i])
         {
@@ -35,13 +35,16 @@ void* PoolAlloc(Allocator* a, size_t size)
     return nullptr;
 }
 
-void* PoolRealloc(Allocator* aa, void* ptr, size_t new_size)
+static void* PoolRealloc(Allocator* a, void* ptr, u32 new_size)
 {
+    (void)a;
+    (void)ptr;
+    (void)new_size;
     Exit("pool_allocator_realloc not supported");
     return nullptr;
 }
 
-void PoolFree(Allocator* a, void* ptr)
+static void PoolFree(Allocator* a, void* ptr)
 {
     assert(a);
     assert(ptr);
@@ -49,7 +52,7 @@ void PoolFree(Allocator* a, void* ptr)
     assert(ptr >= impl->items);
     assert(impl->count > 0);
 
-    u32 index = ((u8*)ptr - (u8*)impl->items) / impl->item_size;
+    u32 index = (u32)((u8*)ptr - (u8*)impl->items) / impl->item_size;
     assert(index < impl->capacity);
 
     impl->items_used[index] = false;
@@ -80,7 +83,7 @@ u32 GetIndex(PoolAllocator* allocator, const void* ptr)
 
     u8* corrected_ptr = (u8*)ptr - sizeof(AllocHeader);
     assert(corrected_ptr >= impl->items);
-    u32 index = (corrected_ptr - (u8*)impl->items) / impl->item_size;
+    u32 index = (u32)(corrected_ptr - (u8*)impl->items) / impl->item_size;
     assert(index < impl->capacity);
     return index;
 }

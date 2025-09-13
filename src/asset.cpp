@@ -52,10 +52,10 @@ const char* GetExtensionFromSignature(AssetSignature signature)
     // Convert signature to 4 character string (little endian to big endian)
     static char ext[6];  // ".xxxx\0"
     ext[0] = '.';
-    ext[1] = tolower((signature >> 24) & 0xFF);
-    ext[2] = tolower((signature >> 16) & 0xFF);
-    ext[3] = tolower((signature >> 8) & 0xFF);
-    ext[4] = tolower(signature & 0xFF);
+    ext[1] = (char)tolower((signature >> 24) & 0xFF);
+    ext[2] = (char)tolower((signature >> 16) & 0xFF);
+    ext[3] = (char)tolower((signature >> 8) & 0xFF);
+    ext[4] = (char)tolower(signature & 0xFF);
     ext[5] = '\0';
     
     return ext;

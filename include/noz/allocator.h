@@ -14,9 +14,9 @@ struct AllocatorStats
 // @allocator
 struct Allocator
 {
-    void* (*alloc)(Allocator*, size_t size);
+    void* (*alloc)(Allocator*, u32 size);
     void (*free)(Allocator*, void* ptr);
-    void* (*realloc)(Allocator*, void* ptr, size_t new_size);
+    void* (*realloc)(Allocator*, void* ptr, u32 new_size);
     void (*push)(Allocator*);
     void (*pop)(Allocator*);
     void (*clear)(Allocator*);
@@ -33,9 +33,9 @@ struct AllocHeader
 #endif
 };
 
-void* Alloc(Allocator* a, size_t size, DestructorFunc = nullptr);
+void* Alloc(Allocator* a, u32 size, DestructorFunc = nullptr);
 void Free(void* ptr);
-void* Realloc(void* ptr, size_t new_size);
+void* Realloc(void* ptr, u32 new_size);
 void Push(Allocator* a);
 void Pop(Allocator* a);
 void Clear(Allocator* a);
@@ -43,7 +43,7 @@ void Destroy(Allocator* a);
 Allocator* GetAllocator(void* ptr);
 
 // @arena
-Allocator* CreateArenaAllocator(size_t size, const char* name);
+Allocator* CreateArenaAllocator(u32 size, const char* name);
 
 // @pool
 struct PoolAllocator : Allocator { };

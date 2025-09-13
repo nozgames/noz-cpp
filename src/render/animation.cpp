@@ -9,6 +9,10 @@ int GetBoneCount(Animation* animation)
 
 Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
+    (void)header;
+    (void)name;
+    (void)name_table;
+
     AnimationImpl* impl = (AnimationImpl*)Alloc(allocator, sizeof(AnimationImpl));
 
     u8 bone_count = ReadU8(stream);

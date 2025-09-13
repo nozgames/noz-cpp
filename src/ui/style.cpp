@@ -100,7 +100,7 @@ Style DeserializeStyle(Stream* stream)
 
 static bool SerializeParameter(Stream* stream, const StyleParameter& value)
 {
-    WriteU8(stream, value.keyword);
+    WriteU8(stream, (u8)value.keyword);
     return value.keyword == STYLE_KEYWORD_OVERWRITE;
 }
 

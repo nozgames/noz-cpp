@@ -15,8 +15,8 @@ namespace std
 struct Stream {};
 
 // @alloc
-Stream* CreateStream(Allocator* allocator, size_t capacity);
-Stream* LoadStream(Allocator* allocator, u8* data, size_t size);
+Stream* CreateStream(Allocator* allocator, u32 capacity);
+Stream* LoadStream(Allocator* allocator, u8* data, u32 size);
 Stream* LoadStream(Allocator* allocator, const std::filesystem::path& path);
 
 // @file
@@ -24,19 +24,18 @@ bool SaveStream(Stream* stream, const std::filesystem::path& path);
 
 // @data
 u8* GetData(Stream* stream);
-size_t GetSize(Stream* stream);
+u32 GetSize(Stream* stream);
 void Clear(Stream* stream);
 
 // @position
-size_t GetPosition(Stream* stream);
-void SetPosition(Stream* stream, size_t position);
-size_t SeekBegin(Stream* stream, size_t offset);
-size_t SeekEnd(Stream* stream, size_t offset);
-size_t SeekCurrent(Stream* stream, size_t offset);
+u32 GetPosition(Stream* stream);
+void SetPosition(Stream* stream, u32 position);
+u32 SeekBegin(Stream* stream, u32 offset);
+u32 SeekEnd(Stream* stream, u32 offset);
+u32 SeekCurrent(Stream* stream, u32 offset);
 bool IsEOS(Stream* stream);
 
 // @read
-bool ReadFileSignature(Stream* stream, const char* expected_signature, size_t signature_length);
 u8 ReadU8(Stream* stream);
 u16 ReadU16(Stream* stream);
 u32 ReadU32(Stream* stream);
@@ -54,7 +53,7 @@ Color ReadColor(Stream* stream);
 Vec3 ReadVec3(Stream* stream);
 Vec2 ReadVec2(Stream* stream);
 Rect ReadRect(Stream* stream);
-void ReadBytes(Stream* stream, void* dest, size_t count);
+void ReadBytes(Stream* stream, void* dest, u32 count);
 
 template <typename TStruct> TStruct ReadStruct(Stream* stream)
 {
@@ -64,7 +63,6 @@ template <typename TStruct> TStruct ReadStruct(Stream* stream)
 }
 
 // @write
-void WriteFileSignature(Stream* stream, const char* signature, size_t signature_length);
 void WriteU8(Stream* stream, u8 value);
 void WriteU16(Stream* stream, u16 value);
 void WriteU32(Stream* stream, u32 value);
@@ -82,7 +80,7 @@ void WriteVec2(Stream* stream, const Vec2& value);
 void WriteCSTR(Stream* stream, const char* format, ...); // Write formatted C string without length prefix
 void WriteColor(Stream* stream, Color value);
 void WriteRect(Stream* stream, const Rect& value);
-void WriteBytes(Stream* stream, const void* data, size_t size);
+void WriteBytes(Stream* stream, const void* data, u32 size);
 
 template <typename TStruct> void WriteStruct(Stream* stream, const TStruct& value)
 {

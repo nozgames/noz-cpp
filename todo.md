@@ -1,7 +1,12 @@
 # Todo
 
-- [ ] Play test animation in game
-- [ ] Add skeleton bones as names automatically
+- [ ] Skeleton should be using name table in serialized bones for names
+- [ ] Need way to rename bone (:r bone name
+- [ ] Single shader!
+- [ ] Really need undo to work properly 
+- [ ] First time you load the shader is not loaded and it messes up, we need to handle the hotload?
+- [ ] Playing animation in editor does not animate mesh
+- [ ] No way to see log messages anymore, we need a consol window
 
 - [ ] Saved animation and its loading for Q / R but not play
 - [ ] when moving bones in animation we have to recalculate the local position from the world after delta change
@@ -22,7 +27,6 @@
 - 
 - [ ] Load editor assets in job
 - [ ] Alt to show names ?
-- [ ] Need way to rename bone (:r bone name
 - [ ] Skeleton bounds should include the meshes
 - [ ] Rotate tool in skeleton editor not working correctly (should rotate the points around center
 - [ ] Clean up mesh dirty flag, just use mesh?
@@ -165,3 +169,6 @@
 - [X] Animation / Skeletons
 - [X] Animator
 - [X] animation editor
+- [X] Bone names should be in name header
+- [X] Play test animation in game
+- [X] Add skeleton bones as names automatically

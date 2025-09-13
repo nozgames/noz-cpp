@@ -129,9 +129,9 @@ static Vec2 GetRandom(const VfxVec2& range)
              Mix(range.min.y, range.max.y, RandomFloat()) };
 }
 
-static u16 GetIndex(VfxInstance* i) { return GetIndex(g_vfx.instance_pool, i); }
-static u16 GetIndex(VfxEmitter* e) { return GetIndex(g_vfx.emitter_pool, e); }
-static u16 GetIndex(VfxParticle* p) { return GetIndex(g_vfx.particle_pool, p); }
+static u16 GetIndex(VfxInstance* i) { return (u16)GetIndex(g_vfx.instance_pool, i); }
+static u16 GetIndex(VfxEmitter* e) { return (u16)GetIndex(g_vfx.emitter_pool, e); }
+static u16 GetIndex(VfxParticle* p) { return (u16)GetIndex(g_vfx.particle_pool, p); }
 static VfxParticle* GetParticle(int i) { return (VfxParticle*)GetAt(g_vfx.particle_pool, i); }
 static VfxEmitter* GetEmitter(int i) { return (VfxEmitter*)GetAt(g_vfx.emitter_pool, i); }
 static VfxHandle GetHandle(VfxInstance* instance) { return { GetIndex(instance), instance->version }; }

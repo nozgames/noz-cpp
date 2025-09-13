@@ -12,14 +12,14 @@ inline u64 Hash(const Name* name) { return (u64)name; }
 
 u64 Hash(void* data, size_t size, u64 seed);
 
-static u64 Hash(u64 h1, u64 h2)
+inline u64 Hash(u64 h1, u64 h2)
 {
     u64 result = h1;
     if (h2) result = Hash(&h2, sizeof(h2), result);
     return result;
 }
 
-static u64 Hash(u64 h1, u64 h2, u64 h3)
+inline u64 Hash(u64 h1, u64 h2, u64 h3)
 {
     u64 result = h1;
     if (h2) result = Hash(&h2, sizeof(h2), result);

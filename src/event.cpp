@@ -4,7 +4,7 @@
 
 struct EventRegistry
 {
-    size_t listener_count;
+    u32 listener_count;
 };
 
 struct EventListener
@@ -13,12 +13,12 @@ struct EventListener
 };
 
 static u8* g_events = nullptr;
-static size_t g_event_stride = 0;
-static size_t g_max_events = 0;
-static size_t g_max_listeners = 0;
+static u32 g_event_stride = 0;
+static u32 g_max_events = 0;
+static u32 g_max_listeners = 0;
 static EventListener* g_event_stack = nullptr;
-static size_t g_event_stack_size = 0;
-static size_t g_event_max_stack_size = 0;
+static u32 g_event_stack_size = 0;
+static u32 g_event_max_stack_size = 0;
 
 static int GetEventIndex(EventId event)
 {
@@ -47,7 +47,7 @@ void InitEvent(ApplicationTraits* traits)
     assert(g_event_stride > 0);
     assert(g_max_events > 0);
     g_events = (u8*)Alloc(ALLOCATOR_DEFAULT, g_event_stride * g_max_events);
-    g_event_stack = (EventListener*)Alloc(ALLOCATOR_DEFAULT, sizeof(EventListener) * traits->max_event_stack);
+    g_event_stack = (EventListener*)Alloc(ALLOCATOR_DEFAULT, (u32)sizeof(EventListener) * traits->max_event_stack);
 }
 
 void ShutdownEvent()
@@ -60,7 +60,7 @@ int FindListener(EventId event, EventCallback callback)
 {
     auto registry = GetRegistry(event);
     auto listener = GetListener(event, 0);
-    for (size_t i = 0; i < registry->listener_count; ++i, listener++)
+    for (u32 i = 0; i < registry->listener_count; ++i, listener++)
         if (listener->callback == callback)
             return i;
     return -1;

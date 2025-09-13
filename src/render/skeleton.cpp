@@ -39,15 +39,18 @@ const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index)
 
 Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
+    (void)header;
+    (void)name;
+
     SkeletonImpl* impl = (SkeletonImpl*)Alloc(allocator, sizeof(SkeletonImpl));
 
     impl->bone_count = ReadU8(stream);
     impl->bones = (Bone*)Alloc(allocator, sizeof(Bone) * impl->bone_count);
 
-    for (uint32_t i = 0; i < impl->bone_count; ++i)
+    for (u8 i = 0; i < impl->bone_count; ++i)
     {
         Bone& bone = impl->bones[i];
-        bone.name = ReadName(stream);
+        bone.name = name_table[i];
         bone.index = i;
         bone.parent_index = ReadI8(stream);;
         bone.local_to_world= ReadStruct<Mat3>(stream);

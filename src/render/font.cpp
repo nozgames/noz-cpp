@@ -2,8 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-#define MAX_GLYPHS 256  // Support extended ASCII
-#define MAX_KERNING (MAX_GLYPHS * MAX_GLYPHS)  // All possible kerning pairs
+#define MAX_GLYPHS 256                        // Support extended ASCII
+#define MAX_KERNING (MAX_GLYPHS * MAX_GLYPHS) // All possible kerning pairs
 
 struct FontImpl : Font
 {
@@ -16,13 +16,13 @@ struct FontImpl : Font
     float line_height;
     int atlas_width;
     int atlas_height;
-    FontGlyph glyphs[MAX_GLYPHS];     // Fixed array for glyphs (advance == 0 means no glyph)
-    uint16_t kerning_index[MAX_KERNING];  // Index into kerning_values array (0xFFFF = no kerning)
-    float* kerning_values;                 // Dynamic array of actual kerning values
-    uint16_t kerning_count;                // Number of kerning pairs
+    FontGlyph glyphs[MAX_GLYPHS];        // Fixed array for glyphs (advance == 0 means no glyph)
+    uint16_t kerning_index[MAX_KERNING]; // Index into kerning_values array (0xFFFF = no kerning)
+    float* kerning_values;               // Dynamic array of actual kerning values
+    uint16_t kerning_count;              // Number of kerning pairs
 };
 
-//static SDL_GPUDevice* g_device = nullptr;
+// static SDL_GPUDevice* g_device = nullptr;
 
 void FontDestructor(void* p)
 {
@@ -36,9 +36,11 @@ void FontDestructor(void* p)
 
 Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
+    (void)name_table;
+
     if (!stream || !header)
         return nullptr;
-        
+
     // Header already validated by LoadAsset
     // Version is in header->version
 
@@ -70,15 +72,16 @@ Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const
     {
         uint32_t codepoint = ReadU32(stream);
 
-        if (codepoint < MAX_GLYPHS) {
+        if (codepoint < MAX_GLYPHS)
+        {
             // Read directly into the glyph structure
             FontGlyph* glyph = &impl->glyphs[codepoint];
             ReadBytes(stream, glyph, sizeof(FontGlyph));
-            
         }
-        else {
+        else
+        {
             // Skip this glyph's data
-            SeekBegin(stream, GetPosition(stream) + sizeof(FontGlyph));
+            SeekBegin(stream, GetPosition(stream) + (u32)sizeof(FontGlyph));
         }
     }
 
@@ -97,7 +100,8 @@ Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const
             float amount = ReadFloat(stream);
 
             // Store in sparse representation
-            if (first < MAX_GLYPHS && second < MAX_GLYPHS) {
+            if (first < MAX_GLYPHS && second < MAX_GLYPHS)
+            {
                 uint32_t index = first * MAX_GLYPHS + second;
                 impl->kerning_index[index] = i;
                 impl->kerning_values[i] = amount;
@@ -111,13 +115,14 @@ Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const
     if (!atlas_data)
     {
         // todo: free without allocator, stuff allocator with destructor?
-        //Free(impl);
+        // Free(impl);
         return nullptr;
     }
 
     ReadBytes(stream, atlas_data, atlas_data_size);
 
-    impl->texture = CreateTexture(allocator, atlas_data, impl->atlas_width, impl->atlas_height, TEXTURE_FORMAT_R8, name);
+    impl->texture =
+        CreateTexture(allocator, atlas_data, impl->atlas_width, impl->atlas_height, TEXTURE_FORMAT_R8, name);
     Free(atlas_data);
 
     if (!impl->texture)
@@ -132,28 +137,28 @@ Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const
 const FontGlyph* GetGlyph(Font* font, char ch)
 {
     FontImpl* impl = static_cast<FontImpl*>(font);
-    
+
     // Check if glyph exists (advance > 0 means valid glyph)
     unsigned char index = (unsigned char)ch;
-    if (index < MAX_GLYPHS && impl->glyphs[index].advance > 0.0f) 
+    if (index < MAX_GLYPHS && impl->glyphs[index].advance > 0.0f)
     {
         return &impl->glyphs[index];
     }
 
     // If character not found, try unknown glyph (ASCII DEL character)
     unsigned char unknown_ch = 0x7F;
-    if (unknown_ch < MAX_GLYPHS && impl->glyphs[unknown_ch].advance > 0.0f) 
+    if (unknown_ch < MAX_GLYPHS && impl->glyphs[unknown_ch].advance > 0.0f)
     {
         return &impl->glyphs[unknown_ch];
     }
 
     // Return default glyph if nothing found
     static FontGlyph default_glyph = {
-        {0.0f, 0.0f},   // uv_min
-        {0.0f, 0.0f},   // uv_max
-        {0.0f, 0.0f},   // size
-        0.0f,           // advance
-        {0.0f, 0.0f},   // bearing
+        {0.0f, 0.0f}, // uv_min
+        {0.0f, 0.0f}, // uv_max
+        {0.0f, 0.0f}, // size
+        0.0f,         // advance
+        {0.0f, 0.0f}, // bearing
     };
 
     return &default_glyph;
@@ -161,8 +166,12 @@ const FontGlyph* GetGlyph(Font* font, char ch)
 
 float GetKerning(Font* font, char first, char second)
 {
-    FontImpl* impl = static_cast<FontImpl*>(font);
+    (void)font;
+    (void)first;
+    (void)second;
+
 #if 0
+    FontImpl* impl = static_cast<FontImpl*>(font);
     u8 f = (u8)first;
     u8 s = (u8)second;
 

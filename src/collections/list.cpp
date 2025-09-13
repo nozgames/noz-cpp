@@ -18,7 +18,7 @@ void ListDestructor(void* ptr)
     Free(impl->items);
 }
 
-List* CreateList(Allocator* allocator, size_t item_size, size_t capacity)
+List* CreateList(Allocator* allocator, u32 item_size, u32 capacity)
 {   
     if (capacity == 0)
 	capacity = DEFAULT_CAPACITY;
@@ -115,7 +115,7 @@ void RemoveRange(List* list, const void* first, int count)
     ListImpl* impl = static_cast<ListImpl*>(list);
     assert(first >= impl->items);
 
-    u32 index = ((u8*)first - (u8*)impl->items) / impl->item_size;
+    u32 index = (u32)((u8*)first - (u8*)impl->items) / impl->item_size;
     assert(index < impl->count);
 
     if (index + count < impl->count)

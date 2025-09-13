@@ -115,3 +115,7 @@ if(CMAKE_GENERATOR STREQUAL "Ninja")
     set(ENV{NINJA_STATUS} "[%f/%t] ")
 endif()
 
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /WX")
+endif()

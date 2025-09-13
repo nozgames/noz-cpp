@@ -9,7 +9,7 @@
 
 static LogFunc g_log_callback = nullptr;
 
-static void LogImpl(LogType type, const char* format, va_list args)
+void LogImpl(LogType type, const char* format, va_list args)
 {
     char buffer[2048];
     vsnprintf(buffer, sizeof(buffer), format, args);

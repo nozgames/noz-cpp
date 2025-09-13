@@ -7,7 +7,7 @@
 struct List {};
 
 // @list
-List* CreateList(Allocator* allocator, size_t item_size, size_t capacity);
+List* CreateList(Allocator* allocator, u32 item_size, u32 capacity);
 u32 GetCount(List* list);
 void* GetAt(List* list, u32 index);
 void* Add(List* list);
@@ -74,7 +74,7 @@ struct LinkedList
 {
     void* head;
     void* tail;
-    u16 node_offset;
+    u32 node_offset;
     u32 count;
 };
 
