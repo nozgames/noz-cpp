@@ -41,7 +41,6 @@ Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, c
 {
     (void)header;
     (void)name;
-    (void)name_table;
 
     SkeletonImpl* impl = (SkeletonImpl*)Alloc(allocator, sizeof(SkeletonImpl));
 
@@ -51,7 +50,7 @@ Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, c
     for (u8 i = 0; i < impl->bone_count; ++i)
     {
         Bone& bone = impl->bones[i];
-        bone.name = ReadName(stream);
+        bone.name = name_table[i];
         bone.index = i;
         bone.parent_index = ReadI8(stream);;
         bone.local_to_world= ReadStruct<Mat3>(stream);
