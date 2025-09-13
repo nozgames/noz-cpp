@@ -27,9 +27,9 @@ static void EvalulateFrame(Animator& animator)
 
         Vec2 position = Mix(bt1.position, bt2.position, t) + skel_impl->bones[i].transform.position;
         float rotation = Mix(bt1.rotation, bt2.rotation, t) + skel_impl->bones[i].transform.rotation;
-        float scale = Mix(bt1.scale, bt2.scale, t);
+        Vec2 scale = Mix(bt1.scale, bt2.scale, t);
 
-        animator.bones[i] = TRS(position, rotation, Vec2{scale, scale});
+        animator.bones[i] = TRS(position, rotation, scale);
     }
 
     for (int i=1; i<anim_impl->bone_count; i++)

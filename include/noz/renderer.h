@@ -188,7 +188,7 @@ extern int GetBoneCount(Animation* animation);
 struct BoneTransform
 {
     Vec2 position;
-    float scale;
+    Vec2 scale;
     float rotation;
 };
 
