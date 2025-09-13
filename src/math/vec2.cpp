@@ -34,6 +34,15 @@ Vec2 Rotate(const Vec2& v, f32 degrees)
     };
 }
 
+
+Vec2 Rotate(const Vec2& v, const Vec2& direction)
+{
+    return Vec2{
+        v.x * direction.x - v.y * direction.x,
+        v.x * direction.y + v.y * direction.y
+    };
+}
+
 f64 Length(const Vec2Double& v)
 {
     return sqrt(v.x * v.x + v.y * v.y);

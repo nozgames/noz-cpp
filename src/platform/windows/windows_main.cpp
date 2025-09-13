@@ -392,4 +392,5 @@ void platform::Log(LogType type, const char* message)
     (void)type;
 
     OutputDebugStringA(message);
+    OutputDebugStringA("\n");
 }

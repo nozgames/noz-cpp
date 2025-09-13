@@ -83,7 +83,7 @@ Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, 
     member = (Skeleton*)LoadAsset(allocator, path, ASSET_SIGNATURE_SKELETON, LoadSkeleton);
 
 #define NOZ_LOAD_ANIMATION(allocator, path, member) \
-    member = (Skeleton*)LoadAsset(allocator, path, ASSET_SIGNATURE_ANIMATION, LoadSkeleton);
+    member = (Animation*)LoadAsset(allocator, path, ASSET_SIGNATURE_ANIMATION, LoadAnimation);
 
 
 #define NOZ_RELOAD_TEXTURE(asset_name, asset)
