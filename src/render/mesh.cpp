@@ -6,12 +6,12 @@
 
 struct MeshImpl : Mesh
 {
-    size_t vertex_count;
-    size_t index_count;
+    u16 vertex_count;
+    u16 index_count;
     platform::Buffer* vertex_buffer;
     platform::Buffer* index_buffer;
     MeshVertex* vertices;
-    uint16_t* indices;
+    u16* indices;
     Bounds2 bounds;
     Texture* texture;
 };
@@ -36,10 +36,10 @@ inline size_t GetMeshImplSize(size_t vertex_count, size_t index_count)
     return
         sizeof(MeshImpl) +
         sizeof(MeshVertex) * vertex_count +
-        sizeof(uint16_t) * index_count;
+        sizeof(u16) * index_count;
 }
 
-static MeshImpl* CreateMesh(Allocator* allocator, size_t vertex_count, size_t index_count, const Name* name)
+static MeshImpl* CreateMesh(Allocator* allocator, u16 vertex_count, u16 index_count, const Name* name)
 {
     MeshImpl* mesh = (MeshImpl*)Alloc(allocator, sizeof(MeshImpl), MeshDestructor);
     if (!mesh)
@@ -48,8 +48,8 @@ static MeshImpl* CreateMesh(Allocator* allocator, size_t vertex_count, size_t in
     mesh->name = name ? name : NAME_NONE;
     mesh->vertex_count = vertex_count;
     mesh->index_count = index_count;
-    mesh->vertices = (MeshVertex*)Alloc(allocator, vertex_count * sizeof(MeshVertex));
-    mesh->indices = (u16*)Alloc(allocator, index_count * sizeof(u16));
+    mesh->vertices = (MeshVertex*)Alloc(allocator, (u32)(vertex_count * sizeof(MeshVertex)));
+    mesh->indices = (u16*)Alloc(allocator, (u32)(index_count * sizeof(u16)));
     return mesh;
 }
 
@@ -82,7 +82,7 @@ Mesh* CreateMesh(
         mesh->vertices[i].uv0 = uvs[i];
     }
 
-    memcpy(mesh->indices, indices, sizeof(uint16_t) * index_count);
+    memcpy(mesh->indices, indices, sizeof(u16) * index_count);
 
     if (upload)
         UploadMesh(mesh);
@@ -104,12 +104,12 @@ static void UploadMesh(MeshImpl* impl)
         impl->name->value);
 }
 
-u32 GetVertexCount(Mesh* mesh)
+u16 GetVertexCount(Mesh* mesh)
 {
     return static_cast<MeshImpl*>(mesh)->vertex_count;
 }
 
-u32 GetIndexCount(Mesh* mesh)
+u16 GetIndexCount(Mesh* mesh)
 {
     return static_cast<MeshImpl*>(mesh)->index_count;
 }
@@ -142,6 +142,9 @@ void RenderMesh(Mesh* mesh)
 
 Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
+    (void)header;
+    (void)name_table;
+
     Bounds2 bounds = ReadStruct<Bounds2>(stream);
     u16 vertex_count = ReadU16(stream);
     u16 index_count = ReadU16(stream);
@@ -153,7 +156,7 @@ Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const
     impl->bounds = bounds;
 
     ReadBytes(stream, impl->vertices, sizeof(MeshVertex) * impl->vertex_count);
-    ReadBytes(stream, impl->indices, sizeof(uint16_t) * impl->index_count);
+    ReadBytes(stream, impl->indices, sizeof(u16) * impl->index_count);
 
     UploadMesh(impl);
     return impl;
@@ -163,6 +166,9 @@ Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const
 
 void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table)
 {
+    (void)header;
+    (void)name_table;
+
     assert(asset);
     assert(stream);
     MeshImpl* impl = static_cast<MeshImpl*>(asset);
@@ -179,7 +185,7 @@ void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const N
     impl->indices = (u16*)Alloc(ALLOCATOR_DEFAULT, impl->index_count * sizeof(u16));
 
     ReadBytes(stream, impl->vertices, sizeof(MeshVertex) * impl->vertex_count);
-    ReadBytes(stream, impl->indices, sizeof(uint16_t) * impl->index_count);
+    ReadBytes(stream, impl->indices, sizeof(u16) * impl->index_count);
 
     impl->vertex_buffer = nullptr;
     impl->index_buffer = nullptr;

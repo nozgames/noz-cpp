@@ -16,7 +16,7 @@ void SetValue(text_t& dst, const char* src)
 {
     assert(src);
 
-    u32 src_len = strlen(src);
+    u32 src_len = Length(src);
     if (src_len == 0)
     {
         Clear(dst);

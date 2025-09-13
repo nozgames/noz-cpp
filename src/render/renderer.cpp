@@ -49,6 +49,8 @@ static void ResetRenderState()
 
 void LoadRendererAssets(Allocator* allocator)
 {
+    (void)allocator;
+
     g_core_assets.textures.white = CreateTexture(nullptr, &color32_white, 1, 1, TEXTURE_FORMAT_RGBA8, GetName("white"));
 }
 

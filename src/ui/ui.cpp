@@ -71,6 +71,8 @@ Font* GetDefaultFont()
 
 void RenderElementQuad(const Color& color, Texture* texture)
 {
+    (void)texture;
+
     BindMaterial(g_ui.element_material);
     BindColor(color);
     DrawMesh(g_ui.element_quad);
@@ -79,10 +81,10 @@ void RenderElementQuad(const Color& color, Texture* texture)
 static Mesh* CreateElementQuad(Allocator* allocator)
 {
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddVertex(builder, {0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, 0);
-    AddVertex(builder, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f}, 0);
-    AddVertex(builder, {1.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, 0);
-    AddVertex(builder, {0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 1.0f}, 0);
+    AddVertex(builder, {0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f});
+    AddVertex(builder, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
+    AddVertex(builder, {1.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 1.0f});
+    AddVertex(builder, {0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 1.0f});
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
     auto mesh = CreateMesh(allocator, builder, GetName("element"));
@@ -177,6 +179,7 @@ void EndCanvas()
 
 void RenderCanvas(const Element& e)
 {
+    (void)e;
     BindCamera(g_ui.camera);
 }
 
@@ -263,6 +266,8 @@ extern float Evaluate(const StyleLength& length, float parent_value);
 
 static Vec2 MeasureContent(Element& e, const Vec2& available_size)
 {
+    (void)available_size;
+
     switch (e.type)
     {
     case ELEMENT_TYPE_LABEL:

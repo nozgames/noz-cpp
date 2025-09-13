@@ -84,33 +84,30 @@ extern Mesh* CreateMesh(
     const Name* name,
     bool upload = true);
 extern Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name, bool upload = true);
-extern u32 GetVertexCount(Mesh* mesh);
-extern u32 GetIndexCount(Mesh* mesh);
+extern u16 GetVertexCount(Mesh* mesh);
+extern u16 GetIndexCount(Mesh* mesh);
 extern const MeshVertex* GetVertices(Mesh* mesh);
 extern const u16* GetIndices(Mesh* mesh);
 
 // @mesh_builder
-MeshBuilder* CreateMeshBuilder(Allocator* allocator, int max_vertices, int max_indices);
+MeshBuilder* CreateMeshBuilder(Allocator* allocator, u16 max_vertices, u16 max_indices);
 void Clear(MeshBuilder* builder);
 const Vec2* GetPositions(MeshBuilder* builder);
 const Vec3* GetNormals(MeshBuilder* builder);
 const Vec2* GetUvs(MeshBuilder* builder);
 const u8* GetBoneIndices(MeshBuilder* builder);
 const u16* GetIndices(MeshBuilder* builder);
-u32 GetVertexCount(MeshBuilder* builder);
-u32 GetIndexCount(MeshBuilder* builder);
-void AddIndex(MeshBuilder* builder, uint16_t index);
-void AddTriangle(MeshBuilder* builder, uint16_t a, uint16_t b, uint16_t c);
-void AddTriangle(MeshBuilder* builder, const Vec3& a, const Vec3& b, const Vec3& c, uint8_t bone_index);
-void AddPyramid(MeshBuilder* builder, const Vec3& start, const Vec3& end, float size, uint8_t bone_index);
-void AddCube(MeshBuilder* builder, const Vec3& center, const Vec3& size, uint8_t bone_index);
+u16 GetVertexCount(MeshBuilder* builder);
+u16 GetIndexCount(MeshBuilder* builder);
+void AddIndex(MeshBuilder* builder, u16 index);
+void AddTriangle(MeshBuilder* builder, u16 a, u16 b, u16 c);
+void AddTriangle(MeshBuilder* builder, const Vec3& a, const Vec3& b, const Vec3& c);
 void AddRaw(
     MeshBuilder* builder,
     i16 vertex_count,
     const Vec2* positions,
     const Vec3* normals,
     const Vec2* uv0,
-    u8 bone_index,
     i16 index_count,
     const u16* indices);
 void AddQuad(
@@ -127,14 +124,8 @@ void AddQuad(
     const Vec2& c,
     const Vec2& d,
     const Vec2& uv_color,
-    const Vec3& normal,
-    uint8_t bone_index=0);
-void AddVertex(
-    MeshBuilder* builder,
-    const Vec2& position,
-    const Vec3& normal,
-    const Vec2& uv,
-    uint8_t bone_index=0);
+    const Vec3& normal);
+void AddVertex(MeshBuilder* builder, const Vec2& position, const Vec3& normal, const Vec2& uv);
 void AddVertex(MeshBuilder* builder, const Vec2& position);
 
 // @render_buffer

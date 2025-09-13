@@ -52,7 +52,7 @@ static void HandleStats(Stream* input_stream)
 {
     assert(input_stream);
     auto stream = CreateEditorMessage(EDITOR_MESSAGE_STATS_ACK);
-    WriteI32(stream, GetCurrentFPS());
+    WriteI32(stream, (i32)GetCurrentFPS());
     SendEditorMessage(stream);
 }
 
@@ -72,7 +72,7 @@ static void WriteInspectorProperty(Stream* stream, const char* name, InspectorOb
 {
     WriteU8(stream, INSPECTOR_OBJECT_COMMAND_PROPERTY);
     WriteString(stream, name);
-    WriteU8(stream, value_type);
+    WriteU8(stream, (u8)value_type);
 }
 
 void WriteInspectorProperty(Stream* stream, const char* name, const char* value)
@@ -110,7 +110,7 @@ void EndInspectorObject(Stream* stream)
     WriteU8(stream, INSPECTOR_OBJECT_COMMAND_END);
 }
 
-static void HandleEditorMessage(void* data, size_t data_size)
+static void HandleEditorMessage(void* data, u32 data_size)
 {
     PushScratch();
     Stream* stream = LoadStream(ALLOCATOR_SCRATCH, (u8*)data, data_size);
@@ -153,7 +153,7 @@ void UpdateEditorClient()
 
             case ENET_EVENT_TYPE_RECEIVE:
             {
-                HandleEditorMessage(event.packet->data, event.packet->dataLength);
+                HandleEditorMessage(event.packet->data, (u32)event.packet->dataLength);
                 enet_packet_destroy(event.packet);
                 break;
             }
@@ -179,7 +179,7 @@ void InitEditorClient(const char* server_address, int port)
     if (enet_address_set_host(&g_client.address, server_address) < 0)
         return;
 
-    g_client.address.port = port;
+    g_client.address.port = (u16)port;
     g_client.host = enet_host_create(nullptr, 1, 2, 0, 0);
     g_client.peer = enet_host_connect(g_client.host, &g_client.address, 2, 0);
 }

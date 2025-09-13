@@ -34,6 +34,8 @@ static void LoadStyles(StyleSheetImpl* impl, Allocator* allocator, Stream* strea
 
 Asset* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
+    (void)header;
+
     auto style_count = ReadU32(stream);
     auto* sheet = (StyleSheet*)Alloc(allocator, sizeof(StyleSheetImpl));
     if (!sheet)
@@ -79,6 +81,8 @@ bool HasStyle(StyleSheet* sheet, const Name* name, PseudoState pseudo_state)
 
 void ReloadStyleSheet(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table)
 {
+    (void)header;
+
     assert(asset);
     assert(stream);
 

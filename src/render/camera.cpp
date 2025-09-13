@@ -151,7 +151,6 @@ void UpdateCamera(Camera* camera)
         
         // Use uniform scaling to maintain square aspect ratio
         // Use the same zoom factor for both X and Y to prevent squishing
-        float zoom = 2.0f / height;  // Use height as reference
         float zoomX = 2.0f / width;
         float zoomY = 2.0f / height;
         

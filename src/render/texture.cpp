@@ -18,7 +18,7 @@ static SamplerOptions g_default_sampler_options = {
     TEXTURE_CLAMP_CLAMP,
 };
 
-static int GetBytesPerPixel(TextureFormat format)
+int GetBytesPerPixel(TextureFormat format)
 {
     switch (format)
     {
@@ -113,6 +113,8 @@ SamplerOptions GetSamplerOptions(Texture* texture)
 
 Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
+    (void)name_table;
+
     assert(stream);
     assert(name);
     assert(header);
@@ -128,7 +130,7 @@ Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, co
     impl->size.y = ReadU32(stream);
 
     const int channels = GetBytesPerPixel(impl->format);
-    const size_t data_size = impl->size.x * impl->size.y * channels;
+    const u32 data_size = impl->size.x * impl->size.y * channels;
     if (const auto texture_data = (u8*)Alloc(ALLOCATOR_SCRATCH, data_size))
     {
         ReadBytes(stream, texture_data, data_size);

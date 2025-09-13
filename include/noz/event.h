@@ -8,7 +8,7 @@
 typedef int EventId;
 
 constexpr EventId MAX_EVENTS = 512;
-constexpr EventId MAX_CORE_EVENTS = 128;
+constexpr u32 MAX_CORE_EVENTS = 128;
 
 typedef void (*EventCallback)(EventId event, const void* event_data);
 

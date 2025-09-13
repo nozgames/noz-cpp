@@ -20,31 +20,37 @@ void ValidateHeader(void *p)
 }
 #endif
 
-static void* AllocDefault(Allocator* a, size_t size)
+static void* AllocDefault(Allocator* a, u32 size)
 {
+    (void)a;
     return malloc(size);
 }
 
-static void* ReallocDefault(Allocator* a, void* ptr, size_t new_size)
+static void* ReallocDefault(Allocator* a, void* ptr, u32 new_size)
 {
+    (void)a;
     return realloc(ptr, new_size);
 }
 
 static void FreeDefault(Allocator* a, void* ptr)
 {
+    (void)a;
     free(ptr);
 }
 
 static void PushDefault(Allocator* a)
 {
+    (void)a;
 }
 
 static void PopDefault(Allocator* a)
 {
+    (void)a;
 }
 
 static void ClearDefault(Allocator* a)
 {
+    (void)a;
 }
 
 Allocator g_default_allocator_impl = {
@@ -60,7 +66,7 @@ Allocator g_default_allocator_impl = {
 Allocator* g_default_allocator = &g_default_allocator_impl;
 Allocator* g_scratch_allocator = nullptr;
 
-void* Alloc(Allocator* a, size_t size, DestructorFunc destructor)
+void* Alloc(Allocator* a, u32 size, DestructorFunc destructor)
 {
     a = GET_ALLOCATOR(a);
 
@@ -108,7 +114,7 @@ void Free(void* ptr)
     a->free(a, header);
 }
 
-void* Realloc(void* ptr, size_t new_size)
+void* Realloc(void* ptr, u32 new_size)
 {
 #if _DEBUG
     ValidateHeader(ptr);

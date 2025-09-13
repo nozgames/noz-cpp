@@ -18,6 +18,9 @@ void ShaderDestructor(void* p)
 
 static bool LoadShaderInternal(ShaderImpl* impl, Stream* stream, const AssetHeader& header, const Name** name_table)
 {
+    (void)header;
+    (void)name_table;
+
     // Read the vertex shader
     auto vertex_bytecode_length = ReadU32(stream);
     auto* vertex_bytecode = (u8*)Alloc(ALLOCATOR_DEFAULT, vertex_bytecode_length);

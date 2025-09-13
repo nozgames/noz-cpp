@@ -17,9 +17,9 @@ struct MaterialImpl : Material
 
 Material* CreateMaterial(Allocator* allocator, Shader* shader)
 {
-    auto texture_count = 1;
-    auto textures_size = texture_count * sizeof(Texture*);
-    auto material_size = sizeof(MaterialImpl) + textures_size;
+    constexpr u32 texture_count = 1;
+    u32 textures_size = texture_count * (u32)sizeof(Texture*);
+    u32 material_size = (u32)sizeof(MaterialImpl) + textures_size;
 
     auto material = (Material*)Alloc(allocator, material_size);
     if (!material)

@@ -96,26 +96,12 @@ void Init(ApplicationTraits& traits)
 // @error
 void Exit(const char* format, ...)
 {
-    char buffer[1024];
+    extern void LogImpl(LogType, const char*, va_list);
 
-#if 0
-    if (format)
-    {
-        va_list args;
-        va_start(args, format);
-        vsnprintf(buffer, sizeof(buffer), format, args);
-        va_end(args);
-        
-        fprintf(stderr, "error: %s\n", buffer);
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, g_app.title, buffer, NULL);
-    }
-    else
-    {
-        fprintf(stderr, "error: unknown error\n");
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, g_app.title, "unknown error", NULL);
-    }
-#endif
-    
+    va_list args;
+    va_start(args, format);
+    LogImpl(LOG_TYPE_ERROR, format, args);
+    va_end(args);
     exit(1);
 }
 
@@ -140,6 +126,7 @@ static void UpdateScreenSize()
 #ifdef NOZ_EDITOR
 static void HandleHotload(EventId event_id, const void* event_data)
 {
+    (void)event_id;
     const HotloadEvent* hotload_event = (const HotloadEvent*)event_data;
     const char* asset_name = hotload_event->asset_name;
     auto name = GetName(asset_name);
@@ -151,6 +138,8 @@ static void HandleHotload(EventId event_id, const void* event_data)
 // @init
 void InitApplication(ApplicationTraits* traits, int argc, const char* argv[])
 {
+    (void)argc;
+
     traits = traits ? traits : &g_default_traits;
 
     memset(&g_app, 0, sizeof(Application));

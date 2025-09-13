@@ -45,6 +45,9 @@ Bounds2 GetBounds(Vfx* vfx)
 
 Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
 {
+    (void)header;
+    (void)name_table;
+
     Vfx* vfx = (Vfx*)Alloc(allocator, sizeof(VfxImpl));
     VfxImpl* impl = static_cast<VfxImpl*>(vfx);
     impl->name = name;
@@ -58,6 +61,9 @@ void RestartVfx(Vfx* vfx);
 
 void ReloadVfx(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table)
 {
+    (void)header;
+    (void)name_table;
+
     assert(asset);
     assert(stream);
 

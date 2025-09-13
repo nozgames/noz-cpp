@@ -56,8 +56,8 @@ static void AddGlyph(
     AddVertex(builder, {glyph_x, glyph_y + glyph_height}, {0.0f, 1.0f}, {glyph->uv_min.x, glyph->uv_max.y});
 
     // Add indices for this glyph quad
-    AddTriangle(builder, vertex_offset, vertex_offset + 1, vertex_offset + 2);
-    AddTriangle(builder, vertex_offset, vertex_offset + 2, vertex_offset + 3);
+    AddTriangle(builder, (u16)vertex_offset, (u16)vertex_offset + 1, (u16)vertex_offset + 2);
+    AddTriangle(builder, (u16)vertex_offset, (u16)vertex_offset + 2, (u16)vertex_offset + 3);
 
     vertex_offset += 4;
 }
@@ -97,7 +97,7 @@ static void CreateTextMesh(Allocator* allocator, TextMeshImpl* impl, const TextR
     if (!IsEmpty(text))
         current_x = -GetGlyph(request.font, text.value[0])->bearing.x * font_size;
 
-    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, (int)text.length * 4, (int)text.length * 6);
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, (u16)text.length * 4, (u16)text.length * 6);
     for (size_t i = 0; i < text.length; ++i)
     {
         char ch = text.value[i];

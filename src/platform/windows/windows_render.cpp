@@ -381,6 +381,9 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData)
 {
+    (void)messageType;
+    (void)pUserData;
+
     if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
         printf("Vulkan validation layer: %s\n", pCallbackData->pMessage);
 
@@ -665,6 +668,8 @@ static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFor
 
 static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
+    (void)availablePresentModes;
+
     // Force VSync by always returning FIFO mode (guaranteed to be available)
     return g_vulkan.traits.vsync == 0 ? VK_PRESENT_MODE_IMMEDIATE_KHR : VK_PRESENT_MODE_FIFO_KHR;
 }
@@ -1204,7 +1209,7 @@ void platform::DestroyBuffer(Buffer* buffer)
         vkDestroyBuffer(g_vulkan.device, (VkBuffer)buffer, nullptr);
 }
 
-platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, size_t vertex_count, const char* name)
+platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, u16 vertex_count, const char* name)
 {
     assert(vertices);
     assert(vertex_count > 0);
@@ -1255,7 +1260,7 @@ platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, size_
     return (Buffer*)vf_vertex_buffer;
 }
 
-platform::Buffer* platform::CreateIndexBuffer(const u16* indices, size_t index_count, const char* name)
+platform::Buffer* platform::CreateIndexBuffer(const u16* indices, u16 index_count, const char* name)
 {
     assert(indices);
     assert(index_count > 0);
@@ -1319,7 +1324,7 @@ void platform::BindIndexBuffer(Buffer* buffer)
     vkCmdBindIndexBuffer(g_vulkan.command_buffer, (VkBuffer)buffer, 0, VK_INDEX_TYPE_UINT16);
 }
 
-void platform::DrawIndexed(size_t index_count)
+void platform::DrawIndexed(u16 index_count)
 {
     assert(g_vulkan.command_buffer);
     assert(index_count > 0);
@@ -1600,6 +1605,8 @@ void platform::DestroyTexture(Texture* texture)
 
 void platform::BindTexture(Texture* texture, int slot)
 {
+    (void)slot;
+
     VkDescriptorSet texture_descriptor_set = texture->vk_descriptor_set;
     vkCmdBindDescriptorSets(
         g_vulkan.command_buffer,
@@ -2020,7 +2027,7 @@ void InitVulkan(const RendererTraits* traits, HWND hwnd)
     // Get device properties for uniform buffer alignment
     VkPhysicalDeviceProperties device_properties;
     vkGetPhysicalDeviceProperties(g_vulkan.physical_device, &device_properties);
-    g_vulkan.min_uniform_buffer_offset_alignment = device_properties.limits.minUniformBufferOffsetAlignment;
+    g_vulkan.min_uniform_buffer_offset_alignment = (u32)device_properties.limits.minUniformBufferOffsetAlignment;
 
     // Create descriptor set layouts first
     CreateDescriptorSetLayout();

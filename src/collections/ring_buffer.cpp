@@ -27,7 +27,6 @@ void* PushFront(RingBuffer* rb)
 
 void* PushFront(RingBuffer* rb, const void* value)
 {
-    auto impl = rb;
     auto item = PushFront(rb);
     if (!item)
         return nullptr;
@@ -47,7 +46,6 @@ void* PushBack(RingBuffer* rb)
 
 void* PushBack(RingBuffer* rb, const void* value)
 {
-    auto impl = rb;
     auto item = PushBack(rb);
     if (!item)
         return nullptr;
@@ -57,7 +55,6 @@ void* PushBack(RingBuffer* rb, const void* value)
 
 void PopFront(RingBuffer* rb)
 {
-    auto impl = rb;
     if (rb->count == 0)
         return;
 
@@ -77,7 +74,6 @@ void PopBack(RingBuffer* rb)
 
 void Clear(RingBuffer* rb)
 {
-    auto impl = rb;
     rb->count = 0;
     rb->front = 0;
     rb->back = 0;
@@ -85,7 +81,6 @@ void Clear(RingBuffer* rb)
 
 void* GetAt(RingBuffer* rb, u32 index)
 {
-    auto impl = rb;
     assert(index < rb->count);
     return rb->items + ((rb->front + index) % rb->capacity) * rb->item_size;
 }

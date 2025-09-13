@@ -71,10 +71,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hwnd, &ps);
+        BeginPaint(hwnd, &ps);
         EndPaint(hwnd, &ps);
-    }
         return 0;
+    }
+
     case WM_SIZE:
     {
         // Update global screen size when window is resized
@@ -348,6 +349,11 @@ extern int main(int argc, char* argv[]);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+    (void)hInstance;
+    (void)hPrevInstance;
+    (void)lpCmdLine;
+    (void)nCmdShow;
+
     // Convert command line arguments
     int argc = 0;
     LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
@@ -383,5 +389,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 void platform::Log(LogType type, const char* message)
 {
+    (void)type;
+
     OutputDebugStringA(message);
 }

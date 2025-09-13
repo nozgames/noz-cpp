@@ -15,21 +15,21 @@ struct ArenaAllocator
 {
     Allocator base;
     u8* data;
-    size_t* stack;
-    size_t stack_depth;
-    size_t stack_size;
-    size_t stack_overflow;
-    size_t size;
-    size_t used;
+    u32* stack;
+    u32 stack_depth;
+    u32 stack_size;
+    u32 stack_overflow;
+    u32 size;
+    u32 used;
 };
 
-void* ArenaAlloc(Allocator* a, size_t size)
+static void* ArenaAlloc(Allocator* a, u32 size)
 {
     auto* impl = (ArenaAllocator*)a;
 
     // Calculate the total size of the alloc including the alloc header and alignment
-    auto total_size = sizeof(ArenaAllocHeader) + size;
-    constexpr size_t alignment = sizeof(void*);
+    u32 total_size = (u32)sizeof(ArenaAllocHeader) + size;
+    constexpr u32 alignment = sizeof(void*);
     total_size = (total_size + alignment - 1) & ~(alignment - 1);
 
     // Overflow?
@@ -37,34 +37,38 @@ void* ArenaAlloc(Allocator* a, size_t size)
         return nullptr;
 
     // Reserve the space
-    void* ptr = (char*)impl->data + impl->used;
+    u8* ptr = impl->data + impl->used;
     impl->used += total_size;
 
     // Stuff a header before the actual data
-    auto* header = (ArenaAllocHeader*)ptr;
+    ArenaAllocHeader* header = (ArenaAllocHeader*)ptr;
     header->size = total_size;
 
     // Return the real data pointer
     return header + 1;
 }
 
-void* ArenaRealloc(Allocator* a, void* ptr, size_t new_size)
+static void* ArenaRealloc(Allocator* a, void* ptr, u32 new_size)
 {
+    (void)a;
+    (void)ptr;
+    (void)new_size;
     Exit("arena_allocator_realloc not supported");
     return nullptr;
 }
 
-void ArenaFree(Allocator* a, void* ptr)
+static void ArenaFree(Allocator* a, void* ptr)
 {
-    // todo: if it was the last pointer we can pop it off
+    (void)a;
+    (void)ptr;
 }
 
-void ArenaClear(Allocator* a)
+static void ArenaClear(Allocator* a)
 {
     auto* impl = (ArenaAllocator*)a;
     assert(impl);
 
-    size_t size = 0;
+    u32 size = 0;
     while (size < impl->used)
     {
         auto header = (ArenaAllocHeader*)(impl->data + size);
@@ -77,8 +81,7 @@ void ArenaClear(Allocator* a)
     impl->used = 0;
 }
 
-
-void ArenaPush(Allocator* a)
+static void ArenaPush(Allocator* a)
 {
     auto impl = (ArenaAllocator*)a;
     assert(impl);
@@ -88,7 +91,7 @@ void ArenaPush(Allocator* a)
         impl->stack_overflow++;
 }
 
-void ArenaPop(Allocator* a)
+static void ArenaPop(Allocator* a)
 {
     auto* impl = (ArenaAllocator*)a;
     assert(impl);
@@ -109,13 +112,13 @@ AllocatorStats ArenaStats(Allocator* a)
     return { impl->size, impl->used };
 }
 
-Allocator* CreateArenaAllocator(size_t size, const char* name)
+Allocator* CreateArenaAllocator(u32 size, const char* name)
 {
     auto* allocator = (ArenaAllocator*)calloc(
         1,
         sizeof(ArenaAllocator) +
         size +
-        sizeof(size_t) * ARENA_ALLOCATOR_MAX_STACK);
+        sizeof(u32) * ARENA_ALLOCATOR_MAX_STACK);
 
     if (!allocator)
         return nullptr;
@@ -130,7 +133,7 @@ Allocator* CreateArenaAllocator(size_t size, const char* name)
         .stats = ArenaStats,
         .name = name,
     };
-    allocator->stack = (size_t*)(allocator + 1);
+    allocator->stack = (u32*)(allocator + 1);
     allocator->stack_size = ARENA_ALLOCATOR_MAX_STACK;
     allocator->size = size;
     allocator->data = (u8*)(allocator->stack + ARENA_ALLOCATOR_MAX_STACK);
