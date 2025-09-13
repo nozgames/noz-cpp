@@ -384,4 +384,5 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 void platform::Log(LogType type, const char* message)
 {
     OutputDebugStringA(message);
+    OutputDebugStringA("\n");
 }

@@ -19,13 +19,12 @@ Mat3 TRS(const Vec2& translation, f32 rotation, const Vec2& scale)
 
 Mat3 TRS(const Vec2& translation, const Vec2& direction, const Vec2& scale)
 {
-    Vec2 dir = Normalize(direction);
-    Vec2 right = Vec2{dir.y, -dir.x};
+    Vec2 perp = Perpendicular(direction);
 
     return Mat3{
-        scale.x * right.x,   scale.x * right.y,   0,
-        scale.y * dir.x,     scale.y * dir.y,     0,
-        translation.x,       translation.y,       1
+        scale.x * direction.x,  scale.x * direction.y,  0,
+        scale.y * perp.x,       scale.y * perp.y,       0,
+        translation.x,          translation.y,          1
     };
 }
 

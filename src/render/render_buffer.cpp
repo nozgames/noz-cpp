@@ -177,6 +177,17 @@ void BindTransform(const Vec2& position, float rotation, const Vec2& scale)
     AddRenderCommand(&cmd);
 }
 
+void BindTransform(const Vec2& position, const Vec2& rotation, const Vec2& scale)
+{
+    Mat3 trs = TRS(position, rotation, scale);
+
+    RenderCommand cmd = {
+        .type = RENDER_COMMAND_TYPE_BIND_TRANSFORM,
+        .data = { .bind_transform = { .transform = trs }}
+    };
+    AddRenderCommand(&cmd);
+}
+
 void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color)
 {
     RenderCommand cmd = {
