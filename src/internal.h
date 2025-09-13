@@ -115,9 +115,7 @@ struct Bone
     const Name* name;
     i32 index;
     i32 parent_index;
-    Vec2 position;
-    Mat3 world_to_local;
-    Mat3 local_to_world;
+    Transform transform;
 };
 
 struct SkeletonImpl : Skeleton

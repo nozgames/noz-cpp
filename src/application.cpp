@@ -48,8 +48,7 @@ static ApplicationTraits g_default_traits =
     .max_event_listeners = 4,
     .max_event_stack = 32,
     .editor_port = 8080,
-    .console = false,
-    .renderer = 
+    .renderer =
     {
         .max_textures = 32,
         .max_shaders = 32,
@@ -162,16 +161,12 @@ void InitApplication(ApplicationTraits* traits, int argc, const char* argv[])
     g_app.traits.width = GetPrefInt(GetName("window.width"), g_app.traits.width);
     g_app.traits.height = GetPrefInt(GetName("window.height"), g_app.traits.height);
 
-    if (!traits->console)
-        InitWindow();
+    InitWindow();
 }
 
 static void HandleClose()
 {
-    if (g_app.traits.console && g_app.window_created)
-        ShutdownWindow();
-    else
-        g_app.running = false;
+    g_app.running = false;
 }
 
 void InitWindow()
@@ -290,36 +285,29 @@ bool UpdateApplication()
 {
     ClearScratch();
 
-    if (IsWindowCreated())
+    bool had_focus = platform::HasFocus();
+    platform::UpdateApplication();
+    if (!IsWindowCreated())
+        return true;
+
+    bool has_focus = platform::HasFocus();
+
+    if (had_focus != has_focus)
     {
-        bool had_focus = platform::HasFocus();
-        platform::UpdateApplication();
-        if (!IsWindowCreated())
-            return true;
+        ResetInputState(GetInputSet());
+        FocusChangedEvent event = { has_focus };
+        Send(EVENT_FOCUS_CHANGED, &event);
+    }
 
-        bool has_focus = platform::HasFocus();
-
-        if (had_focus != has_focus)
-        {
-            ResetInputState(GetInputSet());
-            FocusChangedEvent event = { has_focus };
-            Send(EVENT_FOCUS_CHANGED, &event);
-        }
-
-        UpdateScreenSize();
-        UpdateTime();
-        UpdateInput();
+    UpdateScreenSize();
+    UpdateTime();
+    UpdateInput();
 
 #ifdef NOZ_EDITOR
-        UpdateEditorClient();
+    UpdateEditorClient();
 #endif
 
-        UpdateFPS();
-    }
-    else
-    {
-        UpdateTime();
-    }
+    UpdateFPS();
 
     return g_app.running;
 }

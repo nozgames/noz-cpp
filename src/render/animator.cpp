@@ -25,8 +25,8 @@ static void EvalulateFrame(Animator& animator)
         auto& bt1 = frames[frame1 * anim_impl->frame_stride + i];
         auto& bt2 = frames[frame2 * anim_impl->frame_stride + i];
 
-        Vec2 position = Mix(bt1.position, bt2.position, t) + skel_impl->bones[i].position;
-        float rotation = Mix(bt1.rotation, bt2.rotation, t);
+        Vec2 position = Mix(bt1.position, bt2.position, t) + skel_impl->bones[i].transform.position;
+        float rotation = Mix(bt1.rotation, bt2.rotation, t) + skel_impl->bones[i].transform.rotation;
         float scale = Mix(bt1.scale, bt2.scale, t);
 
         animator.bones[i] = TRS(position, rotation, Vec2{scale, scale});

@@ -25,7 +25,7 @@ const Mat3& GetLocalToWorld(Skeleton* skeleton, int bone_index)
     assert(impl);
     assert(bone_index >= 0 && bone_index < impl->bone_count);
 
-    return impl->bones[bone_index].local_to_world;
+    return GetLocalToWorld(impl->bones[bone_index].transform);
 }
 
 const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index)
@@ -34,7 +34,7 @@ const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index)
     assert(impl);
     assert(bone_index >= 0 && bone_index < impl->bone_count);
 
-    return impl->bones[bone_index].world_to_local;
+    return GetWorldToLocal(impl->bones[bone_index].transform);
 }
 
 Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
@@ -52,10 +52,12 @@ Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, c
         Bone& bone = impl->bones[i];
         bone.name = name_table[i];
         bone.index = i;
-        bone.parent_index = ReadI8(stream);;
-        bone.local_to_world= ReadStruct<Mat3>(stream);
-        bone.world_to_local = ReadStruct<Mat3>(stream);
-        bone.position = ReadStruct<Vec2>(stream);
+        bone.parent_index = ReadI8(stream);
+        bone.transform.local_to_world = ReadStruct<Mat3>(stream);
+        bone.transform.world_to_local = ReadStruct<Mat3>(stream);
+        bone.transform.position = ReadStruct<Vec2>(stream);
+        bone.transform.rotation = ReadFloat(stream);
+        bone.transform.scale = ReadStruct<Vec2>(stream);
     }
 
     return impl;

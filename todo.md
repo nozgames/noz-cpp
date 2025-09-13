@@ -1,17 +1,13 @@
 # Todo
 
-- [ ] Changes to to animations are not saving always
+- [ ] Add rotation to skeleton bones which is the angle of the bone from parent
+- [ ] Dont allow duplicate bone names in animation
 - [ ] New animation
 - [ ] Animation with no frames not loading
-- [ ] App not shutting down
-- [ ] Select closest bone
 - [ ] After creating new mesh I cannot select bones in the skeleton view
 - [ ] Really need undo to work properly
 - [ ] Playing animation in editor does not animate mesh
 - [ ] Outline size tool
-- [ ] button insert a frame (i)
-- [ ] button to add a frame (o)
-- [ ] button delete a frame
 - [ ] button duplicate a frame
 - [ ] button copy a frame
 - [ ] button paste a frame
@@ -178,3 +174,10 @@
 - [X] Alt to show names ?
 - [X] Skeleton should be using name table in serialized bones for names
 - [X] Need way to rename bone (:r bone name
+- [X] button insert a frame (i)
+- [X] button to add a frame (o)
+- [X] button delete a frame
+- [X] Dashed lines are wrong
+- [X] Changes to to animations are not saving always
+- [X] App not shutting down
+- [X] Select closest bone

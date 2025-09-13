@@ -197,6 +197,15 @@ void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& s
     AddRenderCommand(&cmd);
 }
 
+void BindTransform(Transform& transform)
+{
+    RenderCommand cmd = {
+        .type = RENDER_COMMAND_TYPE_BIND_TRANSFORM,
+        .data = { .bind_transform = { .transform = GetLocalToWorld(transform) }}
+    };
+    AddRenderCommand(&cmd);
+}
+
 void BindTransform(const Mat3& transform)
 {
     RenderCommand cmd = {

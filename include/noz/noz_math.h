@@ -98,7 +98,9 @@ struct Vec2
     Vec2 operator+(const Vec2& v) const { return Vec2{ x + v.x, y + v.y }; }
     Vec2 operator-(const Vec2& v) const { return Vec2{ x - v.x, y - v.y }; }
     Vec2& operator+=(const Vec2& v) { x += v.x; y += v.y; return *this; }
+    Vec2& operator-=(const Vec2& v) { x -= v.x; y -= v.y; return *this; }
     Vec2 operator*(f32 scalar) const { return Vec2{ x * scalar, y * scalar }; }
+    Vec2 operator*(const Vec2& v) const { return Vec2{ x * v.x, y * v.y }; }
     Vec2 operator/(f32 scalar) const { return Vec2{ x / scalar, y / scalar }; }
     Vec2 operator*=(f32 scalar) const { return Vec2{ x * scalar, y * scalar }; }
     Vec2 operator-() const { return { -x, -y }; }
@@ -187,6 +189,18 @@ struct quat
     float w;
 };
 
+struct Transform
+{
+    Vec2 position;
+    Vec2 scale;
+    float rotation;
+    Mat3 local_to_world;
+    Mat3 world_to_local;
+    u32 flags;
+};
+
+constexpr u32 TRANSFORM_FLAG_DIRTY = 1 << 0;
+
 constexpr Mat3 MAT3_IDENTITY = { 1,0,0, 0,1,0, 0,0,1 };
 constexpr Mat4 MAT4_IDENTITY = { 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1 };
 
@@ -224,17 +238,28 @@ constexpr u32 U32_MIN = 0;
 
 constexpr Bounds2 BOUNDS2_ZERO = { VEC2_ZERO, VEC2_ZERO };
 
+// @float
+inline f32 Floor(f32 v2) { return floorf(v2); }
+inline f32 Ceil(f32 v2) { return ceilf(v2); }
+inline f32 Min(f32 v1, f32 v2) { return v1 < v2 ? v1 : v2; }
+inline f32 Max(f32 v1, f32 v2) { return v1 > v2 ? v1 : v2; }
+inline f32 Mix(f32 v1, f32 v2, f32 t) { return v1 + (v2 - v1) * t; }
+inline f64 Mix(f64 v1, f64 v2, f64 t) { return v1 + (v2 - v1) * t; }
+inline bool ApproxEqual(f32 a, f32 b, f32 epsilon = 1e-6f) { return fabsf(a - b) <= epsilon; }
+inline f32 Sqrt(f32 v) { return sqrtf(v); }
+inline f32 Cos(f32 v) { return cosf(v); }
+inline f32 Sin(f32 v) { return sinf(v); }
+inline f32 Atan2(f32 y, f32 x) { return atan2f(y, x); }
+
 // @min
 inline i32 Min(i32 v1, i32 v2) { return v1 < v2 ? v1 : v2; }
 inline u32 Min(u32 v1, u32 v2) { return v1 < v2 ? v1 : v2; }
-inline f32 Min(f32 v1, f32 v2) { return v1 < v2 ? v1 : v2; }
 inline u64 Min(u64 v1, u64 v2) { return v1 < v2 ? v1 : v2; }
 inline Vec2 Min(const Vec2& m1, const Vec2& m2) { return { Min(m1.x, m2.x), Min(m1.y, m2.y) }; }
 inline Vec3 Min(const Vec3& m1, const Vec3& m2) { return { Min(m1.x, m2.x), Min(m1.y, m2.y), Min(m1.z, m2.z) }; }
 
 // @max
 inline i32 Max(i32 v1, i32 v2) { return v1 > v2 ? v1 : v2; }
-inline f32 Max(f32 v1, f32 v2) { return v1 > v2 ? v1 : v2; }
 inline u32 Max(u32 v1, u32 v2) { return v1 > v2 ? v1 : v2; }
 inline u64 Max(u64 v1, u64 v2) { return v1 > v2 ? v1 : v2; }
 inline Vec2 Max(const Vec2& m1, const Vec2& m2) { return { Max(m1.x, m2.x), Max(m1.y, m2.y) }; }
@@ -277,10 +302,18 @@ extern Vec2 Normalize(const Vec2& v);
 extern Vec2 Rotate(const Vec2& v, f32 degrees);
 extern Vec2 Rotate(const Vec2& v, const Vec2& direction);
 inline Vec2 Perpendicular(const Vec2& v) { return Vec2{ v.y, -v.x }; }
+inline f32 Dot(const Vec2& a, const Vec2& b) { return a.x * b.x + a.y * b.y; }
+inline Vec2 Mix(const Vec2& v1, const Vec2& v2, f32 t) { return v1 + (v2 - v1) * t; }
+inline bool ApproxEqual(const Vec2& a, const Vec2& b, f32 epsilon = 1e-6f)
+{
+    return ApproxEqual(a.x, b.x, epsilon) && ApproxEqual(a.y, b.y, epsilon);
+}
 
 // @vec2d
 extern f64 Length(const Vec2Double& v);
 extern Vec2Double Normalize(const Vec2Double& v);
+inline f64 Dot(const Vec2Double& a, const Vec2Double& b) { return a.x * b.x + a.y * b.y; }
+inline Vec2Double Mix(const Vec2Double& v1, const Vec2Double& v2, f64 t) { return v1 + (v2 - v1) * t; }
 
 // @vec2int
 inline Vec2 ToVec2(const Vec2Int& v) { return { (f32)v.x, (f32)v.y }; }
@@ -290,45 +323,41 @@ inline Vec2 ToVec2(const Vec3& v) { return { (f32)v.x, (f32)v.y }; }
 extern f32 Length(const Vec3& v);
 extern Vec3 Normalize(const Vec3& v);
 extern Vec3 Cross(const Vec3& a, const Vec3& b);
+inline f32 Dot(const Vec3& a, const Vec3& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
 // @angle
 float SignedAngleDelta(const Vec2& a, const Vec2&b);
+inline float Radians(float degrees) { return degrees * noz::PI / 180.0f; }
+inline float Degrees(float radians) { return radians * 180.0f / noz::PI; }
 
-// @float
-inline f32 Floor(f32 v2) { return floorf(v2); }
-inline f32 Ceil(f32 v2) { return ceilf(v2); }
-
-
-inline f32 Dot(const Vec2& a, const Vec2& b) { return a.x * b.x + a.y * b.y; }
-inline f32 Dot(const Vec3& a, const Vec3& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
-inline f64 Dot(const Vec2Double& a, const Vec2Double& b) { return a.x * b.x + a.y * b.y; }
-
-inline f32 Mix(f32 v1, f32 v2, f32 t) { return v1 + (v2 - v1) * t; }
-inline f64 Mix(f64 v1, f64 v2, f64 t) { return v1 + (v2 - v1) * t; }
-inline Vec2 Mix(const Vec2& v1, const Vec2& v2, f32 t) { return v1 + (v2 - v1) * t; }
-inline Vec2Double Mix(const Vec2Double& v1, const Vec2Double& v2, f64 t) { return v1 + (v2 - v1) * t; }
+// @transform
+extern void SetIdentity(Transform& transform);
+extern void Update(Transform& transform);
+extern void SetPosition(Transform& transform, const Vec2& position);
+extern void SetPosition(Transform& transform, float x, float y);
+extern void SetRotation(Transform& transform, f32 rotation);
+extern void SetRotation(Transform& transform, const Vec2& direction);
+extern void SetScale(Transform& transform, const Vec2& scale);
+extern void SetScale(Transform& transform, float scale);
+extern const Mat3& GetLocalToWorld(Transform& transform);
+extern const Mat3& GetWorldToLocal(Transform& transform);
+extern Vec2 TransformPoint(Transform& transform, const Vec2& point);
+extern Vec2 TransformPoint(Transform& transform);
+extern Vec2 InverseTransformPoint(Transform& transform, const Vec2& point);
+extern Vec2 TransformVector(Transform& transform, const Vec2& vector);
+extern Vec2 InverseTransformVector(Transform& transform, const Vec2& vector);
 
 inline i32 Clamp(i32 v, i32 min, i32 max) { return v < min ? min : v > max ? max : v; }
 inline u32 Clamp(u32 v, u32 min, u32 max) { return v < min ? min : v > max ? max : v; }
 inline f32 Clamp(f32 v, f32 min, f32 max) { return v < min ? min : v > max ? max : v; }
 inline f64 Clamp(f64 v, f64 min, f64 max) { return v < min ? min : v > max ? max : v; }
 
-inline float Radians(float degrees) { return degrees * noz::PI / 180.0f; }
-inline float Degrees(float radians) { return radians * 180.0f / noz::PI; }
 
-inline bool ApproxEqual(f32 a, f32 b, f32 epsilon = 1e-6f) { return fabsf(a - b) <= epsilon; }
-inline bool ApproxEqual(const Vec2& a, const Vec2& b, f32 epsilon = 1e-6f)
-{
-    return ApproxEqual(a.x, b.x, epsilon) && ApproxEqual(a.y, b.y, epsilon);
-}
 
 inline i32 Abs(i32 v) { return v < 0 ? -v : v; }
 inline f32 Abs(f32 v) { return v < 0 ? -v : v; }
 inline f64 Abs(f64 v) { return v < 0 ? -v : v; }
 
-inline f32 Sqrt(f32 v) { return sqrtf(v); }
-inline f32 Cos(f32 v) { return cosf(v); }
-inline f32 Sin(f32 v) { return sinf(v); }
 
 constexpr Vec2Int RoundToNearest(const Vec2Int& v)
 {

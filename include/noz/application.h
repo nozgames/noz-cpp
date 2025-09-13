@@ -34,7 +34,6 @@ struct ApplicationTraits
     u32 max_event_listeners;
     u32 max_event_stack;
     u16 editor_port;
-    bool console;
     RendererTraits renderer;
     bool (*load_assets)(Allocator* allocator);
     void (*unload_assets)();
