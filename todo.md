@@ -1,5 +1,9 @@
 # Todo
 
+- [ ] Render whole bone as selected
+- [ ] Skinned meshes not rendering on skeleton
+- [ ] Need way to handle invalid assets (show invalid or error in editor, animation with missing skeleton for example)
+- [ ] Select bone in skeleton view by clicking on it
 - [ ] Add rotation to skeleton bones which is the angle of the bone from parent
 - [ ] Dont allow duplicate bone names in animation
 - [ ] New animation
@@ -181,3 +185,4 @@
 - [X] Changes to to animations are not saving always
 - [X] App not shutting down
 - [X] Select closest bone
+- [X] move and rotate commit in skeleton view is selecting bones

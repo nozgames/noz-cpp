@@ -57,3 +57,19 @@ Vec2Double Normalize(const Vec2Double& v)
     length = 1.0 / length;
     return { v.x * length, v.y * length };
 }
+
+float DistanceFromLine(const Vec2& v0, const Vec2& v1, const Vec2& point)
+{
+    Vec2 line_dir = v1 - v0;
+    Vec2 point_dir = point - v0;
+    float line_length_sq = Dot(line_dir, line_dir);
+    if (line_length_sq < F32_EPSILON)
+        return Length(point_dir);
+
+    float t = Dot(point_dir, line_dir) / line_length_sq;
+    t = Clamp(t, 0.0f, 1.0f);
+    Vec2 projection = v0 + line_dir * t;
+    return Length(point - projection);
+}
+
+

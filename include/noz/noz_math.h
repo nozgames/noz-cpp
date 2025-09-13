@@ -301,6 +301,7 @@ extern Vec2 Reflect(const Vec2& v, const Vec2& normal);
 extern Vec2 Normalize(const Vec2& v);
 extern Vec2 Rotate(const Vec2& v, f32 degrees);
 extern Vec2 Rotate(const Vec2& v, const Vec2& direction);
+extern float DistanceFromLine(const Vec2& v0, const Vec2& v1, const Vec2& point);
 inline Vec2 Perpendicular(const Vec2& v) { return Vec2{ v.y, -v.x }; }
 inline f32 Dot(const Vec2& a, const Vec2& b) { return a.x * b.x + a.y * b.y; }
 inline Vec2 Mix(const Vec2& v1, const Vec2& v2, f32 t) { return v1 + (v2 - v1) * t; }
@@ -368,5 +369,6 @@ constexpr Vec2Int RoundToNearest(const Vec2Double& v)
 {
     return { (i32)(v.x + 0.5f), (i32)(v.y + 0.5f) };
 }
+
 
 
