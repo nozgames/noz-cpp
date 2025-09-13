@@ -4,8 +4,9 @@
 
 #pragma once
 
-const EventId EVENT_FOCUS_CHANGED = -1;
-const EventId EVENT_HOTLOAD = -2;
+constexpr EventId EVENT_FOCUS_CHANGED = -1;
+constexpr EventId EVENT_HOTLOAD = -2;
+constexpr EventId EVENT_TEXTINPUT_CHANGED = -3;
 
 struct FocusChangedEvent
 {

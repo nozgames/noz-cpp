@@ -362,6 +362,8 @@ void HandleInputCharacter(char c)
     g_input.text_input.value[g_input.text_input.length++] = c;
     g_input.text_input.value[g_input.text_input.length] = 0;
     g_input.text_input.cursor++;
+
+    Send(EVENT_TEXTINPUT_CHANGED, &g_input.text_input);
 }
 
 void HandleInputKeyDown(char c)
@@ -377,6 +379,7 @@ void HandleInputKeyDown(char c)
             g_input.text_input.length--;
             g_input.text_input.value[g_input.text_input.length] = 0;
             g_input.text_input.cursor--;
+            Send(EVENT_TEXTINPUT_CHANGED, &g_input.text_input);
         }
         break;
     }
@@ -387,6 +390,7 @@ void platform::ClearTextInput()
     g_input.text_input.value[0] = 0;
     g_input.text_input.length = 0;
     g_input.text_input.cursor = 0;
+    Send(EVENT_TEXTINPUT_CHANGED, &g_input.text_input);
 }
 
 const TextInput& platform::GetTextInput()

@@ -1,32 +1,35 @@
 # Todo
 
-- [ ] Skeleton should be using name table in serialized bones for names
-- [ ] Need way to rename bone (:r bone name
-- [ ] Single shader!
-- [ ] Really need undo to work properly 
-- [ ] First time you load the shader is not loaded and it messes up, we need to handle the hotload?
+- [ ] Changes to to animations are not saving always
+- [ ] New animation
+- [ ] Animation with no frames not loading
+- [ ] App not shutting down
+- [ ] Select closest bone
+- [ ] After creating new mesh I cannot select bones in the skeleton view
+- [ ] Really need undo to work properly
 - [ ] Playing animation in editor does not animate mesh
-- [ ] No way to see log messages anymore, we need a consol window
-
-- [ ] Saved animation and its loading for Q / R but not play
-- [ ] when moving bones in animation we have to recalculate the local position from the world after delta change
+- [ ] Outline size tool
 - [ ] button insert a frame (i)
 - [ ] button to add a frame (o)
 - [ ] button delete a frame
 - [ ] button duplicate a frame
 - [ ] button copy a frame
 - [ ] button paste a frame
+
+- [ ] zoom should zoom in at cursor
+- [ ] Single shader!
+- [ ] First time you load the shader is not loaded and it messes up, we need to handle the hotload?
+- [ ] No way to see log messages anymore, we need a consol window
+- [ ] Saved animation and its loading for Q / R but not play
+- [ ] when moving bones in animation we have to recalculate the local position from the world after delta change
 - [ ] Onion skinning (alt-o) toggle ?
-- 
 - [ ] Normalize selection colors to blender colors
 - [ ] Animate bone color to blue like blender
 - [ ] Sort order ([ ])
 - [ ] New mesh has no color or edges
 - [ ] Remove dirty flag from assets
 - [ ] Animation editor should use its own bone selected state not the skeletons
-- 
 - [ ] Load editor assets in job
-- [ ] Alt to show names ?
 - [ ] Skeleton bounds should include the meshes
 - [ ] Rotate tool in skeleton editor not working correctly (should rotate the points around center
 - [ ] Clean up mesh dirty flag, just use mesh?
@@ -39,7 +42,6 @@
 - [ ] skeleton editor bone rotate tool
 - [ ] skeleton editor bone move tool
 - [ ] skeleton editor bind mesh
-- [ ] Incrase border size
 - [ ] Set border color
 - [ ] Why isnt it closing? (thread lock) (job system)
 - [ ] m to merge vertices (broken)
@@ -172,3 +174,7 @@
 - [X] Bone names should be in name header
 - [X] Play test animation in game
 - [X] Add skeleton bones as names automatically
+- [X] notification for reimporting asset
+- [X] Alt to show names ?
+- [X] Skeleton should be using name table in serialized bones for names
+- [X] Need way to rename bone (:r bone name

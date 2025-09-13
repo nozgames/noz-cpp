@@ -151,6 +151,12 @@ void BeginElement(const Name* id)
     BeginElement(ELEMENT_TYPE_NONE, id);
 }
 
+void EmptyElement(const Name* id)
+{
+    BeginElement(ELEMENT_TYPE_NONE, id);
+    EndElement();
+}
+
 void EndElement()
 {
     Element& e = g_ui.elements[g_ui.element_stack[g_ui.element_stack_count-1]];
@@ -160,6 +166,25 @@ void EndElement()
         p.child_count++;
     }
     g_ui.element_stack_count--;
+}
+
+void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size)
+{
+    Vec2 screen_pos = WorldToScreen(camera, position);
+    Vec2 screen_size = WorldToScreen(camera, size) - WorldToScreen(camera, VEC2_ZERO);
+    screen_pos = screen_pos - screen_size * 0.5f;
+
+    Vec2 ui_pos = ScreenToWorld(g_ui.camera, screen_pos);
+    Vec2 ui_size = ScreenToWorld(g_ui.camera, screen_size) - ScreenToWorld(g_ui.camera, VEC2_ZERO);
+
+    BeginElement(ELEMENT_TYPE_CANVAS);
+
+    // Force the canvas element to fit the reference
+    Element& e = GetCurrentElement();
+    e.style.margin_left = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, ui_pos.x };
+    e.style.margin_top = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, ui_pos.y };
+    e.style.width = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, ui_size.x };
+    e.style.height = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, ui_size.y };
 }
 
 void BeginCanvas()

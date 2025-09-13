@@ -128,6 +128,9 @@ struct Vec4
     f32 w;
 
     Vec4 operator/=(f32 scalar) { x /= scalar; y /= scalar; z /= scalar; w /= scalar; return *this; }
+
+    float& operator [] (int index) { return *((float*)this + index); }
+    float operator [] (int index) const { return *((float*)this + index); }
 };
 
 struct Vec2Int
