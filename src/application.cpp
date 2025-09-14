@@ -11,25 +11,27 @@
 
 static constexpr int FRAME_HISTORY_SIZE = 240;
 
-void LoadRendererAssets(Allocator* allocator);
-void InitRandom();
-void InitUI();
-void InitEvent(ApplicationTraits* traits);
-void InitName(ApplicationTraits* traits);
-void InitVfx();
-void InitTime();
-void InitRenderer(const RendererTraits* traits);
-void InitAllocator(ApplicationTraits* traits);
-void InitAudio();
-void UpdateTime();
-void ShutdownRenderer();
-void ShutdownEvent();
-void ShutdownUI();
-void ShutdownName();
-void ShutdownVfx();
-void ShutdownTime();
-void ShutdownAllocator();
-void ShutdownAudio();
+extern void LoadRendererAssets(Allocator* allocator);
+extern void InitRandom();
+extern void InitUI();
+extern void InitEvent(ApplicationTraits* traits);
+extern void InitName(ApplicationTraits* traits);
+extern void InitVfx();
+extern void InitTime();
+extern void InitJobs();
+extern void InitRenderer(const RendererTraits* traits);
+extern void InitAllocator(ApplicationTraits* traits);
+extern void InitAudio();
+extern void UpdateTime();
+extern void ShutdownRenderer();
+extern void ShutdownEvent();
+extern void ShutdownUI();
+extern void ShutdownName();
+extern void ShutdownJobs();
+extern void ShutdownVfx();
+extern void ShutdownTime();
+extern void ShutdownAllocator();
+extern void ShutdownAudio();
 extern void ResetInputState(InputSet* input_set);
 
 // @traits
@@ -156,6 +158,7 @@ void InitApplication(ApplicationTraits* traits, int argc, const char* argv[])
     LoadPrefs();
     InitEvent(traits);
     InitTime();
+    InitJobs();
     InitAudio();
 
     g_app.traits.width = GetPrefInt(GetName("window.width"), g_app.traits.width);
@@ -241,6 +244,7 @@ void ShutdownApplication()
     if (g_app.window_created)
         ShutdownWindow();
 
+    ShutdownJobs();
     ShutdownTime();
     ShutdownAudio();
     ShutdownInput();

@@ -141,6 +141,9 @@ Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetSignature si
 
 void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void (*reload)(Asset*, Stream*, const AssetHeader& header, const Name** name_table))
 {
+    if (asset == nullptr)
+        return;
+
     assert(name);
 
     Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, name, signature);

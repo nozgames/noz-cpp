@@ -78,3 +78,12 @@ void ThreadSleep(int milliseconds);
 
 // @helper
 extern void ThrowError(const char* format, ...);
+
+// @job
+struct JobHandle { u32 id; u32 version; };
+
+typedef void (*JobRunFunc)(void* user_data);
+
+extern JobHandle CreateJob(JobRunFunc func, void* user_data = nullptr);
+extern bool IsDone(JobHandle handle);
+

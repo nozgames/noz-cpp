@@ -28,6 +28,7 @@ set(SOURCE_FILES
     src/input/input.cpp
     src/input/input_set.cpp
     src/log.cpp
+    src/job.cpp
     src/memory/allocator.cpp
     src/memory/pool_allocator.cpp
     src/memory/arena_allocator.cpp
