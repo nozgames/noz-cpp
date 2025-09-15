@@ -168,16 +168,17 @@ void EndElement()
     g_ui.element_stack_count--;
 }
 
-void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size)
+void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size, const Name* name)
 {
-    Vec2 screen_pos = WorldToScreen(camera, position);
-    Vec2 screen_size = WorldToScreen(camera, size) - WorldToScreen(camera, VEC2_ZERO);
+    Vec2 flipped_size = { size.x, -size.y };
+    Vec2 screen_pos = WorldToScreen(camera, {position.x, position.y});
+    Vec2 screen_size = WorldToScreen(camera, flipped_size) - WorldToScreen(camera, VEC2_ZERO);
     screen_pos = screen_pos - screen_size * 0.5f;
 
     Vec2 ui_pos = ScreenToWorld(g_ui.camera, screen_pos);
     Vec2 ui_size = ScreenToWorld(g_ui.camera, screen_size) - ScreenToWorld(g_ui.camera, VEC2_ZERO);
 
-    BeginElement(ELEMENT_TYPE_CANVAS);
+    BeginElement(ELEMENT_TYPE_CANVAS, name);
 
     // Force the canvas element to fit the reference
     Element& e = GetCurrentElement();

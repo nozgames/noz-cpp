@@ -149,7 +149,7 @@ extern Font* GetDefaultFont();
 extern void BeginUI(u32 ref_width, u32 ref_height);
 extern void EndUI();
 extern void BeginCanvas();
-extern void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size);
+extern void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size, const Name* name=nullptr);
 extern void EmptyElement(const Name* id);
 extern void BeginElement(const Name* id);
 extern void EndElement();

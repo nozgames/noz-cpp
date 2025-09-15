@@ -1,18 +1,18 @@
 # Todo
 
-- [ ] Handle hot load import jobs (run the reload on the main thread)
+- [ ] hover on animation should play ?
+- [ ] Move the clone methods to use the vtable
+- [ ] Bounds not including all bones in animation and skeleton
+- [ ] not rendering root bone and cant extrude
+- [ ] Saving an asset is causing a double import (.meta?)
+- [ ] Saving an asset should suppress the import notification 
+- [ ] reparenting bone messes up already loaded animations, have them fix their bones
 - [ ] convert props to be struct
-- [ ] Render whole bone as selected
-- [ ] Skinned meshes not rendering on skeleton
 - [ ] Need way to handle invalid assets (show invalid or error in editor, animation with missing skeleton for example)
-- [ ] Select bone in skeleton view by clicking on it
-- [ ] Add rotation to skeleton bones which is the angle of the bone from parent
-- [ ] Dont allow duplicate bone names in animation
 - [ ] New animation
 - [ ] Animation with no frames not loading
 - [ ] After creating new mesh I cannot select bones in the skeleton view
 - [ ] Really need undo to work properly
-- [ ] Playing animation in editor does not animate mesh
 - [ ] Outline size tool
 - [ ] button duplicate a frame
 - [ ] button copy a frame
@@ -43,7 +43,6 @@
 - [ ] Alt-drag on asset to create instance  (draw origin in blue and outline a lighter grey)
 - [ ] skeleton editor bone rotate tool
 - [ ] skeleton editor bone move tool
-- [ ] skeleton editor bind mesh
 - [ ] Set border color
 - [ ] Why isnt it closing? (thread lock) (job system)
 - [ ] m to merge vertices (broken)
@@ -189,3 +188,23 @@
 - [X] Select closest bone
 - [X] move and rotate commit in skeleton view is selecting bones
 - [X] stop importing all assets on laod if they havent changed
+- [X] Handle hot load import jobs (run the reload on the main thread)
+- [X] Extrude broken
+- [X] Skinned meshes not rendering on skeleton
+- [X] Delete bone
+- [X] If the same skinned mesh is on diff bones in a skeelton one gets overwritten
+- [X] Draw whole bone in animation view
+- [X] Text in import notification is bad
+- [X] Draw bone names in the center
+- [X] Bone names not rendering correctly in animation view
+- [X] Rotate is showing wrong center for animate
+- [X] skeleton bone rotations not saving
+- [X] Bone selection in animation  
+- [X] Play mode is throwing asserts
+- [X] Render whole bone as selected
+- [X] Select bone in skeleton view by clicking on it (almost, should factor in the actual visual)
+- [X] Add rotation to skeleton bones which is the angle of the bone from parent
+- [X] Dont allow duplicate bone names in animation
+- [X] Playing animation in editor does not animate mesh
+- [X] skeleton editor bind mesh
+- [x] leaving edit mode when animation playing leaves animation playing

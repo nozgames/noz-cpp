@@ -40,6 +40,7 @@ set(SOURCE_FILES
     src/physics/physics.cpp
     src/physics/rigid_body.cpp
     src/physics/collider.cpp
+    src/physics/collision.cpp
     src/random.cpp
     src/rect.cpp
     src/render/camera.cpp
@@ -68,6 +69,7 @@ set(SOURCE_FILES
     src/audio/audio.cpp
     src/audio/sound.cpp
     src/prefs.cpp
+
 )
 
 # Add platform-specific files

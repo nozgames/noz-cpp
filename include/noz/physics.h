@@ -35,9 +35,9 @@ struct RaycastResult
 // @physics
 RaycastResult Raycast(const Vec2& start, const Vec2& end, uint16_t category_mask = 0xFFFF);
 
-// @rigid_body
-RigidBody* CreateRigidBody(Allocator* allocator);
-
 // @collider
-Collider* CreateBoxCollider(Allocator* allocator, const Vec2& center, const Vec2& size, float density, float friction, float restitution, bool is_sensor);
-Collider* CreateCircleCollider(Allocator* allocator, const Vec2& center, float radius, float density, float friction, float restitution, bool is_sensor);
+Collider* CreateCollider(Allocator* allocator, const Vec2* points, u32 point_count);
+Collider* CreateCollider(Allocator* allocator, Mesh* mesh);
+
+// @collision
+bool OverlapPoint(Collider* collider, const Vec2& point);

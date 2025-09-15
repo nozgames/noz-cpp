@@ -88,6 +88,7 @@ extern u16 GetVertexCount(Mesh* mesh);
 extern u16 GetIndexCount(Mesh* mesh);
 extern const MeshVertex* GetVertices(Mesh* mesh);
 extern const u16* GetIndices(Mesh* mesh);
+extern Bounds2 GetBounds(Mesh* mesh);
 
 // @mesh_builder
 MeshBuilder* CreateMeshBuilder(Allocator* allocator, u16 max_vertices, u16 max_indices);

@@ -5,142 +5,18 @@ Place this file in your project directory or Visual Studio's natvis folder.
 -->
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
-  <!-- Object base visualizer -->
-  <Type Name="Object">
-    <DisplayString>Object</DisplayString>
+  <Type Name="Animation">
+    <DisplayString>Animation</DisplayString>
     <Expand>
-      <ExpandedItem>(ObjectImpl*)this</ExpandedItem>
+      <ExpandedItem>(AnimationImpl*)this</ExpandedItem>
     </Expand>
   </Type>
 
-    <Type Name="Entity">
-    <DisplayString>Entity</DisplayString>
+  <Type Name="Skeleton">
+    <DisplayString>Skeleton</DisplayString>
     <Expand>
-      <ExpandedItem>(EntityImpl*)this</ExpandedItem>
+      <ExpandedItem>(SkeletonImpl*)this</ExpandedItem>
     </Expand>
   </Type>
-
-  <Type Name="EntityBase">
-    <DisplayString>Entity</DisplayString>
-    <Expand>
-      <ExpandedItem>(EntityImpl*)this</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <Type Name="ElementBase">
-    <DisplayString>Element</DisplayString>
-    <Expand>
-      <ExpandedItem>(ElementImpl*)this</ExpandedItem>
-    </Expand>
-  </Type>
-
-
-  <Type Name="Element">
-    <DisplayString>Element</DisplayString>
-    <Expand>
-      <ExpandedItem>(ElementImpl*)this</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <Type Name="ObjectBase">
-    <DisplayString>Object</DisplayString>
-    <Expand>
-      <ExpandedItem>(ObjectImpl*)this</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <!-- Shader pimpl visualizer -->
-  <Type Name="Shader">
-    <DisplayString>Shader</DisplayString>
-    <Expand>
-      <!-- Just show the cast - let the debugger handle ShaderImpl expansion -->
-      <ExpandedItem>(ShaderImpl*)this</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <!-- Texture visualizer -->
-  <Type Name="Texture">
-    <DisplayString>Texture</DisplayString>
-    <Expand>
-      <ExpandedItem>(TextureImpl*)this</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <!-- Material visualizer -->
-  <Type Name="Material">
-    <DisplayString>Material</DisplayString>
-    <Expand>
-      <ExpandedItem>(MaterialImpl*)this</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <!-- Mesh visualizer -->
-  <Type Name="Mesh">
-    <DisplayString>Mesh</DisplayString>
-    <Expand>
-      <ExpandedItem>(MeshImpl*)this</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <Type Name="TextMesh">
-    <DisplayString>TextMesh</DisplayString>
-    <Expand>
-      <ExpandedItem>(TextMeshImpl*)this</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <!-- Font visualizer -->
-  <Type Name="Font">
-    <DisplayString>Font</DisplayString>
-    <Expand>
-      <ExpandedItem>(FontImpl*)this</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <!-- Font visualizer -->
-  <Type Name="StyleSheet">
-    <DisplayString>StyleSheet</DisplayString>
-    <Expand>
-      <ExpandedItem>(StyleSheetImpl*)this</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <!-- Component -->
-  <Type Name="Component">
-    <DisplayString>Component</DisplayString>
-    <Expand>
-      <ExpandedItem>(ComponentImpl*)this</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <Type Name="ComponentBase">
-    <DisplayString>Component</DisplayString>
-    <Expand>
-      <ExpandedItem>(ComponentImpl*)this</ExpandedItem>
-    </Expand>
-  </Type>
-
-
-  <Type Name="Camera">
-    <DisplayString>Camera</DisplayString>
-    <Expand>
-      <ExpandedItem>(CameraImpl*)this</ExpandedItem>
-    </Expand>
-  </Type>
-
-  <!-- EntityFlags visualization -->
-  <Type Name="EntityFlags">
-    <DisplayString>{value,x}</DisplayString>
-    <Expand>
-      <Item Name="ENABLED">(value &amp; 0x1) != 0</Item>
-      <Item Name="ENABLED_SELF">(value &amp; 0x2) != 0</Item>
-      <Item Name="ENABLED_HIERARCHY">(value &amp; 0x4) != 0</Item>
-      <Item Name="LOCAL_DIRTY">(value &amp; 0x8) != 0</Item>
-      <Item Name="WORLD_DIRTY">(value &amp; 0x10) != 0</Item>
-      <Item Name="Raw Value">value</Item>
-    </Expand>
-  </Type>
-
-
 
 </AutoVisualizer>
