@@ -6,15 +6,10 @@
 
 Mat3 TRS(const Vec2& translation, f32 rotation, const Vec2& scale)
 {
-    rotation = Radians(-rotation);
+    rotation = Radians(rotation);
     f32 c = std::cos(rotation);
     f32 s = std::sin(rotation);
-    
-    return Mat3{
-        scale.x * c,     scale.x * s,     0,
-        scale.y * -s,    scale.y * c,     0,
-        translation.x,   translation.y,   1
-    };
+    return TRS(translation, {c, s}, scale);
 }
 
 Mat3 TRS(const Vec2& translation, const Vec2& direction, const Vec2& scale)
