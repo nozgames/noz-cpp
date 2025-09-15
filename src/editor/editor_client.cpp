@@ -39,12 +39,7 @@ void SendEditorMessage(Stream* stream)
 static void HandleHotload(Stream* input_stream)
 {
     assert(input_stream);
-
-    char asset_name[256];
-    ReadString(input_stream, asset_name, sizeof(asset_name));
-    HotloadEvent event = {
-        .asset_name = asset_name
-    };
+    HotloadEvent event = { .asset_name = ReadName(input_stream) };
     Send(EVENT_HOTLOAD, &event);
 }
 

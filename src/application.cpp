@@ -129,10 +129,8 @@ static void HandleHotload(EventId event_id, const void* event_data)
 {
     (void)event_id;
     const HotloadEvent* hotload_event = (const HotloadEvent*)event_data;
-    const char* asset_name = hotload_event->asset_name;
-    auto name = GetName(asset_name);
     if (g_app.traits.hotload_asset)
-        g_app.traits.hotload_asset(name);
+        g_app.traits.hotload_asset(hotload_event->asset_name);
 }
 #endif
 

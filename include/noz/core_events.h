@@ -15,5 +15,5 @@ struct FocusChangedEvent
 
 struct HotloadEvent
 {
-    const char* asset_name;
+    const Name* asset_name;
 };
