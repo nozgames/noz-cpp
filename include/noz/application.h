@@ -75,15 +75,26 @@ float GetCurrentFPS();
 // @thread
 void ThreadYield();
 void ThreadSleep(int milliseconds);
+void SetThreadName(const char* name);
 
 // @helper
 extern void ThrowError(const char* format, ...);
 
 // @job
-struct JobHandle { u32 id; u32 version; };
+struct JobHandle
+{
+    u32 id;
+    u32 version;
+
+    bool operator == (const JobHandle& o) const { return id == o.id && version == o.version; }
+    bool operator != (const JobHandle& o) const { return !(*this == o); }
+};
+
+constexpr JobHandle INVALID_JOB_HANDLE = { 0, 0 };
 
 typedef void (*JobRunFunc)(void* user_data);
 
-extern JobHandle CreateJob(JobRunFunc func, void* user_data = nullptr);
+extern JobHandle CreateJob(JobRunFunc func, void* user_data = nullptr, JobHandle depends_on = INVALID_JOB_HANDLE);
 extern bool IsDone(JobHandle handle);
+
 

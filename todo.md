@@ -1,6 +1,7 @@
 # Todo
 
-- [ ] stop importing all assets on laod if they havent changed
+- [ ] Handle hot load import jobs (run the reload on the main thread)
+- [ ] convert props to be struct
 - [ ] Render whole bone as selected
 - [ ] Skinned meshes not rendering on skeleton
 - [ ] Need way to handle invalid assets (show invalid or error in editor, animation with missing skeleton for example)
@@ -20,7 +21,7 @@
 - [ ] zoom should zoom in at cursor
 - [ ] Single shader!
 - [ ] First time you load the shader is not loaded and it messes up, we need to handle the hotload?
-- [ ] No way to see log messages anymore, we need a consol window
+- [ ] No way to see log messages anymore, we need a console window (win32 window you can open?)
 - [ ] Saved animation and its loading for Q / R but not play
 - [ ] when moving bones in animation we have to recalculate the local position from the world after delta change
 - [ ] Onion skinning (alt-o) toggle ?
@@ -187,3 +188,4 @@
 - [X] App not shutting down
 - [X] Select closest bone
 - [X] move and rotate commit in skeleton view is selecting bones
+- [X] stop importing all assets on laod if they havent changed

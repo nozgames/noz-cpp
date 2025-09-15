@@ -163,8 +163,6 @@ void InitApplication(ApplicationTraits* traits, int argc, const char* argv[])
 
     g_app.traits.width = GetPrefInt(GetName("window.width"), g_app.traits.width);
     g_app.traits.height = GetPrefInt(GetName("window.height"), g_app.traits.height);
-
-    InitWindow();
 }
 
 static void HandleClose()

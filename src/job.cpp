@@ -16,6 +16,7 @@ struct Job
     bool done;
     std::thread* thread;
     u32 version;
+    JobHandle depends_on;
 };
 
 struct JobThread
@@ -40,25 +41,31 @@ struct JobSystem
 
 static JobSystem g_jobs = {};
 
-JobHandle CreateJob(JobRunFunc func, void* user_data)
+JobHandle CreateJob(JobRunFunc func, void* user_data, JobHandle depends_on)
 {
     Job* job = (Job*)Alloc(g_jobs.job_allocator, sizeof(Job));
     if (!job)
         return { 0, 0 };
 
+    u32 job_index = GetIndex(g_jobs.job_allocator, job);
+
     job->version = g_jobs.next_version++;
     job->func = func;
     job->user_data = user_data;
+    job->depends_on = depends_on;
 
     g_jobs.mutex->lock();
     PushBack(g_jobs.queue, job);
+    g_jobs.job_version[job_index] = job->version;
     g_jobs.mutex->unlock();
 
-    return { GetIndex(g_jobs.job_allocator, job), job->version };
+    return { job_index, job->version };
 }
 
 static void JobThreadProc(JobThread *job_thread)
 {
+    SetThreadName("job_worker");
+
     job_thread->running = true;
 
     while (job_thread->running)
@@ -78,6 +85,8 @@ static void JobThreadProc(JobThread *job_thread)
 
 static void JobSchedulerProc()
 {
+    SetThreadName("job_scheduler");
+
     while (g_jobs.running)
     {
         g_jobs.mutex->lock();
@@ -95,18 +104,34 @@ static void JobSchedulerProc()
             u32 job_index = GetIndex(g_jobs.job_allocator, thread.job);
             Free(thread.job);
             thread.job = nullptr;
-            g_jobs.job_version[job_index] = 0;
+            g_jobs.job_version[job_index] = 0xFFFFFFFF;
         }
 
         // Start queued jobs
-        for (int i = 0; i < MAX_CONCURRENT_JOBS && !IsEmpty(g_jobs.queue); i++)
+        int queued_jobs = GetCount(g_jobs.queue);
+        for (int i = 0; i < MAX_CONCURRENT_JOBS && queued_jobs > 0; i++)
         {
             JobThread& thread = g_jobs.threads[i];
             if (thread.job != nullptr)
                 continue;
 
-            Job* job = (Job*)GetFront(g_jobs.queue);
-            Remove(g_jobs.queue, job);
+            Job* job = nullptr;
+            while (queued_jobs > 0)
+            {
+                job = (Job*)GetFront(g_jobs.queue);
+                Remove(g_jobs.queue, job);
+                queued_jobs--;
+
+                // We dont use IsDone here becuase it double locks
+                if (g_jobs.job_version[job->depends_on.id] != job->depends_on.version)
+                    break;
+
+                PushBack(g_jobs.queue, job);
+                job = nullptr;
+            }
+
+            if (job == nullptr)
+                break;
 
             thread.job = job;
             thread.semaphore.release();
@@ -145,6 +170,9 @@ void InitJobs()
         thread.job = nullptr;
         thread.thread = std::thread(JobThreadProc, &g_jobs.threads[i]);
     }
+
+    for (int i=0; i<MAX_JOBS; i++)
+        g_jobs.job_version[i] = 0xFFFFFFFF;
 
     g_jobs.queue_thread = new std::thread(JobSchedulerProc);
 }

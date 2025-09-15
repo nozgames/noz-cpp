@@ -3,6 +3,7 @@
 //
 
 #include "../../platform.h"
+#include <resource.h>
 
 constexpr int INPUT_BUFFER_SIZE = 1024;
 
@@ -13,6 +14,7 @@ constexpr int INPUT_BUFFER_SIZE = 1024;
 #include <shlobj.h>
 #include <filesystem>
 #include <thread>
+#include <dwmapi.h>
 
 extern void InitVulkan(const RendererTraits* traits, HWND hwnd);
 extern void ResizeVulkan(const Vec2Int& screen_size);
@@ -42,7 +44,19 @@ struct WindowsApp
 
 static WindowsApp g_windows = {};
 
-// Method to get focus state for input system
+static BOOL EnableDarkMode(HWND hwnd)
+{
+    BOOL value = TRUE;
+
+    HRESULT hr = DwmSetWindowAttribute(
+        hwnd,
+        DWMWA_USE_IMMERSIVE_DARK_MODE,
+        &value,
+        sizeof(value));
+
+    return SUCCEEDED(hr);
+}
+
 bool GetWindowFocus()
 {
     return g_windows.has_focus;
@@ -56,6 +70,16 @@ void ThreadSleep(int milliseconds)
 void ThreadYield()
 {
     std::this_thread::yield();
+}
+
+void SetThreadName(const char* name)
+{
+    // Convert char* to wide string
+    int size = MultiByteToWideChar(CP_UTF8, 0, name, -1, nullptr, 0);
+    std::wstring wname(size, 0);
+    MultiByteToWideChar(CP_UTF8, 0, name, -1, wname.data(), size);
+
+    SetThreadDescription(GetCurrentThread(), wname.c_str());
 }
 
 // Window procedure
@@ -189,6 +213,12 @@ void platform::InitWindow(void (*on_close)())
         hInstance,  // Instance handle
         NULL        // Additional data
     );
+
+    HICON hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APP));
+    SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+    SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+
+    EnableDarkMode(hwnd);
 
     g_windows.hwnd = hwnd;
     g_windows.on_close = on_close;

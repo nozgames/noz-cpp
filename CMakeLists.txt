@@ -5,16 +5,12 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(noz STATIC include/noz/noz_math.h
-        src/collections/free_list.cpp)
-
-target_precompile_headers(noz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.h)
-
 # Explicitly list all source files
 set(SOURCE_FILES
     src/application.cpp
     src/asset.cpp
     src/string.cpp
+    src/thread.cpp
     src/collections/list.cpp
     src/collections/linked_list.cpp
     src/collections/map.cpp
@@ -87,9 +83,12 @@ if(WIN32)
 else()
 endif()
 
-target_sources(noz PRIVATE ${SOURCE_FILES})
+add_library(noz STATIC ${SOURCE_FILES})
+
+target_precompile_headers(noz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.h)
 target_include_directories(noz PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include
+        ${CMAKE_SOURCE_DIR}/res/windows
 #        ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/vulkan
@@ -105,11 +104,11 @@ target_link_libraries(noz
         ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/enet.lib
         ws2_32
         winmm
+        dwmapi
         Shcore
         xaudio2
         ole32
 )
-
 
 if(CMAKE_GENERATOR STREQUAL "Ninja")
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

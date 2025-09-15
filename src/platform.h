@@ -116,4 +116,7 @@ namespace platform
     float GetSoundPitch(const SoundHandle& handle);
     void SetMasterVolume(float volume);
     float GetMasterVolume();
+
+    // @thread
+    void SetThreadName(const char* name);
 }
