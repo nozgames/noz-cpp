@@ -1,33 +1,31 @@
 # Todo
 
+- [ ] moving bones in some loaded animations move weird, maybe rotation or incorrect matrcieis
+- [ ] not rendering root bone and cant extrude
+- [ ] asset name should render below the bounds of an asset
+- [ ] Sort order ([ ])
+
+- [ ] reparenting bone messes up already loaded animations, have them fix their bones
+- [ ] editor animation likely leaking animation and skeleton asset 
+- [ ] vfx hotload broken
+- [ ] new clone animation
+- [ ] hold frames (h then number)
 - [ ] g r to reset / r r rather than alt-g and alt-r
-- [ ] Skeleton bone selection broken
 - [ ] Seems to be reimporting assets
-- [ ] new should clone the selected if it can
-- [ ] Move getselectedbounds to vtable
 - [ ] Instance a skelton so we can parent different skinned meshes (sotre the instances in the meta file for the skeleton)
 - [ ] Button to disable color and show grey scale
 - [ ] onion skin on animation
 - [ ] bone scale
 - [ ] Circle pie chart for height and edge on verts
-- [ ] animation bounds is not correct until you hit tab on it
-- [ ] asset name should render below the bounds of an asset
 - [ ] show all bounds of assets when alt is down
-- [ ] Deleting a bone messed up all the animatinos even though the bone wasnt a leaf
-- [ ] moving bones in some loaded animations move weird, maybe rotation or incorrect matrcieis
-- [ ] move editor update to vtable
 - [ ] New animation use selected skeleton to create
 - [ ] hover on animation should play ?
-- [ ] Move the clone methods to use the vtable
-- [ ] not rendering root bone and cant extrude
 - [ ] Saving an asset is causing a double import (.meta?)
 - [ ] Saving an asset should suppress the import notification 
-- [ ] reparenting bone messes up already loaded animations, have them fix their bones
 - [ ] convert props to be struct
 - [ ] Need way to handle invalid assets (show invalid or error in editor, animation with missing skeleton for example)
 - [ ] Animation with no frames not loading
 - [ ] After creating new mesh I cannot select bones in the skeleton view
-- [ ] Really need undo to work properly
 - [ ] Outline size tool
 - [ ] button duplicate a frame
 - [ ] button copy a frame
@@ -42,7 +40,6 @@
 - [ ] Onion skinning (alt-o) toggle ?
 - [ ] Normalize selection colors to blender colors
 - [ ] Animate bone color to blue like blender
-- [ ] Sort order ([ ])
 - [ ] New mesh has no color or edges
 - [ ] Remove dirty flag from assets
 - [ ] Animation editor should use its own bone selected state not the skeletons
@@ -232,3 +229,13 @@
 - [X] Change rotation on skeleton to to not change the visuals and just be the baseline
 - [X] Move edtior draw to vtable
 - [X] Move edtior update to vtable
+- [X] Skeleton bone selection broken
+- [X] Move the clone methods to use the vtable
+- [X] Move getselectedbounds to vtable
+- [X] no undo on skeleton bone move or rotate
+- [X] new should clone the selected if it can
+- [X] Something wrong with animation as resetting does not work
+- [x] move editor update to vtable
+- [X] Really need undo to work properly
+- [X] animation bounds is not correct until you hit tab on it
+- [X] Deleting a bone messed up all the animatinos even though the bone wasnt a leaf
