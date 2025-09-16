@@ -13,6 +13,7 @@ struct Shader : Asset {};
 struct Animation : Asset {};
 struct Skeleton : Asset {};
 struct MeshBuilder {};
+struct Animator;
 
 // @renderer_traits
 struct RendererTraits
@@ -131,16 +132,19 @@ void AddVertex(MeshBuilder* builder, const Vec2& position, const Vec3& normal, c
 void AddVertex(MeshBuilder* builder, const Vec2& position);
 
 // @render_buffer
-void BindDefaultTexture(int texture_index);
-void BindColor(Color color);
-void BindCamera(Camera* camera);
-void BindTransform(const Vec2& position, float rotation, const Vec2& scale);
-void BindTransform(const Vec2& position, const Vec2& rotation, const Vec2& scale);
-void BindTransform(const Mat3& transform);
-void BindTransform(Transform& transform);
-void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color);
-void BindMaterial(Material* material);
-void DrawMesh(Mesh* mesh);
+extern void BindDefaultTexture(int texture_index);
+extern void BindColor(Color color);
+extern void BindCamera(Camera* camera);
+extern void BindTransform(const Mat3& parent_transform, const Animator& animator, int bone_index);
+extern void BindTransform(const Vec2& position, float rotation, const Vec2& scale);
+extern void BindTransform(const Vec2& position, const Vec2& rotation, const Vec2& scale);
+extern void BindTransform(const Mat3& transform);
+extern void BindTransform(Transform& transform);
+extern void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color);
+extern void BindMaterial(Material* material);
+extern void DrawMesh(Mesh* mesh);
+extern void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index);
+extern void DrawMesh(Mesh* mesh, const Mat3& transform);
 
 // @font
 struct FontGlyph
@@ -213,3 +217,4 @@ extern bool IsPlaying(Animator& animator);
 extern int GetFrame(Animator& animator);
 extern float GetTime(Animator& animator);
 extern float GetNormalizedTime(Animator& animator);
+extern void SetNormalizedTime(Animator& animator, float normalized_time);

@@ -294,6 +294,7 @@ extern Mat3 TRS(const Vec2& translation, f32 rotation, const Vec2& scale);
 extern Mat3 TRS(const Vec2& translation, const Vec2& direction, const Vec2& scale);
 extern Mat3 Translate(const Vec2& translation);
 extern Mat3 Rotate(float rotation);
+extern Mat3 Rotate(const Vec2& direction);
 extern Mat3 Inverse(const Mat3& m);
 extern Vec2 TransformPoint(const Mat3& m, const Vec2& point);
 inline Vec2 TransformPoint(const Mat3& m) { return TransformPoint(m, VEC2_ZERO); }

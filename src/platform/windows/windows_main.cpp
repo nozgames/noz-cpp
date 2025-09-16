@@ -72,7 +72,7 @@ void ThreadYield()
     std::this_thread::yield();
 }
 
-void SetThreadName(const char* name)
+void platform::SetThreadName(const char* name)
 {
     // Convert char* to wide string
     int size = MultiByteToWideChar(CP_UTF8, 0, name, -1, nullptr, 0);
