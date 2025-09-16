@@ -53,43 +53,6 @@ static MeshImpl* CreateMesh(Allocator* allocator, u16 vertex_count, u16 index_co
     return mesh;
 }
 
-Mesh* CreateMesh(
-    Allocator* allocator,
-    u16 vertex_count,
-    const Vec2* positions,
-    const Vec3* normals,
-    const Vec2* uvs,
-    u16 index_count,
-    u16* indices,
-    const Name* name,
-    bool upload)
-{
-    assert(positions);
-    assert(normals);
-    assert(uvs);
-    assert(indices);
-
-    if (vertex_count == 0 || index_count == 0)
-        return nullptr;
-
-    MeshImpl* mesh = CreateMesh(allocator, vertex_count, index_count, name);
-    mesh->bounds = ToBounds(positions, vertex_count);
-
-    for (size_t i = 0; i < vertex_count; i++)
-    {
-        mesh->vertices[i].position = positions[i];
-        mesh->vertices[i].normal = normals[i];
-        mesh->vertices[i].uv0 = uvs[i];
-    }
-
-    memcpy(mesh->indices, indices, sizeof(u16) * index_count);
-
-    if (upload)
-        UploadMesh(mesh);
-
-    return mesh;
-}
-
 static void UploadMesh(MeshImpl* impl)
 {
     assert(impl);
@@ -129,7 +92,24 @@ Bounds2 GetBounds(Mesh* mesh)
     return static_cast<MeshImpl*>(mesh)->bounds;
 }
 
-extern void BindTextureInternal(Texture* texture, int slot);
+bool OverlapPoint(Mesh* mesh, const Vec2& overlap_point)
+{
+    MeshImpl* impl = static_cast<MeshImpl*>(mesh);
+    if (!Contains(impl->bounds, overlap_point))
+        return false;
+
+    for (u16 i = 0; i < impl->index_count; i += 3)
+    {
+        const Vec2& v0 = impl->vertices[impl->indices[i + 0]].position;
+        const Vec2& v1 = impl->vertices[impl->indices[i + 1]].position;
+        const Vec2& v2 = impl->vertices[impl->indices[i + 2]].position;
+
+        if (OverlapPoint(v0, v1, v2, overlap_point, nullptr))
+            return true;
+    }
+
+    return false;
+}
 
 void RenderMesh(Mesh* mesh)
 {
@@ -160,6 +140,43 @@ Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const
 
     UploadMesh(impl);
     return impl;
+}
+
+Mesh* CreateMesh(
+    Allocator* allocator,
+    u16 vertex_count,
+    const Vec2* positions,
+    const Vec3* normals,
+    const Vec2* uvs,
+    u16 index_count,
+    u16* indices,
+    const Name* name,
+    bool upload)
+{
+    assert(positions);
+    assert(normals);
+    assert(uvs);
+    assert(indices);
+
+    if (vertex_count == 0 || index_count == 0)
+        return nullptr;
+
+    MeshImpl* mesh = CreateMesh(allocator, vertex_count, index_count, name);
+    mesh->bounds = ToBounds(positions, vertex_count);
+
+    for (size_t i = 0; i < vertex_count; i++)
+    {
+        mesh->vertices[i].position = positions[i];
+        mesh->vertices[i].normal = normals[i];
+        mesh->vertices[i].uv0 = uvs[i];
+    }
+
+    memcpy(mesh->indices, indices, sizeof(u16) * index_count);
+
+    if (upload)
+        UploadMesh(mesh);
+
+    return mesh;
 }
 
 #ifdef NOZ_EDITOR
@@ -194,4 +211,3 @@ void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const N
 }
 
 #endif
-

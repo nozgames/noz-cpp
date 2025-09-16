@@ -1,15 +1,30 @@
 # Todo
 
+- [ ] g r to reset / r r rather than alt-g and alt-r
+- [ ] Skeleton bone selection broken
+- [ ] Seems to be reimporting assets
+- [ ] new should clone the selected if it can
+- [ ] Move getselectedbounds to vtable
+- [ ] Instance a skelton so we can parent different skinned meshes (sotre the instances in the meta file for the skeleton)
+- [ ] Button to disable color and show grey scale
+- [ ] onion skin on animation
+- [ ] bone scale
+- [ ] Circle pie chart for height and edge on verts
+- [ ] animation bounds is not correct until you hit tab on it
+- [ ] asset name should render below the bounds of an asset
+- [ ] show all bounds of assets when alt is down
+- [ ] Deleting a bone messed up all the animatinos even though the bone wasnt a leaf
+- [ ] moving bones in some loaded animations move weird, maybe rotation or incorrect matrcieis
+- [ ] move editor update to vtable
+- [ ] New animation use selected skeleton to create
 - [ ] hover on animation should play ?
 - [ ] Move the clone methods to use the vtable
-- [ ] Bounds not including all bones in animation and skeleton
 - [ ] not rendering root bone and cant extrude
 - [ ] Saving an asset is causing a double import (.meta?)
 - [ ] Saving an asset should suppress the import notification 
 - [ ] reparenting bone messes up already loaded animations, have them fix their bones
 - [ ] convert props to be struct
 - [ ] Need way to handle invalid assets (show invalid or error in editor, animation with missing skeleton for example)
-- [ ] New animation
 - [ ] Animation with no frames not loading
 - [ ] After creating new mesh I cannot select bones in the skeleton view
 - [ ] Really need undo to work properly
@@ -56,7 +71,6 @@
 - [ ] calculate normals for faces
 - [ ] Save window positino as well as size
 - [ ] bug with saving window size, sometimes wrong size
-- [ ] Button to disable color and show grey scale
 - [ ] button to set how hard an edge is, soft on a quad will average normals 
 - [ ] Box select being pushed it making the color go away, is that ok?
 - [ ] When you add a vertex interpolate the height from the neighbors
@@ -208,3 +222,13 @@
 - [X] Playing animation in editor does not animate mesh
 - [X] skeleton editor bind mesh
 - [x] leaving edit mode when animation playing leaves animation playing
+- [X] Positions not saving
+- [X] Bounds not including all bones in animation and skeleton
+- [X] editor config change should force reimport
+- [X] Alt-g and alt-r not working in animatino (prob not updating transfroms)
+- [X] Default folders for types so you dont need to specify when doing new
+- [X] Mesh hit test should use mesh rather than editor mesh
+- [X] Bone selection in skeleton not working
+- [X] Change rotation on skeleton to to not change the visuals and just be the baseline
+- [X] Move edtior draw to vtable
+- [X] Move edtior update to vtable
