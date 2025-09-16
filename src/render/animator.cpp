@@ -25,9 +25,9 @@ static void EvalulateFrame(Animator& animator)
         auto& bt1 = frames[frame1 * anim_impl->frame_stride + i];
         auto& bt2 = frames[frame2 * anim_impl->frame_stride + i];
 
-        Vec2 position = Mix(bt1.position, bt2.position, t) + skel_impl->bones[i].transform.position;
-        float rotation = Mix(bt1.rotation, bt2.rotation, t);
-        Vec2 scale = Mix(bt1.scale, bt2.scale, t);
+        Vec2 position = Mix(bt1.position, bt2.position, t) + skel_impl->bones[i].transform.position + animator.user_transforms[i].position;
+        float rotation = Mix(bt1.rotation, bt2.rotation, t) + animator.user_transforms[i].rotation;
+        Vec2 scale = Mix(bt1.scale, bt2.scale, t) * animator.user_transforms[i].scale;
 
         animator.bones[i] = TRS(position, rotation, scale);
     }
@@ -48,8 +48,17 @@ void Init(Animator& animator, Skeleton* skeleton)
     animator.time = 0.0f;
     animator.speed = 1.0f;
     animator.last_frame = -1;
-    for (int i=0; i<GetBoneCount(skeleton); i++)
-        animator.bones[i] = MAT3_IDENTITY;
+
+    int bone_count = GetBoneCount(skeleton);
+    for (int bone_index=0; bone_index<bone_count; bone_index++)
+    {
+        animator.bones[bone_index] = MAT3_IDENTITY;
+        animator.user_transforms[bone_index] = {
+            VEC2_ZERO,
+            VEC2_ONE,
+            0.0f
+        };
+    }
 }
 
 void Stop(Animator& animator)

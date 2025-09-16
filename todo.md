@@ -1,5 +1,9 @@
 # Todo
 
+- [ ] Ability to move the root bone and have the entire skeleton reorient to the new position
+- [ ] starting move on skeleton and then hitting esc is resetting positions of everything to zero
+- [ ] Creating new animation had 0 frames when i tried to edit the frame, bounds seemed bad too
+- [ ] Bone names in not using rotation in skeleton view
 - [ ] moving bones in some loaded animations move weird, maybe rotation or incorrect matrcieis
 - [ ] not rendering root bone and cant extrude
 - [ ] asset name should render below the bounds of an asset

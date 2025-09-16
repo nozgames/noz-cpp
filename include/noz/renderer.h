@@ -203,6 +203,7 @@ struct Animator
     int last_frame;
     bool loop;
     Mat3 bones[MAX_BONES];
+    BoneTransform user_transforms[MAX_BONES];
 };
 
 extern void Init(Animator& animator, Skeleton* skeleton);
