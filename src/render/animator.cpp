@@ -41,26 +41,6 @@ static void EvalulateFrame(Animator& animator)
     animator.last_frame = frame1;
 }
 
-void Init(Animator& animator, Skeleton* skeleton)
-{
-    animator.skeleton = skeleton;
-    animator.animation = nullptr;
-    animator.time = 0.0f;
-    animator.speed = 1.0f;
-    animator.last_frame = -1;
-
-    int bone_count = GetBoneCount(skeleton);
-    for (int bone_index=0; bone_index<bone_count; bone_index++)
-    {
-        animator.bones[bone_index] = MAT3_IDENTITY;
-        animator.user_transforms[bone_index] = {
-            VEC2_ZERO,
-            VEC2_ONE,
-            0.0f
-        };
-    }
-}
-
 void Stop(Animator& animator)
 {
     animator.animation = nullptr;
@@ -109,4 +89,35 @@ float GetNormalizedTime(Animator& animator)
         return 0.0f;
 
     return animator.time / ((AnimationImpl*)animator.animation)->duration;
+}
+
+void SetNormalizedTime(Animator& animator, float normalized_time)
+{
+    if (animator.animation == nullptr)
+        return;
+
+    animator.time = normalized_time * ((AnimationImpl*)animator.animation)->duration;
+    animator.last_frame = -1;
+
+    Update(animator, 0.0f);
+}
+
+void Init(Animator& animator, Skeleton* skeleton)
+{
+    animator.skeleton = skeleton;
+    animator.animation = nullptr;
+    animator.time = 0.0f;
+    animator.speed = 1.0f;
+    animator.last_frame = -1;
+
+    int bone_count = GetBoneCount(skeleton);
+    for (int bone_index=0; bone_index<bone_count; bone_index++)
+    {
+        animator.bones[bone_index] = MAT3_IDENTITY;
+        animator.user_transforms[bone_index] = {
+            VEC2_ZERO,
+            VEC2_ONE,
+            0.0f
+        };
+    }
 }

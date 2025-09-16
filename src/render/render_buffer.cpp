@@ -206,6 +206,15 @@ void BindTransform(Transform& transform)
     AddRenderCommand(&cmd);
 }
 
+void BindTransform(const Mat3& parent_transform, const Animator& animator, int bone_index)
+{
+    RenderCommand cmd = {
+        .type = RENDER_COMMAND_TYPE_BIND_TRANSFORM,
+        .data = { .bind_transform = { .transform = parent_transform * animator.bones[bone_index] }}
+    };
+    AddRenderCommand(&cmd);
+}
+
 void BindTransform(const Mat3& transform)
 {
     RenderCommand cmd = {
@@ -223,6 +232,18 @@ void BindColor(Color color)
             .bind_color = {
                 .color = {color.r, color.g, color.b, color.a}}} };
     AddRenderCommand(&cmd);
+}
+
+void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index)
+{
+    BindTransform(transform, animator, bone_index);
+    DrawMesh(mesh);
+}
+
+void DrawMesh(Mesh* mesh, const Mat3& transform)
+{
+    BindTransform(transform);
+    DrawMesh(mesh);
 }
 
 void DrawMesh(Mesh* mesh)

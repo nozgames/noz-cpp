@@ -44,6 +44,17 @@ Mat3 Rotate(f32 rotation)
     };
 }
 
+extern Mat3 Rotate(const Vec2& direction)
+{
+    Vec2 dir = Normalize(direction);
+    Vec2 perp = Perpendicular(dir);
+    return Mat3{
+        dir.x,  dir.y, 0,
+        perp.x, perp.y, 0,
+        0,      0,     1
+    };
+}
+
 Mat3 Inverse(const Mat3& m)
 {
     Mat3 result;
