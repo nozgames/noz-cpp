@@ -1,11 +1,13 @@
 # Todo
 
+- [ ] Flatten all file paths to "types/name.ext" in the final asset folder for simplicity
 - [ ] Begincanvas take style sheet
 - [ ] Generate bone identifiers in asset manifest
 - [ ] Looks like animation editor is not rendering bone rotations from skeleton
 - [ ] moving bones in skeleton is not changing animations?
 - [ ] Save the zoom and pan of the editor 
 - [ ] Bone rename is not marking modified
+- [ ] Prevent duplicate assets of same type and same name in different folders.
 - [ ] Ability to move the root bone and have the entire skeleton reorient to the new position
 - [ ] starting move on skeleton and then hitting esc is resetting positions of everything to zero
 - [ ] Creating new animation had 0 frames when i tried to edit the frame, bounds seemed bad too

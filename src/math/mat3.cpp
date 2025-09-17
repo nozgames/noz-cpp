@@ -134,3 +134,13 @@ Vec2 TransformVector(const Mat3& m, const Vec2& vector)
         m.m[1] * vector.x + m.m[4] * vector.y,
     };
 }
+
+Vec2 GetForward(const Mat3& m)
+{
+    return Vec2{ m.m[0], m.m[1] };
+}
+
+Vec2 GetRight(const Mat3& m)
+{
+    return Vec2{ m.m[3], m.m[4] };
+}

@@ -138,6 +138,9 @@ Material* GetMaterial(TextMesh* tm)
 
 TextMesh* CreateTextMesh(Allocator* allocator, const TextRequest& request)
 {
+    if (!request.font)
+        return nullptr;
+
     auto tm = (TextMeshImpl*)Alloc(allocator, sizeof(TextMeshImpl));
     auto impl = static_cast<TextMeshImpl*>(tm);
 

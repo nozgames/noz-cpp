@@ -474,7 +474,7 @@ void InitVfx()
     for (u32 i=0; i<MAX_INSTANCES; i++)
         g_vfx.instance_valid[i] = false;
 
-    g_vfx.material = CreateMaterial(ALLOCATOR_DEFAULT, g_core_assets.shaders.vfx);
+    g_vfx.material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_VFX);
 
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
     AddQuad(builder, VEC2_UP, VEC2_RIGHT, 1, 1, {0,0});

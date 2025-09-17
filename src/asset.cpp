@@ -6,8 +6,6 @@
 
 #include <filesystem>
 
-LoadedCoreAssets g_core_assets = {};
-
 bool IsValidSignature(AssetSignature signature)
 {
     return signature == ASSET_SIGNATURE_TEXTURE ||
@@ -117,10 +115,8 @@ Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetSigna
 
     std::filesystem::path asset_path = GetApplicationTraits()->assets_path;
     asset_path /= asset_name->value;
-    asset_path += GetExtensionFromSignature(signature);
 
-    Stream* stream = LoadStream(allocator, asset_path);
-    if (stream)
+    if (Stream* stream = LoadStream(allocator, asset_path))
         return stream;
 
     asset_path = GetBinaryDirectory();

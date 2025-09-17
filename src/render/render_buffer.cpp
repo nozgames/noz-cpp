@@ -296,7 +296,7 @@ void ExecuteRenderCommands()
             break;
 
         case RENDER_COMMAND_TYPE_BIND_DEFAULT_TEXTURE:
-            BindTextureInternal(g_core_assets.textures.white, command->data.bind_default_texture.index);
+            BindTextureInternal(TEXTURE_WHITE, command->data.bind_default_texture.index);
             break;
 
         case RENDER_COMMAND_TYPE_END_PASS:

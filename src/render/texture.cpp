@@ -144,7 +144,7 @@ Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, co
 void BindTextureInternal(Texture* texture, i32 slot)
 {
     if (!texture)
-        texture = g_core_assets.textures.white;
+        texture = TEXTURE_WHITE;
 
     return platform::BindTexture(static_cast<TextureImpl*>(texture)->platform_texture, slot);
 }
