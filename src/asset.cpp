@@ -8,6 +8,18 @@
 
 LoadedCoreAssets g_core_assets = {};
 
+bool IsValidSignature(AssetSignature signature)
+{
+    return signature == ASSET_SIGNATURE_TEXTURE ||
+           signature == ASSET_SIGNATURE_MESH ||
+           signature == ASSET_SIGNATURE_FONT ||
+           signature == ASSET_SIGNATURE_SOUND ||
+           signature == ASSET_SIGNATURE_SKELETON ||
+           signature == ASSET_SIGNATURE_ANIMATION ||
+           signature == ASSET_SIGNATURE_VFX ||
+           signature == ASSET_SIGNATURE_STYLE_SHEET;
+}
+
 bool ReadAssetHeader(Stream* stream, AssetHeader* header)
 {
     if (!stream || !header) return false;
@@ -59,6 +71,44 @@ const char* GetExtensionFromSignature(AssetSignature signature)
     ext[5] = '\0';
     
     return ext;
+}
+
+const char* GetTypeNameFromSignature(AssetSignature signature)
+{
+    switch (signature)
+    {
+        case ASSET_SIGNATURE_TEXTURE: return "Texture";
+        case ASSET_SIGNATURE_MESH: return "Mesh";
+        case ASSET_SIGNATURE_FONT: return "Font";
+        case ASSET_SIGNATURE_SOUND: return "Sound";
+        case ASSET_SIGNATURE_SKELETON: return "Skeleton";
+        case ASSET_SIGNATURE_ANIMATION: return "Animation";
+        case ASSET_SIGNATURE_VFX: return "Vfx";
+        case ASSET_SIGNATURE_SHADER: return "Shader";
+        case ASSET_SIGNATURE_STYLE_SHEET: return "StyleSheet";
+        default: return nullptr;
+    }
+}
+
+AssetSignature GetSignatureFromExtension(const char* ext)
+{
+    if (*ext == '.')
+        ext++;
+
+    if (Length(ext) != 4)
+        return ASSET_SIGNATURE_UNKNOWN;
+
+    // convert extension to signature (big endian to little endian)
+    AssetSignature signature = 0;
+    signature |= ((AssetSignature)toupper(ext[0]) << 24);
+    signature |= ((AssetSignature)toupper(ext[1]) << 16);
+    signature |= ((AssetSignature)toupper(ext[2]) << 8);
+    signature |= ((AssetSignature)toupper(ext[3]) << 0);
+
+    if (!IsValidSignature(signature))
+        return ASSET_SIGNATURE_UNKNOWN;
+
+    return signature;
 }
 
 Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetSignature signature)

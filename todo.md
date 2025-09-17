@@ -1,12 +1,17 @@
 # Todo
 
+- [ ] Begincanvas take style sheet
+- [ ] Generate bone identifiers in asset manifest
+- [ ] Looks like animation editor is not rendering bone rotations from skeleton
+- [ ] moving bones in skeleton is not changing animations?
+- [ ] Save the zoom and pan of the editor 
+- [ ] Bone rename is not marking modified
 - [ ] Ability to move the root bone and have the entire skeleton reorient to the new position
 - [ ] starting move on skeleton and then hitting esc is resetting positions of everything to zero
 - [ ] Creating new animation had 0 frames when i tried to edit the frame, bounds seemed bad too
 - [ ] Bone names in not using rotation in skeleton view
 - [ ] moving bones in some loaded animations move weird, maybe rotation or incorrect matrcieis
 - [ ] not rendering root bone and cant extrude
-- [ ] asset name should render below the bounds of an asset
 - [ ] Sort order ([ ])
 
 - [ ] reparenting bone messes up already loaded animations, have them fix their bones
@@ -21,7 +26,6 @@
 - [ ] onion skin on animation
 - [ ] bone scale
 - [ ] Circle pie chart for height and edge on verts
-- [ ] show all bounds of assets when alt is down
 - [ ] New animation use selected skeleton to create
 - [ ] hover on animation should play ?
 - [ ] Saving an asset is causing a double import (.meta?)
@@ -243,3 +247,5 @@
 - [X] Really need undo to work properly
 - [X] animation bounds is not correct until you hit tab on it
 - [X] Deleting a bone messed up all the animatinos even though the bone wasnt a leaf
+- [X] asset name should render below the bounds of an asset
+- [X] show all bounds of assets when alt is down

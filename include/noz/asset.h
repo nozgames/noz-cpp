@@ -39,12 +39,13 @@ typedef Asset* (*AssetLoaderFunc)(Allocator* allocator, Stream* stream, AssetHea
 extern bool ReadAssetHeader(Stream* stream, AssetHeader* header);
 extern bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** name_table = nullptr);
 extern bool ValidateAssetHeader(AssetHeader* header, uint32_t expected_signature);
+extern AssetSignature GetSignatureFromExtension(const char* ext);
 extern const char* GetExtensionFromSignature(AssetSignature signature);
+extern const char* GetTypeNameFromSignature(AssetSignature signature);
 extern Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader);
 extern const Name** ReadNameTable(const AssetHeader& header, Stream* stream);
-
 inline const Name* GetName(Asset* asset) { return asset->name; }
-
+extern bool IsValidSignature(AssetSignature signature);
 
 // @loaders
 Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);

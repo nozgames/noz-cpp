@@ -122,3 +122,35 @@ char* CleanPath(char* path)
 
     return path;
 }
+
+int Compare(const char* s1, const char* s2, bool ignore_case)
+{
+    if (s1 == s2)
+        return 0;
+
+    if (ignore_case)
+        return _stricmp(s1, s2);
+
+    return strcmp(s1, s2);
+}
+
+void Lowercase(char* dst, u32 dst_size)
+{
+    for (;*dst && dst_size > 0; dst++, dst_size--)
+        if (*dst >= 'A' && *dst <= 'Z')
+            *dst = (char)(*dst - 'A' + 'a');
+}
+
+void Uppercase(char* dst, u32 dst_size)
+{
+    for (;*dst && dst_size > 0; dst++, dst_size--)
+        if (*dst >= 'a' && *dst <= 'z')
+            *dst = (char)(*dst - 'a' + 'A');
+}
+
+void Replace(char* dst, u32 dst_size, char find, char replace)
+{
+    for (;*dst && dst_size > 0; dst++, dst_size--)
+        if (*dst == find)
+            *dst = replace;
+}
