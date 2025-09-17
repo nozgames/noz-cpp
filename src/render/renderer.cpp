@@ -24,6 +24,7 @@ struct Renderer
 };
 
 static Renderer g_renderer = {};
+Texture* TEXTURE_WHITE = nullptr;
 
 void BeginRenderFrame(Color clear_color)
 {
@@ -51,7 +52,7 @@ void LoadRendererAssets(Allocator* allocator)
 {
     (void)allocator;
 
-    g_core_assets.textures.white = CreateTexture(nullptr, &color32_white, 1, 1, TEXTURE_FORMAT_RGBA8, GetName("white"));
+    TEXTURE_WHITE = CreateTexture(nullptr, &color32_white, 1, 1, TEXTURE_FORMAT_RGBA8, GetName("white"));
 }
 
 void InitRenderer(const RendererTraits* traits)

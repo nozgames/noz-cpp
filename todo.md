@@ -1,5 +1,7 @@
 # Todo
 
+- [ ] Prevent duplicate assets of same type and same name in different folders.
+- [ ] Flatten all file paths to "types/name.ext" in the final asset folder for simplicity
 - [ ] Ability to move the root bone and have the entire skeleton reorient to the new position
 - [ ] starting move on skeleton and then hitting esc is resetting positions of everything to zero
 - [ ] Creating new animation had 0 frames when i tried to edit the frame, bounds seemed bad too

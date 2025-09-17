@@ -299,6 +299,8 @@ extern Mat3 Inverse(const Mat3& m);
 extern Vec2 TransformPoint(const Mat3& m, const Vec2& point);
 inline Vec2 TransformPoint(const Mat3& m) { return TransformPoint(m, VEC2_ZERO); }
 extern Vec2 TransformVector(const Mat3& m, const Vec2& vector);
+extern Vec2 GetForward(const Mat3& m);
+extern Vec2 GetRight(const Mat3& m);
 
 // @vec2
 extern f32 Length(const Vec2& v);

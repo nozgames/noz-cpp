@@ -5,26 +5,13 @@
 #pragma once
 
 struct Shader;
+extern Shader* SHADER_LIT;
+extern Shader* SHADER_UI;
+extern Shader* SHADER_TEXT;
+extern Shader* SHADER_VFX;
 
-struct LoadedCoreAssets
-{
-    struct
-    {
-        Shader* ui;
-        Shader* text;
-        Shader* lit;
-        Shader* vfx;
-    } shaders;
+struct Font;
+extern Font* FONT_DEFAULT;
 
-    struct
-    {
-        Font* fallback;
-    } fonts;
-
-    struct
-    {
-        Texture* white;
-    } textures;
-};
-
-extern LoadedCoreAssets g_core_assets;
+struct Texture;
+extern Texture* TEXTURE_WHITE;

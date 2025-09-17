@@ -225,6 +225,9 @@ void RenderElement(const Element& e)
 
     case ELEMENT_TYPE_LABEL:
     {
+        if (!e.resource)
+            break;
+
         Mesh* mesh = GetMesh((TextMesh*)e.resource);
         if (mesh)
         {
@@ -775,9 +778,7 @@ void Label(const char* text, const Name* id)
     CachedTextMesh* c = (CachedTextMesh*)GetValue(g_ui.text_mesh_cache, mesh_key);
     if (c == nullptr)
     {
-        TextMesh* tm = CreateTextMesh(ALLOCATOR_DEFAULT, r);
-        assert(tm);
-        if (tm)
+        if (TextMesh* tm = CreateTextMesh(ALLOCATOR_DEFAULT, r))
         {
             e.resource = tm;
             e.material = GetMaterial(tm);
@@ -791,9 +792,6 @@ void Label(const char* text, const Name* id)
         e.resource = c->text_mesh;
         e.material = GetMaterial(c->text_mesh);
     }
-
-    assert(e.resource);
-    assert(e.material);
 
     EndElement();
 }
@@ -810,11 +808,11 @@ void InitUI()
 {
     g_ui.camera = CreateCamera(ALLOCATOR_DEFAULT);
     g_ui.element_quad = CreateElementQuad(ALLOCATOR_DEFAULT);
-    g_ui.default_font = g_core_assets.fonts.fallback;
-    g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, g_core_assets.shaders.ui);
+    g_ui.default_font = nullptr;;
+    g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
     g_ui.input = CreateInputSet(ALLOCATOR_DEFAULT);
     EnableButton(g_ui.input, MOUSE_LEFT);
-    SetTexture(g_ui.element_material, g_core_assets.textures.white);
+    SetTexture(g_ui.element_material, TEXTURE_WHITE);
 
     Init(g_ui.text_mesh_cache, g_ui.text_mesh_cache_keys, g_ui.text_mesh_cache_values, 1024, sizeof(CachedTextMesh));
 }
