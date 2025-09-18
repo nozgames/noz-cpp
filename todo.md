@@ -1,17 +1,19 @@
 # Todo
 
-- [ ] Style id as a 32 bit int so we no longer need to set style sheet
-  - [ ] index of style in the style sheet and index of style sheet itself, not constant
-- [ ] Double bounds when holding alt
+- [ ] frame on mesh when no points selected is framing origin insteda of bounds
+- [ ] Draw a origin point on screen when changing light
+- [ ] inserting a frame with o in the middle seems to not be working
+- [ ] Onion skinning (alt-o) toggle ?
+- [ ] bone scale
 - [ ] Change UI, vertex size, edge size, etc to not scale with the window size
 - [ ] Seems to be reimporting assets
 - [ ] zoom should zoom in at cursor
 - [ ] Normalize selection colors to blender colors
-- [ ] Animate bone color to blue like blender
-- [ ] Hard to see vertices in edit mode because of border color
-- [ ] Onion skinning (alt-o) toggle ?
 - [ ] Circle pie chart for height and edge on verts
-- 
+- [ ] Zooming in and using alt is causing a hard lag (specifcally on the archer mesh)
+- [ ] Animation bounds does not take into account the actual animation, just the skeleton
+
+- [ ] Adding a bone to the skeleton caused the animations to write garbage data for position
 - [ ] moving bones in skeleton is not changing animations?
 - [ ] Bone rename is not marking modified
 - [ ] Prevent duplicate assets of same type and same name in different folders.
@@ -27,7 +29,6 @@
 - [ ] g r to reset / r r rather than alt-g and alt-r
 - [ ] Instance a skelton so we can parent different skinned meshes (sotre the instances in the meta file for the skeleton)
 - [ ] Button to disable color and show grey scale
-- [ ] bone scale
 - [ ] hover on animation should play ?
 - [ ] Saving an asset is causing a double import (.meta?)
 - [ ] Saving an asset should suppress the import notification 

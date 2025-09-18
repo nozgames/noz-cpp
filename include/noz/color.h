@@ -83,13 +83,6 @@ extern Color24 color24_red;
 extern Color24 color24_green;
 extern Color24 color24_blue;
 
-extern Color COLOR_BLACK;
-extern Color COLOR_WHITE;
-extern Color COLOR_RED;
-extern Color COLOR_GREEN;
-extern Color COLOR_BLUE;
-extern Color COLOR_TRANSPARENT;
-
 constexpr f32 COLOR_UV_ATLAS_WIDTH = 128;
 constexpr f32 COLOR_UV_ATLAS_HEIGHT = 128;
 constexpr f32 COLOR_UV_SIZE = 8;
@@ -101,3 +94,15 @@ constexpr Vec2 ColorUV(int col, int row)
         ((f32)row * COLOR_UV_SIZE + COLOR_UV_SIZE * 0.5f) / COLOR_UV_ATLAS_HEIGHT
     };
 }
+
+constexpr Color Color32ToColor(u8 r, u8 g, u8 b, u8 a)
+{
+    return { r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f };
+}
+
+constexpr Color COLOR_BLACK = {0.0f, 0.0f, 0.0f, 1.0f};
+constexpr Color COLOR_WHITE = {1.0f, 1.0f, 1.0f, 1.0f};
+constexpr Color COLOR_RED = {1.0f, 0.0f, 0.0f, 1.0f};
+constexpr Color COLOR_GREEN = {0.0f, 1.0f, 0.0f, 1.0f};
+constexpr Color COLOR_BLUE = {0.0f, 0.0f, 1.0f, 1.0f};
+constexpr Color COLOR_TRANSPARENT = {0.0f, 0.0f, 0.0f, 0.0f};

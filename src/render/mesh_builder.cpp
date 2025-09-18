@@ -203,6 +203,53 @@ void AddQuad(
     AddTriangle(builder, base_index, base_index + 2, base_index + 3);
 }
 
+void AddCircle(MeshBuilder* builder, const Vec2& center, f32 radius, int segments, const Vec2& uv_color)
+{
+    if (segments < 3)
+        segments = 3;
+
+    u16 base_index = static_cast<MeshBuilderImpl*>(builder)->vertex_count;
+
+    AddVertex(builder, center, VEC3_FORWARD, uv_color);
+
+    for (int i = 0; i <= segments; ++i)
+    {
+        float angle = (float)i / (float)segments * noz::PI * 2.0f;
+        Vec2 offset = { cosf(angle) * radius, sinf(angle) * radius };
+        AddVertex(builder, center + offset, VEC3_FORWARD, uv_color);
+    }
+
+    for (int i = 0; i < segments; ++i)
+        AddTriangle(builder, base_index, base_index + (u16)i + 1, base_index + (u16)i + 2);
+}
+
+void AddArc(MeshBuilder* builder, const Vec2& center, f32 radius, f32 start, f32 end, int segments, const Vec2& uv_color)
+{
+    if (segments < 3)
+        segments = 3;
+
+    u16 base_index = static_cast<MeshBuilderImpl*>(builder)->vertex_count;
+
+    AddVertex(builder, center, VEC3_FORWARD, uv_color);
+
+    f32 step = noz::PI / (f32)(segments - 1);
+    f32 angle_start = Radians(start);
+    f32 angle_end = Radians(end);
+
+    int actual_segments = 1;
+    for (f32 angle = angle_start; angle < angle_end; angle += step, actual_segments++)
+    {
+        Vec2 offset = { cosf(angle) * radius, -sinf(angle) * radius };
+        AddVertex(builder, center + offset, VEC3_FORWARD, uv_color);
+    }
+
+    Vec2 offset_end = { cosf(angle_end) * radius, -sinf(angle_end) * radius };
+    AddVertex(builder, center + offset_end, VEC3_FORWARD, uv_color);
+
+    for (int i = 0; i < actual_segments; ++i)
+        AddTriangle(builder, base_index, base_index + (u16)i + 1, base_index + (u16)i + 2);
+}
+
 void AddRaw(
     MeshBuilder* builder,
     u16 vertex_count,

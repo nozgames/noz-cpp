@@ -255,11 +255,3 @@ Color24 color24_red = {255, 0, 0};
 Color24 color24_green = {0, 255, 0};
 Color24 color24_blue = {0, 0, 255};
 
-// @color
-Color COLOR_BLACK = {0.0f, 0.0f, 0.0f, 1.0f};
-Color COLOR_WHITE = {1.0f, 1.0f, 1.0f, 1.0f};
-Color COLOR_RED = {1.0f, 0.0f, 0.0f, 1.0f};
-Color COLOR_GREEN = {0.0f, 1.0f, 0.0f, 1.0f};
-Color COLOR_BLUE = {0.0f, 0.0f, 1.0f, 1.0f};
-Color COLOR_TRANSPARENT = {0.0f, 0.0f, 0.0f, 0.0f};
-
