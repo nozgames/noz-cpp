@@ -4,6 +4,8 @@
 
 #include "vfx_internal.h"
 
+Vfx** VFX = nullptr;
+
 static void LoadVfxInternal(VfxImpl* impl, Allocator* allocator, Stream* stream)
 {
     impl->bounds = ReadStruct<Bounds2>(stream);

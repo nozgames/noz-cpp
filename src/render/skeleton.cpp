@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+Skeleton** SKELETON = nullptr;
+
 int GetBoneCount(Skeleton* skeleton)
 {
     return ((SkeletonImpl*)skeleton)->bone_count;

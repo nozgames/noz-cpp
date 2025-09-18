@@ -23,3 +23,5 @@ bool IsPlaying(const SoundHandle& handle);
 void SetMasterVolume(float volume);
 float GetMasterVolume();
 
+
+extern Sound** SOUND;

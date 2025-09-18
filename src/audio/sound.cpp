@@ -5,6 +5,8 @@
 #include "../platform.h"
 #include "noz/noz.h"
 
+Sound** SOUND = nullptr;
+
 struct SoundHeader
 {
     u32 sample_rate;

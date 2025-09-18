@@ -19,6 +19,8 @@ typedef u32 ElementFlags;
 constexpr ElementFlags ELEMENT_FLAG_NONE = 0;
 constexpr ElementFlags ELEMENT_FLAG_POP_STYLES = 1 << 0;
 
+StyleSheet** STYLESHEET = nullptr;
+
 struct CachedTextMesh
 {
     TextMesh* text_mesh;

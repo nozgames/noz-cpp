@@ -25,3 +25,5 @@ void DrawVfx();
 Bounds2 GetBounds(Vfx* vfx);
 
 constexpr VfxHandle INVALID_VFX_HANDLE = { 0xFFFFFFFF, 0xFFFFFFFF };
+
+extern Vfx** VFX;

@@ -4,6 +4,8 @@
 
 #include "../platform.h"
 
+Mesh** MESH = nullptr;
+
 struct MeshImpl : Mesh
 {
     u16 vertex_count;
