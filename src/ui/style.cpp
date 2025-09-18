@@ -10,6 +10,7 @@ static Style g_default_style = {
     .height = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_AUTO, 0.0f },
     .background_color = { STYLE_KEYWORD_INHERIT, {0,0,0,0} },
     .color = { STYLE_KEYWORD_INHERIT, {1,1,1,1} },
+    .font = { STYLE_KEYWORD_INHERIT, -1, "" },
     .font_size = { STYLE_KEYWORD_INHERIT, 16 },
     .margin_top = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_FIXED, 0.0f },
     .margin_left = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_FIXED, 0.0f },
@@ -71,6 +72,14 @@ static void DeserializeStyleParameter(Stream* stream, StyleLength& value)
     value.value = ReadFloat(stream);
 }
 
+static void DeserializeStyleParameter(Stream* stream, StyleFont& value)
+{
+    if (!DeserializeStyleParameter(stream, (StyleParameter&)value))
+        return;
+
+    ReadString(stream, value.name, MAX_NAME_LENGTH);
+}
+
 void DeserializeStyle(Stream* stream, Style& style)
 {
     DeserializeStyleParameter(stream, style.flex_direction);
@@ -78,6 +87,7 @@ void DeserializeStyle(Stream* stream, Style& style)
     DeserializeStyleParameter(stream, style.height);
     DeserializeStyleParameter(stream, style.background_color);
     DeserializeStyleParameter(stream, style.color);
+    DeserializeStyleParameter(stream, style.font);
     DeserializeStyleParameter(stream, style.font_size);
     DeserializeStyleParameter(stream, style.margin_top);
     DeserializeStyleParameter(stream, style.margin_left);
@@ -141,6 +151,14 @@ static void SerializeParameter(Stream* stream, const StyleLength& value)
     WriteFloat(stream, value.value);
 }
 
+static void SerializeParameter(Stream* stream, const StyleFont& value)
+{
+    if (!SerializeParameter(stream, (StyleParameter&)value))
+        return;
+
+    WriteString(stream, value.name);
+}
+
 void SerializeStyle(const Style& style, Stream* stream)
 {
     SerializeParameter(stream, style.flex_direction);
@@ -148,6 +166,7 @@ void SerializeStyle(const Style& style, Stream* stream)
     SerializeParameter(stream, style.height);
     SerializeParameter(stream, style.background_color);
     SerializeParameter(stream, style.color);
+    SerializeParameter(stream, style.font);
     SerializeParameter(stream, style.font_size);
     SerializeParameter(stream, style.margin_top);
     SerializeParameter(stream, style.margin_left);
@@ -169,6 +188,7 @@ void MergeStyles(Style& dst, const Style& src, bool apply_defaults)
     STYLE_MERGE(background_color);
     STYLE_MERGE(width);
     STYLE_MERGE(height);
+    STYLE_MERGE(font);
     STYLE_MERGE(font_size);
     STYLE_MERGE(margin_top);
     STYLE_MERGE(margin_left);

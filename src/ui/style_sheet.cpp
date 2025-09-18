@@ -63,6 +63,9 @@ bool GetStyle(StyleSheet* sheet, const Name* id, PseudoState pseudo_state, Style
 
 const Style& GetStyle(StyleSheet* sheet, const Name* id, PseudoState pseudo_state)
 {
+    if (nullptr == sheet)
+        return GetDefaultStyle();
+
     u64 style_key = GetStyleKey(id, pseudo_state);
     StyleSheetImpl* impl = static_cast<StyleSheetImpl*>(sheet);
     Style* style = (Style*)GetValue(impl->style_map, style_key);

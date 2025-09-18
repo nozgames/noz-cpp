@@ -95,7 +95,7 @@ Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, 
 
 #ifdef NOZ_EDITOR
 void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void (*reload)(Asset*, Stream*, const AssetHeader& header, const Name** name_table));
-void ReloadStyleSheet(Asset* sheet, Stream* stream, const AssetHeader& header, const Name** name_table);
+void ReloadStyleSheet(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
 void ReloadVfx(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
 void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
 void ReloadShader(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);

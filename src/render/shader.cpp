@@ -4,6 +4,8 @@
 
 #include "../platform.h"
 
+Shader** SHADER = nullptr;
+
 struct ShaderImpl : Shader
 {
     platform::Shader* platform;

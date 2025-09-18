@@ -97,6 +97,13 @@ struct StyleTextAlign
     TextAlign value;
 };
 
+struct StyleFont
+{
+    StyleParameter parameter;
+    int id;
+    char name[MAX_NAME_LENGTH];
+};
+
 struct Style
 {
     StyleFlexDirection flex_direction;
@@ -104,6 +111,7 @@ struct Style
     StyleLength height;
     StyleColor background_color;
     StyleColor color;
+    StyleFont font;
     StyleInt font_size;
     StyleLength margin_top;
     StyleLength margin_left;
@@ -144,18 +152,19 @@ inline bool IsFixed(const StyleLength& length) { return length.unit == STYLE_LEN
 inline bool IsPercent(const StyleLength& length) { return length.unit == STYLE_LENGTH_UNIT_PERCENT; }
 
 // @ui
-extern void SetDefaultFont(Font* font);
-extern Font* GetDefaultFont();
 extern void BeginUI(u32 ref_width, u32 ref_height);
 extern void EndUI();
-extern void BeginCanvas();
-extern void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size, const Name* name=nullptr);
+extern void BeginCanvas(const Name* name = nullptr, StyleSheet* styles = nullptr);
+extern void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size, const Name* name=nullptr, StyleSheet* styles=nullptr);
 extern void EmptyElement(const Name* id);
 extern void BeginElement(const Name* id);
 extern void EndElement();
 extern void EndCanvas();
-extern void SetStyleSheet(StyleSheet* sheet);
+extern void PushStyles(StyleSheet* sheet);
+extern void PopStyles();
 extern void DrawUI();
 extern void Label(const char* text, const Name* id);
 extern void Image(Material* material, const Name* id);;
 extern void SetInputHandler(ElementInputFunc func, void* user_data = nullptr);
+
+extern StyleSheet* STYLESHEET;
