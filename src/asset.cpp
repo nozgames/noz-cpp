@@ -109,7 +109,7 @@ AssetSignature GetSignatureFromExtension(const char* ext)
     return signature;
 }
 
-Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetSignature signature)
+static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name)
 {
     assert(asset_name);
 
@@ -122,7 +122,6 @@ Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetSigna
     asset_path = GetBinaryDirectory();
     asset_path /= "assets";
     asset_path /= asset_name->value;
-    asset_path += GetExtensionFromSignature(signature);
 
     return LoadStream(allocator, asset_path);
 }
@@ -160,7 +159,7 @@ Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSign
 
 static Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader)
 {
-    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, asset_name, signature);
+    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, asset_name);
     if (!stream)
         return nullptr;
 
@@ -192,7 +191,7 @@ void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void 
 
     assert(name);
 
-    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, name, signature);
+    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, name);
     if (!stream)
         return;
 

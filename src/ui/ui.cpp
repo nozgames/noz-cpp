@@ -145,6 +145,7 @@ static void BeginElement(ElementType type, const Name* id)
 
     Element& e = g_ui.elements[g_ui.element_count++];
     e.type = type;
+    e.flags = 0;
     e.bounds = Rect(0,0,0,0);
     e.parent = g_ui.element_stack_count > 0 ? g_ui.element_stack[g_ui.element_stack_count-1] : UINT32_MAX;
     e.style = GetStyle(GetCurrentStyleSheet(), id, PSEUDO_STATE_NONE);
