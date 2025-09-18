@@ -1,12 +1,9 @@
 # Todo
 
-- [ ] Font support in style
 - [ ] Style id as a 32 bit int so we no longer need to set style sheet
-- [ ] inherit property in style
-- [ ] bug with saving window size, sometimes wrong size
-- [ ] Save window positino as well as size
+  - [ ] index of style in the style sheet and index of style sheet itself, not constant
+- [ ] Double bounds when holding alt
 - [ ] Change UI, vertex size, edge size, etc to not scale with the window size
-- [ ] Save the light position (its there but not working)
 - [ ] Seems to be reimporting assets
 - [ ] zoom should zoom in at cursor
 - [ ] Normalize selection colors to blender colors
@@ -16,7 +13,6 @@
 - [ ] Circle pie chart for height and edge on verts
 - 
 - [ ] moving bones in skeleton is not changing animations?
-- [ ] Save the zoom and pan of the editor 
 - [ ] Bone rename is not marking modified
 - [ ] Prevent duplicate assets of same type and same name in different folders.
 - [ ] starting move on skeleton and then hitting esc is resetting positions of everything to zero
@@ -31,7 +27,6 @@
 - [ ] g r to reset / r r rather than alt-g and alt-r
 - [ ] Instance a skelton so we can parent different skinned meshes (sotre the instances in the meta file for the skeleton)
 - [ ] Button to disable color and show grey scale
-- [ ] onion skin on animation
 - [ ] bone scale
 - [ ] hover on animation should play ?
 - [ ] Saving an asset is causing a double import (.meta?)

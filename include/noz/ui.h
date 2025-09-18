@@ -22,6 +22,12 @@ constexpr PseudoState PSEUDO_STATE_FOCUSED  = 1 << 4;
 constexpr PseudoState PSEUDO_STATE_PRESSED  = 1 << 5;
 constexpr PseudoState PSEUDO_STATE_CHECKED  = 1 << 6;
 
+struct StyleId
+{
+    u16 style_sheet_id;
+    u16 id;
+};
+
 enum TextAlign
 {
     TEXT_ALIGN_MIN,

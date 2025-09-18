@@ -39,6 +39,7 @@ struct WindowsApp
     HCURSOR cursor_wait;
     HCURSOR cursor_cross;
     HCURSOR cursor_move;
+    RectInt window_rect;
     SystemCursor cursor;
 };
 
@@ -82,6 +83,23 @@ void platform::SetThreadName(const char* name)
     SetThreadDescription(GetCurrentThread(), wname.c_str());
 }
 
+static void UpdateWindowRect()
+{
+    RECT rect;
+    GetWindowRect(g_windows.hwnd, &rect);
+    RectInt window_rect = RectInt{
+        rect.left,
+        rect.top,
+        rect.right - rect.left,
+        rect.bottom - rect.top
+    };
+
+    if (window_rect.width <= 0 || window_rect.height <= 0)
+        return;
+
+    g_windows.window_rect = window_rect;
+}
+
 // Window procedure
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -111,8 +129,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             g_windows.screen_size = new_size;
             ResizeVulkan(new_size);
         }
-    }
+        UpdateWindowRect();
         return 0;
+    }
+
+    case WM_MOVE:
+        UpdateWindowRect();
+        break;
 
     case WM_ENTERSIZEMOVE:
         g_windows.is_resizing = true;
@@ -183,35 +206,32 @@ void platform::InitApplication(const ApplicationTraits* traits)
 
 void platform::InitWindow(void (*on_close)())
 {
-    // Set process to be DPI aware (per-monitor DPI awareness)
     SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
     
-    HINSTANCE hInstance = GetModuleHandle(NULL);
+    HINSTANCE hInstance = GetModuleHandle(nullptr);
 
-    // Register window class
     const char* CLASS_NAME = "NoZGameWindow";
     WNDCLASS wc = {};
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = CLASS_NAME;
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
-
     RegisterClass(&wc);
 
-    // Create window
     HWND hwnd = ::CreateWindowEx(
-        0,                          // Optional window styles
-        CLASS_NAME,                 // Window class
-        g_windows.traits->title,              // Window text
-        WS_OVERLAPPEDWINDOW,        // Window style
-        CW_USEDEFAULT, CW_USEDEFAULT,
+        0,
+        CLASS_NAME,
+        g_windows.traits->title,
+        WS_OVERLAPPEDWINDOW,
+        g_windows.traits->x < 0 ? CW_USEDEFAULT : g_windows.traits->x,
+        g_windows.traits->y < 0 ? CW_USEDEFAULT : g_windows.traits->y,
         g_windows.traits->width,
         g_windows.traits->height,
-        NULL,       // Parent window
-        NULL,       // Menu
-        hInstance,  // Instance handle
-        NULL        // Additional data
+        nullptr,
+        nullptr,
+        hInstance,
+        nullptr
     );
 
     HICON hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APP));
@@ -230,7 +250,7 @@ void platform::InitWindow(void (*on_close)())
 
     InitVulkan(&g_windows.traits->renderer, hwnd);
 
-    if (hwnd != NULL)
+    if (hwnd != nullptr)
     {
         ShowWindow(hwnd, SW_SHOW);
         UpdateWindow(hwnd);
@@ -261,7 +281,7 @@ bool platform::UpdateApplication()
     g_windows.mouse_scroll = {0, 0};
 
     int count = 0;
-    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) && count < 10)
+    while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) && count < 10)
     {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
@@ -359,7 +379,7 @@ void platform::FocusWindow()
 std::filesystem::path platform::GetSaveGamePath()
 {
     PWSTR appdata_path;
-    if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, NULL, &appdata_path)))
+    if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, nullptr, &appdata_path)))
     {
         std::filesystem::path save_path = appdata_path;
         CoTaskMemFree(appdata_path);
@@ -424,4 +444,9 @@ void platform::Log(LogType type, const char* message)
     std::string temp = message;
     temp += "\n";
     OutputDebugStringA(temp.c_str());
+}
+
+RectInt platform::GetWindowRect()
+{
+    return g_windows.window_rect;
 }

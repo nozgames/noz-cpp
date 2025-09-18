@@ -24,6 +24,8 @@ struct ApplicationTraits
     const char* name;
     const char* title;
     const char* assets_path;
+    int x;
+    int y;
     int width;
     int height;
     u32 asset_memory_size;

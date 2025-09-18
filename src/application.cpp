@@ -2,10 +2,11 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include "editor/editor_client.h"
+#include "platform.h"
+#include "platform/windows/windows_vulkan.h"
 #include <cstdio>
 #include <filesystem>
-#include "platform.h"
-#include "editor/editor_client.h"
 
 #include <cstdarg>
 
@@ -40,6 +41,8 @@ static ApplicationTraits g_default_traits =
     .name = "noz",
     .title = "noz",
     .assets_path = "assets",
+    .x = -1,
+    .y = -1,
     .width = 800,
     .height = 600,
     .asset_memory_size = 32 * noz::MB,
@@ -159,6 +162,8 @@ void InitApplication(ApplicationTraits* traits, int argc, const char* argv[])
     InitJobs();
     InitAudio();
 
+    g_app.traits.x = GetPrefInt(GetName("window.x"), g_app.traits.x);
+    g_app.traits.y = GetPrefInt(GetName("window.y"), g_app.traits.y);
     g_app.traits.width = GetPrefInt(GetName("window.width"), g_app.traits.width);
     g_app.traits.height = GetPrefInt(GetName("window.height"), g_app.traits.height);
 }
@@ -205,8 +210,11 @@ void ShutdownWindow()
 {
     assert(g_app.window_created);
 
-    SetPrefInt(GetName("window.width"), g_app.screen_size.x);
-    SetPrefInt(GetName("window.height"), g_app.screen_size.y);
+    RectInt window_rect = platform::GetWindowRect();
+    SetPrefInt(GetName("window.x"), window_rect.x);
+    SetPrefInt(GetName("window.y"), window_rect.y);
+    SetPrefInt(GetName("window.width"), window_rect.width);
+    SetPrefInt(GetName("window.height"), window_rect.height);
 
 #ifdef NOZ_EDITOR
     // Shutdown editor client
