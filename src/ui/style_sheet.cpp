@@ -4,17 +4,16 @@
 
 struct StyleSheetImpl : StyleSheet
 {
-    Map style_map;
-    u64* keys;
+    u16 style_count;
     Style* styles;
 };
 
-static u64 GetStyleKey(const Name* id, PseudoState pseudo_state) { return Hash(Hash(id), pseudo_state); }
-
 static void LoadStyles(StyleSheetImpl* impl, Allocator* allocator, Stream* stream, u32 style_count, const Name** name_table)
 {
+    (void) name_table;
+
     impl->styles = (Style*)Alloc(allocator, style_count * sizeof(Style));
-    impl->keys = (u64*)Alloc(allocator, style_count * sizeof(u64));
+    impl->style_count = (u16)style_count;
 
     for (u32 i=0; i < style_count; i++)
     {
@@ -32,15 +31,6 @@ static void LoadStyles(StyleSheetImpl* impl, Allocator* allocator, Stream* strea
         else
             style.font.id = -1;
     }
-
-    for (u32 i=0; i < style_count; i++)
-    {
-        u32 name_index = ReadU32(stream);
-        PseudoState pseudo_state = ReadU32(stream);
-        impl->keys[i] = GetStyleKey(name_table[name_index], pseudo_state);
-    }
-
-    Init(impl->style_map, impl->keys, impl->styles, style_count, sizeof(Style), style_count);
 }
 
 Asset* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
@@ -60,35 +50,15 @@ Asset* LoadStyleSheet(Allocator* allocator, Stream* stream, AssetHeader* header,
     return sheet;
 }
 
-bool GetStyle(StyleSheet* sheet, const Name* id, PseudoState pseudo_state, Style* result)
+const Style& GetStyle(const StyleId& style_id)
 {
-    u64 style_key = GetStyleKey(id, pseudo_state);
-    StyleSheetImpl* impl = static_cast<StyleSheetImpl*>(sheet);
-    Style* style = (Style*)GetValue(impl->style_map, style_key);
-    if (!style)
-        return false;
-
-    *result = *style;
-    return true;
-}
-
-const Style& GetStyle(StyleSheet* sheet, const Name* id, PseudoState pseudo_state)
-{
-    if (nullptr == sheet)
+    if (style_id.style_sheet_id == 0xFFFF || style_id.id == 0xFFFF)
         return GetDefaultStyle();
 
-    u64 style_key = GetStyleKey(id, pseudo_state);
-    StyleSheetImpl* impl = static_cast<StyleSheetImpl*>(sheet);
-    Style* style = (Style*)GetValue(impl->style_map, style_key);
-    if (!style)
-        return GetDefaultStyle();
-
-    return *style;
-}
-
-bool HasStyle(StyleSheet* sheet, const Name* name, PseudoState pseudo_state)
-{
-    return HasKey(static_cast<StyleSheetImpl*>(sheet)->style_map, GetStyleKey(name, pseudo_state));
+    StyleSheetImpl* impl = (StyleSheetImpl*)STYLESHEET[style_id.style_sheet_id];
+    assert(impl);
+    assert(style_id.id < impl->style_count);
+    return impl->styles[style_id.id];
 }
 
 #ifdef NOZ_EDITOR
@@ -101,10 +71,7 @@ void ReloadStyleSheet(Asset* asset, Stream* stream, const AssetHeader& header, c
     assert(stream);
 
     StyleSheetImpl* impl = static_cast<StyleSheetImpl*>(asset);
-
     Free(impl->styles);
-    Free(impl->keys);
-
     LoadStyles(impl, ALLOCATOR_DEFAULT, stream, ReadU32(stream), name_table);
 }
 

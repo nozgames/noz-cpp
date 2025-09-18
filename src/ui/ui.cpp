@@ -15,10 +15,6 @@ constexpr ElementType ELEMENT_TYPE_CANVAS = 2;
 constexpr ElementType ELEMENT_TYPE_LABEL = 3;
 constexpr ElementType ELEMENT_TYPE_IMAGE = 4;
 
-typedef u32 ElementFlags;
-constexpr ElementFlags ELEMENT_FLAG_NONE = 0;
-constexpr ElementFlags ELEMENT_FLAG_POP_STYLES = 1 << 0;
-
 StyleSheet** STYLESHEET = nullptr;
 
 struct CachedTextMesh
@@ -39,7 +35,6 @@ struct Element
     void* resource;
     Material* material;
     void* input_user_data;
-    ElementFlags flags;
     ElementInputFunc input_func;
 };
 
@@ -71,19 +66,6 @@ u32 Layout(u32 element_index, Rect parent_bounds);
 inline StyleSheet* GetCurrentStyleSheet()
 {
     return g_ui.style_stack_count > 0 ? g_ui.style_sheet_stack[g_ui.style_stack_count-1] : nullptr;
-}
-
-void PushStyles(StyleSheet* sheet)
-{
-    assert(g_ui.style_stack_count < STYLE_STACK_SIZE);
-    assert(sheet);
-    g_ui.style_sheet_stack[g_ui.style_stack_count++] = sheet;
-}
-
-void PopStyles()
-{
-    assert(g_ui.style_stack_count > 0);
-    g_ui.style_stack_count--;
 }
 
 void RenderElementQuad(const Color& color, Texture* texture)
@@ -139,38 +121,35 @@ void SetInputHandler(ElementInputFunc func, void* user_data)
     e.input_func = func;
 }
 
-static void BeginElement(ElementType type, const Name* id)
+static void BeginElement(ElementType type, const StyleId& style_id)
 {
     assert(g_ui.in_frame);
 
     Element& e = g_ui.elements[g_ui.element_count++];
     e.type = type;
-    e.flags = 0;
     e.bounds = Rect(0,0,0,0);
     e.parent = g_ui.element_stack_count > 0 ? g_ui.element_stack[g_ui.element_stack_count-1] : UINT32_MAX;
-    e.style = GetStyle(GetCurrentStyleSheet(), id, PSEUDO_STATE_NONE);
+    e.style = GetStyle(style_id);
     e.index = g_ui.element_count-1;
     e.child_count = 0;
     g_ui.element_stack[g_ui.element_stack_count++] = e.index;
 }
 
-void BeginElement(const Name* id)
+void BeginElement(const StyleId& style_id)
 {
-    BeginElement(ELEMENT_TYPE_NONE, id);
+    BeginElement(ELEMENT_TYPE_NONE, style_id);
 }
 
-void EmptyElement(const Name* id)
+
+void EmptyElement(const StyleId& style_id)
 {
-    BeginElement(ELEMENT_TYPE_NONE, id);
+    BeginElement(ELEMENT_TYPE_NONE, style_id);
     EndElement();
 }
 
 void EndElement()
 {
     Element& e = g_ui.elements[g_ui.element_stack[g_ui.element_stack_count-1]];
-
-    if (e.flags & ELEMENT_FLAG_POP_STYLES)
-        PopStyles();
 
     if (e.parent != UINT32_MAX)
     {
@@ -180,7 +159,7 @@ void EndElement()
     g_ui.element_stack_count--;
 }
 
-void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size, const Name* name, StyleSheet* styles)
+void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size, const StyleId& style_id)
 {
     Vec2 flipped_size = { size.x, -size.y };
     Vec2 screen_pos = WorldToScreen(camera, {position.x, position.y});
@@ -190,10 +169,7 @@ void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size, co
     Vec2 ui_pos = ScreenToWorld(g_ui.camera, screen_pos);
     Vec2 ui_size = ScreenToWorld(g_ui.camera, screen_size) - ScreenToWorld(g_ui.camera, VEC2_ZERO);
 
-    if (styles)
-        PushStyles(styles);
-
-    BeginElement(ELEMENT_TYPE_CANVAS, name);
+    BeginElement(ELEMENT_TYPE_CANVAS, style_id);
 
     // Force the canvas element to fit the reference
     Element& e = GetCurrentElement();
@@ -201,25 +177,16 @@ void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size, co
     e.style.margin_top = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, ui_pos.y };
     e.style.width = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, ui_size.x };
     e.style.height = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, ui_size.y };
-
-    if (styles)
-        e.flags |= ELEMENT_FLAG_POP_STYLES;
 }
 
-void BeginCanvas(const Name* name, StyleSheet* styles)
+void BeginCanvas(const StyleId& style_id)
 {
-    if (styles)
-        PushStyles(styles);
-
-    BeginElement(ELEMENT_TYPE_CANVAS, name);
+    BeginElement(ELEMENT_TYPE_CANVAS, style_id);
 
     // Force the canvas element to fit the reference
     Element& e = GetCurrentElement();
     e.style.width = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, g_ui.ortho_size.x };
     e.style.height = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, g_ui.ortho_size.y };
-
-    if (styles)
-        e.flags |= ELEMENT_FLAG_POP_STYLES;
 }
 
 void EndCanvas()
@@ -787,9 +754,9 @@ static u64 GetMeshHash(const TextRequest& request)
     return Hash(Hash(request.text), (u64)request.font, (u64)request.font_size);
 }
 
-void Label(const char* text, const Name* id)
+void Label(const char* text, const StyleId& style_id)
 {
-    BeginElement(ELEMENT_TYPE_LABEL, id);
+    BeginElement(ELEMENT_TYPE_LABEL, style_id);
 
     Element& e = GetCurrentElement();
 
@@ -820,9 +787,9 @@ void Label(const char* text, const Name* id)
     EndElement();
 }
 
-void Image(Material* material, const Name* id)
+void Image(Material* material, const StyleId& style_id)
 {
-    BeginElement(ELEMENT_TYPE_IMAGE, id);
+    BeginElement(ELEMENT_TYPE_IMAGE, style_id);
     Element& e = GetCurrentElement();
     e.resource = material;
     EndElement();

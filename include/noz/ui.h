@@ -9,19 +9,6 @@
 // @types
 struct StyleSheet : Asset {};
 
-// @style
-
-typedef u32 PseudoState;
-
-constexpr PseudoState PSEUDO_STATE_NONE     = 0;
-constexpr PseudoState PSEUDO_STATE_HOVER    = 1 << 0;
-constexpr PseudoState PSEUDO_STATE_ACTIVE   = 1 << 1;
-constexpr PseudoState PSEUDO_STATE_SELECTED = 1 << 2;
-constexpr PseudoState PSEUDO_STATE_DISABLED = 1 << 3;
-constexpr PseudoState PSEUDO_STATE_FOCUSED  = 1 << 4;
-constexpr PseudoState PSEUDO_STATE_PRESSED  = 1 << 5;
-constexpr PseudoState PSEUDO_STATE_CHECKED  = 1 << 6;
-
 struct StyleId
 {
     u16 style_sheet_id;
@@ -139,6 +126,8 @@ struct ElementInput
     void* user_data;
 };
 
+constexpr StyleId STYLE_DEFAULT = { 0xFFFF, 0xFFFF };
+
 typedef bool (*ElementInputFunc)(const ElementInput& input);
 
 const Style& GetDefaultStyle();
@@ -148,9 +137,7 @@ void SerializeStyle(const Style& style, Stream* stream);
 void MergeStyles(Style& dst, const Style& src, bool apply_defaults=false);
 
 // @stylesheet
-const Style& GetStyle(StyleSheet* sheet, const Name* name, PseudoState pseudo_state);
-bool GetStyle(StyleSheet* sheet, const Name* id, PseudoState pseudo_state, Style* result);
-bool HasStyle(StyleSheet* sheet, const Name* name, PseudoState pseudo_state);
+const Style& GetStyle(const StyleId& style_id);
 
 // @style_length
 inline bool IsAuto(const StyleLength& length) { return length.unit == STYLE_LENGTH_UNIT_AUTO; }
@@ -160,17 +147,15 @@ inline bool IsPercent(const StyleLength& length) { return length.unit == STYLE_L
 // @ui
 extern void BeginUI(u32 ref_width, u32 ref_height);
 extern void EndUI();
-extern void BeginCanvas(const Name* name = nullptr, StyleSheet* styles = nullptr);
-extern void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size, const Name* name=nullptr, StyleSheet* styles=nullptr);
-extern void EmptyElement(const Name* id);
-extern void BeginElement(const Name* id);
+extern void BeginCanvas(const StyleId& style_id = STYLE_DEFAULT);
+extern void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size, const StyleId& style_id = STYLE_DEFAULT);
+extern void EmptyElement(const StyleId& style_id = STYLE_DEFAULT);
+extern void BeginElement(const StyleId& style_id = STYLE_DEFAULT);
 extern void EndElement();
 extern void EndCanvas();
-extern void PushStyles(StyleSheet* sheet);
-extern void PopStyles();
 extern void DrawUI();
-extern void Label(const char* text, const Name* id);
-extern void Image(Material* material, const Name* id);;
+extern void Label(const char* text, const StyleId& style_id = STYLE_DEFAULT);
+extern void Image(Material* material, const StyleId& style_id = STYLE_DEFAULT);
 extern void SetInputHandler(ElementInputFunc func, void* user_data = nullptr);
 
 extern StyleSheet** STYLESHEET;
