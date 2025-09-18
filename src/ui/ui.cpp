@@ -3,6 +3,7 @@
 //
 
 constexpr int MAX_ELEMENTS = 1024;
+constexpr int STYLE_STACK_SIZE = 16;
 
 extern void UpdateInputState(InputSet* input_set);
 
@@ -13,6 +14,10 @@ constexpr ElementType ELEMENT_TYPE_NONE = 1;
 constexpr ElementType ELEMENT_TYPE_CANVAS = 2;
 constexpr ElementType ELEMENT_TYPE_LABEL = 3;
 constexpr ElementType ELEMENT_TYPE_IMAGE = 4;
+
+typedef u32 ElementFlags;
+constexpr ElementFlags ELEMENT_FLAG_NONE = 0;
+constexpr ElementFlags ELEMENT_FLAG_POP_STYLES = 1 << 0;
 
 struct CachedTextMesh
 {
@@ -32,6 +37,7 @@ struct Element
     void* resource;
     Material* material;
     void* input_user_data;
+    ElementFlags flags;
     ElementInputFunc input_func;
 };
 
@@ -40,7 +46,6 @@ struct UI
     Camera* camera;
     Mesh* element_quad;
     Material* element_material;
-    Font* default_font;
     CachedTextMesh text_mesh_cache_values[1024];
     u64 text_mesh_cache_keys[1024];
     Map text_mesh_cache;
@@ -48,25 +53,35 @@ struct UI
     u32 element_count;
     u32 element_stack[MAX_ELEMENTS];
     u32 element_stack_count;
-    StyleSheet* style_sheet;
+    StyleSheet* style_sheet_stack[STYLE_STACK_SIZE];
+    u32 style_stack_count;
     Vec2Int ref_size;
     Vec2 ortho_size;
     bool in_frame;
     InputSet* input;
+    StyleSheet* default_style_sheet;
 };
 
 static UI g_ui = {};
 
 u32 Layout(u32 element_index, Rect parent_bounds);
 
-void SetDefaultFont(Font* font)
+inline StyleSheet* GetCurrentStyleSheet()
 {
-    g_ui.default_font = font;
+    return g_ui.style_stack_count > 0 ? g_ui.style_sheet_stack[g_ui.style_stack_count-1] : nullptr;
 }
 
-Font* GetDefaultFont()
+void PushStyles(StyleSheet* sheet)
 {
-    return g_ui.default_font;
+    assert(g_ui.style_stack_count < STYLE_STACK_SIZE);
+    assert(sheet);
+    g_ui.style_sheet_stack[g_ui.style_stack_count++] = sheet;
+}
+
+void PopStyles()
+{
+    assert(g_ui.style_stack_count > 0);
+    g_ui.style_stack_count--;
 }
 
 void RenderElementQuad(const Color& color, Texture* texture)
@@ -115,11 +130,6 @@ static Element& GetCurrentElement()
     return g_ui.elements[g_ui.element_count-1];
 }
 
-void SetStyleSheet(StyleSheet* style_sheet)
-{
-    g_ui.style_sheet = style_sheet;
-}
-
 void SetInputHandler(ElementInputFunc func, void* user_data)
 {
     Element& e = GetCurrentElement();
@@ -135,15 +145,10 @@ static void BeginElement(ElementType type, const Name* id)
     e.type = type;
     e.bounds = Rect(0,0,0,0);
     e.parent = g_ui.element_stack_count > 0 ? g_ui.element_stack[g_ui.element_stack_count-1] : UINT32_MAX;
-    e.style = g_ui.style_sheet ? GetStyle(g_ui.style_sheet, id, PSEUDO_STATE_NONE) : GetDefaultStyle();
+    e.style = GetStyle(GetCurrentStyleSheet(), id, PSEUDO_STATE_NONE);
     e.index = g_ui.element_count-1;
     e.child_count = 0;
     g_ui.element_stack[g_ui.element_stack_count++] = e.index;
-}
-
-static void BeginElement(ElementType type)
-{
-    BeginElement(type, nullptr);
 }
 
 void BeginElement(const Name* id)
@@ -160,6 +165,10 @@ void EmptyElement(const Name* id)
 void EndElement()
 {
     Element& e = g_ui.elements[g_ui.element_stack[g_ui.element_stack_count-1]];
+
+    if (e.flags & ELEMENT_FLAG_POP_STYLES)
+        PopStyles();
+
     if (e.parent != UINT32_MAX)
     {
         Element& p = g_ui.elements[e.parent];
@@ -168,7 +177,7 @@ void EndElement()
     g_ui.element_stack_count--;
 }
 
-void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size, const Name* name)
+void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size, const Name* name, StyleSheet* styles)
 {
     Vec2 flipped_size = { size.x, -size.y };
     Vec2 screen_pos = WorldToScreen(camera, {position.x, position.y});
@@ -178,6 +187,9 @@ void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size, co
     Vec2 ui_pos = ScreenToWorld(g_ui.camera, screen_pos);
     Vec2 ui_size = ScreenToWorld(g_ui.camera, screen_size) - ScreenToWorld(g_ui.camera, VEC2_ZERO);
 
+    if (styles)
+        PushStyles(styles);
+
     BeginElement(ELEMENT_TYPE_CANVAS, name);
 
     // Force the canvas element to fit the reference
@@ -186,16 +198,25 @@ void BeginWorldCanvas(Camera* camera, const Vec2& position, const Vec2& size, co
     e.style.margin_top = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, ui_pos.y };
     e.style.width = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, ui_size.x };
     e.style.height = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, ui_size.y };
+
+    if (styles)
+        e.flags |= ELEMENT_FLAG_POP_STYLES;
 }
 
-void BeginCanvas()
+void BeginCanvas(const Name* name, StyleSheet* styles)
 {
-    BeginElement(ELEMENT_TYPE_CANVAS);
+    if (styles)
+        PushStyles(styles);
+
+    BeginElement(ELEMENT_TYPE_CANVAS, name);
 
     // Force the canvas element to fit the reference
     Element& e = GetCurrentElement();
     e.style.width = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, g_ui.ortho_size.x };
     e.style.height = { STYLE_KEYWORD_INLINE, STYLE_LENGTH_UNIT_FIXED, g_ui.ortho_size.y };
+
+    if (styles)
+        e.flags |= ELEMENT_FLAG_POP_STYLES;
 }
 
 void EndCanvas()
@@ -770,7 +791,7 @@ void Label(const char* text, const Name* id)
     Element& e = GetCurrentElement();
 
     TextRequest r = {};
-    r.font = GetDefaultFont();
+    r.font = nullptr;
     r.font_size = e.style.font_size.value;
     SetValue(r.text, text);
     u64 mesh_key = GetMeshHash(r);
@@ -808,7 +829,6 @@ void InitUI()
 {
     g_ui.camera = CreateCamera(ALLOCATOR_DEFAULT);
     g_ui.element_quad = CreateElementQuad(ALLOCATOR_DEFAULT);
-    g_ui.default_font = nullptr;;
     g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
     g_ui.input = CreateInputSet(ALLOCATOR_DEFAULT);
     EnableButton(g_ui.input, MOUSE_LEFT);
