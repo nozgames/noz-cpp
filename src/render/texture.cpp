@@ -5,6 +5,8 @@
 #include "../internal.h"
 #include "../platform.h"
 
+Texture** TEXTURE = nullptr;
+
 struct TextureImpl : Texture
 {
     platform::Texture* platform_texture = nullptr;

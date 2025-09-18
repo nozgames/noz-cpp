@@ -219,3 +219,11 @@ extern int GetFrame(Animator& animator);
 extern float GetTime(Animator& animator);
 extern float GetNormalizedTime(Animator& animator);
 extern void SetNormalizedTime(Animator& animator, float normalized_time);
+
+
+extern Mesh** MESH;
+extern Font** FONT;
+extern Texture** TEXTURE;
+extern Shader** SHADER;
+extern Skeleton** SKELETON;
+extern Animation** ANIMATION;
