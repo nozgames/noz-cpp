@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+Animation** ANIMATION = nullptr;
+
 int GetBoneCount(Animation* animation)
 {
     return ((AnimationImpl*)animation)->bone_count;

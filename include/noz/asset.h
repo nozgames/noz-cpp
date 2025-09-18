@@ -65,7 +65,7 @@ Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, 
 #define NOZ_LOAD_TEXTURE(allocator, path, member) \
     member = (Texture*)LoadAsset(allocator, path, ASSET_SIGNATURE_TEXTURE, LoadTexture);
 
-#define NOZ_LOAD_STYLE(allocator, path, member) \
+#define NOZ_LOAD_STYLESHEET(allocator, path, member) \
     member = (StyleSheet*)LoadAsset(allocator, path, ASSET_SIGNATURE_STYLE_SHEET, LoadStyleSheet);
 
 #define NOZ_LOAD_MESH(allocator, path, member) \
@@ -100,7 +100,7 @@ void ReloadVfx(Asset* asset, Stream* stream, const AssetHeader& header, const Na
 void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
 void ReloadShader(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
 
-#define NOZ_RELOAD_STYLE(asset_name, asset) \
+#define NOZ_RELOAD_STYLESHEET(asset_name, asset) \
     if(asset_name == incoming_name) { ReloadAsset(asset_name, ASSET_SIGNATURE_STYLE_SHEET, asset, ReloadStyleSheet); return; }
 
 #define NOZ_RELOAD_VFX(asset_name, asset) \
@@ -113,7 +113,7 @@ void ReloadShader(Asset* asset, Stream* stream, const AssetHeader& header, const
     if(asset_name == incoming_name) { ReloadAsset(asset_name, ASSET_SIGNATURE_SHADER, asset, ReloadShader); return; }
 
 #else
-#define NOZ_RELOAD_STYLE(asset)
+#define NOZ_RELOAD_STYLESHEET(asset)
 #define NOZ_RELOAD_VFX(asset_name, asset)
 #define NOZ_RELOAD_MESH(asset_name, asset)
 #define NOZ_RELOAD_SHADER(asset_name, asset)
