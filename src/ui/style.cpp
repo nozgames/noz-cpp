@@ -10,7 +10,7 @@ static Style g_default_style = {
     .height = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_AUTO, 0.0f },
     .background_color = { STYLE_KEYWORD_INHERIT, {0,0,0,0} },
     .color = { STYLE_KEYWORD_INHERIT, {1,1,1,1} },
-    .font = { STYLE_KEYWORD_INHERIT, -1, "" },
+    .font = { STYLE_KEYWORD_INHERIT, -1 },
     .font_size = { STYLE_KEYWORD_INHERIT, 16 },
     .margin_top = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_FIXED, 0.0f },
     .margin_left = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_FIXED, 0.0f },
@@ -78,6 +78,7 @@ static void DeserializeStyleParameter(Stream* stream, StyleFont& value)
         return;
 
     ReadString(stream, value.name, MAX_NAME_LENGTH);
+    value.id = -1;
 }
 
 void DeserializeStyle(Stream* stream, Style& style)

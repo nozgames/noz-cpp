@@ -793,7 +793,7 @@ void Label(const char* text, const Name* id)
     Element& e = GetCurrentElement();
 
     TextRequest r = {};
-    r.font = nullptr;
+    r.font = e.style.font.id >= 0 ? FONT[e.style.font.id] : nullptr;
     r.font_size = e.style.font_size.value;
     SetValue(r.text, text);
     u64 mesh_key = GetMeshHash(r);

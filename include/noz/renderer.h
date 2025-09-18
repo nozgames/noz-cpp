@@ -156,11 +156,12 @@ struct FontGlyph
     Vec2 bearing;
 };
 
-float GetBaseline(Font* font);
-float GetLineHeight(Font* font);
-Material* GetMaterial(Font* font);
-const FontGlyph* GetGlyph(Font* font, char ch);
-float GetKerning(Font* font, char first, char second);
+extern int GetFontIndex(const Name* name);
+extern float GetBaseline(Font* font);
+extern float GetLineHeight(Font* font);
+extern Material* GetMaterial(Font* font);
+extern const FontGlyph* GetGlyph(Font* font, char ch);
+extern float GetKerning(Font* font, char first, char second);
 
 // @camera
 Camera* CreateCamera(Allocator* allocator);

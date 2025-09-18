@@ -18,8 +18,19 @@ static void LoadStyles(StyleSheetImpl* impl, Allocator* allocator, Stream* strea
 
     for (u32 i=0; i < style_count; i++)
     {
-        impl->styles[i] = GetDefaultStyle();
-        DeserializeStyle(stream, impl->styles[i]);
+        Style& style = impl->styles[i];
+        style = GetDefaultStyle();
+        DeserializeStyle(stream, style);
+
+        if (style.font.name[0] != 0)
+        {
+            char font_name[MAX_NAME_LENGTH] = {0};
+            Copy(font_name, MAX_NAME_LENGTH, "font/");
+            Copy(font_name + 5, MAX_NAME_LENGTH - 5, style.font.name);
+            style.font.id = GetFontIndex(GetName(font_name));
+        }
+        else
+            style.font.id = -1;
     }
 
     for (u32 i=0; i < style_count; i++)

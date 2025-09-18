@@ -206,3 +206,15 @@ Material* GetMaterial(Font* font)
 
     return impl->material;
 }
+
+int GetFontIndex(const Name* name)
+{
+    assert(FONT);
+    assert(name);
+
+    for (int i = 0; FONT[i]; i++)
+        if (FONT[i]->name == name)
+            return i;
+
+    return -1;
+}
