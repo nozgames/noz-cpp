@@ -19,11 +19,13 @@ Name* GetName(const char* value)
         return name;
 
     u32 name_value_len = (u32)strlen(value);
+    assert(name_value_len < MAX_NAME_LENGTH - 1);
+
     char* name_value = (char*)Alloc(g_name_allocator, name_value_len + 1);
     memcpy(name_value, value, name_value_len + 1);
     CleanPath(name_value);
     name = (Name*)SetValue(g_names_map, key);
-    name->value = name_value;
+    Copy(name->value, MAX_NAME_LENGTH, name_value);
     return name;;
 }
 

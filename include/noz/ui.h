@@ -97,6 +97,13 @@ struct StyleTextAlign
     TextAlign value;
 };
 
+struct StyleFont
+{
+    StyleParameter parameter;
+    int id;
+    char name[MAX_NAME_LENGTH];
+};
+
 struct Style
 {
     StyleFlexDirection flex_direction;
@@ -104,6 +111,7 @@ struct Style
     StyleLength height;
     StyleColor background_color;
     StyleColor color;
+    StyleFont font;
     StyleInt font_size;
     StyleLength margin_top;
     StyleLength margin_left;
