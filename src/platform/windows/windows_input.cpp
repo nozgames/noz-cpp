@@ -387,6 +387,9 @@ void HandleInputKeyDown(char c)
 
 void platform::ClearTextInput()
 {
+    if (g_input.text_input.length == 0)
+        return;
+
     g_input.text_input.value[0] = 0;
     g_input.text_input.length = 0;
     g_input.text_input.cursor = 0;

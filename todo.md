@@ -1,15 +1,14 @@
 # Todo
 
-- [ ] frame on mesh when no points selected is framing origin insteda of bounds
+- [ ] Capture mouse while using tools like grab
+- [ ] Undo with color did not work
+- [ ] edge color did not work
 - [ ] Draw a origin point on screen when changing light
 - [ ] inserting a frame with o in the middle seems to not be working
-- [ ] Onion skinning (alt-o) toggle ?
 - [ ] bone scale
 - [ ] Change UI, vertex size, edge size, etc to not scale with the window size
 - [ ] Seems to be reimporting assets
 - [ ] zoom should zoom in at cursor
-- [ ] Normalize selection colors to blender colors
-- [ ] Circle pie chart for height and edge on verts
 - [ ] Zooming in and using alt is causing a hard lag (specifcally on the archer mesh)
 - [ ] Animation bounds does not take into account the actual animation, just the skeleton
 
@@ -56,8 +55,6 @@
 - [ ] Why isnt it closing? (thread lock) (job system)
 - [ ] m to merge vertices (broken)
 - [ ] x to dissovlve vertices, faces, edges
-- [ ] highlight triangle when selected
-- [ ] highlight edge when selected
 - [ ] Light color in the editor config
 - [ ] Use TextInput for typing after move or scale command
 - [ ] Pressing g or r should stop the previous g or r and start a new one
