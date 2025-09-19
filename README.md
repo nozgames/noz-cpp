@@ -1,122 +1,54 @@
 # NoZ Game Engine
 
-**NoZ Game Engine** is a lightweight, modern C++ game engine designed for 2D and 3D game development with a focus on simplicity, performance, and clean architecture.
+**NoZ** is a high-performance C++ game engine designed for 2D game development with modern graphics capabilities. Built with a focus on simplicity, performance, and clean C-style APIs, NoZ provides everything needed to create compelling 2D games and interactive applications.
 
-## Overview
+## 🎯 Features
 
-NoZ provides a complete set of tools for game development including rendering, physics, UI, audio, input handling, and asset management. The engine follows a component-based architecture with an object system that provides automatic memory management through reference counting.
+### Core Engine
+- **C-Style API**: Clean, simple function-based interface with minimal C++ complexity
+- **Custom Memory Management**: Arena and pool allocators for optimal performance
+- **Asset System**: Hot-reloadable assets with automatic dependency tracking
+- **Job System**: Multi-threaded task execution with dependency management
+- **Event System**: Decoupled communication between engine systems
+- **Editor Integration**: Real-time asset hot-reloading during development
 
-## Key Features
+### Graphics & Rendering
+- **Vulkan Backend**: Modern, cross-platform graphics API with optimized rendering
+- **Material System**: Shader-based materials with multi-texture support
+- **Mesh System**: Dynamic mesh building and efficient static mesh rendering
+- **Camera System**: 2D orthographic cameras with world-to-screen transformations
+- **Animation System**: Skeletal animation with bone hierarchies and keyframe interpolation
+- **Text Rendering**: High-quality SDF-based font rendering with kerning support
+- **Built-in Shaders**: Optimized shaders for common rendering tasks (lit, UI, text, VFX)
 
-### Core Systems
-- **Object System**: Reference-counted object management with automatic cleanup
-- **Entity-Component System**: Hierarchical entities with component-based architecture
-- **Component Architecture**: Trait-based component system with lifecycle management
-- **Scene Management**: Scene objects with hierarchical transform system
-- **Asset Pipeline**: Hot-reloadable asset system with build tools
-- **Memory Management**: Custom allocators (arena, pool) for performance
-
-### Rendering
-- **Modern Graphics API**: Cross-platform rendering abstraction
-- **Material System**: Shader-based materials with texture support
-- **Mesh System**: Dynamic mesh building and static mesh rendering
-- **Text Rendering**: SDF-based font rendering with kerning support
-- **Shadow Mapping**: Real-time shadow system
-
-### Physics
-- **2D Physics**: Box2D integration for rigid body dynamics
-- **Collision Detection**: Shape-based colliders (box, circle)
-- **Raycasting**: Spatial queries for gameplay mechanics
+### Audio
+- **XAudio2 Integration**: High-performance audio playback on Windows
+- **Sound Management**: Easy-to-use sound playback with volume and pitch control
+- **Handle-based API**: Safe sound instance management with automatic cleanup
 
 ### User Interface
+- **Immediate Mode UI**: Simple, declarative UI system for in-game interfaces
 - **Flexbox Layout**: CSS-like layout system with flexible positioning
-- **Style Sheets**: External styling with pseudo-state support (hover, active, focused, etc.)
-- **UI Components**: Canvas, elements, labels with trait-based extensibility
-- **Screen/World Space**: Support for both overlay and 3D world-space UI
-- **Element Hierarchy**: Parent-child relationships with automatic layout management
+- **Style Sheets**: External styling support for consistent UI appearance
+- **Canvas System**: Both screen-space and world-space UI rendering
+- **Input Handling**: Mouse and keyboard input with element-specific callbacks
 
-### Input & Platform
-- **Action Maps**: Configurable input binding system
-- **Cross-Platform**: Windows and POSIX support
-- **Hot Reload**: Runtime asset reloading for development
+### VFX System
+- **Particle Effects**: Asset-based visual effects system
+- **Handle Management**: Safe VFX instance tracking and control
+- **Spatial Integration**: World-positioned effects with automatic bounds calculation
 
-## Architecture
+### Physics (Simplified)
+- **Collision Detection**: Point-in-polygon and line intersection testing
+- **Raycasting**: Spatial queries for gameplay mechanics
+- **Custom Colliders**: Mesh-based and primitive shape colliders
 
-### Object System Design
-NoZ uses a unique object system that combines the benefits of reference counting with type safety:
+### Platform Support
+- **Windows**: Primary platform with full feature support
+- **Vulkan Graphics**: Cross-platform graphics foundation
+- **C++23**: Modern C++ features with backwards compatibility
 
-```cpp
-// Objects are automatically managed
-Entity* entity = CreateEntity(allocator);
-// No manual cleanup required - objects are reference counted
-
-// Type-safe casting
-if (auto mesh_renderer = Cast<MeshRenderer>(entity)) {
-    SetMesh(mesh_renderer, my_mesh);
-}
-```
-
-### Entity-Component System
-Entities support hierarchical relationships and component attachment with trait-based lifecycle management:
-
-```cpp
-// Create entities with hierarchical relationships
-Entity* parent = CreateEntity(allocator);
-Entity* child = CreateEntity(allocator);
-SetParent(child, parent);
-
-// Add components to entities
-MeshRenderer* renderer = CreateMeshRenderer(allocator);
-AddComponent(parent, renderer);
-
-// Enable/disable entities (affects children)
-SetEnabled(parent, false); // Disables entire hierarchy
-
-// Define custom entity behavior with traits
-struct MyEntityTraits : EntityTraits {
-    void(*on_destroy)(Entity*);
-    void(*on_enabled)(Entity*);
-    void(*on_disabled)(Entity*);
-};
-
-SetEntityTraits(MY_ENTITY_TYPE, &my_traits);
-```
-
-### Asset System
-Assets are loaded by name and managed automatically:
-
-```cpp
-// Assets loaded by name without extensions
-Texture* texture = LoadAsset<Texture>("my_texture");
-Material* material = CreateMaterial(allocator, shader);
-SetTexture(material, texture);
-```
-
-## Dependencies
-
-- **SDL3**: Window management and input
-- **GLM**: Mathematics library
-- **Box2D**: 2D physics simulation
-- **ENet**: Networking (optional)
-- **STB Libraries**: Image loading and other utilities
-
-## Building
-
-NoZ uses CMake for cross-platform builds:
-
-```bash
-mkdir build
-cd build
-cmake ..
-cmake --build .
-```
-
-### Requirements
-- CMake 3.15+
-- C++23 compatible compiler
-- Git (for dependency fetching)
-
-## Quick Start
+## 🚀 Quick Start
 
 ### Basic Application Setup
 
@@ -124,7 +56,7 @@ cmake --build .
 #include <noz/noz.h>
 
 bool LoadAssets(Allocator* allocator) {
-    // Load your game assets
+    // Load game assets here
     return true;
 }
 
@@ -134,9 +66,10 @@ void UnloadAssets() {
 
 int main() {
     ApplicationTraits traits = {
-        .title = "My Game",
-        .width = 1280,
-        .height = 720,
+        .name = "MyGame",
+        .title = "My Awesome Game",
+        .width = 1920,
+        .height = 1080,
         .load_assets = LoadAssets,
         .unload_assets = UnloadAssets
     };
@@ -146,97 +79,189 @@ int main() {
 }
 ```
 
-### Creating Entities and Components
+### Rendering a Textured Quad
 
 ```cpp
-// Create scene hierarchy
-Entity* root = GetRootEntity();
-Entity* player = CreateEntity(allocator);
-SetParent(player, root);
-SetLocalPosition(player, 0, 0, 0);
+// Create camera
+Camera* camera = CreateCamera(allocator);
+SetSize(camera, Vec2{1920, 1080});
 
-// Add renderable component
-MeshRenderer* renderer = CreateMeshRenderer(allocator);
-AddComponent(player, renderer);
-SetMesh(renderer, my_mesh);
-SetMaterial(renderer, my_material);
+// Load assets
+Texture* texture = LoadAsset<Texture>("my_texture");
+Shader* shader = LoadAsset<Shader>("lit");
+Material* material = CreateMaterial(allocator, shader);
+SetTexture(material, texture);
 
-// Transform management
-SetWorldPosition(player, 10, 0, 5);
-SetLocalScale(player, 2.0f);
-SetLocalEulerAngles(player, 0, 45, 0);
+// Create mesh
+MeshBuilder* builder = CreateMeshBuilder(allocator, 4, 6);
+AddQuad(builder, Vec2{0, 1}, Vec2{1, 0}, 100, 100, Vec2{0, 0});
+Mesh* quad = CreateMesh(allocator, builder, MakeName("quad"));
 
-// Enable/disable entities
-SetEnabled(player, true); // Affects all child entities
+// Render
+BeginRenderFrame(Color{0.1f, 0.1f, 0.1f, 1.0f});
+BindCamera(camera);
+BindMaterial(material);
+BindTransform(Vec2{0, 0}, 0.0f, Vec2{1, 1});
+DrawMesh(quad);
+EndRenderFrame();
 ```
 
 ### UI System
 
 ```cpp
-// Create UI canvas (screen or world space)
-Canvas* canvas = CreateCanvas(allocator, CANVAS_TYPE_SCREEN, 1920, 1080);
+BeginUI(1920, 1080);
+BeginCanvas();
 
-// Create UI elements with styling support
-Label* label = CreateLabel(allocator, "Hello World", MakeName("title"));
-SetParent(label, GetRootElement(canvas));
+Label("Hello, World!");
+Image(my_material);
 
-// Apply styles and pseudo-states
-SetPseudoState(label, PSEUDO_STATE_HOVER, true);
-SetVisible(label, true);
+// Custom element with input handling
+SetInputHandler([](const ElementInput& input) -> bool {
+    if (input.button == INPUT_CODE_MOUSE_LEFT) {
+        Log("Button clicked!");
+        return true; // Consume input
+    }
+    return false;
+});
+BeginElement();
+Label("Click Me");
+EndElement();
 
-// Custom element traits for advanced behavior
-struct MyElementTraits : ElementTraits {
-    vec2(*measure_content)(Element*, const vec2& available_size, const Style& style);
-    void(*render_content)(Element*, const Style& style);
-    void(*on_apply_style)(Element*, const Style&);
-};
-
-SetElementTraits(MY_ELEMENT_TYPE, &my_traits);
+EndCanvas();
+DrawUI();
+EndUI();
 ```
 
-## Directory Structure
+### Audio Playback
+
+```cpp
+Sound* sound = LoadAsset<Sound>("explosion");
+SoundHandle handle = Play(sound, 1.0f, 1.0f, false);
+
+// Control playback
+SetVolume(handle, 0.5f);
+SetPitch(handle, 1.2f);
+
+if (IsPlaying(handle)) {
+    Stop(handle);
+}
+```
+
+### VFX System
+
+```cpp
+Vfx* explosion = LoadAsset<Vfx>("explosion_effect");
+VfxHandle effect = Play(explosion, Vec2{100, 200});
+
+// Check if still playing
+if (IsPlaying(effect)) {
+    // Effect is active
+}
+```
+
+## 🏗️ Architecture
+
+### Memory Management
+NoZ uses custom allocators for optimal performance:
+- **Arena Allocators**: For temporary/frame-based data
+- **Pool Allocators**: For fixed-size objects
+- **Asset Memory**: Dedicated memory pools for game assets
+
+### Asset Pipeline
+Assets are referenced by name and automatically managed:
+```cpp
+// Assets loaded by name without file extensions
+Texture* texture = LoadAsset<Texture>("player_sprite");
+Material* material = CreateMaterial(allocator, shader);
+SetTexture(material, texture);
+```
+
+### Handle-Based APIs
+Audio and VFX systems use handles for safe resource management:
+```cpp
+SoundHandle sound = Play(audio_clip);
+VfxHandle effect = Play(particle_system, position);
+// Handles automatically become invalid when resources are freed
+```
+
+## 📁 Project Structure
 
 ```
-libs/noz/
+noz/
 ├── include/noz/          # Public API headers
-├── src/                  # Implementation files
+│   ├── noz.h            # Main include file
+│   ├── renderer.h       # Graphics and rendering
+│   ├── audio.h          # Audio system
+│   ├── ui.h             # User interface
+│   ├── vfx.h            # Visual effects
+│   └── ...
+├── src/                 # Implementation files
 │   ├── render/          # Rendering system
-│   ├── scene/           # Scene and entity management
-│   ├── ui/              # User interface system
-│   ├── physics/         # Physics integration
-│   ├── input/           # Input handling
-│   └── memory/          # Memory management
-├── assets/              # Engine assets (shaders, etc.)
-├── tools/               # Build tools and importers
-└── external/            # Third-party headers
+│   ├── audio/           # Audio implementation
+│   ├── ui/              # UI system
+│   ├── vfx/             # VFX system
+│   ├── math/            # Math utilities
+│   ├── memory/          # Memory management
+│   └── platform/        # Platform-specific code
+├── assets/              # Engine assets
+│   └── shaders/         # Built-in shaders
+├── external/            # Third-party dependencies
+└── CMakeLists.txt       # Build configuration
 ```
 
-## Performance Considerations
+## 🔧 Building
 
-- **Object Pooling**: Use for frequently created/destroyed objects
-- **Memory Allocators**: Arena allocators for temporary data, pool allocators for fixed-size objects
-- **Asset Batching**: Group similar assets for efficient rendering
-- **Hot/Cold Data**: Separate frequently accessed data from metadata
+### Requirements
+- **CMake 3.15+**
+- **C++23 compatible compiler** (MSVC, GCC, Clang)
+- **Vulkan SDK** (for graphics)
+- **Git** (for dependency management)
 
-## Development Workflow
+### Build Steps
+```bash
+mkdir build
+cd build
+cmake ..
+cmake --build . --config Release
+```
 
-1. **Hot Reload**: Assets automatically reload when modified during development
-2. **Debug Assertions**: Extensive validation in debug builds
-3. **Type Safety**: Strong typing prevents common errors
-4. **RAII**: Automatic resource management eliminates memory leaks
+### Dependencies
+NoZ includes the following third-party libraries:
+- **Vulkan** - Modern graphics API
+- **XAudio2** - Audio system (Windows)
+- **ENet** - Networking (optional)
+- **xxHash** - Fast hashing
+- **STB Libraries** - Image loading and utilities
 
-## Code Style
+## 🎮 Example Projects
 
-NoZ follows consistent naming conventions:
-- Types: `snake_case` (e.g., `render_buffer`, `mesh_builder`)
-- Functions: `snake_case` (e.g., `create_entity`, `add_component`)
-- Constants: `UPPER_CASE` (e.g., `MAX_ENTITIES`)
-- Private members: `_prefix` (e.g., `_impl`, `_object`)
+Check out these example projects to see NoZ in action:
+- **Basic Renderer** - Simple textured quad rendering
+- **UI Demo** - Comprehensive UI system showcase
+- **Audio Test** - Sound playback and management
+- **VFX Demo** - Particle effects and visual systems
 
-## License
+## 📊 Performance Characteristics
 
-Copyright(c) 2025 NoZ Games, LLC
+- **Memory Efficient**: Custom allocators minimize allocation overhead
+- **Cache Friendly**: Data structures designed for optimal memory access patterns
+- **Minimal Overhead**: C-style APIs with minimal abstraction cost
+- **Vulkan Optimized**: Modern graphics pipeline with efficient command submission
+- **Asset Streaming**: Hot-reload system designed for fast iteration
+
+## 🔍 API Design Philosophy
+
+NoZ follows these design principles:
+- **Explicit Memory Management**: All allocations require an allocator parameter
+- **Handle-Based Resources**: Safe resource management through opaque handles
+- **C-Style Functions**: Simple, predictable function interfaces
+- **Minimal Dependencies**: Self-contained engine with minimal external requirements
+- **Performance First**: Every API designed with performance implications in mind
+
+## 📝 License
+
+Copyright (c) 2025 NoZ Games, LLC
 
 ---
 
-For detailed API documentation and examples, see the header files in `include/noz/` and implementation examples in the WoolZ game project.
+**NoZ Game Engine** - Built for developers who value performance, simplicity, and creative freedom.
