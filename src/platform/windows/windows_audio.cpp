@@ -8,7 +8,6 @@
 #include <windows.h>
 #include <xaudio2.h>
 #include <x3daudio.h>
-#include <vector>
 
 constexpr int MAX_SOURCES = 32;
 
@@ -25,7 +24,6 @@ const WAVEFORMATEX g_wav_format = {
 struct WindowsAudioSource
 {
     IXAudio2SourceVoice* voice;
-    XAUDIO2_BUFFER buffer;
     float volume;
     float pitch;
     u32 generation;
@@ -86,6 +84,7 @@ void platform::StopSound(const SoundHandle& handle)
         return;
 
     source->voice->Stop();
+    source->voice->FlushSourceBuffers();
 }
 
 void platform::SetSoundVolume(const SoundHandle& handle, float volume)
@@ -139,11 +138,14 @@ platform::SoundHandle platform::PlaySound(Sound* sound, float volume, float pitc
         // Found one!
         source.voice->Stop();
         source.voice->FlushSourceBuffers();
-        source.buffer.AudioBytes = wsound->buffer_size;
-        source.buffer.pAudioData = (const BYTE*)(wsound+1);
-        source.buffer.Flags = XAUDIO2_END_OF_STREAM;
-        source.buffer.LoopCount = loop ? XAUDIO2_LOOP_INFINITE : 0;
-        source.voice->SubmitSourceBuffer(&source.buffer);
+
+        XAUDIO2_BUFFER buffer = {};  // Create a new buffer on the stack
+        buffer.AudioBytes = wsound->buffer_size;
+        buffer.pAudioData = (const BYTE*)(wsound+1);
+        buffer.Flags = XAUDIO2_END_OF_STREAM;
+        buffer.LoopCount = loop ? XAUDIO2_LOOP_INFINITE : 0;
+
+        source.voice->SubmitSourceBuffer(&buffer);
         source.voice->SetVolume(Clamp(volume, 0.0f, 1.0f));
         source.voice->SetFrequencyRatio(Clamp(pitch, 0.5f, 2.0f));
         source.voice->Start(0);
@@ -184,7 +186,7 @@ platform::Sound* platform::CreateSound(
 
     WindowsSound* sound = (WindowsSound*)Alloc(ALLOCATOR_DEFAULT, sizeof(WindowsSound) + data_size);
     sound->buffer_size = data_size;
-    memcpy((u8*)sound + sizeof(WindowsSound), data, data_size);
+    memcpy(sound + 1, data, data_size);
     return (Sound*)sound;
 }
 

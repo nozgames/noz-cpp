@@ -42,3 +42,4 @@ bool OverlapPoint(Collider* collider, const Vec2& point);
 
 // @collision
 bool OverlapPoint(const Vec2& v0, const Vec2& v1, const Vec2& v2, const Vec2& overlap_point, Vec2* where);
+bool OverlapLine(const Vec2& l0v0, const Vec2& l0v1, const Vec2& l1v0, const Vec2& l1v1, Vec2* where);
