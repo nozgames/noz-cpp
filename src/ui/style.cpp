@@ -9,6 +9,9 @@ static Style g_default_style = {
     .width = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_AUTO, 0.0f },
     .height = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_AUTO, 0.0f },
     .background_color = { STYLE_KEYWORD_INHERIT, {0,0,0,0} },
+    .background_vignette_color = { STYLE_KEYWORD_INHERIT, {0,0,0,0} },
+    .background_vignette_intensity = { STYLE_KEYWORD_INHERIT, 1.0f },
+    .background_vignette_smoothness = { STYLE_KEYWORD_INHERIT, 1.0f },
     .color = { STYLE_KEYWORD_INHERIT, {1,1,1,1} },
     .font = { STYLE_KEYWORD_INHERIT, -1 },
     .font_size = { STYLE_KEYWORD_INHERIT, 16 },
@@ -40,6 +43,13 @@ static void DeserializeStyleParameter(Stream* stream, StyleInt& value)
     if (!DeserializeStyleParameter(stream, (StyleParameter&)value))
         return;
     value.value = ReadI32(stream);
+}
+
+static void DeserializeStyleParameter(Stream* stream, StyleFloat& value)
+{
+    if (!DeserializeStyleParameter(stream, (StyleParameter&)value))
+        return;
+    value.value = ReadFloat(stream);
 }
 
 static void DeserializeStyleParameter(Stream* stream, StyleColor& value)
@@ -87,6 +97,9 @@ void DeserializeStyle(Stream* stream, Style& style)
     DeserializeStyleParameter(stream, style.width);
     DeserializeStyleParameter(stream, style.height);
     DeserializeStyleParameter(stream, style.background_color);
+    DeserializeStyleParameter(stream, style.background_vignette_color);
+    DeserializeStyleParameter(stream, style.background_vignette_intensity);
+    DeserializeStyleParameter(stream, style.background_vignette_smoothness);
     DeserializeStyleParameter(stream, style.color);
     DeserializeStyleParameter(stream, style.font);
     DeserializeStyleParameter(stream, style.font_size);
@@ -120,6 +133,13 @@ static void SerializeParameter(Stream* stream, const StyleInt& value)
     if (!SerializeParameter(stream, (StyleParameter&)value))
         return;
     WriteI32(stream, value.value);
+}
+
+static void SerializeParameter(Stream* stream, const StyleFloat& value)
+{
+    if (!SerializeParameter(stream, (StyleParameter&)value))
+        return;
+    WriteFloat(stream, value.value);
 }
 
 static void SerializeParameter(Stream* stream, const StyleColor& value)
@@ -166,6 +186,9 @@ void SerializeStyle(const Style& style, Stream* stream)
     SerializeParameter(stream, style.width);
     SerializeParameter(stream, style.height);
     SerializeParameter(stream, style.background_color);
+    SerializeParameter(stream, style.background_vignette_color);
+    SerializeParameter(stream, style.background_vignette_intensity);
+    SerializeParameter(stream, style.background_vignette_smoothness);
     SerializeParameter(stream, style.color);
     SerializeParameter(stream, style.font);
     SerializeParameter(stream, style.font_size);
@@ -187,6 +210,9 @@ void MergeStyles(Style& dst, const Style& src, bool apply_defaults)
     STYLE_MERGE(flex_direction);
     STYLE_MERGE(color);
     STYLE_MERGE(background_color);
+    STYLE_MERGE(background_vignette_color);
+    STYLE_MERGE(background_vignette_intensity);
+    STYLE_MERGE(background_vignette_smoothness);
     STYLE_MERGE(width);
     STYLE_MERGE(height);
     STYLE_MERGE(font);

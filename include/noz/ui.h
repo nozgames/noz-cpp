@@ -103,6 +103,9 @@ struct Style
     StyleLength width;
     StyleLength height;
     StyleColor background_color;
+    StyleColor background_vignette_color;
+    StyleFloat background_vignette_intensity;
+    StyleFloat background_vignette_smoothness;
     StyleColor color;
     StyleFont font;
     StyleInt font_size;
