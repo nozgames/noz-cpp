@@ -4,6 +4,8 @@
 
 #pragma once
 
+constexpr u32 MAX_UNIFORM_BUFFER_SIZE = sizeof(Mat4);
+
 // @types
 struct Camera {};
 struct Texture : Asset {};
@@ -137,6 +139,8 @@ extern void AddArc(MeshBuilder* builder, const Vec2& center, f32 radius, f32 sta
 extern void BindDefaultTexture(int texture_index);
 extern void BindColor(Color color);
 extern void BindCamera(Camera* camera);
+extern void BindVertexUserData(const void* data, size_t size);
+extern void BindFragmentUserData(const void* data, size_t size);
 extern void BindTransform(const Mat3& parent_transform, const Animator& animator, int bone_index);
 extern void BindTransform(const Vec2& position, float rotation, const Vec2& scale);
 extern void BindTransform(const Vec2& position, const Vec2& rotation, const Vec2& scale);

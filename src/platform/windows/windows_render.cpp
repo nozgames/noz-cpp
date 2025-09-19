@@ -20,8 +20,7 @@ constexpr int MAX_TEXTURES = 128;
 constexpr int VK_SPACE_TEXTURE = UNIFORM_BUFFER_COUNT;
 
 constexpr int MAX_UNIFORM_BUFFERS = 4096;
-constexpr u32 UNIFORM_BUFFER_SIZE = sizeof(Mat4);
-constexpr u32 DYNAMIC_UNIFORM_BUFFER_SIZE = UNIFORM_BUFFER_SIZE * MAX_UNIFORM_BUFFERS;
+constexpr u32 DYNAMIC_UNIFORM_BUFFER_SIZE = MAX_UNIFORM_BUFFER_SIZE * MAX_UNIFORM_BUFFERS;
 
 const char* UNIFORM_BUFFER_NAMES[] = {
     "CameraBuffer",
@@ -214,7 +213,7 @@ static void* AcquireUniformBuffer(UniformBufferType type)
 {
     assert(type >= 0 && type < UNIFORM_BUFFER_COUNT);
 
-    u32 aligned_size = (UNIFORM_BUFFER_SIZE + g_vulkan.min_uniform_buffer_offset_alignment - 1) 
+    u32 aligned_size = (MAX_UNIFORM_BUFFER_SIZE + g_vulkan.min_uniform_buffer_offset_alignment - 1)
                        & ~(g_vulkan.min_uniform_buffer_offset_alignment - 1);
     
     VulkanDynamicBuffer* buffer = &g_vulkan.uniform_buffers[type];
@@ -363,7 +362,7 @@ static void CreateDescriptorSets()
         VkDescriptorBufferInfo buffer_info = {
             .buffer = g_vulkan.uniform_buffers[i].buffer,
             .offset = 0,
-            .range = UNIFORM_BUFFER_SIZE
+            .range = MAX_UNIFORM_BUFFER_SIZE
         };
 
         VkWriteDescriptorSet write = {
@@ -1204,6 +1203,24 @@ void platform::BindTransform(const Mat3& transform)
         return;
 
     CopyMat3ToGPU(buffer_ptr, transform);
+}
+
+void platform::BindVertexUserData(const u8* data, u32 size)
+{
+    void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_VERTEX_USER);
+    if (!buffer_ptr)
+        return;
+
+    memcpy(buffer_ptr, data, size);
+}
+
+void platform::BindFragmentUserData(const u8* data, u32 size)
+{
+    void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_FRAGMENT_USER);
+    if (!buffer_ptr)
+        return;
+
+    memcpy(buffer_ptr, data, size);
 }
 
 void platform::BindCamera(const Mat3& view_matrix)

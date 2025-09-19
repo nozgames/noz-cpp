@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include "../../../src/game_assets.h"
+#include "../platform.h"
 constexpr int MAX_ELEMENTS = 1024;
 constexpr int STYLE_STACK_SIZE = 16;
 
@@ -43,6 +45,7 @@ struct UI
     Camera* camera;
     Mesh* element_quad;
     Material* element_material;
+    Material* vignette_material;
     CachedTextMesh text_mesh_cache_values[1024];
     u64 text_mesh_cache_keys[1024];
     Map text_mesh_cache;
@@ -68,22 +71,13 @@ inline StyleSheet* GetCurrentStyleSheet()
     return g_ui.style_stack_count > 0 ? g_ui.style_sheet_stack[g_ui.style_stack_count-1] : nullptr;
 }
 
-void RenderElementQuad(const Color& color, Texture* texture)
-{
-    (void)texture;
-
-    BindMaterial(g_ui.element_material);
-    BindColor(color);
-    DrawMesh(g_ui.element_quad);
-}
-
 static Mesh* CreateElementQuad(Allocator* allocator)
 {
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddVertex(builder, {0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f});
-    AddVertex(builder, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
-    AddVertex(builder, {1.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 1.0f});
-    AddVertex(builder, {0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 1.0f});
+    AddVertex(builder, {0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 1.0f});
+    AddVertex(builder, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f});
+    AddVertex(builder, {1.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
+    AddVertex(builder, {0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f});
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
     auto mesh = CreateMesh(allocator, builder, GetName("element"));
@@ -197,29 +191,47 @@ void EndCanvas()
 void RenderCanvas(const Element& e)
 {
     (void)e;
+    UpdateCamera(g_ui.camera);
     BindCamera(g_ui.camera);
 }
 
+struct VignetteBuffer
+{
+    float intensity;
+    float smoothness;
+    float padding0;
+    float padding1;
+};
+
 void RenderElement(const Element& e)
 {
+    if (e.type == ELEMENT_TYPE_CANVAS)
+        RenderCanvas(e);
+
     if (e.style.background_color.value.a > 0)
     {
         BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {e.bounds.width, e.bounds.height});
-        RenderElementQuad(e.style.background_color.value, nullptr);
+        BindMaterial(g_ui.element_material);
+        BindColor(e.style.background_color.value);
+        DrawMesh(g_ui.element_quad);
     }
 
     if (e.style.background_vignette_color.value.a > 0)
     {
+        VignetteBuffer vignette = {
+            .intensity = e.style.background_vignette_intensity.value,
+            .smoothness = e.style.background_vignette_smoothness.value
+        };
+
         BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {e.bounds.width, e.bounds.height});
-        RenderElementQuad(e.style.background_vignette_color.value, nullptr);
+        BindMaterial(g_ui.vignette_material);
+        BindColor(e.style.background_vignette_color.value);
+        BindFragmentUserData(&vignette, sizeof(vignette));
+        DrawMesh(g_ui.element_quad);
     }
 
     switch (e.type)
     {
-    case ELEMENT_TYPE_CANVAS:
-        RenderCanvas(e);
-        break;
-
     case ELEMENT_TYPE_LABEL:
     {
         if (!e.resource)
@@ -469,8 +481,8 @@ static void HandleInput()
 
 void EndUI()
 {
-    Vec2Int screen_size = GetScreenSize();
-    Vec2 screen_size_f = Vec2((f32)screen_size.x, (f32)screen_size.y);
+    //Vec2Int screen_size = GetScreenSize();
+    Vec2 screen_size_f = g_ui.ortho_size; //  Vec2((f32)screen_size.x, (f32)screen_size.y);
     Rect screen_bounds = { 0, 0, screen_size_f.x, screen_size_f.y };
     for (u32 element_index=0; element_index < g_ui.element_count; )
         element_index = MeasureElement(element_index, screen_size_f);
@@ -806,6 +818,7 @@ void InitUI()
     g_ui.camera = CreateCamera(ALLOCATOR_DEFAULT);
     g_ui.element_quad = CreateElementQuad(ALLOCATOR_DEFAULT);
     g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
+    g_ui.vignette_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI_VIGNETTE);
     g_ui.input = CreateInputSet(ALLOCATOR_DEFAULT);
     EnableButton(g_ui.input, MOUSE_LEFT);
     SetTexture(g_ui.element_material, TEXTURE_WHITE);

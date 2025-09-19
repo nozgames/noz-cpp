@@ -13,6 +13,8 @@ enum RenderCommandType
     RENDER_COMMAND_TYPE_BIND_MATERIAL,
     RENDER_COMMAND_TYPE_BIND_LIGHT,
     RENDER_COMMAND_TYPE_BIND_TRANSFORM,
+    RENDER_COMMAND_TYPE_BIND_VERTEX_USER,
+    RENDER_COMMAND_TYPE_BIND_FRAGMENT_USER,
     RENDER_COMMAND_TYPE_BIND_CAMERA,
     RENDER_COMMAND_TYPE_BIND_BONES,
     RENDER_COMMAND_TYPE_BIND_DEFAULT_TEXTURE,
@@ -70,6 +72,11 @@ struct BindLightData
     Color shadow_color;
 };
 
+struct BindUserData
+{
+    u8 data[MAX_UNIFORM_BUFFER_SIZE];
+};
+
 struct RenderCommand
 {
     RenderCommandType type;
@@ -84,6 +91,7 @@ struct RenderCommand
         BindDefaultTextureData bind_default_texture;
         BeginPassData begin_pass;
         DrawMeshData draw_mesh;
+        BindUserData bind_user_data;
     } data;
 };
 
@@ -188,6 +196,28 @@ void BindTransform(const Vec2& position, const Vec2& rotation, const Vec2& scale
     AddRenderCommand(&cmd);
 }
 
+void BindVertexUserData(const void* data, size_t size)
+{
+    assert(size <= MAX_UNIFORM_BUFFER_SIZE);
+
+    RenderCommand cmd = {
+        .type = RENDER_COMMAND_TYPE_BIND_VERTEX_USER,
+    };
+    memcpy(cmd.data.bind_user_data.data, data, size);
+    AddRenderCommand(&cmd);
+}
+
+void BindFragmentUserData(const void* data, size_t size)
+{
+    assert(size <= MAX_UNIFORM_BUFFER_SIZE);
+
+    RenderCommand cmd = {
+        .type = RENDER_COMMAND_TYPE_BIND_FRAGMENT_USER,
+    };
+    memcpy(cmd.data.bind_user_data.data, data, size);
+    AddRenderCommand(&cmd);
+}
+
 void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color)
 {
     RenderCommand cmd = {
@@ -273,6 +303,14 @@ void ExecuteRenderCommands()
 
         case RENDER_COMMAND_TYPE_BIND_TRANSFORM:
             platform::BindTransform(command->data.bind_transform.transform);
+            break;
+
+        case RENDER_COMMAND_TYPE_BIND_VERTEX_USER:
+            platform::BindVertexUserData(command->data.bind_user_data.data, MAX_UNIFORM_BUFFER_SIZE);
+            break;
+
+        case RENDER_COMMAND_TYPE_BIND_FRAGMENT_USER:
+            platform::BindFragmentUserData(command->data.bind_user_data.data, MAX_UNIFORM_BUFFER_SIZE);
             break;
 
         case RENDER_COMMAND_TYPE_BIND_LIGHT:

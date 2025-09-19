@@ -94,8 +94,8 @@ static void CreateTextMesh(Allocator* allocator, TextMeshImpl* impl, const TextR
     float baseline_y = total_height - GetBaseline(request.font) * font_size;
 
     // Get the first glyph to adjust starting position
-    if (!IsEmpty(text))
-        current_x = -GetGlyph(request.font, text.value[0])->bearing.x * font_size;
+    // if (!IsEmpty(text))
+    //     current_x = -GetGlyph(request.font, text.value[0])->bearing.x * font_size;
 
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, (u16)text.length * 4, (u16)text.length * 6);
     for (size_t i = 0; i < text.length; ++i)
