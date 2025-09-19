@@ -28,12 +28,12 @@ void main()
 
 //@ FRAGMENT
 
-layout(set = 2, binding = 0) uniform ColorBuffer
+layout(set = 3, binding = 0) uniform ColorBuffer
 {
     vec4 color;
 } colorData;
 
-layout(set = 3, binding = 0, row_major) uniform LightBuffer
+layout(set = 4, binding = 0, row_major) uniform LightBuffer
 {
     vec3 direction;
     float padding;
@@ -41,7 +41,7 @@ layout(set = 3, binding = 0, row_major) uniform LightBuffer
     vec4 shadow_color;
 } light;
 
-layout(set = 4, binding = 0) uniform sampler2D mainTexture;
+layout(set = 6, binding = 0) uniform sampler2D mainTexture;
 
 layout(location = 0) in vec2 f_uv0;
 layout(location = 0) out vec4 FragColor;

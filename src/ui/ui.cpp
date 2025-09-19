@@ -208,6 +208,12 @@ void RenderElement(const Element& e)
         RenderElementQuad(e.style.background_color.value, nullptr);
     }
 
+    if (e.style.background_vignette_color.value.a > 0)
+    {
+        BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {e.bounds.width, e.bounds.height});
+        RenderElementQuad(e.style.background_vignette_color.value, nullptr);
+    }
+
     switch (e.type)
     {
     case ELEMENT_TYPE_CANVAS:

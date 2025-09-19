@@ -48,12 +48,12 @@ void main()
 layout(location = 0) in vec2 f_uv;
 layout(location = 1) in vec3 f_normal;
 layout(location = 0) out vec4 outColor;
-layout(set = 2, binding = 0) uniform ColorBuffer
+layout(set = 3, binding = 0) uniform ColorBuffer
 {
     vec4 color;
 } colorData;
 
-layout(set = 3, binding = 0) uniform LightBuffer
+layout(set = 4, binding = 0) uniform LightBuffer
 {
     vec3 direction;
     float padding;
@@ -61,7 +61,7 @@ layout(set = 3, binding = 0) uniform LightBuffer
     vec4 shadow_color;
 } light;
 
-layout(set = 4, binding = 0) uniform sampler2D mainTexture;
+layout(set = 6, binding = 0) uniform sampler2D mainTexture;
 
 const vec3 shadow_color = vec3(0.3, 0.3, 0.6);
 const float shadow_intensity = 0.5;
