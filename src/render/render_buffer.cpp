@@ -279,6 +279,14 @@ void DrawMesh(Mesh* mesh, const Mat3& transform)
 void DrawMesh(Mesh* mesh)
 {
     assert(mesh);
+
+    extern void UploadMesh(Mesh* mesh);
+
+    if (!IsUploaded(mesh))
+        UploadMesh(mesh);
+
+    assert(IsUploaded(mesh));
+
     RenderCommand cmd = {
         .type = RENDER_COMMAND_TYPE_DRAW_MESH,
         .data = {

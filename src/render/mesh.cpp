@@ -18,7 +18,7 @@ struct MeshImpl : Mesh
     Texture* texture;
 };
 
-static void UploadMesh(MeshImpl* impl);
+void UploadMesh(Mesh* mesh);
 
 static void MeshDestructor(void* p)
 {
@@ -55,9 +55,10 @@ static MeshImpl* CreateMesh(Allocator* allocator, u16 vertex_count, u16 index_co
     return mesh;
 }
 
-static void UploadMesh(MeshImpl* impl)
+void UploadMesh(Mesh* mesh)
 {
-    assert(impl);
+    assert(mesh);
+    MeshImpl* impl = static_cast<MeshImpl*>(mesh);
     assert(!impl->vertex_buffer);
     impl->vertex_buffer = platform::CreateVertexBuffer(
         impl->vertices,
@@ -120,6 +121,11 @@ void RenderMesh(Mesh* mesh)
     platform::BindVertexBuffer(impl->vertex_buffer);
     platform::BindIndexBuffer(impl->index_buffer);
     platform::DrawIndexed(impl->index_count);
+}
+
+bool IsUploaded(Mesh* mesh)
+{
+    return static_cast<MeshImpl*>(mesh)->vertex_buffer != nullptr;
 }
 
 Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)

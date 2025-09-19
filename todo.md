@@ -1,25 +1,22 @@
 # Todo
 
+- [ ] delete vertex / undo is messed up
 - [ ] Capture mouse while using tools like grab
 - [ ] Undo with color did not work
 - [ ] edge color did not work
-- [ ] Draw a origin point on screen when changing light
 - [ ] inserting a frame with o in the middle seems to not be working
 - [ ] bone scale
 - [ ] Change UI, vertex size, edge size, etc to not scale with the window size
 - [ ] Seems to be reimporting assets
 - [ ] zoom should zoom in at cursor
-- [ ] Zooming in and using alt is causing a hard lag (specifcally on the archer mesh)
 - [ ] Animation bounds does not take into account the actual animation, just the skeleton
 
 - [ ] Adding a bone to the skeleton caused the animations to write garbage data for position
 - [ ] moving bones in skeleton is not changing animations?
 - [ ] Bone rename is not marking modified
 - [ ] Prevent duplicate assets of same type and same name in different folders.
-- [ ] starting move on skeleton and then hitting esc is resetting positions of everything to zero
 - [ ] Creating new animation had 0 frames when i tried to edit the frame, bounds seemed bad too
 - [ ] moving bones in some loaded animations move weird, maybe rotation or incorrect matrcieis
-- [ ] not rendering root bone and cant extrude
 - [ ] Sort order ([ ])
 - [ ] editor animation likely leaking animation and skeleton asset 
 - [ ] vfx hotload broken
@@ -83,3 +80,4 @@
 - [ ] hot load of textures
 - [ ] hot load of sounds
 - [ ] Something causes a spawn of error messages in the editor when client disconnects / reconnects, not sure which
+- [X] Draw a origin point on screen when changing light

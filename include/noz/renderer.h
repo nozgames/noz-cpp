@@ -93,6 +93,7 @@ extern const MeshVertex* GetVertices(Mesh* mesh);
 extern const u16* GetIndices(Mesh* mesh);
 extern Bounds2 GetBounds(Mesh* mesh);
 extern bool OverlapPoint(Mesh* mesh, const Vec2& overlap_point);
+extern bool IsUploaded(Mesh* mesh);
 
 // @mesh_builder
 MeshBuilder* CreateMeshBuilder(Allocator* allocator, u16 max_vertices, u16 max_indices);
