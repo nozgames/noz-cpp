@@ -1,3 +1,4 @@
 [shader]
 cull = none
+blend = true
 

@@ -338,9 +338,17 @@ void RenderElement(const Element& e)
 
     case ELEMENT_TYPE_MESH:
     {
+        Bounds2 mesh_bounds = GetBounds((Mesh*)e.resource);
         BindMaterial(e.material);
-        BindColor(COLOR_WHITE);
-        BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {e.bounds.width, e.bounds.height});
+        BindColor(e.style.color.value);
+        Vec2 mesh_scale = Vec2 {
+            e.bounds.width / (mesh_bounds.max.x - mesh_bounds.min.x),
+            -e.bounds.height / (mesh_bounds.max.y - mesh_bounds.min.y)
+        };
+        BindTransform(
+            Vec2{e.bounds.x + -mesh_bounds.min.x * mesh_scale.x, e.bounds.y - mesh_bounds.min.y * -mesh_scale.y},
+            0.0f,
+            mesh_scale);
         DrawMesh((Mesh*)e.resource);
         break;
     }
@@ -407,6 +415,13 @@ u32 MeasureElement(u32 element_index, const Vec2& available_size)
     {
         Element& child = g_ui.elements[element_index];
         Style& child_style = child.style;
+
+        if (child_style.position.value == POSITION_TYPE_ABSOLUTE)
+        {
+            // Absolute children get the full available size of the parent
+            element_index = MeasureElement(element_index, available_size);
+            continue;
+        }
 
         element_index = MeasureElement(element_index, available_size);
 
@@ -577,6 +592,9 @@ static u32 LayoutChildren(
 	Element& child = g_ui.elements[element_index];
 	Style& child_style = child.style;
 
+        if (child_style.position.value == POSITION_TYPE_ABSOLUTE)
+            continue;
+
         // Add child's measured size (which does NOT include margins)
         totalIntrinsicSize += is_column
             ? child.measured_size.x
@@ -621,6 +639,11 @@ static u32 LayoutChildren(
         Element& child = g_ui.elements[element_index];
         Style& child_style = child.style;
 
+        if (child_style.position.value == POSITION_TYPE_ABSOLUTE)
+        {
+            element_index = Layout(element_index, {content_left,content_top,content_width,content_height});
+            continue;
+        }
         // Calculate resolved margins
         float margin_start;
         float margin_end;
