@@ -46,6 +46,8 @@ struct Element
     void* input_user_data;
     ElementInputFunc input_func;
     u64 hash;
+    f32 cached_total_intrinsic_size;
+    i32 cached_auto_margin_count;
 };
 
 struct UI
@@ -163,6 +165,8 @@ static void BeginElement(ElementType type, const StyleId& style_id)
         e.hash = hash;
         e.flags = 0;
         e.bounds = Rect(0,0,0,0);
+        e.cached_total_intrinsic_size = 0.0f;
+        e.cached_auto_margin_count = 0;
     }
 
 }
@@ -346,8 +350,8 @@ void RenderElement(const Element& e)
             -e.bounds.height / (mesh_bounds.max.y - mesh_bounds.min.y)
         };
         BindTransform(
-            Vec2{e.bounds.x + -mesh_bounds.min.x * mesh_scale.x, e.bounds.y - mesh_bounds.min.y * -mesh_scale.y},
-            0.0f,
+            Vec2{e.bounds.x + -mesh_bounds.min.x * mesh_scale.x, e.bounds.y - mesh_bounds.min.y * -mesh_scale.y} + Vec2 { e.style.translate_x.value, e.style.translate_y.value },
+            e.style.rotate.value,
             mesh_scale);
         DrawMesh((Mesh*)e.resource);
         break;
@@ -411,19 +415,22 @@ u32 MeasureElement(u32 element_index, const Vec2& available_size)
     Vec2 child_available_size = content_available;
 
     Vec2 child_measured_size = { 0.0f, 0.0f };
+
+    // Initialize auto margin calculation variables
+    FlexDirection flex_direction = style.flex_direction.value;
+    bool is_column = flex_direction == FLEX_DIRECTION_COL;
+    f32 totalIntrinsicSize = 0.0f;
+    i32 auto_margin_count = 0;
+
     for (u32 child_index=0, child_count = e.child_count; child_index<child_count; child_index++)
     {
         Element& child = g_ui.elements[element_index];
         Style& child_style = child.style;
 
-        if (child_style.position.value == POSITION_TYPE_ABSOLUTE)
-        {
-            // Absolute children get the full available size of the parent
-            element_index = MeasureElement(element_index, available_size);
-            continue;
-        }
-
         element_index = MeasureElement(element_index, available_size);
+
+        if (child_style.position.value == POSITION_TYPE_ABSOLUTE)
+            continue;
 
         // Calculate child size including margins for parent's auto-sizing
         auto child_width_with_margins = child.measured_size.x;
@@ -454,7 +461,43 @@ u32 MeasureElement(u32 element_index, const Vec2& available_size)
             else
                 child_measured_size.y = Max(child_height_with_margins, child_measured_size.y);
         }
+
+        // Calculate auto margin information for layout pass
+        // Add child's measured size (which does NOT include margins)
+        totalIntrinsicSize += is_column
+            ? child.measured_size.x
+            : child.measured_size.y;
+
+        // Add fixed margins to total size and count auto margins
+        if (is_column)
+        {
+            if (IsAuto(child_style.margin_left))
+                auto_margin_count++;
+            else
+                totalIntrinsicSize += Evaluate(child_style.margin_left, child_available_size.x);
+
+            if (IsAuto(child_style.margin_right))
+                auto_margin_count++;
+            else
+                totalIntrinsicSize += Evaluate(child_style.margin_right, child_available_size.x);
+        }
+        else
+        {
+            if (IsAuto(child_style.margin_top))
+                auto_margin_count++;
+            else
+                totalIntrinsicSize += Evaluate(child_style.margin_top, child_available_size.y);
+
+            if (IsAuto(child_style.margin_bottom))
+                auto_margin_count++;
+            else
+                totalIntrinsicSize += Evaluate(child_style.margin_bottom, child_available_size.y);
+        }
     }
+
+    // Cache the calculated auto margin values
+    e.cached_total_intrinsic_size = totalIntrinsicSize;
+    e.cached_auto_margin_count = auto_margin_count;
 
     measured_size = Vec2(0.0f, 0.0f);
 
@@ -583,56 +626,16 @@ static u32 LayoutChildren(
     FlexDirection flex_direction = e.style.flex_direction.value;
     bool is_column = flex_direction == FLEX_DIRECTION_COL;
 
-    // Pass 1: Calculate total intrinsic size and count auto margins
-    f32 totalIntrinsicSize = 0.0f;
-    i32 auto_margin_count = 0;
+    // Use cached auto margin values calculated during measure pass
+    f32 totalIntrinsicSize = e.cached_total_intrinsic_size;
+    i32 auto_margin_count = e.cached_auto_margin_count;
 
-    for (u32 child_index=0, child_count=e.child_count; child_index<child_count; child_index++)
-    {
-	Element& child = g_ui.elements[element_index];
-	Style& child_style = child.style;
-
-        if (child_style.position.value == POSITION_TYPE_ABSOLUTE)
-            continue;
-
-        // Add child's measured size (which does NOT include margins)
-        totalIntrinsicSize += is_column
-            ? child.measured_size.x
-            : child.measured_size.y;
-
-        // Add fixed margins to total size and count auto margins
-        if (is_column)
-        {
-            if (IsAuto(child_style.margin_left))
-                auto_margin_count++;
-            else
-                totalIntrinsicSize += Evaluate(child_style.margin_left, content_width);
-
-            if (IsAuto(child_style.margin_right))
-                auto_margin_count++;
-            else
-                totalIntrinsicSize += Evaluate(child_style.margin_right, content_width);
-        }
-        else
-        {
-            if (IsAuto(child_style.margin_top))
-                auto_margin_count++;
-            else
-                totalIntrinsicSize += Evaluate(child_style.margin_top, content_height);
-
-            if (IsAuto(child_style.margin_bottom))
-                auto_margin_count++;
-            else
-                totalIntrinsicSize += Evaluate(child_style.margin_bottom, content_height);
-        }
-    }
-
-    // Pass 2: Calculate auto margin size
+    // Calculate auto margin size
     float mainAxisSize = is_column ? content_width : content_height;
     float remainingSpace = mainAxisSize - totalIntrinsicSize;
     float flex_margin_size = auto_margin_count > 0 && remainingSpace > 0 ? remainingSpace / auto_margin_count : 0.0f;
 
-    // Pass 3: Layout children with resolved margins
+    // Layout children with resolved margins
     auto current_offset = 0.0f;
     for (u32 child_index=0, child_count=e.child_count; child_index<child_count; child_index++)
     {
@@ -644,6 +647,7 @@ static u32 LayoutChildren(
             element_index = Layout(element_index, {content_left,content_top,content_width,content_height});
             continue;
         }
+
         // Calculate resolved margins
         float margin_start;
         float margin_end;
