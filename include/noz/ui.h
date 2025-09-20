@@ -167,6 +167,10 @@ extern void EndCanvas();
 extern void BeginElement(const StyleId& style_id = STYLE_DEFAULT);
 extern void EndElement();
 extern void SetInputHandler(ElementInputFunc func, void* user_data = nullptr);
+extern bool IsMouseOverElement();
+extern void SetElementStyle(const StyleId& style_id);
+extern bool DidMouseEnterElement();
+extern bool DidMouseLeaveElement();
 
 // @elements
 extern void EmptyElement(const StyleId& style_id = STYLE_DEFAULT);

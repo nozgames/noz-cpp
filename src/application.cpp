@@ -160,6 +160,7 @@ void InitApplication(ApplicationTraits* traits, int argc, const char* argv[])
     InitEvent(traits);
     InitTime();
     InitJobs();
+    InitTween();
     InitAudio();
 
     g_app.traits.x = GetPrefInt(GetName("window.x"), g_app.traits.x);
@@ -248,6 +249,7 @@ void ShutdownApplication()
     if (g_app.window_created)
         ShutdownWindow();
 
+    ShutdownTween();
     ShutdownJobs();
     ShutdownTime();
     ShutdownAudio();
@@ -310,6 +312,7 @@ bool UpdateApplication()
     UpdateScreenSize();
     UpdateTime();
     UpdateInput();
+    UpdateTweens();
 
 #ifdef NOZ_EDITOR
     UpdateEditorClient();

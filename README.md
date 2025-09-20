@@ -55,108 +55,136 @@
 ```cpp
 #include <noz/noz.h>
 
+extern bool LoadAssets(Allocator* allocator);
+extern void UnloadAssets();
+extern void InitGame(int argc, const char** argv);
+extern void RunGame();
+extern void ShutdownGame();
+
+// Main entry point
+int main(int argc, char** argv) {
+    InitGame(argc, (const char**)argv);
+    RunGame();
+    ShutdownGame();
+    return 0;
+}
+
+// Game initialization
+void InitGame(int argc, const char** argv) {
+    ApplicationTraits traits = {};
+    Init(traits);
+    traits.name = "MyGame";
+    traits.title = "My Awesome Game";
+    traits.load_assets = LoadAssets;
+    traits.unload_assets = UnloadAssets;
+    traits.editor_port = 8081;
+#ifdef NOZ_EDITOR
+    traits.hotload_asset = HotloadAsset;
+#endif
+    traits.renderer.msaa = true;
+    InitApplication(&traits, argc, argv);
+    InitWindow();
+
+    // Initialize game systems here
+}
+```
+
+### Asset Loading and Rendering
+
+```cpp
+// Assets are loaded by name using global constants (auto-generated)
 bool LoadAssets(Allocator* allocator) {
-    // Load game assets here
+    // Load textures, shaders, meshes, sounds, etc.
+    NOZ_LOAD_TEXTURE(allocator, PATH_TEXTURE_PALETTE, TEXTURE_PALETTE);
+    NOZ_LOAD_SHADER(allocator, PATH_SHADER_LIT, SHADER_LIT);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_GROUND, MESH_GROUND);
+    NOZ_LOAD_SOUND(allocator, PATH_SOUND_BOW_FIRE, SOUND_BOW_FIRE);
     return true;
 }
 
-void UnloadAssets() {
-    // Cleanup assets
-}
+// Create camera and materials in initialization
+Camera* camera = CreateCamera(ALLOCATOR_DEFAULT);
+SetExtents(camera, WORLD_LEFT, WORLD_RIGHT, WORLD_BOTTOM, -F32_MAX);
 
-int main() {
-    ApplicationTraits traits = {
-        .name = "MyGame",
-        .title = "My Awesome Game",
-        .width = 1920,
-        .height = 1080,
-        .load_assets = LoadAssets,
-        .unload_assets = UnloadAssets
-    };
-    
-    Init(traits);
-    return 0;
-}
-```
+Material* material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_LIT);
+SetTexture(material, TEXTURE_PALETTE, 0);
 
-### Rendering a Textured Quad
-
-```cpp
-// Create camera
-Camera* camera = CreateCamera(allocator);
-SetSize(camera, Vec2{1920, 1080});
-
-// Load assets
-Texture* texture = LoadAsset<Texture>("my_texture");
-Shader* shader = LoadAsset<Shader>("lit");
-Material* material = CreateMaterial(allocator, shader);
-SetTexture(material, texture);
-
-// Create mesh
-MeshBuilder* builder = CreateMeshBuilder(allocator, 4, 6);
-AddQuad(builder, Vec2{0, 1}, Vec2{1, 0}, 100, 100, Vec2{0, 0});
-Mesh* quad = CreateMesh(allocator, builder, MakeName("quad"));
-
-// Render
-BeginRenderFrame(Color{0.1f, 0.1f, 0.1f, 1.0f});
+// Render in game loop
+BeginRenderFrame({0.3f, 0.3f, 0.9f, 1.0f});
 BindCamera(camera);
+BindLight(Normalize(Vec3{1, 1, 0}), COLOR_WHITE, COLOR_BLACK);
 BindMaterial(material);
 BindTransform(Vec2{0, 0}, 0.0f, Vec2{1, 1});
-DrawMesh(quad);
+DrawMesh(MESH_GROUND);
 EndRenderFrame();
 ```
 
-### UI System
+### UI System with Stylesheets
 
 ```cpp
-BeginUI(1920, 1080);
-BeginCanvas();
+// Load stylesheets in LoadAssets
+NOZ_LOAD_STYLESHEET(allocator, PATH_STYLESHEET_MENU, STYLESHEET_MENU);
 
-Label("Hello, World!");
-Image(my_material);
+// UI rendering with styles (in game loop)
+BeginUI(UI_REF_WIDTH, UI_REF_HEIGHT);
 
-// Custom element with input handling
-SetInputHandler([](const ElementInput& input) -> bool {
-    if (input.button == INPUT_CODE_MOUSE_LEFT) {
-        Log("Button clicked!");
-        return true; // Consume input
-    }
-    return false;
-});
-BeginElement();
-Label("Click Me");
-EndElement();
-
+// Menu with styled elements
+BeginCanvas(STYLE_MENU_BACKGROUND);
+    BeginElement(STYLE_MENU_BUTTONS);
+        BeginElement(STYLE_MENU_LARGE_BUTTON);
+            SetInputHandler(HandlePlayButton, nullptr);
+            Label("PLAY", STYLE_MENU_LARGE_BUTTON_TEXT);
+        EndElement();
+        BeginElement(STYLE_MENU_LARGE_BUTTON);
+            SetInputHandler(HandleQuitButton, nullptr);
+            Label("QUIT", STYLE_MENU_LARGE_BUTTON_TEXT);
+        EndElement();
+    EndElement();
 EndCanvas();
+
 DrawUI();
 EndUI();
+
+// Input handler example
+static bool HandlePlayButton(const ElementInput& input) {
+    g_game.state = GAME_STATE_PLAYING;
+    return true;
+}
 ```
 
 ### Audio Playback
 
 ```cpp
-Sound* sound = LoadAsset<Sound>("explosion");
-SoundHandle handle = Play(sound, 1.0f, 1.0f, false);
+// Load sounds in LoadAssets function
+NOZ_LOAD_SOUND(allocator, PATH_SOUND_BOW_FIRE, SOUND_BOW_FIRE);
+NOZ_LOAD_SOUND(allocator, PATH_SOUND_ARROW_IMPACT, SOUND_ARROW_IMPACT);
 
-// Control playback
-SetVolume(handle, 0.5f);
-SetPitch(handle, 1.2f);
+// Play sounds with volume and pitch control
+SoundHandle charge_sound = Play(SOUND_BOW_ARROW_DRAW_B, 0.25f, 1.0f);
+Play(SOUND_BOW_ARROW_FIRE_A, 0.5f);  // Fire and forget
+Play(SOUND_BULLET_IMPACT_B, 0.5f);
 
-if (IsPlaying(handle)) {
-    Stop(handle);
+// Control ongoing sound playback
+if (IsPlaying(charge_sound)) {
+    Stop(charge_sound);
 }
+SetVolume(charge_sound, 0.8f);
 ```
 
 ### VFX System
 
 ```cpp
-Vfx* explosion = LoadAsset<Vfx>("explosion_effect");
-VfxHandle effect = Play(explosion, Vec2{100, 200});
+// Load VFX in LoadAssets function
+NOZ_LOAD_VFX(allocator, PATH_VFX_ARROW_HIT, VFX_ARROW_HIT);
+NOZ_LOAD_VFX(allocator, PATH_VFX_BOW_FIRE, VFX_BOW_FIRE);
 
-// Check if still playing
-if (IsPlaying(effect)) {
-    // Effect is active
-}
+// Play VFX at world positions
+Play(VFX_ARROW_HIT, target_position);
+Play(VFX_BOW_FIRE, bow_position + bow_direction * 0.5f);
+
+// VFX are automatically managed and cleaned up
+// Draw all active VFX in render loop
+DrawVfx();
 ```
 
 ## 🏗️ Architecture
@@ -168,12 +196,21 @@ NoZ uses custom allocators for optimal performance:
 - **Asset Memory**: Dedicated memory pools for game assets
 
 ### Asset Pipeline
-Assets are referenced by name and automatically managed:
+Assets are auto-generated as global constants and loaded via macros:
 ```cpp
-// Assets loaded by name without file extensions
-Texture* texture = LoadAsset<Texture>("player_sprite");
-Material* material = CreateMaterial(allocator, shader);
-SetTexture(material, texture);
+// Auto-generated in game_assets.h
+extern Texture* TEXTURE_PALETTE;
+extern Sound* SOUND_BOW_FIRE;
+extern Mesh* MESH_GROUND;
+
+// Loading in LoadAssets function
+NOZ_LOAD_TEXTURE(allocator, PATH_TEXTURE_PALETTE, TEXTURE_PALETTE);
+NOZ_LOAD_SOUND(allocator, PATH_SOUND_BOW_FIRE, SOUND_BOW_FIRE);
+NOZ_LOAD_MESH(allocator, PATH_MESH_GROUND, MESH_GROUND);
+
+// Usage throughout the game
+Material* material = CreateMaterial(allocator, SHADER_LIT);
+SetTexture(material, TEXTURE_PALETTE, 0);
 ```
 
 ### Handle-Based APIs
@@ -233,9 +270,61 @@ NoZ includes the following third-party libraries:
 - **xxHash** - Fast hashing
 - **STB Libraries** - Image loading and utilities
 
+### Input System
+The engine uses input sets for managing different input contexts:
+
+```cpp
+// Create input sets for different game states
+InputSet* game_input = CreateInputSet(ALLOCATOR_DEFAULT);
+EnableButton(game_input, KEY_A);
+EnableButton(game_input, KEY_D);
+EnableButton(game_input, KEY_SPACE);
+EnableButton(game_input, MOUSE_LEFT);
+EnableButton(game_input, KEY_ESCAPE);
+SetInputSet(game_input);
+
+InputSet* ui_input = CreateInputSet(ALLOCATOR_DEFAULT);
+EnableButton(ui_input, KEY_ESCAPE);
+EnableButton(ui_input, KEY_SPACE);
+
+// Switch input contexts
+if (game_state == GAME_STATE_PAUSED) {
+    PushInputSet(ui_input);  // Add UI input on top
+} else {
+    PopInputSet();  // Remove UI input layer
+}
+
+// Check input in update loop
+if (WasButtonPressed(game_input, KEY_ESCAPE)) {
+    OpenPauseMenu();
+}
+```
+
+### Animation System
+Play skeletal animations on characters and objects:
+
+```cpp
+// Load animations and skeletons in LoadAssets
+NOZ_LOAD_ANIMATION(allocator, PATH_ANIMATION_ARCHER_IDLE, ANIMATION_ARCHER_IDLE);
+NOZ_LOAD_SKELETON(allocator, PATH_SKELETON_ARCHER, SKELETON_ARCHER);
+
+// Initialize animator
+Animator animator;
+Init(animator, SKELETON_ARCHER);
+
+// Play animations
+Play(animator, ANIMATION_ARCHER_IDLE, 1.0f, true);  // Loop idle animation
+Play(animator, ANIMATION_ARCHER_RUN, 1.0f, true);   // Switch to run animation
+
+// Update and draw in game loop
+Update(animator);
+Draw(animator, world_transform);
+```
+
 ## 🎮 Example Projects
 
 Check out these example projects to see NoZ in action:
+- **NockerZ** - Complete archery game with physics, animation, and UI
 - **Basic Renderer** - Simple textured quad rendering
 - **UI Demo** - Comprehensive UI system showcase
 - **Audio Test** - Sound playback and management

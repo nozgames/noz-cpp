@@ -123,3 +123,8 @@ struct SkeletonImpl : Skeleton
     int bone_count;
     Bone* bones;
 };
+
+// @tween
+extern void InitTween();
+extern void ShutdownTween();
+extern void UpdateTweens();

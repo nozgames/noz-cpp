@@ -2,6 +2,7 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include "../platform.h"
 constexpr int MAX_ELEMENTS = 1024;
 constexpr int STYLE_STACK_SIZE = 16;
 
@@ -17,6 +18,11 @@ enum ElementType : u16
     ELEMENT_TYPE_MESH
 };
 
+typedef u16 ElementFlags;
+constexpr ElementFlags ELEMENT_FLAG_HOVER = 1 << 0;
+constexpr ElementFlags ELEMENT_FLAG_MOUSE_ENTER = 1 << 1;
+constexpr ElementFlags ELEMENT_FLAG_MOUSE_LEAVE = 1 << 2;
+
 StyleSheet** STYLESHEET = nullptr;
 
 struct CachedTextMesh
@@ -28,6 +34,7 @@ struct CachedTextMesh
 struct Element
 {
     ElementType type;
+    ElementFlags flags;
     Rect bounds;
     u32 parent;
     Style style;
@@ -38,6 +45,7 @@ struct Element
     Material* material;
     void* input_user_data;
     ElementInputFunc input_func;
+    u64 hash;
 };
 
 struct UI
@@ -45,6 +53,7 @@ struct UI
     Camera* camera;
     Mesh* element_quad;
     Material* element_material;
+    Material* vignette_material;
     CachedTextMesh text_mesh_cache_values[1024];
     u64 text_mesh_cache_keys[1024];
     Map text_mesh_cache;
@@ -70,22 +79,13 @@ inline StyleSheet* GetCurrentStyleSheet()
     return g_ui.style_stack_count > 0 ? g_ui.style_sheet_stack[g_ui.style_stack_count-1] : nullptr;
 }
 
-void RenderElementQuad(const Color& color, Texture* texture)
-{
-    (void)texture;
-
-    BindMaterial(g_ui.element_material);
-    BindColor(color);
-    DrawMesh(g_ui.element_quad);
-}
-
 static Mesh* CreateElementQuad(Allocator* allocator)
 {
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddVertex(builder, {0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f});
-    AddVertex(builder, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
-    AddVertex(builder, {1.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 1.0f});
-    AddVertex(builder, {0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 1.0f});
+    AddVertex(builder, {0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 1.0f});
+    AddVertex(builder, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f});
+    AddVertex(builder, {1.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
+    AddVertex(builder, {0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f});
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
     auto mesh = CreateMesh(allocator, builder, GetName("element"));
@@ -129,12 +129,42 @@ static void BeginElement(ElementType type, const StyleId& style_id)
 
     Element& e = g_ui.elements[g_ui.element_count++];
     e.type = type;
-    e.bounds = Rect(0,0,0,0);
     e.parent = g_ui.element_stack_count > 0 ? g_ui.element_stack[g_ui.element_stack_count-1] : UINT32_MAX;
     e.style = GetStyle(style_id);
     e.index = g_ui.element_count-1;
     e.child_count = 0;
     g_ui.element_stack[g_ui.element_stack_count++] = e.index;
+
+    u64 hash = Hash(e.index, e.parent, style_id.style_sheet_id);
+    hash = Hash(type, hash, style_id.id);
+
+    if (e.hash == hash)
+    {
+        Vec2 mouse = ScreenToWorld(g_ui.camera, GetMousePosition());
+        if (e.type != ELEMENT_TYPE_CANVAS && Contains(e.bounds, mouse))
+        {
+            if ((e.flags & ELEMENT_FLAG_HOVER) == 0)
+                e.flags |= ELEMENT_FLAG_MOUSE_ENTER;
+            else
+                e.flags &= ~ELEMENT_FLAG_MOUSE_ENTER;
+            e.flags |= ELEMENT_FLAG_HOVER;
+        }
+        else
+        {
+            if (e.flags & ELEMENT_FLAG_HOVER)
+                e.flags |= ELEMENT_FLAG_MOUSE_LEAVE;
+            else
+                e.flags &= ~ELEMENT_FLAG_MOUSE_LEAVE;
+            e.flags &= ~ELEMENT_FLAG_HOVER;
+        }
+    }
+    else
+    {
+        e.hash = hash;
+        e.flags = 0;
+        e.bounds = Rect(0,0,0,0);
+    }
+
 }
 
 void BeginElement(const StyleId& style_id)
@@ -199,29 +229,47 @@ void EndCanvas()
 void RenderCanvas(const Element& e)
 {
     (void)e;
+    UpdateCamera(g_ui.camera);
     BindCamera(g_ui.camera);
 }
 
+struct VignetteBuffer
+{
+    float intensity;
+    float smoothness;
+    float padding0;
+    float padding1;
+};
+
 void RenderElement(const Element& e)
 {
+    if (e.type == ELEMENT_TYPE_CANVAS)
+        RenderCanvas(e);
+
     if (e.style.background_color.value.a > 0)
     {
         BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {e.bounds.width, e.bounds.height});
-        RenderElementQuad(e.style.background_color.value, nullptr);
+        BindMaterial(g_ui.element_material);
+        BindColor(e.style.background_color.value);
+        DrawMesh(g_ui.element_quad);
     }
 
     if (e.style.background_vignette_color.value.a > 0)
     {
+        VignetteBuffer vignette = {
+            .intensity = e.style.background_vignette_intensity.value,
+            .smoothness = e.style.background_vignette_smoothness.value
+        };
+
         BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {e.bounds.width, e.bounds.height});
-        RenderElementQuad(e.style.background_vignette_color.value, nullptr);
+        BindMaterial(g_ui.vignette_material);
+        BindColor(e.style.background_vignette_color.value);
+        BindFragmentUserData(&vignette, sizeof(vignette));
+        DrawMesh(g_ui.element_quad);
     }
 
     switch (e.type)
     {
-    case ELEMENT_TYPE_CANVAS:
-        RenderCanvas(e);
-        break;
-
     case ELEMENT_TYPE_LABEL:
     {
         if (!e.resource)
@@ -485,8 +533,8 @@ static void HandleInput()
 
 void EndUI()
 {
-    Vec2Int screen_size = GetScreenSize();
-    Vec2 screen_size_f = Vec2((f32)screen_size.x, (f32)screen_size.y);
+    //Vec2Int screen_size = GetScreenSize();
+    Vec2 screen_size_f = g_ui.ortho_size; //  Vec2((f32)screen_size.x, (f32)screen_size.y);
     Rect screen_bounds = { 0, 0, screen_size_f.x, screen_size_f.y };
     for (u32 element_index=0; element_index < g_ui.element_count; )
         element_index = MeasureElement(element_index, screen_size_f);
@@ -829,11 +877,32 @@ void MeshElement(Mesh* mesh, Material* material, const StyleId& style_id)
     EndElement();
 }
 
+bool IsMouseOverElement()
+{
+    return (GetCurrentElement().flags & ELEMENT_FLAG_HOVER) != 0;
+}
+
+bool DidMouseEnterElement()
+{
+    return (GetCurrentElement().flags & ELEMENT_FLAG_MOUSE_ENTER) != 0;
+}
+
+bool DidMouseLeaveElement()
+{
+    return (GetCurrentElement().flags & ELEMENT_FLAG_MOUSE_LEAVE) != 0;
+}
+
+void SetElementStyle(const StyleId& style_id)
+{
+    GetCurrentElement().style = GetStyle(style_id);
+}
+
 void InitUI()
 {
     g_ui.camera = CreateCamera(ALLOCATOR_DEFAULT);
     g_ui.element_quad = CreateElementQuad(ALLOCATOR_DEFAULT);
     g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
+    g_ui.vignette_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI_VIGNETTE);
     g_ui.input = CreateInputSet(ALLOCATOR_DEFAULT);
     EnableButton(g_ui.input, MOUSE_LEFT);
     SetTexture(g_ui.element_material, TEXTURE_WHITE);

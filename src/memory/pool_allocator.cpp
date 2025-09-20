@@ -96,6 +96,12 @@ void* GetAt(PoolAllocator* allocator, u32 index)
     return (u8*)impl->items + impl->item_size * index + sizeof(AllocHeader);
 }
 
+u32 GetCount(PoolAllocator* allocator)
+{
+    assert(allocator);
+    return static_cast<PoolAllocatorImpl*>(allocator)->count;
+}
+
 bool IsFull(PoolAllocator* allocator)
 {
     assert(allocator);
