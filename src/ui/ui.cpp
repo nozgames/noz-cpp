@@ -416,14 +416,10 @@ u32 MeasureElement(u32 element_index, const Vec2& available_size)
         Element& child = g_ui.elements[element_index];
         Style& child_style = child.style;
 
-        if (child_style.position.value == POSITION_TYPE_ABSOLUTE)
-        {
-            // Absolute children get the full available size of the parent
-            element_index = MeasureElement(element_index, available_size);
-            continue;
-        }
-
         element_index = MeasureElement(element_index, available_size);
+
+        if (child_style.position.value == POSITION_TYPE_ABSOLUTE)
+            continue;
 
         // Calculate child size including margins for parent's auto-sizing
         auto child_width_with_margins = child.measured_size.x;
@@ -644,6 +640,7 @@ static u32 LayoutChildren(
             element_index = Layout(element_index, {content_left,content_top,content_width,content_height});
             continue;
         }
+
         // Calculate resolved margins
         float margin_start;
         float margin_end;

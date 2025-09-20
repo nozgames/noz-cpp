@@ -25,7 +25,10 @@ static Style g_default_style = {
     .padding_bottom = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_FIXED, 0.0f },
     .padding_right = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_FIXED, 0.0f },
     .text_align = { STYLE_KEYWORD_INHERIT, TEXT_ALIGN_MIN },
-    .vertical_align = { STYLE_KEYWORD_INHERIT, TEXT_ALIGN_MIN }
+    .vertical_align = { STYLE_KEYWORD_INHERIT, TEXT_ALIGN_MIN },
+    .rotate = { STYLE_KEYWORD_INHERIT, 0.0f },
+    .translate_x = { STYLE_KEYWORD_INHERIT, 0.0f },
+    .translate_y = { STYLE_KEYWORD_INHERIT, 0.0f },
 };
 
 const Style& GetDefaultStyle()
