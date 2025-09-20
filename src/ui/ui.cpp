@@ -36,6 +36,7 @@ struct Element
     ElementType type;
     ElementFlags flags;
     Rect bounds;
+    Rect local_bounds;
     u32 parent;
     Style style;
     Vec2 measured_size;
@@ -165,6 +166,7 @@ static void BeginElement(ElementType type, const StyleId& style_id)
         e.hash = hash;
         e.flags = 0;
         e.bounds = Rect(0,0,0,0);
+        e.local_bounds = Rect(0,0,0,0);
         e.cached_total_intrinsic_size = 0.0f;
         e.cached_auto_margin_count = 0;
     }
@@ -245,14 +247,20 @@ struct VignetteBuffer
     float padding1;
 };
 
-void RenderElement(const Element& e)
+static int RenderElement(int element_index, const Mat3& parent_transform)
 {
+    Element& e = g_ui.elements[element_index++];
+    Mat3 transform = parent_transform * TRS(
+        {e.style.translate_x.value + e.local_bounds.x, e.style.translate_y.value + e.local_bounds.y},
+        e.style.rotate.value,
+        Vec2{e.style.scale.value, e.style.scale.value});
+
     if (e.type == ELEMENT_TYPE_CANVAS)
         RenderCanvas(e);
 
     if (e.style.background_color.value.a > 0)
     {
-        BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {e.bounds.width, e.bounds.height});
+        BindTransform(transform * Scale(Vec2{e.bounds.width, e.bounds.height}));
         BindMaterial(g_ui.element_material);
         BindColor(e.style.background_color.value);
         DrawMesh(g_ui.element_quad);
@@ -265,7 +273,10 @@ void RenderElement(const Element& e)
             .smoothness = e.style.background_vignette_smoothness.value
         };
 
-        BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {e.bounds.width, e.bounds.height});
+        BindTransform(
+            {e.bounds.x + e.style.translate_x.value, e.bounds.y + e.style.translate_y.value},
+            e.style.rotate.value,
+            Vec2{e.bounds.width, e.bounds.height} * e.style.scale.value);
         BindMaterial(g_ui.vignette_material);
         BindColor(e.style.background_vignette_color.value);
         BindFragmentUserData(&vignette, sizeof(vignette));
@@ -320,7 +331,7 @@ void RenderElement(const Element& e)
                 }
             }
             
-            BindTransform({e.bounds.x + align_x, e.bounds.y + align_y}, 0.0f, {1,1});
+            BindTransform(transform);
             BindColor(e.style.color.value);
             BindMaterial(e.material);
             DrawMesh(mesh);
@@ -352,11 +363,16 @@ void RenderElement(const Element& e)
         BindTransform(
             Vec2{e.bounds.x + -mesh_bounds.min.x * mesh_scale.x, e.bounds.y - mesh_bounds.min.y * -mesh_scale.y} + Vec2 { e.style.translate_x.value, e.style.translate_y.value },
             e.style.rotate.value,
-            mesh_scale);
+            mesh_scale * e.style.scale.value);
         DrawMesh((Mesh*)e.resource);
         break;
     }
     }
+
+    for (u32 i = 0; i < e.child_count; i++)
+        element_index = RenderElement(element_index, transform);
+
+    return element_index;
 }
 
 extern float Evaluate(const StyleLength& length, float parent_value);
@@ -608,8 +624,9 @@ void DrawUI()
 {
     assert(!g_ui.in_frame);
 
-    for (u32 i = 0; i < g_ui.element_count; i++)
-        RenderElement(g_ui.elements[i]);
+    u32 element_index = 0;
+    while (element_index < g_ui.element_count)
+        element_index = RenderElement(element_index, MAT3_IDENTITY);
 }
 
 static u32 LayoutChildren(
@@ -773,6 +790,7 @@ u32 Layout(u32 element_index, Rect parent_bounds)
     Element& e = g_ui.elements[element_index];
     Style& style = e.style;
     Rect& bounds = e.bounds;
+    Rect& local_bounds = e.local_bounds;
     Vec2& measured_size = e.measured_size;
 
     if (e.type == ELEMENT_TYPE_CANVAS)
@@ -810,6 +828,8 @@ u32 Layout(u32 element_index, Rect parent_bounds)
         hsize,
         vsize
     };
+
+    local_bounds = { hmin, vmin, hsize, vsize };
 
     // Calculate content area after padding (relative to Element* bounds)
     float content_left = 0;

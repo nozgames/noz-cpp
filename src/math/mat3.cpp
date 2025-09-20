@@ -44,6 +44,24 @@ Mat3 Rotate(f32 rotation)
     };
 }
 
+Mat3 Scale(f32 scale)
+{
+    return Mat3{
+        scale, 0,     0,
+        0,     scale, 0,
+        0,     0,     1
+    };
+}
+
+Mat3 Scale(const Vec2& scale)
+{
+    return Mat3{
+        scale.x, 0,       0,
+        0,       scale.y, 0,
+        0,       0,       1
+    };
+}
+
 extern Mat3 Rotate(const Vec2& direction)
 {
     Vec2 dir = Normalize(direction);
