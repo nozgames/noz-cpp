@@ -122,6 +122,9 @@ void DeserializeStyle(Stream* stream, Style& style)
     DeserializeStyleParameter(stream, style.padding_right);
     DeserializeStyleParameter(stream, style.text_align);
     DeserializeStyleParameter(stream, style.vertical_align);
+    DeserializeStyleParameter(stream, style.rotate);
+    DeserializeStyleParameter(stream, style.translate_x);
+    DeserializeStyleParameter(stream, style.translate_y);
 }
 
 Style DeserializeStyle(Stream* stream)
@@ -219,6 +222,9 @@ void SerializeStyle(const Style& style, Stream* stream)
     SerializeParameter(stream, style.padding_right);
     SerializeParameter(stream, style.text_align);
     SerializeParameter(stream, style.vertical_align);
+    SerializeParameter(stream, style.rotate);
+    SerializeParameter(stream, style.translate_x);
+    SerializeParameter(stream, style.translate_y);
 }
 
 void MergeStyles(Style& dst, const Style& src, bool apply_defaults)
@@ -245,5 +251,8 @@ void MergeStyles(Style& dst, const Style& src, bool apply_defaults)
     STYLE_MERGE(padding_right);
     STYLE_MERGE(text_align);
     STYLE_MERGE(vertical_align);
+    STYLE_MERGE(rotate);
+    STYLE_MERGE(translate_x);
+    STYLE_MERGE(translate_y);
 #undef STYLE_MERGE
 }

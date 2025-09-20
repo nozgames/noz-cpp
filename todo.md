@@ -1,5 +1,6 @@
 # Todo
 
+- [ ] C button to center all verts on the mesh
 - [ ] Add colliders to meshes
 - [ ] delete vertex / undo is messed up
 - [ ] Capture mouse while using tools like grab

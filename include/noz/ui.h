@@ -131,6 +131,9 @@ struct Style
     StyleLength padding_right;
     StyleTextAlign text_align;
     StyleTextAlign vertical_align;
+    StyleFloat rotate;
+    StyleFloat translate_x;
+    StyleFloat translate_y;
 };
 
 struct ElementInput
