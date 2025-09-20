@@ -691,8 +691,8 @@ static u32 LayoutChildren(
         {
             float child_total_width = margin_start + child.measured_size.x + margin_end;
             child_bounds = {
-                current_offset,
-                0,
+                content_bounds.x + current_offset,
+                content_bounds.y,
                 child_total_width,
                 content_bounds.height
             };
@@ -702,8 +702,8 @@ static u32 LayoutChildren(
         {
             float child_total_height = margin_start + child.measured_size.y + margin_end;
             child_bounds = {
-                0,
-                current_offset,
+                content_bounds.x,
+                content_bounds.y + current_offset,
                 content_bounds.width,
                 child_total_height
             };
@@ -819,33 +819,28 @@ u32 Layout(u32 element_index, Rect parent_bounds)
     bounds = { parent_bounds.x + hmin, parent_bounds.y + vmin, hsize, vsize };
 
     // Calculate content area after padding (relative to Element* bounds)
-    float content_left = 0;
-    float content_top = 0;
-    float content_width = hsize;
-    float content_height = vsize;
+    Rect content_rect = { 0, 0, hsize, vsize };
 
     if (IsFixed(style.padding_left))
     {
         float paddingValue = Evaluate(style.padding_left, 0);
-        content_left += paddingValue;
-        content_width -= paddingValue;
+        content_rect.x += paddingValue;
+        content_rect.width -= paddingValue;
     }
     if (IsFixed(style.padding_right))
-        content_width -= Evaluate(style.padding_right, 0);
+        content_rect.width -= Evaluate(style.padding_right, 0);
 
     if (IsFixed(style.padding_top))
     {
         float paddingValue = Evaluate(style.padding_top, 0);
-        content_top += paddingValue;
-        content_height -= paddingValue;
+        content_rect.y += paddingValue;
+        content_rect.height -= paddingValue;
     }
 
     if (IsFixed(style.padding_bottom))
-        content_height -= Evaluate(style.padding_bottom, 0);
+        content_rect.height -= Evaluate(style.padding_bottom, 0);
 
-    element_index = LayoutChildren(
-        element_index,
-        {bounds.x + content_left, bounds.y + content_top, content_width, content_height});
+    element_index = LayoutChildren(element_index, content_rect);
 
     return element_index;
 }
