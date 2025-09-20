@@ -860,11 +860,16 @@ u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform)
 {
     Element& e = g_ui.elements[element_index++];
 
-    // Calculate element's local transform
-    Mat3 local_transform = TRS(
-        {e.style.translate_x.value + e.bounds.x, e.style.translate_y.value + e.bounds.y},
-        e.style.rotate.value,
-        Vec2{e.style.scale.value, e.style.scale.value});
+    // Calculate center pivot point
+    Vec2 center = {e.bounds.width * 0.5f, e.bounds.height * 0.5f};
+
+    // Calculate element's local transform with center pivot
+    // Order: translate to position -> translate to center -> scale & rotate -> translate back from center
+    Mat3 local_transform =
+        Translate({e.style.translate_x.value + e.bounds.x, e.style.translate_y.value + e.bounds.y}) *
+        Translate(center) *
+        TRS(VEC2_ZERO, e.style.rotate.value, Vec2{e.style.scale.value, e.style.scale.value}) *
+        Translate(-center);
 
     // Calculate world transform
     e.local_to_world = parent_transform * local_transform;
