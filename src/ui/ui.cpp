@@ -48,7 +48,6 @@ struct Element
     u64 hash;
     f32 cached_total_intrinsic_size;
     i32 cached_auto_margin_count;
-    bool cached_layout_info_valid;
 };
 
 struct UI
@@ -168,7 +167,6 @@ static void BeginElement(ElementType type, const StyleId& style_id)
         e.bounds = Rect(0,0,0,0);
         e.cached_total_intrinsic_size = 0.0f;
         e.cached_auto_margin_count = 0;
-        e.cached_layout_info_valid = false;
     }
 
 }
@@ -352,8 +350,8 @@ void RenderElement(const Element& e)
             -e.bounds.height / (mesh_bounds.max.y - mesh_bounds.min.y)
         };
         BindTransform(
-            Vec2{e.bounds.x + -mesh_bounds.min.x * mesh_scale.x, e.bounds.y - mesh_bounds.min.y * -mesh_scale.y},
-            0.0f,
+            Vec2{e.bounds.x + -mesh_bounds.min.x * mesh_scale.x, e.bounds.y - mesh_bounds.min.y * -mesh_scale.y} + Vec2 { e.style.translate_x.value, e.style.translate_y.value },
+            e.style.rotate.value,
             mesh_scale);
         DrawMesh((Mesh*)e.resource);
         break;
@@ -500,7 +498,6 @@ u32 MeasureElement(u32 element_index, const Vec2& available_size)
     // Cache the calculated auto margin values
     e.cached_total_intrinsic_size = totalIntrinsicSize;
     e.cached_auto_margin_count = auto_margin_count;
-    e.cached_layout_info_valid = true;
 
     measured_size = Vec2(0.0f, 0.0f);
 
