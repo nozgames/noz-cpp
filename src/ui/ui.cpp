@@ -590,7 +590,7 @@ static void HandleInput()
             {
                 // Convert mouse to element's local space
                 Vec2 local_mouse = TransformPoint(e.world_to_local, mouse);
-                if (Contains(e.bounds, local_mouse))
+                if (Contains(Bounds2{0,0,e.bounds.width, e.bounds.height}, local_mouse))
                 {
                     ConsumeButton(MOUSE_LEFT);
 
@@ -860,22 +860,20 @@ u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform)
 {
     Element& e = g_ui.elements[element_index++];
 
-    // Calculate center pivot point
-    Vec2 center = {e.bounds.width * 0.5f, e.bounds.height * 0.5f};
+    Vec2 pivot = {
+        e.bounds.width * e.style.transform_origin_x.value,
+        e.bounds.height * e.style.transform_origin_y.value
+    };
 
-    // Calculate element's local transform with center pivot
-    // Order: translate to position -> translate to center -> scale & rotate -> translate back from center
     Mat3 local_transform =
         Translate({e.style.translate_x.value + e.bounds.x, e.style.translate_y.value + e.bounds.y}) *
-        Translate(center) *
+        Translate(pivot) *
         TRS(VEC2_ZERO, e.style.rotate.value, Vec2{e.style.scale.value, e.style.scale.value}) *
-        Translate(-center);
+        Translate(-pivot);
 
-    // Calculate world transform
     e.local_to_world = parent_transform * local_transform;
     e.world_to_local = Inverse(e.local_to_world);
 
-    // Process children
     for (u32 i = 0; i < e.child_count; i++)
         element_index = CalculateTransforms(element_index, e.local_to_world);
 
