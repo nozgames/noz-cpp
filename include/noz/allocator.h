@@ -48,16 +48,17 @@ Allocator* CreateArenaAllocator(u32 size, const char* name);
 // @pool
 struct PoolAllocator : Allocator { };
 
-PoolAllocator* CreatePoolAllocator(u32 item_size, u32 capacity);
-void* GetAt(PoolAllocator* allocator, u32 index);
-u32 GetIndex(PoolAllocator* allocator, const void* ptr);
-bool IsFull(PoolAllocator* allocator);
-bool IsEmpty(PoolAllocator* allocator);
+extern PoolAllocator* CreatePoolAllocator(u32 item_size, u32 capacity);
+extern void* GetAt(PoolAllocator* allocator, u32 index);
+extern u32 GetIndex(PoolAllocator* allocator, const void* ptr);
+extern bool IsFull(PoolAllocator* allocator);
+extern bool IsEmpty(PoolAllocator* allocator);
+extern u32 GetCount(PoolAllocator* allocator);
 
 // @scratch
-void PushScratch();
-void PopScratch();
-void ClearScratch();
+extern void PushScratch();
+extern void PopScratch();
+extern void ClearScratch();
 
 extern Allocator* g_default_allocator;
 extern Allocator* g_scratch_allocator;

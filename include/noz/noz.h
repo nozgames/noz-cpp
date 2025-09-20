@@ -38,3 +38,4 @@
 #include "audio.h"
 #include "prefs.h"
 #include "core_events.h"
+#include "tween.h"

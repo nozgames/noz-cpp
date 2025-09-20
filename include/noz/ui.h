@@ -160,5 +160,9 @@ extern void DrawUI();
 extern void Label(const char* text, const StyleId& style_id = STYLE_DEFAULT);
 extern void Image(Material* material, const StyleId& style_id = STYLE_DEFAULT);
 extern void SetInputHandler(ElementInputFunc func, void* user_data = nullptr);
+extern bool IsMouseOverElement();
+extern void SetElementStyle(const StyleId& style_id);
+extern bool DidMouseEnterElement();
+extern bool DidMouseLeaveElement();
 
 extern StyleSheet** STYLESHEET;

@@ -129,7 +129,11 @@ struct Vec4
     f32 z;
     f32 w;
 
+    Vec4 operator+(const Vec4& v) const { return Vec4{ x + v.x, y + v.y, z + v.y, w + v.w }; }
+    Vec4 operator-(const Vec4& v) const { return Vec4{ x - v.x, y - v.y, z - v.y, w - v.w }; }
     Vec4 operator/=(f32 scalar) { x /= scalar; y /= scalar; z /= scalar; w /= scalar; return *this; }
+    Vec4 operator*(f32 scalar) const { return Vec4{ x * scalar, y * scalar, z * scalar, w * scalar }; }
+    Vec4 operator*(const Vec4& v) const { return Vec4{ x * v.x, y * v.y, z * v.z, w * v.w }; }
 
     float& operator [] (int index) { return *((float*)this + index); }
     float operator [] (int index) const { return *((float*)this + index); }
@@ -316,6 +320,9 @@ inline bool ApproxEqual(const Vec2& a, const Vec2& b, f32 epsilon = 1e-6f)
 {
     return ApproxEqual(a.x, b.x, epsilon) && ApproxEqual(a.y, b.y, epsilon);
 }
+
+// @vec4
+inline Vec4 Mix(const Vec4& v1, const Vec4& v2, f32 t) { return v1 + (v2 - v1) * t; }
 
 // @vec2d
 extern f64 Length(const Vec2Double& v);

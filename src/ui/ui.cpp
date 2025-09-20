@@ -17,6 +17,11 @@ constexpr ElementType ELEMENT_TYPE_CANVAS = 2;
 constexpr ElementType ELEMENT_TYPE_LABEL = 3;
 constexpr ElementType ELEMENT_TYPE_IMAGE = 4;
 
+typedef u16 ElementFlags;
+constexpr ElementFlags ELEMENT_FLAG_HOVER = 1 << 0;
+constexpr ElementFlags ELEMENT_FLAG_MOUSE_ENTER = 1 << 1;
+constexpr ElementFlags ELEMENT_FLAG_MOUSE_LEAVE = 1 << 2;
+
 StyleSheet** STYLESHEET = nullptr;
 
 struct CachedTextMesh
@@ -28,6 +33,7 @@ struct CachedTextMesh
 struct Element
 {
     ElementType type;
+    ElementFlags flags;
     Rect bounds;
     u32 parent;
     Style style;
@@ -38,6 +44,7 @@ struct Element
     Material* material;
     void* input_user_data;
     ElementInputFunc input_func;
+    u64 hash;
 };
 
 struct UI
@@ -121,12 +128,42 @@ static void BeginElement(ElementType type, const StyleId& style_id)
 
     Element& e = g_ui.elements[g_ui.element_count++];
     e.type = type;
-    e.bounds = Rect(0,0,0,0);
     e.parent = g_ui.element_stack_count > 0 ? g_ui.element_stack[g_ui.element_stack_count-1] : UINT32_MAX;
     e.style = GetStyle(style_id);
     e.index = g_ui.element_count-1;
     e.child_count = 0;
     g_ui.element_stack[g_ui.element_stack_count++] = e.index;
+
+    u64 hash = Hash(e.index, e.parent, style_id.style_sheet_id);
+    hash = Hash(type, hash, style_id.id);
+
+    if (e.hash == hash)
+    {
+        Vec2 mouse = ScreenToWorld(g_ui.camera, GetMousePosition());
+        if (e.type != ELEMENT_TYPE_CANVAS && Contains(e.bounds, mouse))
+        {
+            if ((e.flags & ELEMENT_FLAG_HOVER) == 0)
+                e.flags |= ELEMENT_FLAG_MOUSE_ENTER;
+            else
+                e.flags &= ~ELEMENT_FLAG_MOUSE_ENTER;
+            e.flags |= ELEMENT_FLAG_HOVER;
+        }
+        else
+        {
+            if (e.flags & ELEMENT_FLAG_HOVER)
+                e.flags |= ELEMENT_FLAG_MOUSE_LEAVE;
+            else
+                e.flags &= ~ELEMENT_FLAG_MOUSE_LEAVE;
+            e.flags &= ~ELEMENT_FLAG_HOVER;
+        }
+    }
+    else
+    {
+        e.hash = hash;
+        e.flags = 0;
+        e.bounds = Rect(0,0,0,0);
+    }
+
 }
 
 void BeginElement(const StyleId& style_id)
@@ -811,6 +848,26 @@ void Image(Material* material, const StyleId& style_id)
     Element& e = GetCurrentElement();
     e.resource = material;
     EndElement();
+}
+
+bool IsMouseOverElement()
+{
+    return (GetCurrentElement().flags & ELEMENT_FLAG_HOVER) != 0;
+}
+
+bool DidMouseEnterElement()
+{
+    return (GetCurrentElement().flags & ELEMENT_FLAG_MOUSE_ENTER) != 0;
+}
+
+bool DidMouseLeaveElement()
+{
+    return (GetCurrentElement().flags & ELEMENT_FLAG_MOUSE_LEAVE) != 0;
+}
+
+void SetElementStyle(const StyleId& style_id)
+{
+    GetCurrentElement().style = GetStyle(style_id);
 }
 
 void InitUI()
