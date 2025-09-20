@@ -48,6 +48,8 @@ struct Element
     u64 hash;
     f32 cached_total_intrinsic_size;
     i32 cached_auto_margin_count;
+    Mat3 local_to_world;
+    Mat3 world_to_local;
 };
 
 struct UI
@@ -75,6 +77,7 @@ struct UI
 static UI g_ui = {};
 
 u32 Layout(u32 element_index, Rect parent_bounds);
+u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform);
 
 inline StyleSheet* GetCurrentStyleSheet()
 {
@@ -142,8 +145,10 @@ static void BeginElement(ElementType type, const StyleId& style_id)
 
     if (e.hash == hash)
     {
-        Vec2 mouse = ScreenToWorld(g_ui.camera, GetMousePosition());
-        if (e.type != ELEMENT_TYPE_CANVAS && Contains(e.bounds, mouse))
+        bool mouse_over = Contains(
+            Bounds2{VEC2_ZERO, {e.bounds.width, e.bounds.height}},
+            TransformPoint(e.world_to_local, ScreenToWorld(g_ui.camera, GetMousePosition())));
+        if (mouse_over)
         {
             if ((e.flags & ELEMENT_FLAG_HOVER) == 0)
                 e.flags |= ELEMENT_FLAG_MOUSE_ENTER;
@@ -167,6 +172,8 @@ static void BeginElement(ElementType type, const StyleId& style_id)
         e.bounds = Rect(0,0,0,0);
         e.cached_total_intrinsic_size = 0.0f;
         e.cached_auto_margin_count = 0;
+        e.local_to_world = MAT3_IDENTITY;
+        e.world_to_local = MAT3_IDENTITY;
     }
 
 }
@@ -245,13 +252,10 @@ struct VignetteBuffer
     float padding1;
 };
 
-static int RenderElement(int element_index, const Mat3& parent_transform)
+static int RenderElement(int element_index)
 {
     Element& e = g_ui.elements[element_index++];
-    Mat3 transform = parent_transform * TRS(
-        {e.style.translate_x.value + e.bounds.x, e.style.translate_y.value + e.bounds.y},
-        e.style.rotate.value,
-        Vec2{e.style.scale.value, e.style.scale.value});
+    Mat3 transform = e.local_to_world;
 
     if (e.type == ELEMENT_TYPE_CANVAS)
         RenderCanvas(e);
@@ -368,7 +372,7 @@ static int RenderElement(int element_index, const Mat3& parent_transform)
     }
 
     for (u32 i = 0; i < e.child_count; i++)
-        element_index = RenderElement(element_index, transform);
+        element_index = RenderElement(element_index);
 
     return element_index;
 }
@@ -582,20 +586,25 @@ static void HandleInput()
         for (int i=g_ui.element_count; i>0; i--)
         {
             Element& e = g_ui.elements[i-1];
-            if (e.type != ELEMENT_TYPE_CANVAS && Contains(e.bounds, mouse))
+            if (e.type != ELEMENT_TYPE_CANVAS)
             {
-                ConsumeButton(MOUSE_LEFT);
-
-                if (e.input_func != nullptr)
+                // Convert mouse to element's local space
+                Vec2 local_mouse = TransformPoint(e.world_to_local, mouse);
+                if (Contains(e.bounds, local_mouse))
                 {
-                    ElementInput input;
-                    input.button = MOUSE_LEFT;
-                    input.mouse_position = mouse;
-                    input.user_data = e.input_user_data;
-                    input.bounds = e.bounds;
-                    if (e.input_func(input))
+                    ConsumeButton(MOUSE_LEFT);
+
+                    if (e.input_func != nullptr)
                     {
-                        return;
+                        ElementInput input;
+                        input.button = MOUSE_LEFT;
+                        input.mouse_position = mouse;
+                        input.user_data = e.input_user_data;
+                        input.bounds = e.bounds;
+                        if (e.input_func(input))
+                        {
+                            return;
+                        }
                     }
                 }
             }
@@ -612,6 +621,8 @@ void EndUI()
         element_index = MeasureElement(element_index, screen_size_f);
     for (u32 element_index=0; element_index < g_ui.element_count; )
         element_index = Layout(element_index, screen_bounds);
+    for (u32 element_index=0; element_index < g_ui.element_count; )
+        element_index = CalculateTransforms(element_index, MAT3_IDENTITY);
 
     g_ui.in_frame = false;
 
@@ -624,7 +635,7 @@ void DrawUI()
 
     u32 element_index = 0;
     while (element_index < g_ui.element_count)
-        element_index = RenderElement(element_index, MAT3_IDENTITY);
+        element_index = RenderElement(element_index);
 }
 
 static u32 LayoutChildren(
@@ -841,6 +852,27 @@ u32 Layout(u32 element_index, Rect parent_bounds)
         content_rect.height -= Evaluate(style.padding_bottom, 0);
 
     element_index = LayoutChildren(element_index, content_rect);
+
+    return element_index;
+}
+
+u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform)
+{
+    Element& e = g_ui.elements[element_index++];
+
+    // Calculate element's local transform
+    Mat3 local_transform = TRS(
+        {e.style.translate_x.value + e.bounds.x, e.style.translate_y.value + e.bounds.y},
+        e.style.rotate.value,
+        Vec2{e.style.scale.value, e.style.scale.value});
+
+    // Calculate world transform
+    e.local_to_world = parent_transform * local_transform;
+    e.world_to_local = Inverse(e.local_to_world);
+
+    // Process children
+    for (u32 i = 0; i < e.child_count; i++)
+        element_index = CalculateTransforms(element_index, e.local_to_world);
 
     return element_index;
 }
