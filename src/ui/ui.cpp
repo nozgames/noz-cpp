@@ -36,7 +36,6 @@ struct Element
     ElementType type;
     ElementFlags flags;
     Rect bounds;
-    Rect local_bounds;
     u32 parent;
     Style style;
     Vec2 measured_size;
@@ -166,7 +165,6 @@ static void BeginElement(ElementType type, const StyleId& style_id)
         e.hash = hash;
         e.flags = 0;
         e.bounds = Rect(0,0,0,0);
-        e.local_bounds = Rect(0,0,0,0);
         e.cached_total_intrinsic_size = 0.0f;
         e.cached_auto_margin_count = 0;
     }
@@ -251,7 +249,7 @@ static int RenderElement(int element_index, const Mat3& parent_transform)
 {
     Element& e = g_ui.elements[element_index++];
     Mat3 transform = parent_transform * TRS(
-        {e.style.translate_x.value + e.local_bounds.x, e.style.translate_y.value + e.local_bounds.y},
+        {e.style.translate_x.value + e.bounds.x, e.style.translate_y.value + e.bounds.y},
         e.style.rotate.value,
         Vec2{e.style.scale.value, e.style.scale.value});
 
@@ -631,10 +629,7 @@ void DrawUI()
 
 static u32 LayoutChildren(
     u32 element_index,
-    float content_left,
-    float content_top,
-    float content_width,
-    float content_height)
+    Rect content_bounds)
 {
     Element& e = g_ui.elements[element_index++];
     if (e.child_count == 0)
@@ -648,7 +643,7 @@ static u32 LayoutChildren(
     i32 auto_margin_count = e.cached_auto_margin_count;
 
     // Calculate auto margin size
-    float mainAxisSize = is_column ? content_width : content_height;
+    float mainAxisSize = is_column ? content_bounds.width : content_bounds.height;
     float remainingSpace = mainAxisSize - totalIntrinsicSize;
     float flex_margin_size = auto_margin_count > 0 && remainingSpace > 0 ? remainingSpace / auto_margin_count : 0.0f;
 
@@ -661,7 +656,7 @@ static u32 LayoutChildren(
 
         if (child_style.position.value == POSITION_TYPE_ABSOLUTE)
         {
-            element_index = Layout(element_index, {content_left,content_top,content_width,content_height});
+            element_index = Layout(element_index, content_bounds);
             continue;
         }
 
@@ -672,34 +667,34 @@ static u32 LayoutChildren(
         {
             margin_start = IsAuto(child_style.margin_left)
                 ? flex_margin_size
-                : Evaluate(child_style.margin_left, content_width);
+                : Evaluate(child_style.margin_left, content_bounds.width);
             margin_end = IsAuto(child_style.margin_right)
                 ? flex_margin_size
-                : Evaluate(child_style.margin_right, content_width);
+                : Evaluate(child_style.margin_right, content_bounds.width);
         }
         else
         {
             margin_start = IsAuto(child_style.margin_top)
                 ? flex_margin_size
-                : Evaluate(child_style.margin_top, content_height);
+                : Evaluate(child_style.margin_top, content_bounds.height);
             margin_end = IsAuto(child_style.margin_bottom)
                 ? flex_margin_size
-                : Evaluate(child_style.margin_bottom, content_height);
+                : Evaluate(child_style.margin_bottom, content_bounds.height);
         }
 
         // Don't add margin to offset - give child the full space including margins
         // The child will position itself within this space using its own margins
 
-        // Create child bounds that include space for margins
+        // Create child bounds that include space for margins (relative to parent's content area)
         Rect child_bounds;
         if (is_column)
         {
             float child_total_width = margin_start + child.measured_size.x + margin_end;
             child_bounds = {
-                content_left + current_offset,
-                content_top,
+                current_offset,
+                0,
                 child_total_width,
-                content_height
+                content_bounds.height
             };
             current_offset += child_total_width;
         }
@@ -707,9 +702,9 @@ static u32 LayoutChildren(
         {
             float child_total_height = margin_start + child.measured_size.y + margin_end;
             child_bounds = {
-                content_left,
-                content_top + current_offset,
-                content_width,
+                0,
+                current_offset,
+                content_bounds.width,
                 child_total_height
             };
             current_offset += child_total_height;
@@ -790,7 +785,6 @@ u32 Layout(u32 element_index, Rect parent_bounds)
     Element& e = g_ui.elements[element_index];
     Style& style = e.style;
     Rect& bounds = e.bounds;
-    Rect& local_bounds = e.local_bounds;
     Vec2& measured_size = e.measured_size;
 
     if (e.type == ELEMENT_TYPE_CANVAS)
@@ -822,14 +816,7 @@ u32 Layout(u32 element_index, Rect parent_bounds)
         vmax,
         vsize);
 
-    bounds = {
-        parent_bounds.x + hmin,
-        parent_bounds.y + vmin,
-        hsize,
-        vsize
-    };
-
-    local_bounds = { hmin, vmin, hsize, vsize };
+    bounds = { parent_bounds.x + hmin, parent_bounds.y + vmin, hsize, vsize };
 
     // Calculate content area after padding (relative to Element* bounds)
     float content_left = 0;
@@ -858,10 +845,7 @@ u32 Layout(u32 element_index, Rect parent_bounds)
 
     element_index = LayoutChildren(
         element_index,
-        bounds.x + content_left,
-        bounds.y + content_top,
-        content_width,
-        content_height);
+        {bounds.x + content_left, bounds.y + content_top, content_width, content_height});
 
     return element_index;
 }
