@@ -7,13 +7,15 @@ constexpr int STYLE_STACK_SIZE = 16;
 
 extern void UpdateInputState(InputSet* input_set);
 
-typedef u16 ElementType;
-
-constexpr ElementType ELEMENT_TYPE_UNKNOWN = 0;
-constexpr ElementType ELEMENT_TYPE_NONE = 1;
-constexpr ElementType ELEMENT_TYPE_CANVAS = 2;
-constexpr ElementType ELEMENT_TYPE_LABEL = 3;
-constexpr ElementType ELEMENT_TYPE_IMAGE = 4;
+enum ElementType : u16
+{
+    ELEMENT_TYPE_UNKNOWN = 0,
+    ELEMENT_TYPE_NONE,
+    ELEMENT_TYPE_CANVAS,
+    ELEMENT_TYPE_LABEL,
+    ELEMENT_TYPE_IMAGE,
+    ELEMENT_TYPE_MESH
+};
 
 StyleSheet** STYLESHEET = nullptr;
 
@@ -285,6 +287,15 @@ void RenderElement(const Element& e)
         DrawMesh(g_ui.element_quad);
         break;
     }
+
+    case ELEMENT_TYPE_MESH:
+    {
+        BindMaterial(e.material);
+        BindColor(COLOR_WHITE);
+        BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {e.bounds.width, e.bounds.height});
+        DrawMesh((Mesh*)e.resource);
+        break;
+    }
     }
 }
 
@@ -308,6 +319,11 @@ static Vec2 MeasureContent(Element& e, const Vec2& available_size)
             if (texture)
                 return ToVec2(GetSize(texture));
         }
+        break;
+
+    case ELEMENT_TYPE_MESH:
+        if (e.resource != nullptr)
+            return GetSize((Mesh*)e.resource);
         break;
 
     default:
@@ -798,6 +814,18 @@ void Image(Material* material, const StyleId& style_id)
     BeginElement(ELEMENT_TYPE_IMAGE, style_id);
     Element& e = GetCurrentElement();
     e.resource = material;
+    EndElement();
+}
+
+void MeshElement(Mesh* mesh, Material* material, const StyleId& style_id)
+{
+    assert(mesh);
+    assert(material);
+
+    BeginElement(ELEMENT_TYPE_MESH, style_id);
+    Element& e = GetCurrentElement();
+    e.resource = mesh;
+    e.material = material;
     EndElement();
 }
 

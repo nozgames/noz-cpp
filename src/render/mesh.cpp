@@ -95,6 +95,11 @@ Bounds2 GetBounds(Mesh* mesh)
     return static_cast<MeshImpl*>(mesh)->bounds;
 }
 
+Vec2 GetSize(Mesh* mesh)
+{
+    return GetSize(GetBounds(mesh));
+}
+
 bool OverlapPoint(Mesh* mesh, const Vec2& overlap_point)
 {
     MeshImpl* impl = static_cast<MeshImpl*>(mesh);

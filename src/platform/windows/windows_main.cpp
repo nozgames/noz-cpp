@@ -124,7 +124,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         RECT rect;
         GetClientRect(hwnd, &rect);
         Vec2Int new_size = { rect.right - rect.left, rect.bottom - rect.top };
-        if (g_windows.screen_size != new_size)
+        if (g_windows.screen_size != new_size && new_size != VEC2INT_ZERO)
         {
             g_windows.screen_size = new_size;
             ResizeVulkan(new_size);

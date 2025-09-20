@@ -1,5 +1,6 @@
 # Todo
 
+- [ ] Add colliders to meshes
 - [ ] delete vertex / undo is messed up
 - [ ] Capture mouse while using tools like grab
 - [ ] Undo with color did not work
@@ -10,6 +11,7 @@
 - [ ] Seems to be reimporting assets
 - [ ] zoom should zoom in at cursor
 - [ ] Animation bounds does not take into account the actual animation, just the skeleton
+- [ ] x to delete assets
 
 - [ ] Adding a bone to the skeleton caused the animations to write garbage data for position
 - [ ] moving bones in skeleton is not changing animations?

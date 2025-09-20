@@ -90,6 +90,7 @@ extern u16 GetIndexCount(Mesh* mesh);
 extern const MeshVertex* GetVertices(Mesh* mesh);
 extern const u16* GetIndices(Mesh* mesh);
 extern Bounds2 GetBounds(Mesh* mesh);
+extern Vec2 GetSize(Mesh* mesh);
 extern bool OverlapPoint(Mesh* mesh, const Vec2& overlap_point);
 extern bool IsUploaded(Mesh* mesh);
 

@@ -6,6 +6,7 @@
 
 static Style g_default_style = {
     .flex_direction = { STYLE_KEYWORD_INHERIT, FLEX_DIRECTION_ROW },
+    .position = { STYLE_KEYWORD_INHERIT, POSITION_TYPE_RELATIVE },
     .width = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_AUTO, 0.0f },
     .height = { STYLE_KEYWORD_INHERIT, STYLE_LENGTH_UNIT_AUTO, 0.0f },
     .background_color = { STYLE_KEYWORD_INHERIT, {0,0,0,0} },
@@ -73,6 +74,13 @@ static void DeserializeStyleParameter(Stream* stream, StyleFlexDirection& value)
     value.value = (FlexDirection)ReadU8(stream);
 }
 
+static void DeserializeStyleParameter(Stream* stream, StylePosition& value)
+{
+    if (!DeserializeStyleParameter(stream, (StyleParameter&)value))
+        return;
+    value.value = (PositionType)ReadU8(stream);
+}
+
 static void DeserializeStyleParameter(Stream* stream, StyleLength& value)
 {
     if (!DeserializeStyleParameter(stream, (StyleParameter&)value))
@@ -94,6 +102,7 @@ static void DeserializeStyleParameter(Stream* stream, StyleFont& value)
 void DeserializeStyle(Stream* stream, Style& style)
 {
     DeserializeStyleParameter(stream, style.flex_direction);
+    DeserializeStyleParameter(stream, style.position);
     DeserializeStyleParameter(stream, style.width);
     DeserializeStyleParameter(stream, style.height);
     DeserializeStyleParameter(stream, style.background_color);
@@ -156,6 +165,13 @@ static void SerializeParameter(Stream* stream, const StyleFlexDirection& value)
     WriteU8(stream, (uint8_t)value.value);
 }
 
+static void SerializeParameter(Stream* stream, const StylePosition& value)
+{
+    if (!SerializeParameter(stream, (StyleParameter&)value))
+        return;
+    WriteU8(stream, (uint8_t)value.value);
+}
+
 static void SerializeParameter(Stream* stream, const StyleTextAlign& value)
 {
     if (!SerializeParameter(stream, (StyleParameter&)value))
@@ -183,6 +199,7 @@ static void SerializeParameter(Stream* stream, const StyleFont& value)
 void SerializeStyle(const Style& style, Stream* stream)
 {
     SerializeParameter(stream, style.flex_direction);
+    SerializeParameter(stream, style.position);
     SerializeParameter(stream, style.width);
     SerializeParameter(stream, style.height);
     SerializeParameter(stream, style.background_color);
@@ -208,6 +225,7 @@ void MergeStyles(Style& dst, const Style& src, bool apply_defaults)
 {
 #define STYLE_MERGE(n) if (src.n.parameter.keyword >= dst.n.parameter.keyword || (apply_defaults && dst.n.parameter.keyword != STYLE_KEYWORD_INLINE)) dst.n = src.n
     STYLE_MERGE(flex_direction);
+    STYLE_MERGE(position);
     STYLE_MERGE(color);
     STYLE_MERGE(background_color);
     STYLE_MERGE(background_vignette_color);
