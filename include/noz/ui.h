@@ -134,6 +134,7 @@ struct Style
     StyleFloat rotate;
     StyleFloat translate_x;
     StyleFloat translate_y;
+    StyleFloat scale;
 };
 
 struct ElementInput

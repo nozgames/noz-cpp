@@ -29,6 +29,7 @@ static Style g_default_style = {
     .rotate = { STYLE_KEYWORD_INHERIT, 0.0f },
     .translate_x = { STYLE_KEYWORD_INHERIT, 0.0f },
     .translate_y = { STYLE_KEYWORD_INHERIT, 0.0f },
+    .scale = { STYLE_KEYWORD_INHERIT, 1.0f }
 };
 
 const Style& GetDefaultStyle()
@@ -128,6 +129,7 @@ void DeserializeStyle(Stream* stream, Style& style)
     DeserializeStyleParameter(stream, style.rotate);
     DeserializeStyleParameter(stream, style.translate_x);
     DeserializeStyleParameter(stream, style.translate_y);
+    DeserializeStyleParameter(stream, style.scale);
 }
 
 Style DeserializeStyle(Stream* stream)
@@ -228,6 +230,7 @@ void SerializeStyle(const Style& style, Stream* stream)
     SerializeParameter(stream, style.rotate);
     SerializeParameter(stream, style.translate_x);
     SerializeParameter(stream, style.translate_y);
+    SerializeParameter(stream, style.scale);
 }
 
 void MergeStyles(Style& dst, const Style& src, bool apply_defaults)
@@ -257,5 +260,6 @@ void MergeStyles(Style& dst, const Style& src, bool apply_defaults)
     STYLE_MERGE(rotate);
     STYLE_MERGE(translate_x);
     STYLE_MERGE(translate_y);
+    STYLE_MERGE(scale);
 #undef STYLE_MERGE
 }
