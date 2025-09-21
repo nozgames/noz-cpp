@@ -59,6 +59,17 @@ static void PoolFree(Allocator* a, void* ptr)
     impl->count--;
 }
 
+static void PoolClear(Allocator* a)
+{
+    assert(a);
+    PoolAllocatorImpl* impl = static_cast<PoolAllocatorImpl*>(a);
+
+    memset(impl->items_used, 0, sizeof(bool) * impl->capacity);
+    memset(impl->items, 0, impl->item_size * impl->capacity);
+    impl->count = 0;
+}
+
+
 PoolAllocator* CreatePoolAllocator(u32 item_size, u32 capacity)
 {
     // The Alloc function will request extra space for the AllocHeader so prepare for it.
@@ -69,6 +80,7 @@ PoolAllocator* CreatePoolAllocator(u32 item_size, u32 capacity)
     impl->alloc = PoolAlloc;
     impl->free = PoolFree;
     impl->realloc = PoolRealloc;
+    impl->clear = PoolClear;
     impl->items_used = (bool*)(impl + 1);
     impl->items = impl->items_used + capacity;
     impl->capacity = capacity;
