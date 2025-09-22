@@ -280,6 +280,8 @@ Bounds3 Expand(const Bounds3& bounds, const Bounds3& other);
 extern Bounds2 ToBounds(const Vec2* positions, u32 count);
 extern bool Contains(const Bounds2& bounds, const Vec2& point);
 extern bool Intersects(const Bounds2& bounds, const Bounds2& other);
+extern bool Intersects(const Bounds2& bounds, const Vec2& line_start, const Vec2& line_end);
+extern bool Intersects(const Bounds2& bounds, const Vec2& tri_pt0, const Vec2& tri_pt1, const Vec2& tri_pt2);
 extern Bounds2 Union(const Bounds2& a, const Bounds2& b);
 inline Bounds2 Union(const Bounds2& a, const Vec2& b) { return Bounds2{ Min(a.min, b), Max(a.max, b) }; }
 inline Vec2 GetCenter(const Bounds2& b) { return Vec2{ (b.min.x + b.max.x) * 0.5f, (b.min.y + b.max.y) * 0.5f }; }

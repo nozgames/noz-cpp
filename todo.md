@@ -1,13 +1,18 @@
 # Todo
 
-- [ ] C button to center all verts on the mesh
+- [ ] not saving sort order
+- [ ] skeleton bone sort order for editor using []
+- [ ] Box select edge not working
+- [ ] box select face not working
+- [ ] bone scale
+- 
+
+- [ ] adding vertex in edge mode causes assert
 - [ ] Add colliders to meshes
-- [ ] delete vertex / undo is messed up
 - [ ] Capture mouse while using tools like grab
 - [ ] Undo with color did not work
 - [ ] edge color did not work
 - [ ] inserting a frame with o in the middle seems to not be working
-- [ ] bone scale
 - [ ] Change UI, vertex size, edge size, etc to not scale with the window size
 - [ ] Seems to be reimporting assets
 - [ ] zoom should zoom in at cursor
@@ -20,7 +25,6 @@
 - [ ] Prevent duplicate assets of same type and same name in different folders.
 - [ ] Creating new animation had 0 frames when i tried to edit the frame, bounds seemed bad too
 - [ ] moving bones in some loaded animations move weird, maybe rotation or incorrect matrcieis
-- [ ] Sort order ([ ])
 - [ ] editor animation likely leaking animation and skeleton asset 
 - [ ] vfx hotload broken
 - [ ] new clone animation
