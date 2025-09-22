@@ -57,8 +57,6 @@ namespace noz
     {
         return (int)(v + 0.5f);
     }
-
-
 }
 
 float RandomFloat();
@@ -345,7 +343,8 @@ extern Vec3 Cross(const Vec3& a, const Vec3& b);
 inline f32 Dot(const Vec3& a, const Vec3& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
 // @angle
-float SignedAngleDelta(const Vec2& a, const Vec2&b);
+extern float SignedAngleDelta(const Vec2& a, const Vec2&b);
+extern float NormalizeAngle(float angle);
 inline float Radians(float degrees) { return degrees * noz::PI / 180.0f; }
 inline float Degrees(float radians) { return radians * 180.0f / noz::PI; }
 

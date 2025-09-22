@@ -1,20 +1,19 @@
 # Todo
 
+- [ ] adding vertex is too sensitive when near another vertex
+- [ ] Seems to be reimporting assets
+- [ ] Text not fitting in notification box
+- [ ] Change frames to be boxes with dots like animator, so holds are longer boxes
 - [ ] not saving sort order
 - [ ] skeleton bone sort order for editor using []
-- [ ] Box select edge not working
-- [ ] box select face not working
 - [ ] bone scale
-- 
+- [ ] x to dissovlve vertices, faces, edges
 
 - [ ] adding vertex in edge mode causes assert
 - [ ] Add colliders to meshes
 - [ ] Capture mouse while using tools like grab
-- [ ] Undo with color did not work
-- [ ] edge color did not work
 - [ ] inserting a frame with o in the middle seems to not be working
 - [ ] Change UI, vertex size, edge size, etc to not scale with the window size
-- [ ] Seems to be reimporting assets
 - [ ] zoom should zoom in at cursor
 - [ ] Animation bounds does not take into account the actual animation, just the skeleton
 - [ ] x to delete assets
@@ -50,41 +49,32 @@
 - [ ] New mesh has no color or edges
 - [ ] Load editor assets in job
 - [ ] Skeleton bounds should include the meshes
-- [ ] Undo for color change
-- [ ] Undo for height change
-- [ ] Undo for adding vertex
 - [ ] Selecting a mesh asset should account for border in selection
 - [ ] Alt-drag on asset to create instance  (draw origin in blue and outline a lighter grey)
 - [ ] Set border color
 - [ ] Why isnt it closing? (thread lock) (job system)
 - [ ] m to merge vertices (broken)
-- [ ] x to dissovlve vertices, faces, edges
 - [ ] Light color in the editor config
 - [ ] Use TextInput for typing after move or scale command
 - [ ] Pressing g or r should stop the previous g or r and start a new one
-- [ ] calculate normals for faces
 - [ ] button to set how hard an edge is, soft on a quad will average normals 
 - [ ] Box select being pushed it making the color go away, is that ok?
-- [ ] When you add a vertex interpolate the height from the neighbors
 - [ ] highlight colors of selected triangles in the triangle ui
 - [ ] add face if 3 verts are selected and no triangle there
 - [ ] single click to select asset, ctrl to toggle
-- [ ] combined vertex buffer for rendering so we can stream data to it like triangles?  
-- [ ] key to hide / show palette (alt-c?)
-- [ ] e for extrude in mesh
 - [ ] x to limit move
 - [ ] y to limit move
-- [ ] Scene asset 
-- [ ] Scene editor
-- [ ] Auto complete on commands
-- [ ] Trace a font out with meshes?
-- [ ] shader include dependency handling.
-- [ ] configurable outline color
 - [ ] Trail vfx for individual particles
 - [ ] vfx initial_rotation and rotation over time
-- [ ] style sheet inherit not working
 - [ ] Localized strings
+
+- [ ] combined vertex buffer for rendering so we can stream data to it like triangles?
+- [ ] key to hide / show palette (alt-c?)
+- [ ] Scene asset
+- [ ] Scene editor
 - [ ] hot load of textures
 - [ ] hot load of sounds
 - [ ] Something causes a spawn of error messages in the editor when client disconnects / reconnects, not sure which
-- [X] Draw a origin point on screen when changing light
+
+- [ ] Trace a font out with meshes?
+- [ ] Auto complete on commands

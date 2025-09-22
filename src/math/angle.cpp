@@ -15,3 +15,10 @@ float SignedAngleDelta(const Vec2& a, const Vec2&b)
 
     return Degrees(delta);
 }
+
+float NormalizeAngle(float angle)
+{
+    while (angle < 0) angle += noz::TWO_PI;
+    while (angle >= noz::TWO_PI) angle -= noz::TWO_PI;
+    return angle;
+}
