@@ -1,13 +1,16 @@
 # Todo
 
-- [ ] adding vertex is too sensitive when near another vertex
-- [ ] Seems to be reimporting assets
+- [ ] Icons for assets that have no draw function
+- [ ] Make use of global asset list for asset manifest
+
+- [ ] named asset should not include folder and instead the name
+- [ ] Alt should show the short name of an asset (no path)
+- [ ] some meshes are hiding when i go into edit mode of other meshes
+- [ ] Adding a bone to the skeleton caused the animations to write garbage data for position
 - [ ] Text not fitting in notification box
 - [ ] Change frames to be boxes with dots like animator, so holds are longer boxes
-- [ ] not saving sort order
 - [ ] skeleton bone sort order for editor using []
 - [ ] bone scale
-- [ ] x to dissovlve vertices, faces, edges
 
 - [ ] adding vertex in edge mode causes assert
 - [ ] Add colliders to meshes
@@ -18,7 +21,6 @@
 - [ ] Animation bounds does not take into account the actual animation, just the skeleton
 - [ ] x to delete assets
 
-- [ ] Adding a bone to the skeleton caused the animations to write garbage data for position
 - [ ] moving bones in skeleton is not changing animations?
 - [ ] Bone rename is not marking modified
 - [ ] Prevent duplicate assets of same type and same name in different folders.
@@ -53,7 +55,6 @@
 - [ ] Alt-drag on asset to create instance  (draw origin in blue and outline a lighter grey)
 - [ ] Set border color
 - [ ] Why isnt it closing? (thread lock) (job system)
-- [ ] m to merge vertices (broken)
 - [ ] Light color in the editor config
 - [ ] Use TextInput for typing after move or scale command
 - [ ] Pressing g or r should stop the previous g or r and start a new one
