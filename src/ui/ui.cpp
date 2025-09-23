@@ -87,10 +87,10 @@ inline StyleSheet* GetCurrentStyleSheet()
 static Mesh* CreateElementQuad(Allocator* allocator)
 {
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddVertex(builder, {0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 1.0f});
-    AddVertex(builder, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f});
-    AddVertex(builder, {1.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
-    AddVertex(builder, {0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f});
+    AddVertex(builder, {0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f});
+    AddVertex(builder, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
+    AddVertex(builder, {1.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 1.0f});
+    AddVertex(builder, {0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 1.0f});
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
     auto mesh = CreateMesh(allocator, builder, GetName("element"));
@@ -348,7 +348,7 @@ static int RenderElement(int element_index)
             material = g_ui.element_material;
         BindMaterial(material);
         BindColor(COLOR_WHITE);
-        BindTransform({e.bounds.x, e.bounds.y}, 0.0f, {e.bounds.width, e.bounds.height});
+        BindTransform(transform * Scale({e.bounds.width, e.bounds.height}));
         DrawMesh(g_ui.element_quad);
         break;
     }
