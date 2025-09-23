@@ -1,2 +1,7 @@
+[editor]
+sort_order = 660
+position = (-1.522851,-34.515705)
+
 [shader]
-blend=true
+blend = true
+

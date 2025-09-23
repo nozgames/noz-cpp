@@ -1,3 +1,7 @@
+[editor]
+sort_order = 650
+position = (-2.524279,-34.507183)
+
 [shader]
 cull = none
 blend = true
