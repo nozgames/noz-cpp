@@ -54,6 +54,7 @@ extern u32 GetIndex(PoolAllocator* allocator, const void* ptr);
 extern bool IsFull(PoolAllocator* allocator);
 extern bool IsEmpty(PoolAllocator* allocator);
 extern u32 GetCount(PoolAllocator* allocator);
+extern bool IsValid(PoolAllocator* allocator, u32 index);
 
 // @scratch
 extern void PushScratch();

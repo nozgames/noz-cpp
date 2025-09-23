@@ -108,6 +108,14 @@ void* GetAt(PoolAllocator* allocator, u32 index)
     return (u8*)impl->items + impl->item_size * index + sizeof(AllocHeader);
 }
 
+bool IsValid(PoolAllocator* allocator, u32 index)
+{
+    assert(allocator);
+    assert(index < static_cast<PoolAllocatorImpl*>(allocator)->capacity);
+    PoolAllocatorImpl* impl = static_cast<PoolAllocatorImpl*>(allocator);
+    return impl->items_used[index];
+}
+
 u32 GetCount(PoolAllocator* allocator)
 {
     assert(allocator);
