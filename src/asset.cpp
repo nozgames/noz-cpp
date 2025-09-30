@@ -109,14 +109,18 @@ AssetSignature GetSignatureFromExtension(const char* ext)
     return signature;
 }
 
-static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name)
+static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetSignature signature)
 {
     assert(asset_name);
 
     std::filesystem::path asset_path = GetApplicationTraits()->assets_path;
+    asset_path /= GetTypeNameFromSignature(signature);
     asset_path /= asset_name->value;
 
-    if (Stream* stream = LoadStream(allocator, asset_path))
+    std::string lowercase_path = asset_path.string();
+    Lowercase(lowercase_path.data(), (u32)lowercase_path.size());
+
+    if (Stream* stream = LoadStream(allocator, lowercase_path))
         return stream;
 
     asset_path = GetBinaryDirectory();
@@ -159,7 +163,7 @@ Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSign
 
 static Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader)
 {
-    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, asset_name);
+    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, asset_name, signature);
     if (!stream)
         return nullptr;
 
@@ -191,7 +195,7 @@ void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void 
 
     assert(name);
 
-    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, name);
+    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, name, signature);
     if (!stream)
         return;
 
