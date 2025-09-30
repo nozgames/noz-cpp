@@ -10,28 +10,14 @@ extern void BindTextureInternal(Texture* texture, i32 slot);
 
 enum RenderCommandType
 {
-    RENDER_COMMAND_TYPE_BIND_MATERIAL,
     RENDER_COMMAND_TYPE_BIND_LIGHT,
-    RENDER_COMMAND_TYPE_BIND_TRANSFORM,
     RENDER_COMMAND_TYPE_BIND_VERTEX_USER,
     RENDER_COMMAND_TYPE_BIND_FRAGMENT_USER,
     RENDER_COMMAND_TYPE_BIND_CAMERA,
-    RENDER_COMMAND_TYPE_BIND_BONES,
     RENDER_COMMAND_TYPE_BIND_DEFAULT_TEXTURE,
-    RENDER_COMMAND_TYPE_BIND_COLOR,
     RENDER_COMMAND_TYPE_DRAW_MESH,
     RENDER_COMMAND_TYPE_BEGIN_PASS,
     RENDER_COMMAND_TYPE_END_PASS,
-};
-
-struct BindMaterialData
-{
-    Material* material;
-};
-
-struct BindTransformData
-{
-    Mat3 transform;
 };
 
 struct BindCameraData
@@ -39,20 +25,13 @@ struct BindCameraData
     Camera* camera;
 };
 
-struct BindBonesData
-{
-    size_t count;
-    size_t offset;
-};
-
-struct BindColorData
-{
-    Color color;
-};
-
 struct DrawMeshData
 {
     Mesh* mesh;
+    Material* material;
+    Mat3 transform;
+    float depth;
+    Color color;
 };
 
 struct BeginPassData
@@ -82,11 +61,7 @@ struct RenderCommand
     RenderCommandType type;
     union 
     {
-        BindMaterialData bind_material;
-        BindTransformData bind_transform;
         BindCameraData bind_camera;
-        BindBonesData bind_bones;
-        BindColorData bind_color;
         BindLightData bind_light;
         BindDefaultTextureData bind_default_texture;
         BeginPassData begin_pass;
@@ -102,6 +77,10 @@ struct RenderBuffer
     size_t command_count_max;
     size_t transform_count_max;
     bool is_full;
+    Material* current_material;
+    Mat3 current_transform;
+    float current_depth;
+    Color current_color;
 };
 
 static RenderBuffer* g_render_buffer = nullptr;
@@ -164,36 +143,22 @@ void BindCamera(Camera* camera)
 void BindMaterial(Material* material)
 {
     assert(material);
+    g_render_buffer->current_material = material;
+}
 
-    RenderCommand cmd = {
-        .type = RENDER_COMMAND_TYPE_BIND_MATERIAL,
-        .data = {
-            .bind_material = {
-                .material = material}} };
-
-    AddRenderCommand(&cmd);
+void BindDepth(float depth)
+{
+    g_render_buffer->current_depth = depth;
 }
 
 void BindTransform(const Vec2& position, float rotation, const Vec2& scale)
 {
-    Mat3 trs = TRS(position, rotation, scale);
-
-    RenderCommand cmd = {
-        .type = RENDER_COMMAND_TYPE_BIND_TRANSFORM,
-        .data = { .bind_transform = { .transform = trs }}
-    };
-    AddRenderCommand(&cmd);
+    g_render_buffer->current_transform = TRS(position, rotation, scale);
 }
 
 void BindTransform(const Vec2& position, const Vec2& rotation, const Vec2& scale)
 {
-    Mat3 trs = TRS(position, rotation, scale);
-
-    RenderCommand cmd = {
-        .type = RENDER_COMMAND_TYPE_BIND_TRANSFORM,
-        .data = { .bind_transform = { .transform = trs }}
-    };
-    AddRenderCommand(&cmd);
+    g_render_buffer->current_transform = TRS(position, rotation, scale);
 }
 
 void BindVertexUserData(const void* data, size_t size)
@@ -229,39 +194,22 @@ void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& s
 
 void BindTransform(Transform& transform)
 {
-    RenderCommand cmd = {
-        .type = RENDER_COMMAND_TYPE_BIND_TRANSFORM,
-        .data = { .bind_transform = { .transform = GetLocalToWorld(transform) }}
-    };
-    AddRenderCommand(&cmd);
+    g_render_buffer->current_transform = GetLocalToWorld(transform);
 }
 
 void BindTransform(const Mat3& parent_transform, const Animator& animator, int bone_index)
 {
-    RenderCommand cmd = {
-        .type = RENDER_COMMAND_TYPE_BIND_TRANSFORM,
-        .data = { .bind_transform = { .transform = parent_transform * animator.bones[bone_index] }}
-    };
-    AddRenderCommand(&cmd);
+    g_render_buffer->current_transform = parent_transform * animator.bones[bone_index];
 }
 
 void BindTransform(const Mat3& transform)
 {
-    RenderCommand cmd = {
-        .type = RENDER_COMMAND_TYPE_BIND_TRANSFORM,
-        .data = { .bind_transform = { .transform = transform }}
-    };
-    AddRenderCommand(&cmd);
+    g_render_buffer->current_transform = transform;
 }
 
 void BindColor(Color color)
 {
-    RenderCommand cmd = {
-        .type = RENDER_COMMAND_TYPE_BIND_COLOR,
-        .data = {
-            .bind_color = {
-                .color = {color.r, color.g, color.b, color.a}}} };
-    AddRenderCommand(&cmd);
+    g_render_buffer->current_color = color;
 }
 
 void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index)
@@ -276,11 +224,11 @@ void DrawMesh(Mesh* mesh, const Mat3& transform)
     DrawMesh(mesh);
 }
 
+extern void UploadMesh(Mesh* mesh);
+
 void DrawMesh(Mesh* mesh)
 {
     assert(mesh);
-
-    extern void UploadMesh(Mesh* mesh);
 
     if (!IsUploaded(mesh))
         UploadMesh(mesh);
@@ -291,7 +239,15 @@ void DrawMesh(Mesh* mesh)
         .type = RENDER_COMMAND_TYPE_DRAW_MESH,
         .data = {
             .draw_mesh = {
-                .mesh = mesh}} };
+                .mesh = mesh,
+                .material = g_render_buffer->current_material,
+                .transform = g_render_buffer->current_transform,
+                .depth = g_render_buffer->current_depth,
+                .color = g_render_buffer->current_color
+            }
+        }
+    };
+
     AddRenderCommand(&cmd);
 }
 
@@ -305,14 +261,6 @@ void ExecuteRenderCommands()
         RenderCommand* command = commands + command_index;
         switch (command->type)
         {
-        case RENDER_COMMAND_TYPE_BIND_MATERIAL:
-            BindMaterialInternal(command->data.bind_material.material);
-            break;
-
-        case RENDER_COMMAND_TYPE_BIND_TRANSFORM:
-            platform::BindTransform(command->data.bind_transform.transform);
-            break;
-
         case RENDER_COMMAND_TYPE_BIND_VERTEX_USER:
             platform::BindVertexUserData(command->data.bind_user_data.data, MAX_UNIFORM_BUFFER_SIZE);
             break;
@@ -329,11 +277,10 @@ void ExecuteRenderCommands()
             platform::BindCamera(GetViewMatrix(command->data.bind_camera.camera));
             break;
 
-        case RENDER_COMMAND_TYPE_BIND_COLOR:
-            platform::BindColor(command->data.bind_color.color);
-            break;
-
         case RENDER_COMMAND_TYPE_DRAW_MESH:
+            platform::BindColor(command->data.draw_mesh.color);
+            platform::BindTransform(command->data.draw_mesh.transform, command->data.draw_mesh.depth);
+            BindMaterialInternal(command->data.draw_mesh.material);
             RenderMesh(command->data.draw_mesh.mesh);
             break;
 

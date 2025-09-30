@@ -46,7 +46,7 @@ namespace platform
     void EndRenderFrame();
     void BeginRenderPass(Color clear_color);
     void EndRenderPass();
-    void BindTransform(const Mat3& transform);
+    void BindTransform(const Mat3& transform, float depth=0.0f);
     void BindVertexUserData(const u8* data, u32 size);
     void BindFragmentUserData(const u8* data, u32 size);
     void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color);

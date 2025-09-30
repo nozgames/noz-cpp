@@ -8,6 +8,7 @@ layout(set = 0, binding = 0, row_major) uniform CameraBuffer
 layout(set = 1, binding = 0, row_major) uniform ObjectBuffer
 {
     mat3 transform;
+    float depth;
 } object;
 
 layout(location = 0) in vec2 v_position;

@@ -5,4 +5,6 @@ position = (-2.524279,-34.507183)
 [shader]
 cull = none
 blend = true
+depth_test = true
+depth_write = true
 

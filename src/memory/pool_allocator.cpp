@@ -142,8 +142,12 @@ void Enumerate(PoolAllocator* allocator, bool (*func)(u32 index, void* item, voi
     assert(func);
     PoolAllocatorImpl* impl = static_cast<PoolAllocatorImpl*>(allocator);
 
-    for (u32 i=0; i<impl->capacity; i++)
+    int c = impl->count;
+    for (u32 i=0; i<impl->capacity && c > 0; i++)
         if (impl->items_used[i])
+        {
+            c--;
             if (!func(i, GetAt(allocator, i), user_data))
                 break;
+        }
 }
