@@ -1,7 +1,6 @@
 # Todo
 
-- [ ] named asset should not include folder and instead the name
-- [ ] not reimporting assets after then are saved
+- [ ] Grid is in front of meshes
 - [ ] Type numbers for g when moving assets
 - [ ] sort order is too unstable, causing meta files to be changed a lot
 - [ ] sort is not working
