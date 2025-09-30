@@ -25,7 +25,7 @@ void main()
     // Position  
     mat3 mvp = object.transform * camera.view_projection;
     vec3 screen_pos = vec3(v_position, 1.0) * mvp;
-    gl_Position = vec4(screen_pos.xy, 1.0f - ((object.depth + 10) / 20.0), 1.0);
+    gl_Position = vec4(screen_pos.xy, object.depth, 1.0);
 
     // Uv
     f_uv = v_uv0;
