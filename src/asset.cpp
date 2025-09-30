@@ -125,6 +125,7 @@ static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, Ass
 
     asset_path = GetBinaryDirectory();
     asset_path /= "assets";
+    asset_path /= GetTypeNameFromSignature(signature);
     asset_path /= asset_name->value;
 
     return LoadStream(allocator, asset_path);

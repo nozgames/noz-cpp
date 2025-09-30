@@ -1,7 +1,10 @@
 # Todo
 
+- [ ] named asset should not include folder and instead the name
+- [ ] not reimporting assets after then are saved
+- [ ] Type numbers for g when moving assets
+- [ ] sort order is too unstable, causing meta files to be changed a lot
 - [ ] sort is not working
-- - [ ] named asset should not include folder and instead the name
 
 - [ ] Icons for assets that have no draw function
 - [ ] Make use of global asset list for asset manifest
@@ -12,7 +15,6 @@
 - [ ] bone scale
 - [ ] Bone length in the skeleton editor
 
-- [ ] adding vertex in edge mode causes assert
 - [ ] Add colliders to meshes
 - [ ] Capture mouse while using tools like grab
 - [ ] inserting a frame with o in the middle seems to not be working
