@@ -1,5 +1,6 @@
 [shader]
 blend = true
+depth = false
 
 [editor]
 position = (-13.236111,-5.791667)

@@ -1875,10 +1875,11 @@ static bool CreateShaderInternal(
         .sampleShadingEnable = VK_FALSE,
     };
 
+    bool depth_test = (flags & SHADER_FLAGS_DEPTH) != 0;
     VkPipelineDepthStencilStateCreateInfo depth_stencil = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-        .depthTestEnable = VK_TRUE,
-        .depthWriteEnable = VK_TRUE,
+        .depthTestEnable = depth_test,
+        .depthWriteEnable = depth_test,
         .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL,
     };
 

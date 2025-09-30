@@ -15,6 +15,7 @@ bool sampler_options_equals(SamplerOptions* a, SamplerOptions* b);
 typedef u32 ShaderFlags;
 constexpr ShaderFlags SHADER_FLAGS_NONE = 0;
 constexpr ShaderFlags SHADER_FLAGS_BLEND = 1 << 0;
+constexpr ShaderFlags SHADER_FLAGS_DEPTH = 1 << 1;
 
 enum VertexRegister
 {
