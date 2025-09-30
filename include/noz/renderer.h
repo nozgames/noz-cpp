@@ -32,6 +32,8 @@ struct RendererTraits
     uint32_t shadow_map_size;
     i32 vsync;
     bool msaa;
+    float min_depth;
+    float max_depth;
 };
 
 // @texture

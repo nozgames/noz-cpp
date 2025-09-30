@@ -118,6 +118,7 @@ struct VulkanRenderer
     u32 min_uniform_buffer_offset_alignment;
     VkPipelineLayout pipeline_layout;
     u32 current_image_index;
+    float depth_conversion_factor;
 
 #ifdef _DEBUG
     VkDebugUtilsMessengerEXT debug_messenger;
@@ -1233,7 +1234,7 @@ void platform::BindTransform(const Mat3& transform, float depth)
         return;
 
     ObjectBuffer* buffer = (ObjectBuffer*)buffer_ptr;
-    buffer->depth = depth;
+    buffer->depth = 1.0f - ((depth - g_vulkan.traits.min_depth) * g_vulkan.depth_conversion_factor);
     CopyMat3ToGPU(&buffer->transform, transform);
 }
 
@@ -2149,6 +2150,7 @@ void InitVulkan(const RendererTraits* traits, HWND hwnd)
     g_vulkan = {};
     g_vulkan.traits = *traits;
     g_vulkan.hwnd = hwnd;
+    g_vulkan.depth_conversion_factor = 1.0f / (traits->max_depth - traits->min_depth);
 
     // Load Vulkan library dynamically
     if (!LoadVulkanLibrary())
