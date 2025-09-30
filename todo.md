@@ -1,16 +1,16 @@
 # Todo
 
+- [ ] sort is not working
+- - [ ] named asset should not include folder and instead the name
+
 - [ ] Icons for assets that have no draw function
 - [ ] Make use of global asset list for asset manifest
-
-- [ ] named asset should not include folder and instead the name
-- [ ] Alt should show the short name of an asset (no path)
-- [ ] some meshes are hiding when i go into edit mode of other meshes
 - [ ] Adding a bone to the skeleton caused the animations to write garbage data for position
 - [ ] Text not fitting in notification box
 - [ ] Change frames to be boxes with dots like animator, so holds are longer boxes
 - [ ] skeleton bone sort order for editor using []
 - [ ] bone scale
+- [ ] Bone length in the skeleton editor
 
 - [ ] adding vertex in edge mode causes assert
 - [ ] Add colliders to meshes
