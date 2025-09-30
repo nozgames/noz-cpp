@@ -135,3 +135,15 @@ bool IsEmpty(PoolAllocator* allocator)
     PoolAllocatorImpl* impl = static_cast<PoolAllocatorImpl*>(allocator);
     return impl->count == 0;
 }
+
+void Enumerate(PoolAllocator* allocator, bool (*func)(u32 index, void* item, void* user_data), void* user_data)
+{
+    assert(allocator);
+    assert(func);
+    PoolAllocatorImpl* impl = static_cast<PoolAllocatorImpl*>(allocator);
+
+    for (u32 i=0; i<impl->capacity; i++)
+        if (impl->items_used[i])
+            if (!func(i, GetAt(allocator, i), user_data))
+                break;
+}

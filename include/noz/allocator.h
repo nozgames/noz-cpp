@@ -55,6 +55,7 @@ extern bool IsFull(PoolAllocator* allocator);
 extern bool IsEmpty(PoolAllocator* allocator);
 extern u32 GetCount(PoolAllocator* allocator);
 extern bool IsValid(PoolAllocator* allocator, u32 index);
+extern void Enumerate(PoolAllocator* allocator, bool (*func)(u32 index, void* item, void* user_data), void* user_data=nullptr);
 
 // @scratch
 extern void PushScratch();
