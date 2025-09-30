@@ -24,8 +24,7 @@ static void LoadStyles(StyleSheetImpl* impl, Allocator* allocator, Stream* strea
         if (style.font.name[0] != 0)
         {
             char font_name[MAX_NAME_LENGTH] = {0};
-            Copy(font_name, MAX_NAME_LENGTH, "font/");
-            Copy(font_name + 5, MAX_NAME_LENGTH - 5, style.font.name);
+            Copy(font_name, MAX_NAME_LENGTH, style.font.name);
             style.font.id = GetFontIndex(GetName(font_name));
         }
         else
