@@ -1,5 +1,6 @@
 # Todo
 
+- [ ] highlight colors of selected faces in color grid  
 - [ ] Grid is in front of meshes
 - [ ] Type numbers for g when moving assets
 - [ ] sort order is too unstable, causing meta files to be changed a lot

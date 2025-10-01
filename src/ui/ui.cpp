@@ -25,6 +25,14 @@ constexpr ElementFlags ELEMENT_FLAG_MOUSE_LEAVE = 1 << 2;
 
 StyleSheet** STYLESHEET = nullptr;
 
+struct VignetteBuffer
+{
+    float intensity;
+    float smoothness;
+    float padding0;
+    float padding1;
+};
+
 struct CachedTextMesh
 {
     TextMesh* text_mesh;
@@ -102,17 +110,10 @@ static float Evaluate(const StyleLength& length, float parent_value)
 {
     switch (length.unit)
     {
-    case STYLE_LENGTH_UNIT_AUTO:
-        return parent_value;
-
-    case STYLE_LENGTH_UNIT_FIXED:
-        return length.value;
-
-    case STYLE_LENGTH_UNIT_PERCENT:
-        return parent_value * length.value;
-
-    default:
-        return 0.0f;
+    case STYLE_LENGTH_UNIT_AUTO: return parent_value;
+    case STYLE_LENGTH_UNIT_FIXED: return length.value;
+    case STYLE_LENGTH_UNIT_PERCENT: return parent_value * length.value;
+    default: return 0.0f;
     }
 }
 
@@ -175,14 +176,12 @@ static void BeginElement(ElementType type, const StyleId& style_id)
         e.local_to_world = MAT3_IDENTITY;
         e.world_to_local = MAT3_IDENTITY;
     }
-
 }
 
 void BeginElement(const StyleId& style_id)
 {
     BeginElement(ELEMENT_TYPE_NONE, style_id);
 }
-
 
 void EmptyElement(const StyleId& style_id)
 {
@@ -244,13 +243,30 @@ void RenderCanvas(const Element& e)
     BindCamera(g_ui.camera);
 }
 
-struct VignetteBuffer
+static void RenderBorder(Element& e, const Mat3& transform)
 {
-    float intensity;
-    float smoothness;
-    float padding0;
-    float padding1;
-};
+    float border_width = e.style.border_width.value;
+    BindColor(e.style.border_color.value);
+    BindMaterial(g_ui.element_material);
+    DrawMesh(
+        g_ui.element_quad,
+        transform * Scale(Vec2{e.bounds.width, border_width}));
+    DrawMesh(
+        g_ui.element_quad,
+        transform
+            * Translate(Vec2{0,e.bounds.height - border_width})
+            * Scale(Vec2{e.bounds.width, border_width}));
+    DrawMesh(
+        g_ui.element_quad,
+        transform
+            * Translate(Vec2{e.bounds.width - border_width,border_width})
+            * Scale(Vec2{border_width, e.bounds.height - border_width * 2}));
+    DrawMesh(
+        g_ui.element_quad,
+        transform
+            * Translate(Vec2{0, border_width})
+            * Scale(Vec2{border_width, e.bounds.height - border_width * 2}));
+}
 
 static int RenderElement(int element_index)
 {
@@ -259,6 +275,9 @@ static int RenderElement(int element_index)
 
     if (e.type == ELEMENT_TYPE_CANVAS)
         RenderCanvas(e);
+
+    if (e.style.border_width.value > F32_EPSILON && e.style.border_color.value.a > F32_EPSILON)
+        RenderBorder(e, transform);
 
     if (e.style.background_color.value.a > 0)
     {
@@ -957,6 +976,35 @@ void SetElementStyle(const StyleId& style_id)
 {
     GetCurrentElement().style = GetStyle(style_id);
 }
+
+void SetElementTransform(const Vec2& translate, float rotate, float scale)
+{
+    Style& s = GetCurrentElement().style;
+    s.translate_x.value = translate.x;
+    s.translate_y.value = translate.y;
+    s.rotate.value = rotate;
+    s.scale.value = scale;
+}
+
+void SetElementTranslate(const Vec2& translate)
+{
+    Style& s = GetCurrentElement().style;
+    s.translate_x.value = translate.x;
+    s.translate_y.value = translate.y;
+}
+
+void SetElementRotate(float rotate)
+{
+    Style& s = GetCurrentElement().style;
+    s.rotate.value = rotate;
+}
+
+void SetElementScale(float scale)
+{
+    Style& s = GetCurrentElement().style;
+    s.scale.value = scale;
+}
+
 
 void InitUI()
 {
