@@ -31,15 +31,15 @@ void main()
     f_uv = v_uv0;
 
     // Normal
-    vec2 transform_right = normalize(object.transform[0].xy);
-    vec2 transform_up = normalize(object.transform[1].xy);
+    vec2 transform_right = object.transform[0].xy;
+    vec2 transform_up = object.transform[1].xy;
     vec3 world_normal = vec3(
         dot(v_normal.xy, vec2(transform_right.x, transform_right.y)),
         dot(v_normal.xy, vec2(transform_up.x, transform_up.y)),
         v_normal.z
     );
-    
-    f_normal = world_normal;
+
+    f_normal = vec3(normalize(vec3(v_normal.xy, 0) * object.transform).xy, v_normal.z);
 }
 
 //@ END
@@ -65,20 +65,26 @@ layout(set = 4, binding = 0) uniform LightBuffer
 layout(set = 6, binding = 0) uniform sampler2D mainTexture;
 
 const vec3 shadow_color = vec3(0.3, 0.3, 0.6);
-const float shadow_intensity = 0.5;
-const vec3 light_color = vec3(1.1, 1.1, 1);
-const float light_intensity = 2.0;
+const float shadow_intensity = 0.1;
+const vec3 light_color = vec3(2.1, 2.1, 1);
+const float light_intensity = 0.1;
 
-void main()
-{
+vec3 light_gradient(float t, vec3 colorA, vec3 colorB, vec3 colorC) {
+    vec3 color1 = mix(colorA, colorB, clamp(t * 2.0, 0, 1));
+    vec3 color2 = mix(colorB, colorC, clamp((t - 0.5) * 2.0, 0, 1));
+    return mix(color1, color2, step(0.5, t));
+}
+
+void main() {
     float diffuse = (dot(f_normal.xy, light.direction.xy) + 1) * 0.5;
-    vec4 texColor = texture(mainTexture, f_uv) * colorData.color;
-    vec3 color = texColor.rgb * colorData.color.rgb;
-    //vec3 shadow = mix(texColor.rgb, shadow_color, (1.0f - diffuse) * shadow_intensity * f_normal.z);
-    vec3 shadow = mix(color, color * shadow_color, (1.0f - diffuse) * f_normal.z);
-    //vec3 light = mix(texColor.rgb, light_color, diffuse * light_intensity * f_normal.z);
-    vec3 light = mix(color, color * light_color, diffuse * f_normal.z);
-    outColor = vec4(mix(shadow, light, diffuse), texColor.a * colorData.color.a);
+    vec4 color = texture(mainTexture, f_uv) * colorData.color;
+/**
+    vec3 shadow = mix(color.xyz, shadow_color, shadow_intensity * f_normal.z);
+    vec3 light = mix(color.xyz, light_color, light_intensity * f_normal.z);
+*/
+    vec3 shadow = mix(color.xyz, color.xyz * shadow_color, f_normal.z);
+    vec3 light = mix(color.xyz, color.xyz * light_color, f_normal.z);
+    outColor = vec4(light_gradient(diffuse, shadow, color.xyz, light), color.a);
 }
 
 //@ END
