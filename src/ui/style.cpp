@@ -32,6 +32,8 @@ static Style g_default_style = {
     .scale = { STYLE_KEYWORD_INHERIT, 1.0f },
     .transform_origin_x = { STYLE_KEYWORD_INHERIT, 0.5f },
     .transform_origin_y = { STYLE_KEYWORD_INHERIT, 0.5f },
+    .border_color = { STYLE_KEYWORD_INHERIT, {0,0,0,0} },
+    .border_width = { STYLE_KEYWORD_INHERIT, 0.0f },
 };
 
 const Style& GetDefaultStyle()
@@ -134,6 +136,8 @@ void DeserializeStyle(Stream* stream, Style& style)
     DeserializeStyleParameter(stream, style.scale);
     DeserializeStyleParameter(stream, style.transform_origin_x);
     DeserializeStyleParameter(stream, style.transform_origin_y);
+    DeserializeStyleParameter(stream, style.border_color);
+    DeserializeStyleParameter(stream, style.border_width);
 }
 
 Style DeserializeStyle(Stream* stream)
@@ -237,6 +241,8 @@ void SerializeStyle(const Style& style, Stream* stream)
     SerializeParameter(stream, style.scale);
     SerializeParameter(stream, style.transform_origin_x);
     SerializeParameter(stream, style.transform_origin_y);
+    SerializeParameter(stream, style.border_color);
+    SerializeParameter(stream, style.border_width);
 }
 
 void MergeStyles(Style& dst, const Style& src, bool apply_defaults)
@@ -269,5 +275,7 @@ void MergeStyles(Style& dst, const Style& src, bool apply_defaults)
     STYLE_MERGE(scale);
     STYLE_MERGE(transform_origin_x);
     STYLE_MERGE(transform_origin_y);
+    STYLE_MERGE(border_color);
+    STYLE_MERGE(border_width);
 #undef STYLE_MERGE
 }

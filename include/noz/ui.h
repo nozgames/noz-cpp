@@ -137,6 +137,8 @@ struct Style
     StyleFloat scale;
     StyleFloat transform_origin_x;
     StyleFloat transform_origin_y;
+    StyleColor border_color;
+    StyleFloat border_width;
 };
 
 struct ElementInput
@@ -177,6 +179,10 @@ extern bool IsMouseOverElement();
 extern void SetElementStyle(const StyleId& style_id);
 extern bool DidMouseEnterElement();
 extern bool DidMouseLeaveElement();
+extern void SetElementTransform(const Vec2& translate, float rotate, float scale);
+extern void SetElementTranslate(const Vec2& translate);
+extern void SetElementRotate(float rotate);
+extern void SetElementScale(float scale);
 
 // @elements
 extern void EmptyElement(const StyleId& style_id = STYLE_DEFAULT);
