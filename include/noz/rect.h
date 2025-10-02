@@ -26,6 +26,8 @@ inline f32 GetBottom(const Rect& rect) { return rect.y + rect.height; }
 inline f32 GetRight(const Rect& rect) { return rect.x + rect.width; }
 inline Vec2 GetTopLeft(const Rect& rect) { return { rect.x, rect.y }; }
 inline Vec2 GetCenter(const Rect& rect) { return { rect.x + rect.width * 0.5f, rect.y + rect.height * 0.5f }; }
+inline Vec2 GetSize(const Rect& rect) { return { rect.width, rect.height }; }
+inline Rect Expand(const Rect& rect, float s) { return { rect.x - s, rect.y - s, rect.width + s * 2, rect.height + s * 2 }; }
 
 inline void SetLeft(Rect& rect, f32 value) { rect.x = value; }
 inline void SetTop(Rect& rect, f32 value) { rect.y = value; }
