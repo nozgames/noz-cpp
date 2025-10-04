@@ -39,7 +39,9 @@ void SendEditorMessage(Stream* stream)
 static void HandleHotload(Stream* input_stream)
 {
     assert(input_stream);
-    AssetLoadedEvent event = { .name = ReadName(input_stream), .signature = ReadU32(input_stream) };
+    AssetSignature signature = ReadU32(input_stream);
+    const Name* name = ReadName(input_stream);
+    const AssetLoadedEvent event = { .name = name, .signature = signature };
     Send(EVENT_HOTLOAD, &event);
 }
 

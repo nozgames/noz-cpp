@@ -1,7 +1,7 @@
-[editor]
-sort_order = 690
-position = (-13.236111,-5.791667)
-
 [shader]
 blend = true
+
+[editor]
+position = (-18.752468,-30.013460)
+sort_order = 40
 
