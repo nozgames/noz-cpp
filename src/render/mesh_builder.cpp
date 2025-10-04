@@ -223,6 +223,38 @@ void AddCircle(MeshBuilder* builder, const Vec2& center, f32 radius, int segment
         AddTriangle(builder, base_index, base_index + (u16)i + 1, base_index + (u16)i + 2);
 }
 
+void AddCircleStroke(MeshBuilder* builder, const Vec2& center, f32 radius, f32 thickness, int segments, const Vec2& uv_color)
+{
+    if (segments < 3)
+        segments = 3;
+
+    u16 base_index = static_cast<MeshBuilderImpl*>(builder)->vertex_count;
+
+    f32 inner_radius = radius - (thickness * 0.5f);
+    f32 outer_radius = radius + (thickness * 0.5f);
+
+    f32 step = noz::PI / (f32)(segments - 1);
+    for (int i = 0; i <= segments; ++i)
+    {
+        f32 angle = i * step;
+        Vec2 offset_inner = { cosf(angle) * inner_radius, sinf(angle) * inner_radius };
+        Vec2 offset_outer = { cosf(angle) * outer_radius, sinf(angle) * outer_radius };
+        AddVertex(builder, center + offset_inner, VEC3_FORWARD, uv_color);
+        AddVertex(builder, center + offset_outer, VEC3_FORWARD, uv_color);
+    }
+
+    for (int i = 0; i < segments; ++i)
+    {
+        u16 i0 = base_index + (u16)(i * 2 + 0);
+        u16 i1 = base_index + (u16)(i * 2 + 1);
+        u16 i2 = base_index + (u16)(i * 2 + 2);
+        u16 i3 = base_index + (u16)(i * 2 + 3);
+
+        AddTriangle(builder, i0, i1, i2);
+        AddTriangle(builder, i2, i1, i3);
+    }
+}
+
 void AddArc(MeshBuilder* builder, const Vec2& center, f32 radius, f32 start, f32 end, int segments, const Vec2& uv_color)
 {
     if (segments < 3)

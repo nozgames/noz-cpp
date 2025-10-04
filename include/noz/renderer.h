@@ -137,6 +137,7 @@ void AddQuad(
 void AddVertex(MeshBuilder* builder, const Vec2& position, const Vec3& normal, const Vec2& uv);
 void AddVertex(MeshBuilder* builder, const Vec2& position);
 extern void AddCircle(MeshBuilder* builder, const Vec2& center, f32 radius, int segments, const Vec2& uv_color);
+extern void AddCircleStroke(MeshBuilder* builder, const Vec2& center, f32 radius, f32 thickness, int segments, const Vec2& uv_color);
 extern void AddArc(MeshBuilder* builder, const Vec2& center, f32 radius, f32 start, f32 end, int segments, const Vec2& uv_color);
 
 // @render_buffer
