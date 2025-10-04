@@ -233,7 +233,7 @@ void AddCircleStroke(MeshBuilder* builder, const Vec2& center, f32 radius, f32 t
     f32 inner_radius = radius - (thickness * 0.5f);
     f32 outer_radius = radius + (thickness * 0.5f);
 
-    f32 step = noz::PI / (f32)(segments - 1);
+    f32 step = 2.0f * noz::PI / (f32)segments;
     for (int i = 0; i <= segments; ++i)
     {
         f32 angle = i * step;
