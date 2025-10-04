@@ -101,16 +101,20 @@ void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const N
 void ReloadShader(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
 
 #define NOZ_RELOAD_STYLESHEET(asset_name, asset) \
-    if(asset_name == incoming_name) { ReloadAsset(asset_name, ASSET_SIGNATURE_STYLE_SHEET, asset, ReloadStyleSheet); return; }
+    if(asset_name == incoming_name && incoming_signature == ASSET_SIGNATURE_STYLE_SHEET) { \
+        ReloadAsset(asset_name, ASSET_SIGNATURE_STYLE_SHEET, asset, ReloadStyleSheet); return; }
 
 #define NOZ_RELOAD_VFX(asset_name, asset) \
-    if(asset_name == incoming_name) { ReloadAsset(asset_name, ASSET_SIGNATURE_VFX, asset, ReloadVfx); return; }
+    if(asset_name == incoming_name && incoming_signature == ASSET_SIGNATURE_VFX) { \
+        ReloadAsset(asset_name, ASSET_SIGNATURE_VFX, asset, ReloadVfx); return; }
 
 #define NOZ_RELOAD_MESH(asset_name, asset) \
-    if(asset_name == incoming_name) { ReloadAsset(asset_name, ASSET_SIGNATURE_MESH, asset, ReloadMesh); return; }
+    if(asset_name == incoming_name && incoming_signature == ASSET_SIGNATURE_MESH) { \
+        ReloadAsset(asset_name, ASSET_SIGNATURE_MESH, asset, ReloadMesh); return; }
 
 #define NOZ_RELOAD_SHADER(asset_name, asset) \
-    if(asset_name == incoming_name) { ReloadAsset(asset_name, ASSET_SIGNATURE_SHADER, asset, ReloadShader); return; }
+    if(asset_name == incoming_name && incoming_signature == ASSET_SIGNATURE_SHADER) { \
+        ReloadAsset(asset_name, ASSET_SIGNATURE_SHADER, asset, ReloadShader); return; }
 
 #else
 #define NOZ_RELOAD_STYLESHEET(asset)

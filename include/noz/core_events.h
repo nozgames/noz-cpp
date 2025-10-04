@@ -13,7 +13,8 @@ struct FocusChangedEvent
     bool has_focus;
 };
 
-struct HotloadEvent
+struct AssetLoadedEvent
 {
-    const Name* asset_name;
+    const Name* name;
+    AssetSignature signature;
 };

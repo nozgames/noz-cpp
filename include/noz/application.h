@@ -39,7 +39,7 @@ struct ApplicationTraits
     RendererTraits renderer;
     bool (*load_assets)(Allocator* allocator);
     void (*unload_assets)();
-    void (*hotload_asset)(const Name* name);
+    void (*hotload_asset)(const Name* name, AssetSignature signature);
 };
 
 extern void Init(ApplicationTraits& traits);

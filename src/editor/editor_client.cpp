@@ -39,7 +39,7 @@ void SendEditorMessage(Stream* stream)
 static void HandleHotload(Stream* input_stream)
 {
     assert(input_stream);
-    HotloadEvent event = { .asset_name = ReadName(input_stream) };
+    AssetLoadedEvent event = { .name = ReadName(input_stream), .signature = ReadU32(input_stream) };
     Send(EVENT_HOTLOAD, &event);
 }
 

@@ -133,9 +133,9 @@ static void UpdateScreenSize()
 static void HandleHotload(EventId event_id, const void* event_data)
 {
     (void)event_id;
-    const HotloadEvent* hotload_event = (const HotloadEvent*)event_data;
+    const AssetLoadedEvent* hotload_event = (const AssetLoadedEvent*)event_data;
     if (g_app.traits.hotload_asset)
-        g_app.traits.hotload_asset(hotload_event->asset_name);
+        g_app.traits.hotload_asset(hotload_event->name, hotload_event->signature);
 }
 #endif
 
