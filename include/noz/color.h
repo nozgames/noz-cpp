@@ -35,6 +35,15 @@ bool color32_is_transparent(Color32* color);
 bool color32_is_opaque(Color32* color);
 bool color32_equals(Color32* a, Color32* b);
 
+inline Color ToLinear(Color srgb) {
+    return Color {
+        .r = powf(srgb.r, 2.2f),
+        .g = powf(srgb.g, 2.2f),
+        .b = powf(srgb.b, 2.2f),
+        .a = srgb.a
+    };
+}
+
 // Color24 functions
 Color24 color24_create(u8 r, u8 g, u8 b);
 Color24 color24_from_color(Color* color);

@@ -207,9 +207,10 @@ void BindTransform(const Mat3& transform)
     g_render_buffer->current_transform = transform;
 }
 
+
 void BindColor(Color color)
 {
-    g_render_buffer->current_color = color;
+    g_render_buffer->current_color = ToLinear(color);
 }
 
 void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index)
