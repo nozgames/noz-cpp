@@ -84,7 +84,7 @@ void UpdateCamera(Camera* camera)
         {
             // Height is specified, width auto-calculated
             height = top - bottom;
-            width = height * aspectRatio;
+            width = abs(height) * aspectRatio;
         }
         else
         {
@@ -126,7 +126,7 @@ void UpdateCamera(Camera* camera)
 
         // Position camera so that the viewport covers the specified extents
         Vec2 center;
-        center.x = (left + right) * 0.5f;
+        center.x = left + width * 0.5f;
         center.y = bottom + height * 0.5f; // Camera Y = bottom edge + half height
 
         Vec2 final_position = center + impl->position_offset;
@@ -134,9 +134,13 @@ void UpdateCamera(Camera* camera)
         float c = cos(impl->rotation);
         float s = sin(impl->rotation);
 
-        impl->view = Mat3{.m = {c * zoomX, -s * zoomY, 0, s * zoomX, c * zoomY, 0,
-                                -(c * final_position.x + s * final_position.y) * zoomX,
-                                -(-s * final_position.x + c * final_position.y) * zoomY, 1}};
+        impl->view = Mat3{.m = {
+            c * zoomX, -s * zoomY, 0,
+            s * zoomX, c * zoomY, 0,
+            -(c * final_position.x + s * final_position.y) * zoomX,
+            -(-s * final_position.x + c * final_position.y) * zoomY,
+            1
+        }};
     }
     else
     {
@@ -164,9 +168,12 @@ void UpdateCamera(Camera* camera)
         float c = cos(impl->rotation);
         float s = sin(impl->rotation);
         
-        impl->view = Mat3{.m = {c * zoomX, -s * zoomY, 0, s * zoomX, c * zoomY, 0,
-                                -(c * final_position.x + s * final_position.y) * zoomX,
-                                -(-s * final_position.x + c * final_position.y) * zoomY, 1}};
+        impl->view = Mat3{.m = {
+            c * zoomX, -s * zoomY, 0,
+            s * zoomX, c * zoomY, 0,
+            -(c * final_position.x + s * final_position.y) * zoomX,
+            -(-s * final_position.x + c * final_position.y) * zoomY, 1
+        }};
     }
 
     impl->inv_view = Inverse(impl->view);
@@ -193,8 +200,8 @@ void SetSize(Camera* camera, const Vec2& size)
     CameraImpl* impl = static_cast<CameraImpl*>(camera);
 
     // Convert size to extents centered around current position
-    float halfWidth = abs(size.x) * 0.5f;
-    float halfHeight = abs(size.y) * 0.5f;
+    float hw = abs(size.x) * 0.5f;
+    float hh = abs(size.y) * 0.5f;
 
     if (size.x == 0 && size.y == 0)
     {
@@ -205,20 +212,21 @@ void SetSize(Camera* camera, const Vec2& size)
     {
         // Width auto, height specified
         float sign_y = (size.y < 0) ? -1.0f : 1.0f;
-        impl->extents = Vec4{F32_MAX, F32_MAX, -halfHeight * sign_y, halfHeight * sign_y};
+        impl->extents = Vec4{F32_MAX, F32_MAX, -hh * sign_y, hh * sign_y};
+        impl->auto_size_extents = true;
     }
     else if (size.y == 0)
     {
         // Height auto, width specified
         float sign_x = (size.x < 0) ? -1.0f : 1.0f;
-        impl->extents = Vec4{-halfWidth * sign_x, halfWidth * sign_x, F32_MAX, F32_MAX};
+        impl->extents = Vec4{-hw * sign_x, hw * sign_x, F32_MAX, F32_MAX};
     }
     else
     {
         // Both dimensions specified
         float sign_x = (size.x < 0) ? -1.0f : 1.0f;
         float sign_y = (size.y < 0) ? -1.0f : 1.0f;
-        impl->extents = Vec4{-halfWidth * sign_x, halfWidth * sign_x, -halfHeight * sign_y, halfHeight * sign_y};
+        impl->extents = Vec4{-hw * sign_x, hw * sign_x, -hh * sign_y, hh * sign_y};
     }
 
     impl->dirty = true;
@@ -313,7 +321,7 @@ Bounds2 GetBounds(Camera* camera)
     else if (!auto_bottom && !auto_top)
     {
         height = top - bottom;
-        width = height * aspectRatio;
+        width = abs(height) * aspectRatio;
     }
     else
     {
