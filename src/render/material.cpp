@@ -13,6 +13,10 @@ struct MaterialImpl : Material
     Shader* shader;
     Texture** textures;
     size_t texture_count;
+    u8 vertex_data[MAX_UNIFORM_BUFFER_SIZE];
+    u8 fragment_data[MAX_UNIFORM_BUFFER_SIZE];
+    bool has_vertex_data;
+    bool has_fragment_data;
 };
 
 Material* CreateMaterial(Allocator* allocator, Shader* shader)
@@ -28,7 +32,8 @@ Material* CreateMaterial(Allocator* allocator, Shader* shader)
     MaterialImpl* impl = static_cast<MaterialImpl*>(material);
     impl->shader = shader;
     impl->texture_count = texture_count;
-    impl->textures = (Texture**)(impl + 1);
+    impl->textures = reinterpret_cast<Texture**>(impl + 1);
+    impl->name = shader->name;
     return impl;
 }
 
@@ -62,4 +67,24 @@ void BindMaterialInternal(Material* material)
         int slot = static_cast<int>(SAMPLER_REGISTER_TEX0) + static_cast<int>(i);
         BindTextureInternal(impl->textures[i], slot);
     }
+
+    if (impl->has_vertex_data)
+        platform::BindVertexUserData(impl->vertex_data, MAX_UNIFORM_BUFFER_SIZE);
+
+    if (impl->has_fragment_data)
+        platform::BindFragmentUserData(impl->fragment_data, MAX_UNIFORM_BUFFER_SIZE);
+}
+
+void SetVertexData(Material* material, const void* data, size_t size) {
+    MaterialImpl* impl = static_cast<MaterialImpl*>(material);
+    assert(size <= MAX_UNIFORM_BUFFER_SIZE);
+    memcpy(impl->vertex_data, data, size);
+    impl->has_vertex_data = true;
+}
+
+void SetFragmentData(Material* material, const void* data, size_t size) {
+    MaterialImpl* impl = static_cast<MaterialImpl*>(material);
+    assert(size <= MAX_UNIFORM_BUFFER_SIZE);
+    memcpy(impl->fragment_data,  data, size);
+    impl->has_fragment_data = true;
 }

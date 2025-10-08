@@ -310,6 +310,9 @@ extern Vec2 GetRight(const Mat3& m);
 
 // @vec2
 extern f32 Length(const Vec2& v);
+inline f32 LengthSqr(const Vec2& v) { return v.x * v.x + v.y * v.y; }
+inline f32 Distance(const Vec2& v1, const Vec2& v2) { return Length(v2 - v1); }
+inline f32 DistanceSqr(const Vec2& v1, const Vec2& v2) { return LengthSqr(v2 - v1); }
 extern Vec2 Reflect(const Vec2& v, const Vec2& normal);
 extern Vec2 Normalize(const Vec2& v);
 extern Vec2 Rotate(const Vec2& v, f32 degrees);

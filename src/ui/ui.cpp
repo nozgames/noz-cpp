@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#if 0
+
 #include "../platform.h"
 constexpr int MAX_ELEMENTS = 1024;
 constexpr int STYLE_STACK_SIZE = 16;
@@ -43,7 +45,7 @@ struct Element
 {
     ElementType type;
     ElementFlags flags;
-    Rect bounds;
+    Rect rect;
     u32 parent;
     Style style;
     Vec2 measured_size;
@@ -147,7 +149,7 @@ static void BeginElement(ElementType type, const StyleId& style_id)
     if (e.hash == hash)
     {
         bool mouse_over = Contains(
-            Bounds2{VEC2_ZERO, {e.bounds.width, e.bounds.height}},
+            Bounds2{VEC2_ZERO, {e.rect.width, e.rect.height}},
             TransformPoint(e.world_to_local, ScreenToWorld(g_ui.camera, GetMousePosition())));
         if (mouse_over)
         {
@@ -170,7 +172,7 @@ static void BeginElement(ElementType type, const StyleId& style_id)
     {
         e.hash = hash;
         e.flags = 0;
-        e.bounds = Rect(0,0,0,0);
+        e.rect = Rect(0,0,0,0);
         e.cached_total_intrinsic_size = 0.0f;
         e.cached_auto_margin_count = 0;
         e.local_to_world = MAT3_IDENTITY;
@@ -250,22 +252,22 @@ static void RenderBorder(Element& e, const Mat3& transform)
     BindMaterial(g_ui.element_material);
     DrawMesh(
         g_ui.element_quad,
-        transform * Scale(Vec2{e.bounds.width, border_width}));
+        transform * Scale(Vec2{e.rect.width, border_width}));
     DrawMesh(
         g_ui.element_quad,
         transform
-            * Translate(Vec2{0,e.bounds.height - border_width})
-            * Scale(Vec2{e.bounds.width, border_width}));
+            * Translate(Vec2{0,e.rect.height - border_width})
+            * Scale(Vec2{e.rect.width, border_width}));
     DrawMesh(
         g_ui.element_quad,
         transform
-            * Translate(Vec2{e.bounds.width - border_width,border_width})
-            * Scale(Vec2{border_width, e.bounds.height - border_width * 2}));
+            * Translate(Vec2{e.rect.width - border_width,border_width})
+            * Scale(Vec2{border_width, e.rect.height - border_width * 2}));
     DrawMesh(
         g_ui.element_quad,
         transform
             * Translate(Vec2{0, border_width})
-            * Scale(Vec2{border_width, e.bounds.height - border_width * 2}));
+            * Scale(Vec2{border_width, e.rect.height - border_width * 2}));
 }
 
 static int RenderElement(int element_index)
@@ -281,7 +283,7 @@ static int RenderElement(int element_index)
 
     if (e.style.background_color.value.a > 0)
     {
-        BindTransform(transform * Scale(Vec2{e.bounds.width, e.bounds.height}));
+        BindTransform(transform * Scale(Vec2{e.rect.width, e.rect.height}));
         BindMaterial(g_ui.element_material);
         BindColor(e.style.background_color.value);
         DrawMesh(g_ui.element_quad);
@@ -295,9 +297,9 @@ static int RenderElement(int element_index)
         };
 
         BindTransform(
-            {e.bounds.x + e.style.translate_x.value, e.bounds.y + e.style.translate_y.value},
+            {e.rect.x + e.style.translate_x.value, e.rect.y + e.style.translate_y.value},
             e.style.rotate.value,
-            Vec2{e.bounds.width, e.bounds.height} * e.style.scale.value);
+            Vec2{e.rect.width, e.rect.height} * e.style.scale.value);
         BindMaterial(g_ui.vignette_material);
         BindColor(e.style.background_vignette_color.value);
         BindFragmentUserData(&vignette, sizeof(vignette));
@@ -326,10 +328,10 @@ static int RenderElement(int element_index)
                     align_x = 0.0f;
                     break;
                 case TEXT_ALIGN_CENTER:
-                    align_x = (e.bounds.width - text_size.x) * 0.5f;
+                    align_x = (e.rect.width - text_size.x) * 0.5f;
                     break;
                 case TEXT_ALIGN_MAX:
-                    align_x = e.bounds.width - text_size.x;
+                    align_x = e.rect.width - text_size.x;
                     break;
                 }
             }
@@ -344,10 +346,10 @@ static int RenderElement(int element_index)
                     align_y = 0.0f;
                     break;
                 case TEXT_ALIGN_CENTER:
-                    align_y = (e.bounds.height - text_size.y) * 0.5f;
+                    align_y = (e.rect.height - text_size.y) * 0.5f;
                     break;
                 case TEXT_ALIGN_MAX:
-                    align_y = e.bounds.height - text_size.y;
+                    align_y = e.rect.height - text_size.y;
                     break;
                 }
             }
@@ -367,7 +369,7 @@ static int RenderElement(int element_index)
             material = g_ui.element_material;
         BindMaterial(material);
         BindColor(COLOR_WHITE);
-        BindTransform(transform * Scale({e.bounds.width, e.bounds.height}));
+        BindTransform(transform * Scale({e.rect.width, e.rect.height}));
         DrawMesh(g_ui.element_quad);
         break;
     }
@@ -378,11 +380,11 @@ static int RenderElement(int element_index)
         BindMaterial(e.material);
         BindColor(e.style.color.value);
         Vec2 mesh_scale = Vec2 {
-            e.bounds.width / (mesh_bounds.max.x - mesh_bounds.min.x),
-            -e.bounds.height / (mesh_bounds.max.y - mesh_bounds.min.y)
+            e.rect.width / (mesh_bounds.max.x - mesh_bounds.min.x),
+            -e.rect.height / (mesh_bounds.max.y - mesh_bounds.min.y)
         };
         BindTransform(
-            Vec2{e.bounds.x + -mesh_bounds.min.x * mesh_scale.x, e.bounds.y - mesh_bounds.min.y * -mesh_scale.y} + Vec2 { e.style.translate_x.value, e.style.translate_y.value },
+            Vec2{e.rect.x + -mesh_bounds.min.x * mesh_scale.x, e.rect.y - mesh_bounds.min.y * -mesh_scale.y} + Vec2 { e.style.translate_x.value, e.style.translate_y.value },
             e.style.rotate.value,
             mesh_scale * e.style.scale.value);
         DrawMesh((Mesh*)e.resource);
@@ -609,7 +611,7 @@ static void HandleInput()
             {
                 // Convert mouse to element's local space
                 Vec2 local_mouse = TransformPoint(e.world_to_local, mouse);
-                if (Contains(Bounds2{0,0,e.bounds.width, e.bounds.height}, local_mouse))
+                if (Contains(Bounds2{0,0,e.rect.width, e.rect.height}, local_mouse))
                 {
                     ConsumeButton(MOUSE_LEFT);
 
@@ -619,7 +621,7 @@ static void HandleInput()
                         input.button = MOUSE_LEFT;
                         input.mouse_position = mouse;
                         input.user_data = e.input_user_data;
-                        input.bounds = e.bounds;
+                        input.bounds = e.rect;
                         if (e.input_func(input))
                         {
                             return;
@@ -814,7 +816,7 @@ u32 Layout(u32 element_index, Rect parent_bounds)
 {
     Element& e = g_ui.elements[element_index];
     Style& style = e.style;
-    Rect& bounds = e.bounds;
+    Rect& bounds = e.rect;
     Vec2& measured_size = e.measured_size;
 
     if (e.type == ELEMENT_TYPE_CANVAS)
@@ -880,12 +882,12 @@ u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform)
     Element& e = g_ui.elements[element_index++];
 
     Vec2 pivot = {
-        e.bounds.width * e.style.transform_origin_x.value,
-        e.bounds.height * e.style.transform_origin_y.value
+        e.rect.width * e.style.transform_origin_x.value,
+        e.rect.height * e.style.transform_origin_y.value
     };
 
     Mat3 local_transform =
-        Translate({e.style.translate_x.value + e.bounds.x, e.style.translate_y.value + e.bounds.y}) *
+        Translate({e.style.translate_x.value + e.rect.x, e.style.translate_y.value + e.rect.y}) *
         Translate(pivot) *
         TRS(VEC2_ZERO, e.style.rotate.value, Vec2{e.style.scale.value, e.style.scale.value}) *
         Translate(-pivot);
@@ -1005,7 +1007,6 @@ void SetElementScale(float scale)
     s.scale.value = scale;
 }
 
-
 void InitUI()
 {
     g_ui.camera = CreateCamera(ALLOCATOR_DEFAULT);
@@ -1024,3 +1025,4 @@ void ShutdownUI()
     g_ui = {};
 }
 
+#endif

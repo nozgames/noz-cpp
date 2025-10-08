@@ -70,7 +70,12 @@ void Update(Animator& animator, float time_scale)
 
 bool IsPlaying(Animator& animator)
 {
-    return animator.animation != nullptr;
+    return animator.animation != nullptr && (animator.loop || animator.time < ((AnimationImpl*)animator.animation)->duration);
+}
+
+bool IsLooping(Animator& animator)
+{
+    return animator.loop;
 }
 
 int GetFrame(Animator& animator)

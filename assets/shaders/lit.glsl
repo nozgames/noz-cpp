@@ -76,11 +76,8 @@ vec3 light_gradient(float t, vec3 colorA, vec3 colorB, vec3 colorC) {
 }
 
 void main() {
-    float diffuse = (dot(f_normal.xy, light.direction.xy) + 1) * 0.5;
     vec4 color = texture(mainTexture, f_uv) * colorData.color;
-    vec3 shadow = mix(color.xyz, shadow_color, shadow_intensity * f_normal.z);
-    vec3 light = mix(color.xyz, light_color, light_intensity * f_normal.z);
-    outColor = vec4(light_gradient(diffuse, shadow, color.xyz, light), 1);
+    outColor = color;
 }
 
 //@ END

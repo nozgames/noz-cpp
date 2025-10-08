@@ -67,6 +67,8 @@ Material* CreateMaterial(Allocator* allocator, Shader* shader);
 Shader* GetShader(Material* material);
 void SetTexture(Material* material, Texture* texture, size_t index=0);
 Texture* GetTexture(Material* material, size_t index=0);
+void SetVertexData(Material* material, const void* data, size_t size);
+void SetFragmentData(Material* material, const void* data, size_t size);
 
 // @mesh
 struct Mesh : Asset { };
@@ -228,6 +230,7 @@ extern void Play(Animator& animator, Animation* animation, float speed=1.0f, boo
 extern void Stop(Animator& animator);
 extern void Update(Animator& animator, float time_scale=1.0f);
 extern bool IsPlaying(Animator& animator);
+extern bool IsLooping(Animator& animator);
 extern int GetFrame(Animator& animator);
 extern float GetTime(Animator& animator);
 extern float GetNormalizedTime(Animator& animator);
