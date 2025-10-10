@@ -167,7 +167,7 @@ static void IncrementChildCount() {
     g_ui.element_stack[g_ui.element_stack_count-1]->child_count++;
 }
 
-static void ExecuteChildren(Element* element, void (*children)()) {
+static void ExecuteChildren(Element* element, const std::function<void()>& children) {
     if (!children)
         return;
 
@@ -202,7 +202,7 @@ void Stack(void (*children)()) {
     ExecuteChildren(stack, children);
 }
 
-void Container(const ContainerStyle& style, void (*children)()) {
+void Container(const ContainerStyle& style, const std::function<void()>& children) {
     IncrementChildCount();
     ContainerElement* container = static_cast<ContainerElement*>(CreateElement(ELEMENT_TYPE_CONTAINER));
     container->style = style;

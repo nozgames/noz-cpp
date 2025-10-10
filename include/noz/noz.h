@@ -14,6 +14,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
+#include <functional>
 
 #include "noz_math.h"
 #include "string.h"

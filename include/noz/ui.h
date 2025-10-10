@@ -100,6 +100,7 @@ struct ContainerStyle {
     EdgeInsets padding;
     Color color;
     BorderStyle border;
+    void* user_data;
 };
 
 // @frame
@@ -110,7 +111,7 @@ extern void EndUI();
 // @layout
 extern void Canvas(const CanvasStyle& style, void (*children)());
 extern void Stack(void (*children)() = nullptr);
-extern void Container(const ContainerStyle& style, void (*children)() = nullptr);
+extern void Container(const ContainerStyle& style, const std::function<void()>& children);
 extern void Column(const ColumnStyle& style, void (*children)() = nullptr);
 extern void Row(const RowStyle& style, void (*children)() = nullptr);
 extern void Border(const BorderStyle& style, void (*children)() = nullptr);
