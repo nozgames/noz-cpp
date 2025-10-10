@@ -15,7 +15,6 @@ struct MeshImpl : Mesh
     MeshVertex* vertices;
     u16* indices;
     Bounds2 bounds;
-    Texture* texture;
 };
 
 void UploadMesh(Mesh* mesh);

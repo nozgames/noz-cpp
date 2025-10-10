@@ -60,10 +60,7 @@ set(SOURCE_FILES
     src/time.cpp
     src/text.cpp
     src/ui/ui.cpp
-    src/ui/ui2.cpp
-    src/ui/style_sheet.cpp
     src/ui/text_engine.cpp
-    src/ui/style.cpp
     src/vfx/vfx.cpp
     src/vfx/vfx_system.cpp
     src/audio/audio.cpp

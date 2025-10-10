@@ -60,3 +60,36 @@ bool OverlapPoint(Collider* collider, const Vec2& point)
 
     return true;
 }
+
+bool Raycast(Collider* colider, const Vec2& origin, const Vec2& dir, float distance, RaycastResult* result)
+{
+    ColliderImpl* impl = (ColliderImpl*)colider;
+
+    Vec2 ray_end = origin + dir * distance;
+
+    result->fraction = 1.0f;
+
+    Vec2 v1 = impl->points[impl->point_count - 1];
+    for (u32 i = 0; i < impl->point_count; i++)
+    {
+        Vec2 v2 = impl->points[i];
+
+        Vec2 where;
+        if (OverlapLine(origin, ray_end, v1, v2, &where))
+        {
+            float fraction = Distance(where, origin) / distance;
+            if (fraction < result->fraction)
+            {
+                result->point = where;
+                result->fraction = fraction;
+
+                Vec2 edge = v2 - v1;
+                result->normal = Normalize(Vec2(-edge.y, edge.x));
+            }
+        }
+
+        v1 = v2;
+    }
+
+    return result->fraction < 1.0f;
+}

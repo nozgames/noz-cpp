@@ -25,11 +25,9 @@ enum ColliderType
 // @structs
 struct RaycastResult
 {
-    bool hit;
     Vec2 point;
     Vec2 normal;
     float fraction;
-    void* user_data;
 };
 
 // @physics
