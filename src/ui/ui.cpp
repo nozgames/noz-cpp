@@ -488,8 +488,25 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
     Element* e = g_ui.elements[element_index++];
     assert(e);
 
-    e->rect.width = constraints.x;
-    e->rect.height = constraints.y;
+    // Apply margin constraints - margins reduce available space
+    Vec2 margin_constrained = constraints;
+    EdgeInsets margin = {};
+
+    if (e->type == ELEMENT_TYPE_CONTAINER) {
+        ContainerElement* container = static_cast<ContainerElement*>(e);
+        margin = container->style.margin;
+    } else if (e->type == ELEMENT_TYPE_ALIGN) {
+        AlignElement* align = static_cast<AlignElement*>(e);
+        margin = align->style.margin;
+    }
+
+    if (margin_constrained.x != F32_MAX)
+        margin_constrained.x -= (margin.left + margin.right);
+    if (margin_constrained.y != F32_MAX)
+        margin_constrained.y -= (margin.top + margin.bottom);
+
+    e->rect.width = margin_constrained.x;
+    e->rect.height = margin_constrained.y;
 
     if (e->type == ELEMENT_TYPE_CONTAINER) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
@@ -514,6 +531,15 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
     if (e->child_count == 0) {
         if (e->rect.width == F32_MAX) e->rect.width = 0;
         if (e->rect.height == F32_MAX) e->rect.height = 0;
+
+        // Add margin to final size
+        e->rect.width += margin.left + margin.right;
+        e->rect.height += margin.top + margin.bottom;
+
+        // Offset position by margin
+        e->rect.x += margin.left;
+        e->rect.y += margin.top;
+
         return element_index;
     }
 
@@ -528,6 +554,14 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
 
     if (e->rect.width == F32_MAX) e->rect.width = 0;
     if (e->rect.height == F32_MAX) e->rect.height = 0;
+
+    // Add margin to final size
+    e->rect.width += margin.left + margin.right;
+    e->rect.height += margin.top + margin.bottom;
+
+    // Offset position by margin
+    e->rect.x += margin.left;
+    e->rect.y += margin.top;
 
     return element_index;
 }
