@@ -11,8 +11,10 @@ extern void UpdateInputState(InputSet* input_set);
 enum ElementType : u8 {
     ELEMENT_TYPE_UNKNOWN = 0,
     ELEMENT_TYPE_NONE,
+    ELEMENT_TYPE_ALIGN,
     ELEMENT_TYPE_BORDER,
     ELEMENT_TYPE_CANVAS,
+    ELEMENT_TYPE_CENTER,
     ELEMENT_TYPE_COLUMN,
     ELEMENT_TYPE_CONTAINER,
     ELEMENT_TYPE_EXPANDED,
@@ -41,11 +43,13 @@ struct Element {
     ElementState state;
     u32 index;
     Rect rect;
-    Rect rect_with_margins;
     u32 child_count;
-    Vec2 measured_size;
     Mat3 local_to_world;
     Mat3 world_to_local;
+};
+
+struct AlignElement : Element {
+    AlignStyle style;
 };
 
 struct BorderElement : Element {
@@ -91,6 +95,10 @@ struct RectangleElement : Element {
     RectangleStyle style;
 };
 
+struct SizedBoxElement : Element {
+    SizedBoxStyle style;
+};
+
 struct StackElement : Element {
 };
 
@@ -110,6 +118,7 @@ struct TransformElement : Element {
 
 union FatElement {
     Element element;
+    AlignElement align;
     BorderElement border;
     CanvasElement canvas;
     ColumnElement column;
@@ -121,6 +130,7 @@ union FatElement {
     ImageElement image;
     InsetElement inset;
     RowElement row;
+    SizedBoxElement sized_box;
 };
 
 struct UI {
@@ -176,13 +186,25 @@ static void ExecuteChildren(Element* element, const std::function<void()>& child
     PopElement();
 }
 
-void Canvas(const CanvasStyle& style, void (*children)()) {
+void Align(const AlignStyle& style, const std::function<void()>& children) {
+    AlignElement* e = static_cast<AlignElement*>(CreateElement(ELEMENT_TYPE_ALIGN));
+    e->style = style;
+    ExecuteChildren(e, children);
+}
+
+void Canvas(const CanvasStyle& style, const std::function<void()>& children) {
     CanvasElement* canvas = static_cast<CanvasElement*>(CreateElement(ELEMENT_TYPE_CANVAS));
     canvas->style = style;
     ExecuteChildren(canvas, children);
 }
 
-void Row(const RowStyle& style, void (*children)()) {
+void Center(const std::function<void()>& children) {
+    IncrementChildCount();
+    Element* center = CreateElement(ELEMENT_TYPE_CENTER);
+    ExecuteChildren(center, children);
+}
+
+void Row(const RowStyle& style, const std::function<void()>& children) {
     IncrementChildCount();
     RowElement* row = static_cast<RowElement*>(CreateElement(ELEMENT_TYPE_ROW));
     row->style = style;
@@ -314,6 +336,13 @@ void Rectangle(const RectangleStyle& style) {
     rectangle->style = style;
 }
 
+void SizedBox(const SizedBoxStyle& style, const std::function<void()>& children) {
+    IncrementChildCount();
+    SizedBoxElement* e = static_cast<SizedBoxElement*>(CreateElement(ELEMENT_TYPE_SIZED_BOX));
+    e->style = style;
+    ExecuteChildren(e, children);
+}
+
 void Transformed(const TransformStyle& style, void (*children)()) {
     IncrementChildCount();
     TransformElement* transform = static_cast<TransformElement*>(CreateElement(ELEMENT_TYPE_TRANSFORM));
@@ -321,61 +350,7 @@ void Transformed(const TransformStyle& style, void (*children)()) {
     ExecuteChildren(transform, children);
 }
 
-#if 0
-static int MeasureElement(int element_index, const Vec2& available_size) {
-    Element* e = g_ui.elements[element_index++];
-
-    Vec2 adjusted_size = available_size;
-
-    if (e->type == ELEMENT_TYPE_CONTAINER) {
-        ContainerElement* c = static_cast<ContainerElement*>(e);
-        adjusted_size.x -= (c->style.padding.left + c->style.padding.right);
-        adjusted_size.y -= (c->style.padding.top + c->style.padding.bottom);
-    } else if (e->type == ELEMENT_TYPE_INSET) {
-        InsetElement* inset = static_cast<InsetElement*>(e);
-        adjusted_size.x -= (inset->insets.left + inset->insets.right);
-        adjusted_size.y -= (inset->insets.top + inset->insets.bottom);
-    } else if (e->type == ELEMENT_TYPE_ROW) {
-        RowElement* row = static_cast<RowElement*>(e);
-        adjusted_size.x -= row->style.spacing * Max(0, static_cast<int>(e->child_count) - 1);
-    } else if (e->type == ELEMENT_TYPE_COLUMN) {
-        ColumnElement* column = static_cast<ColumnElement*>(e);
-        adjusted_size.y -= column->style.spacing * Max(0, static_cast<int>(e->child_count) - 1);
-    } else if (e->type == ELEMENT_TYPE_LABEL) {
-        LabelElement* l = static_cast<LabelElement*>(e);
-        if (l->cached_mesh) {
-            Vec2 text_size = GetSize(l->cached_mesh->text_mesh);
-            e->measured_size = {
-                l->style.align == TEXT_ALIGN_MIN ? text_size.x : adjusted_size.x,
-                l->style.vertical_align == TEXT_ALIGN_MIN ? text_size.y : adjusted_size.y
-            };
-        } else {
-            e->measured_size = {0,0};
-        }
-    } else if (e->type == ELEMENT_TYPE_IMAGE) {
-        ImageElement* i = static_cast<ImageElement*>(e);
-        if (i->mesh) {
-            Vec2 mesh_size = GetSize(i->mesh);
-            e->measured_size = {
-                Min(mesh_size.x, adjusted_size.x),
-                Min(mesh_size.y, adjusted_size.y)
-            };
-        } else {
-            e->measured_size = {0,0};
-        }
-        return element_index;
-    } else if (e->type == ELEMENT_TYPE_EXPANDED) {
-        e->measured_size = adjusted_size;
-    }
-
-    for (u32 child_index = 0; child_index < e->child_count; child_index++)
-        element_index = MeasureElement(element_index, adjusted_size);
-
-    return element_index;
-}
-#endif
-
-static int LayoutElement(int element_index, const Rect& rect);
+static int LayoutElement(int element_index, const Vec2& constraints, Element* parent);
 
 static int SkipElement(int element_index) {
     Element* e = g_ui.elements[element_index++];
@@ -384,12 +359,37 @@ static int SkipElement(int element_index) {
     return element_index;
 }
 
-static int LayoutChildren(int element_index, Element* parent, const Rect& content_rect) {
-    Rect available_rect = content_rect;
+static void ApplyAlignment(Element* e, const Alignment& align, u32 element_stack_start, u32 element_stack_count) {
+    for (u32 i = 0; i < element_stack_count; i++) {
+        Element* child = g_ui.element_stack[element_stack_start + i];
+        Vec2 offset = {
+            (e->rect.width - child->rect.width) * 0.5f * (align.x + 1.0f),
+            (e->rect.height - child->rect.height) * 0.5f * (align.y + 1.0f)
+        };
+        child->rect.x += offset.x;
+        child->rect.y += offset.y;
+    }
+}
+
+static int LayoutChildren(int element_index, Element* parent, const Vec2& size) {
+    Vec2 child_offset = {};
+    Vec2 consumed_size = {};
+    Vec2 max_size = {};
 
     u32 flex_element_count = 0;
     float flex_total = 0.0f;
     u32 element_stack_start = g_ui.element_stack_count;
+
+    Vec2 constraints = size;
+    if (parent->type == ELEMENT_TYPE_ROW) {
+        constraints.x = F32_MAX;
+    } else if (parent->type == ELEMENT_TYPE_COLUMN) {
+        constraints.y = F32_MAX;
+    } else if (parent->type == ELEMENT_TYPE_ALIGN || parent->type == ELEMENT_TYPE_CENTER) {
+        constraints.x = F32_MAX;
+        constraints.y = F32_MAX;
+    }
+
     for (u32 i = 0; i < parent->child_count; i++) {
         Element* child = g_ui.elements[element_index++];
         g_ui.element_stack[g_ui.element_stack_count++] = child;
@@ -401,54 +401,81 @@ static int LayoutChildren(int element_index, Element* parent, const Rect& conten
             continue;
         }
 
-        element_index = LayoutElement(element_index - 1, available_rect);
+        element_index = LayoutElement(element_index - 1, constraints, parent);
+
+        child->rect.x = child_offset.x;
+        child->rect.y = child_offset.y;
 
         if (parent->type == ELEMENT_TYPE_ROW) {
-            RowElement* row = static_cast<RowElement*>(parent);
-            available_rect.x += child->rect_with_margins.width + row->style.spacing;
-            available_rect.width -= child->rect_with_margins.width;
+            child_offset.x += child->rect.width;
+            consumed_size.x += child->rect.width;
         } else if (parent->type == ELEMENT_TYPE_COLUMN) {
-            ColumnElement* column = static_cast<ColumnElement*>(parent);
-            available_rect.y += child->rect_with_margins.height + column->style.spacing;
-            available_rect.height -= child->rect_with_margins.height;
+            child_offset.y += child->rect.height;
+            consumed_size.y += child->rect.height;
         }
+
+        max_size = {
+            Max(max_size.x, child->rect.width),
+            Max(max_size.y, child->rect.height)
+        };
     }
 
-    if (flex_element_count > 0 && parent->type == ELEMENT_TYPE_ROW) {
+    if (flex_element_count > 0 && parent->type == ELEMENT_TYPE_ROW && size.x != F32_MAX) {
         float offset = 0.0f;
         for (u32 i = 0; i < parent->child_count; i++) {
             Element* child = g_ui.element_stack[element_stack_start + i];
             if (child->type != ELEMENT_TYPE_EXPANDED) {
                 child->rect.x += offset;
-                available_rect.x = child->rect.x + child->rect.width;
+                child_offset.x = child->rect.x + child->rect.width;
                 continue;
             }
 
             ExpandedElement* expanded = static_cast<ExpandedElement*>(child);
-            Rect flex_rect = available_rect;
-            flex_rect.width = available_rect.width * (expanded->style.flex / flex_total);
-            LayoutElement(child->index, available_rect);
+            Vec2 expanded_size = { consumed_size.x * (expanded->style.flex / flex_total), size.y };
+            LayoutElement(child->index, expanded_size, parent);
 
-            available_rect.x += flex_rect.width;
-            offset += flex_rect.width;
+            child_offset.x += expanded_size.x;
+            offset += expanded_size.x;
         }
-    } else if (flex_element_count > 0 && parent->type == ELEMENT_TYPE_COLUMN) {
+
+        max_size.x = child_offset.x;
+    } else if (flex_element_count > 0 && parent->type == ELEMENT_TYPE_COLUMN && size.y != F32_MAX) {
         float offset = 0.0f;
         for (u32 i = 0; i < parent->child_count; i++) {
             Element* child = g_ui.element_stack[element_stack_start + i];
             if (child->type != ELEMENT_TYPE_EXPANDED) {
                 child->rect.y += offset;
-                available_rect.y = child->rect.y + child->rect.height;
+                child_offset.y = child->rect.y + child->rect.height;
                 continue;
             }
 
             ExpandedElement* expanded = static_cast<ExpandedElement*>(child);
-            Rect flex_rect = available_rect;
-            flex_rect.height = available_rect.height * (expanded->style.flex / flex_total);
-            LayoutElement(child->index, flex_rect);
+            Vec2 expanded_size = { size.x, consumed_size.y * (expanded->style.flex / flex_total) };
+            LayoutElement(child->index, expanded_size, parent);
 
-            available_rect.y += flex_rect.height;
-            offset += flex_rect.height;
+            child_offset.y += expanded_size.y;
+            offset += expanded_size.y;
+        }
+
+        max_size.y = child_offset.y;
+    }
+
+    if (parent->rect.width == F32_MAX)
+        parent->rect.width = max_size.x;
+    if (parent->rect.height == F32_MAX)
+        parent->rect.height = max_size.y;
+
+    else if (parent->type == ELEMENT_TYPE_CENTER) {
+        ApplyAlignment(parent, ALIGNMENT_CENTER, element_stack_start, parent->child_count);
+    } else if (parent->type == ELEMENT_TYPE_ALIGN) {
+        AlignElement* align = static_cast<AlignElement*>(parent);
+        ApplyAlignment(parent, align->style.alignment, element_stack_start, parent->child_count);
+    } else if (parent->type == ELEMENT_TYPE_CONTAINER) {
+        ContainerElement* container = static_cast<ContainerElement*>(parent);
+        for (u32 i = 0; i < parent->child_count; i++) {
+            Element* child = g_ui.element_stack[element_stack_start + i];
+            child->rect.x += container->style.padding.left;
+            child->rect.y += container->style.padding.top;
         }
     }
 
@@ -457,65 +484,52 @@ static int LayoutChildren(int element_index, Element* parent, const Rect& conten
     return element_index;
 }
 
-static int LayoutElement(int element_index, const Rect& rect) {
+static int LayoutElement(int element_index, const Vec2& constraints, Element* ) {
     Element* e = g_ui.elements[element_index++];
     assert(e);
 
-    e->rect = rect;
-    e->rect_with_margins = rect;
+    e->rect.width = constraints.x;
+    e->rect.height = constraints.y;
 
     if (e->type == ELEMENT_TYPE_CONTAINER) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
-        Vec2 margin = {
-            container->style.margin.left + container->style.margin.right,
-            container->style.margin.top + container->style.margin.bottom
-        };
-        e->rect.height = Min(container->style.height, e->rect.height - margin.y);
-        e->rect.width = Min(container->style.width, e->rect.width - margin.x);
-        e->rect.x += container->style.margin.left;
-        e->rect.y += container->style.margin.top;
-        e->rect_with_margins.width = e->rect.width + margin.x;
-        e->rect_with_margins.height = e->rect.height + margin.y;
-    }
-
-    if (e->type == ELEMENT_TYPE_LABEL) {
+        e->rect.width = Min(container->style.width, e->rect.width);
+        e->rect.height = Min(container->style.height, e->rect.height);
+    } else if (e->type == ELEMENT_TYPE_SIZED_BOX) {
+        SizedBoxElement* sized_box = static_cast<SizedBoxElement*>(e);
+        e->rect.width = Min(sized_box->style.width, e->rect.width);
+        e->rect.height = Min(sized_box->style.height, e->rect.height);
+    } else if (e->type == ELEMENT_TYPE_LABEL) {
         LabelElement* l = static_cast<LabelElement*>(e);
         Vec2 text_size = GetSize(l->cached_mesh->text_mesh);
-        if (l->style.align == TEXT_ALIGN_MIN) e->rect.width = text_size.x;
-        if (l->style.vertical_align == TEXT_ALIGN_MIN) e->rect.height = text_size.y;
+        if (e->rect.width == F32_MAX) e->rect.width = text_size.x;
+        if (e->rect.height == F32_MAX) e->rect.height = text_size.y;
 
-        if (l->style.align == TEXT_ALIGN_CENTER) {
-            l->offset.x = (e->rect.width - text_size.x) * 0.5f;
-        } else if (l->style.align == TEXT_ALIGN_MAX) {
-            l->offset.x = e->rect.width - text_size.x;
-        }
-
-        if (l->style.vertical_align == TEXT_ALIGN_CENTER) {
-            l->offset.y = (e->rect.height - text_size.y) * 0.5f;
-        } else if (l->style.vertical_align == TEXT_ALIGN_MAX) {
-            l->offset.y = e->rect.height - text_size.y;
-        }
+        if (text_size.x < e->rect.width)
+            l->offset.x = (e->rect.width - text_size.x) * 0.5f * (l->style.align.x + 1.0f);
+        if (text_size.y < e->rect.height)
+            l->offset.y = (e->rect.height - text_size.y) * 0.5f * (l->style.align.y + 1.0f);
     }
 
-    if (e->child_count == 0)
+    if (e->child_count == 0) {
+        if (e->rect.width == F32_MAX) e->rect.width = 0;
+        if (e->rect.height == F32_MAX) e->rect.height = 0;
         return element_index;
-
-    Rect content_rect = {0, 0, e->rect.width, e->rect.height};
-    if (e->type == ELEMENT_TYPE_INSET) {
-        InsetElement* inset = static_cast<InsetElement*>(e);
-        content_rect.x += inset->insets.left;
-        content_rect.y += inset->insets.top;
-        content_rect.width -= (inset->insets.left + inset->insets.right);
-        content_rect.height -= (inset->insets.top + inset->insets.bottom);
-    } else if (e->type == ELEMENT_TYPE_CONTAINER) {
-        ContainerElement* container = static_cast<ContainerElement*>(e);
-        content_rect.x += container->style.padding.left;
-        content_rect.y += container->style.padding.top;
-        content_rect.width -= (container->style.padding.left + container->style.padding.right);
-        content_rect.height -= (container->style.padding.top + container->style.padding.bottom);
     }
 
-    return LayoutChildren(element_index, e, content_rect);
+    Vec2 child_constraints = GetSize(e->rect);
+    if (e->type == ELEMENT_TYPE_CONTAINER) {
+        ContainerElement* container = static_cast<ContainerElement*>(e);
+        if (child_constraints.x != F32_MAX) child_constraints.x -= (container->style.padding.left  + container->style.padding.right);
+        if (child_constraints.y != F32_MAX) child_constraints.y -= (container->style.padding.top   + container->style.padding.bottom);
+    }
+
+    element_index = LayoutChildren(element_index, e, GetSize(e->rect));
+
+    if (e->rect.width == F32_MAX) e->rect.width = 0;
+    if (e->rect.height == F32_MAX) e->rect.height = 0;
+
+    return element_index;
 }
 
 static u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform)
@@ -586,6 +600,9 @@ static void RenderBorder(Element& e, const Mat3& transform)
 
 static void RenderBackground(const Rect& rect, const Mat3& transform, const Color& color)
 {
+    if (color.a <= 0.0f)
+        return;
+
     BindTransform(transform * Scale(Vec2{rect.width, rect.height}));
     BindMaterial(g_ui.element_material);
     BindColor(color);
@@ -727,11 +744,8 @@ static void HandleInput()
 
 void EndUI()
 {
-    Rect rect = {0, 0, g_ui.ortho_size.x, g_ui.ortho_size.y};
-    // for (u32 element_index=0; element_index < g_ui.element_count; element_index++)
-    //     element_index = MeasureElement(element_index, g_ui.ortho_size);
-    for (u32 element_index=0; element_index < g_ui.element_count; element_index++)
-        element_index = LayoutElement(element_index, rect);
+    for (u32 element_index=0; element_index < g_ui.element_count; )
+        element_index = LayoutElement(element_index, g_ui.ortho_size, nullptr);
     for (u32 element_index=0; element_index < g_ui.element_count; )
         element_index = CalculateTransforms(element_index, MAT3_IDENTITY);
 

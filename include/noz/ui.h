@@ -34,6 +34,22 @@ struct EdgeInsets {
     EdgeInsets(float v) : top(v), left(v), bottom(v), right(v) {}
 };
 
+struct Alignment {
+    float x; // -1.0 (min) to 1.0 (max)
+    float y; // -1.0 (min) to 1.0 (max)
+};
+
+constexpr Alignment ALIGNMENT_TOP_LEFT      = { -1.0f, -1.0f };
+constexpr Alignment ALIGNMENT_TOP_CENTER    = {  0.0f, -1.0f };
+constexpr Alignment ALIGNMENT_TOP_RIGHT     = {  1.0f, -1.0f };
+constexpr Alignment ALIGNMENT_CENTER        = {  0.0f,  0.0f };
+constexpr Alignment ALIGNMENT_CENTER_LEFT   = {  0.0f, -1.0f };
+
+struct AlignStyle {
+    Alignment alignment;
+    EdgeInsets margin;
+};
+
 struct RowStyle {
     float spacing = 0.0f;
 };
@@ -64,8 +80,7 @@ struct LabelStyle {
     Font* font = nullptr;
     int font_size = 16;
     Color color = COLOR_WHITE;
-    TextAlign align = TEXT_ALIGN_MIN;
-    TextAlign vertical_align = TEXT_ALIGN_MIN;
+    Alignment align = ALIGNMENT_TOP_LEFT;
 };
 
 struct MouseRegionStyle {
@@ -89,6 +104,11 @@ struct RectangleStyle {
     AnimatedColorFunc color_func = nullptr;
 };
 
+struct SizedBoxStyle {
+    float width = F32_MAX;
+    float height = F32_MAX;
+};
+
 struct CanvasStyle {
     Color color;
 };
@@ -109,15 +129,19 @@ extern void DrawUI();
 extern void EndUI();
 
 // @layout
-extern void Canvas(const CanvasStyle& style, void (*children)());
+extern void Align(const AlignStyle& style, const std::function<void()>& children = nullptr);
+extern void Canvas(const CanvasStyle& style, const std::function<void()>& children = nullptr);
+inline void Canvas(const std::function<void()>& children = nullptr) { Canvas({}, children); }
 extern void Stack(void (*children)() = nullptr);
-extern void Container(const ContainerStyle& style, const std::function<void()>& children);
+extern void Container(const ContainerStyle& style, const std::function<void()>& children=nullptr);
 extern void Column(const ColumnStyle& style, void (*children)() = nullptr);
-extern void Row(const RowStyle& style, void (*children)() = nullptr);
+extern void Row(const RowStyle& style, const std::function<void()>& children = nullptr);
+inline void Row(const std::function<void()>& children = nullptr) { Row({}, children); }
 extern void Border(const BorderStyle& style, void (*children)() = nullptr);
 extern void Inset(const EdgeInsets& insets, void (*children)() = nullptr);
 extern void Inset(float amount, void (*children)() = nullptr);
-extern void SizedBox(int width, int height, void (*children)() = nullptr);
+extern void SizedBox(const SizedBoxStyle& style, const std::function<void()>& children = nullptr);
+extern void Center(const std::function<void()>& children);
 
 // @modifiers
 extern void Transformed(const TransformStyle& style, void (*children)() = nullptr);
@@ -132,3 +156,8 @@ extern void Label(const char* text, const LabelStyle& style = {});
 extern void Image(Material* material, const ImageStyle& style = {});
 extern void Image(Material* material, Mesh* mesh, const ImageStyle& style = {});
 extern void Rectangle(const RectangleStyle& style = {});
+
+// @edgeinsets
+inline EdgeInsets EdgeInsetsTop(float v) { return EdgeInsets(v, 0, 0, 0); }
+inline EdgeInsets EdgeInsetsTopLeft(float t, float l) { return EdgeInsets(t, l, 0, 0); }
+inline EdgeInsets EdgeInsetsBottom(float v) { return EdgeInsets(0, 0, v, 0); }

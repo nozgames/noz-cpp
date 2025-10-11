@@ -4,16 +4,14 @@
 
 #pragma once
 
-struct Rect
-{
+struct Rect {
     f32 x;
     f32 y;
     f32 width;
     f32 height;
 };
 
-struct RectInt
-{
+struct RectInt {
     i32 x;
     i32 y;
     i32 width;
@@ -43,8 +41,7 @@ inline i32 GetRight(const RectInt& rect) { return rect.x + rect.width; }
 inline i32 GetTop(const RectInt& rect) { return rect.y; }
 inline i32 GetBottom(const RectInt& rect) { return rect.y + rect.height; }
 
-inline bool Intersects(const Rect& rect, const Rect& other)
-{
+inline bool Intersects(const Rect& rect, const Rect& other) {
     return !(other.x > rect.x + rect.width || other.x + other.width < rect.x ||
              other.y > rect.y + rect.height || other.y + other.height < rect.y);
 }

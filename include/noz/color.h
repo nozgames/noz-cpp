@@ -104,9 +104,16 @@ constexpr Vec2 ColorUV(int col, int row)
     };
 }
 
-constexpr Color Color32ToColor(u8 r, u8 g, u8 b, u8 a)
-{
+constexpr Color Color32ToColor(u8 r, u8 g, u8 b, u8 a) {
     return { r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f };
+}
+
+constexpr Color Color24ToColor(u32 rgb) {
+    return Color32ToColor((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, 255);
+}
+
+constexpr Color Color32ToColor(u32 rgba) {
+    return Color32ToColor((rgba >> 24) & 0xFF, (rgba >> 16) & 0xFF, (rgba >> 8) & 0xFF, rgba & 0xFF);
 }
 
 constexpr Color COLOR_BLACK = {0.0f, 0.0f, 0.0f, 1.0f};
