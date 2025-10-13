@@ -44,6 +44,8 @@ constexpr Alignment ALIGNMENT_TOP_CENTER    = {  0.0f, -1.0f };
 constexpr Alignment ALIGNMENT_TOP_RIGHT     = {  1.0f, -1.0f };
 constexpr Alignment ALIGNMENT_CENTER        = {  0.0f,  0.0f };
 constexpr Alignment ALIGNMENT_CENTER_LEFT   = {  0.0f, -1.0f };
+constexpr Alignment ALIGNMENT_BOTTOM_LEFT   = { -1.0f,  1.0f };
+constexpr Alignment ALIGNMENT_BOTTOM_RIGHT  = {  1.0f,  1.0f };
 
 struct AlignStyle {
     Alignment alignment;
@@ -135,6 +137,7 @@ inline void Canvas(const std::function<void()>& children = nullptr) { Canvas({},
 extern void Stack(void (*children)() = nullptr);
 extern void Container(const ContainerStyle& style, const std::function<void()>& children=nullptr);
 extern void Column(const ColumnStyle& style, void (*children)() = nullptr);
+inline void Column(void (*children)() = nullptr) { Column({}, children); }
 extern void Row(const RowStyle& style, const std::function<void()>& children = nullptr);
 inline void Row(const std::function<void()>& children = nullptr) { Row({}, children); }
 extern void Border(const BorderStyle& style, void (*children)() = nullptr);
@@ -146,6 +149,7 @@ extern void Center(const std::function<void()>& children);
 // @modifiers
 extern void Transformed(const TransformStyle& style, void (*children)() = nullptr);
 extern void Expanded(const ExpandedStyle& style, void (*children)() = nullptr);
+inline void Expanded(void (*children)() = nullptr) { Expanded({}, children); }
 
 // @input
 extern void GestureDetector(const GestureDetectorStyle& style, void (*children)() = nullptr);
@@ -161,3 +165,5 @@ extern void Rectangle(const RectangleStyle& style = {});
 inline EdgeInsets EdgeInsetsTop(float v) { return EdgeInsets(v, 0, 0, 0); }
 inline EdgeInsets EdgeInsetsTopLeft(float t, float l) { return EdgeInsets(t, l, 0, 0); }
 inline EdgeInsets EdgeInsetsBottom(float v) { return EdgeInsets(0, 0, v, 0); }
+inline EdgeInsets EdgeInsetsAll(float v) { return EdgeInsets(v, v, v, v); }
+inline EdgeInsets EdgeInsetsRight(float v) { return EdgeInsets(0,0,0,v); }

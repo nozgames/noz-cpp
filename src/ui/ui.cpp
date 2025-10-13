@@ -359,15 +359,26 @@ static int SkipElement(int element_index) {
     return element_index;
 }
 
+static EdgeInsets GetMargin(Element* e) {
+    if (e->type == ELEMENT_TYPE_CONTAINER) {
+        return static_cast<ContainerElement*>(e)->style.margin;
+    } else if (e->type == ELEMENT_TYPE_ALIGN) {
+        return static_cast<AlignElement*>(e)->style.margin;
+    }
+    return {};
+}
+
 static void ApplyAlignment(Element* e, const Alignment& align, u32 element_stack_start, u32 element_stack_count) {
+    EdgeInsets parent_margin = GetMargin(e);
     for (u32 i = 0; i < element_stack_count; i++) {
         Element* child = g_ui.element_stack[element_stack_start + i];
-        Vec2 offset = {
-            (e->rect.width - child->rect.width) * 0.5f * (align.x + 1.0f),
-            (e->rect.height - child->rect.height) * 0.5f * (align.y + 1.0f)
-        };
-        child->rect.x += offset.x;
-        child->rect.y += offset.y;
+        EdgeInsets child_margin = GetMargin(child);
+        // Calculate available space excluding parent's margins
+        float available_width = e->rect.width - parent_margin.left - parent_margin.right;
+        float available_height = e->rect.height - parent_margin.top - parent_margin.bottom;
+        // Calculate final position including both parent and child margins
+        child->rect.x = parent_margin.left + child_margin.left + (available_width - child->rect.width - child_margin.left - child_margin.right) * 0.5f * (align.x + 1.0f);
+        child->rect.y = parent_margin.top + child_margin.top + (available_height - child->rect.height - child_margin.top - child_margin.bottom) * 0.5f * (align.y + 1.0f);
     }
 }
 
@@ -403,20 +414,38 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
 
         element_index = LayoutElement(element_index - 1, constraints, parent);
 
-        child->rect.x = child_offset.x;
-        child->rect.y = child_offset.y;
+        EdgeInsets child_margin = GetMargin(child);
+
+        // ALIGN/CENTER children handle their own margins internally, so don't add margin offsets
+        bool child_handles_own_margins = (child->type == ELEMENT_TYPE_ALIGN || child->type == ELEMENT_TYPE_CENTER);
+
+        // For ALIGN/CENTER parents, don't add margins yet - ApplyAlignment will handle positioning
+        if (parent->type == ELEMENT_TYPE_ALIGN || parent->type == ELEMENT_TYPE_CENTER) {
+            child->rect.x = 0;
+            child->rect.y = 0;
+        } else if (child_handles_own_margins) {
+            child->rect.x = child_offset.x;
+            child->rect.y = child_offset.y;
+        } else {
+            child->rect.x = child_offset.x + child_margin.left;
+            child->rect.y = child_offset.y + child_margin.top;
+        }
+
+        // ALIGN/CENTER elements already include their margins in their rect size
+        float child_total_width = child_handles_own_margins ? child->rect.width : (child->rect.width + child_margin.left + child_margin.right);
+        float child_total_height = child_handles_own_margins ? child->rect.height : (child->rect.height + child_margin.top + child_margin.bottom);
 
         if (parent->type == ELEMENT_TYPE_ROW) {
-            child_offset.x += child->rect.width;
-            consumed_size.x += child->rect.width;
+            child_offset.x += child_total_width;
+            consumed_size.x += child_total_width;
         } else if (parent->type == ELEMENT_TYPE_COLUMN) {
-            child_offset.y += child->rect.height;
-            consumed_size.y += child->rect.height;
+            child_offset.y += child_total_height;
+            consumed_size.y += child_total_height;
         }
 
         max_size = {
-            Max(max_size.x, child->rect.width),
-            Max(max_size.y, child->rect.height)
+            Max(max_size.x, child_total_width),
+            Max(max_size.y, child_total_height)
         };
     }
 
@@ -425,17 +454,24 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
         for (u32 i = 0; i < parent->child_count; i++) {
             Element* child = g_ui.element_stack[element_stack_start + i];
             if (child->type != ELEMENT_TYPE_EXPANDED) {
+                EdgeInsets child_margin = GetMargin(child);
+                bool child_handles_own_margins = (child->type == ELEMENT_TYPE_ALIGN || child->type == ELEMENT_TYPE_CENTER);
                 child->rect.x += offset;
-                child_offset.x = child->rect.x + child->rect.width;
+                float child_total_width = child_handles_own_margins ? child->rect.width : (child->rect.width + child_margin.right);
+                child_offset.x = child->rect.x + child_total_width;
                 continue;
             }
 
             ExpandedElement* expanded = static_cast<ExpandedElement*>(child);
+            EdgeInsets expanded_margin = GetMargin(expanded);
             Vec2 expanded_size = { consumed_size.x * (expanded->style.flex / flex_total), size.y };
             LayoutElement(child->index, expanded_size, parent);
 
-            child_offset.x += expanded_size.x;
-            offset += expanded_size.x;
+            child->rect.x = child_offset.x + expanded_margin.left;
+            child->rect.y = expanded_margin.top;
+
+            child_offset.x += expanded_size.x + expanded_margin.left + expanded_margin.right;
+            offset += expanded_size.x + expanded_margin.left + expanded_margin.right;
         }
 
         max_size.x = child_offset.x;
@@ -444,17 +480,24 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
         for (u32 i = 0; i < parent->child_count; i++) {
             Element* child = g_ui.element_stack[element_stack_start + i];
             if (child->type != ELEMENT_TYPE_EXPANDED) {
+                EdgeInsets child_margin = GetMargin(child);
+                bool child_handles_own_margins = (child->type == ELEMENT_TYPE_ALIGN || child->type == ELEMENT_TYPE_CENTER);
                 child->rect.y += offset;
-                child_offset.y = child->rect.y + child->rect.height;
+                float child_total_height = child_handles_own_margins ? child->rect.height : (child->rect.height + child_margin.bottom);
+                child_offset.y = child->rect.y + child_total_height;
                 continue;
             }
 
             ExpandedElement* expanded = static_cast<ExpandedElement*>(child);
+            EdgeInsets expanded_margin = GetMargin(expanded);
             Vec2 expanded_size = { size.x, consumed_size.y * (expanded->style.flex / flex_total) };
             LayoutElement(child->index, expanded_size, parent);
 
-            child_offset.y += expanded_size.y;
-            offset += expanded_size.y;
+            child->rect.x = expanded_margin.left;
+            child->rect.y = child_offset.y + expanded_margin.top;
+
+            child_offset.y += expanded_size.y + expanded_margin.top + expanded_margin.bottom;
+            offset += expanded_size.y + expanded_margin.top + expanded_margin.bottom;
         }
 
         max_size.y = child_offset.y;
@@ -488,7 +531,6 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
     Element* e = g_ui.elements[element_index++];
     assert(e);
 
-    // Apply margin constraints - margins reduce available space
     Vec2 margin_constrained = constraints;
     EdgeInsets margin = {};
 
@@ -500,10 +542,14 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
         margin = align->style.margin;
     }
 
-    if (margin_constrained.x != F32_MAX)
-        margin_constrained.x -= (margin.left + margin.right);
-    if (margin_constrained.y != F32_MAX)
-        margin_constrained.y -= (margin.top + margin.bottom);
+    // For ALIGN/CENTER, don't reduce rect size by margins - they need the full size for alignment
+    // The parent will position them with margin offsets
+    if (e->type != ELEMENT_TYPE_ALIGN && e->type != ELEMENT_TYPE_CENTER) {
+        if (margin_constrained.x != F32_MAX)
+            margin_constrained.x -= margin.left + margin.right;
+        if (margin_constrained.y != F32_MAX)
+            margin_constrained.y -= margin.top + margin.bottom;
+    }
 
     e->rect.width = margin_constrained.x;
     e->rect.height = margin_constrained.y;
@@ -532,14 +578,6 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
         if (e->rect.width == F32_MAX) e->rect.width = 0;
         if (e->rect.height == F32_MAX) e->rect.height = 0;
 
-        // Add margin to final size
-        e->rect.width += margin.left + margin.right;
-        e->rect.height += margin.top + margin.bottom;
-
-        // Offset position by margin
-        e->rect.x += margin.left;
-        e->rect.y += margin.top;
-
         return element_index;
     }
 
@@ -554,14 +592,6 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
 
     if (e->rect.width == F32_MAX) e->rect.width = 0;
     if (e->rect.height == F32_MAX) e->rect.height = 0;
-
-    // Add margin to final size
-    e->rect.width += margin.left + margin.right;
-    e->rect.height += margin.top + margin.bottom;
-
-    // Offset position by margin
-    e->rect.x += margin.left;
-    e->rect.y += margin.top;
 
     return element_index;
 }
@@ -651,34 +681,6 @@ static int RenderElement(int element_index)
     if (e->type == ELEMENT_TYPE_CANVAS)
         RenderCanvas(e);
 
-    // if (e.style.border_width.value > F32_EPSILON && e.style.border_color.value.a > F32_EPSILON)
-    //     RenderBorder(e, transform);
-    //
-    // if (e.style.background_color.value.a > 0)
-    // {
-    //     BindTransform(transform * Scale(Vec2{e.rect.width, e.rect.height}));
-    //     BindMaterial(g_ui.element_material);
-    //     BindColor(e.style.background_color.value);
-    //     DrawMesh(g_ui.element_quad);
-    // }
-
-    // if (e.style.background_vignette_color.value.a > 0)
-    // {
-    //     VignetteBuffer vignette = {
-    //         .intensity = e.style.background_vignette_intensity.value,
-    //         .smoothness = e.style.background_vignette_smoothness.value
-    //     };
-    //
-    //     BindTransform(
-    //         {e.rect.x + e.style.translate_x.value, e.rect.y + e.style.translate_y.value},
-    //         e.style.rotate.value,
-    //         Vec2{e.rect.width, e.rect.height} * e.style.scale.value);
-    //     BindMaterial(g_ui.vignette_material);
-    //     BindColor(e.style.background_vignette_color.value);
-    //     BindFragmentUserData(&vignette, sizeof(vignette));
-    //     DrawMesh(g_ui.element_quad);
-    // }
-
     if (e->type == ELEMENT_TYPE_LABEL) {
         LabelElement* l = static_cast<LabelElement*>(e);
         Mesh* mesh = l->cached_mesh ? GetMesh(l->cached_mesh->text_mesh) : nullptr;
@@ -692,7 +694,10 @@ static int RenderElement(int element_index)
         ImageElement* image = static_cast<ImageElement*>(e);
         BindMaterial(image->material);
         BindColor(image->style.color);
-        BindTransform(transform * Scale({e->rect.width, e->rect.height}));
+        Bounds2 mesh_bounds = GetBounds(image->mesh);
+        Vec2 mesh_size = GetSize(mesh_bounds);
+        Vec2 mesh_scale = Vec2 {e->rect.width / mesh_size.x, e->rect.height / mesh_size.y};
+        BindTransform(transform * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale));
         DrawMesh(image->mesh);
     } else if (e->type == ELEMENT_TYPE_CONTAINER) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
