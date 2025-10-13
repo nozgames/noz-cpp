@@ -12,6 +12,7 @@ extern void SetActive(InputSet* input_set, bool active);
 struct Input
 {
     LinkedList active_sets;
+    bool text_input;
 };
 
 static Input g_input = {};
@@ -58,19 +59,38 @@ Vec2 GetMousePosition()
     return platform::GetMousePosition();
 }
 
-void SetTextInput(const TextInput& text_input)
-{
+void SetTextInput(const TextInput& text_input) {
     platform::SetTextInput(text_input);
 }
 
-void ClearTextInput()
-{
+void ClearTextInput() {
     return platform::ClearTextInput();
 }
 
-const TextInput& GetTextInput()
-{
+const TextInput& GetTextInput() {
     return platform::GetTextInput();
+}
+
+void BeginTextInput() {
+    if (g_input.text_input)
+        return;
+
+    g_input.text_input = true;
+
+    ClearTextInput();
+}
+
+void EndTextInput() {
+    if (!g_input.text_input)
+        return;
+
+    ClearTextInput();
+
+    g_input.text_input = false;
+}
+
+bool IsTextInputEnabled() {
+    return g_input.text_input;
 }
 
 void InitInput()

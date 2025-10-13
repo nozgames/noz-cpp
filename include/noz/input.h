@@ -11,6 +11,14 @@ constexpr int TEXT_INPUT_MAX_LENGTH = 4096;
 // @types
 struct InputSet {};
 
+// @input
+extern void SetInputSet(InputSet* map);
+extern InputSet* GetInputSet();
+extern void PushInputSet(InputSet* map);
+extern void PopInputSet();
+extern Vec2 GetMousePosition();
+
+// @text
 struct TextInput
 {
     char value[TEXT_INPUT_MAX_LENGTH];
@@ -18,15 +26,12 @@ struct TextInput
     int cursor;
 };
 
-// @input
-extern void SetInputSet(InputSet* map);
-extern InputSet* GetInputSet();
-extern void PushInputSet(InputSet* map);
-extern void PopInputSet();
-extern Vec2 GetMousePosition();
+extern void BeginTextInput();
+extern void EndTextInput();
 extern void ClearTextInput();
 extern const TextInput& GetTextInput();
 extern void SetTextInput(const TextInput& text_input);
+extern bool IsTextInputEnabled();
 
 // @InputSet
 extern InputSet* CreateInputSet(Allocator* allocator);

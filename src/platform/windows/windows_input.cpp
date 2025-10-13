@@ -355,8 +355,21 @@ void platform::UpdateInputState()
 
 void HandleInputCharacter(char c)
 {
+    if (!IsTextInputEnabled())
+        return;
+
     if (g_input.text_input.length >= TEXT_INPUT_MAX_LENGTH - 1)
         return;
+
+    if (c == 27) {
+        Send(EVENT_TEXTINPUT_CANCEL, &g_input.text_input);
+        return;
+    }
+
+    if (c == 13) {
+        Send(EVENT_TEXTINPUT_COMMIT, &g_input.text_input);
+        return;
+    }
 
     if (c < 32)
         return;
@@ -365,25 +378,26 @@ void HandleInputCharacter(char c)
     g_input.text_input.value[g_input.text_input.length] = 0;
     g_input.text_input.cursor++;
 
-    Send(EVENT_TEXTINPUT_CHANGED, &g_input.text_input);
+    Send(EVENT_TEXTINPUT_CHANGE, &g_input.text_input);
 }
 
 void HandleInputKeyDown(char c)
 {
-    switch (c)
-    {
-    case VK_BACK:
-        if (g_input.text_input.length > 0 && g_input.text_input.cursor > 0)
-        {
-            // Move characters back one position from cursor
-            for (int i = g_input.text_input.cursor - 1; i < g_input.text_input.length - 1; i++)
-                g_input.text_input.value[i] = g_input.text_input.value[i + 1];
-            g_input.text_input.length--;
-            g_input.text_input.value[g_input.text_input.length] = 0;
-            g_input.text_input.cursor--;
-            Send(EVENT_TEXTINPUT_CHANGED, &g_input.text_input);
-        }
-        break;
+    if (!IsTextInputEnabled())
+        return;
+
+    if (c == VK_BACK) {
+        if (g_input.text_input.length == 0 || g_input.text_input.cursor == 0)
+            return;
+
+        // Move characters back one position from cursor
+        for (int i = g_input.text_input.cursor - 1; i < g_input.text_input.length - 1; i++)
+            g_input.text_input.value[i] = g_input.text_input.value[i + 1];
+        g_input.text_input.length--;
+        g_input.text_input.value[g_input.text_input.length] = 0;
+        g_input.text_input.cursor--;
+        Send(EVENT_TEXTINPUT_CHANGE, &g_input.text_input);
+        return;
     }
 }
 
@@ -395,7 +409,7 @@ void platform::ClearTextInput()
     g_input.text_input.value[0] = 0;
     g_input.text_input.length = 0;
     g_input.text_input.cursor = 0;
-    Send(EVENT_TEXTINPUT_CHANGED, &g_input.text_input);
+    Send(EVENT_TEXTINPUT_CHANGE, &g_input.text_input);
 }
 
 const TextInput& platform::GetTextInput()
