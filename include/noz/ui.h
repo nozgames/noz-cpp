@@ -153,7 +153,7 @@ inline void Expanded(const std::function<void()>& children = nullptr) { Expanded
 
 // @input
 extern void GestureDetector(const GestureDetectorStyle& style, const std::function<void()>& children = nullptr);
-extern void MouseRegion(const MouseRegionStyle& style, void (*children)() = nullptr);
+extern void MouseRegion(const MouseRegionStyle& style, const std::function<void()>& children = nullptr);
 
 // @drawing
 extern void Label(const char* text, const LabelStyle& style = {});

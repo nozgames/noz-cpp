@@ -146,6 +146,7 @@ struct UI {
     Material* element_material;
     InputSet* input;
     PoolAllocator* text_mesh_allocator;
+    ElementState prev_element_states[MAX_ELEMENTS];
 };
 
 static UI g_ui = {};
@@ -323,7 +324,7 @@ void Image(Material* material, Mesh* mesh, const ImageStyle& style) {
     image->style = style;
 }
 
-void MouseRegion(const MouseRegionStyle& style, void (*children)()) {
+void MouseRegion(const MouseRegionStyle& style, const std::function<void()>& children) {
     IncrementChildCount();
     MouseRegionElement* mouse_region = static_cast<MouseRegionElement*>(CreateElement(ELEMENT_TYPE_MOUSE_REGION));
     mouse_region->style = style;
@@ -799,6 +800,7 @@ static void HandleInput()
     for (u32 i=g_ui.element_count; i>0; i--)
     {
         Element* e = g_ui.elements[i-1];
+        ElementState prev_state = g_ui.prev_element_states[i-1];
         Vec2 local_mouse = TransformPoint(e->world_to_local, mouse);
         bool mouse_over = Contains(Bounds2{0,0,e->rect.width, e->rect.height}, local_mouse);
 
@@ -813,7 +815,29 @@ static void HandleInput()
                 g->style.on_tap(g->style.user_data);
                 ConsumeButton(MOUSE_LEFT);
             }
+        } else if (e->type == ELEMENT_TYPE_MOUSE_REGION) {
+            MouseRegionElement* m = static_cast<MouseRegionElement*>(e);
+            bool was_hovered = prev_state & ELEMENT_STATE_HOVERED;
+            bool is_hovered = e->state & ELEMENT_STATE_HOVERED;
+
+            // Trigger on_enter when transitioning from not-hovered to hovered
+            if (!was_hovered && is_hovered && m->style.on_enter) {
+                m->style.on_enter();
+            }
+
+            // Trigger on_exit when transitioning from hovered to not-hovered
+            if (was_hovered && !is_hovered && m->style.on_exit) {
+                m->style.on_exit();
+            }
+
+            // Trigger on_hover every frame while hovered
+            if (is_hovered && m->style.on_hover) {
+                m->style.on_hover();
+            }
         }
+
+        // Store current state for next frame
+        g_ui.prev_element_states[i-1] = e->state;
     }
 }
 
