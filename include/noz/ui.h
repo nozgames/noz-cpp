@@ -43,7 +43,7 @@ constexpr Alignment ALIGNMENT_TOP_LEFT      = { -1.0f, -1.0f };
 constexpr Alignment ALIGNMENT_TOP_CENTER    = {  0.0f, -1.0f };
 constexpr Alignment ALIGNMENT_TOP_RIGHT     = {  1.0f, -1.0f };
 constexpr Alignment ALIGNMENT_CENTER        = {  0.0f,  0.0f };
-constexpr Alignment ALIGNMENT_CENTER_LEFT   = {  0.0f, -1.0f };
+constexpr Alignment ALIGNMENT_CENTER_LEFT   = { -1.0f,  0.0f };
 constexpr Alignment ALIGNMENT_BOTTOM_LEFT   = { -1.0f,  1.0f };
 constexpr Alignment ALIGNMENT_BOTTOM_RIGHT  = {  1.0f,  1.0f };
 
@@ -148,11 +148,11 @@ extern void Center(const std::function<void()>& children);
 
 // @modifiers
 extern void Transformed(const TransformStyle& style, void (*children)() = nullptr);
-extern void Expanded(const ExpandedStyle& style, void (*children)() = nullptr);
-inline void Expanded(void (*children)() = nullptr) { Expanded({}, children); }
+extern void Expanded(const ExpandedStyle& style, const std::function<void()>& children = nullptr);
+inline void Expanded(const std::function<void()>& children = nullptr) { Expanded({}, children); }
 
 // @input
-extern void GestureDetector(const GestureDetectorStyle& style, void (*children)() = nullptr);
+extern void GestureDetector(const GestureDetectorStyle& style, const std::function<void()>& children = nullptr);
 extern void MouseRegion(const MouseRegionStyle& style, void (*children)() = nullptr);
 
 // @drawing

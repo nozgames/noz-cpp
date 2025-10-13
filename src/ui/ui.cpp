@@ -231,14 +231,14 @@ void Container(const ContainerStyle& style, const std::function<void()>& childre
     ExecuteChildren(container, children);
 }
 
-void Expanded(const ExpandedStyle& style, void (*children)()) {
+void Expanded(const ExpandedStyle& style, const std::function<void()>& children) {
     IncrementChildCount();
     ExpandedElement* e = static_cast<ExpandedElement*>(CreateElement(ELEMENT_TYPE_EXPANDED));
     e->style = style;
     ExecuteChildren(e, children);
 }
 
-void GestureDetector(const GestureDetectorStyle& style, void (*children)()) {
+void GestureDetector(const GestureDetectorStyle& style, const std::function<void()>& children) {
     IncrementChildCount();
     GestureDetectorElement* gesture_detector = static_cast<GestureDetectorElement*>(CreateElement(ELEMENT_TYPE_GESTURE_DETECTOR));
     gesture_detector->style = style;
@@ -391,6 +391,14 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
     float flex_total = 0.0f;
     u32 element_stack_start = g_ui.element_stack_count;
 
+    // Get spacing from parent style
+    float spacing = 0.0f;
+    if (parent->type == ELEMENT_TYPE_ROW) {
+        spacing = static_cast<RowElement*>(parent)->style.spacing;
+    } else if (parent->type == ELEMENT_TYPE_COLUMN) {
+        spacing = static_cast<ColumnElement*>(parent)->style.spacing;
+    }
+
     Vec2 constraints = size;
     if (parent->type == ELEMENT_TYPE_ROW) {
         constraints.x = F32_MAX;
@@ -438,9 +446,19 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
         if (parent->type == ELEMENT_TYPE_ROW) {
             child_offset.x += child_total_width;
             consumed_size.x += child_total_width;
+            // Add spacing between children (but not after the last child)
+            if (i < parent->child_count - 1 - flex_element_count) {
+                child_offset.x += spacing;
+                consumed_size.x += spacing;
+            }
         } else if (parent->type == ELEMENT_TYPE_COLUMN) {
             child_offset.y += child_total_height;
             consumed_size.y += child_total_height;
+            // Add spacing between children (but not after the last child)
+            if (i < parent->child_count - 1 - flex_element_count) {
+                child_offset.y += spacing;
+                consumed_size.y += spacing;
+            }
         }
 
         max_size = {
@@ -450,6 +468,7 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
     }
 
     if (flex_element_count > 0 && parent->type == ELEMENT_TYPE_ROW && size.x != F32_MAX) {
+        float remaining_width = size.x - consumed_size.x;
         float offset = 0.0f;
         for (u32 i = 0; i < parent->child_count; i++) {
             Element* child = g_ui.element_stack[element_stack_start + i];
@@ -459,12 +478,16 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
                 child->rect.x += offset;
                 float child_total_width = child_handles_own_margins ? child->rect.width : (child->rect.width + child_margin.right);
                 child_offset.x = child->rect.x + child_total_width;
+                if (i < parent->child_count - 1) {
+                    child_offset.x += spacing;
+                    offset += spacing;
+                }
                 continue;
             }
 
             ExpandedElement* expanded = static_cast<ExpandedElement*>(child);
             EdgeInsets expanded_margin = GetMargin(expanded);
-            Vec2 expanded_size = { consumed_size.x * (expanded->style.flex / flex_total), size.y };
+            Vec2 expanded_size = { remaining_width * (expanded->style.flex / flex_total), size.y };
             LayoutElement(child->index, expanded_size, parent);
 
             child->rect.x = child_offset.x + expanded_margin.left;
@@ -472,10 +495,15 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
 
             child_offset.x += expanded_size.x + expanded_margin.left + expanded_margin.right;
             offset += expanded_size.x + expanded_margin.left + expanded_margin.right;
+            if (i < parent->child_count - 1) {
+                child_offset.x += spacing;
+                offset += spacing;
+            }
         }
 
         max_size.x = child_offset.x;
     } else if (flex_element_count > 0 && parent->type == ELEMENT_TYPE_COLUMN && size.y != F32_MAX) {
+        float remaining_height = size.y - consumed_size.y;
         float offset = 0.0f;
         for (u32 i = 0; i < parent->child_count; i++) {
             Element* child = g_ui.element_stack[element_stack_start + i];
@@ -485,12 +513,16 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
                 child->rect.y += offset;
                 float child_total_height = child_handles_own_margins ? child->rect.height : (child->rect.height + child_margin.bottom);
                 child_offset.y = child->rect.y + child_total_height;
+                if (i < parent->child_count - 1) {
+                    child_offset.y += spacing;
+                    offset += spacing;
+                }
                 continue;
             }
 
             ExpandedElement* expanded = static_cast<ExpandedElement*>(child);
             EdgeInsets expanded_margin = GetMargin(expanded);
-            Vec2 expanded_size = { size.x, consumed_size.y * (expanded->style.flex / flex_total) };
+            Vec2 expanded_size = { size.x, remaining_height * (expanded->style.flex / flex_total) };
             LayoutElement(child->index, expanded_size, parent);
 
             child->rect.x = expanded_margin.left;
@@ -498,6 +530,10 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
 
             child_offset.y += expanded_size.y + expanded_margin.top + expanded_margin.bottom;
             offset += expanded_size.y + expanded_margin.top + expanded_margin.bottom;
+            if (i < parent->child_count - 1) {
+                child_offset.y += spacing;
+                offset += spacing;
+            }
         }
 
         max_size.y = child_offset.y;
@@ -508,7 +544,7 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
     if (parent->rect.height == F32_MAX)
         parent->rect.height = max_size.y;
 
-    else if (parent->type == ELEMENT_TYPE_CENTER) {
+    if (parent->type == ELEMENT_TYPE_CENTER) {
         ApplyAlignment(parent, ALIGNMENT_CENTER, element_stack_start, parent->child_count);
     } else if (parent->type == ELEMENT_TYPE_ALIGN) {
         AlignElement* align = static_cast<AlignElement*>(parent);
@@ -588,7 +624,7 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
         if (child_constraints.y != F32_MAX) child_constraints.y -= (container->style.padding.top   + container->style.padding.bottom);
     }
 
-    element_index = LayoutChildren(element_index, e, GetSize(e->rect));
+    element_index = LayoutChildren(element_index, e, child_constraints);
 
     if (e->rect.width == F32_MAX) e->rect.width = 0;
     if (e->rect.height == F32_MAX) e->rect.height = 0;
