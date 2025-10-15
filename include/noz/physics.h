@@ -30,13 +30,11 @@ struct RaycastResult
     float fraction;
 };
 
-// @physics
-RaycastResult Raycast(const Vec2& start, const Vec2& end, uint16_t category_mask = 0xFFFF);
-
 // @collider
 Collider* CreateCollider(Allocator* allocator, const Vec2* points, u32 point_count);
 Collider* CreateCollider(Allocator* allocator, Mesh* mesh);
 bool OverlapPoint(Collider* collider, const Vec2& point);
+bool Raycast(Collider* colider, const Vec2& origin, const Vec2& dir, float distance, RaycastResult* result);
 
 // @collision
 bool OverlapPoint(const Vec2& v0, const Vec2& v1, const Vec2& v2, const Vec2& overlap_point, Vec2* where);
