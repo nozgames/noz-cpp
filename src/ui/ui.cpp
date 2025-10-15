@@ -663,6 +663,29 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
     return element_index;
 }
 
+static int LayoutCanvas(int element_index) {
+    Element* e = g_ui.elements[element_index];
+    assert(e);
+    assert(e->type == ELEMENT_TYPE_CANVAS);
+
+    CanvasElement* c = static_cast<CanvasElement*>(e);
+
+    Vec2 contraints = g_ui.ortho_size;
+    if (c->style.type == CANVAS_TYPE_WORLD) {
+        Vec2 screen_pos = WorldToScreen(c->style.world_camera, c->style.world_position);
+        Vec2 screen_size = Abs(WorldToScreen(c->style.world_camera, c->style.world_size) - WorldToScreen(c->style.world_camera, VEC2_ZERO));
+        screen_pos = screen_pos - screen_size * 0.5f;
+
+        Vec2 ui_pos = ScreenToWorld(g_ui.camera, screen_pos);
+        Vec2 ui_size = ScreenToWorld(g_ui.camera, screen_size) - ScreenToWorld(g_ui.camera, VEC2_ZERO);
+        e->rect.x = ui_pos.x;
+        e->rect.y = ui_pos.y;
+        contraints = ui_size;
+    }
+
+    return LayoutElement(element_index, contraints, nullptr);
+}
+
 static u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform)
 {
     Element* e = g_ui.elements[element_index++];
@@ -862,7 +885,7 @@ static void HandleInput()
 void EndUI()
 {
     for (u32 element_index=0; element_index < g_ui.element_count; )
-        element_index = LayoutElement(element_index, g_ui.ortho_size, nullptr);
+        element_index = LayoutCanvas(element_index);
     for (u32 element_index=0; element_index < g_ui.element_count; )
         element_index = CalculateTransforms(element_index, MAT3_IDENTITY);
 

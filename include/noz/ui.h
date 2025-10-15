@@ -34,6 +34,11 @@ struct EdgeInsets {
     EdgeInsets(float v) : top(v), left(v), bottom(v), right(v) {}
 };
 
+enum CanvasType {
+    CANVAS_TYPE_SCREEN,
+    CANVAS_TYPE_WORLD
+};
+
 struct Alignment {
     float x; // -1.0 (min) to 1.0 (max)
     float y; // -1.0 (min) to 1.0 (max)
@@ -116,7 +121,11 @@ struct SizedBoxStyle {
 };
 
 struct CanvasStyle {
+    CanvasType type = CANVAS_TYPE_SCREEN;
     Color color;
+    Camera* world_camera;
+    Vec2 world_position;
+    Vec2 world_size;
 };
 
 struct ContainerStyle {

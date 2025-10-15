@@ -267,6 +267,11 @@ inline u64 Max(u64 v1, u64 v2) { return v1 > v2 ? v1 : v2; }
 inline Vec2 Max(const Vec2& m1, const Vec2& m2) { return { Max(m1.x, m2.x), Max(m1.y, m2.y) }; }
 inline Vec3 Max(const Vec3& m1, const Vec3& m2) { return { Max(m1.x, m2.x), Max(m1.y, m2.y), Max(m1.z, m2.z) }; }
 
+// @abs
+inline i32 Abs(i32 v) { return v < 0 ? -v : v; }
+inline f32 Abs(f32 v) { return v < 0 ? -v : v; }
+inline f64 Abs(f64 v) { return v < 0 ? -v : v; }
+
 // @bounds3
 Bounds3 ToBounds(const Vec3* positions, u32 count);
 bool Contains(const Bounds3& bounds, const Vec3& point);
@@ -321,6 +326,7 @@ extern float DistanceFromLine(const Vec2& v0, const Vec2& v1, const Vec2& point)
 inline Vec2 Perpendicular(const Vec2& v) { return Vec2{ -v.y, v.x }; }
 inline f32 Dot(const Vec2& a, const Vec2& b) { return a.x * b.x + a.y * b.y; }
 inline Vec2 Mix(const Vec2& v1, const Vec2& v2, f32 t) { return v1 + (v2 - v1) * t; }
+inline Vec2 Abs(const Vec2& v) { return Vec2{ Abs(v.x), Abs(v.y) }; }
 inline bool ApproxEqual(const Vec2& a, const Vec2& b, f32 epsilon = 1e-6f)
 {
     return ApproxEqual(a.x, b.x, epsilon) && ApproxEqual(a.y, b.y, epsilon);
@@ -375,9 +381,6 @@ inline f64 Clamp(f64 v, f64 min, f64 max) { return v < min ? min : v > max ? max
 
 
 
-inline i32 Abs(i32 v) { return v < 0 ? -v : v; }
-inline f32 Abs(f32 v) { return v < 0 ? -v : v; }
-inline f64 Abs(f64 v) { return v < 0 ? -v : v; }
 
 
 constexpr Vec2Int RoundToNearest(const Vec2Int& v)
