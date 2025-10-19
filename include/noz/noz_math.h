@@ -350,6 +350,7 @@ extern float SignedAngleDelta(const Vec2& a, const Vec2&b);
 extern float NormalizeAngle(float angle);
 inline float Radians(float degrees) { return degrees * noz::PI / 180.0f; }
 inline float Degrees(float radians) { return radians * 180.0f / noz::PI; }
+inline float Angle(const Vec2& direction) { return Degrees(Atan2(direction.y, direction.x)); }
 
 // @transform
 extern void SetIdentity(Transform& transform);
