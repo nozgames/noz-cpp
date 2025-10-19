@@ -34,6 +34,11 @@ struct EdgeInsets {
     EdgeInsets(float v) : top(v), left(v), bottom(v), right(v) {}
 };
 
+enum CanvasType {
+    CANVAS_TYPE_SCREEN,
+    CANVAS_TYPE_WORLD
+};
+
 struct Alignment {
     float x; // -1.0 (min) to 1.0 (max)
     float y; // -1.0 (min) to 1.0 (max)
@@ -71,8 +76,12 @@ struct ExpandedStyle {
     float flex = 1.0f;
 };
 
+struct TapDetails {
+    Vec2 position;
+};
+
 struct GestureDetectorStyle {
-    void (*on_tap)(void* user_data) = nullptr;
+    void (*on_tap)(const TapDetails& details, void* user_data) = nullptr;
     void (*on_tap_down)(void* user_data) = nullptr;
     void (*on_tap_up)(void* user_data) = nullptr;
     void* user_data;
@@ -112,7 +121,11 @@ struct SizedBoxStyle {
 };
 
 struct CanvasStyle {
+    CanvasType type = CANVAS_TYPE_SCREEN;
     Color color;
+    Camera* world_camera;
+    Vec2 world_position;
+    Vec2 world_size;
 };
 
 struct ContainerStyle {
@@ -140,7 +153,7 @@ extern void Column(const ColumnStyle& style, void (*children)() = nullptr);
 inline void Column(void (*children)() = nullptr) { Column({}, children); }
 extern void Row(const RowStyle& style, const std::function<void()>& children = nullptr);
 inline void Row(const std::function<void()>& children = nullptr) { Row({}, children); }
-extern void Border(const BorderStyle& style, void (*children)() = nullptr);
+extern void Border(const BorderStyle& style, const std::function<void()>& children = nullptr);
 extern void Inset(const EdgeInsets& insets, void (*children)() = nullptr);
 extern void Inset(float amount, void (*children)() = nullptr);
 extern void SizedBox(const SizedBoxStyle& style, const std::function<void()>& children = nullptr);
@@ -162,8 +175,12 @@ extern void Image(Material* material, Mesh* mesh, const ImageStyle& style = {});
 extern void Rectangle(const RectangleStyle& style = {});
 
 // @edgeinsets
+inline EdgeInsets EdgeInsetsAll(float v) { return EdgeInsets(v, v, v, v); }
 inline EdgeInsets EdgeInsetsTop(float v) { return EdgeInsets(v, 0, 0, 0); }
 inline EdgeInsets EdgeInsetsTopLeft(float t, float l) { return EdgeInsets(t, l, 0, 0); }
 inline EdgeInsets EdgeInsetsBottom(float v) { return EdgeInsets(0, 0, v, 0); }
-inline EdgeInsets EdgeInsetsAll(float v) { return EdgeInsets(v, v, v, v); }
+inline EdgeInsets EdgeInsetsBottomLeft(float b, float l) { return EdgeInsets(0, l, b, 0); }
+inline EdgeInsets EdgeInsetsBottomLeft(float v) { return EdgeInsets(0, v, v, 0); }
+inline EdgeInsets EdgeInsetsBottomRight(float b, float r) { return EdgeInsets(0, 0, b, r); }
+inline EdgeInsets EdgeInsetsBottomRight(float v) { return EdgeInsets(0, 0, v, v); }
 inline EdgeInsets EdgeInsetsRight(float v) { return EdgeInsets(0,0,0,v); }

@@ -174,7 +174,8 @@ static void PopElement() {
 }
 
 static void IncrementChildCount() {
-    assert(g_ui.element_stack_count > 0);
+    if (g_ui.element_stack_count == 0)
+        return;
     g_ui.element_stack[g_ui.element_stack_count-1]->child_count++;
 }
 
@@ -188,12 +189,21 @@ static void ExecuteChildren(Element* element, const std::function<void()>& child
 }
 
 void Align(const AlignStyle& style, const std::function<void()>& children) {
+    IncrementChildCount();
     AlignElement* e = static_cast<AlignElement*>(CreateElement(ELEMENT_TYPE_ALIGN));
     e->style = style;
     ExecuteChildren(e, children);
 }
 
+void Border(const BorderStyle& style, const std::function<void()>& children) {
+    IncrementChildCount();
+    BorderElement* border = static_cast<BorderElement*>(CreateElement(ELEMENT_TYPE_BORDER));
+    border->style = style;
+    ExecuteChildren(border, children);
+}
+
 void Canvas(const CanvasStyle& style, const std::function<void()>& children) {
+    IncrementChildCount();
     CanvasElement* canvas = static_cast<CanvasElement*>(CreateElement(ELEMENT_TYPE_CANVAS));
     canvas->style = style;
     ExecuteChildren(canvas, children);
@@ -468,6 +478,13 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
         };
     }
 
+    // For Row/Column, use consumed size instead of max size
+    if (parent->type == ELEMENT_TYPE_ROW) {
+        max_size.x = consumed_size.x;
+    } else if (parent->type == ELEMENT_TYPE_COLUMN) {
+        max_size.y = consumed_size.y;
+    }
+
     if (flex_element_count > 0 && parent->type == ELEMENT_TYPE_ROW && size.x != F32_MAX) {
         float remaining_width = size.x - consumed_size.x;
         float offset = 0.0f;
@@ -557,6 +574,13 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
             child->rect.x += container->style.padding.left;
             child->rect.y += container->style.padding.top;
         }
+    } else if (parent->type == ELEMENT_TYPE_BORDER) {
+        BorderElement* border = static_cast<BorderElement*>(parent);
+        for (u32 i = 0; i < parent->child_count; i++) {
+            Element* child = g_ui.element_stack[element_stack_start + i];
+            child->rect.x += border->style.width;
+            child->rect.y += border->style.width;
+        }
     }
 
     g_ui.element_stack_count-=parent->child_count;
@@ -601,14 +625,16 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
         e->rect.height = Min(sized_box->style.height, e->rect.height);
     } else if (e->type == ELEMENT_TYPE_LABEL) {
         LabelElement* l = static_cast<LabelElement*>(e);
-        Vec2 text_size = GetSize(l->cached_mesh->text_mesh);
-        if (e->rect.width == F32_MAX) e->rect.width = text_size.x;
-        if (e->rect.height == F32_MAX) e->rect.height = text_size.y;
+        if (l->cached_mesh && l->cached_mesh->text_mesh) {
+            Vec2 text_size = GetSize(l->cached_mesh->text_mesh);
+            if (e->rect.width == F32_MAX) e->rect.width = text_size.x;
+            if (e->rect.height == F32_MAX) e->rect.height = text_size.y;
 
-        if (text_size.x < e->rect.width)
-            l->offset.x = (e->rect.width - text_size.x) * 0.5f * (l->style.align.x + 1.0f);
-        if (text_size.y < e->rect.height)
-            l->offset.y = (e->rect.height - text_size.y) * 0.5f * (l->style.align.y + 1.0f);
+            if (text_size.x < e->rect.width)
+                l->offset.x = (e->rect.width - text_size.x) * 0.5f * (l->style.align.x + 1.0f);
+            if (text_size.y < e->rect.height)
+                l->offset.y = (e->rect.height - text_size.y) * 0.5f * (l->style.align.y + 1.0f);
+        }
     }
 
     if (e->child_count == 0) {
@@ -623,6 +649,10 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
         ContainerElement* container = static_cast<ContainerElement*>(e);
         if (child_constraints.x != F32_MAX) child_constraints.x -= (container->style.padding.left  + container->style.padding.right);
         if (child_constraints.y != F32_MAX) child_constraints.y -= (container->style.padding.top   + container->style.padding.bottom);
+    } else if (e->type == ELEMENT_TYPE_BORDER) {
+        BorderElement* border = static_cast<BorderElement*>(e);
+        if (child_constraints.x != F32_MAX) child_constraints.x -= border->style.width * 2.0f;
+        if (child_constraints.y != F32_MAX) child_constraints.y -= border->style.width * 2.0f;
     }
 
     element_index = LayoutChildren(element_index, e, child_constraints);
@@ -631,6 +661,29 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
     if (e->rect.height == F32_MAX) e->rect.height = 0;
 
     return element_index;
+}
+
+static int LayoutCanvas(int element_index) {
+    Element* e = g_ui.elements[element_index];
+    assert(e);
+    assert(e->type == ELEMENT_TYPE_CANVAS);
+
+    CanvasElement* c = static_cast<CanvasElement*>(e);
+
+    Vec2 contraints = g_ui.ortho_size;
+    if (c->style.type == CANVAS_TYPE_WORLD) {
+        Vec2 screen_pos = WorldToScreen(c->style.world_camera, c->style.world_position);
+        Vec2 screen_size = Abs(WorldToScreen(c->style.world_camera, c->style.world_size) - WorldToScreen(c->style.world_camera, VEC2_ZERO));
+        screen_pos = screen_pos - screen_size * 0.5f;
+
+        Vec2 ui_pos = ScreenToWorld(g_ui.camera, screen_pos);
+        Vec2 ui_size = ScreenToWorld(g_ui.camera, screen_size) - ScreenToWorld(g_ui.camera, VEC2_ZERO);
+        e->rect.x = ui_pos.x;
+        e->rect.y = ui_pos.y;
+        contraints = ui_size;
+    }
+
+    return LayoutElement(element_index, contraints, nullptr);
 }
 
 static u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform)
@@ -671,33 +724,6 @@ void RenderCanvas(Element* e)
     UpdateCamera(g_ui.camera);
     BindCamera(g_ui.camera);
 }
-
-#if 0
-static void RenderBorder(Element& e, const Mat3& transform)
-{
-    // float border_width = e.style.border_width.value;
-    // BindColor(e.style.border_color.value);
-    // BindMaterial(g_ui.element_material);
-    // DrawMesh(
-    //     g_ui.element_quad,
-    //     transform * Scale(Vec2{e.rect.width, border_width}));
-    // DrawMesh(
-    //     g_ui.element_quad,
-    //     transform
-    //         * Translate(Vec2{0,e.rect.height - border_width})
-    //         * Scale(Vec2{e.rect.width, border_width}));
-    // DrawMesh(
-    //     g_ui.element_quad,
-    //     transform
-    //         * Translate(Vec2{e.rect.width - border_width,border_width})
-    //         * Scale(Vec2{border_width, e.rect.height - border_width * 2}));
-    // DrawMesh(
-    //     g_ui.element_quad,
-    //     transform
-    //         * Translate(Vec2{0, border_width})
-    //         * Scale(Vec2{border_width, e.rect.height - border_width * 2}));
-}
-#endif
 
 static void RenderBackground(const Rect& rect, const Mat3& transform, const Color& color)
 {
@@ -751,6 +777,20 @@ static int RenderElement(int element_index)
         } else {
             BindColor(rectangle->style.color);
         }
+        DrawMesh(g_ui.element_quad);
+    } else if (e->type == ELEMENT_TYPE_BORDER) {
+        BorderElement* border = static_cast<BorderElement*>(e);
+        float border_width = border->style.width;
+        BindColor(border->style.color);
+        BindMaterial(g_ui.element_material);
+
+        BindTransform(transform * Scale(Vec2{e->rect.width, border_width}));
+        DrawMesh(g_ui.element_quad);
+        BindTransform(transform * Translate(Vec2{0, e->rect.height - border_width}) * Scale(Vec2{e->rect.width, border_width}));
+        DrawMesh(g_ui.element_quad);
+        BindTransform(transform * Translate(Vec2{0, border_width}) * Scale(Vec2{border_width, e->rect.height - border_width * 2}));
+        DrawMesh(g_ui.element_quad);
+        BindTransform(transform * Translate(Vec2{e->rect.width - border_width, border_width}) * Scale(Vec2{border_width, e->rect.height - border_width * 2}));
         DrawMesh(g_ui.element_quad);
     }
 
@@ -812,7 +852,8 @@ static void HandleInput()
         if (e->type == ELEMENT_TYPE_GESTURE_DETECTOR) {
             GestureDetectorElement* g = static_cast<GestureDetectorElement*>(e);
             if (mouse_over && g->style.on_tap && WasButtonPressed(g_ui.input, MOUSE_LEFT)) {
-                g->style.on_tap(g->style.user_data);
+                TapDetails details = {.position = local_mouse};
+                g->style.on_tap(details, g->style.user_data);
                 ConsumeButton(MOUSE_LEFT);
             }
         } else if (e->type == ELEMENT_TYPE_MOUSE_REGION) {
@@ -844,7 +885,7 @@ static void HandleInput()
 void EndUI()
 {
     for (u32 element_index=0; element_index < g_ui.element_count; )
-        element_index = LayoutElement(element_index, g_ui.ortho_size, nullptr);
+        element_index = LayoutCanvas(element_index);
     for (u32 element_index=0; element_index < g_ui.element_count; )
         element_index = CalculateTransforms(element_index, MAT3_IDENTITY);
 
