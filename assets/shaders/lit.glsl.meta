@@ -1,9 +1,9 @@
-[editor]
-sort_order = 750
-position = (-9.627552,-29.953804)
-
 [shader]
 cull = none
 blend = true
 depth = true
+
+[editor]
+position = (-9.627552,-29.953804)
+sort_order = 300
 

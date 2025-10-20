@@ -18,7 +18,7 @@ constexpr ElementState ELEMENT_STATE_NONE        = 0;
 constexpr ElementState ELEMENT_STATE_HOVERED     = 1 << 0;
 constexpr ElementState ELEMENT_STATE_PRESSED     = 1 << 1;
 
-typedef Color (*AnimatedColorFunc)(ElementState state, float time);
+typedef Color (*AnimatedColorFunc)(ElementState state, float time, void* user_data);
 
 struct EdgeInsets {
     float top = 0.0f;
@@ -51,6 +51,7 @@ constexpr Alignment ALIGNMENT_CENTER        = {  0.0f,  0.0f };
 constexpr Alignment ALIGNMENT_CENTER_LEFT   = { -1.0f,  0.0f };
 constexpr Alignment ALIGNMENT_BOTTOM_LEFT   = { -1.0f,  1.0f };
 constexpr Alignment ALIGNMENT_BOTTOM_RIGHT  = {  1.0f,  1.0f };
+constexpr Alignment ALIGNMENT_BOTTOM_CENTER = {  0.0f,  1.0f };
 
 struct AlignStyle {
     Alignment alignment;
@@ -113,6 +114,7 @@ struct BorderStyle {
 struct RectangleStyle {
     Color color = COLOR_WHITE;
     AnimatedColorFunc color_func = nullptr;
+    void* color_func_user_data = nullptr;
 };
 
 struct SizedBoxStyle {
@@ -184,3 +186,4 @@ inline EdgeInsets EdgeInsetsBottomLeft(float v) { return EdgeInsets(0, v, v, 0);
 inline EdgeInsets EdgeInsetsBottomRight(float b, float r) { return EdgeInsets(0, 0, b, r); }
 inline EdgeInsets EdgeInsetsBottomRight(float v) { return EdgeInsets(0, 0, v, v); }
 inline EdgeInsets EdgeInsetsRight(float v) { return EdgeInsets(0,0,0,v); }
+inline EdgeInsets EdgeInsetsLeft(float v) { return EdgeInsets(0,v,0,0); }

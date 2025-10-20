@@ -140,6 +140,7 @@ struct UI {
     Element* element_stack[MAX_ELEMENTS];
     u32 element_stack_count;
     Mesh* element_quad;
+    Mesh* image_mesh;
     u32 element_count;
     Vec2 ortho_size;
     Vec2Int ref_size;
@@ -256,8 +257,7 @@ void GestureDetector(const GestureDetectorStyle& style, const std::function<void
     ExecuteChildren(gesture_detector, children);
 }
 
-static u64 GetMeshHash(const TextRequest& request)
-{
+static u64 GetMeshHash(const TextRequest& request) {
     return Hash(Hash(request.text), reinterpret_cast<u64>(request.font), static_cast<u64>(request.font_size));
 }
 
@@ -284,8 +284,7 @@ static CachedTextMesh* GetOrCreateTextMesh(const char* text, const LabelStyle& s
     }, &args);
 
     if (!args.result) {
-        if (TextMesh* tm = CreateTextMesh(ALLOCATOR_DEFAULT, r))
-        {
+        if (TextMesh* tm = CreateTextMesh(ALLOCATOR_DEFAULT, r)) {
             args.result = static_cast<CachedTextMesh*>(Alloc(g_ui.text_mesh_allocator, sizeof(CachedTextMesh)));
             args.result->hash = args.hash;
             args.result->text_mesh = tm;
@@ -322,7 +321,7 @@ void Image(Material* material, const ImageStyle& style) {
     IncrementChildCount();
     ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
     image->material = material;
-    image->mesh = g_ui.element_quad;
+    image->mesh = g_ui.image_mesh;
     image->style = style;
 }
 
@@ -640,7 +639,6 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
     if (e->child_count == 0) {
         if (e->rect.width == F32_MAX) e->rect.width = 0;
         if (e->rect.height == F32_MAX) e->rect.height = 0;
-
         return element_index;
     }
 
@@ -725,8 +723,7 @@ void RenderCanvas(Element* e)
     BindCamera(g_ui.camera);
 }
 
-static void RenderBackground(const Rect& rect, const Mat3& transform, const Color& color)
-{
+static void RenderBackground(const Rect& rect, const Mat3& transform, const Color& color) {
     if (color.a <= 0.0f)
         return;
 
@@ -760,7 +757,7 @@ static int RenderElement(int element_index)
         Bounds2 mesh_bounds = GetBounds(image->mesh);
         Vec2 mesh_size = GetSize(mesh_bounds);
         Vec2 mesh_scale = Vec2 {e->rect.width / mesh_size.x, e->rect.height / mesh_size.y};
-        BindTransform(transform * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale));
+        BindTransform(transform * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1}));
         DrawMesh(image->mesh);
     } else if (e->type == ELEMENT_TYPE_CONTAINER) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
@@ -773,7 +770,7 @@ static int RenderElement(int element_index)
         BindTransform(transform * Scale(Vec2{e->rect.width, e->rect.height}));
         BindMaterial(g_ui.element_material);
         if (rectangle->style.color_func) {
-            BindColor(rectangle->style.color_func(e->state, 0.0f));
+            BindColor(rectangle->style.color_func(e->state, 0.0f, rectangle->style.color_func_user_data));
         } else {
             BindColor(rectangle->style.color);
         }
@@ -818,13 +815,10 @@ void BeginUI(u32 ref_width, u32 ref_height) {
     f32 sw_rw = sw / rw;
     f32 sh_rh = sh / rh;
 
-    if (Abs(sw_rw - 1.0f) < Abs(sh_rh - 1.0f))
-    {
+    if (Abs(sw_rw - 1.0f) < Abs(sh_rh - 1.0f)) {
         g_ui.ortho_size.x = rw;
         g_ui.ortho_size.y = rw * sh / sw;
-    }
-    else
-    {
+    } else {
         g_ui.ortho_size.y = rh;
         g_ui.ortho_size.x = rh * sw / sh;
     }
@@ -893,12 +887,13 @@ void EndUI()
 }
 
 void DrawUI() {
+    BindDepth(10.0f);
     for (u32 element_index = 0; element_index < g_ui.element_count; )
         element_index = RenderElement(element_index);
+    BindDepth(0.0f);
 }
 
-static Mesh* CreateElementQuad(Allocator* allocator)
-{
+static Mesh* CreateElementQuad(Allocator* allocator) {
     PushScratch();
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
     AddVertex(builder, {0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f});
@@ -912,11 +907,26 @@ static Mesh* CreateElementQuad(Allocator* allocator)
     return mesh;
 }
 
+static Mesh* CreateImageQuad(Allocator* allocator) {
+    PushScratch();
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
+    AddVertex(builder, { -0.5f, -0.5f }, { 0.0f, 1.0f }, { 0.0f, 0.0f });
+    AddVertex(builder, {  0.5f, -0.5f }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+    AddVertex(builder, {  0.5f,  0.5f }, { 0.0f, 1.0f }, { 1.0f, 1.0f });
+    AddVertex(builder, { -0.5f,  0.5f }, { 0.0f, 1.0f }, { 0.0f, 1.0f });
+    AddTriangle(builder, 0, 1, 2);
+    AddTriangle(builder, 0, 2, 3);
+    auto mesh = CreateMesh(allocator, builder, GetName("image"));
+    PopScratch();
+    return mesh;
+}
+
 void InitUI() {
     g_ui = {};
     g_ui.allocator = CreateArenaAllocator(sizeof(FatElement) * MAX_ELEMENTS, "UI");
     g_ui.camera = CreateCamera(ALLOCATOR_DEFAULT);
     g_ui.element_quad = CreateElementQuad(ALLOCATOR_DEFAULT);
+    g_ui.image_mesh = CreateImageQuad(ALLOCATOR_DEFAULT);
     g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
     g_ui.input = CreateInputSet(ALLOCATOR_DEFAULT);
     g_ui.text_mesh_allocator = CreatePoolAllocator(sizeof(CachedTextMesh), MAX_TEXT_MESHES);
