@@ -1876,11 +1876,12 @@ static bool CreateShaderInternal(
     };
 
     bool depth_test = (flags & SHADER_FLAGS_DEPTH) != 0;
+    bool depth_less = (flags & SHADER_FLAGS_DEPTH_LESS) != 0;
     VkPipelineDepthStencilStateCreateInfo depth_stencil = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
         .depthTestEnable = depth_test,
         .depthWriteEnable = depth_test,
-        .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL,
+        .depthCompareOp =  depth_less ? VK_COMPARE_OP_LESS : VK_COMPARE_OP_LESS_OR_EQUAL,
     };
 
     VkPipelineColorBlendAttachmentState color_blend_attachment = {};
