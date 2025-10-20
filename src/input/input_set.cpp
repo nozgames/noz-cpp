@@ -207,8 +207,7 @@ void InputActiveInputSetList(LinkedList& list)
     Init(list, offsetof(InputSetImpl, node_active));
 }
 
-void ConsumeButton(InputCode code)
-{
+void ConsumeButton(InputCode code) {
     InputSetImpl* impl = (InputSetImpl*)GetInputSet();
     if (!impl)
         return;
