@@ -219,8 +219,7 @@ void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_in
     DrawMesh(mesh);
 }
 
-void DrawMesh(Mesh* mesh, const Mat3& transform)
-{
+void DrawMesh(Mesh* mesh, const Mat3& transform) {
     BindTransform(transform);
     DrawMesh(mesh);
 }

@@ -910,10 +910,10 @@ static Mesh* CreateElementQuad(Allocator* allocator) {
 static Mesh* CreateImageQuad(Allocator* allocator) {
     PushScratch();
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddVertex(builder, { -0.5f, -0.5f }, { 0.0f, 1.0f }, { 0.0f, 0.0f });
-    AddVertex(builder, {  0.5f, -0.5f }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
-    AddVertex(builder, {  0.5f,  0.5f }, { 0.0f, 1.0f }, { 1.0f, 1.0f });
-    AddVertex(builder, { -0.5f,  0.5f }, { 0.0f, 1.0f }, { 0.0f, 1.0f });
+    AddVertex(builder, { -0.5f, -0.5f }, { 0.0f, 1.0f }, { 0.0f, 1.0f });
+    AddVertex(builder, {  0.5f, -0.5f }, { 0.0f, 1.0f }, { 1.0f, 1.0f });
+    AddVertex(builder, {  0.5f,  0.5f }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+    AddVertex(builder, { -0.5f,  0.5f }, { 0.0f, 1.0f }, { 0.0f, 0.0f });
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
     auto mesh = CreateMesh(allocator, builder, GetName("image"));

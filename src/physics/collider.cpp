@@ -38,17 +38,12 @@ Collider* CreateCollider(Allocator* allocator, Mesh* mesh)
     return impl;
 }
 
-bool OverlapPoint(Collider* collider, const Vec2& point)
-{
+bool OverlapPoint(Collider* collider, const Vec2& point, const Mat3& transform) {
     ColliderImpl* impl = (ColliderImpl*)collider;
-    if (!Contains(impl->bounds, point))
-        return false;
+    Vec2 v1 = TransformPoint(transform, impl->points[impl->point_count - 1]);
 
-    Vec2 v1 = impl->points[impl->point_count - 1];
-
-    for (u32 i = 0; i < impl->point_count; i++)
-    {
-        Vec2 v2 = impl->points[i];
+    for (u32 i = 0; i < impl->point_count; i++) {
+        Vec2 v2 = TransformPoint(transform, impl->points[i]);
         Vec2 edge = v2 - v1;
         Vec2 to_point = point - v1;
         f32 cross = edge.x * to_point.y - edge.y * to_point.x;
@@ -59,6 +54,35 @@ bool OverlapPoint(Collider* collider, const Vec2& point)
     }
 
     return true;
+}
+
+bool OverlapBounds(Collider* collider, const Bounds2& bounds, const Mat3& transform) {
+    ColliderImpl* impl = (ColliderImpl*)collider;
+
+    // Check if any of the bounds corners are inside the collider
+    Vec2 corners[4] = {
+        {bounds.min.x, bounds.min.y},
+        {bounds.max.x, bounds.min.y},
+        {bounds.max.x, bounds.max.y},
+        {bounds.min.x, bounds.max.y}
+    };
+
+    for (u32 i = 0; i < 4; i++) {
+        if (OverlapPoint(collider, corners[i], transform))
+            return true;
+    }
+
+    // check if any collider edges overlap the bounds
+    Vec2 v1 = TransformPoint(transform, impl->points[impl->point_count - 1]);
+    for (u32 i = 0; i < impl->point_count; i++) {
+        Vec2 v2 = TransformPoint(transform, impl->points[i]);
+        if (Intersects(bounds, v1, v2))
+            return true;
+
+        v1 = v2;
+    }
+
+    return false;
 }
 
 bool Raycast(Collider* colider, const Vec2& origin, const Vec2& dir, float distance, RaycastResult* result)
