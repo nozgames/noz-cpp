@@ -21,16 +21,27 @@ constexpr AssetSignature ASSET_SIGNATURE_SKELETON    = MAKE_FOURCC('N', 'Z', 'S'
 constexpr AssetSignature ASSET_SIGNATURE_ANIMATION   = MAKE_FOURCC('N', 'Z', 'A', 'N');
 constexpr AssetSignature ASSET_SIGNATURE_UNKNOWN     = 0xF00DF00D;
 
-struct AssetHeader
-{
+enum AssetType {
+    ASSET_TYPE_UNKNOWN = -1,
+    ASSET_TYPE_MESH,
+    ASSET_TYPE_VFX,
+    ASSET_TYPE_SKELETON,
+    ASSET_TYPE_ANIMATION,
+    ASSET_TYPE_SOUND,
+    ASSET_TYPE_TEXTURE,
+    ASSET_TYPE_FONT,
+    ASSET_TYPE_SHADER,
+    ASSET_TYPE_COUNT,
+};
+
+struct AssetHeader {
     AssetSignature signature;
     u32 version;
     u32 flags;
     u32 names;
 };
 
-struct Asset
-{
+struct Asset {
     const Name* name;
 };
 

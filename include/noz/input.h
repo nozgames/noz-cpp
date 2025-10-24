@@ -12,9 +12,9 @@ constexpr int TEXT_INPUT_MAX_LENGTH = 4096;
 struct InputSet {};
 
 // @input
-extern void SetInputSet(InputSet* map);
+extern void SetInputSet(InputSet* input_set);
 extern InputSet* GetInputSet();
-extern void PushInputSet(InputSet* map);
+extern void PushInputSet(InputSet* input_set, bool inherit_state=false);
 extern void PopInputSet();
 extern Vec2 GetMousePosition();
 

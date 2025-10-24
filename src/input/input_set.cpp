@@ -97,8 +97,7 @@ void UpdateButtonState(InputSetImpl* impl, InputCode code, bool new_state, bool 
     if (reset)
         return;
 
-    if (IsButtonReset(impl->buttons[int_code]))
-    {
+    if (IsButtonReset(impl->buttons[int_code])) {
         if (!new_state)
             impl->buttons[int_code] &= (~BUTTON_STATE_RESET);
 
@@ -111,54 +110,43 @@ void UpdateButtonState(InputSetImpl* impl, InputCode code, bool new_state, bool 
         impl->buttons[int_code] |= BUTTON_STATE_RELEASED;
 }
 
-float GetAxis(InputSet* set, InputCode code)
-{
+float GetAxis(InputSet* set, InputCode code) {
     if (!((InputSetImpl*)set)->active)
         return 0.0f;
     return platform::GetInputAxisValue(code);
 }
 
-void UpdateMouseState(InputSetImpl* impl, bool reset)
-{
-    for (u32 i = 0; i < impl->enabled_count; i++)
-    {
+void UpdateMouseState(InputSetImpl* impl, bool reset) {
+    for (u32 i = 0; i < impl->enabled_count; i++) {
         InputCode code = impl->enabled_codes[i];
-        if (IsMouse(code) && IsButton(code))
-        {
+        if (IsMouse(code) && IsButton(code)) {
             bool button_down = platform::IsInputButtonDown(code);
             UpdateButtonState(impl, code, button_down, reset);
         }
     }
 }
 
-void UpdateKeyboardSate(InputSetImpl* impl, bool reset)
-{
-    for (u32 i = 0; i < impl->enabled_count; i++)
-    {
+void UpdateKeyboardSate(InputSetImpl* impl, bool reset) {
+    for (u32 i = 0; i < impl->enabled_count; i++) {
         InputCode code = impl->enabled_codes[i];
-        if (IsKeyboard(code))
-        {
+        if (IsKeyboard(code)) {
             bool key_down = platform::IsInputButtonDown(code);
             UpdateButtonState(impl, code, key_down, reset);
         }
     }
 }
 
-void UpdateGamepadState(InputSetImpl* impl, bool reset)
-{
-    for (u32 i = 0; i < impl->enabled_count; i++)
-    {
+void UpdateGamepadState(InputSetImpl* impl, bool reset) {
+    for (u32 i = 0; i < impl->enabled_count; i++) {
         InputCode code = impl->enabled_codes[i];
-        if (IsGamepad(code) && IsButton(code))
-        {
+        if (IsGamepad(code) && IsButton(code)) {
             bool button_down = platform::IsInputButtonDown(code);
             UpdateButtonState(impl, code, button_down, reset);
         }
     }
 }
 
-void UpdateInputState(InputSet* input_set)
-{
+void UpdateInputState(InputSet* input_set) {
     if (nullptr == input_set)
         return;
 
@@ -173,23 +161,30 @@ void UpdateInputState(InputSet* input_set)
     UpdateGamepadState(impl, false);
 }
 
-bool IsButtonDown(InputSet* input_set, InputCode code)
-{
-    return (static_cast<InputSetImpl*>(input_set)->buttons[code] & BUTTON_STATE_DOWN) != 0;
+static bool IsButtonReset(InputSet* input_set, InputCode code) {
+    return (static_cast<InputSetImpl*>(input_set)->buttons[code] & BUTTON_STATE_RESET) != 0;
 }
 
-bool WasButtonPressed(InputSet* input_set, InputCode code)
-{
+bool IsButtonDown(InputSet* input_set, InputCode code) {
+    return !IsButtonReset(input_set, code) && (static_cast<InputSetImpl*>(input_set)->buttons[code] & BUTTON_STATE_DOWN) != 0;
+}
+
+bool WasButtonPressed(InputSet* input_set, InputCode code) {
     return (static_cast<InputSetImpl*>(input_set)->buttons[code] & BUTTON_STATE_PRESSED) != 0;
 }
 
-bool WasButtonReleased(InputSet* input_set, InputCode code)
-{
+bool WasButtonReleased(InputSet* input_set, InputCode code) {
     return (static_cast<InputSetImpl*>(input_set)->buttons[code] & BUTTON_STATE_RELEASED) != 0;
 }
 
-void ResetInputState(InputSet* input_set)
-{
+void Copy(InputSet* dst, InputSet* src) {
+    InputSetImpl* dst_impl = static_cast<InputSetImpl*>(dst);
+    InputSetImpl* src_impl = static_cast<InputSetImpl*>(src);
+    *dst_impl = *src_impl;
+    dst_impl->node_active = {};
+}
+
+void ResetInputState(InputSet* input_set) {
     if (!input_set)
         return;
 
@@ -202,8 +197,7 @@ void ResetInputState(InputSet* input_set)
     UpdateGamepadState(impl, true);
 }
 
-void InputActiveInputSetList(LinkedList& list)
-{
+void InputActiveInputSetList(LinkedList& list) {
     Init(list, offsetof(InputSetImpl, node_active));
 }
 

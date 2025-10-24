@@ -1,5 +1,11 @@
 # Todo
 
+- [ ] Need a way to keep the mouse drag going for box select when transitioning to the new input set (maybe pass inherit) ?
+- [ ] better way to handle mouse drag tracking.
+
+- [ ] Always use the sorted assets list rather than the unsorted one
+- [ ] merge editor and view
+
 - [ ] Should be able to select bone by clicking on a skin
 - [ ] Cannot set the edge size on the archer head
 - [ ] what is white screen on startup?
