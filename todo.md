@@ -1,8 +1,6 @@
 # Todo
 
-- [ ] Need a way to keep the mouse drag going for box select when transitioning to the new input set (maybe pass inherit) ?
-- [ ] better way to handle mouse drag tracking.
-
+- [ ] Dont draw origins of objects that are not being edited in front of those that are
 - [ ] Always use the sorted assets list rather than the unsorted one
 - [ ] merge editor and view
 

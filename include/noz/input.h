@@ -17,6 +17,7 @@ extern InputSet* GetInputSet();
 extern void PushInputSet(InputSet* input_set, bool inherit_state=false);
 extern void PopInputSet();
 extern Vec2 GetMousePosition();
+inline bool IsActive(InputSet* input_set) { return GetInputSet() == input_set; }
 
 // @text
 struct TextInput
