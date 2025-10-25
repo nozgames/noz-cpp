@@ -1,8 +1,16 @@
 # Todo
 
+- [ ] knife tool for cutting faces
+  - [ ] all points must be in the same face for now
+  - [ ] all edges must be in the same face
+  - [ ] only 2 points on edges
+  - [ ] split face into two faces along the two verts and then add the extra verts
+- [ ] multi-select delete did not work
 - [ ] Dont draw origins of objects that are not being edited in front of those that are
 - [ ] Always use the sorted assets list rather than the unsorted one
-- [ ] merge editor and view
+- [ ] There are some bugs with creating faces
+- [ ] There are some bugs with deletting edges and vertices
+- [ ] do not allow estruding an internal edge
 
 - [ ] Should be able to select bone by clicking on a skin
 - [ ] Cannot set the edge size on the archer head

@@ -42,8 +42,7 @@ static bool IsButtonReset(u8 state)
     return (state & BUTTON_STATE_RESET) != 0;
 }
 
-void EnableCharacters(InputSet* input_set)
-{
+void EnableCharacters(InputSet* input_set) {
     for (int i = KEY_A; i <= KEY_Z; i++)
         EnableButton(input_set, static_cast<InputCode>(i));
 
@@ -54,8 +53,16 @@ void EnableCharacters(InputSet* input_set)
     EnableButton(input_set, KEY_MINUS);
 }
 
-void EnableButton(InputSet* input_set, InputCode code)
-{
+void EnableModifiers(InputSet* input_set) {
+    EnableButton(input_set, KEY_LEFT_SHIFT);
+    EnableButton(input_set, KEY_RIGHT_SHIFT);
+    EnableButton(input_set, KEY_LEFT_CTRL);
+    EnableButton(input_set, KEY_RIGHT_CTRL);
+    EnableButton(input_set, KEY_LEFT_ALT);
+    EnableButton(input_set, KEY_RIGHT_ALT);
+}
+
+void EnableButton(InputSet* input_set, InputCode code) {
     InputSetImpl* impl = static_cast<InputSetImpl*>(input_set);
     if (IsButtonEnabled(impl->buttons[code]))
         return;

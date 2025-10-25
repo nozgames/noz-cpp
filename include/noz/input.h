@@ -44,7 +44,8 @@ extern bool WasButtonPressed(InputSet* map, InputCode code);
 inline bool WasButtonPressed(InputCode code) { return WasButtonPressed(GetInputSet(), code); }
 extern bool WasButtonReleased(InputSet* map, InputCode code);
 extern void EnableButton(InputSet* map, InputCode code);
-extern void EnableCharacters(InputSet* map);
+extern void EnableCharacters(InputSet* input_set);
+extern void EnableModifiers(InputSet* input_set);
 extern void DisableButton(InputSet* map, InputCode code);
 extern float GetAxis(InputSet* set, InputCode code);
 extern void ConsumeButton(InputCode code);
