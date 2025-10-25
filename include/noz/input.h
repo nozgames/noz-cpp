@@ -41,6 +41,7 @@ inline bool IsShiftDown(InputSet* map) { return IsButtonDown(map, KEY_LEFT_SHIFT
 inline bool IsAltDown(InputSet* map) { return IsButtonDown(map, KEY_LEFT_ALT) || IsButtonDown(map, KEY_RIGHT_ALT); }
 inline bool IsCtrlDown(InputSet* map) { return IsButtonDown(map, KEY_LEFT_CTRL) || IsButtonDown(map, KEY_RIGHT_CTRL); }
 extern bool WasButtonPressed(InputSet* map, InputCode code);
+inline bool WasButtonPressed(InputCode code) { return WasButtonPressed(GetInputSet(), code); }
 extern bool WasButtonReleased(InputSet* map, InputCode code);
 extern void EnableButton(InputSet* map, InputCode code);
 extern void EnableCharacters(InputSet* map);
