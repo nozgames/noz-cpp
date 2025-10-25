@@ -25,6 +25,7 @@ namespace noz
     constexpr float RAD_TO_DEG = 180.0f / PI;
 
     constexpr int MB = 1024 * 1024;
+    constexpr int GB = 1024 * 1024 * 1024;
 
     // @power
     constexpr uint32_t NextPowerOf2(uint32_t n)

@@ -6,8 +6,7 @@
 
 #include <filesystem>
 
-bool IsValidSignature(AssetSignature signature)
-{
+bool IsValidSignature(AssetSignature signature) {
     return signature == ASSET_SIGNATURE_TEXTURE ||
            signature == ASSET_SIGNATURE_MESH ||
            signature == ASSET_SIGNATURE_FONT ||
@@ -18,8 +17,7 @@ bool IsValidSignature(AssetSignature signature)
            signature == ASSET_SIGNATURE_STYLE_SHEET;
 }
 
-bool ReadAssetHeader(Stream* stream, AssetHeader* header)
-{
+bool ReadAssetHeader(Stream* stream, AssetHeader* header) {
     if (!stream || !header) return false;
     
     // Read header fields
@@ -31,8 +29,7 @@ bool ReadAssetHeader(Stream* stream, AssetHeader* header)
     return !IsEOS(stream);
 }
 
-bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** name_table)
-{
+bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** name_table) {
     if (!stream || !header) return false;
     
     // Write header fields
@@ -41,8 +38,7 @@ bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** name_tab
     WriteU32(stream, header->flags);
     WriteU32(stream, header->names);
 
-    if (header->names > 0)
-    {
+    if (header->names > 0) {
         assert(name_table);
         for (u32 i = 0; i < header->names; i++)
             WriteString(stream, name_table[i]->value);
@@ -51,14 +47,12 @@ bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** name_tab
     return true;
 }
 
-bool ValidateAssetHeader(AssetHeader* header, uint32_t expected_signature)
-{
+bool ValidateAssetHeader(AssetHeader* header, uint32_t expected_signature) {
     if (!header) return false;
     return header->signature == expected_signature;
 }
 
-const char* GetExtensionFromSignature(AssetSignature signature)
-{
+const char* GetExtensionFromSignature(AssetSignature signature) {
     // Convert signature to 4 character string (little endian to big endian)
     static char ext[6];  // ".xxxx\0"
     ext[0] = '.';
@@ -71,10 +65,8 @@ const char* GetExtensionFromSignature(AssetSignature signature)
     return ext;
 }
 
-const char* GetTypeNameFromSignature(AssetSignature signature)
-{
-    switch (signature)
-    {
+const char* GetTypeNameFromSignature(AssetSignature signature) {
+    switch (signature) {
         case ASSET_SIGNATURE_TEXTURE: return "Texture";
         case ASSET_SIGNATURE_MESH: return "Mesh";
         case ASSET_SIGNATURE_FONT: return "Font";
@@ -88,8 +80,7 @@ const char* GetTypeNameFromSignature(AssetSignature signature)
     }
 }
 
-AssetSignature GetSignatureFromExtension(const char* ext)
-{
+AssetSignature GetSignatureFromExtension(const char* ext) {
     if (*ext == '.')
         ext++;
 
@@ -109,8 +100,7 @@ AssetSignature GetSignatureFromExtension(const char* ext)
     return signature;
 }
 
-static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetSignature signature)
-{
+static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetSignature signature) {
     assert(asset_name);
 
     std::filesystem::path asset_path = GetApplicationTraits()->assets_path;
@@ -131,8 +121,7 @@ static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, Ass
     return LoadStream(allocator, asset_path);
 }
 
-const Name** ReadNameTable(const AssetHeader& header, Stream* stream)
-{
+const Name** ReadNameTable(const AssetHeader& header, Stream* stream) {
     const Name** name_table = nullptr;
     if (header.names > 0)
     {
@@ -144,11 +133,9 @@ const Name** ReadNameTable(const AssetHeader& header, Stream* stream)
     return name_table;
 }
 
-Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader, Stream* stream)
-{
+Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader, Stream* stream) {
     AssetHeader header = {};
-    if (!ReadAssetHeader(stream, &header) || !ValidateAssetHeader(&header, signature))
-    {
+    if (!ReadAssetHeader(stream, &header) || !ValidateAssetHeader(&header, signature)) {
         Free(stream);
         return nullptr;
     }
@@ -156,14 +143,14 @@ Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSign
     const Name** name_table = ReadNameTable(header, stream);
 
     Asset* asset = loader(allocator, stream, &header, asset_name, name_table);
+    asset->flags = header.flags;
 
     Free(name_table);
 
     return asset;
 }
 
-static Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader)
-{
+Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader) {
     Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, asset_name, signature);
     if (!stream)
         return nullptr;
@@ -175,8 +162,7 @@ static Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, As
     return asset;
 }
 
-Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader)
-{
+Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader) {
     if (!asset_name || !loader)
         return nullptr;
 
@@ -189,8 +175,7 @@ Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetSignature si
 
 #ifdef NOZ_EDITOR
 
-void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void (*reload)(Asset*, Stream*, const AssetHeader& header, const Name** name_table))
-{
+void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void (*reload)(Asset*, Stream*, const AssetHeader& header, const Name** name_table)) {
     if (asset == nullptr)
         return;
 
@@ -201,8 +186,7 @@ void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void 
         return;
 
     AssetHeader header = {};
-    if (!ReadAssetHeader(stream, &header) || !ValidateAssetHeader(&header, signature))
-    {
+    if (!ReadAssetHeader(stream, &header) || !ValidateAssetHeader(&header, signature)) {
         Free(stream);
         return;
     }
