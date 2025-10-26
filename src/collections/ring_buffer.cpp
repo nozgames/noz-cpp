@@ -71,6 +71,12 @@ void PopBack(RingBuffer* rb)
     rb->back = (rb->back + 1) % rb->capacity;
 }
 
+void RemoveAt(RingBuffer* rb, u32 index) {
+    assert(index < rb->count);
+    for (u32 i=index; i<rb->count-1; i++)
+        memcpy(GetAt(rb, i), GetAt(rb, i+1), rb->item_size);
+    rb->count--;
+}
 
 void Clear(RingBuffer* rb)
 {

@@ -12,11 +12,12 @@ constexpr int TEXT_INPUT_MAX_LENGTH = 4096;
 struct InputSet {};
 
 // @input
-extern void SetInputSet(InputSet* map);
+extern void SetInputSet(InputSet* input_set);
 extern InputSet* GetInputSet();
-extern void PushInputSet(InputSet* map);
+extern void PushInputSet(InputSet* input_set, bool inherit_state=false);
 extern void PopInputSet();
 extern Vec2 GetMousePosition();
+inline bool IsActive(InputSet* input_set) { return GetInputSet() == input_set; }
 
 // @text
 struct TextInput
@@ -40,9 +41,11 @@ inline bool IsShiftDown(InputSet* map) { return IsButtonDown(map, KEY_LEFT_SHIFT
 inline bool IsAltDown(InputSet* map) { return IsButtonDown(map, KEY_LEFT_ALT) || IsButtonDown(map, KEY_RIGHT_ALT); }
 inline bool IsCtrlDown(InputSet* map) { return IsButtonDown(map, KEY_LEFT_CTRL) || IsButtonDown(map, KEY_RIGHT_CTRL); }
 extern bool WasButtonPressed(InputSet* map, InputCode code);
+inline bool WasButtonPressed(InputCode code) { return WasButtonPressed(GetInputSet(), code); }
 extern bool WasButtonReleased(InputSet* map, InputCode code);
 extern void EnableButton(InputSet* map, InputCode code);
-extern void EnableCharacters(InputSet* map);
+extern void EnableCharacters(InputSet* input_set);
+extern void EnableModifiers(InputSet* input_set);
 extern void DisableButton(InputSet* map, InputCode code);
 extern float GetAxis(InputSet* set, InputCode code);
 extern void ConsumeButton(InputCode code);

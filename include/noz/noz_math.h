@@ -25,6 +25,7 @@ namespace noz
     constexpr float RAD_TO_DEG = 180.0f / PI;
 
     constexpr int MB = 1024 * 1024;
+    constexpr int GB = 1024 * 1024 * 1024;
 
     // @power
     constexpr uint32_t NextPowerOf2(uint32_t n)
@@ -290,6 +291,7 @@ inline Bounds2 Union(const Bounds2& a, const Vec2& b) { return Bounds2{ Min(a.mi
 inline Vec2 GetCenter(const Bounds2& b) { return Vec2{ (b.min.x + b.max.x) * 0.5f, (b.min.y + b.max.y) * 0.5f }; }
 inline Vec2 GetSize(const Bounds2& b) { return Vec2{ b.max.x - b.min.x, b.max.y - b.min.y }; }
 inline Bounds2 Expand(const Bounds2& b, float size) { return Bounds2{ b.min - Vec2{ size, size }, b.max + Vec2{ size, size } }; }
+inline Bounds2 Translate(const Bounds2& b, const Vec2& translation) { return Bounds2{ b.min + translation, b.max + translation }; }
 
 // @mat4
 extern Mat4 TRS(const Vec3& translation, const Vec4& rotation, const Vec3& scale);
@@ -356,6 +358,7 @@ inline Vec2 XZ(const Vec3& v) { return {v.x, v.z}; }
 // @angle
 extern float SignedAngleDelta(const Vec2& a, const Vec2&b);
 extern float NormalizeAngle(float angle);
+extern float NormalizeAngle180(float angle);
 inline float Radians(float degrees) { return degrees * noz::PI / 180.0f; }
 inline float Degrees(float radians) { return radians * 180.0f / noz::PI; }
 inline float Angle(const Vec2& direction) { return Degrees(Atan2(direction.y, direction.x)); }

@@ -39,6 +39,7 @@ void PopBack(RingBuffer* rb);
 void PopFront(RingBuffer* rb);
 void Clear(RingBuffer* rb);
 void* GetAt(RingBuffer* rb, u32 index);
+void RemoveAt(RingBuffer* rb, u32 index);
 inline void* GetFront(RingBuffer* rb) { return GetAt(rb, 0); }
 inline void* GetBack(RingBuffer* rb) { return GetAt(rb, rb->count - 1); }
 inline bool IsEmpty(RingBuffer* rb) { return rb->count == 0; }

@@ -116,8 +116,7 @@ bool IsValid(PoolAllocator* allocator, u32 index)
     return impl->items_used[index];
 }
 
-u32 GetCount(PoolAllocator* allocator)
-{
+u32 GetCount(PoolAllocator* allocator) {
     assert(allocator);
     return static_cast<PoolAllocatorImpl*>(allocator)->count;
 }

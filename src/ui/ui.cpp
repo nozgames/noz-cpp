@@ -570,8 +570,8 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
         ContainerElement* container = static_cast<ContainerElement*>(parent);
         for (u32 i = 0; i < parent->child_count; i++) {
             Element* child = g_ui.element_stack[element_stack_start + i];
-            child->rect.x += container->style.padding.left;
-            child->rect.y += container->style.padding.top;
+            child->rect.x += container->style.padding.left + container->style.border.width;
+            child->rect.y += container->style.padding.top + container->style.border.width;
         }
     } else if (parent->type == ELEMENT_TYPE_BORDER) {
         BorderElement* border = static_cast<BorderElement*>(parent);
@@ -645,8 +645,8 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
     Vec2 child_constraints = GetSize(e->rect);
     if (e->type == ELEMENT_TYPE_CONTAINER) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
-        if (child_constraints.x != F32_MAX) child_constraints.x -= (container->style.padding.left  + container->style.padding.right);
-        if (child_constraints.y != F32_MAX) child_constraints.y -= (container->style.padding.top   + container->style.padding.bottom);
+        if (child_constraints.x != F32_MAX) child_constraints.x -= (container->style.padding.left  + container->style.padding.right +  container->style.border.width * 2.0f);
+        if (child_constraints.y != F32_MAX) child_constraints.y -= (container->style.padding.top   + container->style.padding.bottom +  container->style.border.width * 2.0f);
     } else if (e->type == ELEMENT_TYPE_BORDER) {
         BorderElement* border = static_cast<BorderElement*>(e);
         if (child_constraints.x != F32_MAX) child_constraints.x -= border->style.width * 2.0f;
@@ -762,6 +762,21 @@ static int RenderElement(int element_index)
     } else if (e->type == ELEMENT_TYPE_CONTAINER) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
         RenderBackground(e->rect, transform, container->style.color);
+
+        if (container->style.border.width > 0.0f && container->style.border.color.a > 0) {
+            float border_width = container->style.border.width;
+            BindColor(container->style.border.color);
+            BindMaterial(g_ui.element_material);
+            BindTransform(transform * Scale(Vec2{e->rect.width, border_width}));
+            DrawMesh(g_ui.element_quad);
+            BindTransform(transform * Translate(Vec2{0, e->rect.height - border_width}) * Scale(Vec2{e->rect.width, border_width}));
+            DrawMesh(g_ui.element_quad);
+            BindTransform(transform * Translate(Vec2{0, border_width}) * Scale(Vec2{border_width, e->rect.height - border_width * 2}));
+            DrawMesh(g_ui.element_quad);
+            BindTransform(transform * Translate(Vec2{e->rect.width - border_width, border_width}) * Scale(Vec2{border_width, e->rect.height - border_width * 2}));
+            DrawMesh(g_ui.element_quad);
+        }
+
     } else if (e->type == ELEMENT_TYPE_CANVAS) {
         CanvasElement* canvas = static_cast<CanvasElement*>(e);
         RenderBackground(e->rect, transform, canvas->style.color);
@@ -910,10 +925,10 @@ static Mesh* CreateElementQuad(Allocator* allocator) {
 static Mesh* CreateImageQuad(Allocator* allocator) {
     PushScratch();
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddVertex(builder, { -0.5f, -0.5f }, { 0.0f, 1.0f }, { 0.0f, 0.0f });
-    AddVertex(builder, {  0.5f, -0.5f }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
-    AddVertex(builder, {  0.5f,  0.5f }, { 0.0f, 1.0f }, { 1.0f, 1.0f });
-    AddVertex(builder, { -0.5f,  0.5f }, { 0.0f, 1.0f }, { 0.0f, 1.0f });
+    AddVertex(builder, { -0.5f, -0.5f }, { 0.0f, 1.0f }, { 0.0f, 1.0f });
+    AddVertex(builder, {  0.5f, -0.5f }, { 0.0f, 1.0f }, { 1.0f, 1.0f });
+    AddVertex(builder, {  0.5f,  0.5f }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
+    AddVertex(builder, { -0.5f,  0.5f }, { 0.0f, 1.0f }, { 0.0f, 0.0f });
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
     auto mesh = CreateMesh(allocator, builder, GetName("image"));

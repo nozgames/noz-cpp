@@ -21,17 +21,32 @@ constexpr AssetSignature ASSET_SIGNATURE_SKELETON    = MAKE_FOURCC('N', 'Z', 'S'
 constexpr AssetSignature ASSET_SIGNATURE_ANIMATION   = MAKE_FOURCC('N', 'Z', 'A', 'N');
 constexpr AssetSignature ASSET_SIGNATURE_UNKNOWN     = 0xF00DF00D;
 
-struct AssetHeader
-{
+enum AssetType {
+    ASSET_TYPE_UNKNOWN = -1,
+    ASSET_TYPE_MESH,
+    ASSET_TYPE_VFX,
+    ASSET_TYPE_SKELETON,
+    ASSET_TYPE_ANIMATION,
+    ASSET_TYPE_SOUND,
+    ASSET_TYPE_TEXTURE,
+    ASSET_TYPE_FONT,
+    ASSET_TYPE_SHADER,
+    ASSET_TYPE_COUNT,
+};
+
+typedef u32 AssetFlags;
+constexpr AssetFlags ASSET_FLAG_NONE        = 0;
+
+struct AssetHeader {
     AssetSignature signature;
     u32 version;
     u32 flags;
     u32 names;
 };
 
-struct Asset
-{
+struct Asset {
     const Name* name;
+    u32 flags;
 };
 
 typedef Asset* (*AssetLoaderFunc)(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
@@ -44,8 +59,10 @@ extern const char* GetExtensionFromSignature(AssetSignature signature);
 extern const char* GetTypeNameFromSignature(AssetSignature signature);
 extern Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader);
 extern const Name** ReadNameTable(const AssetHeader& header, Stream* stream);
-inline const Name* GetName(Asset* asset) { return asset->name; }
 extern bool IsValidSignature(AssetSignature signature);
+extern Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader, Stream* stream);
+extern Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader);
+inline const Name* GetName(Asset* asset) { return asset->name; }
 
 // @loaders
 Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);

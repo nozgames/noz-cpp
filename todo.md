@@ -1,83 +1,78 @@
 # Todo
 
-- [ ] highlight colors of selected faces in color grid  
-- [ ] Grid is in front of meshes
+- [ ] knife tool for cutting faces
+  - [ ] all points must be in the same face for now
+  - [ ] all edges must be in the same face
+  - [ ] only 2 points on edges
+  - [ ] split face into two faces along the two verts and then add the extra verts
+- [ ] multi-select delete did not work
+- [ ] Dont draw origins of objects that are not being edited in front of those that are
+- [ ] Always use the sorted assets list rather than the unsorted one
+- [ ] There are some bugs with creating faces
+- [ ] There are some bugs with deletting edges and vertices
+- [ ] do not allow estruding an internal edge
+
+- [ ] Should be able to select bone by clicking on a skin
+- [ ] Cannot set the edge size on the archer head
+- [ ] what is white screen on startup?
+- [ ] Show border color in the color picker with a different box
+- [ ] Creating a new skeleton dos not appear until restarting
+- [ ] Creating a new animation does not appear until restarting
+- [ ] After altering bone transforms in the skeleton the animations do not update until going into edit mode on the animation
+- [ ] Can create the name of an existing asset and it doubles it up in memory
+- [ ] Hide/show bones with alt-b
+- [ ] save state of bone show/hide for names / bones
 - [ ] Type numbers for g when moving assets
 - [ ] sort order is too unstable, causing meta files to be changed a lot
-- [ ] sort is not working
-
+- [ ] hide bones and names when animating.
+- [ ] always draw the timeline at the bottom of teh screen rather than under the asset
+- [ ] Animation event editor
+- [ ] key to hide / show palette (alt-c?)
 - [ ] Icons for assets that have no draw function
 - [ ] Make use of global asset list for asset manifest
 - [ ] Adding a bone to the skeleton caused the animations to write garbage data for position
-- [ ] Text not fitting in notification box
-- [ ] Change frames to be boxes with dots like animator, so holds are longer boxes
-- [ ] skeleton bone sort order for editor using []
-- [ ] bone scale
-- [ ] Bone length in the skeleton editor
-
-- [ ] Add colliders to meshes
 - [ ] Capture mouse while using tools like grab
-- [ ] inserting a frame with o in the middle seems to not be working
-- [ ] Change UI, vertex size, edge size, etc to not scale with the window size
-- [ ] zoom should zoom in at cursor
 - [ ] Animation bounds does not take into account the actual animation, just the skeleton
-- [ ] x to delete assets
-
 - [ ] moving bones in skeleton is not changing animations?
-- [ ] Bone rename is not marking modified
 - [ ] Prevent duplicate assets of same type and same name in different folders.
 - [ ] Creating new animation had 0 frames when i tried to edit the frame, bounds seemed bad too
 - [ ] moving bones in some loaded animations move weird, maybe rotation or incorrect matrcieis
 - [ ] editor animation likely leaking animation and skeleton asset 
 - [ ] vfx hotload broken
 - [ ] new clone animation
-- [ ] hold frames (h then number)
 - [ ] g r to reset / r r rather than alt-g and alt-r
-- [ ] Instance a skelton so we can parent different skinned meshes (sotre the instances in the meta file for the skeleton)
-- [ ] Button to disable color and show grey scale
-- [ ] hover on animation should play ?
 - [ ] Saving an asset is causing a double import (.meta?)
 - [ ] Saving an asset should suppress the import notification 
-- [ ] convert props to be struct
 - [ ] Need way to handle invalid assets (show invalid or error in editor, animation with missing skeleton for example)
 - [ ] Animation with no frames not loading
 - [ ] After creating new mesh I cannot select bones in the skeleton view
-- [ ] Outline size tool
 - [ ] button duplicate a frame
 - [ ] button copy a frame
 - [ ] button paste a frame
-- [ ] Single shader!
 - [ ] First time you load the shader is not loaded and it messes up, we need to handle the hotload?
 - [ ] No way to see log messages anymore, we need a console window (win32 window you can open?)
 - [ ] when moving bones in animation we have to recalculate the local position from the world after delta change
-- [ ] New mesh has no color or edges
-- [ ] Load editor assets in job
-- [ ] Skeleton bounds should include the meshes
 - [ ] Selecting a mesh asset should account for border in selection
 - [ ] Alt-drag on asset to create instance  (draw origin in blue and outline a lighter grey)
-- [ ] Set border color
-- [ ] Why isnt it closing? (thread lock) (job system)
-- [ ] Light color in the editor config
 - [ ] Use TextInput for typing after move or scale command
 - [ ] Pressing g or r should stop the previous g or r and start a new one
-- [ ] button to set how hard an edge is, soft on a quad will average normals 
 - [ ] Box select being pushed it making the color go away, is that ok?
-- [ ] highlight colors of selected triangles in the triangle ui
-- [ ] add face if 3 verts are selected and no triangle there
 - [ ] single click to select asset, ctrl to toggle
 - [ ] x to limit move
 - [ ] y to limit move
-- [ ] Trail vfx for individual particles
 - [ ] vfx initial_rotation and rotation over time
-- [ ] Localized strings
 
+- [ ] Something causes a spawn of error messages in the editor when client disconnects / reconnects, not sure which
 - [ ] combined vertex buffer for rendering so we can stream data to it like triangles?
-- [ ] key to hide / show palette (alt-c?)
-- [ ] Scene asset
-- [ ] Scene editor
 - [ ] hot load of textures
 - [ ] hot load of sounds
-- [ ] Something causes a spawn of error messages in the editor when client disconnects / reconnects, not sure which
-
+- [ ] convert props to be struct
 - [ ] Trace a font out with meshes?
 - [ ] Auto complete on commands
+- [ ] Load editor assets in job
+- [ ] Change UI, vertex size, edge size, etc to not scale with the window size
+- [ ] Instance a skelton so we can parent different skinned meshes (sotre the instances in the meta file for the skeleton)
+- [ ] hover on animation should play ?
+- [ ] Light color in the editor config
+- [ ] Trail vfx for individual particles
+- [ ] Localized strings
