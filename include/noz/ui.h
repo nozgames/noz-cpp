@@ -107,7 +107,7 @@ struct ImageStyle {
 };
 
 struct BorderStyle {
-    float width = 1.0f;
+    float width = 0.0f;
     Color color = COLOR_WHITE;
 };
 
