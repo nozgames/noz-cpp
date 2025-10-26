@@ -145,6 +145,7 @@ extern void AddArc(MeshBuilder* builder, const Vec2& center, f32 radius, f32 sta
 // @render_buffer
 extern void BindDefaultTexture(int texture_index);
 extern void BindColor(Color color);
+extern void BindColor(Color color, const Vec2& color_uv_offset);
 extern void BindCamera(Camera* camera);
 extern void BindVertexUserData(const void* data, size_t size);
 extern void BindFragmentUserData(const void* data, size_t size);

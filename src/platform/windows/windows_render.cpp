@@ -63,10 +63,15 @@ struct platform::Shader
     PipelineLayout* platform_layout;
 };
 
-struct ObjectBuffer
-{
+struct ObjectBuffer {
     float transform[12];
     float depth;
+};
+
+struct ColorBuffer {
+    Color color;
+    Vec2 uv_offset;
+    Vec2 padding;
 };
 
 struct VulkanDynamicBuffer
@@ -1265,13 +1270,17 @@ void platform::BindCamera(const Mat3& view_matrix)
     CopyMat3ToGPU(buffer_ptr, view_matrix);
 }
 
-void platform::BindColor(const Color& color)
-{
+void platform::BindColor(const Color& color, const Vec2& color_uv_offset) {
     void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_COLOR);
     if (!buffer_ptr)
         return;
 
-    memcpy(buffer_ptr, &color, sizeof(Color));
+    ColorBuffer buffer = {
+        .color = color,
+        .uv_offset = color_uv_offset
+    };
+
+    memcpy(buffer_ptr, &buffer, sizeof(ColorBuffer));
 }
 
 void platform::DestroyBuffer(Buffer* buffer)

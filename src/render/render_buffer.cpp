@@ -25,13 +25,13 @@ struct BindCameraData
     Camera* camera;
 };
 
-struct DrawMeshData
-{
+struct DrawMeshData {
     Mesh* mesh;
     Material* material;
     Mat3 transform;
     float depth;
     Color color;
+    Vec2 color_uv_offset;
 };
 
 struct BeginPassData
@@ -81,6 +81,7 @@ struct RenderBuffer
     Mat3 current_transform;
     float current_depth;
     Color current_color;
+    Vec2 current_color_uv_offset;
 };
 
 static RenderBuffer* g_render_buffer = nullptr;
@@ -207,28 +208,29 @@ void BindTransform(const Mat3& transform)
     g_render_buffer->current_transform = transform;
 }
 
-
-void BindColor(Color color)
-{
+void BindColor(Color color) {
     g_render_buffer->current_color = ToLinear(color);
+    g_render_buffer->current_color_uv_offset = VEC2_ZERO;
 }
 
-void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index)
-{
+void BindColor(Color color, const Vec2& color_uv_offset) {
+    g_render_buffer->current_color = ToLinear(color);
+    g_render_buffer->current_color_uv_offset = color_uv_offset;
+}
+
+void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index) {
     BindTransform(transform, animator, bone_index);
     DrawMesh(mesh);
 }
 
-void DrawMesh(Mesh* mesh, const Mat3& transform)
-{
+void DrawMesh(Mesh* mesh, const Mat3& transform) {
     BindTransform(transform);
     DrawMesh(mesh);
 }
 
 extern void UploadMesh(Mesh* mesh);
 
-void DrawMesh(Mesh* mesh)
-{
+void DrawMesh(Mesh* mesh) {
     assert(mesh);
 
     if (!IsUploaded(mesh))
@@ -244,7 +246,8 @@ void DrawMesh(Mesh* mesh)
                 .material = g_render_buffer->current_material,
                 .transform = g_render_buffer->current_transform,
                 .depth = g_render_buffer->current_depth,
-                .color = g_render_buffer->current_color
+                .color = g_render_buffer->current_color,
+                .color_uv_offset = g_render_buffer->current_color_uv_offset
             }
         }
     };
@@ -279,7 +282,7 @@ void ExecuteRenderCommands()
             break;
 
         case RENDER_COMMAND_TYPE_DRAW_MESH:
-            platform::BindColor(command->data.draw_mesh.color);
+            platform::BindColor(command->data.draw_mesh.color, command->data.draw_mesh.color_uv_offset);
             platform::BindTransform(command->data.draw_mesh.transform, command->data.draw_mesh.depth);
             BindMaterialInternal(command->data.draw_mesh.material);
             RenderMesh(command->data.draw_mesh.mesh);

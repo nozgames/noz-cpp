@@ -20,8 +20,7 @@ layout(location = 2) in vec3 v_normal;
 layout(location = 0) out vec2 f_uv;
 layout(location = 1) out vec3 f_normal;
 
-void main()
-{
+void main() {
     // Position  
     mat3 mvp = object.transform * camera.view_projection;
     vec3 screen_pos = vec3(v_position, 1.0) * mvp;
@@ -49,34 +48,24 @@ void main()
 layout(location = 0) in vec2 f_uv;
 layout(location = 1) in vec3 f_normal;
 layout(location = 0) out vec4 outColor;
-layout(set = 3, binding = 0) uniform ColorBuffer
-{
-    vec4 color;
-} colorData;
 
-layout(set = 4, binding = 0) uniform LightBuffer
-{
+layout(set = 3, binding = 0) uniform ColorBuffer {
+    vec4 color;
+    vec2 uv_offset;
+    vec2 padding;
+} color_buffer;
+
+layout(set = 4, binding = 0) uniform LightBuffer {
     vec3 direction;
     float padding;
     vec4 diffuse_color;
     vec4 shadow_color;
-} light;
+} light_buffer;
 
 layout(set = 6, binding = 0) uniform sampler2D mainTexture;
 
-const vec3 shadow_color = vec3(0.3, 0.3, 0.6);
-const float shadow_intensity = 0.1;
-const vec3 light_color = vec3(2.1, 2.1, 1);
-const float light_intensity = 0.1;
-
-vec3 light_gradient(float t, vec3 colorA, vec3 colorB, vec3 colorC) {
-    vec3 color1 = mix(colorA, colorB, clamp(t * 2.0, 0, 1));
-    vec3 color2 = mix(colorB, colorC, clamp((t - 0.5) * 2.0, 0, 1));
-    return mix(color1, color2, step(0.5, t));
-}
-
 void main() {
-    vec4 color = texture(mainTexture, f_uv) * colorData.color;
+    vec4 color = texture(mainTexture, f_uv + color_buffer.uv_offset) * color_buffer.color;
     outColor = color;
 }
 

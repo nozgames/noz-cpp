@@ -51,7 +51,7 @@ namespace platform
     void BindFragmentUserData(const u8* data, u32 size);
     void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color);
     void BindCamera(const Mat3& view_matrix);
-    void BindColor(const Color& color);
+    void BindColor(const Color& color, const Vec2& color_uv_offset);
     Buffer* CreateVertexBuffer(
         const MeshVertex* vertices,
         u16 vertex_count,
