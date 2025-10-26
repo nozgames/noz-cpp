@@ -49,8 +49,7 @@ Texture* GetTexture(Material* material, size_t index)
     return static_cast<MaterialImpl*>(material)->textures[index];
 }
 
-void SetTexture(Material* material, Texture* texture, size_t index)
-{
+void SetTexture(Material* material, Texture* texture, size_t index) {
     MaterialImpl* impl = static_cast<MaterialImpl*>(material);
     assert(index < impl->texture_count);
     impl->textures[index] = texture;

@@ -459,8 +459,7 @@ void ClearVfx()
             Free(GetAt(g_vfx.instance_pool, i));
 }
 
-void InitVfx()
-{
+void InitVfx() {
     g_vfx.emitter_pool = CreatePoolAllocator(sizeof(VfxEmitter), MAX_EMITTERS);
     g_vfx.instance_pool = CreatePoolAllocator(sizeof(VfxInstance), MAX_INSTANCES);
     g_vfx.particle_pool = CreatePoolAllocator(sizeof(VfxParticle), MAX_PARTICLES);

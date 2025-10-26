@@ -37,6 +37,8 @@ enum InputCode
     KEY_SPACE,
     KEY_ENTER,
     KEY_TAB,
+    KEY_COMMA,
+    KEY_PERIOD,
     KEY_BACKSPACE,
     KEY_ESCAPE,
 
@@ -126,23 +128,19 @@ enum InputCode
     INPUT_CODE_COUNT
 };
 
-inline bool IsKeyboard(InputCode code)
-{
+inline bool IsKeyboard(InputCode code) {
     return code >= KEY_A && code <= KEY_F12;
 }
 
-inline bool IsMouse(InputCode code)
-{
+inline bool IsMouse(InputCode code) {
     return code >= MOUSE_LEFT && code <= MOUSE_SCROLL_Y;
 }
 
-inline bool IsGamepad(InputCode code)
-{
+inline bool IsGamepad(InputCode code) {
     return code >= GAMEPAD_A && code <= GAMEPAD_4_RIGHT_TRIGGER;
 }
 
-inline bool IsAxis(InputCode code)
-{
+inline bool IsAxis(InputCode code) {
     return code == MOUSE_X || code == MOUSE_Y ||
         code == MOUSE_SCROLL_X || code == MOUSE_SCROLL_Y ||
         (code >= GAMEPAD_LEFT_STICK_X && code <= GAMEPAD_RIGHT_TRIGGER) ||

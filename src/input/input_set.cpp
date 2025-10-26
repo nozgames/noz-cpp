@@ -27,18 +27,15 @@ void SetActive(InputSet* input_set, bool active)
     impl->active = active;
 }
 
-static bool IsButtonEnabled(u8 state)
-{
+static bool IsButtonEnabled(u8 state) {
     return (state & BUTTON_STATE_ENABLED) != 0;
 }
 
-static bool IsButtonDown(u8 state)
-{
+static bool IsButtonDown(u8 state) {
     return (state & BUTTON_STATE_DOWN) != 0;
 }
 
-static bool IsButtonReset(u8 state)
-{
+static bool IsButtonReset(u8 state) {
     return (state & BUTTON_STATE_RESET) != 0;
 }
 
@@ -89,32 +86,31 @@ void DisableButton(InputSet* input_set, InputCode code)
     impl->buttons[code] = (impl->buttons[code] & ~BUTTON_STATE_ENABLED) | BUTTON_STATE_RESET;
 }
 
-void UpdateButtonState(InputSetImpl* impl, InputCode code, bool new_state, bool reset)
-{
-    auto int_code = static_cast<int>(code);
-    if (!IsButtonEnabled(impl->buttons[int_code]))
+void UpdateButtonState(InputSetImpl* impl, InputCode code, bool new_state, bool reset) {
+    if (!IsButtonEnabled(impl->buttons[code]))
         return;
 
-    auto old_state = IsButtonDown(impl->buttons[int_code]);
+    auto old_state = IsButtonDown(impl->buttons[code]);
     if (new_state)
-        impl->buttons[int_code] |= BUTTON_STATE_DOWN;
+        impl->buttons[code] |= BUTTON_STATE_DOWN;
     else
-        impl->buttons[int_code] &= ~BUTTON_STATE_DOWN;
+        impl->buttons[code] &= ~BUTTON_STATE_DOWN;
 
     if (reset)
         return;
 
-    if (IsButtonReset(impl->buttons[int_code])) {
+    if (IsButtonReset(impl->buttons[code])) {
         if (!new_state)
-            impl->buttons[int_code] &= (~BUTTON_STATE_RESET);
+            impl->buttons[code] &= (~BUTTON_STATE_RESET);
 
         return;
     }
 
-    if (new_state != old_state && new_state)
-        impl->buttons[int_code] |= BUTTON_STATE_PRESSED;
-    else if (new_state != old_state && !new_state)
-        impl->buttons[int_code] |= BUTTON_STATE_RELEASED;
+    if (new_state != old_state && new_state) {
+        impl->buttons[code] |= BUTTON_STATE_PRESSED;
+    } else if (new_state != old_state && !new_state) {
+        impl->buttons[code] |= BUTTON_STATE_RELEASED;
+    }
 }
 
 float GetAxis(InputSet* set, InputCode code) {
@@ -136,10 +132,11 @@ void UpdateMouseState(InputSetImpl* impl, bool reset) {
 void UpdateKeyboardSate(InputSetImpl* impl, bool reset) {
     for (u32 i = 0; i < impl->enabled_count; i++) {
         InputCode code = impl->enabled_codes[i];
-        if (IsKeyboard(code)) {
-            bool key_down = platform::IsInputButtonDown(code);
-            UpdateButtonState(impl, code, key_down, reset);
-        }
+        if (!IsKeyboard(code))
+            continue;
+
+        bool key_down = platform::IsInputButtonDown(code);
+        UpdateButtonState(impl, code, key_down, reset);
     }
 }
 

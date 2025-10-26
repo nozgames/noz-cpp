@@ -176,8 +176,7 @@ static void HandleClose()
     g_app.running = false;
 }
 
-void InitWindow()
-{
+void InitWindow() {
     assert(!g_app.window_created);
 
     g_app.window_created = true;
@@ -198,8 +197,7 @@ void InitWindow()
     LoadRendererAssets(g_app.asset_allocator);
 
 #ifdef NOZ_EDITOR
-    if (g_app.traits.editor_port != 0)
-    {
+    if (g_app.traits.editor_port != 0) {
         Listen(EVENT_HOTLOAD, HandleHotload);
         InitEditorClient("127.0.0.1", g_app.traits.editor_port);
     }
