@@ -10,14 +10,18 @@ constexpr u8 BUTTON_STATE_DOWN = 1 << 2;
 constexpr u8 BUTTON_STATE_RESET = 1 << 3;
 constexpr u8 BUTTON_STATE_ENABLED = 1 << 4;
 
-struct InputSetImpl : InputSet
-{
+struct InputSetImpl : InputSet {
+    const Name* name;
     u8 buttons[INPUT_CODE_COUNT];
     InputCode enabled_codes[INPUT_CODE_COUNT];
     u32 enabled_count;
     LinkedListNode node_active;
     bool active;
 };
+
+const Name* GetName(InputSet* set) {
+    return static_cast<InputSetImpl*>(set)->name;
+}
 
 void SetActive(InputSet* input_set, bool active)
 {
@@ -100,16 +104,20 @@ void UpdateButtonState(InputSetImpl* impl, InputCode code, bool new_state, bool 
         return;
 
     if (IsButtonReset(impl->buttons[code])) {
-        if (!new_state)
+        if (!new_state) {
+            LogInfo("%d reset", code);
             impl->buttons[code] &= (~BUTTON_STATE_RESET);
+        }
 
         return;
     }
 
     if (new_state != old_state && new_state) {
         impl->buttons[code] |= BUTTON_STATE_PRESSED;
+        LogInfo("%d pressed", code);
     } else if (new_state != old_state && !new_state) {
         impl->buttons[code] |= BUTTON_STATE_RELEASED;
+        LogInfo("%d released", code);
     }
 }
 
@@ -119,34 +127,11 @@ float GetAxis(InputSet* set, InputCode code) {
     return platform::GetInputAxisValue(code);
 }
 
-void UpdateMouseState(InputSetImpl* impl, bool reset) {
+void UpdateButtonState(InputSetImpl* impl, bool reset) {
     for (u32 i = 0; i < impl->enabled_count; i++) {
         InputCode code = impl->enabled_codes[i];
-        if (IsMouse(code) && IsButton(code)) {
-            bool button_down = platform::IsInputButtonDown(code);
-            UpdateButtonState(impl, code, button_down, reset);
-        }
-    }
-}
-
-void UpdateKeyboardSate(InputSetImpl* impl, bool reset) {
-    for (u32 i = 0; i < impl->enabled_count; i++) {
-        InputCode code = impl->enabled_codes[i];
-        if (!IsKeyboard(code))
-            continue;
-
-        bool key_down = platform::IsInputButtonDown(code);
-        UpdateButtonState(impl, code, key_down, reset);
-    }
-}
-
-void UpdateGamepadState(InputSetImpl* impl, bool reset) {
-    for (u32 i = 0; i < impl->enabled_count; i++) {
-        InputCode code = impl->enabled_codes[i];
-        if (IsGamepad(code) && IsButton(code)) {
-            bool button_down = platform::IsInputButtonDown(code);
-            UpdateButtonState(impl, code, button_down, reset);
-        }
+        bool button_down = platform::IsInputButtonDown(code);
+        UpdateButtonState(impl, code, button_down, reset);
     }
 }
 
@@ -154,15 +139,11 @@ void UpdateInputState(InputSet* input_set) {
     if (nullptr == input_set)
         return;
 
-    // Platform input state is now updated in the higher-level UpdateInput() function
-    
     InputSetImpl* impl = static_cast<InputSetImpl*>(input_set);
     for (int i = 0; i < INPUT_CODE_COUNT; i++)
         impl->buttons[i] &= ~(BUTTON_STATE_PRESSED | BUTTON_STATE_RELEASED);
 
-    UpdateKeyboardSate(impl, false);
-    UpdateMouseState(impl, false);
-    UpdateGamepadState(impl, false);
+    UpdateButtonState(impl, false);
 }
 
 static bool IsButtonReset(InputSet* input_set, InputCode code) {
@@ -184,7 +165,9 @@ bool WasButtonReleased(InputSet* input_set, InputCode code) {
 void Copy(InputSet* dst, InputSet* src) {
     InputSetImpl* dst_impl = static_cast<InputSetImpl*>(dst);
     InputSetImpl* src_impl = static_cast<InputSetImpl*>(src);
-    *dst_impl = *src_impl;
+    for (u8 i=0; i<INPUT_CODE_COUNT; i++)
+        if (IsButtonEnabled(dst_impl->buttons[i]))
+            dst_impl->buttons[i] = src_impl->buttons[i] | BUTTON_STATE_ENABLED;
     dst_impl->node_active = {};
 }
 
@@ -196,9 +179,7 @@ void ResetInputState(InputSet* input_set) {
     for (int i = 0; i < INPUT_CODE_COUNT; i++)
         impl->buttons[i] = (impl->buttons[i] & BUTTON_STATE_ENABLED) | BUTTON_STATE_RESET;
 
-    UpdateKeyboardSate(impl, true);
-    UpdateMouseState(impl, true);
-    UpdateGamepadState(impl, true);
+    UpdateButtonState(impl, true);
 }
 
 void InputActiveInputSetList(LinkedList& list) {
@@ -213,10 +194,10 @@ void ConsumeButton(InputCode code) {
     impl->buttons[code] = (impl->buttons[code] & BUTTON_STATE_ENABLED) | BUTTON_STATE_RESET;
 }
 
-InputSet* CreateInputSet(Allocator* allocator)
-{
+InputSet* CreateInputSet(Allocator* allocator, const Name* name) {
     InputSetImpl* impl = (InputSetImpl*)Alloc(allocator, sizeof(InputSetImpl));
     impl->enabled_count = 0;
+    impl->name = name == nullptr ? NAME_NONE : name;
     ResetInputState(impl);
     return impl;
 }

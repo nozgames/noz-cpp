@@ -35,7 +35,7 @@ extern void SetTextInput(const TextInput& text_input);
 extern bool IsTextInputEnabled();
 
 // @InputSet
-extern InputSet* CreateInputSet(Allocator* allocator);
+extern InputSet* CreateInputSet(Allocator* allocator, const Name* name=nullptr);
 extern bool IsButtonDown(InputSet* map, InputCode code);
 inline bool IsShiftDown(InputSet* map) { return IsButtonDown(map, KEY_LEFT_SHIFT) || IsButtonDown(map, KEY_RIGHT_SHIFT); }
 inline bool IsAltDown(InputSet* map) { return IsButtonDown(map, KEY_LEFT_ALT) || IsButtonDown(map, KEY_RIGHT_ALT); }
@@ -49,6 +49,7 @@ extern void EnableModifiers(InputSet* input_set);
 extern void DisableButton(InputSet* map, InputCode code);
 extern float GetAxis(InputSet* set, InputCode code);
 extern void ConsumeButton(InputCode code);
+extern const Name* GetName(InputSet* set);
 
 extern bool IsButtonDown(InputCode code);
 extern bool WasButtonPressed(InputCode code);
