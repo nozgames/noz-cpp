@@ -32,6 +32,7 @@ set(SOURCE_FILES
     src/math/transform.cpp
     src/math/bounds2.cpp
     src/math/bounds3.cpp
+    src/math/easing.cpp
     src/math/mat3.cpp
     src/math/mat4.cpp
     src/math/vec2.cpp

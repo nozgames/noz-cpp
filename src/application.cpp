@@ -312,7 +312,6 @@ bool UpdateApplication()
     UpdateScreenSize();
     UpdateTime();
     UpdateInput();
-    UpdateTweens();
 
 #ifdef NOZ_EDITOR
     UpdateEditorClient();
