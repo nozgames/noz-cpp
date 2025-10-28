@@ -1,5 +1,7 @@
 # Todo
 
+- [ ] animation specify frame rate
+- [ ] editor config default frame rate.
 - [ ] knife tool for cutting faces
   - [ ] all points must be in the same face for now
   - [ ] all edges must be in the same face
@@ -7,7 +9,6 @@
   - [ ] split face into two faces along the two verts and then add the extra verts
 - [ ] multi-select delete did not work
 - [ ] Dont draw origins of objects that are not being edited in front of those that are
-- [ ] Always use the sorted assets list rather than the unsorted one
 - [ ] There are some bugs with creating faces
 - [ ] There are some bugs with deletting edges and vertices
 - [ ] do not allow estruding an internal edge
@@ -17,26 +18,18 @@
 - [ ] what is white screen on startup?
 - [ ] Show border color in the color picker with a different box
 - [ ] Creating a new skeleton dos not appear until restarting
-- [ ] Creating a new animation does not appear until restarting
 - [ ] After altering bone transforms in the skeleton the animations do not update until going into edit mode on the animation
 - [ ] Can create the name of an existing asset and it doubles it up in memory
-- [ ] Hide/show bones with alt-b
-- [ ] save state of bone show/hide for names / bones
 - [ ] Type numbers for g when moving assets
 - [ ] sort order is too unstable, causing meta files to be changed a lot
-- [ ] hide bones and names when animating.
-- [ ] always draw the timeline at the bottom of teh screen rather than under the asset
 - [ ] Animation event editor
 - [ ] key to hide / show palette (alt-c?)
-- [ ] Icons for assets that have no draw function
 - [ ] Make use of global asset list for asset manifest
 - [ ] Adding a bone to the skeleton caused the animations to write garbage data for position
 - [ ] Capture mouse while using tools like grab
 - [ ] Animation bounds does not take into account the actual animation, just the skeleton
 - [ ] moving bones in skeleton is not changing animations?
 - [ ] Prevent duplicate assets of same type and same name in different folders.
-- [ ] Creating new animation had 0 frames when i tried to edit the frame, bounds seemed bad too
-- [ ] moving bones in some loaded animations move weird, maybe rotation or incorrect matrcieis
 - [ ] editor animation likely leaking animation and skeleton asset 
 - [ ] vfx hotload broken
 - [ ] new clone animation
@@ -62,6 +55,7 @@
 - [ ] y to limit move
 - [ ] vfx initial_rotation and rotation over time
 
+- [ ] Icons for assets that have no draw function
 - [ ] Something causes a spawn of error messages in the editor when client disconnects / reconnects, not sure which
 - [ ] combined vertex buffer for rendering so we can stream data to it like triangles?
 - [ ] hot load of textures

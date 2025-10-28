@@ -11,11 +11,10 @@
 
 extern bool GetWindowFocus();
 
-struct WindowsInput
-{
+struct WindowsInput {
     Vec2 mouse_scroll;
-    bool mouse_states[5];
-    bool key_states[256];
+    bool key_states[INPUT_CODE_COUNT];
+    int virtual_keys[INPUT_CODE_COUNT];
     XINPUT_STATE gamepad_states[XUSER_MAX_COUNT];
     bool gamepad_connected[XUSER_MAX_COUNT] = {0};
     TextInput text_input;
@@ -95,6 +94,9 @@ static InputCode VKToInputCode(int vk) {
         case VK_F12: return KEY_F12;
         case VK_OEM_4: return KEY_LEFT_BRACKET;
         case VK_OEM_6: return KEY_RIGHT_BRACKET;
+        case VK_LBUTTON: return MOUSE_LEFT;
+        case VK_RBUTTON: return MOUSE_RIGHT;
+        case VK_MBUTTON: return MOUSE_MIDDLE;
         default: return INPUT_CODE_NONE;
     }
 }
@@ -118,30 +120,11 @@ static float NormalizeTrigger(BYTE trigger_value)
 }
 
 bool platform::IsInputButtonDown(InputCode code) {
-    if (IsKeyboard(code)) {
-        for (int vk = 0; vk < 256; vk++)
-            if (VKToInputCode(vk) == code)
-                return g_input.key_states[vk];
-        return false;
-    }
-
-    // Handle mouse buttons
-    if (IsMouse(code) && IsButton(code))
-    {
-        switch (code)
-        {
-            case MOUSE_LEFT: return g_input.mouse_states[0];
-            case MOUSE_RIGHT: return g_input.mouse_states[1];
-            case MOUSE_MIDDLE: return g_input.mouse_states[2];
-            case MOUSE_BUTTON_4: return g_input.mouse_states[3];
-            case MOUSE_BUTTON_5: return g_input.mouse_states[4];
-            default: return false;
-        }
-    }
+    if (IsMouse(code) || IsKeyboard(code))
+        return g_input.key_states[code];
 
     // Handle gamepad buttons
-    if (IsGamepad(code) && IsButton(code))
-    {
+    if (IsGamepad(code) && IsButton(code)) {
         int gamepad_index = 0; // Default to any gamepad
         WORD button_mask = 0;
 
@@ -299,12 +282,9 @@ void platform::UpdateInputState() {
     
     if (!HasFocus()) {
         // Clear all input states when window doesn't have focus
-        for (int vk = 0; vk < 256; vk++)
-            g_input.key_states[vk] = false;
-        
-        for (int i = 0; i < 5; i++)
-            g_input.mouse_states[i] = false;
-        
+        for (int i = 0; i < INPUT_CODE_COUNT; i++)
+            g_input.key_states[i] = false;
+
         g_input.mouse_scroll = {0, 0};
         
         for (int i = 0; i < XUSER_MAX_COUNT; i++)
@@ -314,15 +294,8 @@ void platform::UpdateInputState() {
     }
 
     // Update keyboard state
-    for (int vk = 0; vk < 256; vk++)
-        g_input.key_states[vk] = (GetAsyncKeyState(vk) & 0x8000) != 0;
-
-    // Update mouse state
-    g_input.mouse_states[0] = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0; // Left mouse
-    g_input.mouse_states[1] = (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0; // Right mouse
-    g_input.mouse_states[2] = (GetAsyncKeyState(VK_MBUTTON) & 0x8000) != 0; // Middle mouse
-    g_input.mouse_states[3] = (GetAsyncKeyState(VK_XBUTTON1) & 0x8000) != 0; // Mouse button 4
-    g_input.mouse_states[4] = (GetAsyncKeyState(VK_XBUTTON2) & 0x8000) != 0; // Mouse button 5
+    for (int i = 0; i < INPUT_CODE_COUNT; i++)
+        g_input.key_states[i] = GetAsyncKeyState(g_input.virtual_keys[i]) < 0;
 
     // Update gamepad states
     for (int i = 0; i < XUSER_MAX_COUNT; i++) {
@@ -414,10 +387,16 @@ void platform::InitializeInput()
 {
     ClearTextInput();
 
-    for (int i = 0; i < XUSER_MAX_COUNT; i++)
-    {
+    for (int i = 0; i < XUSER_MAX_COUNT; i++) {
         ZeroMemory(&g_input.gamepad_states[i], sizeof(XINPUT_STATE));
         g_input.gamepad_connected[i] = false;
+    }
+
+    for (int vk=0; vk<256; vk++) {
+        InputCode code = VKToInputCode(vk);
+        if (code == INPUT_CODE_NONE)
+            continue;
+        g_input.virtual_keys[code] = vk;
     }
 }
 
