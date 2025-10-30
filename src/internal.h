@@ -130,4 +130,3 @@ struct SkeletonImpl : Skeleton
 // @tween
 extern void InitTween();
 extern void ShutdownTween();
-extern void UpdateTweens();

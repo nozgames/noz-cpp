@@ -414,9 +414,10 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
         constraints.x = F32_MAX;
     } else if (parent->type == ELEMENT_TYPE_COLUMN) {
         constraints.y = F32_MAX;
-    } else if (parent->type == ELEMENT_TYPE_ALIGN || parent->type == ELEMENT_TYPE_CENTER) {
-        constraints.x = F32_MAX;
-        constraints.y = F32_MAX;
+    } else if (parent->type == ELEMENT_TYPE_ALIGN) {
+        AlignElement* a = static_cast<AlignElement*>(parent);
+        if (a->style.alignment.x != F32_MAX) constraints.x = F32_MAX;
+        if (a->style.alignment.y != F32_MAX) constraints.y = F32_MAX;
     }
 
     for (u32 i = 0; i < parent->child_count; i++) {
@@ -478,11 +479,10 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
     }
 
     // For Row/Column, use consumed size instead of max size
-    if (parent->type == ELEMENT_TYPE_ROW) {
+    if (parent->type == ELEMENT_TYPE_ROW)
         max_size.x = consumed_size.x;
-    } else if (parent->type == ELEMENT_TYPE_COLUMN) {
+    else if (parent->type == ELEMENT_TYPE_COLUMN)
         max_size.y = consumed_size.y;
-    }
 
     if (flex_element_count > 0 && parent->type == ELEMENT_TYPE_ROW && size.x != F32_MAX) {
         float remaining_width = size.x - consumed_size.x;
@@ -556,9 +556,9 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
         max_size.y = child_offset.y;
     }
 
-    if (parent->rect.width == F32_MAX)
+    if (parent->rect.width == F32_MAX || parent->type == ELEMENT_TYPE_ROW)
         parent->rect.width = max_size.x;
-    if (parent->rect.height == F32_MAX)
+    if (parent->rect.height == F32_MAX || parent->type == ELEMENT_TYPE_COLUMN)
         parent->rect.height = max_size.y;
 
     if (parent->type == ELEMENT_TYPE_CENTER) {

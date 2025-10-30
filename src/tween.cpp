@@ -2,10 +2,11 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#if 0
+
 constexpr u32 MAX_TWEENS = 128;
 
-struct Tween
-{
+struct TweenImpl {
     bool active;
     float elapsed;
     float duration;
@@ -25,7 +26,7 @@ struct TweenSystem
 
 static TweenSystem g_tween = {};
 
-inline Tween& GetTween(u32 index) { return *(Tween*)GetAt(g_tween.allocator, index); }
+inline TweenImpl& GetTween(u32 index) { return *(TweenImpl*)GetAt(g_tween.allocator, index); }
 inline TweenId MakeTweenId(u32 index, u32 generation) { return {(static_cast<u64>(index) << 32) | static_cast<u64>(generation)}; }
 
 void UpdateTweens()
@@ -34,8 +35,8 @@ void UpdateTweens()
     f32 frame_time = GetFrameTime();
     for (u32 i=0; i<MAX_TWEENS && tween_count > 0; i++)
     {
-        Tween& tween = GetTween(i);
-        if (!tween.active)
+        Tween& TweenImpl = GetTween(i);
+        if (!TweenImpl.active)
             continue;
 
         tween.elapsed += frame_time;
@@ -102,4 +103,21 @@ void ShutdownTween()
 {
 }
 
+#endif
 
+void InitTween() {
+}
+
+void ShutdownTween() {
+}
+
+float Tween(float from, float to, float time, float duration) {
+    float t = Clamp(time / duration, 0.0f, 1.0f);
+    return from + (to - from) * t;
+}
+
+float Tween(float from, float to, float time, float duration, const std::function<float(float value)>& func) {
+    float t = func(Clamp(time / duration, 0.0f, 1.0f));
+    float v = from + (to - from) * t;
+    return v;
+}

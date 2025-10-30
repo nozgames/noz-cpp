@@ -44,11 +44,13 @@ struct Alignment {
     float y; // -1.0 (min) to 1.0 (max)
 };
 
+constexpr Alignment ALIGNMENT_TOP           = {  F32_MAX, -1.0f };
 constexpr Alignment ALIGNMENT_TOP_LEFT      = { -1.0f, -1.0f };
 constexpr Alignment ALIGNMENT_TOP_CENTER    = {  0.0f, -1.0f };
 constexpr Alignment ALIGNMENT_TOP_RIGHT     = {  1.0f, -1.0f };
 constexpr Alignment ALIGNMENT_CENTER        = {  0.0f,  0.0f };
 constexpr Alignment ALIGNMENT_CENTER_LEFT   = { -1.0f,  0.0f };
+constexpr Alignment ALIGNMENT_BOTTOM        = {  F32_MAX, 1.0f };
 constexpr Alignment ALIGNMENT_BOTTOM_LEFT   = { -1.0f,  1.0f };
 constexpr Alignment ALIGNMENT_BOTTOM_RIGHT  = {  1.0f,  1.0f };
 constexpr Alignment ALIGNMENT_BOTTOM_CENTER = {  0.0f,  1.0f };
