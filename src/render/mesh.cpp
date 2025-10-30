@@ -163,8 +163,7 @@ Mesh* CreateMesh(
     u16 index_count,
     u16* indices,
     const Name* name,
-    bool upload)
-{
+    bool upload) {
     assert(positions);
     assert(normals);
     assert(uvs);
@@ -176,8 +175,7 @@ Mesh* CreateMesh(
     MeshImpl* mesh = CreateMesh(allocator, vertex_count, index_count, name);
     mesh->bounds = ToBounds(positions, vertex_count);
 
-    for (size_t i = 0; i < vertex_count; i++)
-    {
+    for (size_t i = 0; i < vertex_count; i++) {
         mesh->vertices[i].position = positions[i];
         mesh->vertices[i].normal = normals[i];
         mesh->vertices[i].uv0 = uvs[i];
@@ -193,8 +191,7 @@ Mesh* CreateMesh(
 
 #ifdef NOZ_EDITOR
 
-void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table)
-{
+void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table) {
     (void)header;
     (void)name_table;
 

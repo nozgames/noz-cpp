@@ -7,8 +7,7 @@
 
 Texture** TEXTURE = nullptr;
 
-struct TextureImpl : Texture
-{
+struct TextureImpl : Texture {
     platform::Texture* platform_texture = nullptr;
     SamplerOptions sampler_options;
     TextureFormat format;
@@ -20,10 +19,8 @@ static SamplerOptions g_default_sampler_options = {
     TEXTURE_CLAMP_CLAMP,
 };
 
-int GetBytesPerPixel(TextureFormat format)
-{
-    switch (format)
-    {
+int GetBytesPerPixel(TextureFormat format) {
+    switch (format) {
     case TEXTURE_FORMAT_RGBA8:
         return 4;
     case TEXTURE_FORMAT_RGBA16F:
@@ -41,8 +38,7 @@ static void CreateTexture(
     size_t width,
     size_t height,
     TextureFormat format,
-    const Name* name)
-{
+    const Name* name) {
     assert(impl);
     assert(data);
     assert(width > 0);
@@ -51,8 +47,7 @@ static void CreateTexture(
     impl->platform_texture = platform::CreateTexture(data, width, height, GetBytesPerPixel(format), impl->sampler_options, name->value);
 }
 
-Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const Name* name)
-{
+Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const Name* name) {
     assert(width > 0);
     assert(height > 0);
     assert(name);
@@ -76,8 +71,7 @@ Texture* CreateTexture(
     size_t width,
     size_t height,
     TextureFormat format,
-    const Name* name)
-{
+    const Name* name) {
     assert(data);
     assert(name);
 
@@ -90,8 +84,7 @@ Texture* CreateTexture(
     return impl;
 }
 
-Vec2Int GetSize(Texture* texture)
-{
+Vec2Int GetSize(Texture* texture) {
     return static_cast<TextureImpl*>(texture)->size;
 }
 
@@ -113,8 +106,23 @@ SamplerOptions GetSamplerOptions(Texture* texture)
     return static_cast<TextureImpl*>(texture)->sampler_options;
 }
 
-Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
-{
+static void LoadTextureInternal(TextureImpl* impl, Stream* stream, const Name* name) {
+    impl->format = (TextureFormat)ReadU8(stream);
+    impl->sampler_options.filter  = (TextureFilter)ReadU8(stream);
+    impl->sampler_options.clamp = (TextureClamp)ReadU8(stream);
+    impl->size.x = ReadU32(stream);
+    impl->size.y = ReadU32(stream);
+
+    const int channels = GetBytesPerPixel(impl->format);
+    const u32 data_size = impl->size.x * impl->size.y * channels;
+    if (const auto texture_data = (u8*)Alloc(ALLOCATOR_SCRATCH, data_size)) {
+        ReadBytes(stream, texture_data, data_size);
+        CreateTexture(impl, texture_data, impl->size.x, impl->size.y, impl->format, GetName(name->value));
+        Free(texture_data);
+    }
+}
+
+Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
     (void)name_table;
 
     assert(stream);
@@ -125,28 +133,31 @@ Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, co
     if (!impl)
         return nullptr;
 
-    impl->format = (TextureFormat)ReadU8(stream);
-    impl->sampler_options.filter  = (TextureFilter)ReadU8(stream);
-    impl->sampler_options.clamp = (TextureClamp)ReadU8(stream);
-    impl->size.x = ReadU32(stream);
-    impl->size.y = ReadU32(stream);
-
-    const int channels = GetBytesPerPixel(impl->format);
-    const u32 data_size = impl->size.x * impl->size.y * channels;
-    if (const auto texture_data = (u8*)Alloc(ALLOCATOR_SCRATCH, data_size))
-    {
-        ReadBytes(stream, texture_data, data_size);
-        CreateTexture(impl, texture_data, impl->size.x, impl->size.y, impl->format, GetName(name->value));
-        Free(texture_data);
-    }
+    LoadTextureInternal(impl, stream, name);
 
     return impl;
 }
 
-void BindTextureInternal(Texture* texture, i32 slot)
-{
+void BindTextureInternal(Texture* texture, i32 slot) {
     if (!texture)
         texture = TEXTURE_WHITE;
 
     return platform::BindTexture(static_cast<TextureImpl*>(texture)->platform_texture, slot);
 }
+
+#ifdef NOZ_EDITOR
+
+void ReloadTexture(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table) {
+    (void)header;
+    (void)name_table;
+
+    assert(asset);
+    assert(stream);
+    TextureImpl* impl = static_cast<TextureImpl*>(asset);
+
+    platform::DestroyTexture(impl->platform_texture);
+
+    LoadTextureInternal(impl, stream, GetName(asset));
+}
+
+#endif

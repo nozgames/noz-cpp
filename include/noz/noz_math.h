@@ -399,10 +399,12 @@ constexpr Vec2Int RoundToNearest(const Vec2Double& v)
     return { (i32)(v.x + 0.5f), (i32)(v.y + 0.5f) };
 }
 
+constexpr u32 FourCC(u8 a, u8 b, u8 c, u8 d) {
+    return (u32)(d) | ((u32)(c) << 8) | ((u32)(b) << 16) | ((u32)(a) << 24);
+}
+
 // @easing
 inline float EaseQuadratic(float t) { return t * t; }
 inline float EaseCubic(float t) { return t * t * t; }
 inline float EaseOut(float t, const std::function<float (float)>& func) { return 1.0f - func(1.0f - t); }
 inline float EaseOutQuadratic(float t) { return EaseOut(t, EaseQuadratic); }
-
-

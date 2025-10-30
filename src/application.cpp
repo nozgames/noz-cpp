@@ -130,18 +130,16 @@ static void UpdateScreenSize()
 }
 
 #ifdef NOZ_EDITOR
-static void HandleHotload(EventId event_id, const void* event_data)
-{
+static void HandleHotload(EventId event_id, const void* event_data) {
     (void)event_id;
     const AssetLoadedEvent* hotload_event = (const AssetLoadedEvent*)event_data;
     if (g_app.traits.hotload_asset)
-        g_app.traits.hotload_asset(hotload_event->name, hotload_event->signature);
+        g_app.traits.hotload_asset(hotload_event->name, hotload_event->type);
 }
 #endif
 
 // @init
-void InitApplication(ApplicationTraits* traits, int argc, const char* argv[])
-{
+void InitApplication(ApplicationTraits* traits, int argc, const char* argv[]) {
     (void)argc;
 
     traits = traits ? traits : &g_default_traits;
@@ -171,8 +169,7 @@ void InitApplication(ApplicationTraits* traits, int argc, const char* argv[])
     g_app.traits.height = GetPrefInt(GetName("window.height"), g_app.traits.height);
 }
 
-static void HandleClose()
-{
+static void HandleClose() {
     g_app.running = false;
 }
 

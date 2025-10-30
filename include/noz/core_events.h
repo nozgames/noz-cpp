@@ -18,5 +18,5 @@ struct FocusChangedEvent
 struct AssetLoadedEvent
 {
     const Name* name;
-    AssetSignature signature;
+    AssetType type;
 };
