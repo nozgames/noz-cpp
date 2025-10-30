@@ -98,7 +98,7 @@ void ReloadShader(Asset* asset, Stream* stream, const AssetHeader& header, const
 void ReloadTexture(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
 
 #define NOZ_RELOAD_VFX(asset_name, asset) \
-    if(asset_name == incoming_name && incoming_type == ASSET_ATURE_VFX) { \
+    if(asset_name == incoming_name && incoming_type == ASSET_TYPE_VFX) { \
         ReloadAsset(asset_name, ASSET_TYPE_VFX, asset, ReloadVfx); return; }
 
 #define NOZ_RELOAD_MESH(asset_name, asset) \

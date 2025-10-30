@@ -39,6 +39,8 @@ void main() {
     );
 
     f_normal = vec3(normalize(vec3(v_normal.xy, 0) * object.transform).xy, v_normal.z);
+
+    f_normal.x = 0.5 + clamp(v_position.y / 0.4f, 0, 1) * 0.5;
 }
 
 //@ END
@@ -66,6 +68,9 @@ layout(set = 6, binding = 0) uniform sampler2D mainTexture;
 
 void main() {
     vec4 color = texture(mainTexture, f_uv + color_buffer.uv_offset) * color_buffer.color;
+//    color.r = color.r * f_normal.x;
+//    color.g = color.g * f_normal.x;
+//    color.b = color.b * f_normal.x;
     outColor = color;
 }
 
