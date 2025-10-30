@@ -6,26 +6,15 @@
 
 #include <filesystem>
 
-bool IsValidSignature(AssetSignature signature) {
-    return signature == ASSET_SIGNATURE_TEXTURE ||
-           signature == ASSET_SIGNATURE_MESH ||
-           signature == ASSET_SIGNATURE_FONT ||
-           signature == ASSET_SIGNATURE_SOUND ||
-           signature == ASSET_SIGNATURE_SKELETON ||
-           signature == ASSET_SIGNATURE_ANIMATION ||
-           signature == ASSET_SIGNATURE_VFX ||
-           signature == ASSET_SIGNATURE_STYLE_SHEET;
+bool IsValidAssetType(AssetType asset_type) {
+    return ToString(asset_type) != nullptr;
 }
 
 bool ReadAssetHeader(Stream* stream, AssetHeader* header) {
     if (!stream || !header) return false;
     
-    // Read header fields
-    header->signature = ReadU32(stream);
-    header->version = ReadU32(stream);
-    header->flags = ReadU32(stream);
-    header->names = ReadU32(stream);
-    
+    ReadBytes(stream, header, sizeof(AssetHeader));
+
     return !IsEOS(stream);
 }
 
@@ -33,10 +22,7 @@ bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** name_tab
     if (!stream || !header) return false;
     
     // Write header fields
-    WriteU32(stream, header->signature);
-    WriteU32(stream, header->version);
-    WriteU32(stream, header->flags);
-    WriteU32(stream, header->names);
+    WriteBytes(stream, header, sizeof(AssetHeader));
 
     if (header->names > 0) {
         assert(name_table);
@@ -47,64 +33,32 @@ bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** name_tab
     return true;
 }
 
-bool ValidateAssetHeader(AssetHeader* header, uint32_t expected_signature) {
+bool ValidateAssetHeader(AssetHeader* header, AssetType expected_asset_type) {
     if (!header) return false;
-    return header->signature == expected_signature;
+    if (header->signature != ASSET_SIGNATURE) return false;
+    if (header->type != expected_asset_type) return false;
+    return true;
 }
 
-const char* GetExtensionFromSignature(AssetSignature signature) {
-    // Convert signature to 4 character string (little endian to big endian)
-    static char ext[6];  // ".xxxx\0"
-    ext[0] = '.';
-    ext[1] = (char)tolower((signature >> 24) & 0xFF);
-    ext[2] = (char)tolower((signature >> 16) & 0xFF);
-    ext[3] = (char)tolower((signature >> 8) & 0xFF);
-    ext[4] = (char)tolower(signature & 0xFF);
-    ext[5] = '\0';
-    
-    return ext;
-}
-
-const char* GetTypeNameFromSignature(AssetSignature signature) {
-    switch (signature) {
-        case ASSET_SIGNATURE_TEXTURE: return "Texture";
-        case ASSET_SIGNATURE_MESH: return "Mesh";
-        case ASSET_SIGNATURE_FONT: return "Font";
-        case ASSET_SIGNATURE_SOUND: return "Sound";
-        case ASSET_SIGNATURE_SKELETON: return "Skeleton";
-        case ASSET_SIGNATURE_ANIMATION: return "Animation";
-        case ASSET_SIGNATURE_VFX: return "Vfx";
-        case ASSET_SIGNATURE_SHADER: return "Shader";
-        case ASSET_SIGNATURE_STYLE_SHEET: return "StyleSheet";
+const char* ToString(AssetType asset_type) {
+    switch (asset_type) {
+        case ASSET_TYPE_TEXTURE: return "Texture";
+        case ASSET_TYPE_MESH: return "Mesh";
+        case ASSET_TYPE_FONT: return "Font";
+        case ASSET_TYPE_SOUND: return "Sound";
+        case ASSET_TYPE_SKELETON: return "Skeleton";
+        case ASSET_TYPE_ANIMATION: return "Animation";
+        case ASSET_TYPE_VFX: return "Vfx";
+        case ASSET_TYPE_SHADER: return "Shader";
         default: return nullptr;
     }
 }
 
-AssetSignature GetSignatureFromExtension(const char* ext) {
-    if (*ext == '.')
-        ext++;
-
-    if (Length(ext) != 4)
-        return ASSET_SIGNATURE_UNKNOWN;
-
-    // convert extension to signature (big endian to little endian)
-    AssetSignature signature = 0;
-    signature |= ((AssetSignature)toupper(ext[0]) << 24);
-    signature |= ((AssetSignature)toupper(ext[1]) << 16);
-    signature |= ((AssetSignature)toupper(ext[2]) << 8);
-    signature |= ((AssetSignature)toupper(ext[3]) << 0);
-
-    if (!IsValidSignature(signature))
-        return ASSET_SIGNATURE_UNKNOWN;
-
-    return signature;
-}
-
-static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetSignature signature) {
+static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetType asset_type) {
     assert(asset_name);
 
     std::filesystem::path asset_path = GetApplicationTraits()->assets_path;
-    asset_path /= GetTypeNameFromSignature(signature);
+    asset_path /= ToString(asset_type);
     asset_path /= asset_name->value;
 
     std::string lowercase_path = asset_path.string();
@@ -115,7 +69,7 @@ static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, Ass
 
     asset_path = GetBinaryDirectory();
     asset_path /= "assets";
-    asset_path /= GetTypeNameFromSignature(signature);
+    asset_path /= ToString(asset_type);
     asset_path /= asset_name->value;
 
     return LoadStream(allocator, asset_path);
@@ -133,9 +87,9 @@ const Name** ReadNameTable(const AssetHeader& header, Stream* stream) {
     return name_table;
 }
 
-Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader, Stream* stream) {
+Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, Stream* stream) {
     AssetHeader header = {};
-    if (!ReadAssetHeader(stream, &header) || !ValidateAssetHeader(&header, signature)) {
+    if (!ReadAssetHeader(stream, &header) || !ValidateAssetHeader(&header, asset_type)) {
         Free(stream);
         return nullptr;
     }
@@ -150,24 +104,24 @@ Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSign
     return asset;
 }
 
-Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader) {
-    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, asset_name, signature);
+Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader) {
+    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, asset_name, asset_type);
     if (!stream)
         return nullptr;
 
-    Asset* asset = LoadAssetInternal(allocator, asset_name, signature, loader, stream);
+    Asset* asset = LoadAssetInternal(allocator, asset_name, asset_type, loader, stream);
 
     Free(stream);
 
     return asset;
 }
 
-Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetSignature signature, AssetLoaderFunc loader) {
+Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader) {
     if (!asset_name || !loader)
         return nullptr;
 
     PushScratch();
-    Asset* asset = LoadAssetInternal(allocator, asset_name, signature, loader);
+    Asset* asset = LoadAssetInternal(allocator, asset_name, asset_type, loader);
     PopScratch();
 
     return asset;
@@ -175,18 +129,18 @@ Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetSignature si
 
 #ifdef NOZ_EDITOR
 
-void ReloadAsset(const Name* name, AssetSignature signature, Asset* asset, void (*reload)(Asset*, Stream*, const AssetHeader& header, const Name** name_table)) {
+void ReloadAsset(const Name* name, AssetType asset_type, Asset* asset, void (*reload)(Asset*, Stream*, const AssetHeader& header, const Name** name_table)) {
     if (asset == nullptr)
         return;
 
     assert(name);
 
-    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, name, signature);
+    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, name, asset_type);
     if (!stream)
         return;
 
     AssetHeader header = {};
-    if (!ReadAssetHeader(stream, &header) || !ValidateAssetHeader(&header, signature)) {
+    if (!ReadAssetHeader(stream, &header) || !ValidateAssetHeader(&header, asset_type)) {
         Free(stream);
         return;
     }

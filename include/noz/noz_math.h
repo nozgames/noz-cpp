@@ -399,5 +399,7 @@ constexpr Vec2Int RoundToNearest(const Vec2Double& v)
     return { (i32)(v.x + 0.5f), (i32)(v.y + 0.5f) };
 }
 
-
+constexpr u32 FourCC(u8 a, u8 b, u8 c, u8 d) {
+    return (u32)(d) | ((u32)(c) << 8) | ((u32)(b) << 16) | ((u32)(a) << 24);
+}
 

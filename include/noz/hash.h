@@ -26,3 +26,8 @@ inline u64 Hash(u64 h1, u64 h2, u64 h3)
     if (h3) result = Hash(&h3, sizeof(h3), result);
     return result;
 }
+
+#ifdef NOZ_EDITOR
+#include <filesystem>
+extern u64 HashFile(const std::filesystem::path& path);
+#endif

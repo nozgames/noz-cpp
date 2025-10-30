@@ -7,10 +7,9 @@
 constexpr int PREFS_MAX_INTS = 64;
 constexpr u16 PREFS_VERSION = 1;
 
-constexpr u32 PREFS_SIGNATURE = MAKE_FOURCC('N', 'Z', 'P', 'R');
+constexpr u32 PREFS_SIGNATURE = FourCC('N', 'Z', 'P', 'R');
 
-struct Prefs
-{
+struct Prefs {
     u64 ints_keys[PREFS_MAX_INTS];
     i32 ints[PREFS_MAX_INTS];
     Map ints_map;

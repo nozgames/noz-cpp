@@ -98,12 +98,11 @@ void BindShaderInternal(Shader* shader)
 
 #ifdef NOZ_EDITOR
 
-void ReloadShader(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table)
-{
+void ReloadShader(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table) {
     ShaderImpl* impl = static_cast<ShaderImpl*>(asset);
     assert(impl);
     assert(stream);
-    assert(header.signature == ASSET_SIGNATURE_SHADER);
+    assert(header.type == ASSET_TYPE_SHADER);
 
     platform::Shader* old_shader = impl->platform;
     LoadShaderInternal(impl, stream, header, name_table);

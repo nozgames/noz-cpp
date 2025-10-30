@@ -1669,8 +1669,10 @@ platform::Texture* platform::CreateTexture(
     return texture;
 }
 
-void platform::DestroyTexture(Texture* texture)
-{
+void platform::DestroyTexture(Texture* texture) {
+    if (!texture)
+        return;
+
     if (texture->vk_sampler != VK_NULL_HANDLE)
         vkDestroySampler(g_vulkan.device, texture->vk_sampler, nullptr);
     if (texture->vk_image_view != VK_NULL_HANDLE)
