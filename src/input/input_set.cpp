@@ -104,21 +104,16 @@ void UpdateButtonState(InputSetImpl* impl, InputCode code, bool new_state, bool 
         return;
 
     if (IsButtonReset(impl->buttons[code])) {
-        if (!new_state) {
-            LogInfo("%d reset", code);
+        if (!new_state)
             impl->buttons[code] &= (~BUTTON_STATE_RESET);
-        }
 
         return;
     }
 
-    if (new_state != old_state && new_state) {
+    if (new_state != old_state && new_state)
         impl->buttons[code] |= BUTTON_STATE_PRESSED;
-        LogInfo("%d pressed", code);
-    } else if (new_state != old_state && !new_state) {
+    else if (new_state != old_state && !new_state)
         impl->buttons[code] |= BUTTON_STATE_RELEASED;
-        LogInfo("%d released", code);
-    }
 }
 
 float GetAxis(InputSet* set, InputCode code) {
