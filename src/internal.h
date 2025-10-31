@@ -102,27 +102,26 @@ struct AnimationBone
     u8 index;
 };
 
-struct AnimationImpl : Animation
-{
+struct AnimationImpl : Animation {
     int bone_count;
     int frame_count;
     int frame_stride;
+    int frame_rate;
+    float frame_rate_inv;
     float duration;
     AnimationBone* bones;
     BoneTransform* frames;
 };
 
 // @skeleton
-struct Bone
-{
+struct Bone {
     const Name* name;
     i32 index;
     i32 parent_index;
     Transform transform;
 };
 
-struct SkeletonImpl : Skeleton
-{
+struct SkeletonImpl : Skeleton {
     int bone_count;
     Bone* bones;
 };

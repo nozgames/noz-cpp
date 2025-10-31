@@ -18,8 +18,7 @@ struct MeshBuilder {};
 struct Animator;
 
 // @renderer_traits
-struct RendererTraits
-{
+struct RendererTraits {
     size_t max_textures;
     size_t max_shaders;
     size_t max_samplers;
@@ -73,8 +72,7 @@ void SetFragmentData(Material* material, const void* data, size_t size);
 // @mesh
 struct Mesh : Asset { };
 
-struct MeshVertex
-{
+struct MeshVertex {
     Vec2 position;
     Vec2 uv0;
     Vec3 normal;
@@ -90,6 +88,7 @@ extern Mesh* CreateMesh(
     u16* indices,
     const Name* name,
     bool upload = true);
+
 extern Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name, bool upload = true);
 extern u16 GetVertexCount(Mesh* mesh);
 extern u16 GetIndexCount(Mesh* mesh);
@@ -162,8 +161,7 @@ extern void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int 
 extern void DrawMesh(Mesh* mesh, const Mat3& transform);
 
 // @font
-struct FontGlyph
-{
+struct FontGlyph {
     Vec2 uv_min;
     Vec2 uv_max;
     Vec2 size;
@@ -201,21 +199,18 @@ extern const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index);
 
 // @animation
 constexpr int MAX_ANIMATION_FRAMES = 64;
-constexpr float ANIMATION_FRAME_RATE = 24.0f;
-constexpr float ANIMATION_FRAME_RATE_INV = 1.0f / ANIMATION_FRAME_RATE;
+constexpr int ANIMATION_FRAME_RATE = 12;
 
 extern int GetBoneCount(Animation* animation);
 
 // @animator
-struct BoneTransform
-{
+struct BoneTransform {
     Vec2 position;
     Vec2 scale;
     float rotation;
 };
 
-struct Animator
-{
+struct Animator {
     Skeleton* skeleton;
     Animation* animation;
     float time;
@@ -236,7 +231,6 @@ extern int GetFrame(Animator& animator);
 extern float GetTime(Animator& animator);
 extern float GetNormalizedTime(Animator& animator);
 extern void SetNormalizedTime(Animator& animator, float normalized_time);
-
 
 extern Mesh** MESH;
 extern Font** FONT;

@@ -18,6 +18,7 @@ enum ElementType : u8 {
     ELEMENT_TYPE_COLUMN,
     ELEMENT_TYPE_CONTAINER,
     ELEMENT_TYPE_EXPANDED,
+    ELEMENT_TYPE_GESTURE_BLOCKER,
     ELEMENT_TYPE_GESTURE_DETECTOR,
     ELEMENT_TYPE_IMAGE,
     ELEMENT_TYPE_INSET,
@@ -71,6 +72,9 @@ struct ExpandedElement : Element {
 struct GestureDetectorElement : Element {
     GestureDetectorStyle style;
     void* user_data;
+};
+
+struct GestureBlockerElement : Element {
 };
 
 struct MouseRegionElement : Element {
@@ -248,6 +252,12 @@ void Expanded(const ExpandedStyle& style, const std::function<void()>& children)
     ExpandedElement* e = static_cast<ExpandedElement*>(CreateElement(ELEMENT_TYPE_EXPANDED));
     e->style = style;
     ExecuteChildren(e, children);
+}
+
+void GestureBlocker(const std::function<void()>& children) {
+    IncrementChildCount();
+    GestureBlockerElement* gesture_blocker = static_cast<GestureBlockerElement*>(CreateElement(ELEMENT_TYPE_GESTURE_BLOCKER));
+    ExecuteChildren(gesture_blocker, children);
 }
 
 void GestureDetector(const GestureDetectorStyle& style, const std::function<void()>& children) {
@@ -865,6 +875,8 @@ static void HandleInput()
                 g->style.on_tap(details, g->style.user_data);
                 ConsumeButton(MOUSE_LEFT);
             }
+        } else if (e->type == ELEMENT_TYPE_GESTURE_BLOCKER) {
+            if (mouse_over) ConsumeButton(MOUSE_LEFT);
         } else if (e->type == ELEMENT_TYPE_MOUSE_REGION) {
             MouseRegionElement* m = static_cast<MouseRegionElement*>(e);
             bool was_hovered = prev_state & ELEMENT_STATE_HOVERED;

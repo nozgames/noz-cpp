@@ -379,23 +379,18 @@ extern Vec2 TransformPoint(Transform& transform);
 extern Vec2 InverseTransformPoint(Transform& transform, const Vec2& point);
 extern Vec2 TransformVector(Transform& transform, const Vec2& vector);
 extern Vec2 InverseTransformVector(Transform& transform, const Vec2& vector);
+extern Transform Mix(const Transform& t1, const Transform& t2, f32 t);
 
 inline i32 Clamp(i32 v, i32 min, i32 max) { return v < min ? min : v > max ? max : v; }
 inline u32 Clamp(u32 v, u32 min, u32 max) { return v < min ? min : v > max ? max : v; }
 inline f32 Clamp(f32 v, f32 min, f32 max) { return v < min ? min : v > max ? max : v; }
 inline f64 Clamp(f64 v, f64 min, f64 max) { return v < min ? min : v > max ? max : v; }
 
-
-
-
-
-constexpr Vec2Int RoundToNearest(const Vec2Int& v)
-{
+constexpr Vec2Int RoundToNearest(const Vec2Int& v) {
     return { (i32)(v.x + 0.5f), (i32)(v.y + 0.5f) };
 }
 
-constexpr Vec2Int RoundToNearest(const Vec2Double& v)
-{
+constexpr Vec2Int RoundToNearest(const Vec2Double& v) {
     return { (i32)(v.x + 0.5f), (i32)(v.y + 0.5f) };
 }
 

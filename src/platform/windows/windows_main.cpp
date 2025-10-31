@@ -263,8 +263,7 @@ void platform::ShutdownApplication()
         ::DestroyWindow((HWND)g_windows.hwnd);
 }
 
-bool platform::HasFocus()
-{
+bool platform::HasFocus() {
     return g_windows.has_focus;
 }
 

@@ -169,6 +169,7 @@ extern void Expanded(const ExpandedStyle& style, const std::function<void()>& ch
 inline void Expanded(const std::function<void()>& children = nullptr) { Expanded({}, children); }
 
 // @input
+extern void GestureBlocker(const std::function<void()>& children);
 extern void GestureDetector(const GestureDetectorStyle& style, const std::function<void()>& children = nullptr);
 extern void MouseRegion(const MouseRegionStyle& style, const std::function<void()>& children = nullptr);
 

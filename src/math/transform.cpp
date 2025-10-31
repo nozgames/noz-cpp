@@ -102,3 +102,12 @@ Vec2 InverseTransformVector(Transform& transform, const Vec2& vector)
         0, 0, 1
     }) * vector;
 }
+
+Transform Mix(const Transform& t1, const Transform& t2, f32 t) {
+    return {
+        .position = Mix(t1.position, t2.position, t),
+        .scale = Mix(t1.scale, t2.scale, t),
+        .rotation = t1.rotation + NormalizeAngle180(t2.rotation - t1.rotation) * t,
+        .flags = TRANSFORM_FLAG_DIRTY
+    };
+}

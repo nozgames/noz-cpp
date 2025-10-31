@@ -297,12 +297,11 @@ bool UpdateApplication()
     if (!IsWindowCreated())
         return true;
 
-    bool has_focus = platform::HasFocus();
+    g_app.has_focus = platform::HasFocus();
 
-    if (had_focus != has_focus)
-    {
+    if (had_focus != g_app.has_focus) {
         ResetInputState(GetInputSet());
-        FocusChangedEvent event = { has_focus };
+        FocusChangedEvent event = { g_app.has_focus };
         Send(EVENT_FOCUS_CHANGED, &event);
     }
 

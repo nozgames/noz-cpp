@@ -12,7 +12,7 @@ static void EvalulateFrame(Animator& animator)
     AnimationImpl* anim_impl = (AnimationImpl*)animator.animation;
     SkeletonImpl* skel_impl = (SkeletonImpl*)animator.skeleton;
 
-    f32 float_frame = animator.time * ANIMATION_FRAME_RATE;
+    f32 float_frame = animator.time * anim_impl->frame_rate;
     assert(float_frame < anim_impl->frame_count);
     i32 frame1 = static_cast<i32>(Floor(float_frame));
     i32 frame2 = (frame1 + 1) % anim_impl->frame_count;
@@ -20,8 +20,7 @@ static void EvalulateFrame(Animator& animator)
     assert(t >= 0.0f && t < 1.0f);
     BoneTransform* frames = anim_impl->frames;
 
-    for (int i=0; i<anim_impl->bone_count; i++)
-    {
+    for (int i=0; i<anim_impl->bone_count; i++) {
         auto& bt1 = frames[frame1 * anim_impl->frame_stride + i];
         auto& bt2 = frames[frame2 * anim_impl->frame_stride + i];
 
@@ -55,13 +54,13 @@ void Play(Animator& animator, Animation* animation, float speed, bool loop)
     EvalulateFrame(animator);
 }
 
-void Update(Animator& animator, float time_scale)
-{
-    float duration = ((AnimationImpl*)animator.animation)->duration;
+void Update(Animator& animator, float time_scale) {
+    AnimationImpl* anim_impl = ((AnimationImpl*)animator.animation);
+    float duration = anim_impl->duration;
 
     animator.time += GetFrameTime() * time_scale * animator.speed;
     if (animator.loop)
-        animator.time = fmod(animator.time, duration + ANIMATION_FRAME_RATE_INV);
+        animator.time = fmod(animator.time, duration + anim_impl->frame_rate_inv);
     else
         animator.time = Min(animator.time, duration);
 
