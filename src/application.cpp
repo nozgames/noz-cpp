@@ -319,6 +319,10 @@ bool UpdateApplication()
     return g_app.running;
 }
 
+bool IsWindowFocused() {
+    return g_app.has_focus;
+}
+
 // @screen
 Vec2Int GetScreenSize()
 {

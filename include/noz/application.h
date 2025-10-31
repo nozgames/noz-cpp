@@ -50,6 +50,7 @@ extern void ShutdownApplication();
 extern void ShutdownWindow();
 extern bool IsWindowCreated();
 extern void FocusWindow();
+extern bool IsWindowFocused();
 extern bool UpdateApplication();
 extern void BeginRenderFrame(Color clear_color);
 extern void EndRenderFrame();
