@@ -30,8 +30,6 @@ MeshBuilder* CreateMeshBuilder(Allocator* allocator, u16 max_vertices, u16 max_i
     impl->index_max = max_indices;
     impl->vertex_count = 0;
     impl->index_count = 0;
-    
-    // TODO: do block alloc instead with the object above
     impl->positions = (Vec3*)Alloc(allocator, sizeof(Vec3) * max_vertices);
     impl->uv0 = (Vec2*)Alloc(allocator, sizeof(Vec2) * max_vertices);
     impl->indices = (u16*)Alloc(allocator, sizeof(u16) * max_indices);

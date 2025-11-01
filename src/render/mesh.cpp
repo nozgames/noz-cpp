@@ -183,8 +183,6 @@ void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const N
     Free(impl->indices);
     Free(impl->vertices);
 
-    // todo: destroy platform buffers
-
     impl->bounds = ReadStruct<Bounds2>(stream);
     impl->vertex_count = ReadU16(stream);
     impl->index_count = ReadU16(stream);
