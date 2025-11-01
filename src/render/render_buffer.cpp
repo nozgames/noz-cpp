@@ -152,14 +152,14 @@ void BindDepth(float depth)
     g_render_buffer->current_depth = depth;
 }
 
-void BindTransform(const Vec2& position, float rotation, const Vec2& scale)
-{
-    g_render_buffer->current_transform = TRS(position, rotation, scale);
+void BindTransform(const Vec3& position, float rotation, const Vec2& scale) {
+    g_render_buffer->current_transform = TRS(XY(position), rotation, scale);
+    g_render_buffer->current_depth = position.z;
 }
 
-void BindTransform(const Vec2& position, const Vec2& rotation, const Vec2& scale)
-{
-    g_render_buffer->current_transform = TRS(position, rotation, scale);
+void BindTransform(const Vec3& position, const Vec2& rotation, const Vec2& scale) {
+    g_render_buffer->current_transform = TRS(XY(position), rotation, scale);
+    g_render_buffer->current_depth = position.z;
 }
 
 void BindVertexUserData(const void* data, size_t size)
@@ -193,18 +193,15 @@ void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& s
     AddRenderCommand(&cmd);
 }
 
-void BindTransform(Transform& transform)
-{
+void BindTransform(Transform& transform) {
     g_render_buffer->current_transform = GetLocalToWorld(transform);
 }
 
-void BindTransform(const Mat3& parent_transform, const Animator& animator, int bone_index)
-{
+void BindTransform(const Mat3& parent_transform, const Animator& animator, int bone_index) {
     g_render_buffer->current_transform = parent_transform * animator.bones[bone_index];
 }
 
-void BindTransform(const Mat3& transform)
-{
+void BindTransform(const Mat3& transform) {
     g_render_buffer->current_transform = transform;
 }
 

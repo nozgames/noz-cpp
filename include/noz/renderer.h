@@ -37,20 +37,17 @@ struct RendererTraits {
 
 // @texture
 
-enum TextureFilter
-{
+enum TextureFilter {
     TEXTURE_FILTER_NEAREST,
     TEXTURE_FILTER_LINEAR
 };
 
-enum TextureClamp
-{
+enum TextureClamp {
     TEXTURE_CLAMP_REPEAT,
     TEXTURE_CLAMP_CLAMP
 };
 
-enum TextureFormat
-{
+enum TextureFormat {
     TEXTURE_FORMAT_RGBA8,
     TEXTURE_FORMAT_RGBA16F,
     TEXTURE_FORMAT_R8
@@ -73,16 +70,14 @@ void SetFragmentData(Material* material, const void* data, size_t size);
 struct Mesh : Asset { };
 
 struct MeshVertex {
-    Vec2 position;
+    Vec3 position;
     Vec2 uv0;
-    Vec3 normal;
 };
 
 extern Mesh* CreateMesh(
     Allocator* allocator,
     u16 vertex_count,
-    const Vec2* positions,
-    const Vec3* normals,
+    const Vec3* positions,
     const Vec2* uvs,
     u16 index_count,
     u16* indices,
@@ -100,46 +95,49 @@ extern bool OverlapPoint(Mesh* mesh, const Vec2& overlap_point);
 extern bool IsUploaded(Mesh* mesh);
 
 // @mesh_builder
-MeshBuilder* CreateMeshBuilder(Allocator* allocator, u16 max_vertices, u16 max_indices);
-void Clear(MeshBuilder* builder);
-const Vec2* GetPositions(MeshBuilder* builder);
-const Vec3* GetNormals(MeshBuilder* builder);
-const Vec2* GetUvs(MeshBuilder* builder);
-const u8* GetBoneIndices(MeshBuilder* builder);
-const u16* GetIndices(MeshBuilder* builder);
-u16 GetVertexCount(MeshBuilder* builder);
-u16 GetIndexCount(MeshBuilder* builder);
-void AddIndex(MeshBuilder* builder, u16 index);
-void AddTriangle(MeshBuilder* builder, u16 a, u16 b, u16 c);
-void AddTriangle(MeshBuilder* builder, const Vec3& a, const Vec3& b, const Vec3& c);
-void AddRaw(
+extern MeshBuilder* CreateMeshBuilder(Allocator* allocator, u16 max_vertices, u16 max_indices);
+extern void Clear(MeshBuilder* builder);
+extern const Vec3* GetPositions(MeshBuilder* builder);
+extern const Vec2* GetUvs(MeshBuilder* builder);
+extern const u8* GetBoneIndices(MeshBuilder* builder);
+extern const u16* GetIndices(MeshBuilder* builder);
+extern u16 GetVertexCount(MeshBuilder* builder);
+extern u16 GetIndexCount(MeshBuilder* builder);
+extern void AddIndex(MeshBuilder* builder, u16 index);
+extern void AddTriangle(MeshBuilder* builder, u16 a, u16 b, u16 c);
+extern void AddTriangle(MeshBuilder* builder, const Vec3& a, const Vec3& b, const Vec3& c);
+extern void AddRaw(
     MeshBuilder* builder,
     i16 vertex_count,
-    const Vec2* positions,
-    const Vec3* normals,
+    const Vec3* positions,
     const Vec2* uv0,
     i16 index_count,
     const u16* indices);
-void AddQuad(
+extern void AddQuad(
     MeshBuilder* builder,
-    const Vec2& forward,
-    const Vec2& right,
+    const Vec3& forward,
+    const Vec3& right,
     f32 width,
     f32 height,
     const Vec2& color_uv);
-void AddQuad(
+extern void AddQuad(
     MeshBuilder* builder,
-    const Vec2& a,
-    const Vec2& b,
-    const Vec2& c,
-    const Vec2& d,
-    const Vec2& uv_color,
-    const Vec3& normal);
-void AddVertex(MeshBuilder* builder, const Vec2& position, const Vec3& normal, const Vec2& uv);
-void AddVertex(MeshBuilder* builder, const Vec2& position);
-extern void AddCircle(MeshBuilder* builder, const Vec2& center, f32 radius, int segments, const Vec2& uv_color);
-extern void AddCircleStroke(MeshBuilder* builder, const Vec2& center, f32 radius, f32 thickness, int segments, const Vec2& uv_color);
-extern void AddArc(MeshBuilder* builder, const Vec2& center, f32 radius, f32 start, f32 end, int segments, const Vec2& uv_color);
+    const Vec3& a,
+    const Vec3& b,
+    const Vec3& c,
+    const Vec3& d,
+    const Vec2& uv_color);
+extern void AddVertex(MeshBuilder* builder, const Vec3& position, const Vec2& uv);
+inline void AddVertex(MeshBuilder* builder, const Vec2& position, const Vec2& uv) {
+    AddVertex(builder, {position.x, position.y, 0.0f}, uv);
+}
+extern void AddVertex(MeshBuilder* builder, const Vec3& position);
+inline void AddVertex(MeshBuilder* builder, const Vec2& position) {
+    AddVertex(builder, {position.x, position.y, 0.0f});
+}
+extern void AddCircle(MeshBuilder* builder, const Vec3& center, f32 radius, int segments, const Vec2& uv_color);
+extern void AddCircleStroke(MeshBuilder* builder, const Vec3& center, f32 radius, f32 thickness, int segments, const Vec2& uv_color);
+extern void AddArc(MeshBuilder* builder, const Vec3& center, f32 radius, f32 start, f32 end, int segments, const Vec2& uv_color);
 
 // @render_buffer
 extern void BindDefaultTexture(int texture_index);
@@ -150,8 +148,14 @@ extern void BindVertexUserData(const void* data, size_t size);
 extern void BindFragmentUserData(const void* data, size_t size);
 extern void BindDepth(float depth);
 extern void BindTransform(const Mat3& parent_transform, const Animator& animator, int bone_index);
-extern void BindTransform(const Vec2& position, float rotation, const Vec2& scale);
-extern void BindTransform(const Vec2& position, const Vec2& rotation, const Vec2& scale);
+extern void BindTransform(const Vec3& position, float rotation, const Vec2& scale);
+inline void BindTransform(const Vec2& position, float rotation, const Vec2& scale) {
+    BindTransform({position.x, position.y, 0.0f}, rotation, scale);
+}
+extern void BindTransform(const Vec3& position, const Vec2& rotation, const Vec2& scale);
+inline void BindTransform(const Vec2& position, const Vec2& rotation, const Vec2& scale) {
+    BindTransform({position.x, position.y, 0.0f}, rotation, scale);
+}
 extern void BindTransform(const Mat3& transform);
 extern void BindTransform(Transform& transform);
 extern void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color);
@@ -177,17 +181,17 @@ extern const FontGlyph* GetGlyph(Font* font, char ch);
 extern float GetKerning(Font* font, char first, char second);
 
 // @camera
-Camera* CreateCamera(Allocator* allocator);
-const Vec2& GetPosition(Camera* camera);
-void SetPosition(Camera* camera, const Vec2& position);
-void SetRotation(Camera* camera, float rotation);
-void SetSize(Camera* camera, const Vec2& size);
-void SetExtents(Camera* camera, float left, float right, float bottom, float top, bool auto_size=true);
-Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos);
-Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos);
-void UpdateCamera(Camera* camera);
-const Mat3& GetViewMatrix(Camera* camera);
-Bounds2 GetBounds(Camera* camera);
+extern Camera* CreateCamera(Allocator* allocator);
+extern const Vec2& GetPosition(Camera* camera);
+extern void SetPosition(Camera* camera, const Vec2& position);
+extern void SetRotation(Camera* camera, float rotation);
+extern void SetSize(Camera* camera, const Vec2& size);
+extern void SetExtents(Camera* camera, float left, float right, float bottom, float top, bool auto_size=true);
+extern Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos);
+extern Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos);
+extern void UpdateCamera(Camera* camera);
+extern const Mat3& GetViewMatrix(Camera* camera);
+extern Bounds2 GetBounds(Camera* camera);
 
 // @skeleton
 constexpr int MAX_BONES = 64;

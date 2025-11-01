@@ -86,8 +86,7 @@ struct VulkanDynamicBuffer
     VkDescriptorSet descriptor_set;
 };
 
-struct VulkanRenderer
-{
+struct VulkanRenderer {
     RendererTraits traits;
     HWND hwnd;
     HMODULE library;
@@ -1793,19 +1792,19 @@ static bool CreateShaderInternal(
             .format = VK_FORMAT_R32G32_SFLOAT,
             .offset = 0
         },
-        // UV
+        // Depth
         {
             .location = 1,
             .binding = 0,
-            .format = VK_FORMAT_R32G32_SFLOAT,
+            .format = VK_FORMAT_R32_SFLOAT,
             .offset = sizeof(float) * 2
         },
-        // Normal
+        // UV
         {
             .location = 2,
             .binding = 0,
-            .format = VK_FORMAT_R32G32B32_SFLOAT,
-            .offset = sizeof(float) * 4
+            .format = VK_FORMAT_R32G32_SFLOAT,
+            .offset = sizeof(float) * 3
         }
     };
 

@@ -694,8 +694,7 @@ static int LayoutCanvas(int element_index) {
     return LayoutElement(element_index, contraints, nullptr);
 }
 
-static u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform)
-{
+static u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform) {
     Element* e = g_ui.elements[element_index++];
 
     if (e->type == ELEMENT_TYPE_TRANSFORM) {
@@ -725,9 +724,7 @@ static u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform)
     return element_index;
 }
 
-
-void RenderCanvas(Element* e)
-{
+void RenderCanvas(Element* e){
     (void)e;
     UpdateCamera(g_ui.camera);
     BindCamera(g_ui.camera);
@@ -743,8 +740,7 @@ static void RenderBackground(const Rect& rect, const Mat3& transform, const Colo
     DrawMesh(g_ui.element_quad);
 }
 
-static int RenderElement(int element_index)
-{
+static int RenderElement(int element_index) {
     Element* e = g_ui.elements[element_index++];
     const Mat3& transform = e->local_to_world;
 
@@ -853,8 +849,7 @@ void BeginUI(u32 ref_width, u32 ref_height) {
     UpdateInputState(g_ui.input);
 }
 
-static void HandleInput()
-{
+static void HandleInput() {
     Vec2 mouse = ScreenToWorld(g_ui.camera, GetMousePosition());
     for (u32 i=g_ui.element_count; i>0; i--)
     {
@@ -903,8 +898,7 @@ static void HandleInput()
     }
 }
 
-void EndUI()
-{
+void EndUI() {
     for (u32 element_index=0; element_index < g_ui.element_count; )
         element_index = LayoutCanvas(element_index);
     for (u32 element_index=0; element_index < g_ui.element_count; )
@@ -923,10 +917,10 @@ void DrawUI() {
 static Mesh* CreateElementQuad(Allocator* allocator) {
     PushScratch();
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddVertex(builder, {0.0f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f});
-    AddVertex(builder, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
-    AddVertex(builder, {1.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 1.0f});
-    AddVertex(builder, {0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 1.0f});
+    AddVertex(builder, Vec2{0.0f, 0.0f}, {0.0f, 0.0f});
+    AddVertex(builder, Vec2{1.0f, 0.0f}, {1.0f, 0.0f});
+    AddVertex(builder, Vec2{1.0f, 1.0f}, {1.0f, 1.0f});
+    AddVertex(builder, Vec2{0.0f, 1.0f}, {0.0f, 1.0f});
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
     auto mesh = CreateMesh(allocator, builder, GetName("element"));
@@ -937,10 +931,10 @@ static Mesh* CreateElementQuad(Allocator* allocator) {
 static Mesh* CreateImageQuad(Allocator* allocator) {
     PushScratch();
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddVertex(builder, { -0.5f, -0.5f }, { 0.0f, 1.0f }, { 0.0f, 1.0f });
-    AddVertex(builder, {  0.5f, -0.5f }, { 0.0f, 1.0f }, { 1.0f, 1.0f });
-    AddVertex(builder, {  0.5f,  0.5f }, { 0.0f, 1.0f }, { 1.0f, 0.0f });
-    AddVertex(builder, { -0.5f,  0.5f }, { 0.0f, 1.0f }, { 0.0f, 0.0f });
+    AddVertex(builder, Vec2{ -0.5f, -0.5f }, { 0.0f, 1.0f });
+    AddVertex(builder, Vec2{  0.5f, -0.5f }, { 1.0f, 1.0f });
+    AddVertex(builder, Vec2{  0.5f,  0.5f }, { 1.0f, 0.0f });
+    AddVertex(builder, Vec2{ -0.5f,  0.5f }, { 0.0f, 0.0f });
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
     auto mesh = CreateMesh(allocator, builder, GetName("image"));

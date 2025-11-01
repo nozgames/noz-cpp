@@ -39,8 +39,7 @@ static void AddGlyph(
     float x,
     float y,
     float scale,
-    int& vertex_offset)
-{
+    int& vertex_offset) {
     auto glyph_x = x + glyph->bearing.x * scale;
     // Y increases downward, so glyph_y is the TOP of the glyph
     // bearing.y is distance from baseline to glyph bottom
@@ -50,10 +49,10 @@ static void AddGlyph(
     auto glyph_height = glyph->size.y * scale;
 
     // Add vertices for this glyph quad
-    AddVertex(builder, {glyph_x, glyph_y}, {0.0f, 1.0f}, {glyph->uv_min.x, glyph->uv_min.y});
-    AddVertex(builder, {glyph_x + glyph_width, glyph_y}, {0.0f, 1.0f}, {glyph->uv_max.x, glyph->uv_min.y});
-    AddVertex(builder, {glyph_x + glyph_width, glyph_y + glyph_height}, {0.0f, 1.0f}, {glyph->uv_max.x, glyph->uv_max.y});
-    AddVertex(builder, {glyph_x, glyph_y + glyph_height}, {0.0f, 1.0f}, {glyph->uv_min.x, glyph->uv_max.y});
+    AddVertex(builder, Vec2{glyph_x, glyph_y}, {glyph->uv_min.x, glyph->uv_min.y});
+    AddVertex(builder, Vec2{glyph_x + glyph_width, glyph_y}, {glyph->uv_max.x, glyph->uv_min.y});
+    AddVertex(builder, Vec2{glyph_x + glyph_width, glyph_y + glyph_height}, {glyph->uv_max.x, glyph->uv_max.y});
+    AddVertex(builder, Vec2{glyph_x, glyph_y + glyph_height}, {glyph->uv_min.x, glyph->uv_max.y});
 
     // Add indices for this glyph quad
     AddTriangle(builder, (u16)vertex_offset, (u16)vertex_offset + 1, (u16)vertex_offset + 2);
@@ -62,8 +61,7 @@ static void AddGlyph(
     vertex_offset += 4;
 }
 
-static void CreateTextMesh(Allocator* allocator, TextMeshImpl* impl, const TextRequest& request)
-{
+static void CreateTextMesh(Allocator* allocator, TextMeshImpl* impl, const TextRequest& request) {
     auto& text = request.text;
     float font_size = (float)request.font_size;
 

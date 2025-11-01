@@ -6,8 +6,7 @@
 
 Mesh** MESH = nullptr;
 
-struct MeshImpl : Mesh
-{
+struct MeshImpl : Mesh {
     u16 vertex_count;
     u16 index_count;
     platform::Buffer* vertex_buffer;
@@ -19,8 +18,7 @@ struct MeshImpl : Mesh
 
 void UploadMesh(Mesh* mesh);
 
-static void MeshDestructor(void* p)
-{
+static void MeshDestructor(void* p) {
     MeshImpl* impl = (MeshImpl*)p;
 
     if (impl->vertex_buffer)
@@ -32,16 +30,14 @@ static void MeshDestructor(void* p)
     Free(impl->indices);
 }
 
-inline size_t GetMeshImplSize(size_t vertex_count, size_t index_count)
-{
+inline size_t GetMeshImplSize(size_t vertex_count, size_t index_count) {
     return
         sizeof(MeshImpl) +
         sizeof(MeshVertex) * vertex_count +
         sizeof(u16) * index_count;
 }
 
-static MeshImpl* CreateMesh(Allocator* allocator, u16 vertex_count, u16 index_count, const Name* name)
-{
+static MeshImpl* CreateMesh(Allocator* allocator, u16 vertex_count, u16 index_count, const Name* name) {
     MeshImpl* mesh = (MeshImpl*)Alloc(allocator, sizeof(MeshImpl), MeshDestructor);
     if (!mesh)
         return nullptr;
@@ -69,57 +65,47 @@ void UploadMesh(Mesh* mesh)
         impl->name->value);
 }
 
-u16 GetVertexCount(Mesh* mesh)
-{
+u16 GetVertexCount(Mesh* mesh) {
     return static_cast<MeshImpl*>(mesh)->vertex_count;
 }
 
-u16 GetIndexCount(Mesh* mesh)
-{
+u16 GetIndexCount(Mesh* mesh) {
     return static_cast<MeshImpl*>(mesh)->index_count;
 }
 
-const MeshVertex* GetVertices(Mesh* mesh)
-{
+const MeshVertex* GetVertices(Mesh* mesh) {
     return static_cast<MeshImpl*>(mesh)->vertices;
 }
 
-const u16* GetIndices(Mesh* mesh)
-{
+const u16* GetIndices(Mesh* mesh) {
     return static_cast<MeshImpl*>(mesh)->indices;
 }
 
-Bounds2 GetBounds(Mesh* mesh)
-{
+Bounds2 GetBounds(Mesh* mesh) {
     return static_cast<MeshImpl*>(mesh)->bounds;
 }
 
-Vec2 GetSize(Mesh* mesh)
-{
+Vec2 GetSize(Mesh* mesh) {
     return GetSize(GetBounds(mesh));
 }
 
-bool OverlapPoint(Mesh* mesh, const Vec2& overlap_point)
-{
+bool OverlapPoint(Mesh* mesh, const Vec2& overlap_point) {
     MeshImpl* impl = static_cast<MeshImpl*>(mesh);
     if (!Contains(impl->bounds, overlap_point))
         return false;
 
-    for (u16 i = 0; i < impl->index_count; i += 3)
-    {
-        const Vec2& v0 = impl->vertices[impl->indices[i + 0]].position;
-        const Vec2& v1 = impl->vertices[impl->indices[i + 1]].position;
-        const Vec2& v2 = impl->vertices[impl->indices[i + 2]].position;
-
-        if (OverlapPoint(v0, v1, v2, overlap_point, nullptr))
+    for (u16 i = 0; i < impl->index_count; i += 3) {
+        const Vec3& v0 = impl->vertices[impl->indices[i + 0]].position;
+        const Vec3& v1 = impl->vertices[impl->indices[i + 1]].position;
+        const Vec3& v2 = impl->vertices[impl->indices[i + 2]].position;
+        if (OverlapPoint(XY(v0), XY(v1), XY(v2), overlap_point, nullptr))
             return true;
     }
 
     return false;
 }
 
-void RenderMesh(Mesh* mesh)
-{
+void RenderMesh(Mesh* mesh) {
     assert(mesh);
     MeshImpl* impl = static_cast<MeshImpl*>(mesh);
     platform::BindVertexBuffer(impl->vertex_buffer);
@@ -127,13 +113,11 @@ void RenderMesh(Mesh* mesh)
     platform::DrawIndexed(impl->index_count);
 }
 
-bool IsUploaded(Mesh* mesh)
-{
+bool IsUploaded(Mesh* mesh) {
     return static_cast<MeshImpl*>(mesh)->vertex_buffer != nullptr;
 }
 
-Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
-{
+Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
     (void)header;
     (void)name_table;
 
@@ -157,15 +141,13 @@ Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const
 Mesh* CreateMesh(
     Allocator* allocator,
     u16 vertex_count,
-    const Vec2* positions,
-    const Vec3* normals,
+    const Vec3* positions,
     const Vec2* uvs,
     u16 index_count,
     u16* indices,
     const Name* name,
     bool upload) {
     assert(positions);
-    assert(normals);
     assert(uvs);
     assert(indices);
 
@@ -173,11 +155,10 @@ Mesh* CreateMesh(
         return nullptr;
 
     MeshImpl* mesh = CreateMesh(allocator, vertex_count, index_count, name);
-    mesh->bounds = ToBounds(positions, vertex_count);
+    mesh->bounds = ToBounds2(ToBounds(positions, vertex_count));
 
     for (size_t i = 0; i < vertex_count; i++) {
         mesh->vertices[i].position = positions[i];
-        mesh->vertices[i].normal = normals[i];
         mesh->vertices[i].uv0 = uvs[i];
     }
 

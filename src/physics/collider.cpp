@@ -33,7 +33,7 @@ Collider* CreateCollider(Allocator* allocator, Mesh* mesh)
     impl->points = (Vec2*)Alloc(allocator, sizeof(Vec2) * impl->point_count);
     impl->bounds = GetBounds(mesh);
     for (u32 i=0; i < impl->point_count; i++)
-        impl->points[i] = GetVertices(mesh)[i].position;
+        impl->points[i] = XY(GetVertices(mesh)[i].position);
 
     return impl;
 }

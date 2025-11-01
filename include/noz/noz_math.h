@@ -89,8 +89,7 @@ struct Mat3
     Mat3 operator*(const Mat3& o) const;
 };
 
-struct Vec2
-{
+struct Vec2 {
     f32 x;
     f32 y;
 
@@ -107,8 +106,7 @@ struct Vec2
     bool operator!=(const Vec2& o) const { return x != o.x || y != o.y; }
 };
 
-struct Vec3
-{
+struct Vec3 {
     f32 x;
     f32 y;
     f32 z;
@@ -121,8 +119,7 @@ struct Vec3
     Vec3 operator-() const { return { -x, -y, -z }; }
 };
 
-struct Vec4
-{
+struct Vec4 {
     f32 x;
     f32 y;
     f32 z;
@@ -178,8 +175,7 @@ struct Bounds2
     Bounds2 operator+ (const Vec2& offset) const { return { min + offset, max + offset }; }
 };
 
-struct Bounds3
-{
+struct Bounds3 {
     Vec3 min;
     Vec3 max;
 };
@@ -280,6 +276,10 @@ bool Intersects(const Bounds3& bounds, const Bounds3& point);
 Bounds3 Expand(const Bounds3& bounds, const Vec3& point);
 Bounds3 Expand(const Bounds3& bounds, const Bounds3& other);
 
+inline Bounds2 ToBounds2(const Bounds3& bounds) {
+    return Bounds2{ Vec2{ bounds.min.x, bounds.min.y }, Vec2{ bounds.max.x, bounds.max.y } };
+}
+
 // @bounds2
 extern Bounds2 ToBounds(const Vec2* positions, u32 count);
 extern bool Contains(const Bounds2& bounds, const Vec2& point);
@@ -317,20 +317,20 @@ extern Vec2 GetRight(const Mat3& m);
 
 // @vec2
 extern f32 Length(const Vec2& v);
-inline f32 LengthSqr(const Vec2& v) { return v.x * v.x + v.y * v.y; }
-inline f32 Distance(const Vec2& v1, const Vec2& v2) { return Length(v2 - v1); }
-inline f32 DistanceSqr(const Vec2& v1, const Vec2& v2) { return LengthSqr(v2 - v1); }
 extern Vec2 Reflect(const Vec2& v, const Vec2& normal);
 extern Vec2 Normalize(const Vec2& v);
 extern Vec2 Rotate(const Vec2& v, f32 degrees);
 extern Vec2 Rotate(const Vec2& v, const Vec2& direction);
 extern float DistanceFromLine(const Vec2& v0, const Vec2& v1, const Vec2& point);
+
+inline f32 LengthSqr(const Vec2& v) { return v.x * v.x + v.y * v.y; }
+inline f32 Distance(const Vec2& v1, const Vec2& v2) { return Length(v2 - v1); }
+inline f32 DistanceSqr(const Vec2& v1, const Vec2& v2) { return LengthSqr(v2 - v1); }
 inline Vec2 Perpendicular(const Vec2& v) { return Vec2{ -v.y, v.x }; }
 inline f32 Dot(const Vec2& a, const Vec2& b) { return a.x * b.x + a.y * b.y; }
 inline Vec2 Mix(const Vec2& v1, const Vec2& v2, f32 t) { return v1 + (v2 - v1) * t; }
 inline Vec2 Abs(const Vec2& v) { return Vec2{ Abs(v.x), Abs(v.y) }; }
-inline bool ApproxEqual(const Vec2& a, const Vec2& b, f32 epsilon = 1e-6f)
-{
+inline bool ApproxEqual(const Vec2& a, const Vec2& b, f32 epsilon = 1e-6f) {
     return ApproxEqual(a.x, b.x, epsilon) && ApproxEqual(a.y, b.y, epsilon);
 }
 
