@@ -42,7 +42,7 @@ layout(location = 0) in vec2 f_uv;
 layout(location = 0) out vec4 FragColor;
 
 void main() {
-    vec2 uv = f_uv0;
+    vec2 uv = f_uv;
     uv *=  1.0 - uv.yx;
     float vig = uv.x * uv.y * vignette.intensity;
     vig = pow(vig, vignette.smoothness);

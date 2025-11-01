@@ -1288,8 +1288,7 @@ void platform::DestroyBuffer(Buffer* buffer)
         vkDestroyBuffer(g_vulkan.device, (VkBuffer)buffer, nullptr);
 }
 
-platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, u16 vertex_count, const char* name)
-{
+platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, u16 vertex_count, const char* name) {
     assert(vertices);
     assert(vertex_count > 0);
     assert(g_vulkan.device != VK_NULL_HANDLE);

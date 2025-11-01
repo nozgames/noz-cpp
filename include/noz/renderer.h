@@ -72,6 +72,7 @@ struct Mesh : Asset { };
 struct MeshVertex {
     Vec3 position;
     Vec2 uv0;
+    Vec2 padding;
 };
 
 extern Mesh* CreateMesh(
