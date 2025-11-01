@@ -1238,7 +1238,7 @@ void platform::BindTransform(const Mat3& transform, float depth)
         return;
 
     ObjectBuffer* buffer = (ObjectBuffer*)buffer_ptr;
-    buffer->depth = 1.0f - ((depth - g_vulkan.traits.min_depth) * g_vulkan.depth_conversion_factor);
+    buffer->depth = (depth - g_vulkan.traits.min_depth) * g_vulkan.depth_conversion_factor;
     CopyMat3ToGPU(&buffer->transform, transform);
 }
 
