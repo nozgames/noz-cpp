@@ -37,13 +37,6 @@ layout(set = 3, binding = 0) uniform ColorBuffer {
     vec2 padding;
 } color_buffer;
 
-layout(set = 4, binding = 0) uniform LightBuffer {
-    vec3 direction;
-    float padding;
-    vec4 diffuse_color;
-    vec4 shadow_color;
-} light_buffer;
-
 layout(set = 6, binding = 0) uniform sampler2D mainTexture;
 
 void main() {
