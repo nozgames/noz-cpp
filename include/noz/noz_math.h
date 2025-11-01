@@ -351,6 +351,8 @@ inline Vec2 ToVec2(const Vec3& v) { return { (f32)v.x, (f32)v.y }; }
 extern f32 Length(const Vec3& v);
 extern Vec3 Normalize(const Vec3& v);
 extern Vec3 Cross(const Vec3& a, const Vec3& b);
+inline Vec3 ToVec3(const Vec2& a) { return Vec3{ a.x, a.y, 0.0f }; }
+inline Vec3 ToVec3(const Vec2& a, float z) { return Vec3{ a.x, a.y, z }; }
 inline f32 Dot(const Vec3& a, const Vec3& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 inline Vec2 XY(const Vec3& v) { return {v.x, v.y}; }
 inline Vec2 XZ(const Vec3& v) { return {v.x, v.z}; }
