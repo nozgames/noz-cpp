@@ -19,16 +19,7 @@ struct Animator;
 
 // @renderer_traits
 struct RendererTraits {
-    size_t max_textures;
-    size_t max_shaders;
-    size_t max_samplers;
-    size_t max_pipelines;
-    size_t max_meshes;
-    size_t max_fonts;
     size_t max_frame_commands;
-    size_t max_frame_objects;
-    size_t max_frame_transforms;
-    uint32_t shadow_map_size;
     i32 vsync;
     bool msaa;
     float min_depth;

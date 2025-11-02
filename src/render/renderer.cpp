@@ -17,8 +17,7 @@ extern platform::Pipeline* GetPipeline(Shader* shader);
 
 static void ResetRenderState();
 
-struct Renderer
-{
+struct Renderer {
     RendererTraits traits;
     platform::Pipeline* pipeline;
 };
@@ -26,43 +25,36 @@ struct Renderer
 static Renderer g_renderer = {};
 Texture* TEXTURE_WHITE = nullptr;
 
-void BeginRenderFrame(Color clear_color)
-{
+void BeginRenderFrame(Color clear_color) {
     platform::BeginRenderFrame();
     ClearRenderCommands();
     ResetRenderState();
     BeginRenderPass(clear_color);
 }
 
-void EndRenderFrame()
-{
+void EndRenderFrame() {
     EndRenderPass();
     ExecuteRenderCommands();
     platform::EndRenderFrame();
 }
 
-static void ResetRenderState()
-{
+static void ResetRenderState() {
     g_renderer.pipeline = nullptr;
     BindColor(COLOR_WHITE);
     BindLight(VEC3_FORWARD, COLOR_WHITE, COLOR_BLACK);
 }
 
-void LoadRendererAssets(Allocator* allocator)
-{
+void LoadRendererAssets(Allocator* allocator) {
     (void)allocator;
 
     TEXTURE_WHITE = CreateTexture(nullptr, &color32_white, 1, 1, TEXTURE_FORMAT_RGBA8, GetName("white"));
 }
 
-void InitRenderer(const RendererTraits* traits)
-{
+void InitRenderer(const RendererTraits* traits) {
     InitRenderBuffer(traits);
 }
 
-void ShutdownRenderer()
-{
+void ShutdownRenderer() {
     ShutdownRenderBuffer();
-
     g_renderer = {};
 }

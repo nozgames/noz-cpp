@@ -300,14 +300,12 @@ void ExecuteRenderCommands()
     }
 }
 
-void InitRenderBuffer(const RendererTraits* traits)
-{
+void InitRenderBuffer(const RendererTraits* traits) {
     size_t commands_size = traits->max_frame_commands * sizeof(RenderCommand);
     size_t buffer_size = sizeof(RenderBuffer) + commands_size;
     
     g_render_buffer = (RenderBuffer*)malloc(buffer_size);
-    if (!g_render_buffer)
-    {
+    if (!g_render_buffer) {
         ExitOutOfMemory();
         return;
     }        
@@ -317,8 +315,7 @@ void InitRenderBuffer(const RendererTraits* traits)
     g_render_buffer->command_count_max = traits->max_frame_commands;
 }
 
-void ShutdownRenderBuffer()
-{
+void ShutdownRenderBuffer() {
     assert(g_render_buffer);
     free(g_render_buffer);
     g_render_buffer = nullptr;
