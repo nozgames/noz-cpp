@@ -192,6 +192,7 @@ void InitWindow() {
 
     InitVfx();
     InitUI();
+    InitDebug();
 }
 
 void ShutdownWindow()
@@ -222,6 +223,7 @@ void ShutdownWindow()
         g_app.asset_allocator = nullptr;
     }
 
+    ShutdownDebug();
     ShutdownUI();
     ShutdownVfx();
     ShutdownPhysics();

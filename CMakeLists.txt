@@ -39,6 +39,7 @@ set(SOURCE_FILES
     src/math/vec3.cpp
     src/math/angle.cpp
     src/name.cpp
+    src/debug.cpp
     src/physics/physics.cpp
     src/physics/rigid_body.cpp
     src/physics/collider.cpp

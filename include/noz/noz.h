@@ -40,3 +40,4 @@
 #include "prefs.h"
 #include "core_events.h"
 #include "tween.h"
+#include "debug.h"
