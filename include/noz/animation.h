@@ -38,6 +38,7 @@ struct Animator {
     Animation* blend_animation;
     float blend_time;
     float blend_frame_time;
+    bool blend_loop;
     float time;
     float speed;
     bool loop;
