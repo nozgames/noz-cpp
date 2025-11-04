@@ -2,7 +2,7 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-constexpr float ANIMATOR_BLEND_TIME = 0.1f;
+constexpr float ANIMATOR_BLEND_TIME = 0.05f;
 
 static void EvalulateFrame(Animator& animator) {
     assert(animator.skeleton);
