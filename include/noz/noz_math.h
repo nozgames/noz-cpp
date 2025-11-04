@@ -101,6 +101,7 @@ struct Vec2 {
     Vec2 operator*(const Vec2& v) const { return Vec2{ x * v.x, y * v.y }; }
     Vec2 operator/(f32 scalar) const { return Vec2{ x / scalar, y / scalar }; }
     Vec2 operator*=(f32 scalar) const { return Vec2{ x * scalar, y * scalar }; }
+    Vec2 operator*=(const Vec2& v) const { return Vec2{ x * v.x, y * v.y }; }
     Vec2 operator-() const { return { -x, -y }; }
     bool operator==(const Vec2& o) const { return x == o.x && y == o.y; }
     bool operator!=(const Vec2& o) const { return x != o.x || y != o.y; }

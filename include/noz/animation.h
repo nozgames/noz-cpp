@@ -40,7 +40,6 @@ struct Animator {
     float blend_frame_time;
     float time;
     float speed;
-    int last_frame;
     bool loop;
     Mat3 bones[MAX_BONES];
     BoneTransform user_transforms[MAX_BONES];
@@ -52,7 +51,6 @@ extern void Stop(Animator& animator);
 extern void Update(Animator& animator, float time_scale=1.0f);
 extern bool IsPlaying(Animator& animator);
 extern bool IsLooping(Animator& animator);
-extern int GetFrame(Animator& animator);
 extern float GetTime(Animator& animator);
 extern float GetNormalizedTime(Animator& animator);
 extern void SetNormalizedTime(Animator& animator, float normalized_time);

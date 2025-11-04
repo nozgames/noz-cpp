@@ -14,50 +14,51 @@ static void EvalulateFrame(Animator& animator) {
 
     f32 float_frame = animator.time * anim_impl->frame_rate;
     assert(float_frame < anim_impl->frame_count);
-    i32 frame1 = static_cast<i32>(Floor(float_frame));
-    i32 frame2 = (frame1 + 1) % anim_impl->frame_count;
-    f32 t = float_frame - static_cast<f32>(frame1);
+    i32 frame_index1 = static_cast<i32>(Floor(float_frame));
+    i32 frame_index2 = (frame_index1 + 1) % anim_impl->frame_count;
+    f32 t = float_frame - static_cast<f32>(frame_index1);
     assert(t >= 0.0f && t < 1.0f);
-    BoneTransform* frames = anim_impl->frames;
+    BoneTransform* frame1 = anim_impl->frames + frame_index1 * anim_impl->frame_stride;
+    BoneTransform* frame2 = anim_impl->frames + frame_index2 * anim_impl->frame_stride;
 
-    BoneTransform* blend_frames1 = nullptr;
-    BoneTransform* blend_frames2 = nullptr;
+    BoneTransform* blend_frame1 = nullptr;
+    BoneTransform* blend_frame2 = nullptr;
     f32 blend_frame_t = 0.0f;
     f32 blend_t = 0.0f;
     if (animator.blend_animation) {
         AnimationImpl* blend_anim_impl = (AnimationImpl*)animator.blend_animation;
         assert(GetBoneCount(animator.skeleton) == blend_anim_impl->bone_count);
-
-
         f32 blend_float_frame = animator.blend_time * blend_anim_impl->frame_rate;
-        i32 blend_frame1 = static_cast<i32>(Floor(blend_float_frame));
-        i32 blend_frame2 = (blend_frame1 + 1) % blend_anim_impl->frame_count;
-        blend_frames1 = blend_anim_impl->frames + blend_frame1 * blend_anim_impl->frame_stride;
-        blend_frames2 = blend_anim_impl->frames + blend_frame2 * blend_anim_impl->frame_stride;
-        blend_frame_t = blend_float_frame - static_cast<f32>(blend_frame1);
+        i32 blend_frame_index1 = static_cast<i32>(Floor(blend_float_frame));
+        i32 blend_frame_index2 = (blend_frame_index1 + 1) % blend_anim_impl->frame_count;
+        blend_frame1 = blend_anim_impl->frames + blend_frame_index1 * blend_anim_impl->frame_stride;
+        blend_frame2 = blend_anim_impl->frames + blend_frame_index2 * blend_anim_impl->frame_stride;
+        blend_frame_t = blend_float_frame - static_cast<f32>(blend_frame_index1);
     }
 
     for (int bone_index=0; bone_index<anim_impl->bone_count; bone_index++) {
-        auto& bt1 = frames[frame1 * anim_impl->frame_stride + bone_index];
-        auto& bt2 = frames[frame2 * anim_impl->frame_stride + bone_index];
+        BoneTransform* bt1 = frame1 + bone_index;
+        BoneTransform* bt2 = frame2 + bone_index;
+        BoneTransform frame_transform = Mix(*bt1, *bt2, t);
 
-        BoneTransform frame_transform = Mix(bt1, bt2, t);
-
-        if (blend_frames1) {
-            auto& bbt1 = *(blend_frames1 + bone_index);
-            auto& bbt2 = *(blend_frames2 + bone_index);
+        if (blend_frame1) {
+            auto& bbt1 = *(blend_frame1 + bone_index);
+            auto& bbt2 = *(blend_frame2 + bone_index);
             frame_transform = Mix(frame_transform, Mix(bbt1, bbt2, blend_frame_t), blend_t);
         }
+
+        frame_transform.position += skel_impl->bones[bone_index].transform.position;
+        frame_transform.position += animator.user_transforms[bone_index].position;
+        frame_transform.rotation += animator.user_transforms[bone_index].rotation;
+        frame_transform.scale *= animator.user_transforms[bone_index].scale;
 
         animator.bones[bone_index] = ToMat3(frame_transform);
     }
 
-    for (int i=1; i<anim_impl->bone_count; i++) {
-        int parent_index = skel_impl->bones[i].parent_index;
-        animator.bones[i] = animator.bones[parent_index] * animator.bones[i];
+    for (int bone_index=1; bone_index<anim_impl->bone_count; bone_index++) {
+        int parent_index = skel_impl->bones[bone_index].parent_index;
+        animator.bones[bone_index] = animator.bones[parent_index] * animator.bones[bone_index];
     }
-
-    animator.last_frame = frame1;
 }
 
 void Stop(Animator& animator) {
@@ -110,10 +111,6 @@ bool IsLooping(Animator& animator)
     return animator.loop;
 }
 
-int GetFrame(Animator& animator) {
-    return animator.last_frame;
-}
-
 float GetTime(Animator& animator) {
     return animator.time;
 }
@@ -130,7 +127,6 @@ void SetNormalizedTime(Animator& animator, float normalized_time) {
         return;
 
     animator.time = normalized_time * ((AnimationImpl*)animator.animation)->duration;
-    animator.last_frame = -1;
 
     Update(animator, 0.0f);
 }
@@ -139,7 +135,6 @@ void Init(Animator& animator, Skeleton* skeleton) {
     animator = {};
     animator.skeleton = skeleton;
     animator.speed = 1.0f;
-    animator.last_frame = -1;
 
     int bone_count = GetBoneCount(skeleton);
     for (int bone_index=0; bone_index<bone_count; bone_index++) {
