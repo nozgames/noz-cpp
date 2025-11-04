@@ -30,6 +30,7 @@
 #include "stream.h"
 #include "asset.h"
 #include "renderer.h"
+#include "animation.h"
 #include "application.h"
 #include "ui.h"
 #include "input.h"

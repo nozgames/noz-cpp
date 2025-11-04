@@ -12,7 +12,6 @@ struct Texture : Asset {};
 struct Material : Asset {};
 struct Font : Asset {};
 struct Shader : Asset {};
-struct Animation : Asset {};
 struct Skeleton : Asset {};
 struct MeshBuilder {};
 struct Animator;
@@ -193,44 +192,9 @@ extern int GetBoneIndex(Skeleton* skeleton, const Name* name);
 extern const Mat3& GetLocalToWorld(Skeleton* skeleton, int bone_index);
 extern const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index);
 
-// @animation
-constexpr int MAX_ANIMATION_FRAMES = 64;
-constexpr int ANIMATION_FRAME_RATE = 12;
-
-extern int GetBoneCount(Animation* animation);
-
-// @animator
-struct BoneTransform {
-    Vec2 position;
-    Vec2 scale;
-    float rotation;
-};
-
-struct Animator {
-    Skeleton* skeleton;
-    Animation* animation;
-    float time;
-    float speed;
-    int last_frame;
-    bool loop;
-    Mat3 bones[MAX_BONES];
-    BoneTransform user_transforms[MAX_BONES];
-};
-
-extern void Init(Animator& animator, Skeleton* skeleton);
-extern void Play(Animator& animator, Animation* animation, float speed=1.0f, bool loop=false);
-extern void Stop(Animator& animator);
-extern void Update(Animator& animator, float time_scale=1.0f);
-extern bool IsPlaying(Animator& animator);
-extern bool IsLooping(Animator& animator);
-extern int GetFrame(Animator& animator);
-extern float GetTime(Animator& animator);
-extern float GetNormalizedTime(Animator& animator);
-extern void SetNormalizedTime(Animator& animator, float normalized_time);
 
 extern Mesh** MESH;
 extern Font** FONT;
 extern Texture** TEXTURE;
 extern Shader** SHADER;
 extern Skeleton** SKELETON;
-extern Animation** ANIMATION;

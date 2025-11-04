@@ -106,6 +106,8 @@ struct Vec2 {
     bool operator!=(const Vec2& o) const { return x != o.x || y != o.y; }
 };
 
+inline Vec2 operator*(f32 scalar, const Vec2& v) { return Vec2{ v.x * scalar, v.y * scalar }; }
+
 struct Vec3 {
     f32 x;
     f32 y;
@@ -246,6 +248,7 @@ inline f32 Mix(f32 v1, f32 v2, f32 t) { return v1 + (v2 - v1) * t; }
 inline f64 Mix(f64 v1, f64 v2, f64 t) { return v1 + (v2 - v1) * t; }
 inline bool ApproxEqual(f32 a, f32 b, f32 epsilon = 1e-6f) { return fabsf(a - b) <= epsilon; }
 inline f32 Sqrt(f32 v) { return sqrtf(v); }
+inline float Sqr(float x) { return x * x; }
 inline f32 Cos(f32 v) { return cosf(v); }
 inline f32 Sin(f32 v) { return sinf(v); }
 inline f32 Atan2(f32 y, f32 x) { return atan2f(y, x); }
