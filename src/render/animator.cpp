@@ -9,8 +9,8 @@ static void EvalulateFrame(Animator& animator) {
     assert(animator.animation);
     assert(GetBoneCount(animator.skeleton) == GetBoneCount(animator.animation));
 
-    AnimationImpl* anim_impl = (AnimationImpl*)animator.animation;
-    SkeletonImpl* skel_impl = (SkeletonImpl*)animator.skeleton;
+    AnimationImpl* anim_impl = static_cast<AnimationImpl*>(animator.animation);
+    SkeletonImpl* skel_impl = static_cast<SkeletonImpl*>(animator.skeleton);
 
     f32 float_frame = animator.time * anim_impl->frame_rate;
     assert(float_frame < anim_impl->frame_count);
@@ -27,14 +27,16 @@ static void EvalulateFrame(Animator& animator) {
     f32 blend_frame_t = 0.0f;
     f32 blend_t = 0.0f;
     if (animator.blend_animation) {
-        AnimationImpl* blend_anim_impl = (AnimationImpl*)animator.blend_animation;
+        AnimationImpl* blend_anim_impl = static_cast<AnimationImpl*>(animator.blend_animation);
+        assert(blend_anim_impl);
         assert(GetBoneCount(animator.skeleton) == blend_anim_impl->bone_count);
-        f32 blend_float_frame = animator.blend_time * blend_anim_impl->frame_rate;
+        f32 blend_float_frame = animator.blend_frame_time * blend_anim_impl->frame_rate;
         i32 blend_frame_index1 = static_cast<i32>(Floor(blend_float_frame));
         i32 blend_frame_index2 = animator.blend_loop ? ((blend_frame_index1 + 1) % blend_anim_impl->frame_count) : blend_frame_index1;
         blend_frame1 = blend_anim_impl->frames + blend_frame_index1 * blend_anim_impl->frame_stride;
         blend_frame2 = blend_anim_impl->frames + blend_frame_index2 * blend_anim_impl->frame_stride;
         blend_frame_t = blend_float_frame - static_cast<f32>(blend_frame_index1);
+        blend_t = animator.blend_time / ANIMATOR_BLEND_TIME;
     }
 
     for (int bone_index=0; bone_index<anim_impl->bone_count; bone_index++) {
@@ -43,9 +45,11 @@ static void EvalulateFrame(Animator& animator) {
         BoneTransform frame_transform = Mix(*bt1, *bt2, t);
 
         if (blend_frame1) {
-            auto& bbt1 = *(blend_frame1 + bone_index);
-            auto& bbt2 = *(blend_frame2 + bone_index);
-            frame_transform = Mix(frame_transform, Mix(bbt1, bbt2, blend_frame_t), blend_t);
+            assert(blend_frame2);
+            BoneTransform* bbt1 = blend_frame1 + bone_index;
+            BoneTransform* bbt2 = blend_frame2 + bone_index;
+            BoneTransform blend_frame = Mix(*bbt1, *bbt2, blend_frame_t);
+            frame_transform = Mix(blend_frame, frame_transform, blend_t);
         }
 
         frame_transform.position += skel_impl->bones[bone_index].transform.position;
