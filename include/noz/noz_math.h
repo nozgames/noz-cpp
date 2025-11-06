@@ -113,13 +113,6 @@ struct Vec3 {
     f32 x;
     f32 y;
     f32 z;
-
-    Vec3 operator+(const Vec3& v) const { return { x + v.x, y + v.y, z + v.z }; }
-    Vec3 operator-(const Vec3& v) const { return { x - v.x, y - v.y, z - v.z }; }
-    Vec3& operator+=(const Vec3& v) { x += v.x; y += v.y; z += v.z; return *this; }
-    Vec3 operator*(f32 scalar) const { return { x * scalar, y * scalar, z * scalar }; }
-    Vec3 operator*=(f32 scalar) const { return { x * scalar, y * scalar, z * scalar }; }
-    Vec3 operator-() const { return { -x, -y, -z }; }
 };
 
 struct Vec4 {
@@ -338,6 +331,9 @@ inline bool ApproxEqual(const Vec2& a, const Vec2& b, f32 epsilon = 1e-6f) {
     return ApproxEqual(a.x, b.x, epsilon) && ApproxEqual(a.y, b.y, epsilon);
 }
 
+inline Vec3 XZ(const Vec2& v) { return {v.x, 0.0f, v.y}; }
+
+
 // @vec4
 inline Vec4 Mix(const Vec4& v1, const Vec4& v2, f32 t) { return v1 + (v2 - v1) * t; }
 
@@ -355,11 +351,21 @@ inline Vec2 ToVec2(const Vec3& v) { return { (f32)v.x, (f32)v.y }; }
 extern f32 Length(const Vec3& v);
 extern Vec3 Normalize(const Vec3& v);
 extern Vec3 Cross(const Vec3& a, const Vec3& b);
+inline f32 LengthSqr(const Vec3& v) { return v.x * v.x + v.y * v.y + v.z * v.z; }
 inline Vec3 ToVec3(const Vec2& a) { return Vec3{ a.x, a.y, 0.0f }; }
 inline Vec3 ToVec3(const Vec2& a, float z) { return Vec3{ a.x, a.y, z }; }
 inline f32 Dot(const Vec3& a, const Vec3& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 inline Vec2 XY(const Vec3& v) { return {v.x, v.y}; }
 inline Vec2 XZ(const Vec3& v) { return {v.x, v.z}; }
+
+inline Vec3 operator+(const Vec3& v1, const Vec3& v2) { return { v1.x + v2.x, v1.y + v2.y, v1.z + v2.z }; }
+inline Vec3 operator-(const Vec3& v1, const Vec3& v2) { return { v1.x - v2.x, v1.y - v2.y, v1.z - v2.z }; }
+inline Vec3 operator*(const Vec3& v, f32 s) { return { v.x * s, v.y * s, v.z * s }; }
+inline Vec3 operator/(const Vec3& v, f32 s) { return { v.x / s, v.y / s, v.z / s }; }
+inline Vec3 operator-(const Vec3& v) { return { -v.x, -v.y, -v.z }; }
+inline Vec3 operator+=(Vec3& v, const Vec3& v2) { v.x += v2.x; v.y += v2.y; v.z += v2.z; return v; }
+inline Vec3 operator*=(Vec3& v, f32 s) { v.x *= s; v.y *= s; v.z *= s; return v; }
+inline Vec3 operator-=(Vec3& v, const Vec3& v2) { v.x -= v2.x; v.y -= v2.y; v.z = v2.z; return v; }
 
 // @angle
 extern float SignedAngleDelta(const Vec2& a, const Vec2&b);
