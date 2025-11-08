@@ -4,13 +4,11 @@
 
 Skeleton** SKELETON = nullptr;
 
-int GetBoneCount(Skeleton* skeleton)
-{
+int GetBoneCount(Skeleton* skeleton) {
     return ((SkeletonImpl*)skeleton)->bone_count;
 }
 
-int GetBoneIndex(Skeleton* skeleton, const Name* name)
-{
+int GetBoneIndex(Skeleton* skeleton, const Name* name) {
     assert(skeleton);
     assert(name);
     SkeletonImpl* impl = (SkeletonImpl*)skeleton;
@@ -21,8 +19,21 @@ int GetBoneIndex(Skeleton* skeleton, const Name* name)
     return 0;
 }
 
-const Mat3& GetLocalToWorld(Skeleton* skeleton, int bone_index)
-{
+const Bone& GetBone(Skeleton* skeleton, int bone_index) {
+    SkeletonImpl* impl = (SkeletonImpl*)skeleton;
+    assert(impl);
+    assert(bone_index >= 0 && bone_index < impl->bone_count);
+    return impl->bones[bone_index];
+}
+
+const Transform& GetBoneTransform(Skeleton* skeleton, int bone_index) {
+    SkeletonImpl* impl = (SkeletonImpl*)skeleton;
+    assert(impl);
+    assert(bone_index >= 0 && bone_index < impl->bone_count);
+    return impl->bones[bone_index].transform;
+}
+
+const Mat3& GetLocalToWorld(Skeleton* skeleton, int bone_index) {
     SkeletonImpl* impl = (SkeletonImpl*)skeleton;
     assert(impl);
     assert(bone_index >= 0 && bone_index < impl->bone_count);
@@ -30,8 +41,7 @@ const Mat3& GetLocalToWorld(Skeleton* skeleton, int bone_index)
     return GetLocalToWorld(impl->bones[bone_index].transform);
 }
 
-const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index)
-{
+const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index) {
     SkeletonImpl* impl = (SkeletonImpl*)skeleton;
     assert(impl);
     assert(bone_index >= 0 && bone_index < impl->bone_count);
@@ -39,8 +49,7 @@ const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index)
     return GetWorldToLocal(impl->bones[bone_index].transform);
 }
 
-Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
-{
+Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
     (void)header;
     (void)name;
 
@@ -49,8 +58,7 @@ Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, c
     impl->bone_count = ReadU8(stream);
     impl->bones = (Bone*)Alloc(allocator, sizeof(Bone) * impl->bone_count);
 
-    for (u8 i = 0; i < impl->bone_count; ++i)
-    {
+    for (u8 i = 0; i < impl->bone_count; ++i) {
         Bone& bone = impl->bones[i];
         bone.name = name_table[i];
         bone.index = i;

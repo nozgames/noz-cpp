@@ -114,13 +114,6 @@ struct AnimationImpl : Animation {
 };
 
 // @skeleton
-struct Bone {
-    const Name* name;
-    i32 index;
-    i32 parent_index;
-    Transform transform;
-};
-
 struct SkeletonImpl : Skeleton {
     int bone_count;
     Bone* bones;

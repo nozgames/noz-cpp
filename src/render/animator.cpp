@@ -69,12 +69,14 @@ static void EvalulateFrame(Animator& animator) {
 }
 
 void Stop(Animator& animator) {
-    animator = {};
     animator.animation = nullptr;
     animator.blend_animation = nullptr;
 }
 
 void Play(Animator& animator, Animation* animation, float speed, bool loop) {
+    if (animation == animator.animation)
+        return;
+
     animator.blend_animation = animator.animation;
     animator.blend_time = 0.0f;
     animator.blend_frame_time = animator.time;

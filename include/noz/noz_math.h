@@ -92,19 +92,6 @@ struct Mat3
 struct Vec2 {
     f32 x;
     f32 y;
-
-    Vec2 operator+(const Vec2& v) const { return Vec2{ x + v.x, y + v.y }; }
-    Vec2 operator-(const Vec2& v) const { return Vec2{ x - v.x, y - v.y }; }
-    Vec2& operator+=(const Vec2& v) { x += v.x; y += v.y; return *this; }
-    Vec2& operator-=(const Vec2& v) { x -= v.x; y -= v.y; return *this; }
-    Vec2 operator*(f32 scalar) const { return Vec2{ x * scalar, y * scalar }; }
-    Vec2 operator*(const Vec2& v) const { return Vec2{ x * v.x, y * v.y }; }
-    Vec2 operator/(f32 scalar) const { return Vec2{ x / scalar, y / scalar }; }
-    Vec2 operator*=(f32 scalar) const { return Vec2{ x * scalar, y * scalar }; }
-    Vec2 operator*=(const Vec2& v) const { return Vec2{ x * v.x, y * v.y }; }
-    Vec2 operator-() const { return { -x, -y }; }
-    bool operator==(const Vec2& o) const { return x == o.x && y == o.y; }
-    bool operator!=(const Vec2& o) const { return x != o.x || y != o.y; }
 };
 
 inline Vec2 operator*(f32 scalar, const Vec2& v) { return Vec2{ v.x * scalar, v.y * scalar }; }
@@ -163,12 +150,9 @@ struct Vec2Double
 
 inline Vec2Double operator*(f64 scalar, const Vec2Double& v) { return { v.x * scalar, v.y * scalar }; }
 
-struct Bounds2
-{
+struct Bounds2 {
     Vec2 min;
     Vec2 max;
-
-    Bounds2 operator+ (const Vec2& offset) const { return { min + offset, max + offset }; }
 };
 
 struct Bounds3 {
@@ -184,8 +168,7 @@ struct quat
     float w;
 };
 
-struct Transform
-{
+struct Transform {
     Vec2 position;
     Vec2 scale;
     float rotation;
@@ -277,19 +260,6 @@ inline Bounds2 ToBounds2(const Bounds3& bounds) {
     return Bounds2{ Vec2{ bounds.min.x, bounds.min.y }, Vec2{ bounds.max.x, bounds.max.y } };
 }
 
-// @bounds2
-extern Bounds2 ToBounds(const Vec2* positions, u32 count);
-extern bool Contains(const Bounds2& bounds, const Vec2& point);
-extern bool Intersects(const Bounds2& bounds, const Bounds2& other);
-extern bool Intersects(const Bounds2& bounds, const Vec2& line_start, const Vec2& line_end);
-extern bool Intersects(const Bounds2& bounds, const Vec2& tri_pt0, const Vec2& tri_pt1, const Vec2& tri_pt2);
-extern Bounds2 Union(const Bounds2& a, const Bounds2& b);
-inline Bounds2 Union(const Bounds2& a, const Vec2& b) { return Bounds2{ Min(a.min, b), Max(a.max, b) }; }
-inline Vec2 GetCenter(const Bounds2& b) { return Vec2{ (b.min.x + b.max.x) * 0.5f, (b.min.y + b.max.y) * 0.5f }; }
-inline Vec2 GetSize(const Bounds2& b) { return Vec2{ b.max.x - b.min.x, b.max.y - b.min.y }; }
-inline Bounds2 Expand(const Bounds2& b, float size) { return Bounds2{ b.min - Vec2{ size, size }, b.max + Vec2{ size, size } }; }
-inline Bounds2 Translate(const Bounds2& b, const Vec2& translation) { return Bounds2{ b.min + translation, b.max + translation }; }
-
 // @mat4
 extern Mat4 TRS(const Vec3& translation, const Vec4& rotation, const Vec3& scale);
 extern Mat4 Ortho(f32 left, f32 right, f32 bottom, f32 top, f32 near, f32 far);
@@ -313,6 +283,22 @@ extern Vec2 GetForward(const Mat3& m);
 extern Vec2 GetRight(const Mat3& m);
 
 // @vec2
+inline Vec3 XZ(const Vec2& v) { return {v.x, 0.0f, v.y}; }
+inline Vec2 operator+(const Vec2& v1, const Vec2& v2) { return Vec2{ v1.x + v2.x, v1.y + v2.y }; }
+inline Vec2 operator-(const Vec2& v1, const Vec2& v2) { return Vec2{ v1.x - v2.x, v1.y - v2.y }; }
+inline Vec2 operator*(const Vec2& v, f32 s) { return Vec2{ v.x * s, v.y * s }; }
+inline Vec2 operator*(const Vec2& v1, const Vec2& v2) { return Vec2{ v1.x * v2.x, v1.y * v2.y }; }
+inline Vec2 operator/(const Vec2& v, f32 s) { return Vec2{ v.x / s, v.y / s }; }
+inline Vec2 operator+=(Vec2& v1, const Vec2& v2) { v1.x += v2.x; v1.y += v2.y; return v1; }
+inline Vec2 operator-=(Vec2& v1, const Vec2& v2) { v1.x -= v2.x; v1.y -= v2.y; return v1; }
+inline Vec2 operator*=(Vec2& v, f32 s)  { v.x *= s; v.y *= s; return v; }
+inline Vec2 operator*=(Vec2& v1, const Vec2& v2) { v1.x *= v2.x; v1.y *= v2.y; return v1; }
+inline Vec2 operator/=(Vec2& v, f32 s)  { v.x /= s; v.y /= s; return v; }
+inline Vec2 operator/=(Vec2& v1, const Vec2& v2) { v1.x /= v2.x; v1.y /= v2.y; return v1; }
+inline Vec2 operator-(const Vec2& v) { return { -v.x, -v.y }; }
+inline bool operator==(const Vec2& v1, const Vec2& v2) { return v1.x == v2.x && v1.y == v2.y; }
+inline bool operator!=(const Vec2& v1, const Vec2& v2) { return v1.x != v2.x || v1.y != v2.y; }
+
 extern f32 Length(const Vec2& v);
 extern Vec2 Reflect(const Vec2& v, const Vec2& normal);
 extern Vec2 Normalize(const Vec2& v);
@@ -330,9 +316,6 @@ inline Vec2 Abs(const Vec2& v) { return Vec2{ Abs(v.x), Abs(v.y) }; }
 inline bool ApproxEqual(const Vec2& a, const Vec2& b, f32 epsilon = 1e-6f) {
     return ApproxEqual(a.x, b.x, epsilon) && ApproxEqual(a.y, b.y, epsilon);
 }
-
-inline Vec3 XZ(const Vec2& v) { return {v.x, 0.0f, v.y}; }
-
 
 // @vec4
 inline Vec4 Mix(const Vec4& v1, const Vec4& v2, f32 t) { return v1 + (v2 - v1) * t; }
@@ -367,8 +350,24 @@ inline Vec3 operator+=(Vec3& v, const Vec3& v2) { v.x += v2.x; v.y += v2.y; v.z 
 inline Vec3 operator*=(Vec3& v, f32 s) { v.x *= s; v.y *= s; v.z *= s; return v; }
 inline Vec3 operator-=(Vec3& v, const Vec3& v2) { v.x -= v2.x; v.y -= v2.y; v.z = v2.z; return v; }
 
+// @bounds2
+extern Bounds2 ToBounds(const Vec2* positions, u32 count);
+extern bool Contains(const Bounds2& bounds, const Vec2& point);
+extern bool Intersects(const Bounds2& bounds, const Bounds2& other);
+extern bool Intersects(const Bounds2& bounds, const Vec2& line_start, const Vec2& line_end);
+extern bool Intersects(const Bounds2& bounds, const Vec2& tri_pt0, const Vec2& tri_pt1, const Vec2& tri_pt2);
+extern Bounds2 Union(const Bounds2& a, const Bounds2& b);
+inline Bounds2 Union(const Bounds2& a, const Vec2& b) { return Bounds2{ Min(a.min, b), Max(a.max, b) }; }
+inline Vec2 GetCenter(const Bounds2& b) { return Vec2{ (b.min.x + b.max.x) * 0.5f, (b.min.y + b.max.y) * 0.5f }; }
+inline Vec2 GetSize(const Bounds2& b) { return Vec2{ b.max.x - b.min.x, b.max.y - b.min.y }; }
+inline Bounds2 operator+ (const Bounds2& b, const Vec2& offset) { return { b.min + offset, b.max + offset }; }
+inline Bounds2 operator- (const Bounds2& b, const Vec2& offset) { return { b.min - offset, b.max - offset }; }
+inline Bounds2 Expand(const Bounds2& b, float size) { return Bounds2{ b.min - Vec2{ size, size }, b.max + Vec2{ size, size } }; }
+inline Bounds2 Translate(const Bounds2& b, const Vec2& translation) { return Bounds2{ b.min + translation, b.max + translation }; }
+
 // @angle
 extern float SignedAngleDelta(const Vec2& a, const Vec2&b);
+extern float SignedAngleDelta(float a, float b);
 extern float NormalizeAngle(float angle);
 extern float NormalizeAngle180(float angle);
 inline float Radians(float degrees) { return degrees * noz::PI / 180.0f; }

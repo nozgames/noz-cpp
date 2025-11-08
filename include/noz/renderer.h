@@ -187,11 +187,19 @@ extern Bounds2 GetBounds(Camera* camera);
 // @skeleton
 constexpr int MAX_BONES = 64;
 
+struct Bone {
+    const Name* name;
+    i32 index;
+    i32 parent_index;
+    Transform transform;
+};
+
 extern int GetBoneCount(Skeleton* skeleton);
 extern int GetBoneIndex(Skeleton* skeleton, const Name* name);
 extern const Mat3& GetLocalToWorld(Skeleton* skeleton, int bone_index);
 extern const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index);
-
+extern const Transform& GetBoneTransform(Skeleton* skeleton, int bone_index);
+extern const Bone& GetBone(Skeleton* skeleton, int bone_index);
 
 extern Mesh** MESH;
 extern Font** FONT;
