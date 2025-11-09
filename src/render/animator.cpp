@@ -15,8 +15,9 @@ static void EvalulateFrame(Animator& animator, bool setup) {
     f32 float_frame = animator.time * anim_impl->frame_rate;
     assert(float_frame < anim_impl->frame_count);
     i32 frame_index1 = static_cast<i32>(Floor(float_frame));
-    i32 frame_index2 = frame_index1 + 1;
     f32 t = float_frame - static_cast<f32>(frame_index1);
+    frame_index1 = Min(frame_index1, anim_impl->frame_count - 1);
+    i32 frame_index2 = frame_index1 + 1;
     assert(t >= 0.0f && t < 1.0f);
     BoneTransform* frame1 = anim_impl->frames + frame_index1 * anim_impl->frame_stride;
     BoneTransform* frame2 = anim_impl->frames + frame_index2 * anim_impl->frame_stride;
@@ -32,10 +33,11 @@ static void EvalulateFrame(Animator& animator, bool setup) {
         assert(GetBoneCount(animator.skeleton) == blend_anim_impl->bone_count);
         f32 blend_float_frame = animator.blend_frame_time * blend_anim_impl->frame_rate;
         i32 blend_frame_index1 = static_cast<i32>(Floor(blend_float_frame));
+        blend_frame_t = blend_float_frame - static_cast<f32>(blend_frame_index1);
+        blend_frame_index1 = Min(blend_frame_index1, blend_anim_impl->frame_count - 1);
         i32 blend_frame_index2 = blend_frame_index1 + 1;;
         blend_frame1 = blend_anim_impl->frames + blend_frame_index1 * blend_anim_impl->frame_stride;
         blend_frame2 = blend_anim_impl->frames + blend_frame_index2 * blend_anim_impl->frame_stride;
-        blend_frame_t = blend_float_frame - static_cast<f32>(blend_frame_index1);
         blend_t = animator.blend_time / ANIMATOR_BLEND_TIME;
     }
 
