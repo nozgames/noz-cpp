@@ -10,7 +10,14 @@ struct Animation : Asset {};
 constexpr int MAX_ANIMATION_FRAMES = 64;
 constexpr int ANIMATION_FRAME_RATE = 12;
 
+typedef u32 AnimationFlags;
+constexpr AnimationFlags ANIMATION_FLAG_NONE = 0;
+constexpr AnimationFlags ANIMATION_FLAG_LOOPING = 1 << 0;
+constexpr AnimationFlags ANIMATION_FLAG_ROOT_MOTION = 1 << 1;
+
 extern int GetBoneCount(Animation* animation);
+extern bool IsRootMotion(Animation* animation);
+extern bool IsLooping(Animation* animation);
 
 // @bone_transform
 struct BoneTransform {
@@ -43,6 +50,7 @@ struct Animator {
     float speed;
     bool loop;
     bool root_motion;
+    int frame_index;
     Vec2 root_motion_delta;
     Vec2 last_root_motion;
     Mat3 bones[MAX_BONES];

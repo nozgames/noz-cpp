@@ -4,7 +4,7 @@
 
 constexpr float ANIMATOR_BLEND_TIME = 0.05f;
 
-static void EvalulateFrame(Animator& animator) {
+static void EvalulateFrame(Animator& animator, bool setup) {
     assert(animator.skeleton);
     assert(animator.animation);
     assert(GetBoneCount(animator.skeleton) == GetBoneCount(animator.animation));
@@ -15,15 +15,13 @@ static void EvalulateFrame(Animator& animator) {
     f32 float_frame = animator.time * anim_impl->frame_rate;
     assert(float_frame < anim_impl->frame_count);
     i32 frame_index1 = static_cast<i32>(Floor(float_frame));
-    i32 frame_index2 = animator.loop
-        ? (frame_index1 + 1) % anim_impl->frame_count
-        : Min(frame_index1 + 1, anim_impl->frame_count - 1);
+    i32 frame_index2 = frame_index1 + 1;
     f32 t = float_frame - static_cast<f32>(frame_index1);
     assert(t >= 0.0f && t < 1.0f);
     BoneTransform* frame1 = anim_impl->frames + frame_index1 * anim_impl->frame_stride;
     BoneTransform* frame2 = anim_impl->frames + frame_index2 * anim_impl->frame_stride;
 
-
+    // Blend
     BoneTransform* blend_frame1 = nullptr;
     BoneTransform* blend_frame2 = nullptr;
     f32 blend_frame_t = 0.0f;
@@ -34,7 +32,7 @@ static void EvalulateFrame(Animator& animator) {
         assert(GetBoneCount(animator.skeleton) == blend_anim_impl->bone_count);
         f32 blend_float_frame = animator.blend_frame_time * blend_anim_impl->frame_rate;
         i32 blend_frame_index1 = static_cast<i32>(Floor(blend_float_frame));
-        i32 blend_frame_index2 = animator.blend_loop ? ((blend_frame_index1 + 1) % blend_anim_impl->frame_count) : Min(blend_frame_index1 + 1, blend_anim_impl->frame_count - 1);
+        i32 blend_frame_index2 = blend_frame_index1 + 1;;
         blend_frame1 = blend_anim_impl->frames + blend_frame_index1 * blend_anim_impl->frame_stride;
         blend_frame2 = blend_anim_impl->frames + blend_frame_index2 * blend_anim_impl->frame_stride;
         blend_frame_t = blend_float_frame - static_cast<f32>(blend_frame_index1);
@@ -55,10 +53,15 @@ static void EvalulateFrame(Animator& animator) {
         }
 
         if (bone_index == 0 && animator.root_motion) {
-            if (frame_index1 < frame_index2) {
+            if (setup) {
+                animator.root_motion_delta = VEC2_ZERO;
+            } else if (frame_index1 >= animator.frame_index) {
                 animator.root_motion_delta = frame_transform.position - animator.last_root_motion;
             } else {
-                animator.root_motion_delta = frame_transform.position + (anim_impl->frames[anim_impl->frame_count-1].position - animator.last_root_motion);
+                BoneTransform* last_frame = anim_impl->frames + anim_impl->frame_count * anim_impl->frame_stride;
+                BoneTransform* first_frame = anim_impl->frames;
+                animator.root_motion_delta = last_frame->position - animator.last_root_motion;
+                animator.root_motion_delta += frame_transform.position - first_frame->position;
             }
             animator.last_root_motion = frame_transform.position;
             frame_transform.position = VEC2_ZERO;
@@ -77,6 +80,8 @@ static void EvalulateFrame(Animator& animator) {
         int parent_index = skel_impl->bones[bone_index].parent_index;
         animator.bones[bone_index] = animator.bones[parent_index] * animator.bones[bone_index];
     }
+
+    animator.frame_index = frame_index1;
 }
 
 void Stop(Animator& animator) {
@@ -96,7 +101,10 @@ void Play(Animator& animator, Animation* animation, float speed, bool loop) {
     animator.speed = speed;
     animator.time = 0.0f;
     animator.loop = loop;
-    EvalulateFrame(animator);
+    animator.root_motion = IsRootMotion(animation);
+    animator.last_root_motion = VEC2_ZERO;
+    animator.root_motion_delta = VEC2_ZERO;
+    EvalulateFrame(animator, true);
 }
 
 void Update(Animator& animator, float time_scale) {
@@ -106,7 +114,7 @@ void Update(Animator& animator, float time_scale) {
     animator.time += dt * animator.speed;
 
     if (animator.loop)
-        animator.time = fmod(animator.time, anim_impl->duration + anim_impl->frame_rate_inv);
+        animator.time = fmod(animator.time, anim_impl->duration);
     else
         animator.time = Min(animator.time, anim_impl->duration);
 
@@ -119,7 +127,7 @@ void Update(Animator& animator, float time_scale) {
         }
     }
 
-    EvalulateFrame(animator);
+    EvalulateFrame(animator, false);
 }
 
 bool IsPlaying(Animator& animator)

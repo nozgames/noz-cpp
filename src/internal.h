@@ -95,16 +95,10 @@ Mesh* GetMesh(TextMesh* tm);
 Material* GetMaterial(TextMesh* tm);
 Vec2 GetSize(TextMesh* tm);
 
-
 // @animation
 struct AnimationBone {
     u8 index;
 };
-
-typedef u32 AnimationFlags;
-constexpr AnimationFlags ANIMATION_FLAS_NONE = 0;
-constexpr AnimationFlags ANIMATION_FLAS_LOOPING = 1 << 0;
-constexpr AnimationFlags ANIMATION_FLAG_ROOT_MOTION = 1 << 1;
 
 struct AnimationImpl : Animation {
     int bone_count;

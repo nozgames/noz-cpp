@@ -15,7 +15,7 @@ bool IsRootMotion(Animation* animation) {
 
 bool IsLooping(Animation* animation) {
     AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
-    return (impl->flags & ANIMATION_FLAS_LOOPING) != 0;
+    return (impl->flags & ANIMATION_FLAG_LOOPING) != 0;
 }
 
 Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
@@ -33,15 +33,15 @@ Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, 
     impl->bone_count = bone_count;
     impl->frame_count = frame_count;
     impl->bones = static_cast<AnimationBone*>(Alloc(allocator, sizeof(AnimationBone) * bone_count));
-    impl->frames = static_cast<BoneTransform*>(Alloc(allocator, sizeof(BoneTransform) * bone_count * frame_count));
+    impl->frames = static_cast<BoneTransform*>(Alloc(allocator, sizeof(BoneTransform) * bone_count * (frame_count + 1)));
     impl->frame_stride = bone_count;
     impl->frame_rate = frame_rate;
     impl->frame_rate_inv = 1.0f / static_cast<float>(frame_rate);
-    impl->duration = (frame_count - 1) * impl->frame_rate_inv;
+    impl->duration = frame_count * impl->frame_rate_inv;
     impl->flags = flags;
 
     ReadBytes(stream, &impl->bones[0], sizeof(AnimationBone) * bone_count);
-    ReadBytes(stream, &impl->frames[0], sizeof(BoneTransform) * bone_count * frame_count);
+    ReadBytes(stream, &impl->frames[0], sizeof(BoneTransform) * bone_count * (frame_count + 1));
 
     return impl;
 }
