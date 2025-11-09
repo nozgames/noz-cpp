@@ -54,6 +54,16 @@ static void EvalulateFrame(Animator& animator) {
             frame_transform = Mix(blend_frame, frame_transform, blend_t);
         }
 
+        if (bone_index == 0 && animator.root_motion) {
+            if (frame_index1 < frame_index2) {
+                animator.root_motion_delta = frame_transform.position - animator.last_root_motion;
+            } else {
+                animator.root_motion_delta = frame_transform.position + (anim_impl->frames[anim_impl->frame_count-1].position - animator.last_root_motion);
+            }
+            animator.last_root_motion = frame_transform.position;
+            frame_transform.position = VEC2_ZERO;
+        }
+
         frame_transform.position += skel_impl->bones[bone_index].transform.position;
         frame_transform.position += animator.user_transforms[bone_index].position;
         frame_transform.rotation += animator.user_transforms[bone_index].rotation;

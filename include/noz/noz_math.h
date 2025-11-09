@@ -331,16 +331,6 @@ inline Vec2 ToVec2(const Vec2Int& v) { return { (f32)v.x, (f32)v.y }; }
 inline Vec2 ToVec2(const Vec3& v) { return { (f32)v.x, (f32)v.y }; }
 
 // @vec3
-extern f32 Length(const Vec3& v);
-extern Vec3 Normalize(const Vec3& v);
-extern Vec3 Cross(const Vec3& a, const Vec3& b);
-inline f32 LengthSqr(const Vec3& v) { return v.x * v.x + v.y * v.y + v.z * v.z; }
-inline Vec3 ToVec3(const Vec2& a) { return Vec3{ a.x, a.y, 0.0f }; }
-inline Vec3 ToVec3(const Vec2& a, float z) { return Vec3{ a.x, a.y, z }; }
-inline f32 Dot(const Vec3& a, const Vec3& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
-inline Vec2 XY(const Vec3& v) { return {v.x, v.y}; }
-inline Vec2 XZ(const Vec3& v) { return {v.x, v.z}; }
-
 inline Vec3 operator+(const Vec3& v1, const Vec3& v2) { return { v1.x + v2.x, v1.y + v2.y, v1.z + v2.z }; }
 inline Vec3 operator-(const Vec3& v1, const Vec3& v2) { return { v1.x - v2.x, v1.y - v2.y, v1.z - v2.z }; }
 inline Vec3 operator*(const Vec3& v, f32 s) { return { v.x * s, v.y * s, v.z * s }; }
@@ -349,6 +339,16 @@ inline Vec3 operator-(const Vec3& v) { return { -v.x, -v.y, -v.z }; }
 inline Vec3 operator+=(Vec3& v, const Vec3& v2) { v.x += v2.x; v.y += v2.y; v.z += v2.z; return v; }
 inline Vec3 operator*=(Vec3& v, f32 s) { v.x *= s; v.y *= s; v.z *= s; return v; }
 inline Vec3 operator-=(Vec3& v, const Vec3& v2) { v.x -= v2.x; v.y -= v2.y; v.z = v2.z; return v; }
+extern f32 Length(const Vec3& v);
+extern Vec3 Normalize(const Vec3& v);
+extern Vec3 Cross(const Vec3& a, const Vec3& b);
+inline f32 LengthSqr(const Vec3& v) { return v.x * v.x + v.y * v.y + v.z * v.z; }
+inline Vec3 ToVec3(const Vec2& a) { return Vec3{ a.x, a.y, 0.0f }; }
+inline Vec3 ToVec3(const Vec2& a, float z) { return Vec3{ a.x, a.y, z }; }
+inline f32 DistanceSqr(const Vec3& v1, const Vec3& v2) { return LengthSqr(v2 - v1); }
+inline f32 Dot(const Vec3& a, const Vec3& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+inline Vec2 XY(const Vec3& v) { return {v.x, v.y}; }
+inline Vec2 XZ(const Vec3& v) { return {v.x, v.z}; }
 
 // @bounds2
 extern Bounds2 ToBounds(const Vec2* positions, u32 count);

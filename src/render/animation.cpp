@@ -5,29 +5,40 @@
 Animation** ANIMATION = nullptr;
 
 int GetBoneCount(Animation* animation) {
-    return ((AnimationImpl*)animation)->bone_count;
+    return static_cast<AnimationImpl*>(animation)->bone_count;
 }
 
-Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
-{
+bool IsRootMotion(Animation* animation) {
+    AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
+    return (impl->flags & ANIMATION_FLAG_ROOT_MOTION) != 0;
+}
+
+bool IsLooping(Animation* animation) {
+    AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
+    return (impl->flags & ANIMATION_FLAS_LOOPING) != 0;
+}
+
+Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
     (void)header;
     (void)name;
     (void)name_table;
 
-    AnimationImpl* impl = (AnimationImpl*)Alloc(allocator, sizeof(AnimationImpl));
+    AnimationImpl* impl = static_cast<AnimationImpl*>(Alloc(allocator, sizeof(AnimationImpl)));
 
     u8 bone_count = ReadU8(stream);
     u8 frame_count = ReadU8(stream);
     u8 frame_rate = ReadU8(stream);
+    AnimationFlags flags = ReadU8(stream);
 
     impl->bone_count = bone_count;
     impl->frame_count = frame_count;
-    impl->bones = (AnimationBone*)Alloc(allocator, sizeof(AnimationBone) * bone_count);
-    impl->frames = (BoneTransform*)Alloc(allocator, sizeof(BoneTransform) * bone_count * frame_count);
+    impl->bones = static_cast<AnimationBone*>(Alloc(allocator, sizeof(AnimationBone) * bone_count));
+    impl->frames = static_cast<BoneTransform*>(Alloc(allocator, sizeof(BoneTransform) * bone_count * frame_count));
     impl->frame_stride = bone_count;
     impl->frame_rate = frame_rate;
-    impl->frame_rate_inv = 1.0f / (float)frame_rate;
+    impl->frame_rate_inv = 1.0f / static_cast<float>(frame_rate);
     impl->duration = (frame_count - 1) * impl->frame_rate_inv;
+    impl->flags = flags;
 
     ReadBytes(stream, &impl->bones[0], sizeof(AnimationBone) * bone_count);
     ReadBytes(stream, &impl->frames[0], sizeof(BoneTransform) * bone_count * frame_count);
