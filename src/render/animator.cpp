@@ -59,6 +59,7 @@ static void EvalulateFrame(Animator& animator) {
         frame_transform.rotation += animator.user_transforms[bone_index].rotation;
         frame_transform.scale *= animator.user_transforms[bone_index].scale;
 
+        animator.transforms[bone_index] = frame_transform;
         animator.bones[bone_index] = ToMat3(frame_transform);
     }
 

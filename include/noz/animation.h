@@ -43,6 +43,7 @@ struct Animator {
     float speed;
     bool loop;
     Mat3 bones[MAX_BONES];
+    BoneTransform transforms[MAX_BONES];
     BoneTransform user_transforms[MAX_BONES];
 };
 
@@ -56,5 +57,24 @@ extern float GetTime(Animator& animator);
 extern float GetNormalizedTime(Animator& animator);
 extern void SetNormalizedTime(Animator& animator, float normalized_time);
 
+// @blend_tree
+constexpr int MAX_BLEND_TREE_BLENDS = 3;
+
+struct BlendTreeBlend {
+    Animator animator;
+    float value;
+};
+
+struct BlendTree {
+    Skeleton* skeleton;
+    BlendTreeBlend blends[MAX_BLEND_TREE_BLENDS];
+    int blend_count;
+    float value;
+};
+
+extern void Init(BlendTree& blend_tree, Skeleton* skeleton, int blend_count);
+extern void Play(BlendTree& blend_tree, int blend_index, float value, Animation* animation, float speed=1.0f, bool loop=false);
+extern void SetValue(BlendTree& blend_tree, float value);
+extern void Update(BlendTree& blend_tree, float time_scale, Animator& animator);
 
 extern Animation** ANIMATION;
