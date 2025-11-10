@@ -38,19 +38,28 @@ inline Mat3 ToMat3(const BoneTransform& bt) {
     return TRS(bt.position, bt.rotation, bt.scale);
 }
 
+constexpr int MAX_ANIMATION_LAYERS = 2;
+
+struct AnimatorLayer {
+    Animation* animation;
+    Animation* blend_animation;
+    int frame_index;
+    float blend_time;
+    float blend_frame_time;
+    float time;
+    float speed;
+    u64 bone_mask;
+    bool blend_loop;
+    bool loop;
+    bool playing;
+};
+
 // @animator
 struct Animator {
     Skeleton* skeleton;
-    Animation* animation;
-    Animation* blend_animation;
-    float blend_time;
-    float blend_frame_time;
-    bool blend_loop;
-    float time;
-    float speed;
-    bool loop;
+    AnimatorLayer layers[MAX_ANIMATION_LAYERS];
+    int layer_count;
     bool root_motion;
-    int frame_index;
     Vec2 root_motion_delta;
     Vec2 last_root_motion;
     Mat3 bones[MAX_BONES];
@@ -58,17 +67,33 @@ struct Animator {
     BoneTransform user_transforms[MAX_BONES];
 };
 
-extern void Init(Animator& animator, Skeleton* skeleton);
-extern void Play(Animator& animator, Animation* animation, float speed=1.0f, bool loop=false);
+extern void Init(Animator& animator, Skeleton* skeleton, int layer_count=1);
+extern void SetBoneMask(Animator& animator, int layer_index, u64 bone_mask);
+extern void Play(Animator& animator, Animation* animation, int layer_index=0, float speed=1.0f);
 extern void Stop(Animator& animator);
+extern void Stop(Animator& animatorl, int layer_index);
 extern void Update(Animator& animator, float time_scale=1.0f);
-extern bool IsPlaying(Animator& animator);
 extern bool IsLooping(Animator& animator);
-extern float GetTime(Animator& animator);
-extern float GetNormalizedTime(Animator& animator);
-extern void SetNormalizedTime(Animator& animator, float normalized_time);
-inline bool IsBlending(Animator& animator) {
-    return animator.blend_animation != nullptr;
+extern float GetNormalizedTime(Animator& animator, int layer_index);
+extern void SetNormalizedTime(Animator& animator, int layer_index, float normalized_time);
+inline AnimatorLayer& GetLayer(Animator& animator, int layer_index) {
+    assert(layer_index >= 0 && layer_index < animator.layer_count);
+    return animator.layers[layer_index];
+}
+inline bool IsPlaying(Animator& animator, int layer_index, Animation* animation) {
+    return GetLayer(animator, layer_index).animation == animation;
+}
+inline bool IsPlaying(Animator& animator, int layer_index=0) {
+    return GetLayer(animator, layer_index).playing;
+}
+inline bool IsLooping(Animator& animator, int layer_index=0) {
+    return GetLayer(animator, layer_index).loop;
+}
+inline bool IsBlending(Animator& animator, int layer_index=0) {
+    return GetLayer(animator, layer_index).blend_animation != nullptr;
+}
+inline float GetTime(Animator& animator, int layer_index=0) {
+    return GetLayer(animator, layer_index).time;
 }
 
 // @blend_tree
@@ -86,9 +111,9 @@ struct BlendTree {
     float value;
 };
 
-extern void Init(BlendTree& blend_tree, Skeleton* skeleton, int blend_count);
-extern void Play(BlendTree& blend_tree, int blend_index, float value, Animation* animation, float speed=1.0f, bool loop=false);
+extern void Init(BlendTree& blend_tree, Skeleton* skeleton, int blend_count, u64 bone_mask=0xFFFFFFFFFFFFFFFF);
+extern void Play(BlendTree& blend_tree, int blend_index, float value, Animation* animation, float speed=1.0f);
 extern void SetValue(BlendTree& blend_tree, float value);
-extern void Update(BlendTree& blend_tree, float time_scale, Animator& animator);
+extern void Update(BlendTree& blend_tree, float time_scale, Animator& animator, int layer_index=0);
 
 extern Animation** ANIMATION;

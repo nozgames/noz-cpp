@@ -4,15 +4,20 @@
 
 constexpr float ANIMATOR_BLEND_TIME = 0.05f;
 
-static void EvalulateFrame(Animator& animator, bool setup) {
+
+static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
+    Skeleton* skeleton = animator.skeleton;
     assert(animator.skeleton);
-    assert(animator.animation);
-    assert(GetBoneCount(animator.skeleton) == GetBoneCount(animator.animation));
 
-    AnimationImpl* anim_impl = static_cast<AnimationImpl*>(animator.animation);
-    SkeletonImpl* skel_impl = static_cast<SkeletonImpl*>(animator.skeleton);
+    AnimatorLayer& layer = GetLayer(animator, layer_index);
+    Animation* animation = layer.animation;
+    if (!animation)
+        return;
 
-    f32 float_frame = animator.time * anim_impl->frame_rate;
+    AnimationImpl* anim_impl = static_cast<AnimationImpl*>(animation);
+    SkeletonImpl* skel_impl = static_cast<SkeletonImpl*>(skeleton);
+
+    f32 float_frame = layer.time * anim_impl->frame_rate;
     i32 frame_index1 = static_cast<i32>(Floor(float_frame));
     f32 t = float_frame - static_cast<f32>(frame_index1);
     frame_index1 = Min(frame_index1, anim_impl->frame_count - 1);
@@ -26,21 +31,24 @@ static void EvalulateFrame(Animator& animator, bool setup) {
     BoneTransform* blend_frame2 = nullptr;
     f32 blend_frame_t = 0.0f;
     f32 blend_t = 0.0f;
-    if (animator.blend_animation) {
-        AnimationImpl* blend_anim_impl = static_cast<AnimationImpl*>(animator.blend_animation);
+    if (layer.blend_animation) {
+        AnimationImpl* blend_anim_impl = static_cast<AnimationImpl*>(layer.blend_animation);
         assert(blend_anim_impl);
         assert(GetBoneCount(animator.skeleton) == blend_anim_impl->bone_count);
-        f32 blend_float_frame = animator.blend_frame_time * blend_anim_impl->frame_rate;
+        f32 blend_float_frame = layer.blend_frame_time * blend_anim_impl->frame_rate;
         i32 blend_frame_index1 = static_cast<i32>(Floor(blend_float_frame));
         blend_frame_t = blend_float_frame - static_cast<f32>(blend_frame_index1);
         blend_frame_index1 = Min(blend_frame_index1, blend_anim_impl->frame_count - 1);
         i32 blend_frame_index2 = blend_frame_index1 + 1;;
         blend_frame1 = blend_anim_impl->frames + blend_frame_index1 * blend_anim_impl->frame_stride;
         blend_frame2 = blend_anim_impl->frames + blend_frame_index2 * blend_anim_impl->frame_stride;
-        blend_t = animator.blend_time / ANIMATOR_BLEND_TIME;
+        blend_t = layer.blend_time / ANIMATOR_BLEND_TIME;
     }
 
     for (int bone_index=0; bone_index<anim_impl->bone_count; bone_index++) {
+        if ((layer.bone_mask & (static_cast<u64>(1) << static_cast<u64>(bone_index))) == 0)
+            continue;
+
         BoneTransform* bt1 = frame1 + bone_index;
         BoneTransform* bt2 = frame2 + bone_index;
         BoneTransform frame_transform = Mix(*bt1, *bt2, t);
@@ -56,7 +64,7 @@ static void EvalulateFrame(Animator& animator, bool setup) {
         if (bone_index == 0 && animator.root_motion) {
             if (setup) {
                 animator.root_motion_delta = VEC2_ZERO;
-            } else if (frame_index1 >= animator.frame_index) {
+            } else if (frame_index1 >= layer.frame_index) {
                 animator.root_motion_delta = frame_transform.position - animator.last_root_motion;
             } else {
                 BoneTransform* last_frame = anim_impl->frames + anim_impl->frame_count * anim_impl->frame_stride;
@@ -74,101 +82,140 @@ static void EvalulateFrame(Animator& animator, bool setup) {
         frame_transform.scale *= animator.user_transforms[bone_index].scale;
 
         animator.transforms[bone_index] = frame_transform;
-        animator.bones[bone_index] = ToMat3(frame_transform);
+        //animator.bones[bone_index] = ToMat3(frame_transform);
     }
 
-    for (int bone_index=1; bone_index<anim_impl->bone_count; bone_index++) {
+    layer.frame_index = frame_index1;
+}
+
+static void EvalulateFrame(Animator& animator, bool setup) {
+    for (int layer_index=0; layer_index<animator.layer_count; layer_index++)
+        EvalulateFrame(animator, layer_index, setup);
+
+    SkeletonImpl* skel_impl = static_cast<SkeletonImpl*>(animator.skeleton);
+    int bone_count = skel_impl->bone_count;
+    animator.bones[0] = ToMat3(animator.transforms[0]);
+    for (int bone_index=1; bone_index<bone_count; bone_index++) {
         int parent_index = skel_impl->bones[bone_index].parent_index;
-        animator.bones[bone_index] = animator.bones[parent_index] * animator.bones[bone_index];
+        animator.bones[bone_index] = animator.bones[parent_index] * ToMat3(animator.transforms[bone_index]);
     }
+}
 
-    animator.frame_index = frame_index1;
+void Stop(Animator& animator, int layer_index) {
+    AnimatorLayer& layer = GetLayer(animator, layer_index);
+    layer.animation = nullptr;
+    layer.blend_animation = nullptr;
+    layer.playing = false;
 }
 
 void Stop(Animator& animator) {
-    animator.animation = nullptr;
-    animator.blend_animation = nullptr;
+    for (int layer_index=0; layer_index<animator.layer_count; layer_index++) {
+        Stop(animator, layer_index);
+    }
 }
 
-void Play(Animator& animator, Animation* animation, float speed, bool loop) {
-    if (animation == animator.animation)
+void Play(Animator& animator, Animation* animation, int layer_index, float speed) {
+    assert(animator.skeleton);
+    assert(GetBoneCount(animator.skeleton) == GetBoneCount(animation));
+
+    AnimatorLayer& layer = GetLayer(animator, layer_index);
+    if (animation == layer.animation)
         return;
 
-    animator.blend_animation = animator.animation;
-    animator.blend_time = 0.0f;
-    animator.blend_frame_time = animator.time;
-    animator.blend_loop = animator.loop;
-    animator.animation = animation;
-    animator.speed = speed;
-    animator.time = 0.0f;
-    animator.loop = loop;
-    animator.root_motion = IsRootMotion(animation);
-    animator.last_root_motion = VEC2_ZERO;
-    animator.root_motion_delta = VEC2_ZERO;
+    //layer.blend_animation = layer.animation;
+    layer.blend_time = 0.0f;
+    layer.blend_frame_time = layer.time;
+    layer.blend_loop = layer.loop;
+    layer.animation = animation;
+    layer.speed = speed;
+    layer.time = 0.0f;
+    layer.loop = IsLooping(layer.animation);
+    layer.playing = true;
+
+    if ((layer.bone_mask & 0x1)) {
+        animator.last_root_motion = VEC2_ZERO;
+        animator.root_motion = IsRootMotion(animation);
+        animator.last_root_motion = VEC2_ZERO;
+        animator.root_motion_delta = VEC2_ZERO;
+    }
+
     EvalulateFrame(animator, true);
 }
 
 void Update(Animator& animator, float time_scale) {
-    AnimationImpl* anim_impl = static_cast<AnimationImpl*>(animator.animation);
-
     float dt = GetFrameTime() * time_scale;
-    animator.time += dt * animator.speed;
 
-    if (animator.loop)
-        animator.time = fmod(animator.time, anim_impl->duration);
-    else
-        animator.time = Min(animator.time, anim_impl->duration);
+    for (int layer_index=0; layer_index<animator.layer_count; layer_index++) {
+        AnimatorLayer& layer = GetLayer(animator, layer_index);
+        if (!layer.playing || !layer.animation)
+            continue;
 
-    if (animator.blend_animation) {
-        animator.blend_time += dt;
-        if (animator.blend_time >= ANIMATOR_BLEND_TIME) {
-            animator.blend_animation = nullptr;
-            animator.blend_time = 0.0f;
-            animator.blend_frame_time = 0.0f;
+        AnimationImpl* anim_impl = static_cast<AnimationImpl*>(layer.animation);
+        layer.time += dt * layer.speed;
+
+        if (layer.loop) {
+            layer.time = fmod(layer.time, anim_impl->duration);
+        } else if (layer.time >= anim_impl->duration) {
+            layer.playing = false;
+            layer.time = anim_impl->duration;
+        }
+
+        if (layer.blend_animation) {
+            layer.blend_time += dt;
+            if (layer.blend_time >= ANIMATOR_BLEND_TIME) {
+                layer.blend_animation = nullptr;
+                layer.blend_time = 0.0f;
+                layer.blend_frame_time = 0.0f;
+            }
         }
     }
 
     EvalulateFrame(animator, false);
 }
 
-bool IsPlaying(Animator& animator)
-{
-    return animator.animation != nullptr && (animator.loop || animator.time < ((AnimationImpl*)animator.animation)->duration);
-}
 
-bool IsLooping(Animator& animator)
-{
-    return animator.loop;
-}
-
-float GetTime(Animator& animator) {
-    return animator.time;
-}
-
-float GetNormalizedTime(Animator& animator) {
-    if (!animator.animation)
+float GetNormalizedTime(Animator& animator, int layer_index) {
+    AnimatorLayer& layer = animator.layers[layer_index];
+    if (!layer.animation)
         return 0.0f;
 
-    return animator.time / ((AnimationImpl*)animator.animation)->duration;
+    return layer.time / static_cast<AnimationImpl*>(layer.animation)->duration;
 }
 
-void SetNormalizedTime(Animator& animator, float normalized_time) {
-    if (animator.animation == nullptr)
+void SetNormalizedTime(Animator& animator, int layer_index, float normalized_time) {
+    AnimatorLayer& layer = animator.layers[layer_index];
+    if (layer.animation == nullptr)
         return;
 
-    animator.time = normalized_time * ((AnimationImpl*)animator.animation)->duration;
+    layer.time = normalized_time * static_cast<AnimationImpl*>(layer.animation)->duration;
 
     Update(animator, 0.0f);
 }
 
-void Init(Animator& animator, Skeleton* skeleton) {
+void SetBoneMask(Animator& animator, int layer_index, u64 bone_mask) {
+    AnimatorLayer& layer = GetLayer(animator, layer_index);
+    layer.bone_mask = bone_mask;
+}
+
+void Init(Animator& animator, Skeleton* skeleton, int layer_count) {
     animator = {};
     animator.skeleton = skeleton;
-    animator.speed = 1.0f;
+    animator.layer_count = layer_count;
+
+    for (int layer_index=0; layer_index<layer_count; layer_index++) {
+        AnimatorLayer& layer = animator.layers[layer_index];
+        layer.speed = 1.0f;
+        layer.bone_mask = 0xFFFFFFFFFFFFFFFF;
+    }
 
     int bone_count = GetBoneCount(skeleton);
     for (int bone_index=0; bone_index<bone_count; bone_index++) {
         animator.bones[bone_index] = MAT3_IDENTITY;
+        animator.transforms[bone_index] = {
+            VEC2_ZERO,
+            0.0f,
+            VEC2_ONE
+        };
         animator.user_transforms[bone_index] = {
             VEC2_ZERO,
             0.0f,
