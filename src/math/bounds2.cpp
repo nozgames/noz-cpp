@@ -86,7 +86,18 @@ bool Intersects(const Bounds2& bounds, const Vec2& tri_pt0, const Vec2& tri_pt1,
     return false;
 }
 
-Bounds2 Union(const Bounds2& a, const Bounds2& b)
-{
+Bounds2 Union(const Bounds2& a, const Bounds2& b) {
     return { Min(a.min, b.min), Max(a.max, b.max) };
+}
+
+extern Bounds2 Intersection(const Bounds2& a, const Bounds2& b) {
+    Vec2 new_min = Max(a.min, b.min);
+    Vec2 new_max = Min(a.max, b.max);
+
+    // If there is no intersection, return an empty bounds
+    if (new_min.x > new_max.x || new_min.y > new_max.y) {
+        return { VEC2_ZERO, VEC2_ZERO };
+    }
+
+    return { new_min, new_max };
 }

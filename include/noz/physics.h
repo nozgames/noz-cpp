@@ -31,11 +31,14 @@ struct RaycastResult
 };
 
 // @collider
-Collider* CreateCollider(Allocator* allocator, const Vec2* points, u32 point_count);
-Collider* CreateCollider(Allocator* allocator, Mesh* mesh);
-bool OverlapPoint(Collider* collider, const Vec2& point, const Mat3& transform=MAT3_IDENTITY);
-bool OverlapBounds(Collider* collider, const Bounds2& bounds, const Mat3& transform=MAT3_IDENTITY);
-bool Raycast(Collider* colider, const Vec2& origin, const Vec2& dir, float distance, RaycastResult* result);
+extern Collider* CreateCollider(Allocator* allocator, const Vec2* points, u32 point_count);
+extern Collider* CreateCollider(Allocator* allocator, Mesh* mesh);
+extern Collider* CreateCollider(Allocator* allocator, const Bounds2& bounds);
+extern bool OverlapPoint(Collider* collider, const Vec2& point, const Mat3& transform=MAT3_IDENTITY);
+extern bool OverlapBounds(Collider* collider, const Bounds2& bounds, const Mat3& transform=MAT3_IDENTITY);
+extern bool Raycast(Collider* colider, const Vec2& origin, const Vec2& dir, float distance, RaycastResult* result);
+extern bool Raycast(Collider* colider, const Vec2& p0, const Vec2& p1, RaycastResult* result);
+extern Bounds2 GetBounds(Collider* collider);
 
 // @collision
 bool OverlapPoint(const Vec2& v0, const Vec2& v1, const Vec2& v2, const Vec2& overlap_point, Vec2* where);

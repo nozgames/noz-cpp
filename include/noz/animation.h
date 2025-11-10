@@ -67,6 +67,9 @@ extern bool IsLooping(Animator& animator);
 extern float GetTime(Animator& animator);
 extern float GetNormalizedTime(Animator& animator);
 extern void SetNormalizedTime(Animator& animator, float normalized_time);
+inline bool IsBlending(Animator& animator) {
+    return animator.blend_animation != nullptr;
+}
 
 // @blend_tree
 constexpr int MAX_BLEND_TREE_BLENDS = 3;

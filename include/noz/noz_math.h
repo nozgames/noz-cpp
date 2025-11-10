@@ -352,6 +352,7 @@ inline Vec2 XZ(const Vec3& v) { return {v.x, v.z}; }
 
 // @bounds2
 extern Bounds2 ToBounds(const Vec2* positions, u32 count);
+extern Bounds2 Intersection(const Bounds2& a, const Bounds2& b);
 extern bool Contains(const Bounds2& bounds, const Vec2& point);
 extern bool Intersects(const Bounds2& bounds, const Bounds2& other);
 extern bool Intersects(const Bounds2& bounds, const Vec2& line_start, const Vec2& line_end);

@@ -13,7 +13,6 @@ static void EvalulateFrame(Animator& animator, bool setup) {
     SkeletonImpl* skel_impl = static_cast<SkeletonImpl*>(animator.skeleton);
 
     f32 float_frame = animator.time * anim_impl->frame_rate;
-    assert(float_frame < anim_impl->frame_count);
     i32 frame_index1 = static_cast<i32>(Floor(float_frame));
     f32 t = float_frame - static_cast<f32>(frame_index1);
     frame_index1 = Min(frame_index1, anim_impl->frame_count - 1);

@@ -2,21 +2,30 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct ColliderImpl : Collider
-{
+struct ColliderImpl : Collider {
     Vec2* points;
     u32 point_count;
     Bounds2 bounds;
 };
 
-static void ColliderDestructor(void *ptr)
-{
+static void ColliderDestructor(void *ptr) {
     ColliderImpl* impl = (ColliderImpl*)ptr;
     Free(impl->points);
 }
 
-Collider* CreateCollider(Allocator* allocator, const Vec2* points, u32 point_count)
-{
+Collider* CreateCollider(Allocator* allocator, const Bounds2& bounds) {
+    ColliderImpl* impl = (ColliderImpl*)Alloc(allocator, sizeof(ColliderImpl), ColliderDestructor);
+    impl->point_count = 4;
+    impl->points = static_cast<Vec2*>(Alloc(allocator, sizeof(Vec2) * impl->point_count));
+    impl->bounds = bounds;
+    impl->points[0] = Vec2{bounds.min.x, bounds.min.y};
+    impl->points[1] = Vec2{bounds.max.x, bounds.min.y};
+    impl->points[2] = Vec2{bounds.max.x, bounds.max.y};
+    impl->points[3] = Vec2{bounds.min.x, bounds.max.y};
+    return impl;
+}
+
+Collider* CreateCollider(Allocator* allocator, const Vec2* points, u32 point_count) {
     ColliderImpl* impl = (ColliderImpl*)Alloc(allocator, sizeof(ColliderImpl), ColliderDestructor);
     impl->point_count = point_count;
     impl->points = (Vec2*)Alloc(allocator, sizeof(Vec2) * point_count);
@@ -85,25 +94,29 @@ bool OverlapBounds(Collider* collider, const Bounds2& bounds, const Mat3& transf
     return false;
 }
 
-bool Raycast(Collider* colider, const Vec2& origin, const Vec2& dir, float distance, RaycastResult* result)
-{
-    ColliderImpl* impl = (ColliderImpl*)colider;
+Bounds2 GetBounds(Collider* collider) {
+    return static_cast<ColliderImpl*>(collider)->bounds;
+}
+
+bool Raycast(Collider* colider, const Vec2& p0, const Vec2& p1, RaycastResult* result) {
+    return Raycast(colider, p0, Normalize(p1 - p0), Length(p1 - p0), result);
+}
+
+bool Raycast(Collider* colider, const Vec2& origin, const Vec2& dir, float distance, RaycastResult* result) {
+    const ColliderImpl* impl = static_cast<ColliderImpl*>(colider);
 
     Vec2 ray_end = origin + dir * distance;
 
     result->fraction = 1.0f;
 
     Vec2 v1 = impl->points[impl->point_count - 1];
-    for (u32 i = 0; i < impl->point_count; i++)
-    {
+    for (u32 i = 0; i < impl->point_count; i++) {
         Vec2 v2 = impl->points[i];
 
         Vec2 where;
-        if (OverlapLine(origin, ray_end, v1, v2, &where))
-        {
+        if (OverlapLine(origin, ray_end, v1, v2, &where)) {
             float fraction = Distance(where, origin) / distance;
-            if (fraction < result->fraction)
-            {
+            if (fraction < result->fraction) {
                 result->point = where;
                 result->fraction = fraction;
 
