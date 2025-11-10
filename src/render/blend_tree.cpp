@@ -4,7 +4,6 @@
 
 constexpr float ANIMATOR_BLEND_TIME = 0.05f;
 
-
 void Play(BlendTree& blend_tree, int blend_index, float value, Animation* animation, float speed) {
     assert(blend_index <= blend_tree.blend_count);
     assert(blend_index >= 0);

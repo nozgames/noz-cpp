@@ -76,6 +76,9 @@ extern void Update(Animator& animator, float time_scale=1.0f);
 extern bool IsLooping(Animator& animator);
 extern float GetNormalizedTime(Animator& animator, int layer_index);
 extern void SetNormalizedTime(Animator& animator, int layer_index, float normalized_time);
+inline Skeleton* GetSkeleton(Animator& animator) {
+    return animator.skeleton;
+}
 inline AnimatorLayer& GetLayer(Animator& animator, int layer_index) {
     assert(layer_index >= 0 && layer_index < animator.layer_count);
     return animator.layers[layer_index];
