@@ -9,6 +9,7 @@ layout(set = 0, binding = 0, row_major) uniform CameraBuffer {
 layout(set = 1, binding = 0, row_major) uniform ObjectBuffer {
     mat3 transform;
     float depth;
+    float depth_scale;
 } object;
 
 layout(location = 0) in vec2 v_position;
@@ -20,7 +21,7 @@ layout(location = 0) out vec2 f_uv;
 void main() {
     mat3 mvp = object.transform * camera.view_projection;
     vec3 screen_pos = vec3(v_position, 1.0) * mvp;
-    gl_Position = vec4(screen_pos.xy, 1.0f - (object.depth + v_depth), 1.0);
+    gl_Position = vec4(screen_pos.xy, 1.0f - (object.depth + (v_depth * object.depth_scale)), 1.0);
     f_uv = v_uv;
 }
 

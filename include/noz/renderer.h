@@ -137,7 +137,7 @@ extern void BindColor(Color color, const Vec2& color_uv_offset);
 extern void BindCamera(Camera* camera);
 extern void BindVertexUserData(const void* data, size_t size);
 extern void BindFragmentUserData(const void* data, size_t size);
-extern void BindDepth(float depth);
+extern void BindDepth(float depth, float depth_scale=1.0f);
 extern void BindTransform(const Mat3& parent_transform, const Animator& animator, int bone_index);
 extern void BindTransform(const Vec3& position, float rotation, const Vec2& scale);
 inline void BindTransform(const Vec2& position, float rotation, const Vec2& scale) {

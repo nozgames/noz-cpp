@@ -64,6 +64,7 @@ struct platform::Shader
 struct ObjectBuffer {
     float transform[12];
     float depth;
+    float depth_scale;
 };
 
 struct ColorBuffer {
@@ -1169,13 +1170,14 @@ void platform::BindLight(const Vec3& light_dir, const Color& diffuse_color, cons
     f[11] = shadow_color.a;
 }
 
-void platform::BindTransform(const Mat3& transform, float depth) {
+void platform::BindTransform(const Mat3& transform, float depth, float depth_scale) {
     void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_TRANSFORM);
     if (!buffer_ptr)
         return;
 
-    ObjectBuffer* buffer = (ObjectBuffer*)buffer_ptr;
+    ObjectBuffer* buffer = static_cast<ObjectBuffer*>(buffer_ptr);
     buffer->depth = (depth - g_vulkan.traits.min_depth) * g_vulkan.depth_conversion_factor;
+    buffer->depth_scale = depth_scale;
     CopyMat3ToGPU(&buffer->transform, transform);
 }
 
