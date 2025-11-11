@@ -218,7 +218,9 @@ constexpr Bounds2 BOUNDS2_ZERO = { VEC2_ZERO, VEC2_ZERO };
 
 // @float
 inline f32 Floor(f32 v2) { return floorf(v2); }
+inline i32 FloorToInt(f32 v2) { return static_cast<int>(floorf(v2)); }
 inline f32 Ceil(f32 v2) { return ceilf(v2); }
+inline i32 CeilToInt(f32 v2) { return static_cast<int>(ceilf(v2)); }
 inline f32 Min(f32 v1, f32 v2) { return v1 < v2 ? v1 : v2; }
 inline f32 Max(f32 v1, f32 v2) { return v1 > v2 ? v1 : v2; }
 inline f32 Mix(f32 v1, f32 v2, f32 t) { return v1 + (v2 - v1) * t; }

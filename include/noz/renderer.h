@@ -170,6 +170,8 @@ extern float GetLineHeight(Font* font);
 extern Material* GetMaterial(Font* font);
 extern const FontGlyph* GetGlyph(Font* font, char ch);
 extern float GetKerning(Font* font, char first, char second);
+extern Material* CreateMaterial(Allocator* allocator, Font* font);
+extern Material* CreateMaterial(Allocator* allocator, Font* font, float outline_size, Color outline_color);
 
 // @camera
 extern Camera* CreateCamera(Allocator* allocator);
