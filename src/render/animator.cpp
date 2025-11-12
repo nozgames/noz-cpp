@@ -188,6 +188,9 @@ void SetNormalizedTime(Animator& animator, int layer_index, float normalized_tim
     layer.time = normalized_time * static_cast<AnimationImpl*>(layer.animation)->duration;
 
     Update(animator, 0.0f);
+
+    if (layer_index == 0)
+        animator.root_motion_delta = VEC2_ZERO;
 }
 
 void SetBoneMask(Animator& animator, int layer_index, u64 bone_mask) {
