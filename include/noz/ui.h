@@ -190,3 +190,18 @@ inline EdgeInsets EdgeInsetsBottomRight(float b, float r) { return EdgeInsets(0,
 inline EdgeInsets EdgeInsetsBottomRight(float v) { return EdgeInsets(0, 0, v, v); }
 inline EdgeInsets EdgeInsetsRight(float v) { return EdgeInsets(0,0,0,v); }
 inline EdgeInsets EdgeInsetsLeft(float v) { return EdgeInsets(0,v,0,0); }
+
+// @text_engine
+struct TextMesh {};
+
+struct TextRequest {
+    text_t text;
+    Font* font;
+    int font_size;
+};
+
+TextMesh* CreateTextMesh(Allocator* allocator, const TextRequest& request);
+Vec2 MeasureText(const text_t& text, Font* font, float font_size);
+Mesh* GetMesh(TextMesh* tm);
+Material* GetMaterial(TextMesh* tm);
+Vec2 GetSize(TextMesh* tm);

@@ -9,8 +9,7 @@ struct TextMeshImpl : TextMesh
     Vec2 size;
 };
 
-Vec2 MeasureText(const text_t& text, Font* font, float font_size)
-{
+Vec2 MeasureText(const text_t& text, Font* font, float font_size) {
     assert(font);
 
     // Calculate text width using glyph data

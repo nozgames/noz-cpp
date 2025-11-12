@@ -79,21 +79,6 @@ void InitPhysics();
 void ShutdownPhysics();
 void UpdatePhysics();
 
-// @text_engine
-struct TextMesh {};
-
-struct TextRequest
-{
-    text_t text;
-    Font* font;
-    int font_size;
-};
-
-TextMesh* CreateTextMesh(Allocator* allocator, const TextRequest& request);
-Vec2 MeasureText(const text_t& text, Font* font, float font_size);
-Mesh* GetMesh(TextMesh* tm);
-Material* GetMaterial(TextMesh* tm);
-Vec2 GetSize(TextMesh* tm);
 
 // @animation
 struct AnimationBone {

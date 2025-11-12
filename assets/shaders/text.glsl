@@ -17,7 +17,7 @@ layout(location = 0) out vec2 f_uv;
 void main() {
     mat3 mvp = object.transform * camera.view_projection;
     vec3 screen_pos = vec3(v_position, 1.0) * mvp;
-    gl_Position = vec4(screen_pos.xy, 0.0, 1.0);
+    gl_Position = vec4(screen_pos.xy, 1.0 - object.depth, 1.0);
     f_uv = v_uv;
 }
 
@@ -27,7 +27,7 @@ void main() {
 
 layout(set = 3, binding = 0) uniform ColorBuffer {
     vec4 color;
-} colorData;
+} color_buffer;
 
 layout(set = 4, binding = 0, row_major) uniform LightBuffer {
     vec3 direction;
@@ -35,6 +35,14 @@ layout(set = 4, binding = 0, row_major) uniform LightBuffer {
     vec4 diffuse_color;
     vec4 shadow_color;
 } light;
+
+layout(set = 5, binding = 0) uniform TextBuffer {
+    vec4 outline_color;
+    float outline_width;
+    float padding0;
+    float padding1;
+    float padding2;
+} text_buffer;
 
 layout(set = 6, binding = 0) uniform sampler2D mainTexture;
 
@@ -44,8 +52,20 @@ layout(location = 0) out vec4 FragColor;
 void main() {
     float distance = texture(mainTexture, f_uv).r;
     float width = fwidth(distance);
+
+    // Main text alpha
     float alpha = smoothstep(0.5 - width, 0.5 + width, distance);
-    FragColor = vec4(colorData.color.rgb, alpha * colorData.color.a);
+
+    if (text_buffer.outline_width > 0.0) {
+        vec4 outline_color = text_buffer.outline_color;
+        float outline_threshold = 0.5 - text_buffer.outline_width;
+        float outline_alpha = smoothstep(outline_threshold - width, outline_threshold + width, distance);
+        vec3 final_color = mix(outline_color.rgb, color_buffer.color.rgb, alpha);
+        float final_alpha = max(outline_alpha * outline_color.a, alpha * color_buffer.color.a);
+        FragColor = vec4(final_color, final_alpha);
+    } else {
+        FragColor = vec4(color_buffer.color.rgb, alpha * color_buffer.color.a);
+    }
 }
 
 //@ END

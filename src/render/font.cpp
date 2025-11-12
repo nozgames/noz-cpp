@@ -7,8 +7,7 @@
 
 Font** FONT = nullptr;
 
-struct FontImpl : Font
-{
+struct FontImpl : Font {
     Material* material;
     Texture* texture;
     float baseline;
@@ -24,10 +23,17 @@ struct FontImpl : Font
     uint16_t kerning_count;              // Number of kerning pairs
 };
 
+struct TextBuffer {
+    Color outline_color;
+    float outline_width;
+    float padding0;
+    float padding1;
+    float padding2;
+};
+
 // static SDL_GPUDevice* g_device = nullptr;
 
-void FontDestructor(void* p)
-{
+void FontDestructor(void* p) {
     FontImpl* impl = (FontImpl*)p;
     assert(impl);
 
@@ -36,8 +42,7 @@ void FontDestructor(void* p)
     Free(impl->texture);
 }
 
-Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
-{
+Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
     (void)name_table;
 
     if (!stream || !header)
@@ -195,12 +200,15 @@ float GetLineHeight(Font* font)
     return static_cast<FontImpl*>(font)->line_height;
 }
 
-Material* GetMaterial(Font* font)
-{
+Material* GetMaterial(Font* font) {
     FontImpl* impl = static_cast<FontImpl*>(font);
-    if (impl->material == nullptr)
-    {
+    if (impl->material == nullptr) {
         impl->material = CreateMaterial(GetAllocator(font), SHADER_TEXT);
+        TextBuffer buffer = {
+            .outline_color = COLOR_BLACK,
+            .outline_width = 0.0f
+        };
+        SetFragmentData(impl->material, &buffer, sizeof(TextBuffer));
         SetTexture(impl->material, impl->texture);
     }
 
@@ -217,4 +225,26 @@ int GetFontIndex(const Name* name)
             return i;
 
     return -1;
+}
+
+Material* CreateMaterial(Allocator* allocator, Font* font) {
+    assert(font);
+    Material* material = CreateMaterial(allocator, GetShader(GetMaterial(font)));
+    FontImpl* impl = static_cast<FontImpl*>(font);
+    SetTexture(material, impl->texture);
+    return material;
+}
+
+Material* CreateMaterial(Allocator* allocator, Font* font, float outline_size, Color outline_color) {
+    assert(font);
+    FontImpl* impl = static_cast<FontImpl*>(font);
+    Material* material = CreateMaterial(allocator, GetShader(GetMaterial(font)));
+    TextBuffer buffer = {
+        .outline_color = outline_color,
+        .outline_width = outline_size
+    };
+
+    SetFragmentData(material, &buffer, sizeof(TextBuffer));
+    SetTexture(material, impl->texture);
+    return material;
 }
