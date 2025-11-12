@@ -1,8 +1,7 @@
 # Todo
 
-- [ ] Copy / Paste of frames
-- [ ] animation specify frame rate
-- [ ] editor config default frame rate.
+- [ ] Animated mesh
+- [ ] Skinned mesh setup for animation
 
 - [ ] knife tool for cutting faces
   - [ ] all points must be in the same face for now

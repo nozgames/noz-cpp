@@ -4,7 +4,6 @@
 
 constexpr float ANIMATOR_BLEND_TIME = 0.1f;
 
-
 static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
     Skeleton* skeleton = animator.skeleton;
     assert(animator.skeleton);

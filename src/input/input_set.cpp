@@ -71,16 +71,13 @@ void EnableButton(InputSet* input_set, InputCode code) {
     impl->buttons[code] |= BUTTON_STATE_ENABLED;
 }
 
-void DisableButton(InputSet* input_set, InputCode code)
-{
+void DisableButton(InputSet* input_set, InputCode code) {
     InputSetImpl* impl = static_cast<InputSetImpl*>(input_set);
     if (!IsButtonEnabled(impl->buttons[code]))
         return;
 
-    for (u32 i = 0; i < impl->enabled_count; i++)
-    {
-        if (impl->enabled_codes[i] == code)
-        {
+    for (u32 i = 0; i < impl->enabled_count; i++) {
+        if (impl->enabled_codes[i] == code) {
             impl->enabled_codes[i] = impl->enabled_codes[impl->enabled_count - 1];
             impl->enabled_count--;
             break;

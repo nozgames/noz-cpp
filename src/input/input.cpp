@@ -103,3 +103,7 @@ void InitInput() {
 void ShutdownInput() {
     platform::ShutdownInput();
 }
+
+bool IsButtonDown(InputCode code) {
+    return platform::IsInputButtonDown(code);
+}

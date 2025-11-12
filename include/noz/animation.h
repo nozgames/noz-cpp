@@ -29,7 +29,7 @@ struct BoneTransform {
 inline BoneTransform Mix(const BoneTransform& a, const BoneTransform& b, float t) {
     BoneTransform result;
     result.position = Mix(a.position, b.position, t);
-    result.rotation = Mix(a.rotation, b.rotation, t);
+    result.rotation = MixAngle(a.rotation, b.rotation, t);
     result.scale = Mix(a.scale, b.scale, t);
     return result;
 }
