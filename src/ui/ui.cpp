@@ -330,7 +330,7 @@ void Inset(const EdgeInsets& insets, void (*children)()) {
 void Image(Material* material, const ImageStyle& style) {
     IncrementChildCount();
     ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
-    image->material = material;
+    image->material = material != nullptr ? material : g_ui.element_material;
     image->mesh = g_ui.image_mesh;
     image->style = style;
 }
@@ -338,7 +338,7 @@ void Image(Material* material, const ImageStyle& style) {
 void Image(Material* material, Mesh* mesh, const ImageStyle& style) {
     IncrementChildCount();
     ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
-    image->material = material;
+    image->material = material != nullptr ? material : g_ui.element_material;
     image->mesh = mesh;
     image->style = style;
 }

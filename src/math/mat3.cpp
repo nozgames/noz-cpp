@@ -32,8 +32,7 @@ Mat3 Translate(const Vec2& translation)
     };
 }
 
-Mat3 Rotate(f32 rotation)
-{
+Mat3 Rotate(f32 rotation) {
     rotation = Radians(rotation);
     f32 c = std::cos(rotation);
     f32 s = std::sin(rotation);

@@ -2,7 +2,7 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-constexpr float ANIMATOR_BLEND_TIME = 0.05f;
+constexpr float ANIMATOR_BLEND_TIME = 0.1f;
 
 
 static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
@@ -82,7 +82,6 @@ static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
         frame_transform.scale *= animator.user_transforms[bone_index].scale;
 
         animator.transforms[bone_index] = frame_transform;
-        //animator.bones[bone_index] = ToMat3(frame_transform);
     }
 
     layer.frame_index = frame_index1;

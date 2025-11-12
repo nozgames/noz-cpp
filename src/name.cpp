@@ -8,8 +8,7 @@ static Name g_name_none = {""};
 
 Name* NAME_NONE;
 
-Name* GetName(const char* value)
-{
+Name* GetName(const char* value) {
     if (!value || *value == 0)
         return NAME_NONE;
 
@@ -29,8 +28,7 @@ Name* GetName(const char* value)
     return name;;
 }
 
-void InitName(ApplicationTraits* traits)
-{
+void InitName(ApplicationTraits* traits) {
     g_name_allocator = CreateArenaAllocator(traits->name_memory_size, "name");
 
     g_names_map_keys = (u64*)Alloc(g_name_allocator, sizeof(u64) * traits->max_names);
@@ -40,8 +38,7 @@ void InitName(ApplicationTraits* traits)
     NAME_NONE = &g_name_none;
 }
 
-void ShutdownName()
-{
+void ShutdownName() {
     g_names_map_keys = nullptr;
     g_names_map_values = nullptr;
     Clear(g_name_allocator);

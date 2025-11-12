@@ -669,8 +669,6 @@ static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFor
 
 static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
     (void)availablePresentModes;
-
-    // Force VSync by always returning FIFO mode (guaranteed to be available)
     return g_vulkan.traits.vsync == 0 ? VK_PRESENT_MODE_IMMEDIATE_KHR : VK_PRESENT_MODE_FIFO_KHR;
 }
 
@@ -681,10 +679,12 @@ static VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
     Vec2Int screen_size = platform::GetScreenSize();
     VkExtent2D actualExtent = {static_cast<u32>(screen_size.x), static_cast<u32>(screen_size.y)};
 
-    actualExtent.width = std::max(capabilities.minImageExtent.width,
-                                  std::min(capabilities.maxImageExtent.width, actualExtent.width));
-    actualExtent.height = std::max(capabilities.minImageExtent.height,
-                                   std::min(capabilities.maxImageExtent.height, actualExtent.height));
+    actualExtent.width = std::max(
+        capabilities.minImageExtent.width,
+        std::min(capabilities.maxImageExtent.width, actualExtent.width));
+    actualExtent.height = std::max(
+        capabilities.minImageExtent.height,
+        std::min(capabilities.maxImageExtent.height, actualExtent.height));
 
     return actualExtent;
 }
