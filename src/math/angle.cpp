@@ -37,3 +37,6 @@ float NormalizeAngle180(float angle) {
     return angle;
 }
 
+float MixAngle(float a, float b, float t) {
+    return a + Mix(0, SignedAngleDelta(b,a), t);
+}

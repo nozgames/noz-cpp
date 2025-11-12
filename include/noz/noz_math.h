@@ -368,6 +368,7 @@ inline Bounds2 Expand(const Bounds2& b, float size) { return Bounds2{ b.min - Ve
 inline Bounds2 Translate(const Bounds2& b, const Vec2& translation) { return Bounds2{ b.min + translation, b.max + translation }; }
 
 // @angle
+extern float MixAngle(float a, float b, float t);
 extern float SignedAngleDelta(const Vec2& a, const Vec2&b);
 extern float SignedAngleDelta(float a, float b);
 extern float NormalizeAngle(float angle);
