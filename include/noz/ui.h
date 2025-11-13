@@ -48,8 +48,10 @@ constexpr Alignment ALIGNMENT_TOP           = {  F32_MAX, -1.0f };
 constexpr Alignment ALIGNMENT_TOP_LEFT      = { -1.0f, -1.0f };
 constexpr Alignment ALIGNMENT_TOP_CENTER    = {  0.0f, -1.0f };
 constexpr Alignment ALIGNMENT_TOP_RIGHT     = {  1.0f, -1.0f };
-constexpr Alignment ALIGNMENT_CENTER        = {  0.0f,  0.0f };
+constexpr Alignment ALIGNMENT_CENTER        = {  F32_MAX, 0.0f };
+constexpr Alignment ALIGNMENT_CENTER_CENTER = {  0.0f,  0.0f };
 constexpr Alignment ALIGNMENT_CENTER_LEFT   = { -1.0f,  0.0f };
+constexpr Alignment ALIGNMENT_CENTER_RIGHT  = {  1.0f,  0.0f };
 constexpr Alignment ALIGNMENT_BOTTOM        = {  F32_MAX, 1.0f };
 constexpr Alignment ALIGNMENT_BOTTOM_LEFT   = { -1.0f,  1.0f };
 constexpr Alignment ALIGNMENT_BOTTOM_RIGHT  = {  1.0f,  1.0f };
@@ -106,6 +108,8 @@ struct MouseRegionStyle {
 
 struct ImageStyle {
     Color color = COLOR_WHITE;
+    AnimatedColorFunc color_func = nullptr;
+    void* color_func_user_data = nullptr;
 };
 
 struct BorderStyle {
@@ -185,6 +189,7 @@ inline EdgeInsets EdgeInsetsAll(float v) { return EdgeInsets(v, v, v, v); }
 inline EdgeInsets EdgeInsetsTop(float v) { return EdgeInsets(v, 0, 0, 0); }
 inline EdgeInsets EdgeInsetsTopLeft(float t, float l) { return EdgeInsets(t, l, 0, 0); }
 inline EdgeInsets EdgeInsetsTopLeft(float v) { return EdgeInsets(v, v, 0, 0); }
+inline EdgeInsets EdgeInsetsTopRight(float v) { return EdgeInsets(v, 0, 0, v); }
 inline EdgeInsets EdgeInsetsBottom(float v) { return EdgeInsets(0, 0, v, 0); }
 inline EdgeInsets EdgeInsetsBottomLeft(float b, float l) { return EdgeInsets(0, l, b, 0); }
 inline EdgeInsets EdgeInsetsBottomLeft(float v) { return EdgeInsets(0, v, v, 0); }
@@ -192,6 +197,8 @@ inline EdgeInsets EdgeInsetsBottomRight(float b, float r) { return EdgeInsets(0,
 inline EdgeInsets EdgeInsetsBottomRight(float v) { return EdgeInsets(0, 0, v, v); }
 inline EdgeInsets EdgeInsetsRight(float v) { return EdgeInsets(0,0,0,v); }
 inline EdgeInsets EdgeInsetsLeft(float v) { return EdgeInsets(0,v,0,0); }
+inline EdgeInsets EdgeInsetsLeftRight(float v) { return EdgeInsets(0,v,0,v); }
+
 
 // @text_engine
 struct TextMesh {};

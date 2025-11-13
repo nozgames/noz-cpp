@@ -468,7 +468,7 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
             child_offset.x += child_total_width;
             consumed_size.x += child_total_width;
             // Add spacing between children (but not after the last child)
-            if (i < parent->child_count - 1 - flex_element_count) {
+            if (i < parent->child_count - 1) {
                 child_offset.x += spacing;
                 consumed_size.x += spacing;
             }
@@ -476,7 +476,7 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
             child_offset.y += child_total_height;
             consumed_size.y += child_total_height;
             // Add spacing between children (but not after the last child)
-            if (i < parent->child_count - 1 - flex_element_count) {
+            if (i < parent->child_count - 1) {
                 child_offset.y += spacing;
                 consumed_size.y += spacing;
             }
@@ -505,10 +505,6 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
                 child->rect.x += offset;
                 float child_total_width = child_handles_own_margins ? child->rect.width : (child->rect.width + child_margin.right);
                 child_offset.x = child->rect.x + child_total_width;
-                if (i < parent->child_count - 1) {
-                    child_offset.x += spacing;
-                    offset += spacing;
-                }
                 continue;
             }
 
@@ -522,15 +518,22 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
 
             child_offset.x += expanded_size.x + expanded_margin.left + expanded_margin.right;
             offset += expanded_size.x + expanded_margin.left + expanded_margin.right;
-            if (i < parent->child_count - 1) {
-                child_offset.x += spacing;
-                offset += spacing;
-            }
         }
 
         max_size.x = child_offset.x;
     } else if (flex_element_count > 0 && parent->type == ELEMENT_TYPE_COLUMN && size.y != F32_MAX) {
-        float remaining_height = size.y - consumed_size.y;
+        // Account for spacing that will be added around flex elements
+        // If there are non-flex elements before flex, we need spacing between them
+        // Plus spacing between flex elements themselves (flex_element_count - 1)
+        u32 non_flex_count = parent->child_count - flex_element_count;
+        float flex_spacing = 0.0f;
+        if (flex_element_count > 1) {
+            flex_spacing += spacing * (flex_element_count - 1); // spacing between flex elements
+        }
+        if (non_flex_count > 0) {
+            flex_spacing += spacing; // spacing between last non-flex and first flex
+        }
+        float remaining_height = size.y - consumed_size.y - flex_spacing;
         float offset = 0.0f;
         for (u32 i = 0; i < parent->child_count; i++) {
             Element* child = g_ui.element_stack[element_stack_start + i];
@@ -540,10 +543,6 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
                 child->rect.y += offset;
                 float child_total_height = child_handles_own_margins ? child->rect.height : (child->rect.height + child_margin.bottom);
                 child_offset.y = child->rect.y + child_total_height;
-                if (i < parent->child_count - 1) {
-                    child_offset.y += spacing;
-                    offset += spacing;
-                }
                 continue;
             }
 
@@ -557,10 +556,6 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
 
             child_offset.y += expanded_size.y + expanded_margin.top + expanded_margin.bottom;
             offset += expanded_size.y + expanded_margin.top + expanded_margin.bottom;
-            if (i < parent->child_count - 1) {
-                child_offset.y += spacing;
-                offset += spacing;
-            }
         }
 
         max_size.y = child_offset.y;
@@ -572,7 +567,7 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
         parent->rect.height = max_size.y;
 
     if (parent->type == ELEMENT_TYPE_CENTER) {
-        ApplyAlignment(parent, ALIGNMENT_CENTER, element_stack_start, parent->child_count);
+        ApplyAlignment(parent, ALIGNMENT_CENTER_CENTER, element_stack_start, parent->child_count);
     } else if (parent->type == ELEMENT_TYPE_ALIGN) {
         AlignElement* align = static_cast<AlignElement*>(parent);
         ApplyAlignment(parent, align->style.alignment, element_stack_start, parent->child_count);
@@ -759,7 +754,6 @@ static int RenderElement(int element_index) {
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* image = static_cast<ImageElement*>(e);
         BindMaterial(image->material);
-        BindColor(image->style.color);
         Bounds2 mesh_bounds = GetBounds(image->mesh);
         Vec2 mesh_size = GetSize(mesh_bounds);
 
@@ -775,6 +769,12 @@ static int RenderElement(int element_index) {
             (e->rect.width - scaled_size.x) * 0.5f,
             (e->rect.height - scaled_size.y) * 0.5f
         };
+
+        if (image->style.color_func) {
+            BindColor(image->style.color_func(e->state, 0.0f, image->style.color_func_user_data));
+        } else {
+            BindColor(image->style.color);
+        }
 
         BindTransform(transform * Translate(center_offset) * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1}));
         DrawMesh(image->mesh);
