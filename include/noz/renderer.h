@@ -134,6 +134,7 @@ extern void AddArc(MeshBuilder* builder, const Vec3& center, f32 radius, f32 sta
 extern void BindDefaultTexture(int texture_index);
 extern void BindColor(Color color);
 extern void BindColor(Color color, const Vec2& color_uv_offset);
+extern void BindColor(Color color, const Vec2& color_uv_offset, Color emission);
 extern void BindCamera(Camera* camera);
 extern void BindVertexUserData(const void* data, size_t size);
 extern void BindFragmentUserData(const void* data, size_t size);
@@ -185,6 +186,7 @@ extern Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos);
 extern void UpdateCamera(Camera* camera);
 extern const Mat3& GetViewMatrix(Camera* camera);
 extern Bounds2 GetBounds(Camera* camera);
+extern void Shake(Camera* camera, const Vec2& intensity, float duration);
 
 // @skeleton
 constexpr int MAX_BONES = 64;

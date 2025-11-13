@@ -762,8 +762,21 @@ static int RenderElement(int element_index) {
         BindColor(image->style.color);
         Bounds2 mesh_bounds = GetBounds(image->mesh);
         Vec2 mesh_size = GetSize(mesh_bounds);
-        Vec2 mesh_scale = Vec2 {e->rect.width / mesh_size.x, e->rect.height / mesh_size.y};
-        BindTransform(transform * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1}));
+
+        // Calculate aspect-ratio-preserving scale
+        float scale_x = e->rect.width / mesh_size.x;
+        float scale_y = e->rect.height / mesh_size.y;
+        float uniform_scale = Min(scale_x, scale_y);
+        Vec2 mesh_scale = Vec2{uniform_scale, uniform_scale};
+
+        // Calculate centering offset
+        Vec2 scaled_size = mesh_size * uniform_scale;
+        Vec2 center_offset = Vec2{
+            (e->rect.width - scaled_size.x) * 0.5f,
+            (e->rect.height - scaled_size.y) * 0.5f
+        };
+
+        BindTransform(transform * Translate(center_offset) * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1}));
         DrawMesh(image->mesh);
     } else if (e->type == ELEMENT_TYPE_CONTAINER) {
         ContainerElement* container = static_cast<ContainerElement*>(e);

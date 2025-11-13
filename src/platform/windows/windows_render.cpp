@@ -69,6 +69,7 @@ struct ObjectBuffer {
 
 struct ColorBuffer {
     Color color;
+    Color emission;
     Vec2 uv_offset;
     Vec2 padding;
 };
@@ -1205,13 +1206,14 @@ void platform::BindCamera(const Mat3& view_matrix) {
     CopyMat3ToGPU(buffer_ptr, view_matrix);
 }
 
-void platform::BindColor(const Color& color, const Vec2& color_uv_offset) {
+void platform::BindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission) {
     void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_COLOR);
     if (!buffer_ptr)
         return;
 
     ColorBuffer buffer = {
         .color = color,
+        .emission = emission,
         .uv_offset = color_uv_offset
     };
 

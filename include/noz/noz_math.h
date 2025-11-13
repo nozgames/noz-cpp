@@ -108,13 +108,7 @@ struct Vec4 {
     f32 z;
     f32 w;
 
-    Vec4 operator+(const Vec4& v) const { return Vec4{ x + v.x, y + v.y, z + v.y, w + v.w }; }
-    Vec4 operator-(const Vec4& v) const { return Vec4{ x - v.x, y - v.y, z - v.y, w - v.w }; }
-    Vec4 operator/=(f32 scalar) { x /= scalar; y /= scalar; z /= scalar; w /= scalar; return *this; }
-    Vec4 operator*(f32 scalar) const { return Vec4{ x * scalar, y * scalar, z * scalar, w * scalar }; }
-    Vec4 operator*(const Vec4& v) const { return Vec4{ x * v.x, y * v.y, z * v.z, w * v.w }; }
-
-    float& operator [] (int index) { return *((float*)this + index); }
+    float& operator [] (int index) { return *(reinterpret_cast<float*>(this) + index); }
     float operator [] (int index) const { return *((float*)this + index); }
 };
 
@@ -321,7 +315,16 @@ inline bool ApproxEqual(const Vec2& a, const Vec2& b, f32 epsilon = 1e-6f) {
 }
 
 // @vec4
+inline Vec4 operator+(const Vec4& v1, const Vec4& v2) { return Vec4{ v1.x + v2.x, v1.y + v2.y, v1.z + v2.y, v1.w + v2.w }; }
+inline Vec4 operator-(const Vec4& v1, const Vec4& v2) { return Vec4{ v1.x - v2.x, v1.y - v2.y, v1.z - v2.y, v1.w - v2.w }; }
+inline Vec4 operator-(const Vec4& v1, f32 scalar) { return Vec4{ v1.x - scalar, v1.y - scalar, v1.z - scalar, v1.w - scalar }; }
+inline Vec4 operator*(const Vec4& v, f32 scalar) { return Vec4{ v.x * scalar, v.y * scalar, v.z * scalar, v.w * scalar }; }
+inline Vec4 operator*(const Vec4& v1, const Vec4& v2) { return Vec4{ v1.x * v2.x, v1.y * v2.y, v1.z * v2.z, v1.w * v2.w }; }
+inline Vec4 operator/=(Vec4& v, f32 scalar) { v.x /= scalar; v.y /= scalar; v.z /= scalar; v.w /= scalar; return v; }
+
 inline Vec4 Mix(const Vec4& v1, const Vec4& v2, f32 t) { return v1 + (v2 - v1) * t; }
+inline Vec4 Floor(const Vec4& v) { return { Floor(v.x), Floor(v.y), Floor(v.z), Floor(v.w) }; }
+
 
 // @vec2d
 extern f64 Length(const Vec2Double& v);
@@ -419,3 +422,5 @@ inline float EaseQuadratic(float t) { return t * t; }
 inline float EaseCubic(float t) { return t * t * t; }
 inline float EaseOut(float t, const std::function<float (float)>& func) { return 1.0f - func(1.0f - t); }
 inline float EaseOutQuadratic(float t) { return EaseOut(t, EaseQuadratic); }
+
+extern float PerlinNoise(const Vec2& Position);

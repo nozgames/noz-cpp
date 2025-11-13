@@ -2,8 +2,7 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct CameraImpl : Camera
-{
+struct CameraImpl : Camera {
     Vec2 position_offset; // Offset from the center of calculated extents
     float rotation;
     Vec4 extents; // left, right, bottom, top - F32_MIN/F32_MAX means auto-calculate
@@ -12,10 +11,14 @@ struct CameraImpl : Camera
     Vec2Int last_screen_size;
     bool dirty;
     bool auto_size_extents;
+    Vec2 shake_offset;
+    Vec2 shake_intensity;
+    Vec2 shake_noise;
+    float shake_duration;
+    float shake_elapsed;
 };
 
-static bool IsDirty(CameraImpl* impl)
-{
+static bool IsDirty(CameraImpl* impl) {
     if (impl->dirty)
         return true;
 
@@ -23,8 +26,7 @@ static bool IsDirty(CameraImpl* impl)
     return current_screen_size.x != impl->last_screen_size.x || current_screen_size.y != impl->last_screen_size.y;
 }
 
-static CameraImpl* UpdateIfDirty(Camera* camera)
-{
+static CameraImpl* UpdateIfDirty(Camera* camera) {
     CameraImpl* impl = static_cast<CameraImpl*>(camera);
     if (IsDirty(impl))
         UpdateCamera(camera);
@@ -32,15 +34,46 @@ static CameraImpl* UpdateIfDirty(Camera* camera)
     return impl;
 }
 
-void UpdateCamera(Camera* camera)
-{
+static void UpdateCameraShake(CameraImpl* impl) {
+    if (impl->shake_duration <= 0.0f)
+        return;
+
+    impl->shake_elapsed += GetFrameTime();
+    float t = impl->shake_elapsed / impl->shake_duration;
+    if (t >= 1.0f) {
+        impl->shake_duration = 0.0f;
+        impl->shake_offset = VEC2_ZERO;
+        return;
+    }
+
+    impl->shake_offset = Vec2{
+            impl->shake_intensity.x * (PerlinNoise(Vec2{impl->shake_noise.x, t * 20.0f}) - 0.5f) * 2.0f,
+            impl->shake_intensity.y * (PerlinNoise(Vec2{impl->shake_noise.y, t * 20.0f}) - 0.5f) * 2.0f
+            } * (1.0f - t);
+
+    impl->dirty = true;
+}
+
+void Shake(Camera* camera, const Vec2& intensity, float duration) {
     CameraImpl* impl = static_cast<CameraImpl*>(camera);
+    impl->shake_duration = duration;
+    impl->shake_elapsed = 0.0f;
+    impl->shake_intensity = intensity;
+    impl->shake_noise = Vec2{
+        RandomFloat(0.0f, 100.0f),
+        RandomFloat(0.0f, 100.0f)
+    };
+}
+
+void UpdateCamera(Camera* camera) {
+    CameraImpl* impl = static_cast<CameraImpl*>(camera);
+
+    UpdateCameraShake(impl);
 
     if (!IsDirty(impl))
         return;
 
-    if (impl->auto_size_extents)
-    {
+    if (impl->auto_size_extents) {
         float aspectRatio = GetScreenAspectRatio();
 
         // Calculate actual extents from smart extents
@@ -129,7 +162,7 @@ void UpdateCamera(Camera* camera)
         center.x = left + width * 0.5f;
         center.y = bottom + height * 0.5f; // Camera Y = bottom edge + half height
 
-        Vec2 final_position = center + impl->position_offset;
+        Vec2 final_position = center + impl->position_offset + impl->shake_offset;
 
         float c = cos(impl->rotation);
         float s = sin(impl->rotation);
@@ -163,7 +196,7 @@ void UpdateCamera(Camera* camera)
         center.x = (left + right) * 0.5f;
         center.y = (bottom + top) * 0.5f;
         
-        Vec2 final_position = center + impl->position_offset;
+        Vec2 final_position = center + impl->position_offset + impl->shake_offset;
         
         float c = cos(impl->rotation);
         float s = sin(impl->rotation);
@@ -358,7 +391,7 @@ Bounds2 GetBounds(Camera* camera)
         top = bottom + height;
     }
     
-    Vec2 center = Vec2{(left + right) * 0.5f, (bottom + top) * 0.5f} + impl->position_offset;
+    Vec2 center = Vec2{(left + right) * 0.5f, (bottom + top) * 0.5f} + impl->position_offset + impl->shake_offset;
     Vec2 a = {center.x - width * 0.5f, center.y - height * 0.5f};
     Vec2 b = {center.x + width * 0.5f, center.y + height * 0.5f};
     Bounds2 bounds { Min(a,b), Max(a,b) };

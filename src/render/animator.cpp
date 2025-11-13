@@ -2,7 +2,7 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-constexpr float ANIMATOR_BLEND_TIME = 0.1f;
+constexpr float ANIMATOR_BLEND_TIME = 0.05f;
 
 static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
     Skeleton* skeleton = animator.skeleton;
@@ -120,7 +120,7 @@ void Play(Animator& animator, Animation* animation, int layer_index, float speed
     if (animation == layer.animation)
         return;
 
-    //layer.blend_animation = layer.animation;
+    layer.blend_animation = layer.animation;
     layer.blend_time = 0.0f;
     layer.blend_frame_time = layer.time;
     layer.blend_loop = layer.loop;

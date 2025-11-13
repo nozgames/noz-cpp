@@ -32,6 +32,7 @@ struct DrawMeshData {
     float depth;
     float depth_scale;
     Color color;
+    Color emission;
     Vec2 color_uv_offset;
 };
 
@@ -83,6 +84,7 @@ struct RenderBuffer {
     float current_depth_scale;
     Color current_color;
     Vec2 current_color_uv_offset;
+    Color current_emission;
 };
 
 static RenderBuffer* g_render_buffer = nullptr;
@@ -211,11 +213,19 @@ void BindTransform(const Mat3& transform) {
 void BindColor(Color color) {
     g_render_buffer->current_color = ToLinear(color);
     g_render_buffer->current_color_uv_offset = VEC2_ZERO;
+    g_render_buffer->current_emission = COLOR_TRANSPARENT;
 }
 
 void BindColor(Color color, const Vec2& color_uv_offset) {
     g_render_buffer->current_color = ToLinear(color);
     g_render_buffer->current_color_uv_offset = color_uv_offset;
+    g_render_buffer->current_emission = COLOR_TRANSPARENT;
+}
+
+void BindColor(Color color, const Vec2& color_uv_offset, Color emission) {
+    g_render_buffer->current_color = ToLinear(color);
+    g_render_buffer->current_color_uv_offset = color_uv_offset;
+    g_render_buffer->current_emission = emission;
 }
 
 void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index) {
@@ -248,7 +258,8 @@ void DrawMesh(Mesh* mesh) {
                 .depth = g_render_buffer->current_depth,
                 .depth_scale = g_render_buffer->current_depth_scale,
                 .color = g_render_buffer->current_color,
-                .color_uv_offset = g_render_buffer->current_color_uv_offset
+                .emission = g_render_buffer->current_emission,
+                .color_uv_offset = g_render_buffer->current_color_uv_offset,
             }
         }
     };
@@ -283,7 +294,7 @@ void ExecuteRenderCommands()
             break;
 
         case RENDER_COMMAND_TYPE_DRAW_MESH:
-            platform::BindColor(command->data.draw_mesh.color, command->data.draw_mesh.color_uv_offset);
+            platform::BindColor(command->data.draw_mesh.color, command->data.draw_mesh.color_uv_offset, command->data.draw_mesh.emission);
             platform::BindTransform(command->data.draw_mesh.transform, command->data.draw_mesh.depth, command->data.draw_mesh.depth_scale);
             BindMaterialInternal(command->data.draw_mesh.material);
             RenderMesh(command->data.draw_mesh.mesh);
