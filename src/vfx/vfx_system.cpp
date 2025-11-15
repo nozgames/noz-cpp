@@ -196,7 +196,7 @@ static VfxParticle* EmitParticle(VfxEmitter* e)
     VfxInstance* i = GetInstance(e);
     assert(i);
 
-    float angle = GetRandom(e->def->angle);
+    float angle = Radians(GetRandom(e->def->angle));
     Vec2 dir(cos(angle), sin(angle));
 
     const VfxParticleDef& def = e->def->particle_def;
@@ -277,7 +277,7 @@ static void UpdateParticles()
         float opacity = Mix(p->opacity_start, p->opacity_end, EvaluateCurve(p->opacity_curve, t));
         Color col = Mix(p->color_start, p->color_end, EvaluateCurve(p->color_curve, t));
 
-        BindTransform(p->position, p->rotation, {size, size});
+        BindTransform(p->position, Degrees(p->rotation), {size, size});
         BindColor(SetAlpha(col, opacity));
         BindMaterial(g_vfx.material);
         DrawMesh(g_vfx.meshes[VFX_MESH_SQUARE]);

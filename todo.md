@@ -2,6 +2,7 @@
 
 - [ ] Animated mesh
 - [ ] Skinned mesh setup for animation
+- [ ] Animation play without being in editor
 
 - [ ] knife tool for cutting faces
   - [ ] all points must be in the same face for now
@@ -14,7 +15,6 @@
 - [ ] There are some bugs with deletting edges and vertices
 - [ ] do not allow estruding an internal edge
 
-- [ ] Should be able to select bone by clicking on a skin
 - [ ] Cannot set the edge size on the archer head
 - [ ] what is white screen on startup?
 - [ ] Show border color in the color picker with a different box
@@ -22,10 +22,8 @@
 - [ ] After altering bone transforms in the skeleton the animations do not update until going into edit mode on the animation
 - [ ] Can create the name of an existing asset and it doubles it up in memory
 - [ ] Type numbers for g when moving assets
-- [ ] sort order is too unstable, causing meta files to be changed a lot
 - [ ] Animation event editor
 - [ ] key to hide / show palette (alt-c?)
-- [ ] Make use of global asset list for asset manifest
 - [ ] Adding a bone to the skeleton caused the animations to write garbage data for position
 - [ ] Capture mouse while using tools like grab
 - [ ] Animation bounds does not take into account the actual animation, just the skeleton
@@ -40,9 +38,6 @@
 - [ ] Need way to handle invalid assets (show invalid or error in editor, animation with missing skeleton for example)
 - [ ] Animation with no frames not loading
 - [ ] After creating new mesh I cannot select bones in the skeleton view
-- [ ] button duplicate a frame
-- [ ] button copy a frame
-- [ ] button paste a frame
 - [ ] First time you load the shader is not loaded and it messes up, we need to handle the hotload?
 - [ ] No way to see log messages anymore, we need a console window (win32 window you can open?)
 - [ ] when moving bones in animation we have to recalculate the local position from the world after delta change
