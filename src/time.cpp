@@ -33,13 +33,11 @@ void UpdateTime()
     g_time.total = (float)total_ticks / (float)frequency;
 }
 
-float GetFrameTime()
-{
+float GetFrameTime() {
     return g_time.delta;
 }
 
-float GetFixedTime()
-{
+float GetFixedTime() {
     return g_time.fixed;
 }
 
@@ -48,8 +46,7 @@ float GetTotalTime()
     return g_time.total;
 }
 
-void SetFixedTimeRate(int rate)
-{
+void SetFixedTimeRate(int rate) {
     assert(rate > 0);
     g_time.fixed_rate = rate;
     g_time.fixed = 1.0f / static_cast<float>(g_time.fixed_rate);
