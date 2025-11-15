@@ -12,41 +12,41 @@ static void LoadVfxInternal(VfxImpl* impl, Allocator* allocator, Stream* stream)
     impl->duration = ReadStruct<VfxFloat>(stream);
     impl->loop = ReadBool(stream);
     impl->emitter_count = ReadU32(stream);
-    impl->emitters = (VfxEmitterDef*)Alloc(allocator, sizeof(VfxEmitterDef) * impl->emitter_count);
 
-    for (u32 i = 0; i < impl->emitter_count; ++i)
-    {
-        VfxEmitterDef* emitter_def = &impl->emitters[i];
-        emitter_def->rate = ReadStruct<VfxInt>(stream);
-        emitter_def->burst = ReadStruct<VfxInt>(stream);
-        emitter_def->duration = ReadStruct<VfxFloat>(stream);
-        emitter_def->angle = ReadStruct<VfxFloat>(stream);
-        emitter_def->spawn = ReadStruct<VfxVec2>(stream);
+    if (impl->emitter_count > 0) {
+        impl->emitters = (VfxEmitterDef*)Alloc(allocator, sizeof(VfxEmitterDef) * impl->emitter_count);
 
-        VfxParticleDef* particle_def = &emitter_def->particle_def;
-        // char mesh_name[1024];
-        // ReadString(stream, mesh_name, 1024);
+        for (u32 i = 0; i < impl->emitter_count; ++i) {
+            VfxEmitterDef* emitter_def = &impl->emitters[i];
+            emitter_def->rate = ReadStruct<VfxInt>(stream);
+            emitter_def->burst = ReadStruct<VfxInt>(stream);
+            emitter_def->duration = ReadStruct<VfxFloat>(stream);
+            emitter_def->angle = ReadStruct<VfxFloat>(stream);
+            emitter_def->spawn = ReadStruct<VfxVec2>(stream);
 
-        particle_def->duration = ReadStruct<VfxFloat>(stream);
-        particle_def->size = ReadStruct<VfxFloatCurve>(stream);
-        particle_def->speed = ReadStruct<VfxFloatCurve>(stream);
-        particle_def->color = ReadStruct<VfxColorCurve>(stream);
-        particle_def->opacity = ReadStruct<VfxFloatCurve>(stream);
-        particle_def->gravity = ReadStruct<VfxVec2>(stream);
-        particle_def->drag = ReadStruct<VfxFloat>(stream);
-        particle_def->rotation = ReadStruct<VfxFloatCurve>(stream);
+            VfxParticleDef* particle_def = &emitter_def->particle_def;
+            // char mesh_name[1024];
+            // ReadString(stream, mesh_name, 1024);
 
-        emitter_def->vfx = impl;
+            particle_def->duration = ReadStruct<VfxFloat>(stream);
+            particle_def->size = ReadStruct<VfxFloatCurve>(stream);
+            particle_def->speed = ReadStruct<VfxFloatCurve>(stream);
+            particle_def->color = ReadStruct<VfxColorCurve>(stream);
+            particle_def->opacity = ReadStruct<VfxFloatCurve>(stream);
+            particle_def->gravity = ReadStruct<VfxVec2>(stream);
+            particle_def->drag = ReadStruct<VfxFloat>(stream);
+            particle_def->rotation = ReadStruct<VfxFloatCurve>(stream);
+
+            emitter_def->vfx = impl;
+        }
     }
 }
 
-Bounds2 GetBounds(Vfx* vfx)
-{
+Bounds2 GetBounds(Vfx* vfx) {
     return static_cast<VfxImpl*>(vfx)->bounds;
 }
 
-Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
-{
+Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
     (void)header;
     (void)name_table;
 
@@ -61,8 +61,7 @@ Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const 
 
 void RestartVfx(Vfx* vfx);
 
-void ReloadVfx(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table)
-{
+void ReloadVfx(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table) {
     (void)header;
     (void)name_table;
 
