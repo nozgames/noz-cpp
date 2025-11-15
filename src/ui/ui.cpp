@@ -227,7 +227,7 @@ void Row(const RowStyle& style, const std::function<void()>& children) {
     ExecuteChildren(row, children);
 }
 
-void Column(const ColumnStyle& style, void (*children)()) {
+void Column(const ColumnStyle& style, const std::function<void()>& children) {
     IncrementChildCount();
     ColumnElement* column = static_cast<ColumnElement*>(CreateElement(ELEMENT_TYPE_COLUMN));
     column->style = style;
@@ -363,7 +363,7 @@ void SizedBox(const SizedBoxStyle& style, const std::function<void()>& children)
     ExecuteChildren(e, children);
 }
 
-void Transformed(const TransformStyle& style, void (*children)()) {
+void Transformed(const TransformStyle& style, const std::function<void()>& children) {
     IncrementChildCount();
     TransformElement* transform = static_cast<TransformElement*>(CreateElement(ELEMENT_TYPE_TRANSFORM));
     transform->style = style;

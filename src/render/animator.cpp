@@ -30,6 +30,7 @@ static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
     BoneTransform* blend_frame2 = nullptr;
     f32 blend_frame_t = 0.0f;
     f32 blend_t = 0.0f;
+    bool blend_root_motion = false;
     if (layer.blend_animation) {
         AnimationImpl* blend_anim_impl = static_cast<AnimationImpl*>(layer.blend_animation);
         assert(blend_anim_impl);
@@ -42,6 +43,7 @@ static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
         blend_frame1 = blend_anim_impl->frames + blend_frame_index1 * blend_anim_impl->frame_stride;
         blend_frame2 = blend_anim_impl->frames + blend_frame_index2 * blend_anim_impl->frame_stride;
         blend_t = layer.blend_time / ANIMATOR_BLEND_TIME;
+        blend_root_motion = IsRootMotion(layer.blend_animation);
     }
 
     for (int bone_index=0; bone_index<anim_impl->bone_count; bone_index++) {
@@ -57,6 +59,8 @@ static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
             BoneTransform* bbt1 = blend_frame1 + bone_index;
             BoneTransform* bbt2 = blend_frame2 + bone_index;
             BoneTransform blend_frame = Mix(*bbt1, *bbt2, blend_frame_t);
+            if (blend_root_motion)
+                blend_frame.position = VEC2_ZERO;
             frame_transform = Mix(blend_frame, frame_transform, blend_t);
         }
 
@@ -132,9 +136,9 @@ void Play(Animator& animator, Animation* animation, int layer_index, float speed
 
     if ((layer.bone_mask & 0x1)) {
         animator.last_root_motion = VEC2_ZERO;
-        animator.root_motion = IsRootMotion(animation);
         animator.last_root_motion = VEC2_ZERO;
         animator.root_motion_delta = VEC2_ZERO;
+        animator.root_motion = IsRootMotion(animation);
     }
 
     EvalulateFrame(animator, true);

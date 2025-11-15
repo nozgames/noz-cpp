@@ -18,6 +18,7 @@ constexpr AnimationFlags ANIMATION_FLAG_ROOT_MOTION = 1 << 1;
 extern int GetBoneCount(Animation* animation);
 extern bool IsRootMotion(Animation* animation);
 extern bool IsLooping(Animation* animation);
+extern float GetDuration(Animation* animation);
 
 // @bone_transform
 struct BoneTransform {

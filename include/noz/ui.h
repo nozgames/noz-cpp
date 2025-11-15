@@ -157,7 +157,7 @@ extern void Canvas(const CanvasStyle& style, const std::function<void()>& childr
 inline void Canvas(const std::function<void()>& children = nullptr) { Canvas({}, children); }
 extern void Stack(void (*children)() = nullptr);
 extern void Container(const ContainerStyle& style, const std::function<void()>& children=nullptr);
-extern void Column(const ColumnStyle& style, void (*children)() = nullptr);
+extern void Column(const ColumnStyle& style, const std::function<void()>& children = nullptr);
 inline void Column(void (*children)() = nullptr) { Column({}, children); }
 extern void Row(const RowStyle& style, const std::function<void()>& children = nullptr);
 inline void Row(const std::function<void()>& children = nullptr) { Row({}, children); }
@@ -168,7 +168,7 @@ extern void SizedBox(const SizedBoxStyle& style, const std::function<void()>& ch
 extern void Center(const std::function<void()>& children);
 
 // @modifiers
-extern void Transformed(const TransformStyle& style, void (*children)() = nullptr);
+extern void Transformed(const TransformStyle& style, const std::function<void()>& children = nullptr);
 extern void Expanded(const ExpandedStyle& style, const std::function<void()>& children = nullptr);
 inline void Expanded(const std::function<void()>& children = nullptr) { Expanded({}, children); }
 

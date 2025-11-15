@@ -404,6 +404,7 @@ inline i32 Clamp(i32 v, i32 min, i32 max) { return v < min ? min : v > max ? max
 inline u32 Clamp(u32 v, u32 min, u32 max) { return v < min ? min : v > max ? max : v; }
 inline f32 Clamp(f32 v, f32 min, f32 max) { return v < min ? min : v > max ? max : v; }
 inline f64 Clamp(f64 v, f64 min, f64 max) { return v < min ? min : v > max ? max : v; }
+inline f32 Clamp01(f32 v) { return Clamp(v, 0.0f, 1.0f); }
 
 constexpr Vec2Int RoundToNearest(const Vec2Int& v) {
     return { (i32)(v.x + 0.5f), (i32)(v.y + 0.5f) };

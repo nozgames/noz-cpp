@@ -4,6 +4,10 @@
 
 Animation** ANIMATION = nullptr;
 
+float GetDuration(Animation* animation) {
+    return static_cast<AnimationImpl*>(animation)->duration;
+}
+
 int GetBoneCount(Animation* animation) {
     return static_cast<AnimationImpl*>(animation)->bone_count;
 }
