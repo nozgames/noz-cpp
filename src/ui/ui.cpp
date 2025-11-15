@@ -892,17 +892,17 @@ static void HandleInput() {
 
             // Trigger on_enter when transitioning from not-hovered to hovered
             if (!was_hovered && is_hovered && m->style.on_enter) {
-                m->style.on_enter();
+                m->style.on_enter(m->style.user_data);
             }
 
             // Trigger on_exit when transitioning from hovered to not-hovered
             if (was_hovered && !is_hovered && m->style.on_exit) {
-                m->style.on_exit();
+                m->style.on_exit(m->style.user_data);
             }
 
             // Trigger on_hover every frame while hovered
             if (is_hovered && m->style.on_hover) {
-                m->style.on_hover();
+                m->style.on_hover(m->style.user_data);
             }
         }
 

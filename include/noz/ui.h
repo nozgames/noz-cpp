@@ -101,9 +101,10 @@ struct LabelStyle {
 
 struct MouseRegionStyle {
     // todo: cursor
-    void (*on_enter)() = nullptr;
-    void (*on_exit)() = nullptr;
-    void (*on_hover)() = nullptr;
+    void (*on_enter)(void*) = nullptr;
+    void (*on_exit)(void*) = nullptr;
+    void (*on_hover)(void*) = nullptr;
+    void* user_data;
 };
 
 struct ImageStyle {
