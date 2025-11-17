@@ -28,6 +28,7 @@ Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, 
     (void)name_table;
 
     AnimationImpl* impl = static_cast<AnimationImpl*>(Alloc(allocator, sizeof(AnimationImpl)));
+    impl->name = name;
 
     u8 bone_count = ReadU8(stream);
     u8 frame_count = ReadU8(stream);
