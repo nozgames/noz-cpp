@@ -21,9 +21,9 @@ struct SoundImpl : Sound
     platform::Sound* platform;
 };
 
-Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table)
-{
+Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
     (void)name_table;
+    (void)header;
 
     assert(stream);
     assert(name);

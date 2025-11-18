@@ -178,6 +178,10 @@ platform::Sound* platform::CreateSound(
     u32 channels,
     u32 bits_per_sample)
 {
+    (void)sample_rate;
+    (void)channels;
+    (void)bits_per_sample;
+
     assert(data);
     assert(data_size > 0);
     assert(sample_rate == g_wav_format.nSamplesPerSec);

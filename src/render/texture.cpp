@@ -124,6 +124,7 @@ static void LoadTextureInternal(TextureImpl* impl, Stream* stream, const Name* n
 
 Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
     (void)name_table;
+    (void)header;
 
     assert(stream);
     assert(name);

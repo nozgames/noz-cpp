@@ -12,8 +12,9 @@ struct PoolAllocatorImpl : PoolAllocator
     void* items;
 };
 
-static void* PoolAlloc(Allocator* a, u32 size)
-{
+static void* PoolAlloc(Allocator* a, u32 size) {
+    (void)size;
+
     assert(a);
 
     PoolAllocatorImpl* impl = static_cast<PoolAllocatorImpl*>(a);

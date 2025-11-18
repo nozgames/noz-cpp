@@ -124,16 +124,13 @@ void RemoveRange(List* list, const void* first, int count)
     impl->count -= count;
 }
 
-void RemoveAt(List* list, u32 index)
-{
+void RemoveAt(List* list, u32 index) {
     assert(list);
-    ListImpl* impl = static_cast<ListImpl*>(list);
-    assert(index < impl->count);
+    assert(index < static_cast<ListImpl*>(list)->count);
     RemoveRange(list, GetAt(list, index), 1);
 }
 
-void Clear(List* list)
-{
+void Clear(List* list) {
     assert(list);
     ListImpl* impl = static_cast<ListImpl*>(list);
     impl->count = 0;

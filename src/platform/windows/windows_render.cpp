@@ -400,6 +400,7 @@ static void CreateDescriptorSets() {
     SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.texture_descriptor_set, "Textures");
 }
 
+#if defined(_DEBUG)
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -428,6 +429,7 @@ static bool CheckValidationLayerSupport() {
     }
     return false;
 }
+#endif
 
 static std::vector<const char*> GetRequiredExtensions() {
     std::vector<const char*> extensions;
@@ -1058,6 +1060,8 @@ void RecreateSwapchainObjects() {
 }
 
 void ResizeVulkan(const Vec2Int& size) {
+    (void)size;
+
     assert(g_vulkan.device);
     assert(g_vulkan.hwnd);
     assert(g_vulkan.swapchain);

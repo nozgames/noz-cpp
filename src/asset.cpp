@@ -104,8 +104,11 @@ Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType
     return asset;
 }
 
-Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader) {
-    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, asset_name, asset_type);
+Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, const u8* data, u32 data_size) {
+    Stream* stream = data != nullptr
+        ? LoadStream(ALLOCATOR_SCRATCH, data, data_size)
+        : LoadAssetStream(ALLOCATOR_SCRATCH, asset_name, asset_type);
+
     if (!stream)
         return nullptr;
 
@@ -116,12 +119,12 @@ Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType
     return asset;
 }
 
-Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader) {
+Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, const u8* data, u32 data_size) {
     if (!asset_name || !loader)
         return nullptr;
 
     PushScratch();
-    Asset* asset = LoadAssetInternal(allocator, asset_name, asset_type, loader);
+    Asset* asset = LoadAssetInternal(allocator, asset_name, asset_type, loader, data, data_size);
     PopScratch();
 
     return asset;

@@ -16,7 +16,7 @@ struct Stream {};
 
 // @alloc
 Stream* CreateStream(Allocator* allocator, u32 capacity);
-Stream* LoadStream(Allocator* allocator, u8* data, u32 size);
+Stream* LoadStream(Allocator* allocator, const u8* data, u32 size);
 Stream* LoadStream(Allocator* allocator, const std::filesystem::path& path);
 
 // @file

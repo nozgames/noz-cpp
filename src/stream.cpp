@@ -47,9 +47,8 @@ Stream* CreateStream(Allocator* allocator, u32 capacity)
     return impl;
 }
 
-Stream* LoadStream(Allocator* allocator, uint8_t* data, u32 size)
-{
-    StreamImpl* impl = (StreamImpl*)CreateStream(allocator, size);
+Stream* LoadStream(Allocator* allocator, const u8* data, u32 size) {
+    StreamImpl* impl = static_cast<StreamImpl*>(CreateStream(allocator, size));
     if (!impl)
         return nullptr;
         
@@ -58,7 +57,7 @@ Stream* LoadStream(Allocator* allocator, uint8_t* data, u32 size)
     impl->size = size;
     impl->position = 0;
     
-    return (Stream*)impl;
+    return impl;
 }
 
 Stream* LoadStream(Allocator* allocator, const std::filesystem::path& path)
