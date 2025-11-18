@@ -5,6 +5,7 @@
 #include "editor/editor_client.h"
 #include "platform.h"
 #include <filesystem>
+#include <exception>
 #include <noz/rect.h>
 
 #include <cstdarg>
@@ -364,5 +365,5 @@ void ThrowError(const char* fmt, ...)
     Format(error_message, sizeof(error_message), fmt, args);
     va_end(args);
 
-    throw std::exception(error_message);
+    throw std::runtime_error(error_message);
 }
