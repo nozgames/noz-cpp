@@ -132,7 +132,7 @@ int Compare(const char* s1, const char* s2, bool ignore_case)
 #if defined(WIN32)
         return _stricmp(s1, s2);
 #else
-        return stricmp(s1, s2);
+        return strcasecmp(s1, s2);
 #endif
 
     return strcmp(s1, s2);
