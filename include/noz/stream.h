@@ -4,13 +4,7 @@
 
 #pragma once
 
-namespace std 
-{
-    namespace filesystem 
-    {
-        class path;
-    }
-}
+#include <filesystem>
 
 struct Stream {};
 
