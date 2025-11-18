@@ -71,7 +71,6 @@ struct ExpandedElement : Element {
 
 struct GestureDetectorElement : Element {
     GestureDetectorStyle style;
-    void* user_data;
 };
 
 struct GestureBlockerElement : Element {
