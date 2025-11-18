@@ -2,8 +2,6 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-#include <noz/rect.h>
-
 constexpr int MAX_ELEMENTS = 4096;
 constexpr int MAX_ELEMENT_STACK = 128;
 constexpr int MAX_TEXT_MESHES = 256;
@@ -45,7 +43,7 @@ struct Element {
     ElementType type;
     ElementState state;
     u32 index;
-    Rect rect;
+    noz::Rect rect;
     u32 child_count;
     Mat3 local_to_world;
     Mat3 world_to_local;
@@ -726,7 +724,7 @@ void RenderCanvas(Element* e){
     BindCamera(g_ui.camera);
 }
 
-static void RenderBackground(const Rect& rect, const Mat3& transform, const Color& color) {
+static void RenderBackground(const noz::Rect& rect, const Mat3& transform, const Color& color) {
     if (color.a <= 0.0f)
         return;
 

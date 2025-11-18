@@ -90,7 +90,7 @@ static MacOSApp g_macos = {};
     NSRect frame = [g_macos.window frame];
     // macOS coordinates are bottom-left origin, flip to top-left
     NSRect screenFrame = [[NSScreen mainScreen] frame];
-    g_macos.window_rect = RectInt{
+    g_macos.window_rect = noz::RectInt{
         static_cast<i32>(frame.origin.x),
         static_cast<i32>(screenFrame.size.height - frame.origin.y - frame.size.height),
         static_cast<i32>(frame.size.width),
@@ -350,7 +350,7 @@ void platform::Log(LogType type, const char* message)
     NSLog(@"%s", message);
 }
 
-RectInt platform::GetWindowRect()
+noz::RectInt platform::GetWindowRect()
 {
     return g_macos.window_rect;
 }

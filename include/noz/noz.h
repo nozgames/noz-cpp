@@ -41,3 +41,4 @@
 #include "core_events.h"
 #include "tween.h"
 #include "debug.h"
+#include "rect.h"

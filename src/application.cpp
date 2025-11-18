@@ -6,7 +6,6 @@
 #include "platform.h"
 #include <filesystem>
 #include <exception>
-#include <noz/rect.h>
 
 #include <cstdarg>
 
@@ -199,7 +198,7 @@ void ShutdownWindow()
 {
     assert(g_app.window_created);
 
-    RectInt window_rect = platform::GetWindowRect();
+    noz::RectInt window_rect = platform::GetWindowRect();
     SetPrefInt(GetName("window.x"), window_rect.x);
     SetPrefInt(GetName("window.y"), window_rect.y);
     SetPrefInt(GetName("window.width"), window_rect.width);

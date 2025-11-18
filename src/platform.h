@@ -40,7 +40,7 @@ namespace platform
     bool HasFocus();
     bool IsResizing();
     void Log(LogType type, const char* message);
-    RectInt GetWindowRect();
+    noz::RectInt GetWindowRect();
 
     // @render
     void BeginRenderFrame();
