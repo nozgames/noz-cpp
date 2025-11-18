@@ -42,6 +42,13 @@ static MTLSamplerAddressMode ToMetal(TextureClamp clamp) {
     return clamp == TEXTURE_CLAMP_REPEAT ? MTLSamplerAddressModeRepeat : MTLSamplerAddressModeClampToEdge;
 }
 
+static void CopyMat3ToGPU(void* dst, const Mat3& src) {
+    float *f = (float*)dst;
+    f[0] = src.m[0]; f[1] = src.m[1]; f[2] = src.m[2]; f[3] = 0.0f;
+    f[4] = src.m[3]; f[5] = src.m[4]; f[6] = src.m[5]; f[7] = 0.0f;
+    f[8] = src.m[6]; f[9] = src.m[7]; f[10]= src.m[8]; f[11]= 0.0f;
+}
+
 struct platform::Texture
 {
     id<MTLTexture> metal_texture;
@@ -201,12 +208,7 @@ void platform::BindTransform(const Mat3& transform, float depth, float depth_sca
         ObjectBuffer obj_buffer;
 
         // Copy transform matrix (3x3 stored as 3x4)
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                obj_buffer.transform[i * 4 + j] = transform.m[i][j];
-            }
-            obj_buffer.transform[i * 4 + 3] = 0.0f;
-        }
+        CopyMat3ToGPU(&obj_buffer.transform, transform);
 
         obj_buffer.depth = depth;
         obj_buffer.depth_scale = depth_scale;
@@ -312,12 +314,7 @@ void platform::BindCamera(const Mat3& view_matrix)
         } camera_buffer;
 
         // Copy view matrix
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                camera_buffer.view[i * 4 + j] = view_matrix.m[i][j];
-            }
-            camera_buffer.view[i * 4 + 3] = 0.0f;
-        }
+        CopyMat3ToGPU(&camera_buffer.view, view_matrix);
 
         MetalDynamicBuffer& uniform = g_renderer.uniform_buffers[UNIFORM_BUFFER_CAMERA];
         u32& offset = g_renderer.uniform_buffer_offsets[UNIFORM_BUFFER_CAMERA];
@@ -510,7 +507,7 @@ platform::Texture* platform::CreateTexture(
                                   bytesPerRow:width * 4];
             } else {
                 // Need to convert to RGBA
-                u8* rgba_data = (u8*)Alloc(ALLOCATOR_TEMP, width * height * 4);
+                u8* rgba_data = (u8*)Alloc(ALLOCATOR_SCRATCH, width * height * 4);
                 for (size_t i = 0; i < width * height; i++) {
                     u8* src = (u8*)data + i * channels;
                     u8* dst = rgba_data + i * 4;
@@ -537,10 +534,10 @@ platform::Texture* platform::CreateTexture(
 
         // Create sampler
         MTLSamplerDescriptor* samplerDesc = [MTLSamplerDescriptor new];
-        samplerDesc.minFilter = ToMetal(sampler_options.min_filter);
-        samplerDesc.magFilter = ToMetal(sampler_options.mag_filter);
-        samplerDesc.sAddressMode = ToMetal(sampler_options.clamp_u);
-        samplerDesc.tAddressMode = ToMetal(sampler_options.clamp_v);
+        samplerDesc.minFilter = ToMetal(sampler_options.filter);
+        samplerDesc.magFilter = ToMetal(sampler_options.filter);
+        samplerDesc.sAddressMode = ToMetal(sampler_options.clamp);
+        samplerDesc.tAddressMode = ToMetal(sampler_options.clamp);
 
         id<MTLSamplerState> metal_sampler = [ctx->device newSamplerStateWithDescriptor:samplerDesc];
 
@@ -624,7 +621,7 @@ platform::Shader* platform::CreateShader(
         pipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
 
         // Enable blending if needed
-        if (flags & SHADER_FLAG_BLEND) {
+        if (flags & SHADER_FLAGS_BLEND) {
             pipelineDesc.colorAttachments[0].blendingEnabled = YES;
             pipelineDesc.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
             pipelineDesc.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
