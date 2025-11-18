@@ -11,6 +11,7 @@ typedef u32 ShaderFlags;
 struct ApplicationTraits;
 struct MeshVertex;
 struct SamplerOptions;
+struct RectInt;
 
 namespace platform
 {

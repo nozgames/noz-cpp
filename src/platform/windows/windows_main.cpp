@@ -4,6 +4,7 @@
 
 #include "../../platform.h"
 #include <resource.h>
+#include <noz/rect.h>
 
 constexpr int INPUT_BUFFER_SIZE = 1024;
 

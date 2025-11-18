@@ -285,13 +285,6 @@ Vec3 ReadVec3(Stream* stream)
     return value;
 }
 
-Rect ReadRect(Stream* stream)
-{
-    Rect value;
-    ReadBytes(stream, &value, sizeof(Rect));
-    return value;
-}
-
 double ReadDouble(Stream* stream)
 {
     double value;
@@ -384,11 +377,6 @@ void WriteVec3(Stream* stream, const Vec3& value)
 void WriteVec2(Stream* stream, const Vec2& value)
 {
     WriteBytes(stream, &value, sizeof(Vec2));
-}
-
-void WriteRect(Stream* stream, const Rect& value)
-{
-    WriteBytes(stream, (void*)&value, sizeof(Rect));
 }
 
 void WriteDouble(Stream* stream, double value)

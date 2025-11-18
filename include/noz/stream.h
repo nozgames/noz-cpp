@@ -46,7 +46,6 @@ const Name* ReadName(Stream* stream);
 Color ReadColor(Stream* stream);
 Vec3 ReadVec3(Stream* stream);
 Vec2 ReadVec2(Stream* stream);
-Rect ReadRect(Stream* stream);
 void ReadBytes(Stream* stream, void* dest, u32 count);
 
 template <typename TStruct> TStruct ReadStruct(Stream* stream)
@@ -73,7 +72,6 @@ void WriteVec3(Stream* stream, const Vec3& value);
 void WriteVec2(Stream* stream, const Vec2& value);
 void WriteCSTR(Stream* stream, const char* format, ...); // Write formatted C string without length prefix
 void WriteColor(Stream* stream, Color value);
-void WriteRect(Stream* stream, const Rect& value);
 void WriteBytes(Stream* stream, const void* data, u32 size);
 
 template <typename TStruct> void WriteStruct(Stream* stream, const TStruct& value)

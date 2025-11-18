@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include <noz/rect.h>
+
 constexpr int MAX_ELEMENTS = 4096;
 constexpr int MAX_ELEMENT_STACK = 128;
 constexpr int MAX_TEXT_MESHES = 256;

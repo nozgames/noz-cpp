@@ -5,8 +5,8 @@
 #include "editor/editor_client.h"
 #include "platform.h"
 #include "platform/windows/windows_vulkan.h"
-#include <cstdio>
 #include <filesystem>
+#include <noz/rect.h>
 
 #include <cstdarg>
 

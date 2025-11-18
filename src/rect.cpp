@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include <noz/rect.h>
+
 Rect Intersection(const Rect& rect, const Rect& other)
 {
     f32 left = Max(rect.x, other.x);
