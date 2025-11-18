@@ -54,10 +54,9 @@ struct VfxEmitter
     int particle_count;
 };
 
-struct VfxInstance
-{
+struct VfxInstance {
     Vfx* vfx;
-    Vec2 position;
+    Mat3 transform;
     int emitter_count;
     bool loop;
     u32 version;
@@ -160,16 +159,16 @@ static void InstanceDestructor(void* ptr)
     g_vfx.instance_valid[GetIndex(i)] = false;
 }
 
-static VfxInstance* CreateInstance(Vfx* vfx, const Vec2& position)
+static VfxInstance* CreateInstance(Vfx* vfx, const Mat3& transform)
 {
     if (IsFull(g_vfx.instance_pool))
         return nullptr;
 
-    VfxInstance* instance = (VfxInstance*)Alloc(g_vfx.instance_pool, sizeof(VfxInstance), InstanceDestructor);
+    VfxInstance* instance = static_cast<VfxInstance*>(Alloc(g_vfx.instance_pool, sizeof(VfxInstance), InstanceDestructor));
     assert(instance);
-    instance->position = position;
+    instance->transform = transform;
     instance->vfx = vfx;
-    instance->loop = ((VfxImpl*)vfx)->loop;
+    instance->loop = static_cast<VfxImpl*>(vfx)->loop;
 
     g_vfx.instance_valid[GetIndex(instance)] = true;
     return instance;
@@ -200,7 +199,7 @@ static VfxParticle* EmitParticle(VfxEmitter* e)
     Vec2 dir(cos(angle), sin(angle));
 
     const VfxParticleDef& def = e->def->particle_def;
-    p->position = GetRandom(e->def->spawn) + i->position;
+    p->position = TransformVector(i->transform, GetRandom(e->def->spawn));
     p->size_start = GetRandom(def.size.start);
     p->size_end = GetRandom(def.size.end);
     p->opacity_curve = def.opacity.type;
@@ -264,20 +263,22 @@ static void UpdateParticles()
         p->rotation = Mix(p->rotation_start, p->rotation_end, EvaluateCurve(p->rotation_curve, t));
     }
 
-    for (int i=0; i<MAX_PARTICLES; i++)
-    {
+    for (int i=0; i<MAX_PARTICLES; i++) {
         if (!g_vfx.particle_valid[i])
             continue;
 
         VfxParticle* p = GetParticle(i);
         assert(p);
 
+        VfxInstance* instance = GetInstance(p->emitter_index);
+        assert(instance);
+
         float t = p->elapsed / p->lifetime;
         float size = Mix(p->size_start, p->size_end, EvaluateCurve(p->size_curve, t));
         float opacity = Mix(p->opacity_start, p->opacity_end, EvaluateCurve(p->opacity_curve, t));
         Color col = Mix(p->color_start, p->color_end, EvaluateCurve(p->color_curve, t));
 
-        BindTransform(p->position, Degrees(p->rotation), {size, size});
+        BindTransform(instance->transform * TRS(p->position, Degrees(p->rotation), {size, size}));
         BindColor(SetAlpha(col, opacity));
         BindMaterial(g_vfx.material);
         DrawMesh(g_vfx.meshes[VFX_MESH_SQUARE]);
@@ -286,7 +287,7 @@ static void UpdateParticles()
 
 static void EmitterDestructor(void* ptr)
 {
-    VfxEmitter* e = (VfxEmitter*)ptr;
+    VfxEmitter* e = static_cast<VfxEmitter*>(ptr);
     assert(e);
     assert(e->particle_count == 0);
     VfxInstance* i = GetInstance(e);
@@ -414,17 +415,15 @@ void DrawVfx()
     UpdateParticles();
 }
 
-VfxHandle Play(Vfx* vfx, const Vec2& position)
-{
+VfxHandle Play(Vfx* vfx, const Mat3& transform) {
     VfxImpl* impl = static_cast<VfxImpl*>(vfx);
     assert(impl);
 
-    VfxInstance* instance = CreateInstance(vfx, position);
+    VfxInstance* instance = CreateInstance(vfx, transform);
     if (!instance)
         return INVALID_VFX_HANDLE;
 
-    for (u32 i=0, c=impl->emitter_count; i<c; i++)
-    {
+    for (u32 i=0, c=impl->emitter_count; i<c; i++) {
         VfxEmitter* e = CreateEmitter(instance, impl->emitters[i]);
         if (!e)
             break;
@@ -436,6 +435,10 @@ VfxHandle Play(Vfx* vfx, const Vec2& position)
     }
 
     return GetHandle(instance);
+}
+
+VfxHandle Play(Vfx* vfx, const Vec2& position) {
+    return Play(vfx, Translate(position));
 }
 
 bool IsPlaying(const VfxHandle& handle)
@@ -518,10 +521,10 @@ void RestartVfx(Vfx* vfx)
         if (!instance)
             continue;
 
-        Vec2 position = instance->position;
+        Mat3 transform = instance->transform;
         Stop(GetHandle(instance));
 
-        Play(vfx, position);
+        Play(vfx, transform);
     }
 }
 #endif

@@ -195,8 +195,7 @@ bool platform::IsInputButtonDown(InputCode code) {
     return false;
 }
 
-float platform::GetInputAxisValue(InputCode code)
-{
+float platform::GetInputAxisValue(InputCode code) {
     // Handle mouse axes
     if (IsMouse(code) && IsAxis(code))
     {
@@ -211,8 +210,7 @@ float platform::GetInputAxisValue(InputCode code)
     }
 
     // Handle gamepad axes
-    if (IsGamepad(code) && IsAxis(code))
-    {
+    if (IsGamepad(code) && IsAxis(code)) {
         int gamepad_index = 0; // Default to any gamepad
 
         // Determine gamepad index

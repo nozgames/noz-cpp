@@ -54,17 +54,21 @@ static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
         BoneTransform* bt2 = frame2 + bone_index;
         BoneTransform frame_transform = Mix(*bt1, *bt2, t);
 
+        Vec2 frame_position = frame_transform.position;
+
         if (blend_frame1) {
             assert(blend_frame2);
             BoneTransform* bbt1 = blend_frame1 + bone_index;
             BoneTransform* bbt2 = blend_frame2 + bone_index;
             BoneTransform blend_frame = Mix(*bbt1, *bbt2, blend_frame_t);
-            if (blend_root_motion)
-                blend_frame.position = VEC2_ZERO;
+            if (blend_root_motion && bone_index == 0)
+                blend_frame.position.x = 0;
             frame_transform = Mix(blend_frame, frame_transform, blend_t);
         }
 
         if (bone_index == 0 && animator.root_motion) {
+            frame_transform.position = frame_position;
+
             if (setup) {
                 animator.root_motion_delta = VEC2_ZERO;
             } else if (frame_index1 >= layer.frame_index) {
@@ -116,7 +120,7 @@ void Stop(Animator& animator) {
     }
 }
 
-void Play(Animator& animator, Animation* animation, int layer_index, float speed) {
+void Play(Animator& animator, Animation* animation, int layer_index, float speed, float normalized_time) {
     assert(animator.skeleton);
     assert(GetBoneCount(animator.skeleton) == GetBoneCount(animation));
 
@@ -130,7 +134,7 @@ void Play(Animator& animator, Animation* animation, int layer_index, float speed
     layer.blend_loop = layer.loop;
     layer.animation = animation;
     layer.speed = speed;
-    layer.time = 0.0f;
+    layer.time = normalized_time * static_cast<AnimationImpl*>(animation)->duration;
     layer.loop = IsLooping(layer.animation);
     layer.playing = true;
 

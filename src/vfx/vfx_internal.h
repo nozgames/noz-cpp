@@ -78,8 +78,7 @@ struct VfxEmitterDef
     Vfx* vfx;
 };
 
-struct VfxImpl : Vfx
-{
+struct VfxImpl : Vfx {
     VfxFloat duration;
     VfxEmitterDef* emitters;
     u32 emitter_count;
