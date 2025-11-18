@@ -31,7 +31,7 @@ struct MacOSApp
     NSCursor* cursor_cross;
     NSCursor* cursor_move;
     SystemCursor cursor;
-    RectInt window_rect;
+    noz::RectInt window_rect;
 };
 
 static MacOSApp g_macos = {};
