@@ -69,7 +69,7 @@ static MacOSAudioSource* GetAudioSource(const platform::SoundHandle& handle)
     return &source;
 }
 
-static void AudioQueueOutputCallback(void* userData, AudioQueueRef queue, AudioQueueBufferRef buffer)
+static void AudioQueueOutputCallbackImpl(void* userData, AudioQueueRef queue, AudioQueueBufferRef buffer)
 {
     MacOSAudioSource* source = (MacOSAudioSource*)userData;
     if (!source || !source->is_playing)
@@ -171,7 +171,7 @@ platform::SoundHandle platform::PlaySound(Sound* sound, float volume, float pitc
         // Create audio queue
         OSStatus status = AudioQueueNewOutput(
             &format,
-            AudioQueueOutputCallback,
+            AudioQueueOutputCallbackImpl,
             &source,
             nullptr,
             nullptr,
@@ -204,7 +204,7 @@ platform::SoundHandle platform::PlaySound(Sound* sound, float volume, float pitc
         AudioQueueSetParameter(source.queue, kAudioQueueParam_PlayRate, source.pitch);
 
         // Prime the pump with initial buffer
-        AudioQueueOutputCallback(&source, source.queue, source.buffer);
+        AudioQueueOutputCallbackImpl(&source, source.queue, source.buffer);
 
         // Start playback
         AudioQueueStart(source.queue, nullptr);
