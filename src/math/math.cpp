@@ -72,5 +72,5 @@ Vec2 SmoothDamp(const Vec2& current, const Vec2& target, Vec2& current_velocity,
         current_velocity.y = (output_y - original_to.y) / delta_time;
     }
 
-    return Vec2(output_x, output_y);
+    return Vec2{output_x, output_y};
 }
