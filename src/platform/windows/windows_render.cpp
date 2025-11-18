@@ -5,6 +5,8 @@
 #include "../../platform.h"
 #include "windows_vulkan.h"
 
+struct Buffer {};
+
 enum UniformBufferType
 {
     UNIFORM_BUFFER_CAMERA,

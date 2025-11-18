@@ -17,7 +17,7 @@ namespace platform
 {
     struct Pipeline {};
     struct PipelineLayout {};
-    struct Buffer {};
+    struct Buffer;
     struct BufferMemory {};
     struct Shader;
     struct Image {};
