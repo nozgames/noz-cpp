@@ -4,6 +4,7 @@
 
 #include <mutex>
 #include <semaphore>
+#include <thread>
 
 constexpr int MAX_CONCURRENT_JOBS = 16;
 constexpr int MAX_JOBS = 1024;
