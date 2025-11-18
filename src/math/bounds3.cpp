@@ -15,7 +15,7 @@ Bounds3 ToBounds(const Vec3* positions, u32 count) {
         max_pos = Max(max_pos, positions[i]);
     }
 
-    return Bounds3(min_pos, max_pos);
+    return Bounds3{min_pos, max_pos};
 }
 
 bool Contains(const Bounds3& bounds, const Vec3& point)

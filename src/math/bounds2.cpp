@@ -16,7 +16,7 @@ Bounds2 ToBounds(const Vec2* positions, u32 count)
         max_pos = Max(max_pos, positions[i]);
     }
 
-    return Bounds2(min_pos, max_pos);
+    return Bounds2{min_pos, max_pos};
 }
 
 bool Contains(const Bounds2& bounds, const Vec2& point)
