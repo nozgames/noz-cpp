@@ -114,7 +114,7 @@ void UpdateButtonState(InputSetImpl* impl, InputCode code, bool new_state, bool 
 }
 
 float GetAxis(InputSet* set, InputCode code) {
-    if (!((InputSetImpl*)set)->active)
+    if (!static_cast<InputSetImpl*>(set)->active)
         return 0.0f;
     return platform::GetInputAxisValue(code);
 }

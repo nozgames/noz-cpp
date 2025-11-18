@@ -29,6 +29,7 @@ set(SOURCE_FILES
     src/memory/allocator.cpp
     src/memory/pool_allocator.cpp
     src/memory/arena_allocator.cpp
+    src/math/math.cpp
     src/math/transform.cpp
     src/math/perlin.cpp
     src/math/bounds2.cpp

@@ -101,6 +101,7 @@ namespace platform
     const TextInput& GetTextInput();
     void ClearTextInput();
     extern void SetTextInput(const TextInput& text_input);
+    bool IsGamepadActive();
 
     // @filesystem
     std::filesystem::path GetSaveGamePath();

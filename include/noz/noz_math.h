@@ -425,3 +425,8 @@ inline float EaseOut(float t, const std::function<float (float)>& func) { return
 inline float EaseOutQuadratic(float t) { return EaseOut(t, EaseQuadratic); }
 
 extern float PerlinNoise(const Vec2& Position);
+
+
+// @smooth
+extern float SmoothDamp(float current, float target, float& current_velocity, float smooth_time, float max_speed, float delta_time);
+extern Vec2 SmoothDamp(const Vec2& current, const Vec2& target, Vec2& current_velocity, float smooth_time, float max_speed, float delta_time);

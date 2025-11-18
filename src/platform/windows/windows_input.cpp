@@ -17,7 +17,9 @@ struct WindowsInput {
     int virtual_keys[INPUT_CODE_COUNT];
     XINPUT_STATE gamepad_states[XUSER_MAX_COUNT];
     bool gamepad_connected[XUSER_MAX_COUNT] = {0};
+    Vec2 gamepad_left_stick[XUSER_MAX_COUNT] = {0};
     TextInput text_input;
+    int active_controller;
 };
 
 static WindowsInput g_input = {};
@@ -119,6 +121,20 @@ static float NormalizeTrigger(BYTE trigger_value)
     return (trigger_value - XINPUT_GAMEPAD_TRIGGER_THRESHOLD) / (255.0f - XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
 }
 
+static InputCode GetLeftStickButton(int gamepad_index) {
+    const Vec2& stick = g_input.gamepad_left_stick[gamepad_index];
+    if (stick.y > 0.5f)
+        return GAMEPAD_LEFT_STICK_UP;
+    if (stick.y < -0.5f)
+        return GAMEPAD_LEFT_STICK_DOWN;
+    if (stick.x < -0.5f)
+        return GAMEPAD_LEFT_STICK_LEFT;
+    if (stick.x > 0.5f)
+        return GAMEPAD_LEFT_STICK_RIGHT;
+
+    return INPUT_CODE_NONE;
+}
+
 bool platform::IsInputButtonDown(InputCode code) {
     if (IsMouse(code) || IsKeyboard(code))
         return g_input.key_states[code];
@@ -129,35 +145,23 @@ bool platform::IsInputButtonDown(InputCode code) {
         WORD button_mask = 0;
 
         // Determine gamepad index and button mask
-        if (code >= GAMEPAD_A && code <= GAMEPAD_RIGHT_TRIGGER)
-        {
-            // Generic gamepad (use first connected)
-            for (int i = 0; i < XUSER_MAX_COUNT; i++)
-            {
-                if (g_input.gamepad_connected[i])
-                {
+        if (code >= GAMEPAD_A && code <= GAMEPAD_RIGHT_TRIGGER) {
+            for (int i = 0; i < XUSER_MAX_COUNT; i++) {
+                if (g_input.gamepad_connected[i]) {
                     gamepad_index = i;
                     break;
                 }
             }
-        }
-        else if (code >= GAMEPAD_1_A && code <= GAMEPAD_1_RIGHT_TRIGGER)
-        {
+        } else if (code >= GAMEPAD_1_A && code <= GAMEPAD_1_RIGHT_TRIGGER_BUTTON) {
             gamepad_index = 0;
             code = static_cast<InputCode>(code - GAMEPAD_1_A + GAMEPAD_A);
-        }
-        else if (code >= GAMEPAD_2_A && code <= GAMEPAD_2_RIGHT_TRIGGER)
-        {
+        } else if (code >= GAMEPAD_2_A && code <= GAMEPAD_2_RIGHT_TRIGGER) {
             gamepad_index = 1;
             code = static_cast<InputCode>(code - GAMEPAD_2_A + GAMEPAD_A);
-        }
-        else if (code >= GAMEPAD_3_A && code <= GAMEPAD_3_RIGHT_TRIGGER)
-        {
+        } else if (code >= GAMEPAD_3_A && code <= GAMEPAD_3_RIGHT_TRIGGER) {
             gamepad_index = 2;
             code = static_cast<InputCode>(code - GAMEPAD_3_A + GAMEPAD_A);
-        }
-        else if (code >= GAMEPAD_4_A && code <= GAMEPAD_4_RIGHT_TRIGGER)
-        {
+        } else if (code >= GAMEPAD_4_A && code <= GAMEPAD_4_RIGHT_TRIGGER) {
             gamepad_index = 3;
             code = static_cast<InputCode>(code - GAMEPAD_4_A + GAMEPAD_A);
         }
@@ -166,8 +170,7 @@ bool platform::IsInputButtonDown(InputCode code) {
             return false;
 
         // Map InputCode to XInput button
-        switch (code)
-        {
+        switch (code) {
             case GAMEPAD_A: button_mask = XINPUT_GAMEPAD_A; break;
             case GAMEPAD_B: button_mask = XINPUT_GAMEPAD_B; break;
             case GAMEPAD_X: button_mask = XINPUT_GAMEPAD_X; break;
@@ -186,6 +189,12 @@ bool platform::IsInputButtonDown(InputCode code) {
                 return g_input.gamepad_states[gamepad_index].Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD;
             case GAMEPAD_RIGHT_TRIGGER_BUTTON:
                 return g_input.gamepad_states[gamepad_index].Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD;
+            case GAMEPAD_LEFT_STICK_LEFT:
+            case GAMEPAD_LEFT_STICK_RIGHT:
+            case GAMEPAD_LEFT_STICK_UP:
+            case GAMEPAD_LEFT_STICK_DOWN:
+                return GetLeftStickButton(gamepad_index) == code;
+                break;
             default: return false;
         }
 
@@ -195,10 +204,28 @@ bool platform::IsInputButtonDown(InputCode code) {
     return false;
 }
 
+static bool WasGamepadUsed(int gamepad_index) {
+    const XINPUT_GAMEPAD& gamepad = g_input.gamepad_states[gamepad_index].Gamepad;
+
+    if (NormalizeStick(gamepad.sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) > F32_EPSILON)
+        return true;
+    if (NormalizeStick(gamepad.sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) > F32_EPSILON)
+        return true;
+    if (NormalizeStick(gamepad.sThumbRX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) > F32_EPSILON)
+        return true;
+    if (NormalizeStick(gamepad.sThumbRY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) > F32_EPSILON)
+        return true;
+    if (g_input.gamepad_states[gamepad_index].Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD)
+        return true;
+    if (g_input.gamepad_states[gamepad_index].Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD)
+        return true;
+
+    return false;
+}
+
 float platform::GetInputAxisValue(InputCode code) {
     // Handle mouse axes
-    if (IsMouse(code) && IsAxis(code))
-    {
+    if (IsMouse(code) && IsAxis(code)) {
         switch (code)
         {
             case MOUSE_X: return GetMousePosition().x;
@@ -252,8 +279,7 @@ float platform::GetInputAxisValue(InputCode code) {
 
         const XINPUT_GAMEPAD& gamepad = g_input.gamepad_states[gamepad_index].Gamepad;
 
-        switch (code)
-        {
+        switch (code) {
             case GAMEPAD_LEFT_STICK_X:
                 return NormalizeStick(gamepad.sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
             case GAMEPAD_LEFT_STICK_Y:
@@ -276,10 +302,7 @@ float platform::GetInputAxisValue(InputCode code) {
 
 
 void platform::UpdateInputState() {
-    // todo: limit to actual input set for performance.
-    
     if (!HasFocus()) {
-        // Clear all input states when window doesn't have focus
         for (int i = 0; i < INPUT_CODE_COUNT; i++)
             g_input.key_states[i] = false;
 
@@ -291,29 +314,44 @@ void platform::UpdateInputState() {
         return;
     }
 
-    // Update keyboard state
-    for (int i = 0; i < INPUT_CODE_COUNT; i++)
+    bool key_state_changed = false;
+    for (int i = 0; i < INPUT_CODE_COUNT; i++) {
+        bool old_state = g_input.key_states[i];
         g_input.key_states[i] = GetAsyncKeyState(g_input.virtual_keys[i]) < 0;
+        key_state_changed |= (old_state != g_input.key_states[i]);
+    }
 
-    // Update gamepad states
     for (int i = 0; i < XUSER_MAX_COUNT; i++) {
         XINPUT_STATE state;
         DWORD result = XInputGetState(i, &state);
             
-        if (result == ERROR_SUCCESS)
-        {
+        if (result == ERROR_SUCCESS) {
             g_input.gamepad_connected[i] = true;
             g_input.gamepad_states[i] = state;
-        }
-        else
-        {
+
+            g_input.gamepad_left_stick[i] = Vec2{
+                NormalizeStick(state.Gamepad.sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE),
+                NormalizeStick(state.Gamepad.sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE)
+            };
+
+            if (g_input.active_controller != i && WasGamepadUsed(i)) {
+                g_input.active_controller = i;
+            }
+
+        } else {
             g_input.gamepad_connected[i] = false;
+            if (g_input.active_controller == i) {
+                g_input.active_controller = -1;
+            }
         }
+    }
+
+    if (key_state_changed) {
+        g_input.active_controller = -1;
     }
 }
 
-void HandleInputCharacter(char c)
-{
+void HandleInputCharacter(char c) {
     if (!IsTextInputEnabled())
         return;
 
@@ -379,6 +417,10 @@ const TextInput& platform::GetTextInput()
 void platform::SetTextInput(const TextInput& text_input)
 {
     g_input.text_input = text_input;
+}
+
+bool platform::IsGamepadActive() {
+    return g_input.active_controller != -1;
 }
 
 void platform::InitializeInput()
