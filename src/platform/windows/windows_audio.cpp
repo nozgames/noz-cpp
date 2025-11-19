@@ -32,9 +32,12 @@ struct WindowsAudio
 {
     IXAudio2* xaudio2;
     IXAudio2MasteringVoice* mastering_voice;
+    IXAudio2SubmixVoice* music_submix_voice;
+    IXAudio2SourceVoice* music_source_voice;
     X3DAUDIO_HANDLE instance;
     WindowsAudioSource sources[MAX_SOURCES];
     u32 next_source_id = 0;
+    u32 music_generation;
     float master_volume;
     float sound_volume;
     float music_volume;
@@ -79,8 +82,7 @@ static WindowsAudioSource* GetAudioSource(const platform::SoundHandle& handle)
     return &source;
 }
 
-void platform::StopSound(const SoundHandle& handle)
-{
+void platform::StopSound(const SoundHandle& handle) {
     WindowsAudioSource* source = GetAudioSource(handle);
     if (!source)
         return;
@@ -108,8 +110,7 @@ float platform::GetSoundVolume(const SoundHandle& handle)
     return source->volume;
 }
 
-bool platform::IsSoundPlaying(const SoundHandle& handle)
-{
+bool platform::IsSoundPlaying(const SoundHandle& handle) {
     u32 source_index = GetSourceIndex(handle);
     u32 source_generation = GetSourceGeneration(handle);
     assert(source_index < MAX_SOURCES);
@@ -158,26 +159,67 @@ platform::SoundHandle platform::PlaySound(Sound* sound, float volume, float pitc
     return MakeSoundHandle(0, 0xFFFFFFFF);
 }
 
-static void UpdateMasteringVoiceVolume() {
+void platform::PlayMusic(Sound* sound) {
+    assert(g_win_audio.music_source_voice);
+
+    WindowsSound* wsound = (WindowsSound*)sound;
+
+    // Stop current music if playing
+    g_win_audio.music_source_voice->Stop();
+    g_win_audio.music_source_voice->FlushSourceBuffers();
+
+    XAUDIO2_BUFFER buffer = {};
+    buffer.AudioBytes = wsound->buffer_size;
+    buffer.pAudioData = (const BYTE*)(wsound+1);
+    buffer.Flags = XAUDIO2_END_OF_STREAM;
+    buffer.LoopCount = XAUDIO2_LOOP_INFINITE;
+
+    g_win_audio.music_source_voice->SubmitSourceBuffer(&buffer);
+    g_win_audio.music_source_voice->SetVolume(1.0f);
+    g_win_audio.music_source_voice->SetFrequencyRatio(1.0f);
+    g_win_audio.music_source_voice->Start(0);
+}
+
+bool platform::IsMusicPlaying() {
+    assert(g_win_audio.music_source_voice);
+
+    XAUDIO2_VOICE_STATE state;
+    g_win_audio.music_source_voice->GetState(&state);
+    return state.BuffersQueued > 0;
+}
+
+void platform::StopMusic() {
+    assert(g_win_audio.music_source_voice);
+
+    g_win_audio.music_source_voice->Stop();
+    g_win_audio.music_source_voice->FlushSourceBuffers();
+}
+
+static void UpdateVolume() {
     assert(g_win_audio.mastering_voice);
     g_win_audio.mastering_voice->SetVolume(g_win_audio.master_volume * g_win_audio.sound_volume);
+
+    if (g_win_audio.music_submix_voice) {
+        g_win_audio.music_submix_voice->SetVolume(g_win_audio.master_volume * g_win_audio.music_volume);
+    }
 }
 
 void platform::SetMasterVolume(float volume) {
     assert(g_win_audio.mastering_voice);
     g_win_audio.master_volume = Clamp(volume, 0.0f, 1.0f);
-    UpdateMasteringVoiceVolume();
+    UpdateVolume();
 }
 
 void platform::SetSoundVolume(float volume) {
     assert(g_win_audio.mastering_voice);
     g_win_audio.sound_volume = Clamp(volume, 0.0f, 1.0f);
-    UpdateMasteringVoiceVolume();
+    UpdateVolume();
 }
 
 void platform::SetMusicVolume(float volume) {
-    assert(g_win_audio.mastering_voice);
+    assert(g_win_audio.music_submix_voice);
     g_win_audio.music_volume = Clamp(volume, 0.0f, 1.0f);
+    UpdateVolume();
 }
 
 float platform::GetMasterVolume() {
@@ -267,6 +309,33 @@ void platform::InitializeAudio()
         return;
     }
 
+    // Music submix voice
+    hr = g_win_audio.xaudio2->CreateSubmixVoice(&g_win_audio.music_submix_voice, 1, 44100, 0, 0, nullptr, nullptr);
+    if (FAILED(hr))
+    {
+        LogError("Failed to create music submix voice");
+        g_win_audio.mastering_voice->DestroyVoice();
+        g_win_audio.xaudio2->Release();
+        g_win_audio.xaudio2 = nullptr;
+        CoUninitialize();
+        return;
+    }
+
+    // Music source voice (routes to submix)
+    XAUDIO2_SEND_DESCRIPTOR music_send_descriptor = { 0, g_win_audio.music_submix_voice };
+    XAUDIO2_VOICE_SENDS music_send_list = { 1, &music_send_descriptor };
+    hr = g_win_audio.xaudio2->CreateSourceVoice(&g_win_audio.music_source_voice, &g_wav_format, 0, 2.0f, nullptr, &music_send_list, nullptr);
+    if (FAILED(hr))
+    {
+        LogError("Failed to create music source voice");
+        g_win_audio.music_submix_voice->DestroyVoice();
+        g_win_audio.mastering_voice->DestroyVoice();
+        g_win_audio.xaudio2->Release();
+        g_win_audio.xaudio2 = nullptr;
+        CoUninitialize();
+        return;
+    }
+
     // Sources
     for (int i=0; i<MAX_SOURCES; i++)
     {
@@ -291,6 +360,15 @@ void platform::ShutdownAudio()
         source.voice->Stop();
         source.voice->DestroyVoice();
     }
+
+    if (g_win_audio.music_source_voice)
+    {
+        g_win_audio.music_source_voice->Stop();
+        g_win_audio.music_source_voice->DestroyVoice();
+    }
+
+    if (g_win_audio.music_submix_voice)
+        g_win_audio.music_submix_voice->DestroyVoice();
 
     if (g_win_audio.mastering_voice)
         g_win_audio.mastering_voice->DestroyVoice();

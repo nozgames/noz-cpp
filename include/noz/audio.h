@@ -11,6 +11,9 @@ struct SoundHandle {
 };
 
 extern SoundHandle Play(Sound* sound, float volume = 1.0f, float pitch = 1.0f, bool loop=false);
+extern void PlayMusic(Sound* sound);
+extern void StopMusic();
+extern bool IsMusicPlaying();
 extern void SetVolume(const SoundHandle& handle, float volume);
 extern void SetPitch(const SoundHandle& handle, float pitch);
 extern float GetVolume(const SoundHandle& handle);

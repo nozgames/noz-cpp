@@ -7,19 +7,18 @@
 
 Sound** SOUND = nullptr;
 
-struct SoundHeader
-{
+struct SoundHeader {
     u32 sample_rate;
     u32 channels;
     u32 bits_per_sample;
     u32 data_size;
 };
 
-struct SoundImpl : Sound
-{
+struct SoundImpl : Sound {
     SoundHeader header;
     platform::Sound* platform;
 };
+
 
 Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
     (void)name_table;
@@ -69,14 +68,12 @@ void SetSoundVolume(const SoundHandle& handle, float volume)
     platform::SetSoundVolume({handle.value}, volume);
 }
 
-SoundHandle Play(Sound* sound, float volume, float pitch, bool loop)
-{
+SoundHandle Play(Sound* sound, float volume, float pitch, bool loop) {
     SoundImpl* impl = (SoundImpl*)sound;
     platform::SoundHandle handle = platform::PlaySound(impl->platform, volume, pitch, loop);
     return { handle.value };
 }
 
-void Stop(const SoundHandle& handle)
-{
-    platform::StopSound({handle.value});
+void PlayMusicInternal(Sound* sound) {
+    platform::PlayMusic(static_cast<SoundImpl*>(sound)->platform);
 }

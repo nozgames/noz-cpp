@@ -113,6 +113,9 @@ namespace platform
     Sound* CreateSound(void* data, u32 data_size, u32 sample_rate, u32 channels, u32 bits_per_sample);
     void DestroySound(Sound*);
     SoundHandle PlaySound(Sound* sound, float volume, float pitch, bool loop);
+    void PlayMusic(Sound* sound);
+    bool IsMusicPlaying();
+    void StopMusic();
     void StopSound(const SoundHandle& handle);
     void SetSoundVolume(const SoundHandle& handle, float volume);
     void SetSoundPitch(const SoundHandle& handle, float pitch);
