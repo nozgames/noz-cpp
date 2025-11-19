@@ -120,7 +120,11 @@ namespace platform
     float GetSoundVolume(const SoundHandle& handle);
     float GetSoundPitch(const SoundHandle& handle);
     void SetMasterVolume(float volume);
+    void SetSoundVolume(float volume);
+    void SetMusicVolume(float volume);
     float GetMasterVolume();
+    float GetSoundVolume();
+    float GetMusicVolume();
 
     // @thread
     void SetThreadName(const char* name);

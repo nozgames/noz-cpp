@@ -21,8 +21,7 @@ const WAVEFORMATEX g_wav_format = {
     0                   // cbSize
 };
 
-struct WindowsAudioSource
-{
+struct WindowsAudioSource {
     IXAudio2SourceVoice* voice;
     float volume;
     float pitch;
@@ -36,6 +35,9 @@ struct WindowsAudio
     X3DAUDIO_HANDLE instance;
     WindowsAudioSource sources[MAX_SOURCES];
     u32 next_source_id = 0;
+    float master_volume;
+    float sound_volume;
+    float music_volume;
 };
 
 struct WindowsSound
@@ -156,19 +158,41 @@ platform::SoundHandle platform::PlaySound(Sound* sound, float volume, float pitc
     return MakeSoundHandle(0, 0xFFFFFFFF);
 }
 
-void platform::SetMasterVolume(float volume)
-{
+static void UpdateMasteringVoiceVolume() {
     assert(g_win_audio.mastering_voice);
-    g_win_audio.mastering_voice->SetVolume(Clamp(volume, 0.0f, 1.0f));
+    g_win_audio.mastering_voice->SetVolume(g_win_audio.master_volume * g_win_audio.sound_volume);
 }
 
-float platform::GetMasterVolume()
-{
+void platform::SetMasterVolume(float volume) {
     assert(g_win_audio.mastering_voice);
+    g_win_audio.master_volume = Clamp(volume, 0.0f, 1.0f);
+    UpdateMasteringVoiceVolume();
+}
 
-    float volume;
-    g_win_audio.mastering_voice->GetVolume(&volume);
-    return volume;
+void platform::SetSoundVolume(float volume) {
+    assert(g_win_audio.mastering_voice);
+    g_win_audio.sound_volume = Clamp(volume, 0.0f, 1.0f);
+    UpdateMasteringVoiceVolume();
+}
+
+void platform::SetMusicVolume(float volume) {
+    assert(g_win_audio.mastering_voice);
+    g_win_audio.music_volume = Clamp(volume, 0.0f, 1.0f);
+}
+
+float platform::GetMasterVolume() {
+    assert(g_win_audio.mastering_voice);
+    return g_win_audio.master_volume;
+}
+
+float platform::GetSoundVolume() {
+    assert(g_win_audio.mastering_voice);
+    return g_win_audio.sound_volume;
+}
+
+float platform::GetMusicVolume() {
+    assert(g_win_audio.mastering_voice);
+    return g_win_audio.music_volume;
 }
 
 platform::Sound* platform::CreateSound(
@@ -194,8 +218,7 @@ platform::Sound* platform::CreateSound(
     return (Sound*)sound;
 }
 
-void platform::DestroySound(Sound* sound)
-{
+void platform::DestroySound(Sound* sound) {
     Free(sound);
 }
 
@@ -213,9 +236,13 @@ source.buffer.LoopCount = 0;
 
 void platform::InitializeAudio()
 {
+    g_win_audio = {};
+    g_win_audio.sound_volume = 1.0f;
+    g_win_audio.master_volume = 1.0f;
+    g_win_audio.music_volume = 1.0f;
+
     HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-    if (FAILED(hr))
-    {
+    if (FAILED(hr)) {
         LogError("Failed to initialize COM for audio");
         return;
     }

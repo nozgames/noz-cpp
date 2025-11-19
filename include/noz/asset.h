@@ -59,12 +59,12 @@ Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, cons
 Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 
-#if defined(DEBUG)
-#define NOZ_ASSET_DATA(name) nullptr
-#define NOZ_ASSET_DATA_SIZE(name) 0
-#else
+#ifdef NDEBUG
 #define NOZ_ASSET_DATA(name) name ## _DATA
 #define NOZ_ASSET_DATA_SIZE(name) (u32)(sizeof(NOZ_ASSET_DATA(name)))
+#else
+#define NOZ_ASSET_DATA(name) nullptr
+#define NOZ_ASSET_DATA_SIZE(name) 0
 #endif
 
 // @macros
