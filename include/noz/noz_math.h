@@ -282,6 +282,7 @@ extern Vec2 GetRight(const Mat3& m);
 inline Vec3 XZ(const Vec2& v) { return {v.x, 0.0f, v.y}; }
 inline Vec3 XY(const Vec2& v) { return {v.x, v.y, 0.0f}; }
 inline Vec2 operator+(const Vec2& v1, const Vec2& v2) { return Vec2{ v1.x + v2.x, v1.y + v2.y }; }
+
 inline Vec2 operator-(const Vec2& v1, const Vec2& v2) { return Vec2{ v1.x - v2.x, v1.y - v2.y }; }
 inline Vec2 operator*(const Vec2& v, f32 s) { return Vec2{ v.x * s, v.y * s }; }
 inline Vec2 operator*(const Vec2& v1, const Vec2& v2) { return Vec2{ v1.x * v2.x, v1.y * v2.y }; }

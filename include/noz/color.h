@@ -123,6 +123,7 @@ constexpr Color Color32ToColor(u32 rgba) {
 constexpr Color COLOR_BLACK = {0.0f, 0.0f, 0.0f, 1.0f};
 constexpr Color COLOR_WHITE = {1.0f, 1.0f, 1.0f, 1.0f};
 constexpr Color COLOR_RED = {1.0f, 0.0f, 0.0f, 1.0f};
+constexpr Color COLOR_YELLOW = {1.0f, 1.0f, 0.0f, 1.0f};
 constexpr Color COLOR_PURPLE = {1.0f, 0.0f, 1.0f, 1.0f};
 constexpr Color COLOR_GREEN = {0.0f, 1.0f, 0.0f, 1.0f};
 constexpr Color COLOR_BLUE = {0.0f, 0.0f, 1.0f, 1.0f};
