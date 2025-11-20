@@ -2,7 +2,7 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-float SignedAngleDelta(const Vec2& a, const Vec2&b) {
+float AngleDelta(const Vec2& a, const Vec2&b) {
     float angle_a = atan2f(a.y, a.x);
     float angle_b = atan2f(b.y, b.x);
     float delta = angle_b - angle_a;
@@ -15,14 +15,11 @@ float SignedAngleDelta(const Vec2& a, const Vec2&b) {
     return Degrees(delta);
 }
 
-float SignedAngleDelta(float a, float b) {
-    float delta = Radians(a) - Radians(b);
-    if (delta > noz::PI)
-        delta -= noz::TWO_PI;
-    else if (delta < -noz::PI)
-        delta += noz::TWO_PI;
-
-    return Degrees(delta);
+float AngleDelta(float a, float b) {
+    float delta = Repeat((b - a), 360.0f);
+    if (delta > 180.0F)
+        delta -= 360.0F;
+    return delta;
 }
 
 float NormalizeAngle(float angle) {
@@ -38,5 +35,5 @@ float NormalizeAngle180(float angle) {
 }
 
 float MixAngle(float a, float b, float t) {
-    return a + Mix(0, SignedAngleDelta(b,a), t);
+    return a + Mix(0, AngleDelta(a,b), t);
 }

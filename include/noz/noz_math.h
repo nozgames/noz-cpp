@@ -211,6 +211,7 @@ constexpr u32 U32_MIN = 0;
 constexpr Bounds2 BOUNDS2_ZERO = { VEC2_ZERO, VEC2_ZERO };
 
 // @float
+extern float Repeat(float t, float length);
 inline f32 Floor(f32 v2) { return floorf(v2); }
 inline i32 FloorToInt(f32 v2) { return static_cast<int>(floorf(v2)); }
 inline f32 Ceil(f32 v2) { return ceilf(v2); }
@@ -375,8 +376,8 @@ inline Bounds2 Translate(const Bounds2& b, const Vec2& translation) { return Bou
 
 // @angle
 extern float MixAngle(float a, float b, float t);
-extern float SignedAngleDelta(const Vec2& a, const Vec2&b);
-extern float SignedAngleDelta(float a, float b);
+extern float AngleDelta(const Vec2& a, const Vec2&b);
+extern float AngleDelta(float a, float b);
 extern float NormalizeAngle(float angle);
 extern float NormalizeAngle180(float angle);
 inline float Radians(float degrees) { return degrees * noz::PI / 180.0f; }

@@ -2,6 +2,10 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+float Repeat(float t, float length) {
+    return Clamp(t - Floor(t / length) * length, 0.0f, length);
+}
+
 float SmoothDamp(float current, float target, float& current_velocity, float smooth_time, float max_speed, float delta_time) {
     smooth_time = Max(0.0001f, smooth_time);
     float omega = 2.0f / smooth_time;

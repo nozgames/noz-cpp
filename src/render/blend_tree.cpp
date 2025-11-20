@@ -31,6 +31,8 @@ void Update(BlendTree& blend_tree, float time_scale, Animator& animator) {
 
         BoneTransform bt = {};
         Vec2 root_motion_delta = VEC2_ZERO;
+        float base_rotation = 0.0f;
+        bool first = true;
         for (int i=0; i<blend_tree.blend_count; i++) {
             BlendTreeBlend& blend = blend_tree.blends[i];
             float weight = Clamp(1.0f - Abs(blend.value - blend_tree.value), 0.0f, 1.0f);
@@ -39,7 +41,17 @@ void Update(BlendTree& blend_tree, float time_scale, Animator& animator) {
 
             BoneTransform bone_transform = blend.animator.transforms[bone_index];
             bt.position += bone_transform.position * weight;
-            bt.rotation += bone_transform.rotation * weight;
+
+            // Blend rotation using shortest angle
+            if (first) {
+                base_rotation = bone_transform.rotation;
+                bt.rotation = bone_transform.rotation * weight;
+                first = false;
+            } else {
+                float angle_diff = AngleDelta(base_rotation, bone_transform.rotation);
+                bt.rotation += (base_rotation + angle_diff) * weight;
+            }
+
             bt.scale += bone_transform.scale * weight;
 
             if (bone_index == 0)
