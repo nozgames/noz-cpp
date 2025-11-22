@@ -61,6 +61,7 @@ set(SOURCE_FILES
     src/render/animation.cpp
     src/render/animator.cpp
     src/render/blend_tree.cpp
+    src/render/animated_mesh.cpp
     src/stream.cpp
     src/time.cpp
     src/text.cpp

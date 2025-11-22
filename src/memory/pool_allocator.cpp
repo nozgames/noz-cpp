@@ -71,13 +71,11 @@ static void PoolClear(Allocator* a)
 }
 
 
-PoolAllocator* CreatePoolAllocator(u32 item_size, u32 capacity)
-{
-    // The Alloc function will request extra space for the AllocHeader so prepare for it.
+PoolAllocator* CreatePoolAllocator(u32 item_size, u32 capacity) {
     item_size += sizeof(AllocHeader);
 
     u32 alloc_size = sizeof(PoolAllocatorImpl) + (item_size + sizeof(bool)) * capacity;
-    PoolAllocatorImpl* impl = (PoolAllocatorImpl*)calloc(1, alloc_size);
+    PoolAllocatorImpl* impl = static_cast<PoolAllocatorImpl*>(calloc(1, alloc_size));
     impl->alloc = PoolAlloc;
     impl->free = PoolFree;
     impl->realloc = PoolRealloc;

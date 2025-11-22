@@ -92,12 +92,11 @@ extern Color24 color24_red;
 extern Color24 color24_green;
 extern Color24 color24_blue;
 
-constexpr f32 COLOR_UV_ATLAS_WIDTH = 128;
-constexpr f32 COLOR_UV_ATLAS_HEIGHT = 128;
+constexpr f32 COLOR_UV_ATLAS_WIDTH = 512;
+constexpr f32 COLOR_UV_ATLAS_HEIGHT = 16;
 constexpr f32 COLOR_UV_SIZE = 8;
 
-constexpr Vec2 ColorUV(int col, int row)
-{
+constexpr Vec2 ColorUV(int col, int row) {
     return {
         ((f32)col * COLOR_UV_SIZE + COLOR_UV_SIZE * 0.5f) / COLOR_UV_ATLAS_WIDTH,
         ((f32)row * COLOR_UV_SIZE + COLOR_UV_SIZE * 0.5f) / COLOR_UV_ATLAS_HEIGHT

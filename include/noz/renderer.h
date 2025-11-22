@@ -5,6 +5,7 @@
 #pragma once
 
 constexpr u32 MAX_UNIFORM_BUFFER_SIZE = sizeof(Mat4);
+constexpr int ANIMATED_MESH_MAX_FRAMES = 32;
 
 // @types
 struct Camera {};
@@ -13,6 +14,7 @@ struct Material : Asset {};
 struct Font : Asset {};
 struct Shader : Asset {};
 struct Skeleton : Asset {};
+struct AnimatedMesh : Asset {};
 struct MeshBuilder {};
 struct Animator;
 
@@ -85,6 +87,11 @@ extern Vec2 GetSize(Mesh* mesh);
 extern bool OverlapPoint(Mesh* mesh, const Vec2& overlap_point);
 extern bool IsUploaded(Mesh* mesh);
 
+// @animated_mesh
+extern AnimatedMesh* CreateAnimatedMesh(Allocator* allocator, const Name* name, int frame_count, Mesh** frames);
+extern int GetFrameCount(AnimatedMesh* mesh);
+extern Mesh* GetFrame(AnimatedMesh* mesh, int frame_index);
+
 // @mesh_builder
 extern MeshBuilder* CreateMeshBuilder(Allocator* allocator, u16 max_vertices, u16 max_indices);
 extern void Clear(MeshBuilder* builder);
@@ -156,6 +163,8 @@ extern void DrawMesh(Mesh* mesh);
 extern void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index);
 extern void DrawMesh(Mesh* mesh, const Mat3& transform);
 
+extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, int frame_index);
+
 // @font
 struct FontGlyph {
     Vec2 uv_min;
@@ -210,3 +219,4 @@ extern Font** FONT;
 extern Texture** TEXTURE;
 extern Shader** SHADER;
 extern Skeleton** SKELETON;
+extern AnimatedMesh** ANIMATEDMESH;
