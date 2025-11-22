@@ -234,6 +234,9 @@ void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_in
 }
 
 void DrawMesh(Mesh* mesh, const Mat3& transform) {
+    if (!mesh)
+        return;
+
     BindTransform(transform);
     DrawMesh(mesh);
 }

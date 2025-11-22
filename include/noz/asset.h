@@ -16,6 +16,7 @@ enum AssetType {
     ASSET_TYPE_TEXTURE,
     ASSET_TYPE_FONT,
     ASSET_TYPE_SHADER,
+    ASSET_TYPE_ANIMATED_MESH,
     ASSET_TYPE_COUNT,
 };
 
@@ -58,6 +59,7 @@ Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const 
 Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+Asset* LoadAnimatedMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 
 // @macros
 #define NOZ_LOAD_SHADER(allocator, path, member) \
@@ -84,11 +86,14 @@ Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, 
 #define NOZ_LOAD_ANIMATION(allocator, path, member) \
     member = (Animation*)LoadAsset(allocator, path, ASSET_TYPE_ANIMATION, LoadAnimation);
 
+#define NOZ_LOAD_ANIMATED_MESH(allocator, path, member) \
+    member = (Animation*)LoadAsset(allocator, path, ASSET_TYPE_ANIMATED_MESH, LoadAnimatedMesh);
 
 #define NOZ_RELOAD_FONT(asset_name, asset)
 #define NOZ_RELOAD_SOUND(asset_name, asset)
 #define NOZ_RELOAD_SKELETON(asset_name, asset)
 #define NOZ_RELOAD_ANIMATION(asset_name, asset)
+#define NOZ_RELOAD_ANIMATED_MESH(asset_name, asset)
 
 #ifdef NOZ_EDITOR
 void ReloadAsset(const Name* name, AssetType asset_type, Asset* asset, void (*reload)(Asset*, Stream*, const AssetHeader& header, const Name** name_table));

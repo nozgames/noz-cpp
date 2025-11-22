@@ -111,6 +111,8 @@ struct ImageStyle {
     Color color = COLOR_WHITE;
     AnimatedColorFunc color_func = nullptr;
     void* color_func_user_data = nullptr;
+    Vec2 uv = VEC2_ZERO;
+    Vec2 st = VEC2_ONE;
 };
 
 struct BorderStyle {

@@ -13,6 +13,7 @@ struct Material : Asset {};
 struct Font : Asset {};
 struct Shader : Asset {};
 struct Skeleton : Asset {};
+struct AnimatedMesh : Asset {};
 struct MeshBuilder {};
 struct Animator;
 
@@ -210,3 +211,4 @@ extern Font** FONT;
 extern Texture** TEXTURE;
 extern Shader** SHADER;
 extern Skeleton** SKELETON;
+extern AnimatedMesh** ANIMATED_MESH;
