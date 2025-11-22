@@ -196,7 +196,7 @@ static VfxParticle* EmitParticle(VfxEmitter* e)
     assert(i);
 
     float angle = Radians(GetRandom(e->def->angle));
-    Vec2 dir(cos(angle), sin(angle));
+    Vec2 dir { Cos(angle), Sin(angle) };
 
     const VfxParticleDef& def = e->def->particle_def;
     p->position = TransformVector(i->transform, GetRandom(e->def->spawn));

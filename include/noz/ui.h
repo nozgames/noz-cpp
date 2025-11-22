@@ -83,13 +83,22 @@ struct ExpandedStyle {
 
 struct TapDetails {
     Vec2 position;
+    void* user_data;
+    int id;
+};
+
+struct DragDetails {
+    void* user_data;
+    int id;
 };
 
 struct GestureDetectorStyle {
-    void (*on_tap)(const TapDetails& details, void* user_data) = nullptr;
-    void (*on_tap_down)(void* user_data) = nullptr;
-    void (*on_tap_up)(void* user_data) = nullptr;
+    void (*on_tap)(const TapDetails& details);
+    void (*on_tap_down)(const TapDetails& details);
+    void (*on_tap_up)(const TapDetails& details);
+    void (*on_drag)(const DragDetails& details);
     void* user_data;
+    int id;
 };
 
 struct LabelStyle {
@@ -97,6 +106,7 @@ struct LabelStyle {
     int font_size = 16;
     Color color = COLOR_WHITE;
     Alignment align = ALIGNMENT_TOP_LEFT;
+    Material* material;
 };
 
 struct MouseRegionStyle {

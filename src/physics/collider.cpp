@@ -121,7 +121,7 @@ bool Raycast(Collider* colider, const Vec2& origin, const Vec2& dir, float dista
                 result->fraction = fraction;
 
                 Vec2 edge = v2 - v1;
-                result->normal = Normalize(Vec2(-edge.y, edge.x));
+                result->normal = Normalize(Vec2{-edge.y, edge.x});
             }
         }
 

@@ -4,9 +4,8 @@
 
 #include "editor/editor_client.h"
 #include "platform.h"
-#include "platform/windows/windows_vulkan.h"
-#include <cstdio>
 #include <filesystem>
+#include <exception>
 
 #include <cstdarg>
 
@@ -199,7 +198,7 @@ void ShutdownWindow()
 {
     assert(g_app.window_created);
 
-    RectInt window_rect = platform::GetWindowRect();
+    noz::RectInt window_rect = platform::GetWindowRect();
     SetPrefInt(GetName("window.x"), window_rect.x);
     SetPrefInt(GetName("window.y"), window_rect.y);
     SetPrefInt(GetName("window.width"), window_rect.width);
@@ -365,5 +364,5 @@ void ThrowError(const char* fmt, ...)
     Format(error_message, sizeof(error_message), fmt, args);
     va_end(args);
 
-    throw std::exception(error_message);
+    throw std::runtime_error(error_message);
 }

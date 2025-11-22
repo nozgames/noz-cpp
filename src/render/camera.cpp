@@ -289,7 +289,7 @@ Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos)
     Vec3 worldPos = impl->inv_view * Vec3{ndc.x, ndc.y, 1.0f};
 
     // Return as Vec2 (assuming homogeneous coordinate is 1)
-    return Vec2(worldPos.x / worldPos.z, worldPos.y / worldPos.z);
+    return Vec2{worldPos.x / worldPos.z, worldPos.y / worldPos.z};
 }
 
 Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos)
@@ -297,7 +297,7 @@ Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos)
     CameraImpl* impl = UpdateIfDirty(camera);
 
     // Transform world position to NDC using the view matrix
-    Vec3 ndc = impl->view * Vec3(world_pos.x, world_pos.y, 1.0f);
+    Vec3 ndc = impl->view * Vec3{world_pos.x, world_pos.y, 1.0f};
 
     // Homogeneous divide (if needed)
     ndc.x /= ndc.z;

@@ -21,7 +21,6 @@
 #include "allocator.h"
 #include "collections.h"
 #include "log.h"
-#include "rect.h"
 #include "event.h"
 #include "name.h"
 #include "color.h"
@@ -42,3 +41,4 @@
 #include "core_events.h"
 #include "tween.h"
 #include "debug.h"
+#include "rect.h"

@@ -29,6 +29,7 @@ set(SOURCE_FILES
     src/memory/allocator.cpp
     src/memory/pool_allocator.cpp
     src/memory/arena_allocator.cpp
+    src/math/math.cpp
     src/math/transform.cpp
     src/math/perlin.cpp
     src/math/bounds2.cpp
@@ -84,35 +85,76 @@ if(WIN32)
         src/platform/windows/windows_render.cpp
         src/platform/windows/windows_vulkan.cpp
     )
-else()
+elseif(APPLE)
+    list(APPEND SOURCE_FILES
+        src/platform/macosx/macosx_main.cpp
+        src/platform/macosx/macosx_input.cpp
+        src/platform/macosx/macosx_audio.cpp
+        src/platform/macosx/macosx_time.cpp
+        src/platform/macosx/macosx_render.cpp
+        src/platform/macosx/macosx_metal.cpp
+    )
+    # Enable Objective-C++ for macOS files
+    set_source_files_properties(
+        src/platform/macosx/macosx_main.cpp
+        src/platform/macosx/macosx_input.cpp
+        src/platform/macosx/macosx_audio.cpp
+        src/platform/macosx/macosx_render.cpp
+        src/platform/macosx/macosx_metal.cpp
+        PROPERTIES
+        COMPILE_FLAGS "-x objective-c++"
+    )
 endif()
 
 add_library(noz STATIC ${SOURCE_FILES})
 
 target_precompile_headers(noz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.h)
+
+# Common include directories
 target_include_directories(noz PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include
-        ${CMAKE_SOURCE_DIR}/res/windows
-#        ${CMAKE_CURRENT_SOURCE_DIR}/external/sdl/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/vulkan
         ${CMAKE_CURRENT_SOURCE_DIR}/external
         ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-target_compile_definitions(noz PRIVATE _CRT_SECURE_NO_WARNINGS)
+# Platform-specific include directories
+if(WIN32)
+    target_include_directories(noz PUBLIC
+        ${CMAKE_SOURCE_DIR}/res/windows
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/vulkan
+    )
+    target_compile_definitions(noz PRIVATE _CRT_SECURE_NO_WARNINGS)
+elseif(APPLE)
+    # macOS uses system frameworks, no additional include paths needed
+endif()
 
 # Link dependencies for noz
-target_link_libraries(noz
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/box2d.lib
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/enet.lib
-        ws2_32
-        winmm
-        dwmapi
-        Shcore
-        xaudio2
-        ole32
-)
+if(WIN32)
+    target_link_libraries(noz
+        PUBLIC
+            ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/box2d.lib
+            ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/enet.lib
+            ws2_32
+            winmm
+            dwmapi
+            Shcore
+            xaudio2
+            ole32
+    )
+elseif(APPLE)
+    target_link_libraries(noz
+        PUBLIC
+            ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/libbox2d.a
+            ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/libenet.a
+            "-framework Cocoa"
+            "-framework Metal"
+            "-framework MetalKit"
+            "-framework QuartzCore"
+            "-framework GameController"
+            "-framework AudioToolbox"
+            "-framework Carbon"
+    )
+endif()
 
 if(CMAKE_GENERATOR STREQUAL "Ninja")
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

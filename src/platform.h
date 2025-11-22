@@ -11,12 +11,13 @@ typedef u32 ShaderFlags;
 struct ApplicationTraits;
 struct MeshVertex;
 struct SamplerOptions;
+struct RectInt;
 
 namespace platform
 {
     struct Pipeline {};
     struct PipelineLayout {};
-    struct Buffer {};
+    struct Buffer;
     struct BufferMemory {};
     struct Shader;
     struct Image {};
@@ -39,7 +40,7 @@ namespace platform
     bool HasFocus();
     bool IsResizing();
     void Log(LogType type, const char* message);
-    RectInt GetWindowRect();
+    noz::RectInt GetWindowRect();
 
     // @render
     void BeginRenderFrame();
@@ -101,6 +102,7 @@ namespace platform
     const TextInput& GetTextInput();
     void ClearTextInput();
     extern void SetTextInput(const TextInput& text_input);
+    bool IsGamepadActive();
 
     // @filesystem
     std::filesystem::path GetSaveGamePath();
@@ -111,6 +113,9 @@ namespace platform
     Sound* CreateSound(void* data, u32 data_size, u32 sample_rate, u32 channels, u32 bits_per_sample);
     void DestroySound(Sound*);
     SoundHandle PlaySound(Sound* sound, float volume, float pitch, bool loop);
+    void PlayMusic(Sound* sound);
+    bool IsMusicPlaying();
+    void StopMusic();
     void StopSound(const SoundHandle& handle);
     void SetSoundVolume(const SoundHandle& handle, float volume);
     void SetSoundPitch(const SoundHandle& handle, float pitch);
@@ -118,7 +123,11 @@ namespace platform
     float GetSoundVolume(const SoundHandle& handle);
     float GetSoundPitch(const SoundHandle& handle);
     void SetMasterVolume(float volume);
+    void SetSoundVolume(float volume);
+    void SetMusicVolume(float volume);
     float GetMasterVolume();
+    float GetSoundVolume();
+    float GetMusicVolume();
 
     // @thread
     void SetThreadName(const char* name);

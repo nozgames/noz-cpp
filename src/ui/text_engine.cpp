@@ -29,7 +29,7 @@ Vec2 MeasureText(const text_t& text, Font* font, float font_size) {
     // Use consistent line height for all text meshes
     float total_height = GetLineHeight(font) * font_size;
 
-    return Vec2(total_width, total_height);
+    return Vec2{total_width, total_height};
 }
 
 static void AddGlyph(

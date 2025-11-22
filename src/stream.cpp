@@ -47,9 +47,8 @@ Stream* CreateStream(Allocator* allocator, u32 capacity)
     return impl;
 }
 
-Stream* LoadStream(Allocator* allocator, uint8_t* data, u32 size)
-{
-    StreamImpl* impl = (StreamImpl*)CreateStream(allocator, size);
+Stream* LoadStream(Allocator* allocator, const u8* data, u32 size) {
+    StreamImpl* impl = static_cast<StreamImpl*>(CreateStream(allocator, size));
     if (!impl)
         return nullptr;
         
@@ -58,7 +57,7 @@ Stream* LoadStream(Allocator* allocator, uint8_t* data, u32 size)
     impl->size = size;
     impl->position = 0;
     
-    return (Stream*)impl;
+    return impl;
 }
 
 Stream* LoadStream(Allocator* allocator, const std::filesystem::path& path)
@@ -286,13 +285,6 @@ Vec3 ReadVec3(Stream* stream)
     return value;
 }
 
-Rect ReadRect(Stream* stream)
-{
-    Rect value;
-    ReadBytes(stream, &value, sizeof(Rect));
-    return value;
-}
-
 double ReadDouble(Stream* stream)
 {
     double value;
@@ -385,11 +377,6 @@ void WriteVec3(Stream* stream, const Vec3& value)
 void WriteVec2(Stream* stream, const Vec2& value)
 {
     WriteBytes(stream, &value, sizeof(Vec2));
-}
-
-void WriteRect(Stream* stream, const Rect& value)
-{
-    WriteBytes(stream, (void*)&value, sizeof(Rect));
 }
 
 void WriteDouble(Stream* stream, double value)

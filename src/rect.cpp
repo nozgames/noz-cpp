@@ -2,8 +2,7 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-Rect Intersection(const Rect& rect, const Rect& other)
-{
+noz::Rect noz::Intersection(const Rect& rect, const Rect& other) {
     f32 left = Max(rect.x, other.x);
     f32 top = Max(rect.y, other.y);
     f32 right = Min(rect.x + rect.width, other.x + other.width);

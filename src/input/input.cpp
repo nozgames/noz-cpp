@@ -13,13 +13,28 @@ extern void Copy(InputSet* dst, InputSet* src);
 struct Input {
     LinkedList active_sets;
     bool text_input;
+    bool gamepad_active;
 };
 
 static Input g_input = {};
 
+bool IsGamepadActive() {
+    return g_input.gamepad_active;
+}
+
 void UpdateInput() {
     platform::UpdateInputState();
-    UpdateInputState((InputSet*)GetBack(g_input.active_sets));
+    UpdateInputState(static_cast<InputSet*>(GetBack(g_input.active_sets)));
+
+    bool gamepad_active = platform::IsGamepadActive();
+    if (gamepad_active != g_input.gamepad_active) {
+        g_input.gamepad_active = gamepad_active;
+        if (gamepad_active) {
+            Send(EVENT_GAMEPAD_ACTIVATED, nullptr);
+        } else {
+            Send(EVENT_GAMEPAD_DEACTIVATED, nullptr);
+        }
+    }
 }
 
 void PushInputSet(InputSet* input_set, bool inherit_state) {
@@ -40,17 +55,17 @@ void PushInputSet(InputSet* input_set, bool inherit_state) {
 
 void PopInputSet() {
     SetActive(GetInputSet(), false);
-    ResetInputState((InputSet*)PopBack(g_input.active_sets));
+    ResetInputState(static_cast<InputSet*>(PopBack(g_input.active_sets)));
     SetActive(GetInputSet(), true);
     ResetInputState(GetInputSet());
 }
 
 InputSet* GetInputSet() {
-    return (InputSet*)GetBack(g_input.active_sets);
+    return static_cast<InputSet*>(GetBack(g_input.active_sets));
 }
 
 void SetInputSet(InputSet* input_set) {
-    ResetInputState((InputSet*)GetBack(g_input.active_sets));
+    ResetInputState(static_cast<InputSet*>(GetBack(g_input.active_sets)));
     while (GetInputSet())
         PopInputSet();
     PushInputSet(input_set, false);

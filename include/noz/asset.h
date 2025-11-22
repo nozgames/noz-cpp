@@ -43,11 +43,11 @@ extern bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** n
 extern bool ValidateAssetHeader(AssetHeader* header, uint32_t expected_signature);
 extern const char* GetExtensionFromAssetType(AssetType asset_type);
 extern const char* ToString(AssetType asset_type);
-extern Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader);
+extern Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, const u8* data=nullptr, u32 data_size=0);
 extern const Name** ReadNameTable(const AssetHeader& header, Stream* stream);
 extern bool IsValidAssetType(AssetType asset_type);
 extern Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, Stream* stream);
-extern Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader);
+extern Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, const u8* data=nullptr, u32 data_size=0);
 inline const Name* GetName(Asset* asset) { return asset->name; }
 
 // @loaders
@@ -61,30 +61,38 @@ Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, c
 Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 Asset* LoadAnimatedMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 
+#ifdef NDEBUG
+#define NOZ_ASSET_DATA(name) name ## _DATA
+#define NOZ_ASSET_DATA_SIZE(name) (u32)(sizeof(NOZ_ASSET_DATA(name)))
+#else
+#define NOZ_ASSET_DATA(name) nullptr
+#define NOZ_ASSET_DATA_SIZE(name) 0
+#endif
+
 // @macros
 #define NOZ_LOAD_SHADER(allocator, path, member) \
-    member = (Shader*)LoadAsset(allocator, path, ASSET_TYPE_SHADER, LoadShader);
+    member = (Shader*)LoadAsset(allocator, path, ASSET_TYPE_SHADER, LoadShader, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
 
 #define NOZ_LOAD_TEXTURE(allocator, path, member) \
-    member = (Texture*)LoadAsset(allocator, path, ASSET_TYPE_TEXTURE, LoadTexture);
+    member = (Texture*)LoadAsset(allocator, path, ASSET_TYPE_TEXTURE, LoadTexture, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
 
 #define NOZ_LOAD_MESH(allocator, path, member) \
-    member = (Mesh*)LoadAsset(allocator, path, ASSET_TYPE_MESH, LoadMesh);
+    member = (Mesh*)LoadAsset(allocator, path, ASSET_TYPE_MESH, LoadMesh, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
 
 #define NOZ_LOAD_FONT(allocator, path, member) \
-    member = (Font*)LoadAsset(allocator, path, ASSET_TYPE_FONT, LoadFont);
+    member = (Font*)LoadAsset(allocator, path, ASSET_TYPE_FONT, LoadFont, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
 
 #define NOZ_LOAD_VFX(allocator, path, member) \
-    member = (Vfx*)LoadAsset(allocator, path, ASSET_TYPE_VFX, LoadVfx);
+    member = (Vfx*)LoadAsset(allocator, path, ASSET_TYPE_VFX, LoadVfx, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
 
 #define NOZ_LOAD_SOUND(allocator, path, member) \
-    member = (Sound*)LoadAsset(allocator, path, ASSET_TYPE_SOUND, LoadSound);
+    member = (Sound*)LoadAsset(allocator, path, ASSET_TYPE_SOUND, LoadSound, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
 
 #define NOZ_LOAD_SKELETON(allocator, path, member) \
-    member = (Skeleton*)LoadAsset(allocator, path, ASSET_TYPE_SKELETON, LoadSkeleton);
+    member = (Skeleton*)LoadAsset(allocator, path, ASSET_TYPE_SKELETON, LoadSkeleton, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
 
 #define NOZ_LOAD_ANIMATION(allocator, path, member) \
-    member = (Animation*)LoadAsset(allocator, path, ASSET_TYPE_ANIMATION, LoadAnimation);
+    member = (Animation*)LoadAsset(allocator, path, ASSET_TYPE_ANIMATION, LoadAnimation, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
 
 #define NOZ_LOAD_ANIMATED_MESH(allocator, path, member) \
     member = (Animation*)LoadAsset(allocator, path, ASSET_TYPE_ANIMATED_MESH, LoadAnimatedMesh);

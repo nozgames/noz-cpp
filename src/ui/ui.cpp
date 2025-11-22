@@ -43,7 +43,7 @@ struct Element {
     ElementType type;
     ElementState state;
     u32 index;
-    Rect rect;
+    noz::Rect rect;
     u32 child_count;
     Mat3 local_to_world;
     Mat3 world_to_local;
@@ -71,7 +71,6 @@ struct ExpandedElement : Element {
 
 struct GestureDetectorElement : Element {
     GestureDetectorStyle style;
-    void* user_data;
 };
 
 struct GestureBlockerElement : Element {
@@ -725,7 +724,7 @@ void RenderCanvas(Element* e){
     BindCamera(g_ui.camera);
 }
 
-static void RenderBackground(const Rect& rect, const Mat3& transform, const Color& color) {
+static void RenderBackground(const noz::Rect& rect, const Mat3& transform, const Color& color) {
     if (color.a <= 0.0f)
         return;
 
@@ -748,7 +747,7 @@ static int RenderElement(int element_index) {
         if (mesh) {
             BindTransform(transform * Translate(l->offset));
             BindColor(l->style.color);
-            BindMaterial(GetMaterial(l->cached_mesh->text_mesh));
+            BindMaterial(l->style.material ? l->style.material : GetMaterial(l->cached_mesh->text_mesh));
             DrawMesh(mesh);
         }
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
@@ -879,8 +878,8 @@ static void HandleInput() {
         if (e->type == ELEMENT_TYPE_GESTURE_DETECTOR) {
             GestureDetectorElement* g = static_cast<GestureDetectorElement*>(e);
             if (mouse_over && g->style.on_tap && WasButtonPressed(g_ui.input, MOUSE_LEFT)) {
-                TapDetails details = {.position = local_mouse};
-                g->style.on_tap(details, g->style.user_data);
+                TapDetails details = {.position = local_mouse, .user_data= g->style.user_data, .id=g->style.id};
+                g->style.on_tap(details);
                 ConsumeButton(MOUSE_LEFT);
             }
         } else if (e->type == ELEMENT_TYPE_GESTURE_BLOCKER) {

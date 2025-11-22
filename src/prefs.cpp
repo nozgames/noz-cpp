@@ -73,20 +73,17 @@ static void SavePrefsInternal(const std::filesystem::path& path)
     SaveStream(stream, path);
 }
 
-void SavePrefs()
-{
+void SavePrefs() {
     PushScratch();
     SavePrefsInternal(platform::GetSaveGamePath() / "prefs.dat");
     PopScratch();
 }
 
-void SetPrefInt(const Name* name, i32 value)
-{
+void SetPrefInt(const Name* name, i32 value) {
     SetValue(g_prefs.ints_map, Hash(name->value), &value);
 }
 
-i32 GetPrefInt(const Name* name, i32 default_value)
-{
+i32 GetPrefInt(const Name* name, i32 default_value) {
     void* value = GetValue(g_prefs.ints_map, Hash(name->value));
     if (!value)
         return default_value;

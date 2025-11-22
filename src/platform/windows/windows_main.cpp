@@ -39,7 +39,7 @@ struct WindowsApp
     HCURSOR cursor_wait;
     HCURSOR cursor_cross;
     HCURSOR cursor_move;
-    RectInt window_rect;
+    noz::RectInt window_rect;
     SystemCursor cursor;
 };
 
@@ -87,7 +87,7 @@ static void UpdateWindowRect()
 {
     RECT rect;
     GetWindowRect(g_windows.hwnd, &rect);
-    RectInt window_rect = RectInt{
+    noz::RectInt window_rect = noz::RectInt{
         rect.left,
         rect.top,
         rect.right - rect.left,
@@ -445,7 +445,6 @@ void platform::Log(LogType type, const char* message)
     OutputDebugStringA(temp.c_str());
 }
 
-RectInt platform::GetWindowRect()
-{
+noz::RectInt platform::GetWindowRect() {
     return g_windows.window_rect;
 }

@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include <filesystem>
+
 #define XXH_STATIC_LINKING_ONLY
 #define XXH_IMPLEMENTATION
 #include <xxhash.h>
