@@ -638,6 +638,10 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
             if (text_size.y < e->rect.height)
                 l->offset.y = (e->rect.height - text_size.y) * 0.5f * (l->style.align.y + 1.0f);
         }
+    } else if (e->type == ELEMENT_TYPE_IMAGE) {
+        ImageElement* i = static_cast<ImageElement*>(e);
+        if (e->rect.width == F32_MAX) e->rect.width = GetSize(i->mesh).x * i->style.scale;
+        if (e->rect.height == F32_MAX) e->rect.height = GetSize(i->mesh).y * i->style.scale;
     }
 
     if (e->child_count == 0) {
@@ -920,7 +924,7 @@ void EndUI() {
 }
 
 void DrawUI() {
-    BindDepth(10.0f);
+    BindDepth(GetApplicationTraits()->renderer.max_depth, 0);
     for (u32 element_index = 0; element_index < g_ui.element_count; )
         element_index = RenderElement(element_index);
     BindDepth(0.0f);
