@@ -7,9 +7,9 @@
 extern void RenderMesh(Mesh* mesh);
 extern void BindMaterialInternal(Material* material);
 extern void BindTextureInternal(Texture* texture, i32 slot);
+extern void UploadMesh(Mesh* mesh);
 
-enum RenderCommandType
-{
+enum RenderCommandType {
     RENDER_COMMAND_TYPE_BIND_LIGHT,
     RENDER_COMMAND_TYPE_BIND_VERTEX_USER,
     RENDER_COMMAND_TYPE_BIND_FRAGMENT_USER,
@@ -241,7 +241,13 @@ void DrawMesh(Mesh* mesh, const Mat3& transform) {
     DrawMesh(mesh);
 }
 
-extern void UploadMesh(Mesh* mesh);
+void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, int frame_index) {
+    if (!mesh)
+        return;
+
+    assert(frame_index >=0 && frame_index < GetFrameCount(mesh));
+    DrawMesh(GetFrame(mesh, frame_index), transform);
+}
 
 void DrawMesh(Mesh* mesh) {
     assert(mesh);

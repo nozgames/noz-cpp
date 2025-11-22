@@ -9,6 +9,7 @@ struct Animation : Asset {};
 // @animation
 constexpr int MAX_ANIMATION_FRAMES = 64;
 constexpr int ANIMATION_FRAME_RATE = 12;
+constexpr float ANIMATION_FRAME_TIME = 1.0f / ANIMATION_FRAME_RATE;
 
 typedef u32 AnimationFlags;
 constexpr AnimationFlags ANIMATION_FLAG_NONE = 0;

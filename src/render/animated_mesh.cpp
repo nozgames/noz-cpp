@@ -4,13 +4,28 @@
 
 AnimatedMesh** ANIMATED_MESH = nullptr;
 
-struct AnimatedMeshImpl : Mesh {
+struct AnimatedMeshImpl : AnimatedMesh {
     Bounds2 bounds;
+    int frame_count;
+    Mesh* frames[ANIMATED_MESH_MAX_FRAMES];
 };
+
+int GetFrameCount(AnimatedMesh* mesh) {
+    return static_cast<AnimatedMeshImpl*>(mesh)->frame_count;
+}
+
+Mesh* GetFrame(AnimatedMesh* mesh, int frame_index) {
+    return static_cast<AnimatedMeshImpl*>(mesh)->frames[frame_index];
+}
 
 static void AnimatedMeshDestructor(void* p) {
     AnimatedMeshImpl* impl = static_cast<AnimatedMeshImpl*>(p);
-    (void)impl;
+    for (int i=0; i<impl->frame_count; i++) {
+        if (!impl->frames[i]) continue;
+        Free(impl->frames[i]);
+        impl->frames[i] = nullptr;
+    }
+    impl->frame_count = 0;
 }
 
 static AnimatedMeshImpl* CreateAnimatedMesh(Allocator* allocator, const Name* name) {
@@ -19,6 +34,18 @@ static AnimatedMeshImpl* CreateAnimatedMesh(Allocator* allocator, const Name* na
         return nullptr;
 
     mesh->name = name ? name : NAME_NONE;
+    return mesh;
+}
+
+AnimatedMesh* CreateAnimatedMesh(Allocator* allocator, const Name* name, int frame_count, Mesh** frames) {
+    AnimatedMeshImpl* mesh = CreateAnimatedMesh(allocator, name);
+    if (!mesh)
+        return nullptr;
+
+    mesh->frame_count = frame_count;
+    for (int i=0; i<frame_count; i++)
+        mesh->frames[i] = frames[i];
+
     return mesh;
 }
 
