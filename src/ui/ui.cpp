@@ -924,7 +924,7 @@ void EndUI() {
 }
 
 void DrawUI() {
-    BindDepth(GetApplicationTraits()->renderer.max_depth, 0);
+    BindDepth(GetApplicationTraits()->renderer.max_depth - 0.01f, 0);
     for (u32 element_index = 0; element_index < g_ui.element_count; )
         element_index = RenderElement(element_index);
     BindDepth(0.0f);
