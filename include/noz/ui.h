@@ -212,6 +212,7 @@ inline EdgeInsets EdgeInsetsBottomRight(float v) { return EdgeInsets(0, 0, v, v)
 inline EdgeInsets EdgeInsetsRight(float v) { return EdgeInsets(0,0,0,v); }
 inline EdgeInsets EdgeInsetsLeft(float v) { return EdgeInsets(0,v,0,0); }
 inline EdgeInsets EdgeInsetsLeftRight(float v) { return EdgeInsets(0,v,0,v); }
+inline EdgeInsets EdgeInsetsLeftRight(float l, float r) { return EdgeInsets(0,l,0,r); }
 
 
 // @text_engine
