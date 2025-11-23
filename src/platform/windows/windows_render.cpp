@@ -42,8 +42,7 @@ static VkSamplerAddressMode ToVK(TextureClamp clamp) {
     return clamp == TEXTURE_CLAMP_REPEAT ? VK_SAMPLER_ADDRESS_MODE_REPEAT : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 }
 
-struct platform::Texture
-{
+struct platform::Texture {
     VkImage vk_image;
     VkImageView vk_image_view;
     VkDeviceMemory vk_memory;
@@ -54,8 +53,7 @@ struct platform::Texture
     i32 channels;
 };
 
-struct platform::Shader
-{
+struct platform::Shader {
     VkShaderModule vertex_module;
     VkShaderModule geometry_module;
     VkShaderModule fragment_module;
@@ -67,6 +65,8 @@ struct ObjectBuffer {
     float transform[12];
     float depth;
     float depth_scale;
+    float depth_min;
+    float depth_max;
 };
 
 struct ColorBuffer {
@@ -1183,8 +1183,10 @@ void platform::BindTransform(const Mat3& transform, float depth, float depth_sca
         return;
 
     ObjectBuffer* buffer = static_cast<ObjectBuffer*>(buffer_ptr);
-    buffer->depth = (depth - g_vulkan.traits.min_depth) * g_vulkan.depth_conversion_factor;
+    buffer->depth = depth;
     buffer->depth_scale = depth_scale;
+    buffer->depth_min = GetApplicationTraits()->renderer.min_depth;
+    buffer->depth_max = GetApplicationTraits()->renderer.max_depth;
     CopyMat3ToGPU(&buffer->transform, transform);
 }
 
