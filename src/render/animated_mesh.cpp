@@ -4,7 +4,7 @@
 
 extern Mesh* LoadMesh(Allocator* allocator, Stream* stream, const Name* name);
 
-AnimatedMesh** ANIMATED_MESH = nullptr;
+AnimatedMesh** ANIMATEDMESH = nullptr;
 
 struct AnimatedMeshImpl : AnimatedMesh {
     Bounds2 bounds;

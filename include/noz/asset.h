@@ -94,14 +94,14 @@ Asset* LoadAnimatedMesh(Allocator* allocator, Stream* stream, AssetHeader* heade
 #define NOZ_LOAD_ANIMATION(allocator, path, member) \
     member = (Animation*)LoadAsset(allocator, path, ASSET_TYPE_ANIMATION, LoadAnimation, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
 
-#define NOZ_LOAD_ANIMATED_MESH(allocator, path, member) \
-    member = (Animation*)LoadAsset(allocator, path, ASSET_TYPE_ANIMATED_MESH, LoadAnimatedMesh);
+#define NOZ_LOAD_ANIMATEDMESH(allocator, path, member) \
+    member = static_cast<AnimatedMesh*>(LoadAsset(allocator, path, ASSET_TYPE_ANIMATED_MESH, LoadAnimatedMesh));
 
 #define NOZ_RELOAD_FONT(asset_name, asset)
 #define NOZ_RELOAD_SOUND(asset_name, asset)
 #define NOZ_RELOAD_SKELETON(asset_name, asset)
 #define NOZ_RELOAD_ANIMATION(asset_name, asset)
-#define NOZ_RELOAD_ANIMATED_MESH(asset_name, asset)
+#define NOZ_RELOAD_ANIMATEDMESH(asset_name, asset)
 
 #ifdef NOZ_EDITOR
 void ReloadAsset(const Name* name, AssetType asset_type, Asset* asset, void (*reload)(Asset*, Stream*, const AssetHeader& header, const Name** name_table));

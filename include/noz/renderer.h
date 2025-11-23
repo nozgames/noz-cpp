@@ -222,4 +222,4 @@ extern Font** FONT;
 extern Texture** TEXTURE;
 extern Shader** SHADER;
 extern Skeleton** SKELETON;
-extern AnimatedMesh** ANIMATED_MESH;
+extern AnimatedMesh** ANIMATEDMESH;
