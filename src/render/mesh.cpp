@@ -117,10 +117,7 @@ bool IsUploaded(Mesh* mesh) {
     return static_cast<MeshImpl*>(mesh)->vertex_buffer != nullptr;
 }
 
-Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
-    (void)header;
-    (void)name_table;
-
+Mesh* LoadMesh(Allocator* allocator, Stream* stream, const Name* name) {
     Bounds2 bounds = ReadStruct<Bounds2>(stream);
     u16 vertex_count = ReadU16(stream);
     u16 index_count = ReadU16(stream);
@@ -133,9 +130,14 @@ Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const
 
     ReadBytes(stream, impl->vertices, sizeof(MeshVertex) * impl->vertex_count);
     ReadBytes(stream, impl->indices, sizeof(u16) * impl->index_count);
-
     UploadMesh(impl);
     return impl;
+}
+
+Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
+    (void)header;
+    (void)name_table;
+    return LoadMesh(allocator, stream, name);
 }
 
 Mesh* CreateMesh(

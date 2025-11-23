@@ -91,6 +91,8 @@ extern bool IsUploaded(Mesh* mesh);
 extern AnimatedMesh* CreateAnimatedMesh(Allocator* allocator, const Name* name, int frame_count, Mesh** frames);
 extern int GetFrameCount(AnimatedMesh* mesh);
 extern Mesh* GetFrame(AnimatedMesh* mesh, int frame_index);
+extern float Update(AnimatedMesh* mesh, float current_time, float speed=1.0f, bool loop=true);
+extern int GetFrameIndex(AnimatedMesh* mesh, float time);
 
 // @mesh_builder
 extern MeshBuilder* CreateMeshBuilder(Allocator* allocator, u16 max_vertices, u16 max_indices);
@@ -164,6 +166,7 @@ extern void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int 
 extern void DrawMesh(Mesh* mesh, const Mat3& transform);
 
 extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, int frame_index);
+extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, float time);
 
 // @font
 struct FontGlyph {
