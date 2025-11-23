@@ -15,6 +15,10 @@ struct AnimatedMeshImpl : AnimatedMesh {
     float duration;
 };
 
+float GetDuration(AnimatedMesh* mesh) {
+    return static_cast<AnimatedMeshImpl*>(mesh)->duration;
+}
+
 int GetFrameCount(AnimatedMesh* mesh) {
     return static_cast<AnimatedMeshImpl*>(mesh)->frame_count;
 }
@@ -86,9 +90,9 @@ Asset* LoadAnimatedMesh(Allocator* allocator, Stream* stream, AssetHeader* heade
         return nullptr;
 
     impl->bounds = ReadStruct<Bounds2>(stream);
-    impl->frame_count = ReadU8(stream);
     impl->frame_rate = ReadU8(stream);
     impl->frame_rate_inv = 1.0f / static_cast<float>(impl->frame_rate);
+    impl->frame_count = ReadU8(stream);
     impl->duration = impl->frame_count * impl->frame_rate_inv;
 
     for (int frame_index=0; frame_index<impl->frame_count; frame_index++)

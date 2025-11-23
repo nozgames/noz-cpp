@@ -89,6 +89,7 @@ extern bool IsUploaded(Mesh* mesh);
 
 // @animated_mesh
 extern AnimatedMesh* CreateAnimatedMesh(Allocator* allocator, const Name* name, int frame_count, Mesh** frames);
+extern float GetDuration(AnimatedMesh* mesh);
 extern int GetFrameCount(AnimatedMesh* mesh);
 extern Mesh* GetFrame(AnimatedMesh* mesh, int frame_index);
 extern float Update(AnimatedMesh* mesh, float current_time, float speed=1.0f, bool loop=true);
