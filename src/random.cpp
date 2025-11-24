@@ -36,8 +36,14 @@ bool RandomBool()
     return dis(g_gen) == 1;
 }
 
-bool RandomBool(float probability)
-{
+bool RandomBool(float probability) {
     std::uniform_real_distribution<float> dis(0.0f, 1.0f);
     return dis(g_gen) < probability;
+}
+
+Vec2 RandomVec2(const Vec2& min, const Vec2& max) {
+    return Vec2{
+        RandomFloat(min.x, max.x),
+        RandomFloat(min.y, max.y)
+    };
 }

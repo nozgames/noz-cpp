@@ -310,8 +310,14 @@ void ExecuteRenderCommands()
             break;
 
         case RENDER_COMMAND_TYPE_DRAW_MESH:
-            platform::BindColor(command->data.draw_mesh.color, command->data.draw_mesh.color_uv_offset, command->data.draw_mesh.emission);
-            platform::BindTransform(command->data.draw_mesh.transform, command->data.draw_mesh.depth, command->data.draw_mesh.depth_scale);
+            platform::BindColor(
+                command->data.draw_mesh.color,
+                command->data.draw_mesh.color_uv_offset,
+                command->data.draw_mesh.emission);
+            platform::BindTransform(
+                command->data.draw_mesh.transform,
+                command->data.draw_mesh.depth,
+                command->data.draw_mesh.depth_scale);
             BindMaterialInternal(command->data.draw_mesh.material);
             RenderMesh(command->data.draw_mesh.mesh);
             break;

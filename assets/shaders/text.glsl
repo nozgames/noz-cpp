@@ -21,7 +21,7 @@ void main() {
     mat3 mvp = object.transform * camera.view_projection;
     vec3 screen_pos = vec3(v_position, 1.0) * mvp;
     float depth = (object.depth - object.depth_min) / (object.depth_max - object.depth_min);
-    gl_Position = vec4(screen_pos.xy, depth, 1.0);
+    gl_Position = vec4(screen_pos.xy, 1.0f - depth, 1.0);
     f_uv = v_uv;
 }
 
@@ -56,10 +56,7 @@ layout(location = 0) out vec4 FragColor;
 void main() {
     float distance = texture(mainTexture, f_uv).r;
     float width = fwidth(distance);
-
-    // Main text alpha
     float alpha = smoothstep(0.5 - width, 0.5 + width, distance);
-
     if (text_buffer.outline_width > 0.0) {
         vec4 outline_color = text_buffer.outline_color;
         float outline_threshold = 0.5 - text_buffer.outline_width;

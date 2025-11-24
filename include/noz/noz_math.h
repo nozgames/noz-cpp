@@ -60,12 +60,6 @@ namespace noz
     }
 }
 
-float RandomFloat();
-float RandomFloat(float min, float max);
-int RandomInt(int min, int max);
-bool RandomBool();
-bool RandomBool(float probability);
-
 struct Vec3;
 struct Vec4;
 struct Vec2;
@@ -209,6 +203,14 @@ constexpr u32 U32_MAX = 0xFFFFFFFF;
 constexpr u32 U32_MIN = 0;
 
 constexpr Bounds2 BOUNDS2_ZERO = { VEC2_ZERO, VEC2_ZERO };
+
+// @random
+float RandomFloat();
+float RandomFloat(float min, float max);
+int RandomInt(int min, int max);
+bool RandomBool();
+bool RandomBool(float probability);
+Vec2 RandomVec2(const Vec2& min, const Vec2& max);
 
 // @float
 extern float Repeat(float t, float length);
