@@ -117,6 +117,13 @@ struct MouseRegionStyle {
     void* user_data;
 };
 
+enum ImageStretch {
+    IMAGE_STRETCH_NONE,
+    IMAGE_STRETCH_FILL,
+    IMAGE_STRETCH_UNIFORM,
+    IMAGE_STRETCH_UNIFORM_FILL
+};
+
 struct ImageStyle {
     Color color = COLOR_WHITE;
     AnimatedColorFunc color_func = nullptr;
@@ -124,6 +131,7 @@ struct ImageStyle {
     float scale = 1.0f;
     Vec2 uv = VEC2_ZERO;
     Vec2 st = VEC2_ONE;
+    ImageStretch stretch = IMAGE_STRETCH_UNIFORM;
 };
 
 struct BorderStyle {

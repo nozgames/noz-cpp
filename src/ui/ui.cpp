@@ -776,26 +776,36 @@ static int RenderElement(int element_index) {
         Bounds2 mesh_bounds = image->animated_mesh ? GetBounds(image->animated_mesh) : GetBounds(image->mesh);
         Vec2 mesh_size = GetSize(mesh_bounds);
 
-        // Calculate aspect-ratio-preserving scale
-        float scale_x = e->rect.width / mesh_size.x;
-        float scale_y = e->rect.height / mesh_size.y;
-        float uniform_scale = Min(scale_x, scale_y);
-        Vec2 mesh_scale = Vec2{uniform_scale, uniform_scale};
-
-        // Calculate centering offset
-        Vec2 scaled_size = mesh_size * uniform_scale;
-        Vec2 center_offset = Vec2{
-            (e->rect.width - scaled_size.x) * 0.5f,
-            (e->rect.height - scaled_size.y) * 0.5f
-        };
-
-        if (image->style.color_func) {
+        if (image->style.color_func)
             BindColor(image->style.color_func(e->state, 0.0f, image->style.color_func_user_data));
-        } else {
+        else
             BindColor(image->style.color);
-        }
 
-        Mat3 image_transform = transform * Translate(center_offset) * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1});
+        Mat3 image_transform;
+        if (image->style.stretch == IMAGE_STRETCH_UNIFORM) {
+            // Calculate aspect-ratio-preserving scale
+            float scale_x = e->rect.width / mesh_size.x;
+            float scale_y = e->rect.height / mesh_size.y;
+            float uniform_scale = Min(scale_x, scale_y);
+            Vec2 mesh_scale = Vec2{uniform_scale, uniform_scale};
+
+            // Calculate centering offset
+            Vec2 scaled_size = mesh_size * uniform_scale;
+            Vec2 center_offset = Vec2{
+                (e->rect.width - scaled_size.x) * 0.5f,
+                (e->rect.height - scaled_size.y) * 0.5f
+            };
+
+            image_transform = transform * Translate(center_offset) * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1});
+        } else if (image->style.stretch == IMAGE_STRETCH_FILL) {
+            Vec2 mesh_scale = Vec2{
+                e->rect.width / mesh_size.x,
+                e->rect.height / mesh_size.y
+            };
+            image_transform = transform * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1});
+        } else {
+            image_transform = transform * Translate(-mesh_bounds.min) * Scale(Vec2{1, -1});
+        }
 
         if (image->animated_mesh)
             DrawMesh(image->animated_mesh, image_transform, image->animated_time);
