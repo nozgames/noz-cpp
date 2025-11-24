@@ -109,6 +109,8 @@ struct ImageElement : Element {
     ImageStyle style;
     Material* material = nullptr;
     Mesh* mesh = nullptr;
+    AnimatedMesh* animated_mesh = nullptr;
+    float animated_time = 0.0f;
 };
 
 struct InsetElement : Element {
@@ -339,6 +341,15 @@ void Image(Material* material, Mesh* mesh, const ImageStyle& style) {
     ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
     image->material = material != nullptr ? material : g_ui.element_material;
     image->mesh = mesh;
+    image->style = style;
+}
+
+void Image(Material* material, AnimatedMesh* mesh, float time, const ImageStyle& style) {
+    IncrementChildCount();
+    ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
+    image->material = material != nullptr ? material : g_ui.element_material;
+    image->animated_mesh = mesh;
+    image->animated_time = time;
     image->style = style;
 }
 
@@ -640,8 +651,13 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
         }
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* i = static_cast<ImageElement*>(e);
-        if (e->rect.width == F32_MAX) e->rect.width = GetSize(i->mesh).x * i->style.scale;
-        if (e->rect.height == F32_MAX) e->rect.height = GetSize(i->mesh).y * i->style.scale;
+        if (i->animated_mesh) {
+            if (e->rect.width == F32_MAX) e->rect.width = GetSize(i->animated_mesh).x * i->style.scale;
+            if (e->rect.height == F32_MAX) e->rect.height = GetSize(i->animated_mesh).y * i->style.scale;
+        } else {
+            if (e->rect.width == F32_MAX) e->rect.width = GetSize(i->mesh).x * i->style.scale;
+            if (e->rect.height == F32_MAX) e->rect.height = GetSize(i->mesh).y * i->style.scale;
+        }
     }
 
     if (e->child_count == 0) {
@@ -757,7 +773,7 @@ static int RenderElement(int element_index) {
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* image = static_cast<ImageElement*>(e);
         BindMaterial(image->material);
-        Bounds2 mesh_bounds = GetBounds(image->mesh);
+        Bounds2 mesh_bounds = image->animated_mesh ? GetBounds(image->animated_mesh) : GetBounds(image->mesh);
         Vec2 mesh_size = GetSize(mesh_bounds);
 
         // Calculate aspect-ratio-preserving scale
@@ -779,8 +795,12 @@ static int RenderElement(int element_index) {
             BindColor(image->style.color);
         }
 
-        BindTransform(transform * Translate(center_offset) * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1}));
-        DrawMesh(image->mesh);
+        Mat3 image_transform = transform * Translate(center_offset) * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1});
+
+        if (image->animated_mesh)
+            DrawMesh(image->animated_mesh, image_transform, image->animated_time);
+        else
+            DrawMesh(image->mesh, image_transform);
     } else if (e->type == ELEMENT_TYPE_CONTAINER) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
         RenderBackground(e->rect, transform, container->style.color);

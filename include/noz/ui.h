@@ -195,6 +195,7 @@ extern void MouseRegion(const MouseRegionStyle& style, const std::function<void(
 extern void Label(const char* text, const LabelStyle& style = {});
 extern void Image(Material* material, const ImageStyle& style = {});
 extern void Image(Material* material, Mesh* mesh, const ImageStyle& style = {});
+extern void Image(Material* material, AnimatedMesh* mesh, float time, const ImageStyle& style = {});
 inline void Image(Mesh* mesh, const ImageStyle& style = {}) { Image(nullptr, mesh, style); }
 extern void Rectangle(const RectangleStyle& style = {});
 

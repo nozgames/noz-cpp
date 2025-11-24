@@ -15,6 +15,14 @@ struct AnimatedMeshImpl : AnimatedMesh {
     float duration;
 };
 
+Bounds2 GetBounds(AnimatedMesh* mesh) {
+    return static_cast<AnimatedMeshImpl*>(mesh)->bounds;
+}
+
+extern Vec2 GetSize(AnimatedMesh* mesh) {
+    return GetSize(GetBounds(mesh));
+}
+
 float GetDuration(AnimatedMesh* mesh) {
     return static_cast<AnimatedMeshImpl*>(mesh)->duration;
 }

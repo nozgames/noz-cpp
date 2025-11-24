@@ -94,6 +94,8 @@ extern int GetFrameCount(AnimatedMesh* mesh);
 extern Mesh* GetFrame(AnimatedMesh* mesh, int frame_index);
 extern float Update(AnimatedMesh* mesh, float current_time, float speed=1.0f, bool loop=true);
 extern int GetFrameIndex(AnimatedMesh* mesh, float time);
+extern Bounds2 GetBounds(AnimatedMesh* mesh);
+extern Vec2 GetSize(AnimatedMesh* mesh);
 
 // @mesh_builder
 extern MeshBuilder* CreateMeshBuilder(Allocator* allocator, u16 max_vertices, u16 max_indices);

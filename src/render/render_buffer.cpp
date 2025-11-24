@@ -249,7 +249,7 @@ void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, int frame_index) {
     if (!mesh)
         return;
 
-    assert(frame_index >=0 && frame_index < GetFrameCount(mesh));
+    frame_index = Clamp(frame_index, 0, GetFrameCount(mesh) - 1);
     DrawMesh(GetFrame(mesh, frame_index), transform);
 }
 
