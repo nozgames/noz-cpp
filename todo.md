@@ -1,11 +1,10 @@
 # Todo
 
+- [ ] new mesh should use click to add verts to create shape, enter to close
 - [ ] reference fodler should auto mark ref
 
-- [ ] delete broken?
 - [ ] click through when overlapping assets
 
-- [ ] Animated mesh
 - [ ] Skinned mesh setup for animation
 - [ ] Animation play without being in editor
 

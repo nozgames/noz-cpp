@@ -69,7 +69,7 @@ static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, Ass
         return stream;
 
     asset_path = GetBinaryDirectory();
-    asset_path /= "assets";
+    asset_path /= "../assets";
     asset_path /= ToString(asset_type);
     asset_path /= asset_name->value;
 

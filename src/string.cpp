@@ -112,6 +112,27 @@ bool Equals(const char* s1, const char* s2, bool ignore_case)
     return Equals(s1, s2, U32_MAX, ignore_case);
 }
 
+bool Contains(const char* s1, const char* s2, bool ignore_case) {
+    assert(s1);
+    assert(s2);
+
+    u32 len2 = Length(s2);
+    if (len2 == 0)
+        return true;
+
+    u32 len1 = Length(s1);
+    if (len1 < len2)
+        return false;
+
+    u32 count = len1 - len2 + 1;
+    for (u32 i=0; i<count; i++, s1++) {
+        if (Equals(s1, s2, len2, ignore_case))
+            return true;
+    }
+
+    return false;
+}
+
 char* CleanPath(char* path)
 {
     assert(path);
