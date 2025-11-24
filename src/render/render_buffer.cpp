@@ -256,6 +256,9 @@ void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, int frame_index) {
 void DrawMesh(Mesh* mesh) {
     assert(mesh);
 
+    if (GetVertexCount(mesh) == 0 || GetIndexCount(mesh) == 0)
+        return;
+
     if (!IsUploaded(mesh))
         UploadMesh(mesh);
 
