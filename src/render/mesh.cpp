@@ -158,6 +158,7 @@ Mesh* CreateMesh(
 
     MeshImpl* mesh = CreateMesh(allocator, vertex_count, index_count, name);
     mesh->bounds = ToBounds2(ToBounds(positions, vertex_count));
+    mesh->bounds = Union(mesh->bounds, VEC2_ZERO);
 
     for (size_t i = 0; i < vertex_count; i++) {
         mesh->vertices[i].position = positions[i];
