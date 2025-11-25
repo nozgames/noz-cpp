@@ -249,12 +249,15 @@ void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, int frame_index) {
     if (!mesh)
         return;
 
-    assert(frame_index >=0 && frame_index < GetFrameCount(mesh));
+    frame_index = Clamp(frame_index, 0, GetFrameCount(mesh) - 1);
     DrawMesh(GetFrame(mesh, frame_index), transform);
 }
 
 void DrawMesh(Mesh* mesh) {
     assert(mesh);
+
+    if (GetVertexCount(mesh) == 0 || GetIndexCount(mesh) == 0)
+        return;
 
     if (!IsUploaded(mesh))
         UploadMesh(mesh);
@@ -303,12 +306,19 @@ void ExecuteRenderCommands()
             break;
 
         case RENDER_COMMAND_TYPE_BIND_CAMERA:
+            platform::SetViewport(GetViewport(command->data.bind_camera.camera));
             platform::BindCamera(GetViewMatrix(command->data.bind_camera.camera));
             break;
 
         case RENDER_COMMAND_TYPE_DRAW_MESH:
-            platform::BindColor(command->data.draw_mesh.color, command->data.draw_mesh.color_uv_offset, command->data.draw_mesh.emission);
-            platform::BindTransform(command->data.draw_mesh.transform, command->data.draw_mesh.depth, command->data.draw_mesh.depth_scale);
+            platform::BindColor(
+                command->data.draw_mesh.color,
+                command->data.draw_mesh.color_uv_offset,
+                command->data.draw_mesh.emission);
+            platform::BindTransform(
+                command->data.draw_mesh.transform,
+                command->data.draw_mesh.depth,
+                command->data.draw_mesh.depth_scale);
             BindMaterialInternal(command->data.draw_mesh.material);
             RenderMesh(command->data.draw_mesh.mesh);
             break;

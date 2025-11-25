@@ -21,7 +21,7 @@ void main() {
     mat3 mvp = object.transform * camera.view_projection;
     vec3 screen_pos = vec3(v_position, 1.0) * mvp;
     float depth = (object.depth + (v_depth * object.depth_scale) - object.depth_min) / (object.depth_max - object.depth_min);
-    gl_Position = vec4(screen_pos.xy, depth, 1.0);
+    gl_Position = vec4(screen_pos.xy, 1.0f - depth, 1.0);
     f_uv = v_uv;
 }
 

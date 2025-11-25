@@ -128,9 +128,12 @@ Mesh* LoadMesh(Allocator* allocator, Stream* stream, const Name* name) {
 
     impl->bounds = bounds;
 
-    ReadBytes(stream, impl->vertices, sizeof(MeshVertex) * impl->vertex_count);
-    ReadBytes(stream, impl->indices, sizeof(u16) * impl->index_count);
-    UploadMesh(impl);
+    if (impl->vertex_count > 0) {
+        ReadBytes(stream, impl->vertices, sizeof(MeshVertex) * impl->vertex_count);
+        ReadBytes(stream, impl->indices, sizeof(u16) * impl->index_count);
+        UploadMesh(impl);
+    }
+
     return impl;
 }
 

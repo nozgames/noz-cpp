@@ -13,7 +13,7 @@ static constexpr int FRAME_HISTORY_SIZE = 240;
 
 extern void LoadRendererAssets(Allocator* allocator);
 extern void InitRandom();
-extern void InitUI();
+extern void InitUI(const ApplicationTraits* traits);
 extern void InitEvent(ApplicationTraits* traits);
 extern void InitName(ApplicationTraits* traits);
 extern void InitVfx();
@@ -22,6 +22,7 @@ extern void InitJobs();
 extern void InitRenderer(const RendererTraits* traits);
 extern void InitAllocator(ApplicationTraits* traits);
 extern void InitAudio();
+extern void InitPrefs(const ApplicationTraits& traits);
 extern void UpdateTime();
 extern void ShutdownRenderer();
 extern void ShutdownEvent();
@@ -32,6 +33,7 @@ extern void ShutdownVfx();
 extern void ShutdownTime();
 extern void ShutdownAllocator();
 extern void ShutdownAudio();
+extern void ShutdownPrefs();
 extern void ResetInputState(InputSet* input_set);
 
 // @traits
@@ -50,8 +52,10 @@ static ApplicationTraits g_default_traits =
     .name_memory_size = 1 * noz::MB,
     .max_events = 128,
     .max_event_listeners = 4,
+    .max_prefs = 256,
     .max_event_stack = 32,
     .editor_port = 8080,
+    .ui_depth = F32_MAX,
     .renderer = {
         .max_frame_commands = 8192 * 2,
         .vsync = 1,
@@ -145,17 +149,17 @@ void InitApplication(ApplicationTraits* traits, int argc, const char* argv[]) {
     InitAllocator(traits);
     InitName(traits);
     InitRandom();
-    LoadPrefs();
+    InitPrefs(g_app.traits);
     InitEvent(traits);
     InitTime();
     InitJobs();
     InitTween();
     InitAudio();
 
-    g_app.traits.x = GetPrefInt(GetName("window.x"), g_app.traits.x);
-    g_app.traits.y = GetPrefInt(GetName("window.y"), g_app.traits.y);
-    g_app.traits.width = GetPrefInt(GetName("window.width"), g_app.traits.width);
-    g_app.traits.height = GetPrefInt(GetName("window.height"), g_app.traits.height);
+    g_app.traits.x = GetPrefInt(PREF_WINDOW_X, g_app.traits.x);
+    g_app.traits.y = GetPrefInt(PREF_WINDOW_Y, g_app.traits.y);
+    g_app.traits.width = GetPrefInt(PREF_WINDOW_WIDTH, g_app.traits.width);
+    g_app.traits.height = GetPrefInt(PREF_WINDOW_HEIGHT, g_app.traits.height);
 }
 
 static void HandleClose() {
@@ -190,19 +194,18 @@ void InitWindow() {
 #endif // NOZ_EDITOR
 
     InitVfx();
-    InitUI();
+    InitUI(&g_app.traits);
     InitDebug();
 }
 
-void ShutdownWindow()
-{
+void ShutdownWindow() {
     assert(g_app.window_created);
 
     noz::RectInt window_rect = platform::GetWindowRect();
-    SetPrefInt(GetName("window.x"), window_rect.x);
-    SetPrefInt(GetName("window.y"), window_rect.y);
-    SetPrefInt(GetName("window.width"), window_rect.width);
-    SetPrefInt(GetName("window.height"), window_rect.height);
+    SetPrefInt(PREF_WINDOW_X, window_rect.x);
+    SetPrefInt(PREF_WINDOW_Y, window_rect.y);
+    SetPrefInt(PREF_WINDOW_WIDTH, window_rect.width);
+    SetPrefInt(PREF_WINDOW_HEIGHT, window_rect.height);
 
 #ifdef NOZ_EDITOR
     // Shutdown editor client
@@ -245,7 +248,7 @@ void ShutdownApplication()
     platform::ShutdownApplication();
     ShutdownEvent();
     ShutdownName();
-    SavePrefs();
+    ShutdownPrefs();
     ShutdownAllocator();
 }
 

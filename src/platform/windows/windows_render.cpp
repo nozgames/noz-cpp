@@ -1677,6 +1677,44 @@ void platform::EndRenderPass() {
     vkCmdEndRenderPass(g_vulkan.command_buffer);
 }
 
+void platform::SetViewport(const noz::Rect& viewport) {
+    VkViewport vk_viewport;
+    VkRect2D scissor;
+
+    if (viewport.width > 0 && viewport.height > 0) {
+        // Use specified viewport
+        vk_viewport = {
+            .x = viewport.x,
+            .y = viewport.y,
+            .width = viewport.width,
+            .height = viewport.height,
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f,
+        };
+        scissor = {
+            .offset = {(i32)viewport.x, (i32)viewport.y},
+            .extent = {(u32)viewport.width, (u32)viewport.height}
+        };
+    } else {
+        // Reset to full screen
+        vk_viewport = {
+            .x = 0.0f,
+            .y = 0.0f,
+            .width = (float)g_vulkan.swapchain_extent.width,
+            .height = (float)g_vulkan.swapchain_extent.height,
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f,
+        };
+        scissor = {
+            .offset = {0, 0},
+            .extent = g_vulkan.swapchain_extent
+        };
+    }
+
+    vkCmdSetViewport(g_vulkan.command_buffer, 0, 1, &vk_viewport);
+    vkCmdSetScissor(g_vulkan.command_buffer, 0, 1, &scissor);
+}
+
 static VkShaderModule CreateShaderModule(const void* code, u32 code_size, const char* name) {
     assert(code);
     assert(code_size > 0);

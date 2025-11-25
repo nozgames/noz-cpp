@@ -117,6 +117,13 @@ struct MouseRegionStyle {
     void* user_data;
 };
 
+enum ImageStretch {
+    IMAGE_STRETCH_NONE,
+    IMAGE_STRETCH_FILL,
+    IMAGE_STRETCH_UNIFORM,
+    IMAGE_STRETCH_UNIFORM_FILL
+};
+
 struct ImageStyle {
     Color color = COLOR_WHITE;
     AnimatedColorFunc color_func = nullptr;
@@ -124,6 +131,7 @@ struct ImageStyle {
     float scale = 1.0f;
     Vec2 uv = VEC2_ZERO;
     Vec2 st = VEC2_ONE;
+    ImageStretch stretch = IMAGE_STRETCH_UNIFORM;
 };
 
 struct BorderStyle {
@@ -193,10 +201,15 @@ extern void MouseRegion(const MouseRegionStyle& style, const std::function<void(
 
 // @drawing
 extern void Label(const char* text, const LabelStyle& style = {});
+inline void Label(const text_t& text, const LabelStyle& style = {}) {
+    Label(text.value, style);
+}
 extern void Image(Material* material, const ImageStyle& style = {});
 extern void Image(Material* material, Mesh* mesh, const ImageStyle& style = {});
+extern void Image(Material* material, AnimatedMesh* mesh, float time, const ImageStyle& style = {});
 inline void Image(Mesh* mesh, const ImageStyle& style = {}) { Image(nullptr, mesh, style); }
 extern void Rectangle(const RectangleStyle& style = {});
+extern void Scene(Camera* camera, void (*draw_scene)() = nullptr);
 
 // @edgeinsets
 inline EdgeInsets EdgeInsetsAll(float v) { return EdgeInsets(v, v, v, v); }
@@ -204,6 +217,7 @@ inline EdgeInsets EdgeInsetsTop(float v) { return EdgeInsets(v, 0, 0, 0); }
 inline EdgeInsets EdgeInsetsTopLeft(float t, float l) { return EdgeInsets(t, l, 0, 0); }
 inline EdgeInsets EdgeInsetsTopLeft(float v) { return EdgeInsets(v, v, 0, 0); }
 inline EdgeInsets EdgeInsetsTopRight(float v) { return EdgeInsets(v, 0, 0, v); }
+inline EdgeInsets EdgeInsetsTopRight(float t, float l) { return EdgeInsets(t, 0, 0, l); }
 inline EdgeInsets EdgeInsetsBottom(float v) { return EdgeInsets(0, 0, v, 0); }
 inline EdgeInsets EdgeInsetsBottomLeft(float b, float l) { return EdgeInsets(0, l, b, 0); }
 inline EdgeInsets EdgeInsetsBottomLeft(float v) { return EdgeInsets(0, v, v, 0); }

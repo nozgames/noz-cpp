@@ -202,6 +202,56 @@ void platform::EndRenderPass()
     }
 }
 
+void platform::SetViewport(const noz::Rect& viewport)
+{
+    @autoreleasepool {
+        MetalContext* ctx = GetMetalContext();
+        if (!ctx->render_encoder)
+            return;
+
+        MTLViewport mtl_viewport;
+        MTLScissorRect scissor;
+
+        if (viewport.width > 0 && viewport.height > 0) {
+            // Use specified viewport
+            mtl_viewport = {
+                .originX = (double)viewport.x,
+                .originY = (double)viewport.y,
+                .width = (double)viewport.width,
+                .height = (double)viewport.height,
+                .znear = 0.0,
+                .zfar = 1.0
+            };
+            scissor = {
+                .x = (NSUInteger)viewport.x,
+                .y = (NSUInteger)viewport.y,
+                .width = (NSUInteger)viewport.width,
+                .height = (NSUInteger)viewport.height
+            };
+        } else {
+            // Reset to full screen
+            CGSize size = ctx->metal_layer.drawableSize;
+            mtl_viewport = {
+                .originX = 0.0,
+                .originY = 0.0,
+                .width = size.width,
+                .height = size.height,
+                .znear = 0.0,
+                .zfar = 1.0
+            };
+            scissor = {
+                .x = 0,
+                .y = 0,
+                .width = (NSUInteger)size.width,
+                .height = (NSUInteger)size.height
+            };
+        }
+
+        [ctx->render_encoder setViewport:mtl_viewport];
+        [ctx->render_encoder setScissorRect:scissor];
+    }
+}
+
 void platform::BindTransform(const Mat3& transform, float depth, float depth_scale)
 {
     @autoreleasepool {

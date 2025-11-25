@@ -16,14 +16,22 @@ struct CameraImpl : Camera {
     Vec2 shake_noise;
     float shake_duration;
     float shake_elapsed;
+    noz::Rect viewport; // Viewport rect in screen pixels. If width/height are 0, uses full screen
 };
+
+// Returns the effective size for rendering - viewport size if set, otherwise screen size
+static Vec2Int GetEffectiveSize(CameraImpl* impl) {
+    if (impl->viewport.width > 0 && impl->viewport.height > 0)
+        return Vec2Int{(i32)impl->viewport.width, (i32)impl->viewport.height};
+    return GetScreenSize();
+}
 
 static bool IsDirty(CameraImpl* impl) {
     if (impl->dirty)
         return true;
 
-    Vec2Int current_screen_size = GetScreenSize();
-    return current_screen_size.x != impl->last_screen_size.x || current_screen_size.y != impl->last_screen_size.y;
+    Vec2Int current_size = GetEffectiveSize(impl);
+    return current_size.x != impl->last_screen_size.x || current_size.y != impl->last_screen_size.y;
 }
 
 static CameraImpl* UpdateIfDirty(Camera* camera) {
@@ -74,7 +82,8 @@ void UpdateCamera(Camera* camera) {
         return;
 
     if (impl->auto_size_extents) {
-        float aspectRatio = GetScreenAspectRatio();
+        Vec2Int effectiveSize = GetEffectiveSize(impl);
+        float aspectRatio = (float)effectiveSize.x / (float)effectiveSize.y;
 
         // Calculate actual extents from smart extents
         float left = impl->extents.x;
@@ -210,7 +219,7 @@ void UpdateCamera(Camera* camera) {
     }
 
     impl->inv_view = Inverse(impl->view);
-    impl->last_screen_size = GetScreenSize();
+    impl->last_screen_size = GetEffectiveSize(impl);
     impl->dirty = false;
 }
 
@@ -278,12 +287,20 @@ Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos)
     CameraImpl* impl = UpdateIfDirty(camera);
 
     // Convert screen position to NDC (Normalized Device Coordinates)
-    // Assuming screen_pos is in pixels [0, screenWidth] x [0, screenHeight]
-    Vec2Int screen_size_int = GetScreenSize();
-    Vec2 screenSize = {(f32)screen_size_int.x, (f32)screen_size_int.y};
+    // If viewport is set, coordinates are relative to the viewport
+    Vec2Int effectiveSize = GetEffectiveSize(impl);
+    Vec2 viewportSize = {(f32)effectiveSize.x, (f32)effectiveSize.y};
+
+    // Adjust screen_pos to be relative to viewport if set
+    Vec2 localPos = screen_pos;
+    if (impl->viewport.width > 0 && impl->viewport.height > 0) {
+        localPos.x -= impl->viewport.x;
+        localPos.y -= impl->viewport.y;
+    }
+
     Vec2 ndc;
-    ndc.x = screen_pos.x / screenSize.x * 2.0f - 1.0f;
-    ndc.y = screen_pos.y / screenSize.y * 2.0f - 1.0f;
+    ndc.x = localPos.x / viewportSize.x * 2.0f - 1.0f;
+    ndc.y = localPos.y / viewportSize.y * 2.0f - 1.0f;
 
     // Transform NDC to world space
     Vec3 worldPos = impl->inv_view * Vec3{ndc.x, ndc.y, 1.0f};
@@ -303,12 +320,20 @@ Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos)
     ndc.x /= ndc.z;
     ndc.y /= ndc.z;
 
-    // Convert NDC [-1, 1] to screen coordinates [0, screenSize]
-    Vec2Int screen_size_int = GetScreenSize();
-    Vec2 screenSize = {(f32)screen_size_int.x, (f32)screen_size_int.y};
+    // Convert NDC [-1, 1] to screen coordinates
+    // If viewport is set, coordinates are relative to the viewport
+    Vec2Int effectiveSize = GetEffectiveSize(impl);
+    Vec2 viewportSize = {(f32)effectiveSize.x, (f32)effectiveSize.y};
     Vec2 screen;
-    screen.x = (ndc.x + 1.0f) * 0.5f * screenSize.x;
-    screen.y = (ndc.y + 1.0f) * 0.5f * screenSize.y;
+    screen.x = (ndc.x + 1.0f) * 0.5f * viewportSize.x;
+    screen.y = (ndc.y + 1.0f) * 0.5f * viewportSize.y;
+
+    // Add viewport offset if set
+    if (impl->viewport.width > 0 && impl->viewport.height > 0) {
+        screen.x += impl->viewport.x;
+        screen.y += impl->viewport.y;
+    }
+
     return screen;
 }
 
@@ -320,9 +345,10 @@ const Mat3& GetViewMatrix(Camera* camera)
 Bounds2 GetBounds(Camera* camera)
 {
     CameraImpl* impl = UpdateIfDirty(camera);
-    
+
     // Calculate the actual world bounds from the camera's current state
-    float aspectRatio = GetScreenAspectRatio();
+    Vec2Int effectiveSize = GetEffectiveSize(impl);
+    float aspectRatio = (float)effectiveSize.x / (float)effectiveSize.y;
     
     // Get current extents
     float left = impl->extents.x;
@@ -403,6 +429,18 @@ const Vec2& GetPosition(Camera* camera)
     return static_cast<CameraImpl*>(camera)->position_offset;
 }
 
+void SetViewport(Camera* camera, const noz::Rect& viewport)
+{
+    CameraImpl* impl = static_cast<CameraImpl*>(camera);
+    impl->viewport = viewport;
+    impl->dirty = true;
+}
+
+const noz::Rect& GetViewport(Camera* camera)
+{
+    return static_cast<CameraImpl*>(camera)->viewport;
+}
+
 Camera* CreateCamera(Allocator* allocator)
 {
     CameraImpl* impl = (CameraImpl*)Alloc(allocator, sizeof(CameraImpl));
@@ -411,6 +449,7 @@ Camera* CreateCamera(Allocator* allocator)
     impl->rotation = 0.0f;
     impl->dirty = true;
     impl->last_screen_size = {0, 0};
+    impl->viewport = {}; // Default: use full screen (width/height = 0)
     return impl;
 }
 

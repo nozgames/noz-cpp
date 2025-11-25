@@ -26,6 +26,7 @@ enum ElementType : u8 {
     ELEMENT_TYPE_MOUSE_REGION,
     ELEMENT_TYPE_RECTANGLE,
     ELEMENT_TYPE_ROW,
+    ELEMENT_TYPE_SCENE,
     ELEMENT_TYPE_SIZED_BOX,
     ELEMENT_TYPE_STACK,
     ELEMENT_TYPE_TRANSFORM,
@@ -84,6 +85,11 @@ struct RowElement : Element {
     RowStyle style;
 };
 
+struct SceneElement : Element {
+    Camera* camera;
+    void (*draw_scene)();
+};
+
 struct ColumnElement : Element {
     ColumnStyle style;
 };
@@ -109,6 +115,8 @@ struct ImageElement : Element {
     ImageStyle style;
     Material* material = nullptr;
     Mesh* mesh = nullptr;
+    AnimatedMesh* animated_mesh = nullptr;
+    float animated_time = 0.0f;
 };
 
 struct InsetElement : Element {
@@ -150,6 +158,7 @@ struct UI {
     Material* element_material;
     InputSet* input;
     PoolAllocator* text_mesh_allocator;
+    float depth;
     ElementState prev_element_states[MAX_ELEMENTS];
 };
 
@@ -342,6 +351,15 @@ void Image(Material* material, Mesh* mesh, const ImageStyle& style) {
     image->style = style;
 }
 
+void Image(Material* material, AnimatedMesh* mesh, float time, const ImageStyle& style) {
+    IncrementChildCount();
+    ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
+    image->material = material != nullptr ? material : g_ui.element_material;
+    image->animated_mesh = mesh;
+    image->animated_time = time;
+    image->style = style;
+}
+
 void MouseRegion(const MouseRegionStyle& style, const std::function<void()>& children) {
     IncrementChildCount();
     MouseRegionElement* mouse_region = static_cast<MouseRegionElement*>(CreateElement(ELEMENT_TYPE_MOUSE_REGION));
@@ -353,6 +371,13 @@ void Rectangle(const RectangleStyle& style) {
     IncrementChildCount();
     RectangleElement* rectangle = static_cast<RectangleElement*>(CreateElement(ELEMENT_TYPE_RECTANGLE));
     rectangle->style = style;
+}
+
+void Scene(Camera* camera, void (*draw_scene)()) {
+    IncrementChildCount();
+    SceneElement* scene_element = static_cast<SceneElement*>(CreateElement(ELEMENT_TYPE_SCENE));
+    scene_element->draw_scene = draw_scene;
+    scene_element->camera = camera;
 }
 
 void SizedBox(const SizedBoxStyle& style, const std::function<void()>& children) {
@@ -379,11 +404,12 @@ static int SkipElement(int element_index) {
 }
 
 static EdgeInsets GetMargin(Element* e) {
-    if (e->type == ELEMENT_TYPE_CONTAINER) {
+    if (e->type == ELEMENT_TYPE_CONTAINER)
         return static_cast<ContainerElement*>(e)->style.margin;
-    } else if (e->type == ELEMENT_TYPE_ALIGN) {
+
+    if (e->type == ELEMENT_TYPE_ALIGN)
         return static_cast<AlignElement*>(e)->style.margin;
-    }
+
     return {};
 }
 
@@ -640,8 +666,13 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
         }
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* i = static_cast<ImageElement*>(e);
-        if (e->rect.width == F32_MAX) e->rect.width = GetSize(i->mesh).x * i->style.scale;
-        if (e->rect.height == F32_MAX) e->rect.height = GetSize(i->mesh).y * i->style.scale;
+        if (i->animated_mesh) {
+            if (e->rect.width == F32_MAX) e->rect.width = GetSize(i->animated_mesh).x * i->style.scale;
+            if (e->rect.height == F32_MAX) e->rect.height = GetSize(i->animated_mesh).y * i->style.scale;
+        } else {
+            if (e->rect.width == F32_MAX) e->rect.width = GetSize(i->mesh).x * i->style.scale;
+            if (e->rect.height == F32_MAX) e->rect.height = GetSize(i->mesh).y * i->style.scale;
+        }
     }
 
     if (e->child_count == 0) {
@@ -757,30 +788,44 @@ static int RenderElement(int element_index) {
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* image = static_cast<ImageElement*>(e);
         BindMaterial(image->material);
-        Bounds2 mesh_bounds = GetBounds(image->mesh);
+        Bounds2 mesh_bounds = image->animated_mesh ? GetBounds(image->animated_mesh) : GetBounds(image->mesh);
         Vec2 mesh_size = GetSize(mesh_bounds);
 
-        // Calculate aspect-ratio-preserving scale
-        float scale_x = e->rect.width / mesh_size.x;
-        float scale_y = e->rect.height / mesh_size.y;
-        float uniform_scale = Min(scale_x, scale_y);
-        Vec2 mesh_scale = Vec2{uniform_scale, uniform_scale};
-
-        // Calculate centering offset
-        Vec2 scaled_size = mesh_size * uniform_scale;
-        Vec2 center_offset = Vec2{
-            (e->rect.width - scaled_size.x) * 0.5f,
-            (e->rect.height - scaled_size.y) * 0.5f
-        };
-
-        if (image->style.color_func) {
+        if (image->style.color_func)
             BindColor(image->style.color_func(e->state, 0.0f, image->style.color_func_user_data));
-        } else {
+        else
             BindColor(image->style.color);
+
+        Mat3 image_transform;
+        if (image->style.stretch == IMAGE_STRETCH_UNIFORM) {
+            // Calculate aspect-ratio-preserving scale
+            float scale_x = e->rect.width / mesh_size.x;
+            float scale_y = e->rect.height / mesh_size.y;
+            float uniform_scale = Min(scale_x, scale_y);
+            Vec2 mesh_scale = Vec2{uniform_scale, uniform_scale};
+
+            // Calculate centering offset
+            Vec2 scaled_size = mesh_size * uniform_scale;
+            Vec2 center_offset = Vec2{
+                (e->rect.width - scaled_size.x) * 0.5f,
+                (e->rect.height - scaled_size.y) * 0.5f
+            };
+
+            image_transform = transform * Translate(center_offset) * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1} * image->style.scale);
+        } else if (image->style.stretch == IMAGE_STRETCH_FILL) {
+            Vec2 mesh_scale = Vec2{
+                e->rect.width / mesh_size.x,
+                e->rect.height / mesh_size.y
+            };
+            image_transform = transform * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1} * image->style.scale);
+        } else {
+            image_transform = transform * Translate({e->rect.width * 0.5f, e->rect.height * 0.5f}) * Scale(image->style.scale) * Scale(Vec2{1, -1});
         }
 
-        BindTransform(transform * Translate(center_offset) * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1}));
-        DrawMesh(image->mesh);
+        if (image->animated_mesh)
+            DrawMesh(image->animated_mesh, image_transform, image->animated_time);
+        else
+            DrawMesh(image->mesh, image_transform);
     } else if (e->type == ELEMENT_TYPE_CONTAINER) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
         RenderBackground(e->rect, transform, container->style.color);
@@ -826,6 +871,35 @@ static int RenderElement(int element_index) {
         DrawMesh(g_ui.element_quad);
         BindTransform(transform * Translate(Vec2{e->rect.width - border_width, border_width}) * Scale(Vec2{border_width, e->rect.height - border_width * 2}));
         DrawMesh(g_ui.element_quad);
+    } else if (e->type == ELEMENT_TYPE_SCENE) {
+        SceneElement* scene_element = static_cast<SceneElement*>(e);
+        if (scene_element->camera && scene_element->draw_scene) {
+            // Calculate the screen rect for the scene element
+            // Transform the element corners from UI space to screen space
+            Vec2 ui_top_left = TransformPoint(transform, VEC2_ZERO);
+            Vec2 ui_bottom_right = TransformPoint(transform, Vec2{e->rect.width, e->rect.height});
+
+            Vec2 screen_top_left = WorldToScreen(g_ui.camera, ui_top_left);
+            Vec2 screen_bottom_right = WorldToScreen(g_ui.camera, ui_bottom_right);
+
+            // Create viewport rect in screen pixels
+            noz::Rect viewport_rect = {
+                screen_top_left.x,
+                screen_top_left.y,
+                screen_bottom_right.x - screen_top_left.x,
+                screen_bottom_right.y - screen_top_left.y
+            };
+
+            // Set the scene camera's viewport and render
+            SetViewport(scene_element->camera, viewport_rect);
+            UpdateCamera(scene_element->camera);
+            BindCamera(scene_element->camera);
+            scene_element->draw_scene();
+
+            // Restore the UI camera
+            UpdateCamera(g_ui.camera);
+            BindCamera(g_ui.camera);
+        }
     }
 
     for (u32 i = 0; i < e->child_count; i++)
@@ -924,7 +998,7 @@ void EndUI() {
 }
 
 void DrawUI() {
-    BindDepth(GetApplicationTraits()->renderer.max_depth - 0.01f, 0);
+    BindDepth(g_ui.depth);
     for (u32 element_index = 0; element_index < g_ui.element_count; )
         element_index = RenderElement(element_index);
     BindDepth(0.0f);
@@ -958,7 +1032,7 @@ static Mesh* CreateImageQuad(Allocator* allocator) {
     return mesh;
 }
 
-void InitUI() {
+void InitUI(const ApplicationTraits* traits) {
     g_ui = {};
     g_ui.allocator = CreateArenaAllocator(sizeof(FatElement) * MAX_ELEMENTS, "UI");
     g_ui.camera = CreateCamera(ALLOCATOR_DEFAULT);
@@ -967,6 +1041,7 @@ void InitUI() {
     g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
     g_ui.input = CreateInputSet(ALLOCATOR_DEFAULT);
     g_ui.text_mesh_allocator = CreatePoolAllocator(sizeof(CachedTextMesh), MAX_TEXT_MESHES);
+    g_ui.depth = traits->ui_depth >= F32_MAX ? traits->renderer.max_depth - 0.01f : traits->ui_depth;
 
     EnableButton(g_ui.input, MOUSE_LEFT);
     SetTexture(g_ui.element_material, TEXTURE_WHITE);
