@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "rect.h"
+
 constexpr u32 MAX_UNIFORM_BUFFER_SIZE = sizeof(Mat4);
 constexpr int ANIMATED_MESH_MAX_FRAMES = 32;
 
@@ -93,6 +95,7 @@ extern float GetDuration(AnimatedMesh* mesh);
 extern int GetFrameCount(AnimatedMesh* mesh);
 extern Mesh* GetFrame(AnimatedMesh* mesh, int frame_index);
 extern float Update(AnimatedMesh* mesh, float current_time, float speed=1.0f, bool loop=true);
+extern float Update(AnimatedMesh* mesh, float current_time, float speed, bool loop, int min_frame, int max_frame=-1);
 extern int GetFrameIndex(AnimatedMesh* mesh, float time);
 extern Bounds2 GetBounds(AnimatedMesh* mesh);
 extern Vec2 GetSize(AnimatedMesh* mesh);
@@ -196,6 +199,8 @@ extern void SetPosition(Camera* camera, const Vec2& position);
 extern void SetRotation(Camera* camera, float rotation);
 extern void SetSize(Camera* camera, const Vec2& size);
 extern void SetExtents(Camera* camera, float left, float right, float bottom, float top, bool auto_size=true);
+extern void SetViewport(Camera* camera, const noz::Rect& viewport);
+extern const noz::Rect& GetViewport(Camera* camera);
 extern Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos);
 extern Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos);
 extern void UpdateCamera(Camera* camera);

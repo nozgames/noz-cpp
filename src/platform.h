@@ -47,6 +47,7 @@ namespace platform
     void EndRenderFrame();
     void BeginRenderPass(Color clear_color);
     void EndRenderPass();
+    void SetViewport(const noz::Rect& viewport); // Set viewport rect in screen pixels. Pass empty rect to reset to full screen.
     void BindTransform(const Mat3& transform, float depth=0.0f, float depth_scale=1.0f);
     void BindVertexUserData(const u8* data, u32 size);
     void BindFragmentUserData(const u8* data, u32 size);

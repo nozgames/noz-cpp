@@ -811,15 +811,15 @@ static int RenderElement(int element_index) {
                 (e->rect.height - scaled_size.y) * 0.5f
             };
 
-            image_transform = transform * Translate(center_offset) * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1});
+            image_transform = transform * Translate(center_offset) * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1} * image->style.scale);
         } else if (image->style.stretch == IMAGE_STRETCH_FILL) {
             Vec2 mesh_scale = Vec2{
                 e->rect.width / mesh_size.x,
                 e->rect.height / mesh_size.y
             };
-            image_transform = transform * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1});
+            image_transform = transform * Translate(-mesh_bounds.min * mesh_scale) * Scale(mesh_scale) * Scale(Vec2{1, -1} * image->style.scale);
         } else {
-            image_transform = transform * Translate(-mesh_bounds.min) * Scale(Vec2{1, -1});
+            image_transform = transform * Translate({e->rect.width * 0.5f, e->rect.height * 0.5f}) * Scale(image->style.scale) * Scale(Vec2{1, -1});
         }
 
         if (image->animated_mesh)
@@ -874,7 +874,31 @@ static int RenderElement(int element_index) {
     } else if (e->type == ELEMENT_TYPE_SCENE) {
         SceneElement* scene_element = static_cast<SceneElement*>(e);
         if (scene_element->camera && scene_element->draw_scene) {
-            // todo:
+            // Calculate the screen rect for the scene element
+            // Transform the element corners from UI space to screen space
+            Vec2 ui_top_left = TransformPoint(transform, VEC2_ZERO);
+            Vec2 ui_bottom_right = TransformPoint(transform, Vec2{e->rect.width, e->rect.height});
+
+            Vec2 screen_top_left = WorldToScreen(g_ui.camera, ui_top_left);
+            Vec2 screen_bottom_right = WorldToScreen(g_ui.camera, ui_bottom_right);
+
+            // Create viewport rect in screen pixels
+            noz::Rect viewport_rect = {
+                screen_top_left.x,
+                screen_top_left.y,
+                screen_bottom_right.x - screen_top_left.x,
+                screen_bottom_right.y - screen_top_left.y
+            };
+
+            // Set the scene camera's viewport and render
+            SetViewport(scene_element->camera, viewport_rect);
+            UpdateCamera(scene_element->camera);
+            BindCamera(scene_element->camera);
+            scene_element->draw_scene();
+
+            // Restore the UI camera
+            UpdateCamera(g_ui.camera);
+            BindCamera(g_ui.camera);
         }
     }
 

@@ -35,6 +35,28 @@ Mesh* GetFrame(AnimatedMesh* mesh, int frame_index) {
     return static_cast<AnimatedMeshImpl*>(mesh)->frames[frame_index];
 }
 
+float Update(AnimatedMesh* mesh, float current_time, float speed, bool loop, int min_frame, int max_frame) {
+    if (max_frame == -1)
+        max_frame = GetFrameCount(mesh) - 1;
+
+    int frame_count = max_frame - min_frame;
+    if (frame_count <= 0)
+        return current_time;
+
+    AnimatedMeshImpl* impl = static_cast<AnimatedMeshImpl*>(mesh);
+    float duration = static_cast<float>(frame_count) * impl->frame_rate_inv;
+
+    current_time += speed * GetFrameTime();
+    if (current_time >= duration - F32_EPSILON) {
+        if (loop)
+            current_time = fmod(current_time, duration);
+        else
+            current_time = impl->duration - F32_EPSILON;
+    }
+
+    return current_time;
+}
+
 float Update(AnimatedMesh* mesh, float current_time, float speed, bool loop) {
     AnimatedMeshImpl* impl = static_cast<AnimatedMeshImpl*>(mesh);
     if (impl->frame_count == 0)

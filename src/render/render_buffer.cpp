@@ -306,6 +306,7 @@ void ExecuteRenderCommands()
             break;
 
         case RENDER_COMMAND_TYPE_BIND_CAMERA:
+            platform::SetViewport(GetViewport(command->data.bind_camera.camera));
             platform::BindCamera(GetViewMatrix(command->data.bind_camera.camera));
             break;
 
