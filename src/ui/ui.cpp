@@ -26,6 +26,7 @@ enum ElementType : u8 {
     ELEMENT_TYPE_MOUSE_REGION,
     ELEMENT_TYPE_RECTANGLE,
     ELEMENT_TYPE_ROW,
+    ELEMENT_TYPE_SCENE,
     ELEMENT_TYPE_SIZED_BOX,
     ELEMENT_TYPE_STACK,
     ELEMENT_TYPE_TRANSFORM,
@@ -82,6 +83,11 @@ struct MouseRegionElement : Element {
 
 struct RowElement : Element {
     RowStyle style;
+};
+
+struct SceneElement : Element {
+    Camera* camera;
+    void (*draw_scene)();
 };
 
 struct ColumnElement : Element {
@@ -152,6 +158,7 @@ struct UI {
     Material* element_material;
     InputSet* input;
     PoolAllocator* text_mesh_allocator;
+    float depth;
     ElementState prev_element_states[MAX_ELEMENTS];
 };
 
@@ -366,6 +373,13 @@ void Rectangle(const RectangleStyle& style) {
     rectangle->style = style;
 }
 
+void Scene(Camera* camera, void (*draw_scene)()) {
+    IncrementChildCount();
+    SceneElement* scene_element = static_cast<SceneElement*>(CreateElement(ELEMENT_TYPE_SCENE));
+    scene_element->draw_scene = draw_scene;
+    scene_element->camera = camera;
+}
+
 void SizedBox(const SizedBoxStyle& style, const std::function<void()>& children) {
     IncrementChildCount();
     SizedBoxElement* e = static_cast<SizedBoxElement*>(CreateElement(ELEMENT_TYPE_SIZED_BOX));
@@ -390,11 +404,12 @@ static int SkipElement(int element_index) {
 }
 
 static EdgeInsets GetMargin(Element* e) {
-    if (e->type == ELEMENT_TYPE_CONTAINER) {
+    if (e->type == ELEMENT_TYPE_CONTAINER)
         return static_cast<ContainerElement*>(e)->style.margin;
-    } else if (e->type == ELEMENT_TYPE_ALIGN) {
+
+    if (e->type == ELEMENT_TYPE_ALIGN)
         return static_cast<AlignElement*>(e)->style.margin;
-    }
+
     return {};
 }
 
@@ -856,6 +871,11 @@ static int RenderElement(int element_index) {
         DrawMesh(g_ui.element_quad);
         BindTransform(transform * Translate(Vec2{e->rect.width - border_width, border_width}) * Scale(Vec2{border_width, e->rect.height - border_width * 2}));
         DrawMesh(g_ui.element_quad);
+    } else if (e->type == ELEMENT_TYPE_SCENE) {
+        SceneElement* scene_element = static_cast<SceneElement*>(e);
+        if (scene_element->camera && scene_element->draw_scene) {
+            // todo:
+        }
     }
 
     for (u32 i = 0; i < e->child_count; i++)
@@ -954,7 +974,7 @@ void EndUI() {
 }
 
 void DrawUI() {
-    BindDepth(GetApplicationTraits()->renderer.max_depth - 0.01f, 0);
+    BindDepth(g_ui.depth);
     for (u32 element_index = 0; element_index < g_ui.element_count; )
         element_index = RenderElement(element_index);
     BindDepth(0.0f);
@@ -988,7 +1008,7 @@ static Mesh* CreateImageQuad(Allocator* allocator) {
     return mesh;
 }
 
-void InitUI() {
+void InitUI(const ApplicationTraits* traits) {
     g_ui = {};
     g_ui.allocator = CreateArenaAllocator(sizeof(FatElement) * MAX_ELEMENTS, "UI");
     g_ui.camera = CreateCamera(ALLOCATOR_DEFAULT);
@@ -997,6 +1017,7 @@ void InitUI() {
     g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
     g_ui.input = CreateInputSet(ALLOCATOR_DEFAULT);
     g_ui.text_mesh_allocator = CreatePoolAllocator(sizeof(CachedTextMesh), MAX_TEXT_MESHES);
+    g_ui.depth = traits->ui_depth >= F32_MAX ? traits->renderer.max_depth - 0.01f : traits->ui_depth;
 
     EnableButton(g_ui.input, MOUSE_LEFT);
     SetTexture(g_ui.element_material, TEXTURE_WHITE);

@@ -19,8 +19,7 @@ enum SystemCursor
     SYSTEM_CURSOR_WAIT,
 };
 
-struct ApplicationTraits
-{
+struct ApplicationTraits {
     const char* name;
     const char* title;
     const char* assets_path;
@@ -34,8 +33,10 @@ struct ApplicationTraits
     u32 name_memory_size;
     u32 max_events;
     u32 max_event_listeners;
+    u32 max_prefs;
     u32 max_event_stack;
     u16 editor_port;
+    float ui_depth;
     RendererTraits renderer;
     bool (*load_assets)(Allocator* allocator);
     void (*unload_assets)();

@@ -4,21 +4,21 @@
 
 #include "platform.h"
 
-constexpr int PREFS_MAX_INTS = 64;
-constexpr u16 PREFS_VERSION = 1;
-
+constexpr u16 PREFS_VERSION = 4;
 constexpr u32 PREFS_SIGNATURE = FourCC('N', 'Z', 'P', 'R');
+constexpr i32 PREF_DEFAULT = I32_MIN;
 
 struct Prefs {
-    u64 ints_keys[PREFS_MAX_INTS];
-    i32 ints[PREFS_MAX_INTS];
-    Map ints_map;
+    i32* ints;
+    i32 max_prefs;
 };
 
 static Prefs g_prefs = {};
 
-static void LoadPrefsInternal(const std::filesystem::path& path)
-{
+static void LoadPrefsInternal(const std::filesystem::path& path) {
+    for (i32 i = 0; i < g_prefs.max_prefs; ++i)
+        g_prefs.ints[i] = PREF_DEFAULT;
+
     Stream* stream = LoadStream(ALLOCATOR_SCRATCH, path);
     if (!stream)
         return;
@@ -28,45 +28,42 @@ static void LoadPrefsInternal(const std::filesystem::path& path)
         return;
 
     u16 version = ReadU16(stream);
-    if (version > PREFS_VERSION)
+    if (PREFS_VERSION > version)
         return;
 
     u16 int_count = ReadU16(stream);
-    if (int_count > PREFS_MAX_INTS)
-        return;
-
-    for (u16 i = 0; i < int_count; ++i)
-    {
-        u64 key = ReadU64(stream);
+    for (u16 i = 0; i < int_count; ++i) {
+        u32 index = ReadI32(stream);
         i32 value = ReadI32(stream);
-        SetValue(g_prefs.ints_map, key, &value);
+        g_prefs.ints[index] = value;
     }
 }
 
-void LoadPrefs()
-{
-    g_prefs = {};
-
-    Init(g_prefs.ints_map, g_prefs.ints_keys, g_prefs.ints, PREFS_MAX_INTS, sizeof(i32), 0);
-
+void LoadPrefs() {
     PushScratch();
     LoadPrefsInternal(platform::GetSaveGamePath() / "prefs.dat");
     PopScratch();
 }
 
-static void SavePrefsInternal(const std::filesystem::path& path)
-{
+static void SavePrefsInternal(const std::filesystem::path& path) {
     Stream* stream = CreateStream(ALLOCATOR_SCRATCH, 4096);
     if (!stream)
         return;
 
     WriteU32(stream, PREFS_SIGNATURE);
     WriteU16(stream, PREFS_VERSION);
-    WriteU16(stream, (u16)g_prefs.ints_map.count);
 
-    for (u32 i = 0; i < g_prefs.ints_map.count; ++i)
-    {
-        WriteU64(stream, g_prefs.ints_map.keys[i]);
+    i32 pref_count = 0;
+    for (i32 i = 0; i < g_prefs.max_prefs; ++i)
+        if (g_prefs.ints[i] != PREF_DEFAULT)
+            ++pref_count;
+
+    WriteU16(stream, (u16)pref_count);
+
+    for (i32 i = 0; i < g_prefs.max_prefs; ++i) {
+        if (g_prefs.ints[i] == PREF_DEFAULT)
+            continue;
+        WriteI32(stream, i);
         WriteI32(stream, g_prefs.ints[i]);
     }
 
@@ -79,14 +76,37 @@ void SavePrefs() {
     PopScratch();
 }
 
-void SetPrefInt(const Name* name, i32 value) {
-    SetValue(g_prefs.ints_map, Hash(name->value), &value);
+void SetPrefInt(i32 id, i32 value) {
+    id += PREF_CORE_COUNT;
+    assert(id >= 0 && id < g_prefs.max_prefs);
+    g_prefs.ints[id] = value;
 }
 
-i32 GetPrefInt(const Name* name, i32 default_value) {
-    void* value = GetValue(g_prefs.ints_map, Hash(name->value));
-    if (!value)
+i32 GetPrefInt(int id, i32 default_value) {
+    id += PREF_CORE_COUNT;
+    assert(id >= 0 && id < g_prefs.max_prefs);
+    if (g_prefs.ints[id] == PREF_DEFAULT)
         return default_value;
+    return g_prefs.ints[id];
+}
 
-    return *(i32*)value;
+void ClearPref(int id) {
+    id += PREF_CORE_COUNT;
+    assert(id >= 0 && id < g_prefs.max_prefs);
+    g_prefs.ints[id] = PREF_DEFAULT;
+}
+
+void InitPrefs(const ApplicationTraits& traits) {
+    g_prefs = {};
+    g_prefs.max_prefs = (i32)traits.max_prefs + PREF_CORE_COUNT;
+    g_prefs.ints = static_cast<int*>(Alloc(ALLOCATOR_DEFAULT, sizeof(i32) * g_prefs.max_prefs));
+
+    LoadPrefs();
+}
+
+void ShutdownPrefs() {
+    SavePrefs();
+
+    Free(g_prefs.ints);
+    g_prefs = {};
 }

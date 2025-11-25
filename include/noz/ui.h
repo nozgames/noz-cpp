@@ -201,11 +201,15 @@ extern void MouseRegion(const MouseRegionStyle& style, const std::function<void(
 
 // @drawing
 extern void Label(const char* text, const LabelStyle& style = {});
+inline void Label(const text_t& text, const LabelStyle& style = {}) {
+    Label(text.value, style);
+}
 extern void Image(Material* material, const ImageStyle& style = {});
 extern void Image(Material* material, Mesh* mesh, const ImageStyle& style = {});
 extern void Image(Material* material, AnimatedMesh* mesh, float time, const ImageStyle& style = {});
 inline void Image(Mesh* mesh, const ImageStyle& style = {}) { Image(nullptr, mesh, style); }
 extern void Rectangle(const RectangleStyle& style = {});
+extern void Scene(Camera* camera, void (*draw_scene)() = nullptr);
 
 // @edgeinsets
 inline EdgeInsets EdgeInsetsAll(float v) { return EdgeInsets(v, v, v, v); }
