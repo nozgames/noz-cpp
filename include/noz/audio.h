@@ -10,6 +10,7 @@ struct SoundHandle {
     u64 value;
 };
 
+extern SoundHandle Play(Sound** sounds, int count, float volume = 1.0f, float pitch = 1.0f, bool loop=false);
 extern SoundHandle Play(Sound* sound, float volume = 1.0f, float pitch = 1.0f, bool loop=false);
 extern void PlayMusic(Sound* sound);
 extern void StopMusic();

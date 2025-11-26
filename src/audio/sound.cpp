@@ -68,6 +68,10 @@ void SetSoundVolume(const SoundHandle& handle, float volume)
     platform::SetSoundVolume({handle.value}, volume);
 }
 
+SoundHandle Play(Sound** sounds, int count, float volume, float pitch, bool loop) {
+    return Play(sounds[RandomInt(0, count - 1)], volume, pitch, loop);
+}
+
 SoundHandle Play(Sound* sound, float volume, float pitch, bool loop) {
     SoundImpl* impl = (SoundImpl*)sound;
     platform::SoundHandle handle = platform::PlaySound(impl->platform, volume, pitch, loop);
