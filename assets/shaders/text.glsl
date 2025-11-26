@@ -12,6 +12,7 @@ layout(set = 1, binding = 0, row_major) uniform ObjectBuffer {
     float depth_max;
 } object;
 
+
 layout(location = 0) in vec2 v_position;
 layout(location = 1) in float v_depth;
 layout(location = 2) in vec2 v_uv;

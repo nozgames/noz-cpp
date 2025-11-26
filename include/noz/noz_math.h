@@ -229,6 +229,9 @@ inline f32 Cos(f32 v) { return cosf(v); }
 inline f32 Sin(f32 v) { return sinf(v); }
 inline f32 Atan2(f32 y, f32 x) { return atan2f(y, x); }
 
+// @double
+inline bool ApproxEqual(f64 a, f64 b, f64 epsilon = 1e-6f) { return fabs(a - b) <= epsilon; }
+
 // @min
 inline i32 Min(i32 v1, i32 v2) { return v1 < v2 ? v1 : v2; }
 inline u32 Min(u32 v1, u32 v2) { return v1 < v2 ? v1 : v2; }
