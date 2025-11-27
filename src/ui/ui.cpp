@@ -899,6 +899,7 @@ static int RenderElement(int element_index) {
             // Restore the UI camera
             UpdateCamera(g_ui.camera);
             BindCamera(g_ui.camera);
+            BindDepth(g_ui.depth, 0);
         }
     }
 
@@ -998,7 +999,7 @@ void EndUI() {
 }
 
 void DrawUI() {
-    BindDepth(g_ui.depth);
+    BindDepth(g_ui.depth, 0);
     for (u32 element_index = 0; element_index < g_ui.element_count; )
         element_index = RenderElement(element_index);
     BindDepth(0.0f);
