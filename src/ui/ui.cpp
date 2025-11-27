@@ -172,6 +172,10 @@ static Element* CreateElement(ElementType type) {
     return element;
 }
 
+extern Vec2 ScreenToUI(const Vec2& screen_pos) {
+    return screen_pos / ToVec2(GetScreenSize()) * g_ui.ortho_size;
+}
+
 static void PushElement(Element* element) {
     if (g_ui.element_stack_count >= MAX_ELEMENT_STACK)
         return;

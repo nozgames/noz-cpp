@@ -23,21 +23,21 @@ enum ColliderType
 };
 
 // @structs
-struct RaycastResult
-{
+struct RaycastResult {
     Vec2 point;
     Vec2 normal;
     float fraction;
+    float distance;
 };
 
 // @collider
 extern Collider* CreateCollider(Allocator* allocator, const Vec2* points, u32 point_count);
 extern Collider* CreateCollider(Allocator* allocator, Mesh* mesh);
 extern Collider* CreateCollider(Allocator* allocator, const Bounds2& bounds);
-extern bool OverlapPoint(Collider* collider, const Vec2& point, const Mat3& transform=MAT3_IDENTITY);
-extern bool OverlapBounds(Collider* collider, const Bounds2& bounds, const Mat3& transform=MAT3_IDENTITY);
-extern bool Raycast(Collider* colider, const Vec2& origin, const Vec2& dir, float distance, RaycastResult* result);
-extern bool Raycast(Collider* colider, const Vec2& p0, const Vec2& p1, RaycastResult* result);
+extern bool OverlapPoint(Collider* collider, const Mat3& transform, const Vec2& point);
+extern bool OverlapBounds(Collider* collider, const Mat3& transform, const Bounds2& bounds);
+extern bool Raycast(Collider* colider, const Mat3& transform, const Vec2& p0, const Vec2& p1, RaycastResult* result);
+extern bool Raycast(Collider* colider, const Mat3& transform, const Vec2& origin, const Vec2& dir, float distance, RaycastResult* result);
 extern Bounds2 GetBounds(Collider* collider);
 
 // @collision
