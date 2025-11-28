@@ -225,7 +225,7 @@ void BindColor(Color color, const Vec2& color_uv_offset) {
 void BindColor(Color color, const Vec2& color_uv_offset, Color emission) {
     g_render_buffer->current_color = ToLinear(color);
     g_render_buffer->current_color_uv_offset = color_uv_offset;
-    g_render_buffer->current_emission = emission;
+    g_render_buffer->current_emission = ToLinear(emission);
 }
 
 void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index) {

@@ -119,6 +119,11 @@ constexpr Color Color32ToColor(u32 rgba) {
     return Color32ToColor((rgba >> 24) & 0xFF, (rgba >> 16) & 0xFF, (rgba >> 8) & 0xFF, rgba & 0xFF);
 }
 
+constexpr Color Color32ToColor(u32 rgb, float alpha) {
+    return Color32ToColor((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, (u8)(alpha * 255.0f));
+}
+
+
 constexpr Color COLOR_BLACK = {0.0f, 0.0f, 0.0f, 1.0f};
 constexpr Color COLOR_WHITE = {1.0f, 1.0f, 1.0f, 1.0f};
 constexpr Color COLOR_RED = {1.0f, 0.0f, 0.0f, 1.0f};

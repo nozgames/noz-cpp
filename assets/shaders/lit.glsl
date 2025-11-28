@@ -45,7 +45,8 @@ layout(set = 3, binding = 0) uniform ColorBuffer {
 layout(set = 6, binding = 0) uniform sampler2D mainTexture;
 
 void main() {
-    outColor = mix(texture(mainTexture, f_uv + color_buffer.uv_offset) * color_buffer.color, vec4(color_buffer.emission.rgb,1), color_buffer.emission.a);
+    vec4 diffuse = texture(mainTexture, f_uv + color_buffer.uv_offset) * color_buffer.color;
+    outColor = vec4(mix(diffuse.rgb, color_buffer.emission.rgb, color_buffer.emission.a), diffuse.a);
 }
 
 //@ END
