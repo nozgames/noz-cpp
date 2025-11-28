@@ -201,6 +201,17 @@ static void ExecuteChildren(Element* element, const std::function<void()>& child
     PopElement();
 }
 
+void End() {
+    PopElement();
+}
+
+void BeginAlign(const AlignStyle& style) {
+    IncrementChildCount();
+    AlignElement* e = static_cast<AlignElement*>(CreateElement(ELEMENT_TYPE_ALIGN));
+    e->style = style;
+    PushElement(e);
+}
+
 void Align(const AlignStyle& style, const std::function<void()>& children) {
     IncrementChildCount();
     AlignElement* e = static_cast<AlignElement*>(CreateElement(ELEMENT_TYPE_ALIGN));

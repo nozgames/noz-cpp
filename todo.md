@@ -1,5 +1,10 @@
 # Todo
 
+- [ ] hotkey to select all connected geometry (like in blender)
+- [ ] ctrl-d to duplicate selected
+- [ ] copy-paste for meshes in animated mesh editor
+- [ ] rework mesh data to make it easier to work with faces
+- [ ] select all face not working
 - [ ] new mesh should use click to add verts to create shape, enter to close
 - [ ] reference fodler should auto mark ref
 

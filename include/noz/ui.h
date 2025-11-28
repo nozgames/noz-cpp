@@ -173,7 +173,12 @@ extern void BeginUI(u32 ref_width, u32 ref_height);
 extern void DrawUI();
 extern void EndUI();
 
+
 // @layout
+extern void BeginAlign(const AlignStyle& style={});
+
+extern void End();
+
 extern void Align(const AlignStyle& style, const std::function<void()>& children = nullptr);
 extern void Canvas(const CanvasStyle& style, const std::function<void()>& children = nullptr);
 inline void Canvas(const std::function<void()>& children = nullptr) { Canvas({}, children); }
