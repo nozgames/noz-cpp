@@ -47,7 +47,7 @@ Collider* CreateCollider(Allocator* allocator, Mesh* mesh)
     return impl;
 }
 
-bool OverlapPoint(Collider* collider, const Vec2& point, const Mat3& transform) {
+bool OverlapPoint(Collider* collider, const Mat3& transform, const Vec2& point) {
     ColliderImpl* impl = (ColliderImpl*)collider;
     Vec2 v1 = TransformPoint(transform, impl->points[impl->point_count - 1]);
 
@@ -65,7 +65,7 @@ bool OverlapPoint(Collider* collider, const Vec2& point, const Mat3& transform) 
     return true;
 }
 
-bool OverlapBounds(Collider* collider, const Bounds2& bounds, const Mat3& transform) {
+bool OverlapBounds(Collider* collider, const Mat3& transform, const Bounds2& bounds) {
     ColliderImpl* impl = (ColliderImpl*)collider;
 
     // Check if any of the bounds corners are inside the collider
@@ -77,7 +77,7 @@ bool OverlapBounds(Collider* collider, const Bounds2& bounds, const Mat3& transf
     };
 
     for (u32 i = 0; i < 4; i++) {
-        if (OverlapPoint(collider, corners[i], transform))
+        if (OverlapPoint(collider, transform, corners[i]))
             return true;
     }
 
@@ -98,35 +98,42 @@ Bounds2 GetBounds(Collider* collider) {
     return static_cast<ColliderImpl*>(collider)->bounds;
 }
 
-bool Raycast(Collider* colider, const Vec2& p0, const Vec2& p1, RaycastResult* result) {
-    return Raycast(colider, p0, Normalize(p1 - p0), Length(p1 - p0), result);
+bool Raycast(Collider* colider, const Mat3& transform, const Vec2& p0, const Vec2& p1, RaycastResult* result) {
+    return Raycast(colider, transform, p0, Normalize(p1 - p0), Length(p1 - p0), result);
 }
 
-bool Raycast(Collider* colider, const Vec2& origin, const Vec2& dir, float distance, RaycastResult* result) {
+bool Raycast(Collider* colider, const Mat3& transform, const Vec2& origin, const Vec2& dir, float distance, RaycastResult* result) {
     const ColliderImpl* impl = static_cast<ColliderImpl*>(colider);
 
     Vec2 ray_end = origin + dir * distance;
 
-    result->fraction = 1.0f;
+    RaycastResult best_result = {};
+    best_result.fraction = 1.0f;
 
-    Vec2 v1 = impl->points[impl->point_count - 1];
+    Vec2 v1 = TransformPoint(transform, impl->points[impl->point_count - 1]);
     for (u32 i = 0; i < impl->point_count; i++) {
-        Vec2 v2 = impl->points[i];
+        Vec2 v2 = TransformPoint(transform, impl->points[i]);
 
         Vec2 where;
         if (OverlapLine(origin, ray_end, v1, v2, &where)) {
-            float fraction = Distance(where, origin) / distance;
-            if (fraction < result->fraction) {
-                result->point = where;
-                result->fraction = fraction;
+            float overlap_distance = Distance(where, origin);
+            float fraction = overlap_distance / distance;
+            if (fraction < best_result.fraction) {
+                best_result.point = where;
+                best_result.fraction = fraction;
+                best_result.distance = overlap_distance;
 
                 Vec2 edge = v2 - v1;
-                result->normal = Normalize(Vec2{-edge.y, edge.x});
+                best_result.normal = Normalize(Vec2{-edge.y, edge.x});
             }
         }
 
         v1 = v2;
     }
 
-    return result->fraction < 1.0f;
+    if (result) {
+        *result = best_result;
+    }
+
+    return best_result.fraction < 1.0f;
 }

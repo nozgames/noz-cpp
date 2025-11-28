@@ -172,6 +172,10 @@ static Element* CreateElement(ElementType type) {
     return element;
 }
 
+extern Vec2 ScreenToUI(const Vec2& screen_pos) {
+    return screen_pos / ToVec2(GetScreenSize()) * g_ui.ortho_size;
+}
+
 static void PushElement(Element* element) {
     if (g_ui.element_stack_count >= MAX_ELEMENT_STACK)
         return;
@@ -910,6 +914,7 @@ static int RenderElement(int element_index) {
             // Restore the UI camera
             UpdateCamera(g_ui.camera);
             BindCamera(g_ui.camera);
+            BindDepth(g_ui.depth, 0);
         }
     }
 
@@ -1009,7 +1014,7 @@ void EndUI() {
 }
 
 void DrawUI() {
-    BindDepth(g_ui.depth);
+    BindDepth(g_ui.depth, 0);
     for (u32 element_index = 0; element_index < g_ui.element_count; )
         element_index = RenderElement(element_index);
     BindDepth(0.0f);

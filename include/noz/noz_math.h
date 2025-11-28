@@ -293,6 +293,7 @@ inline Vec2 operator-(const Vec2& v1, const Vec2& v2) { return Vec2{ v1.x - v2.x
 inline Vec2 operator*(const Vec2& v, f32 s) { return Vec2{ v.x * s, v.y * s }; }
 inline Vec2 operator*(const Vec2& v1, const Vec2& v2) { return Vec2{ v1.x * v2.x, v1.y * v2.y }; }
 inline Vec2 operator/(const Vec2& v, f32 s) { return Vec2{ v.x / s, v.y / s }; }
+inline Vec2 operator/(const Vec2& v1, const Vec2& v2) { return Vec2{ v1.x / v2.x, v1.y / v2.y }; }
 inline Vec2 operator+=(Vec2& v1, const Vec2& v2) { v1.x += v2.x; v1.y += v2.y; return v1; }
 inline Vec2 operator-=(Vec2& v1, const Vec2& v2) { v1.x -= v2.x; v1.y -= v2.y; return v1; }
 inline Vec2 operator*=(Vec2& v, f32 s)  { v.x *= s; v.y *= s; return v; }
@@ -364,6 +365,7 @@ inline Vec2 XY(const Vec3& v) { return {v.x, v.y}; }
 inline Vec2 XZ(const Vec3& v) { return {v.x, v.z}; }
 
 // @bounds2
+inline Bounds2 MakeBounds2(float size) { return Bounds2{ Vec2{ -size, -size }, Vec2{ size, size } }; }
 extern Bounds2 ToBounds(const Vec2* positions, u32 count);
 extern Bounds2 Intersection(const Bounds2& a, const Bounds2& b);
 extern bool Contains(const Bounds2& bounds, const Vec2& point);

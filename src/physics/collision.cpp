@@ -32,8 +32,7 @@ bool OverlapPoint(
     return false;
 }
 
-bool OverlapLine(const Vec2& l0v0, const Vec2& l0v1, const Vec2& l1v0, const Vec2& l1v1, Vec2* where)
-{
+bool OverlapLine(const Vec2& l0v0, const Vec2& l0v1, const Vec2& l1v0, const Vec2& l1v1, Vec2* where) {
     Vec2 d0 = l0v1 - l0v0;
     Vec2 d1 = l1v1 - l1v0;
 

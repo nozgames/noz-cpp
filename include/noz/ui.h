@@ -168,10 +168,11 @@ struct ContainerStyle {
     void* user_data;
 };
 
-// @frame
+// @common
 extern void BeginUI(u32 ref_width, u32 ref_height);
 extern void DrawUI();
 extern void EndUI();
+extern Vec2 ScreenToUI(const Vec2& screen_pos);
 
 
 // @layout
@@ -185,7 +186,7 @@ inline void Canvas(const std::function<void()>& children = nullptr) { Canvas({},
 extern void Stack(void (*children)() = nullptr);
 extern void Container(const ContainerStyle& style, const std::function<void()>& children=nullptr);
 extern void Column(const ColumnStyle& style, const std::function<void()>& children = nullptr);
-inline void Column(void (*children)() = nullptr) { Column({}, children); }
+inline void Column(const std::function<void()>& children) { Column({}, children); }
 extern void Row(const RowStyle& style, const std::function<void()>& children = nullptr);
 inline void Row(const std::function<void()>& children = nullptr) { Row({}, children); }
 extern void Border(const BorderStyle& style, const std::function<void()>& children = nullptr);
