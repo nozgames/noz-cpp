@@ -31,6 +31,7 @@ enum InputCode
     KEY_MINUS,
     KEY_EQUALS,
 
+    KEY_TILDE,
     KEY_LEFT_BRACKET,
     KEY_RIGHT_BRACKET,
 
