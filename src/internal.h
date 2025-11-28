@@ -17,6 +17,9 @@ constexpr ShaderFlags SHADER_FLAGS_NONE = 0;
 constexpr ShaderFlags SHADER_FLAGS_BLEND = 1 << 0;
 constexpr ShaderFlags SHADER_FLAGS_DEPTH = 1 << 1;
 constexpr ShaderFlags SHADER_FLAGS_DEPTH_LESS = 1 << 2;
+constexpr ShaderFlags SHADER_FLAGS_POSTPROCESS = 1 << 3;
+constexpr ShaderFlags SHADER_FLAGS_UI_COMPOSITE = 1 << 4;
+constexpr ShaderFlags SHADER_FLAGS_PREMULTIPLIED_ALPHA = 1 << 5;
 
 
 enum VertexRegister
@@ -53,32 +56,18 @@ typedef struct animation_track
     int data_offset;
 } animation_track_t;
 
-// @render_buffer
-
-// @animation
-// void animation_evaluate_frame(
-//     Animation* animation,
-//     float time,
-//     bone_t* bones,
-//     size_t bone_count,
-//     BoneTransform* transforms,
-//     size_t transform_count);
+// @render
+void BeginUIPass();
 
 // @input
 void InitInput();
 void ShutdownInput();
 void UpdateInput();
 
-// @helper
-//InputCode ScanCodeToInputCode(SDL_Scancode scancode);
-InputCode InputCodeFromMouseButton(int button);
-//SDL_Scancode InputCodeToScanCode(InputCode code);
-
 // @physics
 void InitPhysics();
 void ShutdownPhysics();
 void UpdatePhysics();
-
 
 // @animation
 struct AnimationBone {

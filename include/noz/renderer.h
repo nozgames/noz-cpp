@@ -225,6 +225,26 @@ extern const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index);
 extern const Transform& GetBoneTransform(Skeleton* skeleton, int bone_index);
 extern const Bone& GetBone(Skeleton* skeleton, int bone_index);
 
+// @postprocess
+struct PostProcessParams {
+    float desaturation;  // 0.0 = full color, 1.0 = grayscale
+    float blur;          // 0.0 = no blur, 1.0 = max blur (not yet implemented)
+};
+
+extern void EnablePostProcess(bool enabled);
+extern bool IsPostProcessEnabled();
+extern void SetPostProcessMaterial(Material* material);
+extern Material* GetPostProcessMaterial();
+extern void SetPostProcessParams(const PostProcessParams& params);
+extern const PostProcessParams& GetPostProcessParams();
+extern void BeginPostProcessPass();
+extern void EndPostProcessPass();
+extern void DrawPostProcessQuad(Material* material);
+
+// @ui_composite
+extern void SetUICompositeMaterial(Material* material);
+extern Material* GetUICompositeMaterial();
+
 extern Mesh** MESH;
 extern Font** FONT;
 extern Texture** TEXTURE;

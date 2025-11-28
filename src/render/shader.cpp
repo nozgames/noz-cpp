@@ -3,6 +3,7 @@
 //
 
 #include "../platform.h"
+#include <cstring>
 
 Shader** SHADER = nullptr;
 
@@ -57,6 +58,23 @@ static bool LoadShaderInternal(ShaderImpl* impl, Stream* stream, const AssetHead
     ReadBytes(stream, fragment_bytecode, fragment_bytecode_length);
 
     impl->flags = (ShaderFlags)ReadU8(stream);
+
+    // Auto-detect shader types by name
+    if (impl->name) {
+        if (strstr(impl->name->value, "postprocess_ui_composite") != nullptr) {
+            // UI composite must be checked first (more specific)
+            impl->flags |= SHADER_FLAGS_UI_COMPOSITE;
+        } else if (strstr(impl->name->value, "postprocess") != nullptr) {
+            impl->flags |= SHADER_FLAGS_POSTPROCESS;
+        }
+
+        // UI shaders use premultiplied alpha for correct blending onto transparent backgrounds
+        if (strstr(impl->name->value, "ui") != nullptr ||
+            strstr(impl->name->value, "text") != nullptr) {
+            impl->flags |= SHADER_FLAGS_PREMULTIPLIED_ALPHA;
+        }
+    }
+
     impl->platform = platform::CreateShader(
         vertex_bytecode, vertex_bytecode_length,
         geometry_bytecode, geometry_bytecode_length,

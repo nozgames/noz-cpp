@@ -13,10 +13,7 @@ struct MeshVertex;
 struct SamplerOptions;
 struct RectInt;
 
-namespace platform
-{
-    struct Pipeline {};
-    struct PipelineLayout {};
+namespace platform {
     struct Buffer;
     struct BufferMemory {};
     struct Shader;
@@ -47,6 +44,15 @@ namespace platform
     void EndRenderFrame();
     void BeginRenderPass(Color clear_color);
     void EndRenderPass();
+
+    // @postprocess
+    void SetPostProcessEnabled(bool enabled);
+    void BeginPostProcessPass();
+    void EndPostProcessPass();
+    void BeginUIPass();  // Begin UI render pass to ui_offscreen with MSAA
+    void EndSwapchainPass();    // End UI render pass and composite onto swapchain
+    void BindOffscreenTexture();
+    void BindUIOffscreenTexture();
     void SetViewport(const noz::Rect& viewport); // Set viewport rect in screen pixels. Pass empty rect to reset to full screen.
     void BindTransform(const Mat3& transform, float depth=0.0f, float depth_scale=1.0f);
     void BindVertexUserData(const u8* data, u32 size);

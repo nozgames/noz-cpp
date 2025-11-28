@@ -115,8 +115,7 @@ void BeginRenderPass(Color clear_color)
     AddRenderCommand(&cmd);
 }
 
-void EndRenderPass()
-{
+void EndRenderPass() {
     RenderCommand cmd = { .type = RENDER_COMMAND_TYPE_END_PASS };
     AddRenderCommand(&cmd);
 }

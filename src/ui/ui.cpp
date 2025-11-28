@@ -1035,19 +1035,18 @@ void EndUI() {
 }
 
 void DrawUI() {
-    BindDepth(g_ui.depth, 0);
+    BindDepth(0, 0);
     for (u32 element_index = 0; element_index < g_ui.element_count; )
         element_index = RenderElement(element_index);
-    BindDepth(0.0f);
 }
 
 static Mesh* CreateElementQuad(Allocator* allocator) {
     PushScratch();
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddVertex(builder, Vec2{0.0f, 0.0f}, {0.0f, 0.0f});
-    AddVertex(builder, Vec2{1.0f, 0.0f}, {1.0f, 0.0f});
-    AddVertex(builder, Vec2{1.0f, 1.0f}, {1.0f, 1.0f});
-    AddVertex(builder, Vec2{0.0f, 1.0f}, {0.0f, 1.0f});
+    AddVertex(builder, Vec2{0.0f, 0.0f}, ColorUV(0,0));
+    AddVertex(builder, Vec2{1.0f, 0.0f}, ColorUV(0,0));
+    AddVertex(builder, Vec2{1.0f, 1.0f}, ColorUV(0,0));
+    AddVertex(builder, Vec2{0.0f, 1.0f}, ColorUV(0,0));
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
     auto mesh = CreateMesh(allocator, builder, GetName("element"));
@@ -1081,7 +1080,7 @@ void InitUI(const ApplicationTraits* traits) {
     g_ui.depth = traits->ui_depth >= F32_MAX ? traits->renderer.max_depth - 0.01f : traits->ui_depth;
 
     EnableButton(g_ui.input, MOUSE_LEFT);
-    SetTexture(g_ui.element_material, TEXTURE_WHITE);
+    SetTexture(g_ui.element_material, TEXTURE[0]);
 }
 
 void ShutdownUI() {
