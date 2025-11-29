@@ -204,6 +204,7 @@ extern void SizedBox(const SizedBoxStyle& style, const std::function<void()>& ch
 extern void Center(const std::function<void()>& children);
 
 // @modifiers
+extern void BeginExpanded(const ExpandedStyle& style={});
 extern void Transformed(const TransformStyle& style, const std::function<void()>& children = nullptr);
 extern void Expanded(const ExpandedStyle& style, const std::function<void()>& children = nullptr);
 inline void Expanded(const std::function<void()>& children = nullptr) { Expanded({}, children); }
