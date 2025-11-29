@@ -40,4 +40,12 @@ Place this file in your project directory or Visual Studio's natvis folder.
     </Expand>
   </Type>
 
+  <Type Name="Texture">
+    <DisplayString>Texture</DisplayString>
+    <Expand>
+      <ExpandedItem>(TextureImpl*)this</ExpandedItem>
+    </Expand>
+  </Type>
+
+
 </AutoVisualizer>

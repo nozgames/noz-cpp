@@ -1,6 +1,8 @@
 # Todo
 
+- [ ] palette edtior?
 - [ ] hotkey to select all connected geometry (like in blender)
+- [ ] hotkey to move face forward or backward in list
 - [ ] ctrl-d to duplicate selected
 - [ ] copy-paste for meshes in animated mesh editor
 - [ ] rework mesh data to make it easier to work with faces

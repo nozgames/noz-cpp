@@ -17,7 +17,8 @@ constexpr ShaderFlags SHADER_FLAGS_NONE = 0;
 constexpr ShaderFlags SHADER_FLAGS_BLEND = 1 << 0;
 constexpr ShaderFlags SHADER_FLAGS_DEPTH = 1 << 1;
 constexpr ShaderFlags SHADER_FLAGS_DEPTH_LESS = 1 << 2;
-
+constexpr ShaderFlags SHADER_FLAGS_POSTPROCESS = 1 << 3;
+constexpr ShaderFlags SHADER_FLAGS_UI_COMPOSITE = 1 << 4;
 
 enum VertexRegister
 {
