@@ -304,6 +304,13 @@ void Container(const ContainerStyle& style, const std::function<void()>& childre
     ExecuteChildren(container, children);
 }
 
+void BeginExpanded(const ExpandedStyle& style) {
+    IncrementChildCount();
+    ExpandedElement* e = static_cast<ExpandedElement*>(CreateElement(ELEMENT_TYPE_EXPANDED));
+    e->style = style;
+    PushElement(e);
+}
+
 void Expanded(const ExpandedStyle& style, const std::function<void()>& children) {
     IncrementChildCount();
     ExpandedElement* e = static_cast<ExpandedElement*>(CreateElement(ELEMENT_TYPE_EXPANDED));
