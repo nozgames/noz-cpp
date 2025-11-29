@@ -67,12 +67,6 @@ static bool LoadShaderInternal(ShaderImpl* impl, Stream* stream, const AssetHead
         } else if (strstr(impl->name->value, "postprocess") != nullptr) {
             impl->flags |= SHADER_FLAGS_POSTPROCESS;
         }
-
-        // UI shaders use premultiplied alpha for correct blending onto transparent backgrounds
-        if (strstr(impl->name->value, "ui") != nullptr ||
-            strstr(impl->name->value, "text") != nullptr) {
-            impl->flags |= SHADER_FLAGS_PREMULTIPLIED_ALPHA;
-        }
     }
 
     impl->platform = platform::CreateShader(
