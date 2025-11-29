@@ -252,6 +252,11 @@ void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, int frame_index) {
     DrawMesh(GetFrame(mesh, frame_index), transform);
 }
 
+void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, Animator& animator, int bone_index, float time) {
+    BindTransform(transform, animator, bone_index);
+    DrawMesh(GetFrame(mesh, GetFrameIndex(mesh, time)));
+}
+
 void DrawMesh(Mesh* mesh) {
     assert(mesh);
 

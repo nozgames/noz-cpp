@@ -74,7 +74,8 @@ float Update(AnimatedMesh* mesh, float current_time, float speed, bool loop) {
 }
 
 int GetFrameIndex(AnimatedMesh* mesh, float time) {
-    return FloorToInt(time * static_cast<float>(static_cast<AnimatedMeshImpl*>(mesh)->frame_rate));
+    AnimatedMeshImpl* impl = static_cast<AnimatedMeshImpl*>(mesh);
+    return Clamp(FloorToInt(time * static_cast<float>(impl->frame_rate)), 0, impl->frame_count - 1);
 }
 
 static void AnimatedMeshDestructor(void* p) {

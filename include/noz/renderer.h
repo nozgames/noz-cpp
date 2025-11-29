@@ -173,6 +173,7 @@ extern void DrawMesh(Mesh* mesh, const Mat3& transform);
 
 extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, int frame_index);
 extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, float time);
+extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, Animator& animator, int bone_index, float time);
 
 // @font
 struct FontGlyph {
