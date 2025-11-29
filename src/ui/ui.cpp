@@ -222,6 +222,13 @@ void Align(const AlignStyle& style, const std::function<void()>& children) {
     ExecuteChildren(e, children);
 }
 
+void BeginBorder(const BorderStyle& style) {
+    IncrementChildCount();
+    BorderElement* border = static_cast<BorderElement*>(CreateElement(ELEMENT_TYPE_BORDER));
+    border->style = style;
+    PushElement(border);
+}
+
 void Border(const BorderStyle& style, const std::function<void()>& children) {
     IncrementChildCount();
     BorderElement* border = static_cast<BorderElement*>(CreateElement(ELEMENT_TYPE_BORDER));
@@ -308,6 +315,13 @@ void GestureBlocker(const std::function<void()>& children) {
     IncrementChildCount();
     GestureBlockerElement* gesture_blocker = static_cast<GestureBlockerElement*>(CreateElement(ELEMENT_TYPE_GESTURE_BLOCKER));
     ExecuteChildren(gesture_blocker, children);
+}
+
+void BeginGestureDetector(const GestureDetectorStyle& style) {
+    IncrementChildCount();
+    GestureDetectorElement* g = static_cast<GestureDetectorElement*>(CreateElement(ELEMENT_TYPE_GESTURE_DETECTOR));
+    g->style = style;
+    PushElement(g);
 }
 
 void GestureDetector(const GestureDetectorStyle& style, const std::function<void()>& children) {
@@ -416,11 +430,25 @@ void Scene(Camera* camera, void (*draw_scene)()) {
     scene_element->camera = camera;
 }
 
+void BeginSizedBox(const SizedBoxStyle& style) {
+    IncrementChildCount();
+    SizedBoxElement* e = static_cast<SizedBoxElement*>(CreateElement(ELEMENT_TYPE_SIZED_BOX));
+    e->style = style;
+    PushElement(e);
+}
+
 void SizedBox(const SizedBoxStyle& style, const std::function<void()>& children) {
     IncrementChildCount();
     SizedBoxElement* e = static_cast<SizedBoxElement*>(CreateElement(ELEMENT_TYPE_SIZED_BOX));
     e->style = style;
     ExecuteChildren(e, children);
+}
+
+void BeginTransformed(const TransformStyle& style) {
+    IncrementChildCount();
+    TransformElement* transform = static_cast<TransformElement*>(CreateElement(ELEMENT_TYPE_TRANSFORM));
+    transform->style = style;
+    PushElement(transform);
 }
 
 void Transformed(const TransformStyle& style, const std::function<void()>& children) {

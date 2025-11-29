@@ -182,6 +182,9 @@ extern void BeginAlign(const AlignStyle& style={});
 extern void BeginContainer(const ContainerStyle& style={});
 extern void BeginColumn(const ColumnStyle& style={});
 extern void BeginRow(const RowStyle& style={});
+extern void BeginTransformed(const TransformStyle& style);
+extern void BeginSizedBox(const SizedBoxStyle& style);
+extern void BeginBorder(const BorderStyle& style);
 
 extern void End();
 
@@ -206,6 +209,8 @@ extern void Expanded(const ExpandedStyle& style, const std::function<void()>& ch
 inline void Expanded(const std::function<void()>& children = nullptr) { Expanded({}, children); }
 
 // @input
+extern void BeginGestureDetector(const GestureDetectorStyle& style);
+
 extern void GestureBlocker(const std::function<void()>& children);
 extern void GestureDetector(const GestureDetectorStyle& style, const std::function<void()>& children = nullptr);
 extern void MouseRegion(const MouseRegionStyle& style, const std::function<void()>& children = nullptr);
