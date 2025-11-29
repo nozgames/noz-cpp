@@ -132,6 +132,7 @@ struct ImageStyle {
     Vec2 uv = VEC2_ZERO;
     Vec2 st = VEC2_ONE;
     ImageStretch stretch = IMAGE_STRETCH_UNIFORM;
+    Material* material;
 };
 
 struct BorderStyle {
@@ -176,7 +177,11 @@ extern Vec2 ScreenToUI(const Vec2& screen_pos);
 
 
 // @layout
+extern void BeginCanvas(const CanvasStyle& style={});
 extern void BeginAlign(const AlignStyle& style={});
+extern void BeginContainer(const ContainerStyle& style={});
+extern void BeginColumn(const ColumnStyle& style={});
+extern void BeginRow(const RowStyle& style={});
 
 extern void End();
 
@@ -210,10 +215,8 @@ extern void Label(const char* text, const LabelStyle& style = {});
 inline void Label(const text_t& text, const LabelStyle& style = {}) {
     Label(text.value, style);
 }
-extern void Image(Material* material, const ImageStyle& style = {});
-extern void Image(Material* material, Mesh* mesh, const ImageStyle& style = {});
-extern void Image(Material* material, AnimatedMesh* mesh, float time, const ImageStyle& style = {});
-inline void Image(Mesh* mesh, const ImageStyle& style = {}) { Image(nullptr, mesh, style); }
+extern void Image(Mesh* mesh, const ImageStyle& style = {});
+extern void Image(AnimatedMesh* mesh, float time, const ImageStyle& style = {});
 extern void Rectangle(const RectangleStyle& style = {});
 extern void Scene(Camera* camera, void (*draw_scene)() = nullptr);
 

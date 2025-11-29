@@ -94,6 +94,7 @@ static InputCode VKToInputCode(int vk) {
         case VK_F10: return KEY_F10;
         case VK_F11: return KEY_F11;
         case VK_F12: return KEY_F12;
+        case VK_OEM_3: return KEY_TILDE;
         case VK_OEM_4: return KEY_LEFT_BRACKET;
         case VK_OEM_6: return KEY_RIGHT_BRACKET;
         case VK_LBUTTON: return MOUSE_LEFT;

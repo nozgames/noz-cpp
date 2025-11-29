@@ -58,7 +58,6 @@ struct platform::Shader {
     VkShaderModule geometry_module;
     VkShaderModule fragment_module;
     VkPipeline pipeline;
-    PipelineLayout* platform_layout;
 };
 
 struct ObjectBuffer {
@@ -76,8 +75,7 @@ struct ColorBuffer {
     Vec2 padding;
 };
 
-struct VulkanDynamicBuffer
-{
+struct VulkanDynamicBuffer {
     VkBuffer buffer;
     VkDeviceMemory memory;
     void* mapped_ptr;
@@ -86,6 +84,15 @@ struct VulkanDynamicBuffer
     u32 size;
     VkDescriptorSetLayout descriptor_set_layout;
     VkDescriptorSet descriptor_set;
+};
+
+struct OffscreenTarget {
+    VkImage image;
+    VkDeviceMemory memory;
+    VkImageView image_view;
+    VkSampler sampler;
+    VkDescriptorSet descriptor_set;
+    VkFramebuffer framebuffer;
 };
 
 struct VulkanRenderer {
@@ -126,6 +133,24 @@ struct VulkanRenderer {
     u32 current_image_index;
     float depth_conversion_factor;
 
+    // Post-processing resources
+    OffscreenTarget offscreen;
+    VkRenderPass offscreen_render_pass;     // Render to offscreen target
+    VkRenderPass postprocess_render_pass;   // Render fullscreen quad to swapchain
+    VkRenderPass ui_render_pass;            // Render UI to offscreen with MSAA
+    VkRenderPass ui_composite_render_pass;  // Composite UI onto swapchain
+    std::vector<VkFramebuffer> postprocess_framebuffers;  // Framebuffers for post-process pass (one per swapchain image)
+    std::vector<VkFramebuffer> ui_composite_framebuffers; // Framebuffers for UI composite pass (one per swapchain image)
+    OffscreenTarget ui_offscreen;           // UI renders here with MSAA (resolve target)
+    VkFramebuffer ui_framebuffer;           // Framebuffer for UI MSAA rendering
+    VkImage ui_msaa_color_image;            // UI-specific MSAA color image
+    VkDeviceMemory ui_msaa_color_image_memory;
+    VkImageView ui_msaa_color_image_view;
+    VkImage ui_depth_image;                 // UI-specific depth image
+    VkDeviceMemory ui_depth_image_memory;
+    VkImageView ui_depth_image_view;
+    bool postprocess_enabled;
+
 #ifdef _DEBUG
     VkDebugUtilsMessengerEXT debug_messenger;
 #endif
@@ -147,6 +172,21 @@ static void CreateColorResources();
 static void CleanupColorResources();
 static void CreateDepthResources();
 static void CleanupDepthResources();
+static void CreateOffscreenResources();
+static void CleanupOffscreenResources();
+static void CreateOffscreenRenderPass();
+static void CreatePostProcessRenderPass();
+static void CreateUIRenderPass();
+static void CreateUICompositeRenderPass();
+static void CreateOffscreenFramebuffer();
+static void CreatePostProcessFramebuffers();
+static void CleanupPostProcessFramebuffers();
+static void CreateUIOffscreenResources();
+static void CleanupUIOffscreenResources();
+static void CreateUIFramebuffer();
+static void CleanupUIFramebuffer();
+static void CreateUICompositeFramebuffers();
+static void CleanupUICompositeFramebuffers();
 
 static void SetVulkanObjectName(VkObjectType object_type, uint64_t object_handle, const char* name) {
     if (!name || !vkSetDebugUtilsObjectNameEXT)
@@ -951,6 +991,11 @@ void RecreateSwapchainObjects() {
 
     CleanupColorResources();
     CleanupDepthResources();
+    CleanupOffscreenResources();
+    CleanupPostProcessFramebuffers();
+    CleanupUICompositeFramebuffers();
+    CleanupUIFramebuffer();
+    CleanupUIOffscreenResources();
 
     for (auto image_view : g_vulkan.swapchain_image_views)
         vkDestroyImageView(g_vulkan.device, image_view, nullptr);
@@ -1036,29 +1081,15 @@ void RecreateSwapchainObjects() {
         SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)g_vulkan.swapchain_image_views[i], image_name);
     }
 
-    // Recreate color resources for MSAA
     CreateColorResources();
-
-    // Recreate depth resources
     CreateDepthResources();
-
-    // frame buffers
-    g_vulkan.swapchain_framebuffers.resize(g_vulkan.swapchain_image_views.size());
-    for (size_t i = 0; i < g_vulkan.swapchain_image_views.size(); i++)
-    {
-        VkImageView attachments[] = {g_vulkan.msaa_color_image_view, g_vulkan.swapchain_image_views[i], g_vulkan.depth_image_view};
-        VkFramebufferCreateInfo frame_buffer_info = {
-            .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-            .renderPass = g_vulkan.render_pass,
-            .attachmentCount = 3,
-            .pAttachments = attachments,
-            .width = g_vulkan.swapchain_extent.width,
-            .height = g_vulkan.swapchain_extent.height,
-            .layers = 1
-        };
-
-        vkCreateFramebuffer(g_vulkan.device, &frame_buffer_info, nullptr, &g_vulkan.swapchain_framebuffers[i]);
-    }
+    CreateOffscreenResources();
+    CreateOffscreenFramebuffer();
+    CreateFramebuffers();
+    CreatePostProcessFramebuffers();
+    CreateUIOffscreenResources();
+    CreateUIFramebuffer();
+    CreateUICompositeFramebuffers();
 }
 
 void ResizeVulkan(const Vec2Int& size) {
@@ -1642,10 +1673,21 @@ void platform::BeginRenderPass(Color clear_color) {
     clear_values[1].color = {0.0f, 0.0f, 0.0f, 1.0f}; // Resolve attachment (unused)
     clear_values[2].depthStencil = {1.0f, 0};
 
+    // Choose framebuffer and render pass based on whether post-processing is enabled
+    VkFramebuffer framebuffer;
+    VkRenderPass render_pass;
+    if (g_vulkan.postprocess_enabled) {
+        framebuffer = g_vulkan.offscreen.framebuffer;
+        render_pass = g_vulkan.offscreen_render_pass;
+    } else {
+        framebuffer = g_vulkan.swapchain_framebuffers[g_vulkan.current_image_index];
+        render_pass = g_vulkan.render_pass;
+    }
+
     VkRenderPassBeginInfo vk_render_pass_info = {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-        .renderPass = g_vulkan.render_pass,
-        .framebuffer = g_vulkan.swapchain_framebuffers[g_vulkan.current_image_index],
+        .renderPass = render_pass,
+        .framebuffer = framebuffer,
         .renderArea = {
             .offset = {0, 0},
             .extent = g_vulkan.swapchain_extent
@@ -1655,7 +1697,7 @@ void platform::BeginRenderPass(Color clear_color) {
     };
 
     vkCmdBeginRenderPass(g_vulkan.command_buffer, &vk_render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
-    
+
     VkViewport viewport = {
         .x = 0.0f,
         .y = 0.0f,
@@ -1665,7 +1707,7 @@ void platform::BeginRenderPass(Color clear_color) {
         .maxDepth = 1.0f,
     };
     vkCmdSetViewport(g_vulkan.command_buffer, 0, 1, &viewport);
-    
+
     VkRect2D scissor = {
         .offset = {0, 0},
         .extent = g_vulkan.swapchain_extent
@@ -1675,6 +1717,176 @@ void platform::BeginRenderPass(Color clear_color) {
 
 void platform::EndRenderPass() {
     vkCmdEndRenderPass(g_vulkan.command_buffer);
+}
+
+void platform::BeginPostProcessPass() {
+    VkImageMemoryBarrier barrier = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+        .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = g_vulkan.offscreen.image,
+        .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        }
+    };
+
+    vkCmdPipelineBarrier(
+        g_vulkan.command_buffer,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier
+    );
+
+    // Begin post-process render pass (renders to swapchain)
+    VkRenderPassBeginInfo render_pass_info = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .renderPass = g_vulkan.postprocess_render_pass,
+        .framebuffer = g_vulkan.postprocess_framebuffers[g_vulkan.current_image_index],
+        .renderArea = {
+            .offset = {0, 0},
+            .extent = g_vulkan.swapchain_extent
+        },
+        .clearValueCount = 0,
+        .pClearValues = nullptr,
+    };
+
+    vkCmdBeginRenderPass(g_vulkan.command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+
+    VkViewport viewport = {
+        .x = 0.0f,
+        .y = 0.0f,
+        .width = (float)g_vulkan.swapchain_extent.width,
+        .height = (float)g_vulkan.swapchain_extent.height,
+        .minDepth = 0.0f,
+        .maxDepth = 1.0f,
+    };
+    vkCmdSetViewport(g_vulkan.command_buffer, 0, 1, &viewport);
+
+    VkRect2D scissor = {
+        .offset = {0, 0},
+        .extent = g_vulkan.swapchain_extent
+    };
+    vkCmdSetScissor(g_vulkan.command_buffer, 0, 1, &scissor);
+}
+
+void platform::EndPostProcessPass() {
+    vkCmdEndRenderPass(g_vulkan.command_buffer);
+}
+
+void platform::SetPostProcessEnabled(bool enabled) {
+    g_vulkan.postprocess_enabled = enabled;
+}
+
+void platform::BeginUIPass() {
+    // Begin render pass for UI to ui_offscreen with MSAA
+    // UI renders to ui_offscreen, then gets composited onto swapchain
+    VkClearValue clear_values[3] = {};
+    clear_values[0].color = {0.0f, 0.0f, 0.0f, 0.0f};  // Clear UI MSAA to transparent
+    clear_values[1].color = {0.0f, 0.0f, 0.0f, 0.0f};  // Clear UI offscreen to transparent
+    clear_values[2].depthStencil = {1.0f, 0};
+
+    VkRenderPassBeginInfo render_pass_info = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .renderPass = g_vulkan.ui_render_pass,
+        .framebuffer = g_vulkan.ui_framebuffer,
+        .renderArea = {
+            .offset = {0, 0},
+            .extent = g_vulkan.swapchain_extent
+        },
+        .clearValueCount = 3,
+        .pClearValues = clear_values,
+    };
+
+    vkCmdBeginRenderPass(g_vulkan.command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+
+    VkViewport viewport = {
+        .x = 0.0f,
+        .y = 0.0f,
+        .width = (float)g_vulkan.swapchain_extent.width,
+        .height = (float)g_vulkan.swapchain_extent.height,
+        .minDepth = 0.0f,
+        .maxDepth = 1.0f,
+    };
+    vkCmdSetViewport(g_vulkan.command_buffer, 0, 1, &viewport);
+
+    VkRect2D scissor = {
+        .offset = {0, 0},
+        .extent = g_vulkan.swapchain_extent
+    };
+    vkCmdSetScissor(g_vulkan.command_buffer, 0, 1, &scissor);
+}
+
+void platform::BindOffscreenTexture() {
+    vkCmdBindDescriptorSets(
+        g_vulkan.command_buffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        g_vulkan.pipeline_layout,
+        VK_SPACE_TEXTURE,
+        1,
+        &g_vulkan.offscreen.descriptor_set,
+        0,
+        nullptr
+    );
+}
+
+void platform::BindUIOffscreenTexture() {
+    vkCmdBindDescriptorSets(
+        g_vulkan.command_buffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        g_vulkan.pipeline_layout,
+        VK_SPACE_TEXTURE,
+        1,
+        &g_vulkan.ui_offscreen.descriptor_set,
+        0,
+        nullptr
+    );
+}
+
+void platform::EndSwapchainPass() {
+    // End the UI render pass (ui_offscreen now contains resolved UI with alpha)
+    vkCmdEndRenderPass(g_vulkan.command_buffer);
+
+    // Begin UI composite pass to alpha-blend UI onto swapchain
+    VkRenderPassBeginInfo render_pass_info = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .renderPass = g_vulkan.ui_composite_render_pass,
+        .framebuffer = g_vulkan.ui_composite_framebuffers[g_vulkan.current_image_index],
+        .renderArea = {
+            .offset = {0, 0},
+            .extent = g_vulkan.swapchain_extent
+        },
+        .clearValueCount = 0,
+        .pClearValues = nullptr,
+    };
+
+    vkCmdBeginRenderPass(g_vulkan.command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+
+    VkViewport viewport = {
+        .x = 0.0f,
+        .y = 0.0f,
+        .width = (float)g_vulkan.swapchain_extent.width,
+        .height = (float)g_vulkan.swapchain_extent.height,
+        .minDepth = 0.0f,
+        .maxDepth = 1.0f,
+    };
+    vkCmdSetViewport(g_vulkan.command_buffer, 0, 1, &viewport);
+
+    VkRect2D scissor = {
+        .offset = {0, 0},
+        .extent = g_vulkan.swapchain_extent
+    };
+    vkCmdSetScissor(g_vulkan.command_buffer, 0, 1, &scissor);
 }
 
 void platform::SetViewport(const noz::Rect& viewport) {
@@ -1846,9 +2058,11 @@ static bool CreateShaderInternal(
         .lineWidth = 1.0f,
     };
 
+    bool is_postprocess = (flags & SHADER_FLAGS_POSTPROCESS) != 0;
+    bool is_ui_composite = (flags & SHADER_FLAGS_UI_COMPOSITE) != 0;
     VkPipelineMultisampleStateCreateInfo multisampling = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        .rasterizationSamples = g_vulkan.msaa_samples,
+        .rasterizationSamples = (is_postprocess || is_ui_composite) ? VK_SAMPLE_COUNT_1_BIT : g_vulkan.msaa_samples,
         .sampleShadingEnable = VK_FALSE,
     };
 
@@ -1861,8 +2075,21 @@ static bool CreateShaderInternal(
         .depthCompareOp =  depth_less ? VK_COMPARE_OP_LESS : VK_COMPARE_OP_LESS_OR_EQUAL,
     };
 
+    bool is_premultiplied = (flags & SHADER_FLAGS_PREMULTIPLIED_ALPHA) != 0;
+
     VkPipelineColorBlendAttachmentState color_blend_attachment = {};
-    if (flags & SHADER_FLAGS_BLEND) {
+    if (is_ui_composite || is_premultiplied) {
+        // Premultiplied alpha blending:
+        // Shaders output (color * alpha, alpha), blend with: src * 1 + dst * (1 - src_alpha)
+        color_blend_attachment.blendEnable = VK_TRUE;
+        color_blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+        color_blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        color_blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
+        color_blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        color_blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        color_blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
+        color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    } else if (flags & SHADER_FLAGS_BLEND) {
         // Standard alpha blending: (src_alpha * src_color) + ((1 - src_alpha) * dst_color)
         color_blend_attachment.blendEnable = VK_TRUE;
         color_blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
@@ -1892,6 +2119,14 @@ static bool CreateShaderInternal(
         .pDynamicStates = dynamic_states
     };
 
+    // Select appropriate render pass
+    VkRenderPass render_pass = g_vulkan.render_pass;
+    if (is_ui_composite) {
+        render_pass = g_vulkan.ui_composite_render_pass;
+    } else if (is_postprocess) {
+        render_pass = g_vulkan.postprocess_render_pass;
+    }
+
     VkGraphicsPipelineCreateInfo pipeline_info = {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
         .stageCount = static_cast<uint32_t>(shader_stages.size()),
@@ -1905,7 +2140,7 @@ static bool CreateShaderInternal(
         .pColorBlendState = &color_blending,
         .pDynamicState = &dynamic_state,
         .layout = g_vulkan.pipeline_layout,
-        .renderPass = g_vulkan.render_pass,
+        .renderPass = render_pass,
         .subpass = 0
     };
 
@@ -2071,6 +2306,793 @@ static void CleanupDepthResources() {
     }
 }
 
+static void CreateOffscreenResources() {
+    // Create offscreen image (no MSAA, used as texture input for post-process)
+    VkFormat color_format = g_vulkan.swapchain_image_format;
+
+    VkImageCreateInfo image_info = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = color_format,
+        .extent = {
+            .width = g_vulkan.swapchain_extent.width,
+            .height = g_vulkan.swapchain_extent.height,
+            .depth = 1
+        },
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    };
+
+    if (vkCreateImage(g_vulkan.device, &image_info, nullptr, &g_vulkan.offscreen.image) != VK_SUCCESS)
+        Exit("Failed to create offscreen image");
+
+    VkMemoryRequirements mem_requirements;
+    vkGetImageMemoryRequirements(g_vulkan.device, g_vulkan.offscreen.image, &mem_requirements);
+
+    VkMemoryAllocateInfo alloc_info = {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .allocationSize = mem_requirements.size,
+        .memoryTypeIndex = FindMemoryType(mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+    };
+
+    if (vkAllocateMemory(g_vulkan.device, &alloc_info, nullptr, &g_vulkan.offscreen.memory) != VK_SUCCESS)
+        Exit("Failed to allocate offscreen image memory");
+
+    vkBindImageMemory(g_vulkan.device, g_vulkan.offscreen.image, g_vulkan.offscreen.memory, 0);
+
+    // Create image view
+    VkImageViewCreateInfo view_info = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image = g_vulkan.offscreen.image,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = color_format,
+        .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        }
+    };
+
+    if (vkCreateImageView(g_vulkan.device, &view_info, nullptr, &g_vulkan.offscreen.image_view) != VK_SUCCESS)
+        Exit("Failed to create offscreen image view");
+
+    // Create sampler for post-process shader to sample the offscreen texture
+    VkSamplerCreateInfo sampler_info = {
+        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        .magFilter = VK_FILTER_LINEAR,
+        .minFilter = VK_FILTER_LINEAR,
+        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .mipLodBias = 0.0f,
+        .anisotropyEnable = VK_FALSE,
+        .maxAnisotropy = 1.0f,
+        .compareEnable = VK_FALSE,
+        .compareOp = VK_COMPARE_OP_ALWAYS,
+        .minLod = 0.0f,
+        .maxLod = 0.0f,
+        .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+        .unnormalizedCoordinates = VK_FALSE,
+    };
+
+    if (vkCreateSampler(g_vulkan.device, &sampler_info, nullptr, &g_vulkan.offscreen.sampler) != VK_SUCCESS)
+        Exit("Failed to create offscreen sampler");
+
+    // Create descriptor set for sampling offscreen texture
+    VkDescriptorSetAllocateInfo desc_alloc_info = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool = g_vulkan.descriptor_pool,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &g_vulkan.texture_descriptor_set_layout
+    };
+
+    if (vkAllocateDescriptorSets(g_vulkan.device, &desc_alloc_info, &g_vulkan.offscreen.descriptor_set) != VK_SUCCESS)
+        Exit("Failed to allocate offscreen descriptor set");
+
+    VkDescriptorImageInfo desc_image_info = {
+        .sampler = g_vulkan.offscreen.sampler,
+        .imageView = g_vulkan.offscreen.image_view,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
+
+    VkWriteDescriptorSet write = {
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = g_vulkan.offscreen.descriptor_set,
+        .dstBinding = 0,
+        .dstArrayElement = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .pImageInfo = &desc_image_info
+    };
+    vkUpdateDescriptorSets(g_vulkan.device, 1, &write, 0, nullptr);
+
+    SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE, (uint64_t)g_vulkan.offscreen.image, "Offscreen");
+    SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)g_vulkan.offscreen.image_view, "Offscreen");
+    SetVulkanObjectName(VK_OBJECT_TYPE_SAMPLER, (uint64_t)g_vulkan.offscreen.sampler, "Offscreen");
+    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.offscreen.descriptor_set, "Offscreen");
+}
+
+static void CleanupOffscreenResources() {
+    if (g_vulkan.offscreen.sampler != VK_NULL_HANDLE) {
+        vkDestroySampler(g_vulkan.device, g_vulkan.offscreen.sampler, nullptr);
+        g_vulkan.offscreen.sampler = VK_NULL_HANDLE;
+    }
+    if (g_vulkan.offscreen.image_view != VK_NULL_HANDLE) {
+        vkDestroyImageView(g_vulkan.device, g_vulkan.offscreen.image_view, nullptr);
+        g_vulkan.offscreen.image_view = VK_NULL_HANDLE;
+    }
+    if (g_vulkan.offscreen.image != VK_NULL_HANDLE) {
+        vkDestroyImage(g_vulkan.device, g_vulkan.offscreen.image, nullptr);
+        g_vulkan.offscreen.image = VK_NULL_HANDLE;
+    }
+    if (g_vulkan.offscreen.memory != VK_NULL_HANDLE) {
+        vkFreeMemory(g_vulkan.device, g_vulkan.offscreen.memory, nullptr);
+        g_vulkan.offscreen.memory = VK_NULL_HANDLE;
+    }
+    if (g_vulkan.offscreen.framebuffer != VK_NULL_HANDLE) {
+        vkDestroyFramebuffer(g_vulkan.device, g_vulkan.offscreen.framebuffer, nullptr);
+        g_vulkan.offscreen.framebuffer = VK_NULL_HANDLE;
+    }
+}
+
+static void CreateOffscreenRenderPass() {
+    // Render pass for rendering to offscreen target (MSAA + resolve to offscreen image)
+    // Same as main render pass but final layout is COLOR_ATTACHMENT_OPTIMAL for later sampling
+    VkAttachmentDescription colorAttachment = {};
+    colorAttachment.format = g_vulkan.swapchain_image_format;
+    colorAttachment.samples = g_vulkan.msaa_samples;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentDescription colorAttachmentResolve = {};
+    colorAttachmentResolve.format = g_vulkan.swapchain_image_format;
+    colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // For later shader sampling
+
+    VkAttachmentReference colorAttachmentRef = {
+        .attachment = 0,
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    };
+
+    VkAttachmentReference colorAttachmentResolveRef = {
+        .attachment = 1,
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    };
+
+    VkAttachmentDescription depthAttachment = {};
+    depthAttachment.format = VK_FORMAT_D32_SFLOAT;
+    depthAttachment.samples = g_vulkan.msaa_samples;
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference depthAttachmentRef = {
+        .attachment = 2,
+        .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+    };
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+    subpass.pResolveAttachments = &colorAttachmentResolveRef;
+    subpass.pDepthStencilAttachment = &depthAttachmentRef;
+
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    VkAttachmentDescription attachments[] = {colorAttachment, colorAttachmentResolve, depthAttachment};
+    VkRenderPassCreateInfo renderPassInfo = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+        .attachmentCount = 3,
+        .pAttachments = attachments,
+        .subpassCount = 1,
+        .pSubpasses = &subpass,
+        .dependencyCount = 1,
+        .pDependencies = &dependency
+    };
+
+    if (vkCreateRenderPass(g_vulkan.device, &renderPassInfo, nullptr, &g_vulkan.offscreen_render_pass) != VK_SUCCESS)
+        Exit("Failed to create offscreen render pass");
+}
+
+static void CreatePostProcessRenderPass() {
+    // Simple render pass for post-processing: single color attachment, no depth
+    VkAttachmentDescription color_attachment = {
+        .format = g_vulkan.swapchain_image_format,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    };
+
+    VkAttachmentReference color_ref = {
+        .attachment = 0,
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+
+    VkSubpassDescription subpass = {
+        .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &color_ref,
+    };
+
+    VkSubpassDependency dependency = {
+        .srcSubpass = VK_SUBPASS_EXTERNAL,
+        .dstSubpass = 0,
+        .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask = 0,
+        .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+    };
+
+    VkRenderPassCreateInfo render_pass_info = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+        .attachmentCount = 1,
+        .pAttachments = &color_attachment,
+        .subpassCount = 1,
+        .pSubpasses = &subpass,
+        .dependencyCount = 1,
+        .pDependencies = &dependency,
+    };
+
+    if (vkCreateRenderPass(g_vulkan.device, &render_pass_info, nullptr, &g_vulkan.postprocess_render_pass) != VK_SUCCESS)
+        Exit("Failed to create post-process render pass");
+}
+
+static void CreateUIRenderPass() {
+    // UI render pass: MSAA rendering to UI offscreen target
+    // Same structure as offscreen_render_pass but resolves to ui_offscreen image
+    VkAttachmentDescription colorAttachment = {
+        .format = g_vulkan.swapchain_image_format,
+        .samples = g_vulkan.msaa_samples,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+
+    VkAttachmentDescription colorAttachmentResolve = {
+        .format = g_vulkan.swapchain_image_format,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,  // For compositing shader sampling
+    };
+
+    VkAttachmentDescription depthAttachment = {
+        .format = VK_FORMAT_D32_SFLOAT,
+        .samples = g_vulkan.msaa_samples,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+    };
+
+    VkAttachmentReference colorAttachmentRef = {
+        .attachment = 0,
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+
+    VkAttachmentReference colorAttachmentResolveRef = {
+        .attachment = 1,
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+
+    VkAttachmentReference depthAttachmentRef = {
+        .attachment = 2,
+        .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+    };
+
+    VkSubpassDescription subpass = {
+        .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &colorAttachmentRef,
+        .pResolveAttachments = &colorAttachmentResolveRef,
+        .pDepthStencilAttachment = &depthAttachmentRef,
+    };
+
+    VkSubpassDependency dependency = {
+        .srcSubpass = VK_SUBPASS_EXTERNAL,
+        .dstSubpass = 0,
+        .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+        .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+        .srcAccessMask = 0,
+        .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+    };
+
+    VkAttachmentDescription attachments[] = {colorAttachment, colorAttachmentResolve, depthAttachment};
+    VkRenderPassCreateInfo renderPassInfo = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+        .attachmentCount = 3,
+        .pAttachments = attachments,
+        .subpassCount = 1,
+        .pSubpasses = &subpass,
+        .dependencyCount = 1,
+        .pDependencies = &dependency,
+    };
+
+    if (vkCreateRenderPass(g_vulkan.device, &renderPassInfo, nullptr, &g_vulkan.ui_render_pass) != VK_SUCCESS)
+        Exit("Failed to create UI render pass");
+}
+
+static void CreateUICompositeRenderPass() {
+    // Simple render pass for compositing UI onto swapchain with alpha blending
+    VkAttachmentDescription color_attachment = {
+        .format = g_vulkan.swapchain_image_format,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,  // Load post-processed scene
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    };
+
+    VkAttachmentReference color_ref = {
+        .attachment = 0,
+        .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+
+    VkSubpassDescription subpass = {
+        .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = &color_ref,
+    };
+
+    VkSubpassDependency dependency = {
+        .srcSubpass = VK_SUBPASS_EXTERNAL,
+        .dstSubpass = 0,
+        .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+    };
+
+    VkRenderPassCreateInfo render_pass_info = {
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+        .attachmentCount = 1,
+        .pAttachments = &color_attachment,
+        .subpassCount = 1,
+        .pSubpasses = &subpass,
+        .dependencyCount = 1,
+        .pDependencies = &dependency,
+    };
+
+    if (vkCreateRenderPass(g_vulkan.device, &render_pass_info, nullptr, &g_vulkan.ui_composite_render_pass) != VK_SUCCESS)
+        Exit("Failed to create UI composite render pass");
+}
+
+static void CreateOffscreenFramebuffer() {
+    // Create framebuffer for rendering to offscreen target (with MSAA + depth)
+    VkImageView attachments[] = {
+        g_vulkan.msaa_color_image_view,  // MSAA color
+        g_vulkan.offscreen.image_view,   // Resolve target (offscreen instead of swapchain)
+        g_vulkan.depth_image_view        // Depth
+    };
+
+    VkFramebufferCreateInfo framebuffer_info = {
+        .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+        .renderPass = g_vulkan.offscreen_render_pass,  // Use offscreen render pass
+        .attachmentCount = 3,
+        .pAttachments = attachments,
+        .width = g_vulkan.swapchain_extent.width,
+        .height = g_vulkan.swapchain_extent.height,
+        .layers = 1
+    };
+
+    if (vkCreateFramebuffer(g_vulkan.device, &framebuffer_info, nullptr, &g_vulkan.offscreen.framebuffer) != VK_SUCCESS)
+        Exit("Failed to create offscreen framebuffer");
+
+    SetVulkanObjectName(VK_OBJECT_TYPE_FRAMEBUFFER, (uint64_t)g_vulkan.offscreen.framebuffer, "Offscreen Framebuffer");
+}
+
+static void CreatePostProcessFramebuffers() {
+    g_vulkan.postprocess_framebuffers.resize(g_vulkan.swapchain_image_views.size());
+
+    for (size_t i = 0; i < g_vulkan.swapchain_image_views.size(); i++) {
+        // Post-process framebuffer only has the swapchain image as attachment (no MSAA, no depth)
+        VkImageView attachments[] = { g_vulkan.swapchain_image_views[i] };
+
+        VkFramebufferCreateInfo framebuffer_info = {
+            .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+            .renderPass = g_vulkan.postprocess_render_pass,
+            .attachmentCount = 1,
+            .pAttachments = attachments,
+            .width = g_vulkan.swapchain_extent.width,
+            .height = g_vulkan.swapchain_extent.height,
+            .layers = 1
+        };
+
+        if (vkCreateFramebuffer(g_vulkan.device, &framebuffer_info, nullptr, &g_vulkan.postprocess_framebuffers[i]) != VK_SUCCESS)
+            Exit("Failed to create post-process framebuffer");
+
+        char name[32];
+        snprintf(name, sizeof(name), "PostProcess Framebuffer %zu", i);
+        SetVulkanObjectName(VK_OBJECT_TYPE_FRAMEBUFFER, (uint64_t)g_vulkan.postprocess_framebuffers[i], name);
+    }
+}
+
+static void CleanupPostProcessFramebuffers() {
+    for (auto framebuffer : g_vulkan.postprocess_framebuffers) {
+        if (framebuffer != VK_NULL_HANDLE)
+            vkDestroyFramebuffer(g_vulkan.device, framebuffer, nullptr);
+    }
+    g_vulkan.postprocess_framebuffers.clear();
+}
+
+static void CreateUIOffscreenResources() {
+    // Create UI-specific MSAA color image
+    VkImageCreateInfo msaa_info = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = g_vulkan.swapchain_image_format,
+        .extent = {
+            .width = g_vulkan.swapchain_extent.width,
+            .height = g_vulkan.swapchain_extent.height,
+            .depth = 1
+        },
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = g_vulkan.msaa_samples,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    };
+
+    if (vkCreateImage(g_vulkan.device, &msaa_info, nullptr, &g_vulkan.ui_msaa_color_image) != VK_SUCCESS)
+        Exit("Failed to create UI MSAA color image");
+
+    VkMemoryRequirements msaa_mem_req;
+    vkGetImageMemoryRequirements(g_vulkan.device, g_vulkan.ui_msaa_color_image, &msaa_mem_req);
+
+    VkMemoryAllocateInfo msaa_alloc = {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .allocationSize = msaa_mem_req.size,
+        .memoryTypeIndex = FindMemoryType(msaa_mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+    };
+
+    if (vkAllocateMemory(g_vulkan.device, &msaa_alloc, nullptr, &g_vulkan.ui_msaa_color_image_memory) != VK_SUCCESS)
+        Exit("Failed to allocate UI MSAA color image memory");
+
+    vkBindImageMemory(g_vulkan.device, g_vulkan.ui_msaa_color_image, g_vulkan.ui_msaa_color_image_memory, 0);
+
+    VkImageViewCreateInfo msaa_view_info = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image = g_vulkan.ui_msaa_color_image,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = g_vulkan.swapchain_image_format,
+        .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        }
+    };
+
+    if (vkCreateImageView(g_vulkan.device, &msaa_view_info, nullptr, &g_vulkan.ui_msaa_color_image_view) != VK_SUCCESS)
+        Exit("Failed to create UI MSAA color image view");
+
+    SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE, (uint64_t)g_vulkan.ui_msaa_color_image, "UI MSAA Color");
+    SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)g_vulkan.ui_msaa_color_image_view, "UI MSAA Color");
+
+    // Create UI-specific depth image
+    VkImageCreateInfo depth_info = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = VK_FORMAT_D32_SFLOAT,
+        .extent = {
+            .width = g_vulkan.swapchain_extent.width,
+            .height = g_vulkan.swapchain_extent.height,
+            .depth = 1
+        },
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = g_vulkan.msaa_samples,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    };
+
+    if (vkCreateImage(g_vulkan.device, &depth_info, nullptr, &g_vulkan.ui_depth_image) != VK_SUCCESS)
+        Exit("Failed to create UI depth image");
+
+    VkMemoryRequirements depth_mem_req;
+    vkGetImageMemoryRequirements(g_vulkan.device, g_vulkan.ui_depth_image, &depth_mem_req);
+
+    VkMemoryAllocateInfo depth_alloc = {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .allocationSize = depth_mem_req.size,
+        .memoryTypeIndex = FindMemoryType(depth_mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+    };
+
+    if (vkAllocateMemory(g_vulkan.device, &depth_alloc, nullptr, &g_vulkan.ui_depth_image_memory) != VK_SUCCESS)
+        Exit("Failed to allocate UI depth image memory");
+
+    vkBindImageMemory(g_vulkan.device, g_vulkan.ui_depth_image, g_vulkan.ui_depth_image_memory, 0);
+
+    VkImageViewCreateInfo depth_view_info = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image = g_vulkan.ui_depth_image,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = VK_FORMAT_D32_SFLOAT,
+        .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        }
+    };
+
+    if (vkCreateImageView(g_vulkan.device, &depth_view_info, nullptr, &g_vulkan.ui_depth_image_view) != VK_SUCCESS)
+        Exit("Failed to create UI depth image view");
+
+    SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE, (uint64_t)g_vulkan.ui_depth_image, "UI Depth");
+    SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)g_vulkan.ui_depth_image_view, "UI Depth");
+
+    // Create UI offscreen image (resolve target, no MSAA, used as texture for compositing)
+    VkImageCreateInfo image_info = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = g_vulkan.swapchain_image_format,
+        .extent = {
+            .width = g_vulkan.swapchain_extent.width,
+            .height = g_vulkan.swapchain_extent.height,
+            .depth = 1
+        },
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    };
+
+    if (vkCreateImage(g_vulkan.device, &image_info, nullptr, &g_vulkan.ui_offscreen.image) != VK_SUCCESS)
+        Exit("Failed to create UI offscreen image");
+
+    VkMemoryRequirements mem_requirements;
+    vkGetImageMemoryRequirements(g_vulkan.device, g_vulkan.ui_offscreen.image, &mem_requirements);
+
+    VkMemoryAllocateInfo alloc_info = {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .allocationSize = mem_requirements.size,
+        .memoryTypeIndex = FindMemoryType(mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+    };
+
+    if (vkAllocateMemory(g_vulkan.device, &alloc_info, nullptr, &g_vulkan.ui_offscreen.memory) != VK_SUCCESS)
+        Exit("Failed to allocate UI offscreen image memory");
+
+    vkBindImageMemory(g_vulkan.device, g_vulkan.ui_offscreen.image, g_vulkan.ui_offscreen.memory, 0);
+
+    // Create image view
+    VkImageViewCreateInfo view_info = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image = g_vulkan.ui_offscreen.image,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = g_vulkan.swapchain_image_format,
+        .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        }
+    };
+
+    if (vkCreateImageView(g_vulkan.device, &view_info, nullptr, &g_vulkan.ui_offscreen.image_view) != VK_SUCCESS)
+        Exit("Failed to create UI offscreen image view");
+
+    // Create sampler for compositing shader
+    VkSamplerCreateInfo sampler_info = {
+        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        .magFilter = VK_FILTER_LINEAR,
+        .minFilter = VK_FILTER_LINEAR,
+        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .mipLodBias = 0.0f,
+        .anisotropyEnable = VK_FALSE,
+        .maxAnisotropy = 1.0f,
+        .compareEnable = VK_FALSE,
+        .compareOp = VK_COMPARE_OP_ALWAYS,
+        .minLod = 0.0f,
+        .maxLod = 0.0f,
+        .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+        .unnormalizedCoordinates = VK_FALSE,
+    };
+
+    if (vkCreateSampler(g_vulkan.device, &sampler_info, nullptr, &g_vulkan.ui_offscreen.sampler) != VK_SUCCESS)
+        Exit("Failed to create UI offscreen sampler");
+
+    // Create descriptor set for sampling UI offscreen texture
+    VkDescriptorSetAllocateInfo desc_alloc_info = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool = g_vulkan.descriptor_pool,
+        .descriptorSetCount = 1,
+        .pSetLayouts = &g_vulkan.texture_descriptor_set_layout
+    };
+
+    if (vkAllocateDescriptorSets(g_vulkan.device, &desc_alloc_info, &g_vulkan.ui_offscreen.descriptor_set) != VK_SUCCESS)
+        Exit("Failed to allocate UI offscreen descriptor set");
+
+    VkDescriptorImageInfo desc_image_info = {
+        .sampler = g_vulkan.ui_offscreen.sampler,
+        .imageView = g_vulkan.ui_offscreen.image_view,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
+
+    VkWriteDescriptorSet write = {
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = g_vulkan.ui_offscreen.descriptor_set,
+        .dstBinding = 0,
+        .dstArrayElement = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .pImageInfo = &desc_image_info
+    };
+    vkUpdateDescriptorSets(g_vulkan.device, 1, &write, 0, nullptr);
+
+    SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE, (uint64_t)g_vulkan.ui_offscreen.image, "UI Offscreen");
+    SetVulkanObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)g_vulkan.ui_offscreen.image_view, "UI Offscreen");
+    SetVulkanObjectName(VK_OBJECT_TYPE_SAMPLER, (uint64_t)g_vulkan.ui_offscreen.sampler, "UI Offscreen");
+    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.ui_offscreen.descriptor_set, "UI Offscreen");
+}
+
+static void CleanupUIOffscreenResources() {
+    // Cleanup UI MSAA resources
+    if (g_vulkan.ui_msaa_color_image_view != VK_NULL_HANDLE) {
+        vkDestroyImageView(g_vulkan.device, g_vulkan.ui_msaa_color_image_view, nullptr);
+        g_vulkan.ui_msaa_color_image_view = VK_NULL_HANDLE;
+    }
+    if (g_vulkan.ui_msaa_color_image != VK_NULL_HANDLE) {
+        vkDestroyImage(g_vulkan.device, g_vulkan.ui_msaa_color_image, nullptr);
+        g_vulkan.ui_msaa_color_image = VK_NULL_HANDLE;
+    }
+    if (g_vulkan.ui_msaa_color_image_memory != VK_NULL_HANDLE) {
+        vkFreeMemory(g_vulkan.device, g_vulkan.ui_msaa_color_image_memory, nullptr);
+        g_vulkan.ui_msaa_color_image_memory = VK_NULL_HANDLE;
+    }
+
+    // Cleanup UI depth resources
+    if (g_vulkan.ui_depth_image_view != VK_NULL_HANDLE) {
+        vkDestroyImageView(g_vulkan.device, g_vulkan.ui_depth_image_view, nullptr);
+        g_vulkan.ui_depth_image_view = VK_NULL_HANDLE;
+    }
+    if (g_vulkan.ui_depth_image != VK_NULL_HANDLE) {
+        vkDestroyImage(g_vulkan.device, g_vulkan.ui_depth_image, nullptr);
+        g_vulkan.ui_depth_image = VK_NULL_HANDLE;
+    }
+    if (g_vulkan.ui_depth_image_memory != VK_NULL_HANDLE) {
+        vkFreeMemory(g_vulkan.device, g_vulkan.ui_depth_image_memory, nullptr);
+        g_vulkan.ui_depth_image_memory = VK_NULL_HANDLE;
+    }
+
+    // Cleanup UI offscreen (resolve target)
+    if (g_vulkan.ui_offscreen.sampler != VK_NULL_HANDLE) {
+        vkDestroySampler(g_vulkan.device, g_vulkan.ui_offscreen.sampler, nullptr);
+        g_vulkan.ui_offscreen.sampler = VK_NULL_HANDLE;
+    }
+    if (g_vulkan.ui_offscreen.image_view != VK_NULL_HANDLE) {
+        vkDestroyImageView(g_vulkan.device, g_vulkan.ui_offscreen.image_view, nullptr);
+        g_vulkan.ui_offscreen.image_view = VK_NULL_HANDLE;
+    }
+    if (g_vulkan.ui_offscreen.image != VK_NULL_HANDLE) {
+        vkDestroyImage(g_vulkan.device, g_vulkan.ui_offscreen.image, nullptr);
+        g_vulkan.ui_offscreen.image = VK_NULL_HANDLE;
+    }
+    if (g_vulkan.ui_offscreen.memory != VK_NULL_HANDLE) {
+        vkFreeMemory(g_vulkan.device, g_vulkan.ui_offscreen.memory, nullptr);
+        g_vulkan.ui_offscreen.memory = VK_NULL_HANDLE;
+    }
+}
+
+static void CreateUIFramebuffer() {
+    // UI framebuffer: UI MSAA color, UI offscreen resolve, UI depth
+    VkImageView attachments[] = {
+        g_vulkan.ui_msaa_color_image_view,
+        g_vulkan.ui_offscreen.image_view,
+        g_vulkan.ui_depth_image_view
+    };
+
+    VkFramebufferCreateInfo framebuffer_info = {
+        .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+        .renderPass = g_vulkan.ui_render_pass,
+        .attachmentCount = 3,
+        .pAttachments = attachments,
+        .width = g_vulkan.swapchain_extent.width,
+        .height = g_vulkan.swapchain_extent.height,
+        .layers = 1
+    };
+
+    if (vkCreateFramebuffer(g_vulkan.device, &framebuffer_info, nullptr, &g_vulkan.ui_framebuffer) != VK_SUCCESS)
+        Exit("Failed to create UI framebuffer");
+
+    SetVulkanObjectName(VK_OBJECT_TYPE_FRAMEBUFFER, (uint64_t)g_vulkan.ui_framebuffer, "UI Framebuffer");
+}
+
+static void CleanupUIFramebuffer() {
+    if (g_vulkan.ui_framebuffer != VK_NULL_HANDLE) {
+        vkDestroyFramebuffer(g_vulkan.device, g_vulkan.ui_framebuffer, nullptr);
+        g_vulkan.ui_framebuffer = VK_NULL_HANDLE;
+    }
+}
+
+static void CreateUICompositeFramebuffers() {
+    g_vulkan.ui_composite_framebuffers.resize(g_vulkan.swapchain_image_views.size());
+
+    for (size_t i = 0; i < g_vulkan.swapchain_image_views.size(); i++) {
+        // UI composite framebuffer: just the swapchain image (no MSAA, no depth)
+        VkImageView attachments[] = { g_vulkan.swapchain_image_views[i] };
+
+        VkFramebufferCreateInfo framebuffer_info = {
+            .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+            .renderPass = g_vulkan.ui_composite_render_pass,
+            .attachmentCount = 1,
+            .pAttachments = attachments,
+            .width = g_vulkan.swapchain_extent.width,
+            .height = g_vulkan.swapchain_extent.height,
+            .layers = 1
+        };
+
+        if (vkCreateFramebuffer(g_vulkan.device, &framebuffer_info, nullptr, &g_vulkan.ui_composite_framebuffers[i]) != VK_SUCCESS)
+            Exit("Failed to create UI composite framebuffer");
+
+        char name[32];
+        snprintf(name, sizeof(name), "UI Composite Framebuffer %zu", i);
+        SetVulkanObjectName(VK_OBJECT_TYPE_FRAMEBUFFER, (uint64_t)g_vulkan.ui_composite_framebuffers[i], name);
+    }
+}
+
+static void CleanupUICompositeFramebuffers() {
+    for (auto framebuffer : g_vulkan.ui_composite_framebuffers) {
+        if (framebuffer != VK_NULL_HANDLE)
+            vkDestroyFramebuffer(g_vulkan.device, framebuffer, nullptr);
+    }
+    g_vulkan.ui_composite_framebuffers.clear();
+}
+
 platform::Shader* platform::CreateShader(
     const void* vertex_code,
     u32 vertex_code_size,
@@ -2132,6 +3154,10 @@ void InitVulkan(const RendererTraits* traits, HWND hwnd) {
     CreateCommandPool();
     CreateCommandBuffer();
     CreateSyncObjects();
+    CreateOffscreenRenderPass();
+    CreatePostProcessRenderPass();
+    CreateUIRenderPass();
+    CreateUICompositeRenderPass();
 
     // Get device properties for uniform buffer alignment
     VkPhysicalDeviceProperties device_properties;
@@ -2150,6 +3176,12 @@ void InitVulkan(const RendererTraits* traits, HWND hwnd) {
     CreateDescriptorPool();
     CreateDescriptorSets();
     CreatePipelineLayout();
+    CreateOffscreenResources();
+    CreateOffscreenFramebuffer();
+    CreatePostProcessFramebuffers();
+    CreateUIOffscreenResources();
+    CreateUIFramebuffer();
+    CreateUICompositeFramebuffers();
 }
 
 void ShutdownVulkan() {
@@ -2176,8 +3208,27 @@ void ShutdownVulkan() {
         // Cleanup depth resources
         CleanupDepthResources();
 
-        // Cleanup render pass
+        // Cleanup offscreen resources
+        CleanupOffscreenResources();
+
+        // Cleanup post-process framebuffers
+        CleanupPostProcessFramebuffers();
+
+        // Cleanup UI resources
+        CleanupUICompositeFramebuffers();
+        CleanupUIFramebuffer();
+        CleanupUIOffscreenResources();
+
+        // Cleanup render passes
         vkDestroyRenderPass(g_vulkan.device, g_vulkan.render_pass, nullptr);
+        if (g_vulkan.offscreen_render_pass)
+            vkDestroyRenderPass(g_vulkan.device, g_vulkan.offscreen_render_pass, nullptr);
+        if (g_vulkan.postprocess_render_pass)
+            vkDestroyRenderPass(g_vulkan.device, g_vulkan.postprocess_render_pass, nullptr);
+        if (g_vulkan.ui_render_pass)
+            vkDestroyRenderPass(g_vulkan.device, g_vulkan.ui_render_pass, nullptr);
+        if (g_vulkan.ui_composite_render_pass)
+            vkDestroyRenderPass(g_vulkan.device, g_vulkan.ui_composite_render_pass, nullptr);
 
         // Cleanup swapchain
         for (auto imageView : g_vulkan.swapchain_image_views)

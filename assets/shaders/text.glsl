@@ -64,9 +64,10 @@ void main() {
         float outline_alpha = smoothstep(outline_threshold - width, outline_threshold + width, distance);
         vec3 final_color = mix(outline_color.rgb, color_buffer.color.rgb, alpha);
         float final_alpha = max(outline_alpha * outline_color.a, alpha * color_buffer.color.a);
-        FragColor = vec4(final_color, final_alpha);
+        FragColor = vec4(final_color * final_alpha, final_alpha);
     } else {
-        FragColor = vec4(color_buffer.color.rgb, alpha * color_buffer.color.a);
+        float final_alpha = alpha * color_buffer.color.a;
+        FragColor = vec4(color_buffer.color.rgb * final_alpha, final_alpha);
     }
 }
 

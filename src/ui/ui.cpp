@@ -113,7 +113,6 @@ struct StackElement : Element {
 
 struct ImageElement : Element {
     ImageStyle style;
-    Material* material = nullptr;
     Mesh* mesh = nullptr;
     AnimatedMesh* animated_mesh = nullptr;
     float animated_time = 0.0f;
@@ -230,6 +229,13 @@ void Border(const BorderStyle& style, const std::function<void()>& children) {
     ExecuteChildren(border, children);
 }
 
+void BeginCanvas(const CanvasStyle& style) {
+    IncrementChildCount();
+    CanvasElement* canvas = static_cast<CanvasElement*>(CreateElement(ELEMENT_TYPE_CANVAS));
+    canvas->style = style;
+    PushElement(canvas);
+}
+
 void Canvas(const CanvasStyle& style, const std::function<void()>& children) {
     IncrementChildCount();
     CanvasElement* canvas = static_cast<CanvasElement*>(CreateElement(ELEMENT_TYPE_CANVAS));
@@ -243,11 +249,25 @@ void Center(const std::function<void()>& children) {
     ExecuteChildren(center, children);
 }
 
+void BeginRow(const RowStyle& style) {
+    IncrementChildCount();
+    RowElement* row = static_cast<RowElement*>(CreateElement(ELEMENT_TYPE_ROW));
+    row->style = style;
+    PushElement(row);
+}
+
 void Row(const RowStyle& style, const std::function<void()>& children) {
     IncrementChildCount();
     RowElement* row = static_cast<RowElement*>(CreateElement(ELEMENT_TYPE_ROW));
     row->style = style;
     ExecuteChildren(row, children);
+}
+
+void BeginColumn(const ColumnStyle& style) {
+    IncrementChildCount();
+    ColumnElement* column = static_cast<ColumnElement*>(CreateElement(ELEMENT_TYPE_COLUMN));
+    column->style = style;
+    PushElement(column);
 }
 
 void Column(const ColumnStyle& style, const std::function<void()>& children) {
@@ -261,6 +281,13 @@ void Stack(void (*children)()) {
     IncrementChildCount();
     StackElement* stack = static_cast<StackElement*>(CreateElement(ELEMENT_TYPE_STACK));
     ExecuteChildren(stack, children);
+}
+
+void BeginContainer(const ContainerStyle& style) {
+    IncrementChildCount();
+    ContainerElement* container = static_cast<ContainerElement*>(CreateElement(ELEMENT_TYPE_CONTAINER));
+    container->style = style;
+    PushElement(container);
 }
 
 void Container(const ContainerStyle& style, const std::function<void()>& children) {
@@ -350,29 +377,23 @@ void Inset(const EdgeInsets& insets, void (*children)()) {
     ExecuteChildren(inset, children);
 }
 
-void Image(Material* material, const ImageStyle& style) {
+void Image(Mesh* mesh, const ImageStyle& style) {
     IncrementChildCount();
     ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
-    image->material = material != nullptr ? material : g_ui.element_material;
-    image->mesh = g_ui.image_mesh;
-    image->style = style;
-}
-
-void Image(Material* material, Mesh* mesh, const ImageStyle& style) {
-    IncrementChildCount();
-    ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
-    image->material = material != nullptr ? material : g_ui.element_material;
     image->mesh = mesh;
     image->style = style;
+    if (!image->style.material)
+        image->style.material = g_ui.element_material;
 }
 
-void Image(Material* material, AnimatedMesh* mesh, float time, const ImageStyle& style) {
+void Image(AnimatedMesh* mesh, float time, const ImageStyle& style) {
     IncrementChildCount();
     ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
-    image->material = material != nullptr ? material : g_ui.element_material;
     image->animated_mesh = mesh;
     image->animated_time = time;
     image->style = style;
+    if (!image->style.material)
+        image->style.material = g_ui.element_material;
 }
 
 void MouseRegion(const MouseRegionStyle& style, const std::function<void()>& children) {
@@ -802,7 +823,7 @@ static int RenderElement(int element_index) {
         }
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* image = static_cast<ImageElement*>(e);
-        BindMaterial(image->material);
+        BindMaterial(image->style.material);
         Bounds2 mesh_bounds = image->animated_mesh ? GetBounds(image->animated_mesh) : GetBounds(image->mesh);
         Vec2 mesh_size = GetSize(mesh_bounds);
 
@@ -1014,19 +1035,18 @@ void EndUI() {
 }
 
 void DrawUI() {
-    BindDepth(g_ui.depth, 0);
+    BindDepth(0, 0);
     for (u32 element_index = 0; element_index < g_ui.element_count; )
         element_index = RenderElement(element_index);
-    BindDepth(0.0f);
 }
 
 static Mesh* CreateElementQuad(Allocator* allocator) {
     PushScratch();
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddVertex(builder, Vec2{0.0f, 0.0f}, {0.0f, 0.0f});
-    AddVertex(builder, Vec2{1.0f, 0.0f}, {1.0f, 0.0f});
-    AddVertex(builder, Vec2{1.0f, 1.0f}, {1.0f, 1.0f});
-    AddVertex(builder, Vec2{0.0f, 1.0f}, {0.0f, 1.0f});
+    AddVertex(builder, Vec2{0.0f, 0.0f}, ColorUV(0,0));
+    AddVertex(builder, Vec2{1.0f, 0.0f}, ColorUV(0,0));
+    AddVertex(builder, Vec2{1.0f, 1.0f}, ColorUV(0,0));
+    AddVertex(builder, Vec2{0.0f, 1.0f}, ColorUV(0,0));
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
     auto mesh = CreateMesh(allocator, builder, GetName("element"));
@@ -1060,7 +1080,7 @@ void InitUI(const ApplicationTraits* traits) {
     g_ui.depth = traits->ui_depth >= F32_MAX ? traits->renderer.max_depth - 0.01f : traits->ui_depth;
 
     EnableButton(g_ui.input, MOUSE_LEFT);
-    SetTexture(g_ui.element_material, TEXTURE_WHITE);
+    SetTexture(g_ui.element_material, TEXTURE[0]);
 }
 
 void ShutdownUI() {

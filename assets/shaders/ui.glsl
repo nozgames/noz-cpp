@@ -31,7 +31,10 @@ void main() {
 
 layout(set = 3, binding = 0) uniform ColorBuffer {
     vec4 color;
-} colorData;
+    vec4 emission;
+    vec2 uv_offset;
+    vec2 padding;
+} color_buffer;
 
 layout(set = 4, binding = 0) uniform LightBuffer {
     vec3 direction;
@@ -46,7 +49,8 @@ layout(location = 0) in vec2 f_uv;
 layout(location = 0) out vec4 FragColor;
 
 void main() {
-    FragColor = texture(mainTexture, f_uv) * colorData.color;
+    vec4 diffuse = texture(mainTexture, f_uv + color_buffer.uv_offset) * color_buffer.color;
+    FragColor = vec4(mix(diffuse.rgb, color_buffer.emission.rgb, color_buffer.emission.a) * diffuse.a, diffuse.a);
 }
 
 //@ END
