@@ -1,33 +1,33 @@
+# Skins
+
+- [ ] new asset type for skin
+- [ ] skeleton has a built in skin (default skin)
+- [ ] skin editor allow adding or removing meshes to the skin
+- [ ] meshes are designed at root
+- [ ] meshes can be weighted to a single skeleton
+- [ ] can edit weights of meshes in animation editor or skeleton editor or skin editor
+- [ ] each vertex can have up to 4 weights
+
 # Todo
+
+
+- [ ] higlight asset on hover in select tool
+- [ ] name pan in tools like knife and select
+- [ ] Crash when typing text
+- [ ] Skinned mesh setup for animation
+  - [ ] attach animation to animation (bow as child of stick_bow_fire)
 
 - [ ] palette edtior?
 - [ ] hotkey to select all connected geometry (like in blender)
-- [ ] hotkey to move face forward or backward in list
-- [ ] ctrl-d to duplicate selected
-- [ ] copy-paste for meshes in animated mesh editor
-- [ ] rework mesh data to make it easier to work with faces
-- [ ] select all face not working
+- [ ] ctrl-d to duplicate selected mesh face
 - [ ] new mesh should use click to add verts to create shape, enter to close
-- [ ] reference fodler should auto mark ref
-
-- [ ] click through when overlapping assets
-
-- [ ] Skinned mesh setup for animation
 - [ ] Animation play without being in editor
-
-- [ ] knife tool for cutting faces
-  - [ ] all points must be in the same face for now
-  - [ ] all edges must be in the same face
-  - [ ] only 2 points on edges
-  - [ ] split face into two faces along the two verts and then add the extra verts
 - [ ] multi-select delete did not work
 - [ ] Dont draw origins of objects that are not being edited in front of those that are
 - [ ] There are some bugs with creating faces
 - [ ] There are some bugs with deletting edges and vertices
 - [ ] do not allow estruding an internal edge
 
-- [ ] Cannot set the edge size on the archer head
-- [ ] what is white screen on startup?
 - [ ] Show border color in the color picker with a different box
 - [ ] Creating a new skeleton dos not appear until restarting
 - [ ] After altering bone transforms in the skeleton the animations do not update until going into edit mode on the animation
@@ -61,6 +61,7 @@
 - [ ] x to limit move
 - [ ] y to limit move
 - [ ] vfx initial_rotation and rotation over time
+- [ ] scale command which allows you to specify a scale value for assets
 
 - [ ] Icons for assets that have no draw function
 - [ ] Something causes a spawn of error messages in the editor when client disconnects / reconnects, not sure which
@@ -74,6 +75,5 @@
 - [ ] Change UI, vertex size, edge size, etc to not scale with the window size
 - [ ] Instance a skelton so we can parent different skinned meshes (sotre the instances in the meta file for the skeleton)
 - [ ] hover on animation should play ?
-- [ ] Light color in the editor config
 - [ ] Trail vfx for individual particles
 - [ ] Localized strings
