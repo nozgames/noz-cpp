@@ -17,7 +17,6 @@ extern void ShutdownRenderBuffer();
 extern void ExecuteRenderCommands();
 extern void ClearRenderCommands();
 extern void DrawUI();
-
 static void ResetRenderState();
 
 struct Renderer {
@@ -109,7 +108,6 @@ void EndRenderFrame() {
 
 static void ResetRenderState() {
     BindColor(COLOR_WHITE);
-    BindLight(VEC3_FORWARD, COLOR_WHITE, COLOR_BLACK);
 }
 
 void LoadRendererAssets(Allocator* allocator) {
@@ -146,22 +144,14 @@ const PostProcessParams& GetPostProcessParams() {
 
 static Mesh* GetFullscreenQuad() {
     if (!g_renderer.fullscreen_quad) {
-        // Create fullscreen quad covering NDC space (-1,-1) to (1,1)
-        Vec3 positions[] = {
-            {-1.0f, -1.0f, 0.0f},
-            { 1.0f, -1.0f, 0.0f},
-            { 1.0f,  1.0f, 0.0f},
-            {-1.0f,  1.0f, 0.0f}
+        static MeshVertex vertices[] = {
+            { {-1.0f, -1.0f}, 0.0f, {0.0f, 0.0f} },
+            { { 1.0f, -1.0f}, 0.0f, {1.0f, 0.0f} },
+            { { 1.0f,  1.0f}, 0.0f, {1.0f, 1.0f} },
+            { {-1.0f,  1.0f}, 0.0f, {0.0f, 1.0f} }
         };
-        Vec2 uvs[] = {
-            {0.0f, 0.0f},  // Bottom-left
-            {1.0f, 0.0f},  // Bottom-right
-            {1.0f, 1.0f},  // Top-right
-            {0.0f, 1.0f}   // Top-left
-        };
-        u16 indices[] = {0, 1, 2, 0, 2, 3};
-
-        g_renderer.fullscreen_quad = CreateMesh(nullptr, 4, positions, uvs, 6, indices, GetName("fullscreen_quad"));
+        static u16 indices[] = {0, 1, 2, 0, 2, 3};
+        g_renderer.fullscreen_quad = CreateMesh(nullptr, 4, vertices, 6, indices, GetName("fullscreen_quad"));
     }
     return g_renderer.fullscreen_quad;
 }

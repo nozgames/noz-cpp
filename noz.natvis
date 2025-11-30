@@ -47,5 +47,18 @@ Place this file in your project directory or Visual Studio's natvis folder.
     </Expand>
   </Type>
 
+  <Type Name="Shader">
+    <DisplayString>Shader</DisplayString>
+    <Expand>
+      <ExpandedItem>(ShaderImpl*)this</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="Material">
+    <DisplayString>Material</DisplayString>
+    <Expand>
+      <ExpandedItem>(MaterialImpl*)this</ExpandedItem>
+    </Expand>
+  </Type>
 
 </AutoVisualizer>

@@ -12,7 +12,7 @@
 enum UniformBufferType
 {
     UNIFORM_BUFFER_CAMERA,
-    UNIFORM_BUFFER_TRANSFORM,
+    UNIFORM_BUFFER_OBJECT,
     UNIFORM_BUFFER_VERTEX_USER,
     UNIFORM_BUFFER_COLOR,
     UNIFORM_BUFFER_LIGHT,
@@ -264,8 +264,8 @@ void platform::BindTransform(const Mat3& transform, float depth, float depth_sca
         obj_buffer.depth_scale = depth_scale;
 
         // Update uniform buffer
-        MetalDynamicBuffer& uniform = g_renderer.uniform_buffers[UNIFORM_BUFFER_TRANSFORM];
-        u32& offset = g_renderer.uniform_buffer_offsets[UNIFORM_BUFFER_TRANSFORM];
+        MetalDynamicBuffer& uniform = g_renderer.uniform_buffers[UNIFORM_BUFFER_OBJECT];
+        u32& offset = g_renderer.uniform_buffer_offsets[UNIFORM_BUFFER_OBJECT];
 
         if (offset + sizeof(ObjectBuffer) <= uniform.size) {
             memcpy((u8*)[uniform.buffer contents] + offset, &obj_buffer, sizeof(ObjectBuffer));
@@ -274,7 +274,7 @@ void platform::BindTransform(const Mat3& transform, float depth, float depth_sca
             if (ctx->render_encoder) {
                 [ctx->render_encoder setVertexBuffer:uniform.buffer
                                                offset:offset
-                                              atIndex:UNIFORM_BUFFER_TRANSFORM];
+                                              atIndex:UNIFORM_BUFFER_OBJECT];
             }
 
             offset += MAX_UNIFORM_BUFFER_SIZE;
@@ -324,40 +324,7 @@ void platform::BindFragmentUserData(const u8* data, u32 size)
     }
 }
 
-void platform::BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color)
-{
-    @autoreleasepool {
-        struct LightBuffer {
-            Vec3 direction;
-            float padding1;
-            Color diffuse;
-            Color shadow;
-        } light_buffer;
-
-        light_buffer.direction = light_dir;
-        light_buffer.diffuse = diffuse_color;
-        light_buffer.shadow = shadow_color;
-
-        MetalDynamicBuffer& uniform = g_renderer.uniform_buffers[UNIFORM_BUFFER_LIGHT];
-        u32& offset = g_renderer.uniform_buffer_offsets[UNIFORM_BUFFER_LIGHT];
-
-        if (offset + sizeof(LightBuffer) <= uniform.size) {
-            memcpy((u8*)[uniform.buffer contents] + offset, &light_buffer, sizeof(LightBuffer));
-
-            MetalContext* ctx = GetMetalContext();
-            if (ctx->render_encoder) {
-                [ctx->render_encoder setFragmentBuffer:uniform.buffer
-                                                 offset:offset
-                                                atIndex:UNIFORM_BUFFER_LIGHT];
-            }
-
-            offset += MAX_UNIFORM_BUFFER_SIZE;
-        }
-    }
-}
-
-void platform::BindCamera(const Mat3& view_matrix)
-{
+void platform::BindCamera(const Mat3& view_matrix) {
     @autoreleasepool {
         struct CameraBuffer {
             float view[12];

@@ -106,8 +106,7 @@ struct Vec4 {
     float operator [] (int index) const { return *((float*)this + index); }
 };
 
-struct Vec2Int
-{
+struct Vec2Int {
     i32 x;
     i32 y;
 
@@ -119,8 +118,14 @@ struct Vec2Int
     bool operator!=(const Vec2Int& o) const { return x != o.x || y != o.y; }
 };
 
-struct Vec2Double
-{
+struct Vec4Int {
+    int x;
+    int y;
+    int z;
+    int w;
+};
+
+struct Vec2Double {
     f64 x;
     f64 y;
 

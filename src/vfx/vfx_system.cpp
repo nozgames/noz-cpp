@@ -479,7 +479,7 @@ void InitVfx() {
     g_vfx.material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_VFX);
 
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddQuad(builder, VEC3_UP, VEC3_RIGHT, 1, 1, {0,0});
+    AddQuad(builder, VEC2_UP, VEC2_RIGHT, 1, 1, {0,0});
     g_vfx.meshes[VFX_MESH_SQUARE] = CreateMesh(ALLOCATOR_DEFAULT, builder, GetName("vfx_square"));
     Free(builder);
 }

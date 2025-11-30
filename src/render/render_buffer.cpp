@@ -15,13 +15,13 @@ enum RenderCommandType {
     RENDER_COMMAND_TYPE_BIND_FRAGMENT_USER,
     RENDER_COMMAND_TYPE_BIND_CAMERA,
     RENDER_COMMAND_TYPE_BIND_DEFAULT_TEXTURE,
+    RENDER_COMMAND_TYPE_BIND_SKELETON,
     RENDER_COMMAND_TYPE_DRAW_MESH,
     RENDER_COMMAND_TYPE_BEGIN_PASS,
     RENDER_COMMAND_TYPE_END_PASS,
 };
 
-struct BindCameraData
-{
+struct BindCameraData {
     Camera* camera;
 };
 
@@ -36,39 +36,32 @@ struct DrawMeshData {
     Vec2 color_uv_offset;
 };
 
-struct BeginPassData
-{
+struct BeginPassData {
     Color clear_color;
 };
 
-struct BindDefaultTextureData
-{
+struct BindDefaultTextureData {
     int index;
 };
 
-struct BindLightData
-{
-    Vec3 light_dir;
-    Color diffuse_color;
-    Color shadow_color;
-};
-
-struct BindUserData
-{
+struct BindUserData {
     u8 data[MAX_UNIFORM_BUFFER_SIZE];
 };
 
-struct RenderCommand
-{
+struct BindSkeletonData {
+    int bone_count;
+    Mat3 bones[MAX_BONES];
+};
+
+struct RenderCommand {
     RenderCommandType type;
-    union 
-    {
+    union {
         BindCameraData bind_camera;
-        BindLightData bind_light;
         BindDefaultTextureData bind_default_texture;
         BeginPassData begin_pass;
         DrawMeshData draw_mesh;
         BindUserData bind_user_data;
+        BindSkeletonData bind_skeleton;
     } data;
 };
 
@@ -89,8 +82,7 @@ struct RenderBuffer {
 
 static RenderBuffer* g_render_buffer = nullptr;
 
-static void AddRenderCommand(RenderCommand* cmd)
-{
+static void AddRenderCommand(RenderCommand* cmd) {
     // don't add the command if we are full
     if (g_render_buffer->is_full)
         return;
@@ -99,14 +91,12 @@ static void AddRenderCommand(RenderCommand* cmd)
     g_render_buffer->is_full = g_render_buffer->command_count == g_render_buffer->command_count_max;
 }
 
-void ClearRenderCommands()
-{
+void ClearRenderCommands() {
     g_render_buffer->command_count = 0;
     g_render_buffer->is_full = false;
 }
 
-void BeginRenderPass(Color clear_color)
-{
+void BeginRenderPass(Color clear_color) {
     RenderCommand cmd = {
         .type = RENDER_COMMAND_TYPE_BEGIN_PASS,
         .data = {
@@ -120,8 +110,14 @@ void EndRenderPass() {
     AddRenderCommand(&cmd);
 }
 
-void BindDefaultTexture(int texture_index)
-{
+void BindSkeleton(const Mat3* bones, int bone_count) {
+    RenderCommand cmd = { .type = RENDER_COMMAND_TYPE_BIND_SKELETON };
+    cmd.data.bind_skeleton.bone_count = bone_count;
+    memcpy(cmd.data.bind_skeleton.bones, bones, sizeof(Mat3) * bone_count);
+    AddRenderCommand(&cmd);
+}
+
+void BindDefaultTexture(int texture_index) {
     RenderCommand cmd = {
         .type = RENDER_COMMAND_TYPE_BIND_DEFAULT_TEXTURE,
         .data = {
@@ -177,23 +173,13 @@ void BindVertexUserData(const void* data, size_t size)
     AddRenderCommand(&cmd);
 }
 
-void BindFragmentUserData(const void* data, size_t size)
-{
+void BindFragmentUserData(const void* data, size_t size) {
     assert(size <= MAX_UNIFORM_BUFFER_SIZE);
 
     RenderCommand cmd = {
         .type = RENDER_COMMAND_TYPE_BIND_FRAGMENT_USER,
     };
     memcpy(cmd.data.bind_user_data.data, data, size);
-    AddRenderCommand(&cmd);
-}
-
-void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color)
-{
-    RenderCommand cmd = {
-        .type = RENDER_COMMAND_TYPE_BIND_LIGHT,
-        .data = { .bind_light = { .light_dir = light_dir, .diffuse_color = diffuse_color, .shadow_color = shadow_color } }
-    };
     AddRenderCommand(&cmd);
 }
 
@@ -305,10 +291,6 @@ void ExecuteRenderCommands()
             platform::BindFragmentUserData(command->data.bind_user_data.data, MAX_UNIFORM_BUFFER_SIZE);
             break;
 
-        case RENDER_COMMAND_TYPE_BIND_LIGHT:
-            platform::BindLight(command->data.bind_light.light_dir, command->data.bind_light.diffuse_color, command->data.bind_light.shadow_color);
-            break;
-
         case RENDER_COMMAND_TYPE_BIND_CAMERA:
             platform::SetViewport(GetViewport(command->data.bind_camera.camera));
             platform::BindCamera(GetViewMatrix(command->data.bind_camera.camera));
@@ -333,6 +315,10 @@ void ExecuteRenderCommands()
 
         case RENDER_COMMAND_TYPE_BIND_DEFAULT_TEXTURE:
             BindTextureInternal(TEXTURE_WHITE, command->data.bind_default_texture.index);
+            break;
+
+        case RENDER_COMMAND_TYPE_BIND_SKELETON:
+            platform::BindSkeleton(command->data.bind_skeleton.bones, (u8)command->data.bind_skeleton.bone_count);
             break;
 
         case RENDER_COMMAND_TYPE_END_PASS:

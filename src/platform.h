@@ -57,9 +57,9 @@ namespace platform {
     void BindTransform(const Mat3& transform, float depth=0.0f, float depth_scale=1.0f);
     void BindVertexUserData(const u8* data, u32 size);
     void BindFragmentUserData(const u8* data, u32 size);
-    void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color);
     void BindCamera(const Mat3& view_matrix);
     void BindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission);
+    void BindSkeleton(const Mat3* bone_transforms, u8 bone_count);
     Buffer* CreateVertexBuffer(
         const MeshVertex* vertices,
         u16 vertex_count,
