@@ -9,6 +9,7 @@
 constexpr int MAX_BONES = 32;
 constexpr u32 MAX_UNIFORM_BUFFER_SIZE = sizeof(Mat4) * 32;
 constexpr int ANIMATED_MESH_MAX_FRAMES = 32;
+constexpr int MESH_MAX_VERTEX_WEIGHTS = 4;
 
 // @types
 struct Camera {};
@@ -137,6 +138,7 @@ inline void AddVertex(MeshBuilder* builder, const Vec2& position, float depth) {
 inline void AddVertex(MeshBuilder* builder, const Vec2& position) {
     AddVertex(builder, {position.x, position.y}, 0.0f);
 }
+extern void AddVertexWeight(MeshBuilder* builder, int bone_idnex, float weight);
 extern void AddCircle(MeshBuilder* builder, const Vec2& center, f32 radius, int segments, const Vec2& uv_color);
 extern void AddCircleStroke(MeshBuilder* builder, const Vec2& center, f32 radius, f32 thickness, int segments, const Vec2& uv_color);
 extern void AddArc(MeshBuilder* builder, const Vec2& center, f32 radius, f32 start, f32 end, int segments, const Vec2& uv_color);

@@ -123,6 +123,9 @@ struct Vec4Int {
     int y;
     int z;
     int w;
+
+    int& operator [] (int index) { return *(reinterpret_cast<int*>(this) + index); }
+    int operator [] (int index) const { return *((int*)this + index); }
 };
 
 struct Vec2Double {

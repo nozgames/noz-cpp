@@ -8,9 +8,12 @@
 - [ ] can edit weights of meshes in animation editor or skeleton editor or skin editor
 - [ ] each vertex can have up to 4 weights[ui.glsl](../../nonstick/noz/assets/shaders/ui.glsl)
 
+# Mesh Editor
+
+- [ ] highlight all bones that influence selected vertices
+
 # Todo
 
-- [ ] hotkey to hide/show grid (ctrl - ') 
 - [ ] higlight asset on hover in select tool
 - [ ] name pan in tools like knife and select
 - [ ] Crash when typing text
