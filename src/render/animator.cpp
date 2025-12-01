@@ -22,8 +22,6 @@ static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
     frame_index1 = Min(frame_index1, anim_impl->frame_count - 1);
     i32 frame_index2 = frame_index1 + 1;
     assert(t >= 0.0f && t < 1.0f);
-    float t2 = t;
-    t = 0.0f;
     BoneTransform* frame1 = anim_impl->frames + frame_index1 * anim_impl->frame_stride;
     BoneTransform* frame2 = anim_impl->frames + frame_index2 * anim_impl->frame_stride;
 
@@ -54,7 +52,7 @@ static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
 
         BoneTransform* bt1 = frame1 + bone_index;
         BoneTransform* bt2 = frame2 + bone_index;
-        BoneTransform frame_transform = Mix(*bt1, *bt2, bone_index == 0 ? t2 : t);
+        BoneTransform frame_transform = Mix(*bt1, *bt2, t);
 
         Vec2 frame_position = frame_transform.position;
 
@@ -207,6 +205,12 @@ void SetNormalizedTime(Animator& animator, int layer_index, float normalized_tim
 void SetBoneMask(Animator& animator, int layer_index, u64 bone_mask) {
     AnimatorLayer& layer = GetLayer(animator, layer_index);
     layer.bone_mask = bone_mask;
+}
+
+void BindSkeleton(Animator& animator) {
+    SkeletonImpl* skel_impl = static_cast<SkeletonImpl*>(animator.skeleton);
+    int bone_count = skel_impl->bone_count;
+    BindSkeleton(&skel_impl->bones->transform.world_to_local, sizeof(Bone), animator.bones, sizeof(Mat3), bone_count);
 }
 
 void Init(Animator& animator, Skeleton* skeleton, int layer_count) {

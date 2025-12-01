@@ -101,6 +101,8 @@ inline float GetTime(Animator& animator, int layer_index=0) {
     return GetLayer(animator, layer_index).time;
 }
 
+extern void BindSkeleton(Animator& animator);
+
 // @blend_tree
 constexpr int MAX_BLEND_TREE_BLENDS = 3;
 
