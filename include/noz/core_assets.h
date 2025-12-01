@@ -5,7 +5,7 @@
 #pragma once
 
 struct Shader;
-extern Shader* SHADER_LIT;
+extern Shader* SHADER_MESH;
 extern Shader* SHADER_UI;
 extern Shader* SHADER_UI_VIGNETTE;
 extern Shader* SHADER_TEXT;

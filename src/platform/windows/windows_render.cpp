@@ -7,13 +7,12 @@
 
 struct Buffer {};
 
-enum UniformBufferType
-{
+enum UniformBufferType {
     UNIFORM_BUFFER_CAMERA,
-    UNIFORM_BUFFER_TRANSFORM,
+    UNIFORM_BUFFER_OBJECT,
+    UNIFORM_BUFFER_SKELETON,
     UNIFORM_BUFFER_VERTEX_USER,
     UNIFORM_BUFFER_COLOR,
-    UNIFORM_BUFFER_LIGHT,
     UNIFORM_BUFFER_FRAGMENT_USER,
     UNIFORM_BUFFER_COUNT
 };
@@ -27,11 +26,12 @@ constexpr u32 DYNAMIC_UNIFORM_BUFFER_SIZE = MAX_UNIFORM_BUFFER_SIZE * MAX_UNIFOR
 const char* UNIFORM_BUFFER_NAMES[] = {
     "CameraBuffer",
     "TransformBuffer",
+    "SkeletonBuffer",
     "VertexUserBuffer",
     "ColorBuffer",
-    "LightBuffer",
     "FragmentUserBuffer"
 };
+
 static_assert(sizeof(UNIFORM_BUFFER_NAMES) / sizeof(const char*) == UNIFORM_BUFFER_COUNT);
 
 static VkFilter ToVK(TextureFilter filter) {
@@ -124,8 +124,8 @@ struct VulkanRenderer {
     VkSemaphore image_available_semaphore;
     VkSemaphore render_finished_semaphore;
     VkFence in_flight_fence;
-    VkDescriptorSetLayout texture_descriptor_set_layout;
-    VkDescriptorSet texture_descriptor_set;
+    VkDescriptorSetLayout sampler_descriptor_set_layout;
+    VkDescriptorSet sampler_descriptor_set;
     VkDescriptorPool descriptor_pool;
     VulkanDynamicBuffer uniform_buffers[UNIFORM_BUFFER_COUNT];  // Now consecutive 0,1,2
     u32 min_uniform_buffer_offset_alignment;
@@ -304,73 +304,53 @@ static void ResetFrameBuffers() {
     }
 }
 
-static void CreateDescriptorSetLayout() {
-    // Create descriptor set layouts for each uniform buffer type
+static void CreateDescriptorSetLayout(VkShaderStageFlags stage_flags, UniformBufferType buffer_type) {
+
     VkDescriptorSetLayoutBinding uniform_binding = {
         .binding = 0,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
         .descriptorCount = 1,
-        .stageFlags = 0,  // Will be set per buffer type
+        .stageFlags = stage_flags,
         .pImmutableSamplers = nullptr
     };
 
-    VkDescriptorSetLayoutCreateInfo layout_info = {
+    VkDescriptorSetLayoutCreateInfo uniform_layout = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .bindingCount = 1,
         .pBindings = &uniform_binding
     };
 
-    // Camera buffer layout (vertex stage)
-    uniform_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    if (vkCreateDescriptorSetLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.uniform_buffers[UNIFORM_BUFFER_CAMERA].descriptor_set_layout) != VK_SUCCESS)
-        Exit("Failed to create camera descriptor set layout");
+    if (vkCreateDescriptorSetLayout(g_vulkan.device, &uniform_layout, nullptr, &g_vulkan.uniform_buffers[buffer_type].descriptor_set_layout) != VK_SUCCESS)
+        Exit("Failed to create descriptor set layout");
+}
 
-    // Transform buffer layout (vertex stage)
-    uniform_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    if (vkCreateDescriptorSetLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.uniform_buffers[UNIFORM_BUFFER_TRANSFORM].descriptor_set_layout) != VK_SUCCESS)
-        Exit("Failed to create transform descriptor set layout");
+static void CreateDescriptorSetLayout() {
+    // uniform buffers
+    CreateDescriptorSetLayout(VK_SHADER_STAGE_VERTEX_BIT, UNIFORM_BUFFER_CAMERA);
+    CreateDescriptorSetLayout(VK_SHADER_STAGE_VERTEX_BIT, UNIFORM_BUFFER_OBJECT);
+    CreateDescriptorSetLayout(VK_SHADER_STAGE_VERTEX_BIT, UNIFORM_BUFFER_SKELETON);
+    CreateDescriptorSetLayout(VK_SHADER_STAGE_VERTEX_BIT, UNIFORM_BUFFER_VERTEX_USER);
+    CreateDescriptorSetLayout(VK_SHADER_STAGE_FRAGMENT_BIT, UNIFORM_BUFFER_COLOR);
+    CreateDescriptorSetLayout(VK_SHADER_STAGE_FRAGMENT_BIT, UNIFORM_BUFFER_FRAGMENT_USER);
+    CreateDescriptorSetLayout(VK_SHADER_STAGE_FRAGMENT_BIT, UNIFORM_BUFFER_FRAGMENT_USER);
 
-    // Vertex user
-    uniform_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    if (vkCreateDescriptorSetLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.uniform_buffers[UNIFORM_BUFFER_VERTEX_USER].descriptor_set_layout) != VK_SUCCESS)
-        Exit("Failed to create transform descriptor set layout");
-
-    // Light buffer layout (fragment stage)
-    uniform_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    if (vkCreateDescriptorSetLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.uniform_buffers[UNIFORM_BUFFER_LIGHT].descriptor_set_layout) != VK_SUCCESS)
-        Exit("Failed to create light descriptor set layout");
-
-    // Color buffer layout (fragment stage)
-    uniform_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    if (vkCreateDescriptorSetLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.uniform_buffers[UNIFORM_BUFFER_COLOR].descriptor_set_layout) != VK_SUCCESS)
-        Exit("Failed to create color descriptor set layout");
-
-    // Color buffer layout (fragment stage)
-    uniform_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    if (vkCreateDescriptorSetLayout(g_vulkan.device, &layout_info, nullptr, &g_vulkan.uniform_buffers[UNIFORM_BUFFER_FRAGMENT_USER].descriptor_set_layout) != VK_SUCCESS)
-        Exit("Failed to create color descriptor set layout");
-
-    // texture
-    VkDescriptorSetLayoutBinding texture_bindings[] = {
-        // Texture0
-        {
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .pImmutableSamplers = nullptr
-        },
+    // samplers
+    VkDescriptorSetLayoutBinding sampler_binding = {
+        .binding = 0,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = 1,
+        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        .pImmutableSamplers = nullptr
     };
 
-    VkDescriptorSetLayoutCreateInfo texture_layout_info = {
+    VkDescriptorSetLayoutCreateInfo sampler_layout = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .bindingCount = sizeof(texture_bindings) / sizeof(VkDescriptorSetLayoutBinding),
-        .pBindings = texture_bindings
+        .bindingCount = 1,
+        .pBindings = &sampler_binding
     };
     
-    if (vkCreateDescriptorSetLayout(g_vulkan.device, &texture_layout_info, nullptr, &g_vulkan.texture_descriptor_set_layout) != VK_SUCCESS)
+    if (vkCreateDescriptorSetLayout(g_vulkan.device, &sampler_layout, nullptr, &g_vulkan.sampler_descriptor_set_layout) != VK_SUCCESS)
         Exit("Failed to create texture descriptor set layout");
-
 }
 
 static void CreateDescriptorPool() {
@@ -433,13 +413,13 @@ static void CreateDescriptorSets() {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .descriptorPool = g_vulkan.descriptor_pool,
         .descriptorSetCount = 1,
-        .pSetLayouts = &g_vulkan.texture_descriptor_set_layout,
+        .pSetLayouts = &g_vulkan.sampler_descriptor_set_layout,
     };
 
-    if (vkAllocateDescriptorSets(g_vulkan.device, &texture_alloc_info, &g_vulkan.texture_descriptor_set) != VK_SUCCESS)
+    if (vkAllocateDescriptorSets(g_vulkan.device, &texture_alloc_info, &g_vulkan.sampler_descriptor_set) != VK_SUCCESS)
         Exit("Failed to allocate texture descriptor set");
 
-    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.texture_descriptor_set, "Textures");
+    SetVulkanObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)g_vulkan.sampler_descriptor_set, "Textures");
 }
 
 #if defined(_DEBUG)
@@ -964,12 +944,12 @@ static void CreateSyncObjects() {
 static void CreatePipelineLayout() {
     VkDescriptorSetLayout layouts[] = {
         g_vulkan.uniform_buffers[UNIFORM_BUFFER_CAMERA].descriptor_set_layout,
-        g_vulkan.uniform_buffers[UNIFORM_BUFFER_TRANSFORM].descriptor_set_layout,
+        g_vulkan.uniform_buffers[UNIFORM_BUFFER_OBJECT].descriptor_set_layout,
+        g_vulkan.uniform_buffers[UNIFORM_BUFFER_SKELETON].descriptor_set_layout,
         g_vulkan.uniform_buffers[UNIFORM_BUFFER_VERTEX_USER].descriptor_set_layout,
         g_vulkan.uniform_buffers[UNIFORM_BUFFER_COLOR].descriptor_set_layout,
-        g_vulkan.uniform_buffers[UNIFORM_BUFFER_LIGHT].descriptor_set_layout,
         g_vulkan.uniform_buffers[UNIFORM_BUFFER_FRAGMENT_USER].descriptor_set_layout,
-        g_vulkan.texture_descriptor_set_layout
+        g_vulkan.sampler_descriptor_set_layout
     };
 
     VkPipelineLayoutCreateInfo layout_info = {};
@@ -1188,28 +1168,18 @@ static void CopyMat3ToGPU(void* dst, const Mat3& src) {
     f[8] = src.m[6]; f[9] = src.m[7]; f[10]= src.m[8]; f[11]= 0.0f;
 }
 
-void platform::BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color) {
-    void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_LIGHT);
+void platform::BindSkeleton(const Mat3* bone_transforms, u8 bone_count) {
+    void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_SKELETON);
     if (!buffer_ptr)
         return;
 
-    float* f = (float*)buffer_ptr;
-    f[0] = light_dir.x;
-    f[1] = light_dir.y;
-    f[2] = light_dir.z;
-    f[3] = 0; // Padding
-    f[4] = diffuse_color.r;
-    f[5] = diffuse_color.g;
-    f[6] = diffuse_color.b;
-    f[7] = diffuse_color.a;
-    f[8] = shadow_color.r;
-    f[9] = shadow_color.g;
-    f[10] = shadow_color.b;
-    f[11] = shadow_color.a;
+    float* bones = (static_cast<float*>(buffer_ptr));
+    for (u8 i = 0; i < bone_count; i++)
+        CopyMat3ToGPU(bones + i * 12, bone_transforms[i]);
 }
 
 void platform::BindTransform(const Mat3& transform, float depth, float depth_scale) {
-    void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_TRANSFORM);
+    void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_OBJECT);
     if (!buffer_ptr)
         return;
 
@@ -1292,8 +1262,7 @@ platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, u16 v
     };
 
     VkDeviceMemory vk_vertex_memory = VK_NULL_HANDLE;
-    if (VK_SUCCESS != vkAllocateMemory(g_vulkan.device, &vk_alloc_info, nullptr, &vk_vertex_memory))
-    {
+    if (VK_SUCCESS != vkAllocateMemory(g_vulkan.device, &vk_alloc_info, nullptr, &vk_vertex_memory)) {
         vkDestroyBuffer(g_vulkan.device, vf_vertex_buffer, nullptr);
         return nullptr;
     }
@@ -1302,8 +1271,7 @@ platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, u16 v
     
     // Copy vertex data
     void* mapped_data;
-    if (VK_SUCCESS == vkMapMemory(g_vulkan.device, vk_vertex_memory, 0, vk_buffer_info.size, 0, &mapped_data))
-    {
+    if (VK_SUCCESS == vkMapMemory(g_vulkan.device, vk_vertex_memory, 0, vk_buffer_info.size, 0, &mapped_data)) {
         memcpy(mapped_data, vertices, vk_buffer_info.size);
         vkUnmapMemory(g_vulkan.device, vk_vertex_memory);
     }
@@ -1584,7 +1552,7 @@ static bool CreateTextureInternal(platform::Texture* texture, void* data, const 
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .descriptorPool = g_vulkan.descriptor_pool,
         .descriptorSetCount = 1,
-        .pSetLayouts = &g_vulkan.texture_descriptor_set_layout
+        .pSetLayouts = &g_vulkan.sampler_descriptor_set_layout
     };
 
     if (vkAllocateDescriptorSets(g_vulkan.device, &desc_alloc_info, &texture->vk_descriptor_set) != VK_SUCCESS)
@@ -1984,12 +1952,26 @@ static bool CreateShaderInternal(
             .binding = 0,
             .format = VK_FORMAT_R32G32_SFLOAT,
             .offset = sizeof(float) * 3
-        }
+        },
+        // Bone indices
+        {
+            .location = 3,
+            .binding = 0,
+            .format = VK_FORMAT_R32G32B32A32_SINT,
+            .offset = sizeof(float) * 5
+        },
+        // Bone Weights
+        {
+            .location = 4,
+            .binding = 0,
+            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+            .offset = sizeof(float) * 5 + sizeof(i32) * 4
+        },
     };
 
     VkVertexInputBindingDescription binding_desc = {
         .binding = 0,
-        .stride = sizeof(float) * 7,
+        .stride = sizeof(MeshVertex),
         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
     };
 
@@ -2391,7 +2373,7 @@ static void CreateOffscreenResources() {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .descriptorPool = g_vulkan.descriptor_pool,
         .descriptorSetCount = 1,
-        .pSetLayouts = &g_vulkan.texture_descriptor_set_layout
+        .pSetLayouts = &g_vulkan.sampler_descriptor_set_layout
     };
 
     if (vkAllocateDescriptorSets(g_vulkan.device, &desc_alloc_info, &g_vulkan.offscreen.descriptor_set) != VK_SUCCESS)
@@ -2951,7 +2933,7 @@ static void CreateUIOffscreenResources() {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .descriptorPool = g_vulkan.descriptor_pool,
         .descriptorSetCount = 1,
-        .pSetLayouts = &g_vulkan.texture_descriptor_set_layout
+        .pSetLayouts = &g_vulkan.sampler_descriptor_set_layout
     };
 
     if (vkAllocateDescriptorSets(g_vulkan.device, &desc_alloc_info, &g_vulkan.ui_offscreen.descriptor_set) != VK_SUCCESS)

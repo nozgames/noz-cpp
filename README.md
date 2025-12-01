@@ -112,7 +112,6 @@ SetTexture(material, TEXTURE_PALETTE, 0);
 // Render in game loop
 BeginRenderFrame({0.3f, 0.3f, 0.9f, 1.0f});
 BindCamera(camera);
-BindLight(Normalize(Vec3{1, 1, 0}), COLOR_WHITE, COLOR_BLACK);
 BindMaterial(material);
 BindTransform(Vec2{0, 0}, 0.0f, Vec2{1, 1});
 DrawMesh(MESH_GROUND);

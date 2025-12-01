@@ -18,6 +18,39 @@ struct MeshImpl : Mesh {
 
 void UploadMesh(Mesh* mesh);
 
+static void NormalizeVertexWeights(MeshVertex* vertices, int vertex_count) {
+    for (int vertex_index=0; vertex_index<vertex_count; vertex_index++) {
+        MeshVertex& v = vertices[vertex_index];
+        float total_weight = v.bone_weights.x + v.bone_weights.y + v.bone_weights.z + v.bone_weights.w;
+        if (total_weight < F32_EPSILON) {
+            v.bone_weights.x = 1.0f;
+            v.bone_weights.y = 0.0f;
+            v.bone_weights.z = 0.0f;
+            v.bone_weights.w = 0.0f;
+        } else {
+            v.bone_weights.x /= total_weight;
+            v.bone_weights.y /= total_weight;
+            v.bone_weights.z /= total_weight;
+            v.bone_weights.w /= total_weight;
+        }
+    }
+}
+
+Bounds2 ToBounds(const MeshVertex* vertices, int vertex_count) {
+    if (vertex_count == 0)
+        return { VEC2_ZERO, VEC2_ZERO };
+
+    Vec2 min_pos = vertices[0].position;
+    Vec2 max_pos = min_pos;
+
+    for (size_t i = 1; i < vertex_count; i++) {
+        min_pos = Min(min_pos, vertices[i].position);
+        max_pos = Max(max_pos, vertices[i].position);
+    }
+
+    return Bounds2{min_pos, max_pos};
+}
+
 static void MeshDestructor(void* p) {
     MeshImpl* impl = (MeshImpl*)p;
 
@@ -95,10 +128,10 @@ bool OverlapPoint(Mesh* mesh, const Vec2& overlap_point) {
         return false;
 
     for (u16 i = 0; i < impl->index_count; i += 3) {
-        const Vec3& v0 = impl->vertices[impl->indices[i + 0]].position;
-        const Vec3& v1 = impl->vertices[impl->indices[i + 1]].position;
-        const Vec3& v2 = impl->vertices[impl->indices[i + 2]].position;
-        if (OverlapPoint(XY(v0), XY(v1), XY(v2), overlap_point, nullptr))
+        const Vec2& v0 = impl->vertices[impl->indices[i + 0]].position;
+        const Vec2& v1 = impl->vertices[impl->indices[i + 1]].position;
+        const Vec2& v2 = impl->vertices[impl->indices[i + 2]].position;
+        if (OverlapPoint(v0, v1, v2, overlap_point, nullptr))
             return true;
     }
 
@@ -146,29 +179,24 @@ Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const
 Mesh* CreateMesh(
     Allocator* allocator,
     u16 vertex_count,
-    const Vec3* positions,
-    const Vec2* uvs,
+    const MeshVertex* vertices,
     u16 index_count,
     u16* indices,
     const Name* name,
     bool upload) {
-    assert(positions);
-    assert(uvs);
+    assert(vertices);
     assert(indices);
 
     if (vertex_count == 0 || index_count == 0)
         return nullptr;
 
     MeshImpl* mesh = CreateMesh(allocator, vertex_count, index_count, name);
-    mesh->bounds = ToBounds2(ToBounds(positions, vertex_count));
-    mesh->bounds = Union(mesh->bounds, VEC2_ZERO);
+    mesh->bounds = ToBounds(vertices, vertex_count);
 
-    for (size_t i = 0; i < vertex_count; i++) {
-        mesh->vertices[i].position = positions[i];
-        mesh->vertices[i].uv0 = uvs[i];
-    }
-
+    memcpy(mesh->vertices, vertices, sizeof(MeshVertex) * vertex_count);
     memcpy(mesh->indices, indices, sizeof(u16) * index_count);
+
+    NormalizeVertexWeights(mesh->vertices, mesh->vertex_count);
 
     if (upload)
         UploadMesh(mesh);

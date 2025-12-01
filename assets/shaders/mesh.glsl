@@ -35,7 +35,7 @@ void main() {
 layout(location = 0) in vec2 f_uv;
 layout(location = 0) out vec4 outColor;
 
-layout(set = 3, binding = 0) uniform ColorBuffer {
+layout(set = 4, binding = 0) uniform ColorBuffer {
     vec4 color;
     vec4 emission;
     vec2 uv_offset;

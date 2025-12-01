@@ -2,8 +2,7 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-Bounds2 ToBounds(const Vec2* positions, u32 count)
-{
+Bounds2 ToBounds(const Vec2* positions, u32 count) {
     if (count == 0)
         return { VEC2_ZERO, VEC2_ZERO };
 

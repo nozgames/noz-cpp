@@ -35,14 +35,13 @@ Collider* CreateCollider(Allocator* allocator, const Vec2* points, u32 point_cou
     return impl;
 }
 
-Collider* CreateCollider(Allocator* allocator, Mesh* mesh)
-{
+Collider* CreateCollider(Allocator* allocator, Mesh* mesh) {
     ColliderImpl* impl = (ColliderImpl*)Alloc(allocator, sizeof(ColliderImpl), ColliderDestructor);
     impl->point_count = GetVertexCount(mesh);
     impl->points = (Vec2*)Alloc(allocator, sizeof(Vec2) * impl->point_count);
     impl->bounds = GetBounds(mesh);
     for (u32 i=0; i < impl->point_count; i++)
-        impl->points[i] = XY(GetVertices(mesh)[i].position);
+        impl->points[i] = GetVertices(mesh)[i].position;
 
     return impl;
 }

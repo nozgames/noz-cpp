@@ -3,8 +3,7 @@
 //
 
 struct MeshBuilderImpl : MeshBuilder {
-    Vec3* positions;
-    Vec2* uv0;
+    MeshVertex* vertices;
     u16* indices;
     u16 vertex_count;
     u16 vertex_max;
@@ -16,8 +15,7 @@ struct MeshBuilderImpl : MeshBuilder {
 void MeshBuilderDestructor(void* builder) {
     assert(builder);
     MeshBuilderImpl* impl = (MeshBuilderImpl*)builder;
-    Free(impl->positions);
-    Free(impl->uv0);
+    Free(impl->vertices);
     Free(impl->indices);
 }
 
@@ -30,11 +28,10 @@ MeshBuilder* CreateMeshBuilder(Allocator* allocator, u16 max_vertices, u16 max_i
     impl->index_max = max_indices;
     impl->vertex_count = 0;
     impl->index_count = 0;
-    impl->positions = (Vec3*)Alloc(allocator, sizeof(Vec3) * max_vertices);
-    impl->uv0 = (Vec2*)Alloc(allocator, sizeof(Vec2) * max_vertices);
-    impl->indices = (u16*)Alloc(allocator, sizeof(u16) * max_indices);
+    impl->vertices = static_cast<MeshVertex*>(Alloc(allocator, sizeof(MeshVertex) * max_vertices));
+    impl->indices = static_cast<u16*>(Alloc(allocator, sizeof(u16) * max_indices));
     
-    if (!impl->positions || !impl->uv0 || !impl->indices) {
+    if (!impl->vertices || !impl->indices) {
         Free(impl);
         return nullptr;
     }
@@ -50,12 +47,8 @@ void Clear(MeshBuilder* builder) {
     impl->index_count = 0;
 }
 
-const Vec3* GetPositions(MeshBuilder* builder) {
-    return static_cast<MeshBuilderImpl*>(builder)->positions;
-}
-
-const Vec2* GetUvs(MeshBuilder* builder) {
-    return static_cast<MeshBuilderImpl*>(builder)->uv0;
+const MeshVertex* GetVertices(MeshBuilder* builder) {
+    return static_cast<MeshBuilderImpl*>(builder)->vertices;
 }
 
 const u16* GetIndices(MeshBuilder* builder) {
@@ -70,7 +63,7 @@ u16 GetIndexCount(MeshBuilder* builder) {
     return static_cast<MeshBuilderImpl*>(builder)->index_count;
 }
 
-void AddVertex(MeshBuilder* builder, const Vec3& position, const Vec2& uv) {
+void AddVertex(MeshBuilder* builder, const MeshVertex& vertex) {
     MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);
     impl->is_full = impl->is_full && impl->vertex_count + 1 >= impl->vertex_max;
     if (impl->is_full)
@@ -78,11 +71,10 @@ void AddVertex(MeshBuilder* builder, const Vec3& position, const Vec2& uv) {
 
     size_t index = impl->vertex_count;
     impl->vertex_count++;
-    impl->positions[index] = position;
-    impl->uv0[index] = uv;
+    impl->vertices[index] = vertex;
 }
 
-void AddVertex(MeshBuilder* builder, const Vec3& position) {
+void AddVertex(MeshBuilder* builder, const Vec2& position, const Vec2& uv, float depth) {
     MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);
     impl->is_full = impl->is_full && impl->vertex_count + 1 >= impl->vertex_max;
     if (impl->is_full)
@@ -90,8 +82,12 @@ void AddVertex(MeshBuilder* builder, const Vec3& position) {
 
     size_t index = impl->vertex_count;
     impl->vertex_count++;
-    impl->positions[index] = position;
-    impl->uv0[index] = VEC2_ZERO;
+    impl->vertices[index] = {
+        .position = position,
+        .depth = depth,
+        .uv = uv,
+        .bone_weights = { 1.0f }
+    };
 }
 
 void AddIndex(MeshBuilder* builder, u16 index) {
@@ -116,53 +112,32 @@ void AddTriangle(MeshBuilder* builder, u16 a, u16 b, u16 c) {
     impl->index_count+=3;
 }
 
-void AddTriangle(
-    MeshBuilder* builder,
-    const Vec3& a,
-    const Vec3& b,
-    const Vec3& c) {
-    u16 vertex_index = static_cast<MeshBuilderImpl*>(builder)->vertex_count;
-    AddVertex(builder, a, { 0.0f, 0.0f });
-    AddVertex(builder, b, { 1.0f, 0.0f });
-    AddVertex(builder, c, { 0.5f, 1.0f });
-    AddTriangle(builder, vertex_index, vertex_index + 1, vertex_index + 2);
-}
-
 void AddQuad(
     MeshBuilder* builder,
-    const Vec3& forward,
-    const Vec3& right,
+    const Vec2& forward,
+    const Vec2& right,
     f32 width,
     f32 height,
     const Vec2& color_uv) {
     f32 hw = width * 0.5f;
     f32 hh = height * 0.5f;
-    Vec3 f = forward * hh;
-    Vec3 r = right * hw;
-    Vec3 a =  f - r;
-    Vec3 b =  f + r;
-    Vec3 c = -f + r;
-    Vec3 d = -f - r;
-    AddQuad(builder, a, b, c, d, color_uv);
-}
+    Vec2 f = forward * hh;
+    Vec2 r = right * hw;
+    Vec2 a =  f - r;
+    Vec2 b =  f + r;
+    Vec2 c = -f + r;
+    Vec2 d = -f - r;
 
-void AddQuad(
-    MeshBuilder* builder,
-    const Vec3& a,
-    const Vec3& b,
-    const Vec3& c,
-    const Vec3& d,
-    const Vec2& uv_color) {
     u16 base_index = static_cast<MeshBuilderImpl*>(builder)->vertex_count;
-    AddVertex(builder, a, uv_color);
-    AddVertex(builder, b, uv_color);
-    AddVertex(builder, c, uv_color);
-    AddVertex(builder, d, uv_color);
+    AddVertex(builder, a, color_uv);
+    AddVertex(builder, b, color_uv);
+    AddVertex(builder, c, color_uv);
+    AddVertex(builder, d, color_uv);
     AddTriangle(builder, base_index, base_index + 1, base_index + 2);
     AddTriangle(builder, base_index, base_index + 2, base_index + 3);
 }
 
-void AddCircle(MeshBuilder* builder, const Vec3& center, f32 radius, int segments, const Vec2& uv_color) {
+void AddCircle(MeshBuilder* builder, const Vec2& center, f32 radius, int segments, const Vec2& uv_color) {
     if (segments < 3)
         segments = 3;
 
@@ -172,7 +147,7 @@ void AddCircle(MeshBuilder* builder, const Vec3& center, f32 radius, int segment
 
     for (int i = 0; i <= segments; ++i) {
         float angle = (float)i / (float)segments * noz::PI * 2.0f;
-        Vec3 offset = { cosf(angle) * radius, sinf(angle) * radius };
+        Vec2 offset = { cosf(angle) * radius, sinf(angle) * radius };
         AddVertex(builder, center + offset, uv_color);
     }
 
@@ -180,7 +155,7 @@ void AddCircle(MeshBuilder* builder, const Vec3& center, f32 radius, int segment
         AddTriangle(builder, base_index, base_index + (u16)i + 1, base_index + (u16)i + 2);
 }
 
-void AddCircleStroke(MeshBuilder* builder, const Vec3& center, f32 radius, f32 thickness, int segments, const Vec2& uv_color) {
+void AddCircleStroke(MeshBuilder* builder, const Vec2& center, f32 radius, f32 thickness, int segments, const Vec2& uv_color) {
     segments = Max(segments, 3);
 
     u16 base_index = static_cast<MeshBuilderImpl*>(builder)->vertex_count;
@@ -189,8 +164,8 @@ void AddCircleStroke(MeshBuilder* builder, const Vec3& center, f32 radius, f32 t
     f32 step = 2.0f * noz::PI / (f32)segments;
     for (int i = 0; i <= segments; ++i) {
         f32 angle = i * step;
-        Vec3 offset_inner = { cosf(angle) * inner_radius, sinf(angle) * inner_radius };
-        Vec3 offset_outer = { cosf(angle) * outer_radius, sinf(angle) * outer_radius };
+        Vec2 offset_inner = { cosf(angle) * inner_radius, sinf(angle) * inner_radius };
+        Vec2 offset_outer = { cosf(angle) * outer_radius, sinf(angle) * outer_radius };
         AddVertex(builder, center + offset_inner, uv_color);
         AddVertex(builder, center + offset_outer, uv_color);
     }
@@ -205,7 +180,7 @@ void AddCircleStroke(MeshBuilder* builder, const Vec3& center, f32 radius, f32 t
     }
 }
 
-void AddArc(MeshBuilder* builder, const Vec3& center, f32 radius, f32 start, f32 end, int segments, const Vec2& uv_color) {
+void AddArc(MeshBuilder* builder, const Vec2& center, f32 radius, f32 start, f32 end, int segments, const Vec2& uv_color) {
     segments = Max(segments, 3);
 
     u16 base_index = static_cast<MeshBuilderImpl*>(builder)->vertex_count;
@@ -218,11 +193,11 @@ void AddArc(MeshBuilder* builder, const Vec3& center, f32 radius, f32 start, f32
 
     int actual_segments = 1;
     for (f32 angle = angle_start; angle < angle_end; angle += step, actual_segments++) {
-        Vec3 offset = { cosf(angle) * radius, -sinf(angle) * radius };
+        Vec2 offset = { cosf(angle) * radius, -sinf(angle) * radius };
         AddVertex(builder, center + offset, uv_color);
     }
 
-    Vec3 offset_end = { cosf(angle_end) * radius, -sinf(angle_end) * radius };
+    Vec2 offset_end = { cosf(angle_end) * radius, -sinf(angle_end) * radius };
     AddVertex(builder, center + offset_end, uv_color);
 
     for (int i = 0; i < actual_segments; ++i)
@@ -232,8 +207,7 @@ void AddArc(MeshBuilder* builder, const Vec3& center, f32 radius, f32 start, f32
 void AddRaw(
     MeshBuilder* builder,
     u16 vertex_count,
-    const Vec3* positions,
-    const Vec2* uv0,
+    const MeshVertex* vertices,
     u16 index_count,
     const u16* indices)
 {
@@ -243,8 +217,7 @@ void AddRaw(
         return;
 
     size_t vertex_start = impl->vertex_count;
-    memcpy(impl->positions + impl->vertex_count, positions, sizeof(Vec3) * vertex_count);
-    memcpy(impl->uv0 + impl->vertex_count, uv0, sizeof(Vec2) * vertex_count);
+    memcpy(impl->vertices + impl->vertex_count, vertices, sizeof(MeshVertex) * vertex_count);
 
     for (size_t i = 0; i < index_count; ++i) {
         impl->indices[impl->index_count] = indices[i] + (u16)vertex_start;
@@ -258,8 +231,7 @@ Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name, b
     return CreateMesh(
         allocator,
         impl->vertex_count,
-        impl->positions,
-        impl->uv0,
+        impl->vertices,
         impl->index_count,
         impl->indices,
         name,

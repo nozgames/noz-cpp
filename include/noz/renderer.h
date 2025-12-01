@@ -6,7 +6,8 @@
 
 #include "rect.h"
 
-constexpr u32 MAX_UNIFORM_BUFFER_SIZE = sizeof(Mat4);
+constexpr int MAX_BONES = 32;
+constexpr u32 MAX_UNIFORM_BUFFER_SIZE = sizeof(Mat4) * 32;
 constexpr int ANIMATED_MESH_MAX_FRAMES = 32;
 
 // @types
@@ -64,16 +65,17 @@ void SetFragmentData(Material* material, const void* data, size_t size);
 struct Mesh : Asset { };
 
 struct MeshVertex {
-    Vec3 position;
-    Vec2 uv0;
-    Vec2 padding;
+    Vec2 position;
+    float depth;
+    Vec2 uv;
+    Vec4Int bone_indices;
+    Vec4 bone_weights = {1.0f, 0.0f, 0.0f, 0.0f};
 };
 
 extern Mesh* CreateMesh(
     Allocator* allocator,
     u16 vertex_count,
-    const Vec3* positions,
-    const Vec2* uvs,
+    const MeshVertex* vertices,
     u16 index_count,
     u16* indices,
     const Name* name,
@@ -88,6 +90,7 @@ extern Bounds2 GetBounds(Mesh* mesh);
 extern Vec2 GetSize(Mesh* mesh);
 extern bool OverlapPoint(Mesh* mesh, const Vec2& overlap_point);
 extern bool IsUploaded(Mesh* mesh);
+extern Bounds2 ToBounds(const MeshVertex* vertices, int vertex_count);
 
 // @animated_mesh
 extern AnimatedMesh* CreateAnimatedMesh(Allocator* allocator, const Name* name, int frame_count, Mesh** frames);
@@ -103,7 +106,7 @@ extern Vec2 GetSize(AnimatedMesh* mesh);
 // @mesh_builder
 extern MeshBuilder* CreateMeshBuilder(Allocator* allocator, u16 max_vertices, u16 max_indices);
 extern void Clear(MeshBuilder* builder);
-extern const Vec3* GetPositions(MeshBuilder* builder);
+extern const MeshVertex* GetVertices(MeshBuilder* builder);
 extern const Vec2* GetUvs(MeshBuilder* builder);
 extern const u8* GetBoneIndices(MeshBuilder* builder);
 extern const u16* GetIndices(MeshBuilder* builder);
@@ -111,7 +114,6 @@ extern u16 GetVertexCount(MeshBuilder* builder);
 extern u16 GetIndexCount(MeshBuilder* builder);
 extern void AddIndex(MeshBuilder* builder, u16 index);
 extern void AddTriangle(MeshBuilder* builder, u16 a, u16 b, u16 c);
-extern void AddTriangle(MeshBuilder* builder, const Vec3& a, const Vec3& b, const Vec3& c);
 extern void AddRaw(
     MeshBuilder* builder,
     i16 vertex_count,
@@ -121,31 +123,28 @@ extern void AddRaw(
     const u16* indices);
 extern void AddQuad(
     MeshBuilder* builder,
-    const Vec3& forward,
-    const Vec3& right,
+    const Vec2& forward,
+    const Vec2& right,
     f32 width,
     f32 height,
     const Vec2& color_uv);
-extern void AddQuad(
-    MeshBuilder* builder,
-    const Vec3& a,
-    const Vec3& b,
-    const Vec3& c,
-    const Vec3& d,
-    const Vec2& uv_color);
-extern void AddVertex(MeshBuilder* builder, const Vec3& position, const Vec2& uv);
-inline void AddVertex(MeshBuilder* builder, const Vec2& position, const Vec2& uv) {
-    AddVertex(builder, {position.x, position.y, 0.0f}, uv);
+
+extern void AddVertex(MeshBuilder* builder, const MeshVertex& vertex);
+extern void AddVertex(MeshBuilder* builder, const Vec2& position, const Vec2& uv, float depth=0.0f);
+inline void AddVertex(MeshBuilder* builder, const Vec2& position, float depth) {
+    AddVertex(builder, position, VEC2_ZERO, depth);
 }
-extern void AddVertex(MeshBuilder* builder, const Vec3& position);
 inline void AddVertex(MeshBuilder* builder, const Vec2& position) {
-    AddVertex(builder, {position.x, position.y, 0.0f});
+    AddVertex(builder, {position.x, position.y}, 0.0f);
 }
-extern void AddCircle(MeshBuilder* builder, const Vec3& center, f32 radius, int segments, const Vec2& uv_color);
-extern void AddCircleStroke(MeshBuilder* builder, const Vec3& center, f32 radius, f32 thickness, int segments, const Vec2& uv_color);
-extern void AddArc(MeshBuilder* builder, const Vec3& center, f32 radius, f32 start, f32 end, int segments, const Vec2& uv_color);
+extern void AddCircle(MeshBuilder* builder, const Vec2& center, f32 radius, int segments, const Vec2& uv_color);
+extern void AddCircleStroke(MeshBuilder* builder, const Vec2& center, f32 radius, f32 thickness, int segments, const Vec2& uv_color);
+extern void AddArc(MeshBuilder* builder, const Vec2& center, f32 radius, f32 start, f32 end, int segments, const Vec2& uv_color);
 
 // @render_buffer
+extern void BindSkeleton(const Mat3* bones, int bone_count, int stride=0);
+extern void BindSkeleton(const Mat3* bind_poses, int bind_pose_stride, Mat3* bones, int bone_stride, int bone_count);
+extern void BindIdentitySkeleton();
 extern void BindDefaultTexture(int texture_index);
 extern void BindColor(Color color);
 extern void BindColor(Color color, const Vec2& color_uv_offset);
@@ -165,7 +164,6 @@ inline void BindTransform(const Vec2& position, const Vec2& rotation, const Vec2
 }
 extern void BindTransform(const Mat3& transform);
 extern void BindTransform(Transform& transform);
-extern void BindLight(const Vec3& light_dir, const Color& diffuse_color, const Color& shadow_color);
 extern void BindMaterial(Material* material);
 extern void DrawMesh(Mesh* mesh);
 extern void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index);
@@ -208,9 +206,6 @@ extern void UpdateCamera(Camera* camera);
 extern const Mat3& GetViewMatrix(Camera* camera);
 extern Bounds2 GetBounds(Camera* camera);
 extern void Shake(Camera* camera, const Vec2& intensity, float duration);
-
-// @skeleton
-constexpr int MAX_BONES = 64;
 
 struct Bone {
     const Name* name;
