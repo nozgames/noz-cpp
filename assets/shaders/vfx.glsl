@@ -25,7 +25,7 @@ void main() {
 
 //@ FRAGMENT
 
-layout(set = 3, binding = 0) uniform ColorBuffer {
+layout(set = 4, binding = 0) uniform ColorBuffer {
     vec4 color;
 } color_buffer;
 
