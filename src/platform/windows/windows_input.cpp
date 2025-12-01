@@ -64,7 +64,6 @@ static InputCode VKToInputCode(int vk) {
         case '9': return KEY_9;
         case VK_OEM_PLUS: return KEY_EQUALS;
         case VK_OEM_MINUS: return KEY_MINUS;
-        case VK_OEM_1: return KEY_SEMICOLON;
         case VK_SPACE: return KEY_SPACE;
         case VK_RETURN: return KEY_ENTER;
         case VK_TAB: return KEY_TAB;
@@ -94,9 +93,11 @@ static InputCode VKToInputCode(int vk) {
         case VK_F10: return KEY_F10;
         case VK_F11: return KEY_F11;
         case VK_F12: return KEY_F12;
+        case VK_OEM_1: return KEY_SEMICOLON;
         case VK_OEM_3: return KEY_TILDE;
         case VK_OEM_4: return KEY_LEFT_BRACKET;
         case VK_OEM_6: return KEY_RIGHT_BRACKET;
+        case VK_OEM_7: return KEY_QUOTE;
         case VK_LBUTTON: return MOUSE_LEFT;
         case VK_RBUTTON: return MOUSE_RIGHT;
         case VK_MBUTTON: return MOUSE_MIDDLE;

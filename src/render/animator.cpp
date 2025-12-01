@@ -22,6 +22,7 @@ static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
     frame_index1 = Min(frame_index1, anim_impl->frame_count - 1);
     i32 frame_index2 = frame_index1 + 1;
     assert(t >= 0.0f && t < 1.0f);
+    t = 0.0f;
     BoneTransform* frame1 = anim_impl->frames + frame_index1 * anim_impl->frame_stride;
     BoneTransform* frame2 = anim_impl->frames + frame_index2 * anim_impl->frame_stride;
 
@@ -85,6 +86,7 @@ static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
 
         frame_transform.position += skel_impl->bones[bone_index].transform.position;
         frame_transform.position += animator.user_transforms[bone_index].position;
+        frame_transform.rotation += skel_impl->bones[bone_index].transform.rotation;
         frame_transform.rotation += animator.user_transforms[bone_index].rotation;
         frame_transform.scale *= animator.user_transforms[bone_index].scale;
 

@@ -1957,7 +1957,7 @@ static bool CreateShaderInternal(
         {
             .location = 3,
             .binding = 0,
-            .format = VK_FORMAT_R8G8B8A8_SINT,
+            .format = VK_FORMAT_R32G32B32A32_SINT,
             .offset = sizeof(float) * 5
         },
         // Bone Weights
@@ -1965,7 +1965,7 @@ static bool CreateShaderInternal(
             .location = 4,
             .binding = 0,
             .format = VK_FORMAT_R32G32B32A32_SFLOAT,
-            .offset = sizeof(float) * 5 + sizeof(u8) * 4
+            .offset = sizeof(float) * 5 + sizeof(i32) * 4
         },
     };
 

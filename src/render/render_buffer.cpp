@@ -110,10 +110,51 @@ void EndRenderPass() {
     AddRenderCommand(&cmd);
 }
 
-void BindSkeleton(const Mat3* bones, int bone_count) {
+void BindIdentitySkeleton() {
+    RenderCommand cmd = { .type = RENDER_COMMAND_TYPE_BIND_SKELETON };
+    cmd.data.bind_skeleton.bone_count = MAX_BONES;
+    for (int i = 0; i < MAX_BONES; ++i)
+        cmd.data.bind_skeleton.bones[i] = MAT3_IDENTITY;
+    AddRenderCommand(&cmd);
+}
+
+void BindSkeleton(const Mat3* bind_poses, int bind_pose_stride, Mat3* bones, int bone_stride, int bone_count) {
+    if (bone_stride == 0)
+        bone_stride = sizeof(Mat3);
+
+    if (bind_pose_stride == 0)
+        bind_pose_stride = sizeof(Mat3);
+
+    assert(bone_stride >= (int)sizeof(Mat3));
+    assert(bind_pose_stride >= (int)sizeof(Mat3));
+
+    const u8* bind_pose_bytes = (const u8*)bind_poses;
+    const u8* bone_bytes = (const u8*)bones;
+
     RenderCommand cmd = { .type = RENDER_COMMAND_TYPE_BIND_SKELETON };
     cmd.data.bind_skeleton.bone_count = bone_count;
-    memcpy(cmd.data.bind_skeleton.bones, bones, sizeof(Mat3) * bone_count);
+    for (int i = 0; i < bone_count; ++i, bind_pose_bytes += bind_pose_stride, bone_bytes += bone_stride) {
+        const Mat3& bind_pose = *((Mat3*)bind_pose_bytes);
+        const Mat3& bone = *((Mat3*)bone_bytes);
+        Mat3 transform = bone * bind_pose;
+        memcpy(&cmd.data.bind_skeleton.bones[i], &transform, sizeof(Mat3));
+    }
+
+    AddRenderCommand(&cmd);
+}
+
+void BindSkeleton(const Mat3* bones, int bone_count, int stride) {
+    assert(stride == 0 || stride >= (int)sizeof(Mat3));
+
+    RenderCommand cmd = { .type = RENDER_COMMAND_TYPE_BIND_SKELETON };
+    cmd.data.bind_skeleton.bone_count = bone_count;
+    if (stride == 0 || stride == sizeof(Mat3)) {
+        memcpy(cmd.data.bind_skeleton.bones, bones, sizeof(Mat3) * bone_count);
+    } else {
+        for (int i = 0; i < bone_count; ++i) {
+            memcpy(&cmd.data.bind_skeleton.bones[i], (const u8*)bones + i * stride, sizeof(Mat3));
+        }
+    }
     AddRenderCommand(&cmd);
 }
 

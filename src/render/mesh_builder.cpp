@@ -63,6 +63,17 @@ u16 GetIndexCount(MeshBuilder* builder) {
     return static_cast<MeshBuilderImpl*>(builder)->index_count;
 }
 
+void AddVertex(MeshBuilder* builder, const MeshVertex& vertex) {
+    MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);
+    impl->is_full = impl->is_full && impl->vertex_count + 1 >= impl->vertex_max;
+    if (impl->is_full)
+        return;
+
+    size_t index = impl->vertex_count;
+    impl->vertex_count++;
+    impl->vertices[index] = vertex;
+}
+
 void AddVertex(MeshBuilder* builder, const Vec2& position, const Vec2& uv, float depth) {
     MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);
     impl->is_full = impl->is_full && impl->vertex_count + 1 >= impl->vertex_max;

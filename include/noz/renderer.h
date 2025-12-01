@@ -129,6 +129,7 @@ extern void AddQuad(
     f32 height,
     const Vec2& color_uv);
 
+extern void AddVertex(MeshBuilder* builder, const MeshVertex& vertex);
 extern void AddVertex(MeshBuilder* builder, const Vec2& position, const Vec2& uv, float depth=0.0f);
 inline void AddVertex(MeshBuilder* builder, const Vec2& position, float depth) {
     AddVertex(builder, position, VEC2_ZERO, depth);
@@ -141,7 +142,9 @@ extern void AddCircleStroke(MeshBuilder* builder, const Vec2& center, f32 radius
 extern void AddArc(MeshBuilder* builder, const Vec2& center, f32 radius, f32 start, f32 end, int segments, const Vec2& uv_color);
 
 // @render_buffer
-extern void BindSkeleton(const Mat3* bones, int bone_count);
+extern void BindSkeleton(const Mat3* bones, int bone_count, int stride=0);
+extern void BindSkeleton(const Mat3* bind_poses, int bind_pose_stride, Mat3* bones, int bone_stride, int bone_count);
+extern void BindIdentitySkeleton();
 extern void BindDefaultTexture(int texture_index);
 extern void BindColor(Color color);
 extern void BindColor(Color color, const Vec2& color_uv_offset);
