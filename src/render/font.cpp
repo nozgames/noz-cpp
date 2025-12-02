@@ -6,6 +6,7 @@
 #define MAX_KERNING (MAX_GLYPHS * MAX_GLYPHS) // All possible kerning pairs
 
 Font** FONT = nullptr;
+int FONT_COUNT = 0;
 
 struct FontImpl : Font {
     Material* material;

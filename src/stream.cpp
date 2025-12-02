@@ -389,6 +389,13 @@ void WriteBool(Stream* stream, bool value)
     WriteU8(stream, value ? 1 : 0);
 }
 
+void WriteName(Stream* stream, const Name* name) {
+    if (name == nullptr)
+        WriteString(stream, "");
+    else
+        WriteString(stream, name->value);
+}
+
 void WriteString(Stream* stream, const char* value)
 {
     if (!stream) return;

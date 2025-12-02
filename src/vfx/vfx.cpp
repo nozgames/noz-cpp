@@ -5,6 +5,7 @@
 #include "vfx_internal.h"
 
 Vfx** VFX = nullptr;
+int VFX_COUNT = 0;
 
 static void LoadVfxInternal(VfxImpl* impl, Allocator* allocator, Stream* stream) {
     impl->bounds = ReadStruct<Bounds2>(stream);
@@ -32,7 +33,8 @@ static void LoadVfxInternal(VfxImpl* impl, Allocator* allocator, Stream* stream)
             particle_def->gravity = ReadStruct<VfxVec2>(stream);
             particle_def->drag = ReadStruct<VfxFloat>(stream);
             particle_def->rotation = ReadStruct<VfxFloatCurve>(stream);
-            particle_def->mesh_index = (int)ReadI16(stream);
+            particle_def->mesh_name = ReadName(stream);
+            particle_def->mesh = GetMesh(particle_def->mesh_name);
 
             emitter_def->vfx = impl;
         }

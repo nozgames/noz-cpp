@@ -243,9 +243,17 @@ extern void DrawPostProcessQuad(Material* material);
 extern void SetUICompositeMaterial(Material* material);
 extern Material* GetUICompositeMaterial();
 
+extern Mesh* GetMesh(const Name* name);
+
 extern Mesh** MESH;
 extern Font** FONT;
 extern Texture** TEXTURE;
 extern Shader** SHADER;
 extern Skeleton** SKELETON;
 extern AnimatedMesh** ANIMATEDMESH;
+
+extern int MESH_COUNT;
+extern int FONT_COUNT;
+extern int TEXTURE_COUNT;
+extern int SHADER_COUNT;
+extern int ANIMATEDMESH_COUNT;

@@ -215,8 +215,7 @@ static VfxParticle* EmitParticle(VfxEmitter* e) {
     p->rotation = p->rotation_start;
     p->emitter_index = GetIndex(e);
 
-    if (def.mesh_index >= 0)
-        p->mesh = MESH[def.mesh_index];
+    p->mesh = def.mesh;
     if (p->mesh == nullptr)
         p->mesh = g_vfx.meshes[VFX_MESH_SQUARE];
 

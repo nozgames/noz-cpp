@@ -3,9 +3,9 @@
 //
 
 #include "../platform.h"
-#include <cstring>
 
 Shader** SHADER = nullptr;
+int SHADER_COUNT = 0;
 
 struct ShaderImpl : Shader
 {

@@ -73,6 +73,7 @@ void WriteVec2(Stream* stream, const Vec2& value);
 void WriteCSTR(Stream* stream, const char* format, ...); // Write formatted C string without length prefix
 void WriteColor(Stream* stream, Color value);
 void WriteBytes(Stream* stream, const void* data, u32 size);
+void WriteName(Stream* stream, const Name* name);
 
 template <typename TStruct> void WriteStruct(Stream* stream, const TStruct& value)
 {

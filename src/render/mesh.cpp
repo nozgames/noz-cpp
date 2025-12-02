@@ -5,6 +5,7 @@
 #include "../platform.h"
 
 Mesh** MESH = nullptr;
+int MESH_COUNT = 0;
 
 struct MeshImpl : Mesh {
     u16 vertex_count;
@@ -17,6 +18,19 @@ struct MeshImpl : Mesh {
 };
 
 void UploadMesh(Mesh* mesh);
+
+Mesh* GetMesh(const Name* name) {
+    if (!name)
+        return nullptr;
+
+    for (int i = 0; i < MESH_COUNT; i++) {
+        Mesh* mesh = MESH[i];
+        if (mesh && mesh->name == name)
+            return mesh;
+    }
+
+    return nullptr;
+}
 
 static void NormalizeVertexWeights(MeshVertex* vertices, int vertex_count) {
     for (int vertex_index=0; vertex_index<vertex_count; vertex_index++) {

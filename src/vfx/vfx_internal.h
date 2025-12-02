@@ -57,11 +57,8 @@ struct VfxParticleDef {
     VfxColorCurve color;
     VfxFloatCurve opacity;
     VfxFloatCurve rotation;
-    int mesh_index;
-
-#ifdef NOZ_EDITOR
+    Mesh* mesh;
     const Name* mesh_name;
-#endif
 };
 
 struct VfxEmitterDef {
