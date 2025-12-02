@@ -18,6 +18,8 @@
 
 # Animation
 
+- [ ] bone selection with root motion disabled not working
+- [ ] when root motion is disabled the bounds is incorrectly calculated
 - [ ] Animation event editor (name events)
 - [ ] bounds needs to include skinned mesh extents
 - [ ] Skinned mesh setup for animation
@@ -30,10 +32,15 @@
 - [ ] hover on animation should play ?
 
 # VFX
+- [ ] custom mesh
 - [ ] vfx hotload broken ?
 - [ ] vfx bounds is not correct
 - [ ] Trail vfx for individual particles
 - [ ] hover to play
+
+# Sound
+- [ ] hot load of sounds
+- [ ] way to stop sound when playing (music for example)
 
 # General
 
@@ -62,7 +69,6 @@
 - [ ] scale command which allows you to specify a scale value for assets
 - [ ] Something causes a spawn of error messages in the editor when client disconnects / reconnects, not sure which
 - [ ] combined vertex buffer for rendering so we can stream data to it like triangles?
-- [ ] hot load of sounds
 - [ ] convert props to be struct
 - [ ] Trace a font out with meshes?
 - [ ] Auto complete on commands

@@ -6,8 +6,7 @@
 
 Vfx** VFX = nullptr;
 
-static void LoadVfxInternal(VfxImpl* impl, Allocator* allocator, Stream* stream)
-{
+static void LoadVfxInternal(VfxImpl* impl, Allocator* allocator, Stream* stream) {
     impl->bounds = ReadStruct<Bounds2>(stream);
     impl->duration = ReadStruct<VfxFloat>(stream);
     impl->loop = ReadBool(stream);
@@ -25,9 +24,6 @@ static void LoadVfxInternal(VfxImpl* impl, Allocator* allocator, Stream* stream)
             emitter_def->spawn = ReadStruct<VfxVec2>(stream);
 
             VfxParticleDef* particle_def = &emitter_def->particle_def;
-            // char mesh_name[1024];
-            // ReadString(stream, mesh_name, 1024);
-
             particle_def->duration = ReadStruct<VfxFloat>(stream);
             particle_def->size = ReadStruct<VfxFloatCurve>(stream);
             particle_def->speed = ReadStruct<VfxFloatCurve>(stream);
@@ -36,6 +32,7 @@ static void LoadVfxInternal(VfxImpl* impl, Allocator* allocator, Stream* stream)
             particle_def->gravity = ReadStruct<VfxVec2>(stream);
             particle_def->drag = ReadStruct<VfxFloat>(stream);
             particle_def->rotation = ReadStruct<VfxFloatCurve>(stream);
+            particle_def->mesh_index = (int)ReadI16(stream);
 
             emitter_def->vfx = impl;
         }

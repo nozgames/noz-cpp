@@ -4,8 +4,7 @@
 
 #pragma once
 
-enum VfxCurveType
-{
+enum VfxCurveType {
     VFX_CURVE_TYPE_UNKNOWN = -1,
     VFX_CURVE_TYPE_LINEAR = 0,
     VFX_CURVE_TYPE_EASE_IN,
@@ -17,46 +16,39 @@ enum VfxCurveType
     VFX_CURVE_TYPE_CUSTOM
 };
 
-struct VfxFloat
-{
+struct VfxFloat {
     float min;
     float max;
 };
 
-struct VfxInt
-{
+struct VfxInt {
     int min;
     int max;
 };
 
-struct VfxColor
-{
+struct VfxColor {
     Color min;
     Color max;
 };
 
-struct VfxVec2
-{
+struct VfxVec2 {
     Vec2 min;
     Vec2 max;
 };
 
-struct VfxFloatCurve
-{
+struct VfxFloatCurve {
     VfxCurveType type;
     VfxFloat start;
     VfxFloat end;
 };
 
-struct VfxColorCurve
-{
+struct VfxColorCurve {
     VfxCurveType type;
     VfxColor start;
     VfxColor end;
 };
 
-struct VfxParticleDef
-{
+struct VfxParticleDef {
     VfxVec2 gravity;
     VfxFloat duration;
     VfxFloat drag;
@@ -65,10 +57,14 @@ struct VfxParticleDef
     VfxColorCurve color;
     VfxFloatCurve opacity;
     VfxFloatCurve rotation;
+    int mesh_index;
+
+#ifdef NOZ_EDITOR
+    const Name* mesh_name;
+#endif
 };
 
-struct VfxEmitterDef
-{
+struct VfxEmitterDef {
     VfxInt   rate;
     VfxInt   burst;
     VfxFloat duration;

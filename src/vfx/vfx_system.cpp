@@ -168,8 +168,7 @@ static VfxInstance* CreateInstance(Vfx* vfx, const Mat3& transform) {
     return instance;
 }
 
-static void ParticleDestructor(void *ptr)
-{
+static void ParticleDestructor(void *ptr) {
     VfxParticle* p = (VfxParticle*)ptr;
     VfxEmitter* e = GetEmitter(p->emitter_index);
 
@@ -215,6 +214,11 @@ static VfxParticle* EmitParticle(VfxEmitter* e) {
     p->rotation_end = Radians(GetRandom(def.rotation.end));
     p->rotation = p->rotation_start;
     p->emitter_index = GetIndex(e);
+
+    if (def.mesh_index >= 0)
+        p->mesh = MESH[def.mesh_index];
+    if (p->mesh == nullptr)
+        p->mesh = g_vfx.meshes[VFX_MESH_SQUARE];
 
     g_vfx.particle_valid[GetIndex(p)] = true;
     e->particle_count++;
@@ -274,7 +278,7 @@ static void UpdateParticles() {
         BindTransform(i->transform * TRS(p->position, Degrees(p->rotation), {size, size}));
         BindColor(SetAlpha(col, opacity));
         BindMaterial(g_vfx.material);
-        DrawMesh(g_vfx.meshes[VFX_MESH_SQUARE]);
+        DrawMesh(p->mesh);
     }
 }
 
@@ -466,6 +470,7 @@ void InitVfx() {
         g_vfx.instance_valid[i] = false;
 
     g_vfx.material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_VFX);
+    SetTexture(g_vfx.material, TEXTURE[0]);
 
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
     AddQuad(builder, VEC2_UP, VEC2_RIGHT, 1, 1, {0,0});

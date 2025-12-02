@@ -4,7 +4,7 @@
 
 constexpr int MAX_ELEMENTS = 4096;
 constexpr int MAX_ELEMENT_STACK = 128;
-constexpr int MAX_TEXT_MESHES = 256;
+constexpr int MAX_TEXT_MESHES = 4096;
 
 extern void UpdateInputState(InputSet* input_set);
 
