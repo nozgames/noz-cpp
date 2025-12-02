@@ -9,13 +9,11 @@ constexpr u16 MAX_EMITTERS = 2024;
 constexpr u16 MAX_INSTANCES = 256;
 constexpr u16 MAX_MESHES = 1;
 
-enum VfxMesh
-{
+enum VfxMesh {
     VFX_MESH_SQUARE
 };
 
-struct VfxParticle
-{
+struct VfxParticle {
     Vec2 position;
     Vec2 velocity;
     VfxCurveType rotation_curve;
@@ -42,8 +40,7 @@ struct VfxParticle
     u16 emitter_index;
 };
 
-struct VfxEmitter
-{
+struct VfxEmitter {
     const VfxEmitterDef* def;
     float rate;
     float elapsed;
@@ -62,8 +59,7 @@ struct VfxInstance {
     u32 version;
 };
 
-struct VfxSystem
-{
+struct VfxSystem {
     Mesh* meshes[MAX_MESHES];
     Material* material;
 
@@ -79,7 +75,6 @@ struct VfxSystem
 
 static VfxSystem g_vfx = {};
 
-static VfxInstance* CreateInstance(Vfx* vfx, const Vec2& position);
 static VfxEmitter* CreateEmitter(VfxInstance* instance, const VfxEmitterDef& def);
 static VfxParticle* EmitParticle(VfxEmitter* e);
 
@@ -159,8 +154,7 @@ static void InstanceDestructor(void* ptr)
     g_vfx.instance_valid[GetIndex(i)] = false;
 }
 
-static VfxInstance* CreateInstance(Vfx* vfx, const Mat3& transform)
-{
+static VfxInstance* CreateInstance(Vfx* vfx, const Mat3& transform) {
     if (IsFull(g_vfx.instance_pool))
         return nullptr;
 
@@ -184,8 +178,7 @@ static void ParticleDestructor(void *ptr)
     g_vfx.particle_valid[GetIndex(p)] = false;
 }
 
-static VfxParticle* EmitParticle(VfxEmitter* e)
-{
+static VfxParticle* EmitParticle(VfxEmitter* e) {
     if (IsFull(g_vfx.emitter_pool))
         return nullptr;
 
@@ -229,23 +222,20 @@ static VfxParticle* EmitParticle(VfxEmitter* e)
     return p;
 }
 
-static void UpdateParticles()
-{
+static void UpdateParticles() {
     if (IsEmpty(g_vfx.particle_pool))
         return;
 
     float dt = GetFrameTime();
 
-    for (u32 i = 0; i < MAX_PARTICLES; ++i)
-    {
+    for (u32 i = 0; i < MAX_PARTICLES; ++i) {
         if (!g_vfx.particle_valid[i])
             continue;
 
         VfxParticle* p = GetParticle(i);
         p->elapsed += dt;
 
-        if (p->elapsed >= p->lifetime)
-        {
+        if (p->elapsed >= p->lifetime) {
             Free(p);
             continue;
         }
@@ -263,22 +253,25 @@ static void UpdateParticles()
         p->rotation = Mix(p->rotation_start, p->rotation_end, EvaluateCurve(p->rotation_curve, t));
     }
 
-    for (int i=0; i<MAX_PARTICLES; i++) {
-        if (!g_vfx.particle_valid[i])
+    for (int particle_index=0; particle_index<MAX_PARTICLES; particle_index++) {
+        if (!g_vfx.particle_valid[particle_index])
             continue;
 
-        VfxParticle* p = GetParticle(i);
+        VfxParticle* p = GetParticle(particle_index);
         assert(p);
 
-        VfxInstance* instance = GetInstance(p->emitter_index);
-        assert(instance);
+        VfxEmitter* e = GetEmitter(p->emitter_index);
+        assert(e);
+
+        VfxInstance* i = GetInstance(e);
+        assert(i);
 
         float t = p->elapsed / p->lifetime;
         float size = Mix(p->size_start, p->size_end, EvaluateCurve(p->size_curve, t));
         float opacity = Mix(p->opacity_start, p->opacity_end, EvaluateCurve(p->opacity_curve, t));
         Color col = Mix(p->color_start, p->color_end, EvaluateCurve(p->color_curve, t));
 
-        BindTransform(instance->transform * TRS(p->position, Degrees(p->rotation), {size, size}));
+        BindTransform(i->transform * TRS(p->position, Degrees(p->rotation), {size, size}));
         BindColor(SetAlpha(col, opacity));
         BindMaterial(g_vfx.material);
         DrawMesh(g_vfx.meshes[VFX_MESH_SQUARE]);
@@ -299,8 +292,7 @@ static void EmitterDestructor(void* ptr)
         Free(i);
 }
 
-static VfxEmitter* CreateEmitter(VfxInstance* instance, const VfxEmitterDef& def)
-{
+static VfxEmitter* CreateEmitter(VfxInstance* instance, const VfxEmitterDef& def) {
     if (IsFull(g_vfx.emitter_pool))
         return nullptr;
 
@@ -341,8 +333,7 @@ static void UpdateEmitters()
 
         e->accumulator += dt;
 
-        while (e->accumulator >= e->rate)
-        {
+        while (e->accumulator >= e->rate) {
             EmitParticle(e);
             e->accumulator -= e->rate;
         }
@@ -425,10 +416,8 @@ VfxHandle Play(Vfx* vfx, const Mat3& transform) {
 
     for (u32 i=0, c=impl->emitter_count; i<c; i++) {
         VfxEmitter* e = CreateEmitter(instance, impl->emitters[i]);
-        if (!e)
-            break;
+        if (!e) break;
 
-        // Handle burst
         i32 burst_count = GetRandom(e->def->burst);
         for (i32 b = 0; b < burst_count; ++b)
             EmitParticle(e);
