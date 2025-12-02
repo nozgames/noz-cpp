@@ -3,6 +3,7 @@
 //
 
 Skeleton** SKELETON = nullptr;
+int SKELETON_COUNT = 0;
 
 int GetBoneCount(Skeleton* skeleton) {
     return ((SkeletonImpl*)skeleton)->bone_count;

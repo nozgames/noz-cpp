@@ -257,3 +257,4 @@ extern int FONT_COUNT;
 extern int TEXTURE_COUNT;
 extern int SHADER_COUNT;
 extern int ANIMATEDMESH_COUNT;
+extern int SKELETON_COUNT;

@@ -3,6 +3,7 @@
 //
 
 Animation** ANIMATION = nullptr;
+int ANIMATION_COUNT = 0;
 
 float GetDuration(Animation* animation) {
     return static_cast<AnimationImpl*>(animation)->duration;
