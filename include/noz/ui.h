@@ -13,12 +13,13 @@ enum TextAlign
     TEXT_ALIGN_MAX
 };
 
-typedef u32 ElementState;
-constexpr ElementState ELEMENT_STATE_NONE        = 0;
-constexpr ElementState ELEMENT_STATE_HOVERED     = 1 << 0;
-constexpr ElementState ELEMENT_STATE_PRESSED     = 1 << 1;
+typedef u32 ElementFlags;
+constexpr ElementFlags ELEMENT_FLAG_NONE        = 0;
+constexpr ElementFlags ELEMENT_FLAG_HOVERED     = 1 << 0;
+constexpr ElementFlags ELEMENT_FLAG_PRESSED     = 1 << 1;
+constexpr ElementFlags ELEMENT_FLAG_DOWN        = 1 << 2;
 
-typedef Color (*AnimatedColorFunc)(ElementState state, float time, void* user_data);
+typedef Color (*AnimatedColorFunc)(ElementFlags state, float time, void* user_data);
 
 struct EdgeInsets {
     float top = 0.0f;
@@ -174,7 +175,7 @@ extern void BeginUI(u32 ref_width, u32 ref_height);
 extern void DrawUI();
 extern void EndUI();
 extern Vec2 ScreenToUI(const Vec2& screen_pos);
-
+extern bool CheckElementFlags(ElementFlags flags);
 
 // @layout
 extern void BeginCanvas(const CanvasStyle& style={});
@@ -215,6 +216,9 @@ extern void BeginGestureDetector(const GestureDetectorStyle& style);
 extern void GestureBlocker(const std::function<void()>& children);
 extern void GestureDetector(const GestureDetectorStyle& style, const std::function<void()>& children = nullptr);
 extern void MouseRegion(const MouseRegionStyle& style, const std::function<void()>& children = nullptr);
+inline bool IsHovered() { return CheckElementFlags(ELEMENT_FLAG_HOVERED); }
+inline bool WasPressed() { return CheckElementFlags(ELEMENT_FLAG_PRESSED); }
+inline bool IsDown() { return CheckElementFlags(ELEMENT_FLAG_DOWN); }
 
 // @drawing
 extern void Label(const char* text, const LabelStyle& style = {});

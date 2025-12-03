@@ -76,7 +76,7 @@ extern void Stop(Animator& animator);
 extern void Stop(Animator& animatorl, int layer_index);
 extern void Update(Animator& animator, float time_scale=1.0f);
 extern bool IsLooping(Animator& animator);
-extern float GetNormalizedTime(Animator& animator, int layer_index);
+inline int GetFrameIndex(Animator& animator, int layer_index=0) { return animator.layers[layer_index].frame_index; }
 extern void SetNormalizedTime(Animator& animator, int layer_index, float normalized_time);
 inline Skeleton* GetSkeleton(Animator& animator) {
     return animator.skeleton;
@@ -89,6 +89,7 @@ inline bool IsPlaying(Animator& animator, int layer_index, Animation* animation)
     return GetLayer(animator, layer_index).animation == animation;
 }
 inline bool IsPlaying(Animator& animator, int layer_index=0) {
+    if (animator.layer_count == 0) return false;
     return GetLayer(animator, layer_index).playing;
 }
 inline bool IsLooping(AnimationFlags flags) {

@@ -40,9 +40,13 @@ struct CachedTextMesh
     int last_frame;
 };
 
+struct ElementState {
+    ElementFlags flags;
+    u64 hash;
+};
+
 struct Element {
     ElementType type;
-    ElementState state;
     u32 index;
     noz::Rect rect;
     u32 child_count;
@@ -148,30 +152,49 @@ struct UI {
     Camera* camera;
     Element* elements[MAX_ELEMENTS];
     Element* element_stack[MAX_ELEMENTS];
+    ElementState element_states[MAX_ELEMENTS];
+    u32 element_count;
     u32 element_stack_count;
     Mesh* element_quad;
     Mesh* image_mesh;
-    u32 element_count;
     Vec2 ortho_size;
     Vec2Int ref_size;
     Material* element_material;
     InputSet* input;
     PoolAllocator* text_mesh_allocator;
     float depth;
-    ElementState prev_element_states[MAX_ELEMENTS];
+    u64 hash;
 };
 
 static UI g_ui = {};
 
 static Element* CreateElement(ElementType type) {
+    g_ui.hash = Hash(g_ui.hash, type);
+
     Element* element = static_cast<Element*>(Alloc(g_ui.allocator, sizeof(FatElement)));
     element->type = type;
-    element->index= g_ui.element_count;
+    element->index = g_ui.element_count;
     g_ui.elements[g_ui.element_count++] = element;
+
+    ElementState& state = g_ui.element_states[element->index];
+    if (state.hash != g_ui.hash) {
+        state.flags = 0;
+        state.hash = g_ui.hash;
+    }
     return element;
 }
 
-extern Vec2 ScreenToUI(const Vec2& screen_pos) {
+bool CheckElementFlags(ElementFlags flags) {
+    if (g_ui.element_stack_count <= 0)
+        return false;
+
+    Element* e = g_ui.element_stack[g_ui.element_stack_count - 1];
+    assert(e);
+
+    return (g_ui.element_states[e->index].flags & flags) == flags;
+}
+
+Vec2 ScreenToUI(const Vec2& screen_pos) {
     return screen_pos / ToVec2(GetScreenSize()) * g_ui.ortho_size;
 }
 
@@ -381,7 +404,6 @@ void Label(const char* text, const LabelStyle& style) {
     LabelElement* label = static_cast<LabelElement*>(CreateElement(ELEMENT_TYPE_LABEL));
     label->style = style;
     label->cached_mesh = GetOrCreateTextMesh(text, style);
-    ExecuteChildren(label, nullptr);
 }
 
 void Inset(float amount, void (*children)()) {
@@ -874,7 +896,7 @@ static int RenderElement(int element_index) {
         Vec2 mesh_size = GetSize(mesh_bounds);
 
         if (image->style.color_func)
-            BindColor(image->style.color_func(e->state, 0.0f, image->style.color_func_user_data));
+            BindColor(image->style.color_func(g_ui.element_states[e->index].flags, 0.0f, image->style.color_func_user_data));
         else
             BindColor(image->style.color);
 
@@ -934,7 +956,7 @@ static int RenderElement(int element_index) {
         BindTransform(transform * Scale(Vec2{e->rect.width, e->rect.height}));
         BindMaterial(g_ui.element_material);
         if (rectangle->style.color_func) {
-            BindColor(rectangle->style.color_func(e->state, 0.0f, rectangle->style.color_func_user_data));
+            BindColor(rectangle->style.color_func(g_ui.element_states[e->index].flags, 0.0f, rectangle->style.color_func_user_data));
         } else {
             BindColor(rectangle->style.color);
         }
@@ -995,6 +1017,7 @@ void BeginUI(u32 ref_width, u32 ref_height) {
     g_ui.ref_size = { (i32)ref_width, (i32)ref_height };
     g_ui.element_stack_count = 0;
     g_ui.element_count = 0;
+    g_ui.hash = 0;
 
     Clear(g_ui.allocator);
 
@@ -1024,17 +1047,28 @@ void BeginUI(u32 ref_width, u32 ref_height) {
 
 static void HandleInput() {
     Vec2 mouse = ScreenToWorld(g_ui.camera, GetMousePosition());
-    for (u32 i=g_ui.element_count; i>0; i--)
-    {
+    for (u32 i=g_ui.element_count; i>0; i--) {
         Element* e = g_ui.elements[i-1];
-        ElementState prev_state = g_ui.prev_element_states[i-1];
+        ElementState& prev_state = g_ui.element_states[i-1];
         Vec2 local_mouse = TransformPoint(e->world_to_local, mouse);
         bool mouse_over = Contains(Bounds2{0,0,e->rect.width, e->rect.height}, local_mouse);
 
         if (mouse_over)
-            e->state = e->state | ELEMENT_STATE_HOVERED;
+            prev_state.flags = prev_state.flags | ELEMENT_FLAG_HOVERED;
         else
-            e->state = e->state & ~ELEMENT_STATE_HOVERED;
+            prev_state.flags = prev_state.flags & ~ELEMENT_FLAG_HOVERED;
+
+        if (mouse_over && WasButtonPressed(g_ui.input, MOUSE_LEFT)) {
+            prev_state.flags = prev_state.flags | ELEMENT_FLAG_PRESSED;
+        } else {
+            prev_state.flags = prev_state.flags & ~ELEMENT_FLAG_PRESSED;
+        }
+
+        if (mouse_over && IsButtonDown(g_ui.input, MOUSE_LEFT)) {
+            prev_state.flags = prev_state.flags | ELEMENT_FLAG_DOWN;
+        } else {
+            prev_state.flags = prev_state.flags & ~ELEMENT_FLAG_DOWN;
+        }
 
         if (e->type == ELEMENT_TYPE_GESTURE_DETECTOR) {
             GestureDetectorElement* g = static_cast<GestureDetectorElement*>(e);
@@ -1047,8 +1081,8 @@ static void HandleInput() {
             if (mouse_over) ConsumeButton(MOUSE_LEFT);
         } else if (e->type == ELEMENT_TYPE_MOUSE_REGION) {
             MouseRegionElement* m = static_cast<MouseRegionElement*>(e);
-            bool was_hovered = prev_state & ELEMENT_STATE_HOVERED;
-            bool is_hovered = e->state & ELEMENT_STATE_HOVERED;
+            bool was_hovered = prev_state.flags & ELEMENT_FLAG_HOVERED;
+            bool is_hovered = prev_state.flags & ELEMENT_FLAG_HOVERED;
 
             // Trigger on_enter when transitioning from not-hovered to hovered
             if (!was_hovered && is_hovered && m->style.on_enter) {
@@ -1065,9 +1099,6 @@ static void HandleInput() {
                 m->style.on_hover(m->style.user_data);
             }
         }
-
-        // Store current state for next frame
-        g_ui.prev_element_states[i-1] = e->state;
     }
 }
 

@@ -72,16 +72,26 @@ struct AnimationBone {
     u8 index;
 };
 
+struct AnimationFrame {
+    int transform0;
+    int transform1;
+    int event;
+    float fraction0;
+    float fraction1;
+};
+
 struct AnimationImpl : Animation {
     int bone_count;
+    int transform_count;
+    int transform_stride;
     int frame_count;
-    int frame_stride;
     int frame_rate;
     float frame_rate_inv;
     float duration;
     AnimationFlags flags;
     AnimationBone* bones;
-    BoneTransform* frames;
+    BoneTransform* transforms;
+    AnimationFrame* frames;
 };
 
 // @skeleton
