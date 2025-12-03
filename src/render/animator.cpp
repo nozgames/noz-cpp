@@ -28,22 +28,21 @@ static void EvalulateFrame(Animator& animator, int layer_index) {
     // Blend
     BoneTransform* blend_transform0 = nullptr;
     BoneTransform* blend_transform1 = nullptr;
-    f32 blend_frame_t = 0.0f;
+    f32 blend_frame_fraction = 0.0f;
     f32 blend_t = 0.0f;
-    bool blend_root_motion = false;
     if (layer.blend_animation) {
         AnimationImpl* blend_anim_impl = static_cast<AnimationImpl*>(layer.blend_animation);
         assert(blend_anim_impl);
         assert(GetBoneCount(animator.skeleton) == blend_anim_impl->bone_count);
-        f32 blend_float_frame = layer.blend_frame_time * blend_anim_impl->frame_rate;
-        i32 blend_frame_index1 = static_cast<i32>(Floor(blend_float_frame));
-        blend_frame_t = blend_float_frame - static_cast<f32>(blend_frame_index1);
-        blend_frame_index1 = Min(blend_frame_index1, blend_anim_impl->frame_count - 1);
-        i32 blend_frame_index2 = blend_frame_index1 + 1;;
-        blend_transform0 = blend_anim_impl->transforms + blend_frame_index1 * blend_anim_impl->transform_stride;
-        blend_transform1 = blend_anim_impl->transforms + blend_frame_index2 * blend_anim_impl->transform_stride;
+        f32 blend_index_float = layer.blend_frame_time * blend_anim_impl->frame_rate;
+        i32 blend_index = static_cast<i32>(blend_index_float);
+        AnimationFrame& blend_frame = blend_anim_impl->frames[blend_index];
+        i32 blend_transform_index0 = blend_frame.transform0;
+        i32 blend_transform_index1 = blend_frame.transform1;
+        blend_frame_fraction = (blend_index_float - static_cast<f32>(blend_index)) * (blend_frame.fraction1 - blend_frame.fraction0) + blend_frame.fraction0;
+        blend_transform0 = blend_anim_impl->transforms + blend_transform_index0 * blend_anim_impl->transform_stride;
+        blend_transform1 = blend_anim_impl->transforms + blend_transform_index1 * blend_anim_impl->transform_stride;
         blend_t = layer.blend_time / ANIMATOR_BLEND_TIME;
-        blend_root_motion = IsRootMotion(layer.blend_animation);
     }
 
     for (int bone_index=0; bone_index<anim_impl->bone_count; bone_index++) {
@@ -58,9 +57,7 @@ static void EvalulateFrame(Animator& animator, int layer_index) {
             assert(blend_transform1);
             BoneTransform* bbt1 = blend_transform0 + bone_index;
             BoneTransform* bbt2 = blend_transform1 + bone_index;
-            BoneTransform blend_frame = Mix(*bbt1, *bbt2, blend_frame_t);
-            if (blend_root_motion && bone_index == 0)
-                blend_frame.position.x = 0;
+            BoneTransform blend_frame = Mix(*bbt1, *bbt2, blend_frame_fraction);
             frame_transform = Mix(blend_frame, frame_transform, blend_t);
         }
 
