@@ -41,6 +41,7 @@ inline Mat3 ToMat3(const BoneTransform& bt) {
 }
 
 constexpr int MAX_ANIMATION_LAYERS = 2;
+constexpr int ANIMATION_MAX_EVENTS = 4;
 
 struct AnimatorLayer {
     Animation* animation;
@@ -67,6 +68,8 @@ struct Animator {
     Mat3 bones[MAX_BONES];
     BoneTransform transforms[MAX_BONES];
     BoneTransform user_transforms[MAX_BONES];
+    int events[ANIMATION_MAX_EVENTS];
+    int event_count;
 };
 
 extern void Init(Animator& animator, Skeleton* skeleton, int layer_count=1);
@@ -76,6 +79,11 @@ extern void Stop(Animator& animator);
 extern void Stop(Animator& animatorl, int layer_index);
 extern void Update(Animator& animator, float time_scale=1.0f);
 extern bool IsLooping(Animator& animator);
+inline int GetEventCount(Animator& animator) { return animator.event_count; }
+inline int GetEvent(Animator& animator, int event_index) {
+    assert(event_index >= 0 && event_index < animator.event_count);
+    return animator.events[event_index];
+}
 inline int GetFrameIndex(Animator& animator, int layer_index=0) { return animator.layers[layer_index].frame_index; }
 extern void SetNormalizedTime(Animator& animator, int layer_index, float normalized_time);
 inline Skeleton* GetSkeleton(Animator& animator) {

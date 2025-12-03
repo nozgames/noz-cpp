@@ -55,5 +55,12 @@ Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, 
 
     impl->frames[impl->frame_count] = impl->frames[impl->frame_count-1];
 
+    for (int i=0; i<impl->frame_count; i++) {
+        AnimationFrame& f = impl->frames[i];
+        if (f.event > 0) {
+            LogInfo("hmm");
+        }
+    }
+
     return impl;
 }

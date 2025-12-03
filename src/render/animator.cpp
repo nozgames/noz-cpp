@@ -75,6 +75,27 @@ static void EvalulateFrame(Animator& animator, int layer_index) {
     animator.root_motion_delta = rm - animator.last_root_motion;
     animator.last_root_motion = rm;
 
+    // Events
+    animator.event_count = 0;
+    if (frame_index > layer.frame_index) {
+        for (int i=layer.frame_index+1; i<= frame_index && animator.event_count < ANIMATION_MAX_EVENTS; i++) {
+            AnimationFrame& f = anim_impl->frames[i];
+            if (f.event <= 0) continue;
+            animator.events[animator.event_count++] = f.event;
+        }
+    } else if (frame_index < layer.frame_index) {
+        for (int i=layer.frame_index+1; i<anim_impl->frame_count && animator.event_count < ANIMATION_MAX_EVENTS; i++) {
+            AnimationFrame& f = anim_impl->frames[i];
+            if (f.event <= 0) continue;
+            animator.events[animator.event_count++] = f.event;
+        }
+        for (int i=0; i<= frame_index && animator.event_count < ANIMATION_MAX_EVENTS; i++) {
+            AnimationFrame& f = anim_impl->frames[i];
+            if (f.event <= 0) continue;
+            animator.events[animator.event_count++] = f.event;
+        }
+    }
+
     layer.frame_index = frame_index;
 }
 

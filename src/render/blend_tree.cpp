@@ -21,8 +21,16 @@ void Update(BlendTree& blend_tree, float time_scale, Animator& animator) {
     if (blend_tree.blend_count == 0)
         return;
 
-    for (int i=0; i<blend_tree.blend_count; i++)
-        Update(blend_tree.blends[i].animator, time_scale);
+    for (int i=0; i<blend_tree.blend_count; i++) {
+        Animator& blend_animator = blend_tree.blends[i].animator;
+        Update(blend_animator, time_scale);
+
+        for (int event_index=0, event_count=GetEventCount(blend_animator);
+            event_index<event_count && animator.event_count < ANIMATION_MAX_EVENTS;
+            event_index++) {
+            animator.events[animator.event_count++] = GetEvent(blend_animator, event_index);
+        }
+    }
 
     int bone_count = GetBoneCount(blend_tree.skeleton);
     for (int bone_index=0; bone_index<bone_count; bone_index++) {
