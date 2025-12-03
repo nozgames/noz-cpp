@@ -291,6 +291,7 @@ inline Vec2 TransformPoint(const Mat3& m) { return TransformPoint(m, VEC2_ZERO);
 extern Vec2 TransformVector(const Mat3& m, const Vec2& vector);
 extern Vec2 GetForward(const Mat3& m);
 extern Vec2 GetRight(const Mat3& m);
+extern f32 GetRotation(const Mat3& m);
 
 // @vec2
 inline Vec3 XZ(const Vec2& v) { return {v.x, 0.0f, v.y}; }

@@ -18,6 +18,7 @@
 
 # Animation
 
+- [ ] Loop toggle button
 - [ ] bone selection with root motion disabled not working
 - [ ] when root motion is disabled the bounds is incorrectly calculated
 - [ ] Animation event editor (name events)
@@ -26,7 +27,6 @@
   - [ ] attach animation to animation (bow as child of stick_bow_fire)
 - [ ] Animation play without being in editor
 - [ ] Animation bounds does not take into account the actual animation, just the skeleton
-- [ ] editor animation likely leaking animation and skeleton asset
 - [ ] new clone animation
 - [ ] Animation with no frames not loading
 - [ ] hover on animation should play ?

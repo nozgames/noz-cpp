@@ -91,6 +91,9 @@ inline bool IsPlaying(Animator& animator, int layer_index, Animation* animation)
 inline bool IsPlaying(Animator& animator, int layer_index=0) {
     return GetLayer(animator, layer_index).playing;
 }
+inline bool IsLooping(AnimationFlags flags) {
+    return (flags & ANIMATION_FLAG_LOOPING) != 0;
+}
 inline bool IsLooping(Animator& animator, int layer_index=0) {
     return GetLayer(animator, layer_index).loop;
 }

@@ -161,3 +161,7 @@ Vec2 GetRight(const Mat3& m)
 {
     return Vec2{ m.m[3], m.m[4] };
 }
+
+f32 GetRotation(const Mat3& m) {
+    return Degrees(Atan2(m.m[1], m.m[0]));
+}

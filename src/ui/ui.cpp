@@ -657,10 +657,21 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
         max_size.y = child_offset.y;
     }
 
-    if (parent->rect.width == F32_MAX || parent->type == ELEMENT_TYPE_ROW)
+    if (parent->rect.width == F32_MAX || parent->type == ELEMENT_TYPE_ROW) {
         parent->rect.width = max_size.x;
-    if (parent->rect.height == F32_MAX || parent->type == ELEMENT_TYPE_COLUMN)
+        if (parent->type == ELEMENT_TYPE_CONTAINER) {
+            ContainerElement* container = static_cast<ContainerElement*>(parent);
+            parent->rect.width += (container->style.padding.left + container->style.padding.right);
+        }
+    }
+
+    if (parent->rect.height == F32_MAX || parent->type == ELEMENT_TYPE_COLUMN) {
         parent->rect.height = max_size.y;
+        if (parent->type == ELEMENT_TYPE_CONTAINER) {
+            ContainerElement* container = static_cast<ContainerElement*>(parent);
+            parent->rect.height += (container->style.padding.top + container->style.padding.bottom);
+        }
+    }
 
     if (parent->type == ELEMENT_TYPE_CENTER) {
         ApplyAlignment(parent, ALIGNMENT_CENTER_CENTER, element_stack_start, parent->child_count);
