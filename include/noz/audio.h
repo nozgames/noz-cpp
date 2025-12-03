@@ -31,3 +31,4 @@ extern float GetSoundVolume();
 extern float GetMusicVolume();
 
 extern Sound** SOUND;
+extern int SOUND_COUNT;

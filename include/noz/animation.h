@@ -133,3 +133,4 @@ inline bool IsPlaying(BlendTree& blend_tree) {
 }
 
 extern Animation** ANIMATION;
+extern int ANIMATION_COUNT;

@@ -315,20 +315,17 @@ static VfxEmitter* CreateEmitter(VfxInstance* instance, const VfxEmitterDef& def
     return e;
 }
 
-static void UpdateEmitters()
-{
+static void UpdateEmitters() {
     if (IsEmpty(g_vfx.emitter_pool))
         return;
 
     float dt = GetFrameTime();
-    for (u32 i=0; i<MAX_EMITTERS; i++)
-    {
+    for (u32 i=0; i<MAX_EMITTERS; i++) {
         if (!g_vfx.emitter_valid[i])
             continue;
 
         VfxEmitter* e = GetEmitter(i);;
-        if (e->rate <= 0.0000001f || e->elapsed >= e->duration)
-        {
+        if (e->rate <= 0.0000001f || e->elapsed >= e->duration) {
             if (e->particle_count == 0)
                 Free(e);
             continue;
@@ -343,23 +340,20 @@ static void UpdateEmitters()
     }
 }
 
-void Stop(const VfxHandle& handle)
-{
+void Stop(const VfxHandle& handle) {
     VfxInstance* instance = GetInstance(handle);
     if (!instance)
         return;
 
     // Stop all the emitters but let existing particles live out their lifetime
-    for (u32 i = 0; i < MAX_EMITTERS; ++i)
-    {
+    for (u32 i = 0; i < MAX_EMITTERS; ++i) {
         VfxEmitter* e = GetEmitter(i);
         if (e->instance_index == GetIndex(instance))
             e->rate = 0.0f;
     }
 }
 
-void Destroy(VfxHandle& handle)
-{
+void Destroy(VfxHandle& handle) {
     VfxInstance* instance = GetInstance(handle);
     if (!instance)
         return;
@@ -369,8 +363,7 @@ void Destroy(VfxHandle& handle)
     Stop(handle);
 
     // Free any particles associated with the instance
-    for (u32 i = 0; i < MAX_PARTICLES; ++i)
-    {
+    for (u32 i = 0; i < MAX_PARTICLES; ++i) {
         if (!g_vfx.particle_valid[i])
             continue;
 
@@ -387,8 +380,7 @@ void Destroy(VfxHandle& handle)
     }
 
     // Free any emitters associated with the instance
-    for (u32 i = 0; i < MAX_EMITTERS; ++i)
-    {
+    for (u32 i = 0; i < MAX_EMITTERS; ++i) {
         if (!g_vfx.emitter_valid[i])
             continue;
 
