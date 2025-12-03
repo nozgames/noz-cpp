@@ -70,11 +70,9 @@ static void EvalulateFrame(Animator& animator, int layer_index) {
         animator.transforms[bone_index] = frame_transform;
     }
 
+    // Root motion
     float rm = frame.root_motion0 + (frame.root_motion1 - frame.root_motion0) * frame_fraction;
-    LogInfo("rm=%f last=%f delta=%f", rm, animator.last_root_motion, rm - animator.last_root_motion);
     animator.root_motion_delta = rm - animator.last_root_motion;
-    if (animator.root_motion_delta< 0.0f)
-        animator.root_motion_delta = 0.0f;
     animator.last_root_motion = rm;
 
     layer.frame_index = frame_index;
