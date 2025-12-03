@@ -51,7 +51,7 @@ Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, 
 
     ReadBytes(stream, &impl->bones[0], sizeof(AnimationBone) * bone_count);
     ReadBytes(stream, &impl->transforms[0], sizeof(BoneTransform) * bone_count * transform_count);
-    ReadBytes(stream, &impl->frames[0], sizeof(AnimationFrame) * frame_count);
+    ReadBytes(stream, &impl->frames[0], sizeof(AnimationFrame) * (frame_count + 1));
 
     return impl;
 }
