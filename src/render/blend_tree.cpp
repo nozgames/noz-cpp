@@ -4,6 +4,8 @@
 
 constexpr float ANIMATOR_BLEND_TIME = 0.05f;
 
+extern void AddEvent(Animator& animator, int event_id);
+
 void Play(BlendTree& blend_tree, int blend_index, float value, Animation* animation, float speed, float normalized_time) {
     assert(blend_index <= blend_tree.blend_count);
     assert(blend_index >= 0);
@@ -25,11 +27,8 @@ void Update(BlendTree& blend_tree, float time_scale, Animator& animator) {
         Animator& blend_animator = blend_tree.blends[i].animator;
         Update(blend_animator, time_scale);
 
-        for (int event_index=0, event_count=GetEventCount(blend_animator);
-            event_index<event_count && animator.event_count < ANIMATION_MAX_EVENTS;
-            event_index++) {
-            animator.events[animator.event_count++] = GetEvent(blend_animator, event_index);
-        }
+        while (HasEvents(blend_animator))
+            AddEvent(animator, GetEvent(blend_animator));
     }
 
     int bone_count = GetBoneCount(blend_tree.skeleton);

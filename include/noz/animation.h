@@ -79,11 +79,8 @@ extern void Stop(Animator& animator);
 extern void Stop(Animator& animatorl, int layer_index);
 extern void Update(Animator& animator, float time_scale=1.0f);
 extern bool IsLooping(Animator& animator);
-inline int GetEventCount(Animator& animator) { return animator.event_count; }
-inline int GetEvent(Animator& animator, int event_index) {
-    assert(event_index >= 0 && event_index < animator.event_count);
-    return animator.events[event_index];
-}
+inline bool HasEvents(Animator& animator) { return animator.event_count > 0; }
+extern int GetEvent(Animator& animator);
 inline int GetFrameIndex(Animator& animator, int layer_index=0) { return animator.layers[layer_index].frame_index; }
 extern void SetNormalizedTime(Animator& animator, int layer_index, float normalized_time);
 inline Skeleton* GetSkeleton(Animator& animator) {

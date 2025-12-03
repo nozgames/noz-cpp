@@ -4,6 +4,26 @@
 
 constexpr float ANIMATOR_BLEND_TIME = 0.05f;
 
+void AddEvent(Animator& animator, int event_id) {
+    if (event_id <= 0) return;
+    if (animator.event_count >= ANIMATION_MAX_EVENTS) {
+        for (int i=1; i<ANIMATION_MAX_EVENTS; i++)
+            animator.events[i-1] = animator.events[i];
+        animator.events[animator.event_count] = event_id;
+    } else {
+        animator.events[animator.event_count++] = event_id;
+    }
+}
+
+extern int GetEvent(Animator& animator) {
+    if (animator.event_count==0) return 0;
+    int event_id = animator.events[0];
+    for (int i=1; i<animator.event_count; i++)
+        animator.events[i-1] = animator.events[i];
+    animator.event_count--;
+    return event_id;
+}
+
 static void EvalulateFrame(Animator& animator, int layer_index) {
     Skeleton* skeleton = animator.skeleton;
     assert(animator.skeleton);
@@ -76,24 +96,14 @@ static void EvalulateFrame(Animator& animator, int layer_index) {
     animator.last_root_motion = rm;
 
     // Events
-    animator.event_count = 0;
     if (frame_index > layer.frame_index) {
-        for (int i=layer.frame_index+1; i<= frame_index && animator.event_count < ANIMATION_MAX_EVENTS; i++) {
-            AnimationFrame& f = anim_impl->frames[i];
-            if (f.event <= 0) continue;
-            animator.events[animator.event_count++] = f.event;
-        }
+        for (int i=layer.frame_index+1; i<= frame_index; i++)
+            AddEvent(animator, anim_impl->frames[i].event);
     } else if (frame_index < layer.frame_index) {
-        for (int i=layer.frame_index+1; i<anim_impl->frame_count && animator.event_count < ANIMATION_MAX_EVENTS; i++) {
-            AnimationFrame& f = anim_impl->frames[i];
-            if (f.event <= 0) continue;
-            animator.events[animator.event_count++] = f.event;
-        }
-        for (int i=0; i<= frame_index && animator.event_count < ANIMATION_MAX_EVENTS; i++) {
-            AnimationFrame& f = anim_impl->frames[i];
-            if (f.event <= 0) continue;
-            animator.events[animator.event_count++] = f.event;
-        }
+        for (int i=layer.frame_index+1; i<anim_impl->frame_count; i++)
+            AddEvent(animator, anim_impl->frames[i].event);
+        for (int i=0; i<= frame_index; i++)
+            AddEvent(animator, anim_impl->frames[i].event);
     }
 
     layer.frame_index = frame_index;
@@ -142,6 +152,7 @@ void Play(Animator& animator, Animation* animation, int layer_index, float speed
     layer.time = normalized_time * static_cast<AnimationImpl*>(animation)->duration;
     layer.loop = IsLooping(layer.animation);
     layer.playing = true;
+    layer.frame_index = -1;
 
     if ((layer.bone_mask & 0x1)) {
         animator.last_root_motion = 0.0f;
