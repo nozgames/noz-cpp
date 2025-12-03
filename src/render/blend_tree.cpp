@@ -30,7 +30,7 @@ void Update(BlendTree& blend_tree, float time_scale, Animator& animator) {
             continue;
 
         BoneTransform bt = {};
-        Vec2 root_motion_delta = VEC2_ZERO;
+        float root_motion_delta = 0.0f;
         float base_rotation = 0.0f;
         bool first = true;
         for (int i=0; i<blend_tree.blend_count; i++) {

@@ -1,5 +1,5 @@
 # Mesh
-- [ ] do not allow extridomg an internal edge (check face count)
+- [ ] do not allow extruding an internal edge (check face count)
 - [ ] new mesh should use click to add verts to create shape, enter to close
 - [ ] There are some bugs with deletting edges and vertices
 - [ ] vertices left behind when deleting faces nad edges
@@ -16,12 +16,23 @@
 - [ ] moving bones in skeleton is not changing animations?
 - [ ] hit test faces of assets when parenting.
 
+# State
+- [ ] Add state that works like event except an animation can be in multiple states (hidden arrow for example)
+
+# Event
+- [ ] Deleting an event should go through all animations and remove the event
+- [ ] Write event ids as constants in the manifest
+- [ ] dont include events in builds
+- [ ] new event should find a unique id based on current events
+- [ ] editor and inspector to allow you to set the id manually?
+
 # Animation
 
-- [ ] Loop toggle button
-- [ ] bone selection with root motion disabled not working
+- [ ] remove root motion flag and metadata
+- [ ] undo bone move is causing all frames to show events?
+- [ ] Fire events 
+- [ ] write events to the serialized animation file
 - [ ] when root motion is disabled the bounds is incorrectly calculated
-- [ ] Animation event editor (name events)
 - [ ] bounds needs to include skinned mesh extents
 - [ ] Skinned mesh setup for animation
   - [ ] attach animation to animation (bow as child of stick_bow_fire)

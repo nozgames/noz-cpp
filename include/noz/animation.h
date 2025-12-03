@@ -62,8 +62,8 @@ struct Animator {
     AnimatorLayer layers[MAX_ANIMATION_LAYERS];
     int layer_count;
     bool root_motion;
-    Vec2 root_motion_delta;
-    Vec2 last_root_motion;
+    float root_motion_delta;
+    float last_root_motion;
     Mat3 bones[MAX_BONES];
     BoneTransform transforms[MAX_BONES];
     BoneTransform user_transforms[MAX_BONES];

@@ -4,7 +4,7 @@
 
 constexpr float ANIMATOR_BLEND_TIME = 0.05f;
 
-static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
+static void EvalulateFrame(Animator& animator, int layer_index) {
     Skeleton* skeleton = animator.skeleton;
     assert(animator.skeleton);
 
@@ -17,7 +17,7 @@ static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
     SkeletonImpl* skel_impl = static_cast<SkeletonImpl*>(skeleton);
 
     f32 frame_index_float = layer.time * anim_impl->frame_rate;
-    i32 frame_index = static_cast<i32>(Floor(frame_index_float));
+    i32 frame_index = static_cast<i32>(frame_index_float);
     AnimationFrame& frame = anim_impl->frames[frame_index];
     i32 transform_index0 = frame.transform0;
     i32 transform_index1 = frame.transform1;
@@ -54,8 +54,6 @@ static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
         BoneTransform* bone_transform1 = transform1 + bone_index;
         BoneTransform frame_transform = Mix(*bone_transform0, *bone_transform1, frame_fraction);
 
-        Vec2 frame_position = frame_transform.position;
-
         if (blend_transform0) {
             assert(blend_transform1);
             BoneTransform* bbt1 = blend_transform0 + bone_index;
@@ -64,23 +62,6 @@ static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
             if (blend_root_motion && bone_index == 0)
                 blend_frame.position.x = 0;
             frame_transform = Mix(blend_frame, frame_transform, blend_t);
-        }
-
-        if (bone_index == 0 && animator.root_motion) {
-            frame_transform.position = frame_position;
-
-            if (setup) {
-                animator.root_motion_delta = VEC2_ZERO;
-            } else if (frame_index >= layer.frame_index) {
-                animator.root_motion_delta = frame_transform.position - animator.last_root_motion;
-            } else {
-                BoneTransform* last_frame = anim_impl->transforms + anim_impl->frame_count * anim_impl->transform_stride;
-                BoneTransform* first_frame = anim_impl->transforms;
-                animator.root_motion_delta = last_frame->position - animator.last_root_motion;
-                animator.root_motion_delta += frame_transform.position - first_frame->position;
-            }
-            animator.last_root_motion = frame_transform.position;
-            frame_transform.position = VEC2_ZERO;
         }
 
         frame_transform.position += skel_impl->bones[bone_index].transform.position;
@@ -92,12 +73,19 @@ static void EvalulateFrame(Animator& animator, int layer_index, bool setup) {
         animator.transforms[bone_index] = frame_transform;
     }
 
+    float rm = frame.root_motion0 + (frame.root_motion1 - frame.root_motion0) * frame_fraction;
+    LogInfo("rm=%f last=%f delta=%f", rm, animator.last_root_motion, rm - animator.last_root_motion);
+    animator.root_motion_delta = rm - animator.last_root_motion;
+    if (animator.root_motion_delta< 0.0f)
+        animator.root_motion_delta = 0.0f;
+    animator.last_root_motion = rm;
+
     layer.frame_index = frame_index;
 }
 
-static void EvalulateFrame(Animator& animator, bool setup) {
+static void EvalulateFrame(Animator& animator) {
     for (int layer_index=0; layer_index<animator.layer_count; layer_index++)
-        EvalulateFrame(animator, layer_index, setup);
+        EvalulateFrame(animator, layer_index);
 
     SkeletonImpl* skel_impl = static_cast<SkeletonImpl*>(animator.skeleton);
     int bone_count = skel_impl->bone_count;
@@ -140,13 +128,12 @@ void Play(Animator& animator, Animation* animation, int layer_index, float speed
     layer.playing = true;
 
     if ((layer.bone_mask & 0x1)) {
-        animator.last_root_motion = VEC2_ZERO;
-        animator.last_root_motion = VEC2_ZERO;
-        animator.root_motion_delta = VEC2_ZERO;
+        animator.last_root_motion = 0.0f;
+        animator.root_motion_delta = 0.0f;
         animator.root_motion = IsRootMotion(animation);
     }
 
-    EvalulateFrame(animator, true);
+    EvalulateFrame(animator);
 }
 
 void Update(Animator& animator, float time_scale) {
@@ -160,11 +147,14 @@ void Update(Animator& animator, float time_scale) {
         AnimationImpl* anim_impl = static_cast<AnimationImpl*>(layer.animation);
         layer.time += dt * layer.speed;
 
-        if (layer.loop) {
-            layer.time = fmod(layer.time, anim_impl->duration);
-        } else if (layer.time >= anim_impl->duration) {
-            layer.playing = false;
-            layer.time = anim_impl->duration;
+        if (layer.time >= anim_impl->duration) {
+            if (layer.loop) {
+                layer.time = fmod(layer.time, anim_impl->duration);
+                animator.last_root_motion -= anim_impl->frames[anim_impl->frame_count-1].root_motion1;
+            } else {
+                layer.playing = false;
+                layer.time = anim_impl->duration;
+            }
         }
 
         if (layer.blend_animation) {
@@ -177,9 +167,8 @@ void Update(Animator& animator, float time_scale) {
         }
     }
 
-    EvalulateFrame(animator, false);
+    EvalulateFrame(animator);
 }
-
 
 float GetNormalizedTime(Animator& animator, int layer_index) {
     AnimatorLayer& layer = animator.layers[layer_index];
@@ -199,7 +188,7 @@ void SetNormalizedTime(Animator& animator, int layer_index, float normalized_tim
     Update(animator, 0.0f);
 
     if (layer_index == 0)
-        animator.root_motion_delta = VEC2_ZERO;
+        animator.root_motion_delta = 0.0f;
 }
 
 void SetBoneMask(Animator& animator, int layer_index, u64 bone_mask) {

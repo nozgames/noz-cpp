@@ -78,6 +78,8 @@ struct AnimationFrame {
     int event;
     float fraction0;
     float fraction1;
+    float root_motion0;
+    float root_motion1;
 };
 
 struct AnimationImpl : Animation {
@@ -103,3 +105,4 @@ struct SkeletonImpl : Skeleton {
 // @tween
 extern void InitTween();
 extern void ShutdownTween();
+
