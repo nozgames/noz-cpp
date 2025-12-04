@@ -54,6 +54,7 @@ struct VfxEmitter {
 struct VfxInstance {
     Vfx* vfx;
     Mat3 transform;
+    float depth;
     int emitter_count;
     bool loop;
     u32 version;
@@ -154,7 +155,7 @@ static void InstanceDestructor(void* ptr)
     g_vfx.instance_valid[GetIndex(i)] = false;
 }
 
-static VfxInstance* CreateInstance(Vfx* vfx, const Mat3& transform) {
+static VfxInstance* CreateInstance(Vfx* vfx, const Mat3& transform, float depth) {
     if (IsFull(g_vfx.instance_pool))
         return nullptr;
 
@@ -162,6 +163,7 @@ static VfxInstance* CreateInstance(Vfx* vfx, const Mat3& transform) {
     assert(instance);
     instance->transform = transform;
     instance->vfx = vfx;
+    instance->depth = depth;
     instance->loop = static_cast<VfxImpl*>(vfx)->loop;
 
     g_vfx.instance_valid[GetIndex(instance)] = true;
@@ -274,6 +276,7 @@ static void UpdateParticles() {
         float opacity = Mix(p->opacity_start, p->opacity_end, EvaluateCurve(p->opacity_curve, t));
         Color col = Mix(p->color_start, p->color_end, EvaluateCurve(p->color_curve, t));
 
+        BindDepth(i->depth);
         BindTransform(i->transform * TRS(p->position, Degrees(p->rotation), {size, size}));
         BindColor(SetAlpha(col, opacity));
         BindMaterial(g_vfx.material);
@@ -401,11 +404,11 @@ void DrawVfx()
     UpdateParticles();
 }
 
-VfxHandle Play(Vfx* vfx, const Mat3& transform) {
+VfxHandle Play(Vfx* vfx, const Mat3& transform, float depth) {
     VfxImpl* impl = static_cast<VfxImpl*>(vfx);
     assert(impl);
 
-    VfxInstance* instance = CreateInstance(vfx, transform);
+    VfxInstance* instance = CreateInstance(vfx, transform, depth);
     if (!instance)
         return INVALID_VFX_HANDLE;
 
@@ -421,8 +424,8 @@ VfxHandle Play(Vfx* vfx, const Mat3& transform) {
     return GetHandle(instance);
 }
 
-VfxHandle Play(Vfx* vfx, const Vec2& position) {
-    return Play(vfx, Translate(position));
+VfxHandle Play(Vfx* vfx, const Vec2& position, float depth) {
+    return Play(vfx, Translate(position), depth);
 }
 
 bool IsPlaying(const VfxHandle& handle)
