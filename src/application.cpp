@@ -369,3 +369,11 @@ void ThrowError(const char* fmt, ...)
 
     throw std::runtime_error(error_message);
 }
+
+void SetPaletteTexture(Texture* texture) {
+    extern void SetVfxPaletteTexture(Texture*);
+    extern void SetUIPaletteTexture(Texture*);
+
+    SetVfxPaletteTexture(texture);
+    SetUIPaletteTexture(texture);
+}

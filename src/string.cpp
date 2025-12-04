@@ -159,22 +159,19 @@ int Compare(const char* s1, const char* s2, bool ignore_case)
     return strcmp(s1, s2);
 }
 
-void Lowercase(char* dst, u32 dst_size)
-{
+void Lowercase(char* dst, u32 dst_size) {
     for (;*dst && dst_size > 0; dst++, dst_size--)
         if (*dst >= 'A' && *dst <= 'Z')
             *dst = (char)(*dst - 'A' + 'a');
 }
 
-void Uppercase(char* dst, u32 dst_size)
-{
+void Uppercase(char* dst, u32 dst_size) {
     for (;*dst && dst_size > 0; dst++, dst_size--)
         if (*dst >= 'a' && *dst <= 'z')
             *dst = (char)(*dst - 'a' + 'A');
 }
 
-void Replace(char* dst, u32 dst_size, char find, char replace)
-{
+void Replace(char* dst, u32 dst_size, char find, char replace) {
     for (;*dst && dst_size > 0; dst++, dst_size--)
         if (*dst == find)
             *dst = replace;

@@ -113,7 +113,7 @@ bool SaveStream(Stream* stream, const std::filesystem::path& path)
 
     try
     {
-        std::filesystem::create_directory(full_path.parent_path());
+        std::filesystem::create_directories(full_path.parent_path());
     }
     catch (...)
     {

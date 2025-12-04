@@ -211,7 +211,7 @@ static VfxParticle* EmitParticle(VfxEmitter* e) {
     p->drag = GetRandom(def.drag);
     p->rotation_curve = def.rotation.type;
     p->rotation_start = Radians(GetRandom(def.rotation.start));
-    p->rotation_end = Radians(GetRandom(def.rotation.end));
+    p->rotation_end = p->rotation_start + Radians(GetRandom(def.rotation.end));
     p->rotation = p->rotation_start;
     p->emitter_index = GetIndex(e);
 
@@ -446,6 +446,11 @@ void ClearVfx()
             Free(GetAt(g_vfx.instance_pool, i));
 }
 
+void SetVfxPaletteTexture(Texture* texture) {
+    if (!texture) return;
+    SetTexture(g_vfx.material, texture);
+}
+
 void InitVfx() {
     g_vfx.emitter_pool = CreatePoolAllocator(sizeof(VfxEmitter), MAX_EMITTERS);
     g_vfx.instance_pool = CreatePoolAllocator(sizeof(VfxInstance), MAX_INSTANCES);
@@ -461,7 +466,8 @@ void InitVfx() {
         g_vfx.instance_valid[i] = false;
 
     g_vfx.material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_VFX);
-    SetTexture(g_vfx.material, TEXTURE[0]);
+    if (TEXTURE)
+        SetVfxPaletteTexture(TEXTURE[0]);
 
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
     AddQuad(builder, VEC2_UP, VEC2_RIGHT, 1, 1, {0,0});

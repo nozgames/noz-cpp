@@ -1145,6 +1145,11 @@ static Mesh* CreateImageQuad(Allocator* allocator) {
     return mesh;
 }
 
+void SetUIPaletteTexture(Texture* texture) {
+    if (!texture) return;
+    SetTexture(g_ui.element_material, texture);
+}
+
 void InitUI(const ApplicationTraits* traits) {
     g_ui = {};
     g_ui.allocator = CreateArenaAllocator(sizeof(FatElement) * MAX_ELEMENTS, "UI");
@@ -1157,7 +1162,8 @@ void InitUI(const ApplicationTraits* traits) {
     g_ui.depth = traits->ui_depth >= F32_MAX ? traits->renderer.max_depth - 0.01f : traits->ui_depth;
 
     EnableButton(g_ui.input, MOUSE_LEFT);
-    SetTexture(g_ui.element_material, TEXTURE[0]);
+    if (TEXTURE)
+        SetUIPaletteTexture(TEXTURE[0]);
 }
 
 void ShutdownUI() {

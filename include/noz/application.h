@@ -57,6 +57,7 @@ extern void BeginRenderFrame(Color clear_color);
 extern void EndRenderFrame();
 extern void ShowCursor(bool show);
 extern void SetCursor(SystemCursor cursor);
+extern void SetPaletteTexture(Texture* texture);
 
 const char* GetBinaryDirectory();
 void Exit(const char* format, ...);

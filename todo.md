@@ -26,12 +26,12 @@
 - [ ] new event should find a unique id based on current events
 - [ ] editor and inspector to allow you to set the id manually?
 
+# Shader
+- [ ] Dont crash if shader fails to compile
+
 # Animation
 
 - [ ] remove root motion flag and metadata
-- [ ] undo bone move is causing all frames to show events?
-- [ ] Fire events 
-- [ ] write events to the serialized animation file
 - [ ] when root motion is disabled the bounds is incorrectly calculated
 - [ ] bounds needs to include skinned mesh extents
 - [ ] Skinned mesh setup for animation
@@ -48,10 +48,16 @@
 - [ ] vfx bounds is not correct
 - [ ] Trail vfx for individual particles
 - [ ] hover to play
+- [ ] depth sort particles
+- [ ] updating particle files does not seem to update in the game immediately (have to save twice)
 
 # Sound
 - [ ] hot load of sounds
 - [ ] way to stop sound when playing (music for example)
+
+# Animated Mesh
+- [ ] hold frames not working
+- [ ] play animated mesh as vfx (one time, stop after play)
 
 # General
 
