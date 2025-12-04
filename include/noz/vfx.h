@@ -17,8 +17,8 @@ struct VfxHandle
 };
 
 // @vfx
-VfxHandle Play(Vfx* vfx, const Vec2& position);
-VfxHandle Play(Vfx* vfx, const Mat3& transform);
+VfxHandle Play(Vfx* vfx, const Vec2& position, float depth=0.0f);
+VfxHandle Play(Vfx* vfx, const Mat3& transform, float depth=0.0f);
 void Stop(const VfxHandle& handle);
 bool IsPlaying(const VfxHandle& handle);
 void ClearVfx();
