@@ -22,9 +22,10 @@ extern void ShutdownVulkan();
 extern void WaitVulkan();
 extern void HandleInputCharacter(char c);
 extern void HandleInputKeyDown(char c);
+static void SetCursorInternal(SystemCursor cursor);
+static void ShowCursorInternal(bool show);
 
-struct WindowsApp
-{
+struct WindowsApp {
     const ApplicationTraits* traits;
     Vec2Int screen_size;
     Vec2 mouse_position;
@@ -41,6 +42,8 @@ struct WindowsApp
     HCURSOR cursor_move;
     noz::RectInt window_rect;
     SystemCursor cursor;
+    bool mouse_on_screen;
+    bool show_cursor;
 };
 
 static WindowsApp g_windows = {};
@@ -162,15 +165,35 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             static_cast<f32>(x),
             static_cast<f32>(y)
         };
+
+        if (!g_windows.mouse_on_screen) {
+            g_windows.mouse_on_screen = true;
+
+            TRACKMOUSEEVENT tme = {};
+            tme.cbSize = sizeof(tme);
+            tme.dwFlags = TME_LEAVE;
+            tme.hwndTrack = hwnd;
+            TrackMouseEvent(&tme);
+
+            ShowCursorInternal(g_windows.cursor != SYSTEM_CURSOR_NONE);
+        }
+
         return 0;
     }
 
+    case WM_MOUSELEAVE:
+        g_windows.mouse_on_screen = false;
+        ShowCursorInternal(true);
+        break;
+
     case WM_SETCURSOR:
-        if (LOWORD(lParam) == HTCLIENT)
-        {
-            SetCursor(g_windows.cursor);
+        if (LOWORD(lParam) == HTCLIENT) {
+            SetCursorInternal(g_windows.cursor);
             return 0;
         }
+
+        g_windows.mouse_on_screen = false;
+        ShowCursorInternal(true);
         break;
 
     case WM_CHAR:
@@ -242,6 +265,8 @@ void platform::InitWindow(void (*on_close)())
 
     g_windows.hwnd = hwnd;
     g_windows.on_close = on_close;
+    g_windows.show_cursor = true;
+    g_windows.cursor = SYSTEM_CURSOR_DEFAULT;
 
     // Initial screen size
     RECT rect;
@@ -310,67 +335,50 @@ Vec2Int platform::GetScreenSize()
     return g_windows.screen_size;
 }
 
-void platform::SetCursor(SystemCursor cursor)
-{
-    g_windows.cursor = cursor;
+static void ShowCursorInternal(bool show) {
+    if (g_windows.show_cursor == show)
+        return;
 
-    switch (cursor)
-    {
-        default:
-        case SYSTEM_CURSOR_DEFAULT:
-            SetCursor(g_windows.cursor_default);
-            break;
+    g_windows.show_cursor = show;
 
-        case SYSTEM_CURSOR_MOVE:
-            SetCursor(g_windows.cursor_move);
-            break;
+    ShowCursor(show ? TRUE : FALSE);
+}
 
-        case SYSTEM_CURSOR_SELECT:
-            SetCursor(g_windows.cursor_cross);
-            break;
-
-        case SYSTEM_CURSOR_WAIT:
-            SetCursor(g_windows.cursor_wait);
-            break;
+static void SetCursorInternal(SystemCursor cursor) {
+    if (cursor == SYSTEM_CURSOR_NONE) {
+        if (g_windows.mouse_on_screen) {
+            ShowCursorInternal(false);
+        }
+        return;
     }
+
+    if (cursor == SYSTEM_CURSOR_DEFAULT) {
+        SetCursor(g_windows.cursor_default);
+    } else if (cursor == SYSTEM_CURSOR_MOVE) {
+        SetCursor(g_windows.cursor_move);
+    } else if (cursor == SYSTEM_CURSOR_SELECT) {
+        SetCursor(g_windows.cursor_cross);
+    } else if (cursor == SYSTEM_CURSOR_WAIT) {
+        SetCursor(g_windows.cursor_wait);
+    }
+
+    ShowCursorInternal(true);
 }
 
-void platform::ShowCursor(bool show)
-{
-    ::ShowCursor(show ? TRUE : FALSE);
+void platform::SetCursor(SystemCursor cursor) {
+    g_windows.cursor = cursor;
+    SetCursorInternal(cursor);
 }
 
-// Vec2 platform::GetMousePosition()
-// {
-//     platform::Window* window = ::GetWindow();
-//     if (!window)
-//         return Vec2{0, 0};
-//
-//     HWND hwnd = (HWND)window;
-//
-//     POINT cursor_pos;
-//     if (!GetCursorPos(&cursor_pos))
-//         return VEC2_ZERO;
-//
-//     if (!ScreenToClient(hwnd, &cursor_pos))
-//         return VEC2_ZERO;
-//
-//     return Vec2{static_cast<f32>(cursor_pos.x), static_cast<f32>(cursor_pos.y)};
-// }
-
-
-Vec2 platform::GetMousePosition()
-{
+Vec2 platform::GetMousePosition() {
     return g_windows.mouse_position;
 }
 
-Vec2 platform::GetMouseScroll()
-{
+Vec2 platform::GetMouseScroll() {
     return g_windows.mouse_scroll;
 }
 
-void platform::FocusWindow()
-{
+void platform::FocusWindow() {
     if (g_windows.hwnd)
         SetForegroundWindow(g_windows.hwnd);
 }
@@ -448,3 +456,9 @@ void platform::Log(LogType type, const char* message)
 noz::RectInt platform::GetWindowRect() {
     return g_windows.window_rect;
 }
+
+
+bool platform::IsMouseOverWindow(){
+    return g_windows.mouse_on_screen;
+}
+

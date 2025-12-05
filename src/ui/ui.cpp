@@ -150,6 +150,7 @@ union FatElement {
 struct UI {
     Allocator* allocator;
     Camera* camera;
+    Camera* cursor_camera;
     Element* elements[MAX_ELEMENTS];
     Element* element_stack[MAX_ELEMENTS];
     ElementState element_states[MAX_ELEMENTS];
@@ -1112,10 +1113,22 @@ void EndUI() {
 }
 
 void DrawUI() {
-    BindDepth(0, 0);
+    BindDepth(g_ui.depth, 0);
     for (u32 element_index = 0; element_index < g_ui.element_count; )
         element_index = RenderElement(element_index);
+
+    // cursor
+    BindDepth(g_ui.depth, 0);
+    if (GetApplicationTraits()->draw_cursor) {
+        Vec2 screen_size = ToVec2(GetScreenSize());
+        Vec2 cursor_pos = GetMousePosition();
+        cursor_pos.y = screen_size.y - cursor_pos.y;
+        SetExtents(g_ui.cursor_camera, 0, screen_size.x, screen_size.y, 0);
+        BindCamera(g_ui.cursor_camera);
+        GetApplicationTraits()->draw_cursor(Translate(cursor_pos));
+    }
 }
+
 
 static Mesh* CreateElementQuad(Allocator* allocator) {
     PushScratch();
@@ -1160,6 +1173,8 @@ void InitUI(const ApplicationTraits* traits) {
     g_ui.input = CreateInputSet(ALLOCATOR_DEFAULT);
     g_ui.text_mesh_allocator = CreatePoolAllocator(sizeof(CachedTextMesh), MAX_TEXT_MESHES);
     g_ui.depth = traits->ui_depth >= F32_MAX ? traits->renderer.max_depth - 0.01f : traits->ui_depth;
+
+    g_ui.cursor_camera = CreateCamera(ALLOCATOR_DEFAULT);
 
     EnableButton(g_ui.input, MOUSE_LEFT);
     if (TEXTURE)

@@ -18,6 +18,7 @@ extern void PushInputSet(InputSet* input_set, bool inherit_state=false);
 extern void PopInputSet();
 extern Vec2 GetMousePosition();
 extern bool IsGamepadActive();
+extern bool IsMouseOverWindow();
 inline bool IsActive(InputSet* input_set) { return GetInputSet() == input_set; }
 
 // @text
