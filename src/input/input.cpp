@@ -75,6 +75,10 @@ Vec2 GetMousePosition() {
     return platform::GetMousePosition();
 }
 
+bool IsMouseOverWindow() {
+    return platform::IsMouseOverWindow();
+}
+
 void SetTextInput(const TextInput& text_input) {
     platform::SetTextInput(text_input);
 }

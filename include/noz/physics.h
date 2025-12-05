@@ -38,6 +38,8 @@ extern bool OverlapPoint(Collider* collider, const Mat3& transform, const Vec2& 
 extern bool OverlapBounds(Collider* collider, const Mat3& transform, const Bounds2& bounds);
 extern bool Raycast(Collider* colider, const Mat3& transform, const Vec2& p0, const Vec2& p1, RaycastResult* result);
 extern bool Raycast(Collider* colider, const Mat3& transform, const Vec2& origin, const Vec2& dir, float distance, RaycastResult* result);
+extern bool CircleCast(Collider* collider, const Mat3& transform, const Vec2& p0, const Vec2& p1, float radius, RaycastResult* result);
+extern bool CircleCast(Collider* collider, const Mat3& transform, const Vec2& origin, const Vec2& dir, float distance, float radius, RaycastResult* result);
 extern Bounds2 GetBounds(Collider* collider);
 
 // @collision

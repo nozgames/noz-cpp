@@ -136,3 +136,73 @@ bool Raycast(Collider* colider, const Mat3& transform, const Vec2& origin, const
 
     return best_result.fraction < 1.0f;
 }
+
+bool CircleCast(Collider* collider, const Mat3& transform, const Vec2& p0, const Vec2& p1, float radius, RaycastResult* result) {
+    return CircleCast(collider, transform, p0, Normalize(p1 - p0), Length(p1 - p0), radius, result);
+}
+
+bool CircleCast(Collider* collider, const Mat3& transform, const Vec2& origin, const Vec2& dir, float distance, float radius, RaycastResult* result) {
+    const ColliderImpl* impl = static_cast<ColliderImpl*>(collider);
+
+    RaycastResult best_result = {};
+    best_result.fraction = 1.0f;
+
+    Vec2 v1 = TransformPoint(transform, impl->points[impl->point_count - 1]);
+    for (u32 i = 0; i < impl->point_count; i++) {
+        Vec2 v2 = TransformPoint(transform, impl->points[i]);
+
+        // Calculate edge normal (pointing outward for CCW winding)
+        Vec2 edge = v2 - v1;
+        Vec2 edge_normal = Normalize(Vec2{edge.y, -edge.x});
+
+        // Offset the edge by the radius
+        Vec2 v1_offset = v1 + edge_normal * radius;
+        Vec2 v2_offset = v2 + edge_normal * radius;
+
+        // Test ray against the offset edge
+        Vec2 ray_end = origin + dir * distance;
+        Vec2 where;
+        if (OverlapLine(origin, ray_end, v1_offset, v2_offset, &where)) {
+            float overlap_distance = Distance(where, origin);
+            float fraction = overlap_distance / distance;
+            if (fraction < best_result.fraction) {
+                best_result.point = where - edge_normal * radius;
+                best_result.fraction = fraction;
+                best_result.distance = overlap_distance;
+                best_result.normal = edge_normal;
+            }
+        }
+
+        // Test ray against circle at vertex v1 (handles rounded corners)
+        // Solve: |origin + t*dir - v1|^2 = radius^2
+        Vec2 to_vertex = origin - v1;
+        float a = Dot(dir, dir);
+        float b = 2.0f * Dot(to_vertex, dir);
+        float c = Dot(to_vertex, to_vertex) - radius * radius;
+        float discriminant = b * b - 4.0f * a * c;
+
+        if (discriminant >= 0.0f) {
+            float sqrt_disc = sqrtf(discriminant);
+            float t = (-b - sqrt_disc) / (2.0f * a);
+
+            if (t >= 0.0f && t <= distance) {
+                float fraction = t / distance;
+                if (fraction < best_result.fraction) {
+                    Vec2 hit_point = origin + dir * t;
+                    best_result.point = v1;
+                    best_result.fraction = fraction;
+                    best_result.distance = t;
+                    best_result.normal = Normalize(hit_point - v1);
+                }
+            }
+        }
+
+        v1 = v2;
+    }
+
+    if (result) {
+        *result = best_result;
+    }
+
+    return best_result.fraction < 1.0f;
+}

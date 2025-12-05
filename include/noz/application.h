@@ -11,8 +11,8 @@ namespace platform
     struct Window;
 }
 
-enum SystemCursor
-{
+enum SystemCursor {
+    SYSTEM_CURSOR_NONE,
     SYSTEM_CURSOR_DEFAULT,
     SYSTEM_CURSOR_MOVE,
     SYSTEM_CURSOR_SELECT,
@@ -41,6 +41,7 @@ struct ApplicationTraits {
     bool (*load_assets)(Allocator* allocator);
     void (*unload_assets)();
     void (*hotload_asset)(const Name* incoming_name, AssetType incoming_type);
+    void (*draw_cursor)(const Mat3& transform);
 };
 
 extern void Init(ApplicationTraits& traits);
@@ -55,8 +56,7 @@ extern bool IsWindowFocused();
 extern bool UpdateApplication();
 extern void BeginRenderFrame(Color clear_color);
 extern void EndRenderFrame();
-extern void ShowCursor(bool show);
-extern void SetCursor(SystemCursor cursor);
+extern void SetSystemCursor(SystemCursor cursor);
 extern void SetPaletteTexture(Texture* texture);
 
 const char* GetBinaryDirectory();
@@ -94,6 +94,10 @@ struct JobHandle
     bool operator == (const JobHandle& o) const { return id == o.id && version == o.version; }
     bool operator != (const JobHandle& o) const { return !(*this == o); }
 };
+
+// @save
+extern bool WriteSaveFile(const char* path, Stream* stream);
+extern Stream* ReadSaveFile(Allocator* allocator, const char* path);
 
 constexpr JobHandle INVALID_JOB_HANDLE = { 0, 0 };
 

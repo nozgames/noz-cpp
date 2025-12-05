@@ -322,43 +322,34 @@ Vec2Int GetScreenSize()
     return g_app.screen_size;
 }
 
-Vec2 GetScreenCenter()
-{
-    return {(f32)g_app.screen_size.x * 0.5f, (f32)g_app.screen_size.y * 0.5f};
+Vec2 GetScreenCenter() {
+    return {
+        static_cast<f32>(g_app.screen_size.x) * 0.5f,
+        static_cast<f32>(g_app.screen_size.y) * 0.5f
+    };
 }
 
-float GetScreenAspectRatio()
-{
+float GetScreenAspectRatio() {
     return g_app.screen_aspect_ratio;
 }
 
-void ShowCursor(bool cursor)
-{
-    platform::ShowCursor(cursor);
-}
-
-void SetCursor(SystemCursor cursor)
-{
+void SetSystemCursor(SystemCursor cursor) {
     platform::SetCursor(cursor);
 }
 
-const ApplicationTraits* GetApplicationTraits()
-{
+const ApplicationTraits* GetApplicationTraits() {
     return &g_app.traits;
 }
 
-float GetCurrentFPS()
-{
-    return (float)g_app.average_fps;
+float GetCurrentFPS() {
+    return static_cast<float>(g_app.average_fps);
 }
 
-const char* GetBinaryDirectory()
-{
+const char* GetBinaryDirectory() {
     return g_app.binary_dir.c_str();
 }
 
-void ThrowError(const char* fmt, ...)
-{
+void ThrowError(const char* fmt, ...) {
     assert(fmt);
 
     va_list args;
@@ -376,4 +367,13 @@ void SetPaletteTexture(Texture* texture) {
 
     SetVfxPaletteTexture(texture);
     SetUIPaletteTexture(texture);
+}
+
+bool WriteSaveFile(const char* path, Stream* stream) {
+    SaveStream(stream, platform::GetSaveGamePath() / path);
+    return true;
+}
+
+Stream* ReadSaveFile(Allocator* allocator, const char* path) {
+    return LoadStream(allocator, platform::GetSaveGamePath() / path);
 }

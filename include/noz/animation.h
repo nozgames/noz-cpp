@@ -110,6 +110,7 @@ inline float GetTime(Animator& animator, int layer_index=0) {
     return GetLayer(animator, layer_index).time;
 }
 
+extern void BindSkeleton(Skeleton* skeleton);
 extern void BindSkeleton(Animator& animator);
 
 // @blend_tree

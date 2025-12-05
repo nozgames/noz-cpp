@@ -32,7 +32,6 @@ namespace platform {
     void FocusWindow();
     bool UpdateApplication();
     Vec2Int GetScreenSize();
-    void ShowCursor(bool show);
     void SetCursor(SystemCursor cursor);
     bool HasFocus();
     bool IsResizing();
@@ -110,6 +109,7 @@ namespace platform {
     void ClearTextInput();
     extern void SetTextInput(const TextInput& text_input);
     bool IsGamepadActive();
+    bool IsMouseOverWindow();
 
     // @filesystem
     std::filesystem::path GetSaveGamePath();

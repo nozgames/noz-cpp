@@ -118,6 +118,12 @@ struct Vec2Int {
     bool operator!=(const Vec2Int& o) const { return x != o.x || y != o.y; }
 };
 
+struct Vec3Int {
+    i32 x;
+    i32 y;
+    i32 z;
+};
+
 struct Vec4Int {
     int x;
     int y;
