@@ -368,3 +368,12 @@ void SetPaletteTexture(Texture* texture) {
     SetVfxPaletteTexture(texture);
     SetUIPaletteTexture(texture);
 }
+
+bool WriteSaveFile(const char* path, Stream* stream) {
+    SaveStream(stream, platform::GetSaveGamePath() / path);
+    return true;
+}
+
+Stream* ReadSaveFile(Allocator* allocator, const char* path) {
+    return LoadStream(allocator, platform::GetSaveGamePath() / path);
+}

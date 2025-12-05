@@ -383,8 +383,7 @@ void platform::FocusWindow() {
         SetForegroundWindow(g_windows.hwnd);
 }
 
-std::filesystem::path platform::GetSaveGamePath()
-{
+std::filesystem::path platform::GetSaveGamePath() {
     PWSTR appdata_path;
     if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, nullptr, &appdata_path)))
     {

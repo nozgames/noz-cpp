@@ -95,6 +95,10 @@ struct JobHandle
     bool operator != (const JobHandle& o) const { return !(*this == o); }
 };
 
+// @save
+extern bool WriteSaveFile(const char* path, Stream* stream);
+extern Stream* ReadSaveFile(Allocator* allocator, const char* path);
+
 constexpr JobHandle INVALID_JOB_HANDLE = { 0, 0 };
 
 typedef void (*JobRunFunc)(void* user_data);
