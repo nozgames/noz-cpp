@@ -11,6 +11,7 @@ set(SOURCE_FILES
     src/asset.cpp
     src/string.cpp
     src/thread.cpp
+    src/tokenizer.cpp
     src/collections/list.cpp
     src/collections/linked_list.cpp
     src/collections/map.cpp
