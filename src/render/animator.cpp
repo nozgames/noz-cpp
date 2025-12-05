@@ -223,6 +223,13 @@ void SetBoneMask(Animator& animator, int layer_index, u64 bone_mask) {
     layer.bone_mask = bone_mask;
 }
 
+
+void BindSkeleton(Skeleton* skeleton) {
+    SkeletonImpl* skel_impl = static_cast<SkeletonImpl*>(skeleton);
+    Mat3 identity = MAT3_IDENTITY;
+    BindSkeleton(&skel_impl->bones->transform.world_to_local, sizeof(Bone), &identity, 0, skel_impl->bone_count);
+}
+
 void BindSkeleton(Animator& animator) {
     SkeletonImpl* skel_impl = static_cast<SkeletonImpl*>(animator.skeleton);
     int bone_count = skel_impl->bone_count;
