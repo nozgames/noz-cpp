@@ -873,13 +873,13 @@ void RenderCanvas(Element* e){
     BindCamera(g_ui.camera);
 }
 
-static void RenderBackground(const noz::Rect& rect, const Mat3& transform, const Color& color) {
+static void RenderBackground(const noz::Rect& rect, const Mat3& transform, const Color& color, const Vec2Int& color_offset) {
     if (color.a <= 0.0f)
         return;
 
     BindTransform(transform * Scale(Vec2{rect.width, rect.height}));
     BindMaterial(g_ui.element_material);
-    BindColor(color);
+    BindColor(color,ToVec2(color_offset));
     DrawMesh(g_ui.element_quad);
 }
 
@@ -905,10 +905,7 @@ static int RenderElement(int element_index) {
         Bounds2 mesh_bounds = image->animated_mesh ? GetBounds(image->animated_mesh) : GetBounds(image->mesh);
         Vec2 mesh_size = GetSize(mesh_bounds);
 
-        if (image->style.color_func)
-            BindColor(image->style.color_func(g_ui.element_states[e->index].flags, 0.0f, image->style.color_func_user_data));
-        else
-            BindColor(image->style.color);
+        BindColor(image->style.color, ToVec2(image->style.color_offset));
 
         Mat3 image_transform;
         if (image->style.stretch == IMAGE_STRETCH_UNIFORM) {
@@ -942,7 +939,7 @@ static int RenderElement(int element_index) {
             DrawMesh(image->mesh, image_transform);
     } else if (e->type == ELEMENT_TYPE_CONTAINER) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
-        RenderBackground(e->rect, transform, container->style.color);
+        RenderBackground(e->rect, transform, container->style.color, container->style.color_offset);
 
         if (container->style.border.width > 0.0f && container->style.border.color.a > 0) {
             float border_width = container->style.border.width;
@@ -960,7 +957,7 @@ static int RenderElement(int element_index) {
 
     } else if (e->type == ELEMENT_TYPE_CANVAS) {
         CanvasElement* canvas = static_cast<CanvasElement*>(e);
-        RenderBackground(e->rect, transform, canvas->style.color);
+        RenderBackground(e->rect, transform, canvas->style.color, VEC2INT_ZERO);
     } else if (e->type == ELEMENT_TYPE_RECTANGLE) {
         RectangleElement* rectangle = static_cast<RectangleElement*>(e);
         BindTransform(transform * Scale(Vec2{e->rect.width, e->rect.height}));

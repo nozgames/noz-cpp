@@ -26,7 +26,7 @@ void main() {
     vec3 screen_pos = vec3(v_position, 1.0) * mvp;
     float depth = (object.depth + (v_depth * object.depth_scale) - object.depth_min) / (object.depth_max - object.depth_min);
     gl_Position = vec4(screen_pos.xy, 1.0f - depth, 1.0);
-    f_uv = v_uv;
+    f_uv = vec2(v_uv.x * 0.015625 + 0.0078125, v_uv.y * 0.015625 + 0.0078125);
 }
 
 //@ END
@@ -46,7 +46,7 @@ layout(set = 4, binding = 0) uniform ColorBuffer {
 layout(set = 6, binding = 0) uniform sampler2D mainTexture;
 
 void main() {
-    vec4 diffuse = texture(mainTexture, f_uv + color_buffer.uv_offset) * color_buffer.color;
+    vec4 diffuse = texture(mainTexture, f_uv + color_buffer.uv_offset * 0.015625) * color_buffer.color;
     outColor = vec4(mix(diffuse.rgb, color_buffer.emission.rgb, color_buffer.emission.a), diffuse.a);
 }
 

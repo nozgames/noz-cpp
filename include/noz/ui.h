@@ -132,8 +132,7 @@ enum ImageStretch {
 
 struct ImageStyle {
     Color color = COLOR_WHITE;
-    AnimatedColorFunc color_func = nullptr;
-    void* color_func_user_data = nullptr;
+    Vec2Int color_offset;
     float scale = 1.0f;
     Vec2 uv = VEC2_ZERO;
     Vec2 st = VEC2_ONE;
@@ -171,6 +170,7 @@ struct ContainerStyle {
     EdgeInsets margin;
     EdgeInsets padding;
     Color color;
+    Vec2Int color_offset;
     BorderStyle border;
     void* user_data;
 };
