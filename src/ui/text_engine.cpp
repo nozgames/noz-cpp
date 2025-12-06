@@ -2,14 +2,13 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct TextMeshImpl : TextMesh
-{
+struct TextMeshImpl : TextMesh {
     Mesh* mesh;
     Material* material;
     Vec2 size;
 };
 
-Vec2 MeasureText(const text_t& text, Font* font, float font_size) {
+Vec2 MeasureText(const Text& text, Font* font, float font_size) {
     assert(font);
 
     // Calculate text width using glyph data
@@ -30,6 +29,29 @@ Vec2 MeasureText(const text_t& text, Font* font, float font_size) {
     float total_height = GetLineHeight(font) * font_size;
 
     return Vec2{total_width, total_height};
+}
+
+Bounds2 MeasureText(const Text& text, Font* font, float font_size, int start, int end) {
+    assert(font);
+
+    float xmax = 0.0f;
+    float xmin = 0.0f;
+
+    for (int i = 0; i < text.length && i < end; ++i) {
+        if (i == start) xmin = xmax;
+
+        char ch = text.value[i];
+        auto glyph = GetGlyph(font, ch);
+        xmax += glyph->advance * font_size;
+
+        // Kerning
+        if (i + 1 < text.length)
+            xmax += GetKerning(font, ch, text.value[i + 1]) * font_size;
+    }
+
+    if (start == text.length) xmin = xmax;
+
+    return Bounds2{Vec2{xmin, 0.0f}, Vec2{xmax, GetLineHeight(font) * font_size}};
 }
 
 static void AddGlyph(

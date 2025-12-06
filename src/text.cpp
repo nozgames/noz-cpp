@@ -6,13 +6,13 @@
 #include <cstdarg>
 #include <cstdio>
 
-void SetValue(text_t& dst, const text_t& src)
+void SetValue(Text& dst, const Text& src)
 {
     dst.length = src.length;
     memcpy(dst.value, src.value, src.length + 1);
 }
 
-void SetValue(text_t& dst, const char* src)
+void SetValue(Text& dst, const char* src)
 {
     assert(src);
 
@@ -23,16 +23,16 @@ void SetValue(text_t& dst, const char* src)
         return;
     }
 
-    dst.length = Min(src_len, (u32)(TEXT_SIZE - 1));
+    dst.length = Min(src_len, (u32)(TEXT_MAX_LENGTH - 1));
     memcpy(dst.value, src, src_len + 1);
     dst.length = src_len;
 }
 
-void Append(text_t& dst, const char* src)
+void Append(Text& dst, const char* src)
 {
     assert(src);
 
-    u32 src_len = Min((u32)strlen(src), (u32)(TEXT_SIZE - dst.length - 1));
+    u32 src_len = Min((u32)strlen(src), (u32)(TEXT_MAX_LENGTH - dst.length - 1));
     if (src_len == 0)
         return;
 
@@ -40,14 +40,14 @@ void Append(text_t& dst, const char* src)
     dst.length += src_len;
 }
 
-void Format(text_t& dst, const char* fmt, ...)
+void Format(Text& dst, const char* fmt, ...)
 {
     assert(fmt);
     
     va_list args;
     va_start(args, fmt);
     
-    int written = vsnprintf(dst.value, TEXT_SIZE - 1, fmt, args);
+    int written = vsnprintf(dst.value, TEXT_MAX_LENGTH - 1, fmt, args);
     va_end(args);
     
     if (written < 0) {
@@ -59,14 +59,14 @@ void Format(text_t& dst, const char* fmt, ...)
     dst.length = written;
 }
 
-void Trim(text_t& text)
+void Trim(Text& text)
 {
     if (text.length == 0)
         return;
 
     // Trim leading whitespace
-    size_t start = 0;
-    while (start < text.length && isspace((unsigned char)text.value[start]))
+    int start = 0;
+    while (start < text.length && isspace(static_cast<unsigned char>(text.value[start])))
         start++;
 
     // All whitespace?
@@ -77,7 +77,7 @@ void Trim(text_t& text)
     }
 
     // Trim trailing whitespace
-    size_t end = text.length;
+    int end = text.length;
     while (end > start && isspace((unsigned char)text.value[end - 1]))
         end--;
 
@@ -89,7 +89,7 @@ void Trim(text_t& text)
     text.value[text.length] = '\0';
 }
 
-bool Equals(const text_t& a, const text_t& b)
+bool Equals(const Text& a, const Text& b)
 {
     if (a.length != b.length)
         return false;
@@ -97,7 +97,7 @@ bool Equals(const text_t& a, const text_t& b)
     return memcmp(a.value, b.value, a.length) == 0;
 }
 
-bool Equals(const text_t& text, const char* str)
+bool Equals(const Text& text, const char* str)
 {
     assert(str);
     

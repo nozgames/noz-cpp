@@ -90,8 +90,8 @@ struct RowElement : Element {
 };
 
 struct SceneElement : Element {
-    Camera* camera;
-    void (*draw_scene)();
+    SceneStyle style;
+    void (*draw_scene)(void*);
 };
 
 struct ColumnElement : Element {
@@ -183,6 +183,15 @@ static Element* CreateElement(ElementType type) {
         state.hash = g_ui.hash;
     }
     return element;
+}
+
+u64 GetElementId() {
+    if (g_ui.element_stack_count <= 0)
+        return 0;
+
+    Element* e = g_ui.element_stack[g_ui.element_stack_count - 1];
+    assert(e);
+    return g_ui.element_states[e->index].hash;
 }
 
 bool CheckElementFlags(ElementFlags flags) {
@@ -453,11 +462,11 @@ void Rectangle(const RectangleStyle& style) {
     rectangle->style = style;
 }
 
-void Scene(Camera* camera, void (*draw_scene)()) {
+void Scene(const SceneStyle& style, void (*draw_scene)(void*)) {
     IncrementChildCount();
-    SceneElement* scene_element = static_cast<SceneElement*>(CreateElement(ELEMENT_TYPE_SCENE));
-    scene_element->draw_scene = draw_scene;
-    scene_element->camera = camera;
+    SceneElement* e = static_cast<SceneElement*>(CreateElement(ELEMENT_TYPE_SCENE));
+    e->style = style;
+    e->draw_scene = draw_scene;
 }
 
 void BeginSizedBox(const SizedBoxStyle& style) {
@@ -978,7 +987,7 @@ static int RenderElement(int element_index) {
         DrawMesh(g_ui.element_quad);
     } else if (e->type == ELEMENT_TYPE_SCENE) {
         SceneElement* scene_element = static_cast<SceneElement*>(e);
-        if (scene_element->camera && scene_element->draw_scene) {
+        if (scene_element->style.camera && scene_element->draw_scene) {
             // Calculate the screen rect for the scene element
             // Transform the element corners from UI space to screen space
             Vec2 ui_top_left = TransformPoint(transform, VEC2_ZERO);
@@ -996,10 +1005,10 @@ static int RenderElement(int element_index) {
             };
 
             // Set the scene camera's viewport and render
-            SetViewport(scene_element->camera, viewport_rect);
-            UpdateCamera(scene_element->camera);
-            BindCamera(scene_element->camera);
-            scene_element->draw_scene();
+            SetViewport(scene_element->style.camera, viewport_rect);
+            UpdateCamera(scene_element->style.camera);
+            BindCamera(scene_element->style.camera);
+            scene_element->draw_scene(scene_element->style.user_data);
 
             // Restore the UI camera
             UpdateCamera(g_ui.camera);

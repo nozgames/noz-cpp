@@ -22,7 +22,7 @@ struct WindowsInput {
     int active_controller;
 };
 
-static WindowsInput g_input = {};
+static WindowsInput g_windows_input = {};
 
 static InputCode VKToInputCode(int vk) {
     switch (vk) {
@@ -124,7 +124,7 @@ static float NormalizeTrigger(BYTE trigger_value)
 }
 
 static InputCode GetLeftStickButton(int gamepad_index) {
-    const Vec2& stick = g_input.gamepad_left_stick[gamepad_index];
+    const Vec2& stick = g_windows_input.gamepad_left_stick[gamepad_index];
     if (stick.y > 0.5f)
         return GAMEPAD_LEFT_STICK_UP;
     if (stick.y < -0.5f)
@@ -139,7 +139,7 @@ static InputCode GetLeftStickButton(int gamepad_index) {
 
 bool platform::IsInputButtonDown(InputCode code) {
     if (IsMouse(code) || IsKeyboard(code))
-        return g_input.key_states[code];
+        return g_windows_input.key_states[code];
 
     // Handle gamepad buttons
     if (IsGamepad(code) && IsButton(code)) {
@@ -149,7 +149,7 @@ bool platform::IsInputButtonDown(InputCode code) {
         // Determine gamepad index and button mask
         if (code >= GAMEPAD_A && code <= GAMEPAD_RIGHT_TRIGGER) {
             for (int i = 0; i < XUSER_MAX_COUNT; i++) {
-                if (g_input.gamepad_connected[i]) {
+                if (g_windows_input.gamepad_connected[i]) {
                     gamepad_index = i;
                     break;
                 }
@@ -168,7 +168,7 @@ bool platform::IsInputButtonDown(InputCode code) {
             code = static_cast<InputCode>(code - GAMEPAD_4_A + GAMEPAD_A);
         }
 
-        if (!g_input.gamepad_connected[gamepad_index])
+        if (!g_windows_input.gamepad_connected[gamepad_index])
             return false;
 
         // Map InputCode to XInput button
@@ -188,9 +188,9 @@ bool platform::IsInputButtonDown(InputCode code) {
             case GAMEPAD_DPAD_LEFT: button_mask = XINPUT_GAMEPAD_DPAD_LEFT; break;
             case GAMEPAD_DPAD_RIGHT: button_mask = XINPUT_GAMEPAD_DPAD_RIGHT; break;
             case GAMEPAD_LEFT_TRIGGER_BUTTON:
-                return g_input.gamepad_states[gamepad_index].Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD;
+                return g_windows_input.gamepad_states[gamepad_index].Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD;
             case GAMEPAD_RIGHT_TRIGGER_BUTTON:
-                return g_input.gamepad_states[gamepad_index].Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD;
+                return g_windows_input.gamepad_states[gamepad_index].Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD;
             case GAMEPAD_LEFT_STICK_LEFT:
             case GAMEPAD_LEFT_STICK_RIGHT:
             case GAMEPAD_LEFT_STICK_UP:
@@ -200,14 +200,14 @@ bool platform::IsInputButtonDown(InputCode code) {
             default: return false;
         }
 
-        return (g_input.gamepad_states[gamepad_index].Gamepad.wButtons & button_mask) != 0;
+        return (g_windows_input.gamepad_states[gamepad_index].Gamepad.wButtons & button_mask) != 0;
     }
 
     return false;
 }
 
 static bool WasGamepadUsed(int gamepad_index) {
-    const XINPUT_GAMEPAD& gamepad = g_input.gamepad_states[gamepad_index].Gamepad;
+    const XINPUT_GAMEPAD& gamepad = g_windows_input.gamepad_states[gamepad_index].Gamepad;
 
     if (NormalizeStick(gamepad.sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) > F32_EPSILON)
         return true;
@@ -217,9 +217,9 @@ static bool WasGamepadUsed(int gamepad_index) {
         return true;
     if (NormalizeStick(gamepad.sThumbRY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) > F32_EPSILON)
         return true;
-    if (g_input.gamepad_states[gamepad_index].Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD)
+    if (g_windows_input.gamepad_states[gamepad_index].Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD)
         return true;
-    if (g_input.gamepad_states[gamepad_index].Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD)
+    if (g_windows_input.gamepad_states[gamepad_index].Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD)
         return true;
 
     return false;
@@ -248,7 +248,7 @@ float platform::GetInputAxisValue(InputCode code) {
             // Generic gamepad (use first connected)
             for (int i = 0; i < XUSER_MAX_COUNT; i++)
             {
-                if (g_input.gamepad_connected[i])
+                if (g_windows_input.gamepad_connected[i])
                 {
                     gamepad_index = i;
                     break;
@@ -276,10 +276,10 @@ float platform::GetInputAxisValue(InputCode code) {
             code = static_cast<InputCode>(code - GAMEPAD_4_LEFT_STICK_X + GAMEPAD_LEFT_STICK_X);
         }
 
-        if (!g_input.gamepad_connected[gamepad_index])
+        if (!g_windows_input.gamepad_connected[gamepad_index])
             return 0.0f;
 
-        const XINPUT_GAMEPAD& gamepad = g_input.gamepad_states[gamepad_index].Gamepad;
+        const XINPUT_GAMEPAD& gamepad = g_windows_input.gamepad_states[gamepad_index].Gamepad;
 
         switch (code) {
             case GAMEPAD_LEFT_STICK_X:
@@ -306,50 +306,50 @@ float platform::GetInputAxisValue(InputCode code) {
 void platform::UpdateInputState() {
     if (!HasFocus()) {
         for (int i = 0; i < INPUT_CODE_COUNT; i++)
-            g_input.key_states[i] = false;
+            g_windows_input.key_states[i] = false;
 
-        g_input.mouse_scroll = {0, 0};
-        
+        g_windows_input.mouse_scroll = {0, 0};
+
         for (int i = 0; i < XUSER_MAX_COUNT; i++)
-            ZeroMemory(&g_input.gamepad_states[i], sizeof(XINPUT_STATE));
+            ZeroMemory(&g_windows_input.gamepad_states[i], sizeof(XINPUT_STATE));
 
         return;
     }
 
     bool key_state_changed = false;
     for (int i = 0; i < INPUT_CODE_COUNT; i++) {
-        bool old_state = g_input.key_states[i];
-        g_input.key_states[i] = GetAsyncKeyState(g_input.virtual_keys[i]) < 0;
-        key_state_changed |= (old_state != g_input.key_states[i]);
+        bool old_state = g_windows_input.key_states[i];
+        g_windows_input.key_states[i] = GetAsyncKeyState(g_windows_input.virtual_keys[i]) < 0;
+        key_state_changed |= (old_state != g_windows_input.key_states[i]);
     }
 
     for (int i = 0; i < XUSER_MAX_COUNT; i++) {
         XINPUT_STATE state;
         DWORD result = XInputGetState(i, &state);
-            
-        if (result == ERROR_SUCCESS) {
-            g_input.gamepad_connected[i] = true;
-            g_input.gamepad_states[i] = state;
 
-            g_input.gamepad_left_stick[i] = Vec2{
+        if (result == ERROR_SUCCESS) {
+            g_windows_input.gamepad_connected[i] = true;
+            g_windows_input.gamepad_states[i] = state;
+
+            g_windows_input.gamepad_left_stick[i] = Vec2{
                 NormalizeStick(state.Gamepad.sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE),
                 NormalizeStick(state.Gamepad.sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE)
             };
 
-            if (g_input.active_controller != i && WasGamepadUsed(i)) {
-                g_input.active_controller = i;
+            if (g_windows_input.active_controller != i && WasGamepadUsed(i)) {
+                g_windows_input.active_controller = i;
             }
 
         } else {
-            g_input.gamepad_connected[i] = false;
-            if (g_input.active_controller == i) {
-                g_input.active_controller = -1;
+            g_windows_input.gamepad_connected[i] = false;
+            if (g_windows_input.active_controller == i) {
+                g_windows_input.active_controller = -1;
             }
         }
     }
 
     if (key_state_changed) {
-        g_input.active_controller = -1;
+        g_windows_input.active_controller = -1;
     }
 }
 
@@ -357,72 +357,142 @@ void HandleInputCharacter(char c) {
     if (!IsTextInputEnabled())
         return;
 
-    if (g_input.text_input.length >= TEXT_INPUT_MAX_LENGTH - 1)
+    if (g_windows_input.text_input.value.length >= TEXT_MAX_LENGTH)
         return;
 
     if (c == 27) {
-        Send(EVENT_TEXTINPUT_CANCEL, &g_input.text_input);
+        Send(EVENT_TEXTINPUT_CANCEL, &g_windows_input.text_input);
         return;
     }
 
     if (c == 13) {
-        Send(EVENT_TEXTINPUT_COMMIT, &g_input.text_input);
+        Send(EVENT_TEXTINPUT_COMMIT, &g_windows_input.text_input);
         return;
     }
 
     if (c < 32)
         return;
 
-    g_input.text_input.value[g_input.text_input.length++] = c;
-    g_input.text_input.value[g_input.text_input.length] = 0;
-    g_input.text_input.cursor++;
+    char text[] = { c, 0 };
+    ReplaceSelection(g_windows_input.text_input, text);
 
-    Send(EVENT_TEXTINPUT_CHANGE, &g_input.text_input);
+    Send(EVENT_TEXTINPUT_CHANGE, &g_windows_input.text_input);
 }
 
-void HandleInputKeyDown(char c)
-{
+void HandleInputKeyDown(char c) {
     if (!IsTextInputEnabled())
         return;
 
+    TextInput& input = g_windows_input.text_input;
     if (c == VK_BACK) {
-        if (g_input.text_input.length == 0 || g_input.text_input.cursor == 0)
+        if (input.selection_end > input.selection_start) {
+            ReplaceSelection(input, "");
+            return;
+        }
+
+        if (input.cursor < 1)
             return;
 
-        // Move characters back one position from cursor
-        for (int i = g_input.text_input.cursor - 1; i < g_input.text_input.length - 1; i++)
-            g_input.text_input.value[i] = g_input.text_input.value[i + 1];
-        g_input.text_input.length--;
-        g_input.text_input.value[g_input.text_input.length] = 0;
-        g_input.text_input.cursor--;
-        Send(EVENT_TEXTINPUT_CHANGE, &g_input.text_input);
+        input.selection_start = input.cursor - 1;
+        input.selection_end = input.cursor;
+        ReplaceSelection(input, "");
+
+        Send(EVENT_TEXTINPUT_CHANGE, &g_windows_input.text_input);
         return;
+    } else if (c == VK_DELETE) {
+        if (input.selection_end > input.selection_start) {
+            ReplaceSelection(input, "");
+            return;
+        }
+
+        if (input.cursor >= input.value.length)
+            return;
+
+        input.selection_start = input.cursor;
+        input.selection_end = input.cursor + 1;
+        ReplaceSelection(input, "");
+
+        Send(EVENT_TEXTINPUT_CHANGE, &g_windows_input.text_input);
+        return;
+
+    } if (c == 36) {
+        if (IsShiftDown()) {
+            input.selection_start = 0;
+            input.selection_end = input.cursor;
+        } else {
+            input.cursor = 0;
+            input.selection_start = 0;
+            input.selection_end = 0;
+        }
+    } if (c == 35) {
+        if (IsShiftDown()) {
+            input.selection_start = input.cursor;
+            input.selection_end = input.value.length;
+        } else {
+            input.cursor = input.value.length;
+            input.selection_start = 0;
+            input.selection_end = 0;
+        }
+    } else if (c == 37) {
+        if (input.cursor > 0) {
+            input.cursor--;
+            if (IsShiftDown()) {
+                if (input.selection_start == input.selection_end) {
+                    input.selection_start = input.cursor;
+                    input.selection_end = input.cursor + 1;
+                } else if (input.cursor < input.selection_start) {
+                    input.selection_start = input.cursor;
+                } else {
+                    input.selection_end = input.cursor;
+                }
+            } else {
+                input.selection_start = 0;
+                input.selection_end = 0;
+            }
+        }
+    } else if (c == 39) {
+        if (input.cursor < input.value.length) {
+            input.cursor++;
+            if (IsShiftDown()) {
+                if (input.selection_start == input.selection_end) {
+                    input.selection_start = input.cursor - 1;
+                    input.selection_end = input.cursor;
+                } else if (input.cursor > input.selection_end) {
+                    input.selection_end = input.cursor;
+                } else {
+                    input.selection_start = input.cursor;
+                }
+            } else {
+                input.selection_start = 0;
+                input.selection_end = 0;
+            }
+        }
     }
 }
 
-void platform::ClearTextInput()
-{
-    if (g_input.text_input.length == 0)
+void platform::ClearTextInput() {
+    Text& text = g_windows_input.text_input.value;
+    if (text.length == 0)
         return;
 
-    g_input.text_input.value[0] = 0;
-    g_input.text_input.length = 0;
-    g_input.text_input.cursor = 0;
-    Send(EVENT_TEXTINPUT_CHANGE, &g_input.text_input);
+    text.value[0] = 0;
+    text.length = 0;
+    g_windows_input.text_input.cursor = 0;
+    Send(EVENT_TEXTINPUT_CHANGE, &g_windows_input.text_input);
 }
 
 const TextInput& platform::GetTextInput()
 {
-    return g_input.text_input;
+    return g_windows_input.text_input;
 }
 
 void platform::SetTextInput(const TextInput& text_input)
 {
-    g_input.text_input = text_input;
+    g_windows_input.text_input = text_input;
 }
 
 bool platform::IsGamepadActive() {
-    return g_input.active_controller != -1;
+    return g_windows_input.active_controller != -1;
 }
 
 void platform::InitializeInput()
@@ -430,15 +500,15 @@ void platform::InitializeInput()
     ClearTextInput();
 
     for (int i = 0; i < XUSER_MAX_COUNT; i++) {
-        ZeroMemory(&g_input.gamepad_states[i], sizeof(XINPUT_STATE));
-        g_input.gamepad_connected[i] = false;
+        ZeroMemory(&g_windows_input.gamepad_states[i], sizeof(XINPUT_STATE));
+        g_windows_input.gamepad_connected[i] = false;
     }
 
     for (int vk=0; vk<256; vk++) {
         InputCode code = VKToInputCode(vk);
         if (code == INPUT_CODE_NONE)
             continue;
-        g_input.virtual_keys[code] = vk;
+        g_windows_input.virtual_keys[code] = vk;
     }
 }
 

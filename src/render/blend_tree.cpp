@@ -70,6 +70,16 @@ void Update(BlendTree& blend_tree, float time_scale, Animator& animator) {
         if (bone_index == 0)
             animator.root_motion_delta = root_motion_delta;
     }
+
+    bool playing = true;
+    for (int i=0; playing && i<blend_tree.blend_count; i++) {
+        Animator& blend_animator = blend_tree.blends[i].animator;
+        playing &= blend_animator.layers[0].playing;
+    }
+
+    Update(animator, 0.0f);
+
+    animator.layers[0].playing = playing;
 }
 
 void Stop(BlendTree& blend_tree) {

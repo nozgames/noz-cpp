@@ -1,4 +1,4 @@
-//
+    //
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
@@ -22,7 +22,8 @@ enum RenderCommandType {
 };
 
 struct BindCameraData {
-    Camera* camera;
+    noz::Rect viewport;
+    Mat3 view_matrix;
 };
 
 struct DrawMeshData {
@@ -173,7 +174,8 @@ void BindCamera(Camera* camera)
         .type = RENDER_COMMAND_TYPE_BIND_CAMERA,
         .data = {
             .bind_camera = {
-                .camera = camera
+                .viewport = GetViewport(camera),
+                .view_matrix = GetViewMatrix(camera)
             }
         }
     };
@@ -333,8 +335,8 @@ void ExecuteRenderCommands()
             break;
 
         case RENDER_COMMAND_TYPE_BIND_CAMERA:
-            platform::SetViewport(GetViewport(command->data.bind_camera.camera));
-            platform::BindCamera(GetViewMatrix(command->data.bind_camera.camera));
+            platform::SetViewport(command->data.bind_camera.viewport);
+            platform::BindCamera(command->data.bind_camera.view_matrix);
             break;
 
         case RENDER_COMMAND_TYPE_DRAW_MESH:
