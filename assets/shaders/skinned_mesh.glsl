@@ -21,8 +21,9 @@ layout(set = 2, binding = 0, row_major) uniform SkeletonBuffer {
 layout(location = 0) in vec2 v_position;
 layout(location = 1) in float v_depth;
 layout(location = 2) in vec2 v_uv;
-layout(location = 3) in ivec4 v_bones_indices;
-layout(location = 4) in vec4 v_bone_weights;
+layout(location = 3) in vec2 v_normal;
+layout(location = 4) in ivec4 v_bones_indices;
+layout(location = 5) in vec4 v_bone_weights;
 
 layout(location = 0) out vec2 f_uv;
 

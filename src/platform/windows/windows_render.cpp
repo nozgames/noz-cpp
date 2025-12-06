@@ -1944,28 +1944,35 @@ static bool CreateShaderInternal(
             .location = 1,
             .binding = 0,
             .format = VK_FORMAT_R32_SFLOAT,
-            .offset = sizeof(float) * 2
+            .offset = offsetof(MeshVertex, depth)
         },
         // UV
         {
             .location = 2,
             .binding = 0,
             .format = VK_FORMAT_R32G32_SFLOAT,
-            .offset = sizeof(float) * 3
+            .offset = offsetof(MeshVertex, uv)
         },
-        // Bone indices
+        // Normal
         {
             .location = 3,
             .binding = 0,
-            .format = VK_FORMAT_R32G32B32A32_SINT,
-            .offset = sizeof(float) * 5
+            .format = VK_FORMAT_R32G32_SFLOAT,
+            .offset = offsetof(MeshVertex, normal)
         },
-        // Bone Weights
+        // Bone indices
         {
             .location = 4,
             .binding = 0,
+            .format = VK_FORMAT_R32G32B32A32_SINT,
+            .offset = offsetof(MeshVertex, bone_indices)
+        },
+        // Bone Weights
+        {
+            .location = 5,
+            .binding = 0,
             .format = VK_FORMAT_R32G32B32A32_SFLOAT,
-            .offset = sizeof(float) * 5 + sizeof(i32) * 4
+            .offset = offsetof(MeshVertex, bone_weights)
         },
     };
 
