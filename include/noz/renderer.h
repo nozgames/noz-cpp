@@ -69,6 +69,7 @@ struct MeshVertex {
     Vec2 position;
     float depth;
     Vec2 uv;
+    Vec2 normal;
     Vec4Int bone_indices;
     Vec4 bone_weights = {1.0f, 0.0f, 0.0f, 0.0f};
 };
