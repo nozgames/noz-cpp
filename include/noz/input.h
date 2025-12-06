@@ -4,8 +4,6 @@
 
 #pragma once
 
-constexpr int TEXT_INPUT_MAX_LENGTH = 4096;
-
 #include "input_code.h"
 
 // @types
@@ -22,19 +20,21 @@ extern bool IsMouseOverWindow();
 inline bool IsActive(InputSet* input_set) { return GetInputSet() == input_set; }
 
 // @text
-struct TextInput
-{
-    char value[TEXT_INPUT_MAX_LENGTH];
-    int length;
+struct TextInput {
+    Text value;
     int cursor;
+    int selection_start;
+    int selection_end;
 };
 
+// @text_input
 extern void BeginTextInput();
 extern void EndTextInput();
 extern void ClearTextInput();
 extern const TextInput& GetTextInput();
 extern void SetTextInput(const TextInput& text_input);
 extern bool IsTextInputEnabled();
+extern void ReplaceSelection(TextInput& input, const char* value);
 
 // @InputSet
 extern InputSet* CreateInputSet(Allocator* allocator, const Name* name=nullptr);

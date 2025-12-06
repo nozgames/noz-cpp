@@ -21,7 +21,7 @@ u64 Hash(void* data, size_t size, u64 seed) {
     return XXH64(data, size, seed);
 }
 
-u64 Hash(const text_t& text) {
+u64 Hash(const Text& text) {
     return XXH64(text.value, text.length, 0);
 }
 

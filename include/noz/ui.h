@@ -93,6 +93,11 @@ struct DragDetails {
     int id;
 };
 
+struct SceneStyle {
+    Camera* camera;
+    void* user_data;
+};
+
 struct GestureDetectorStyle {
     void (*on_tap)(const TapDetails& details);
     void (*on_tap_down)(const TapDetails& details);
@@ -176,6 +181,7 @@ extern void DrawUI();
 extern void EndUI();
 extern Vec2 ScreenToUI(const Vec2& screen_pos);
 extern bool CheckElementFlags(ElementFlags flags);
+extern u64 GetElementId();
 
 // @layout
 extern void BeginCanvas(const CanvasStyle& style={});
@@ -222,13 +228,13 @@ inline bool IsDown() { return CheckElementFlags(ELEMENT_FLAG_DOWN); }
 
 // @drawing
 extern void Label(const char* text, const LabelStyle& style = {});
-inline void Label(const text_t& text, const LabelStyle& style = {}) {
+inline void Label(const Text& text, const LabelStyle& style = {}) {
     Label(text.value, style);
 }
 extern void Image(Mesh* mesh, const ImageStyle& style = {});
 extern void Image(AnimatedMesh* mesh, float time, const ImageStyle& style = {});
 extern void Rectangle(const RectangleStyle& style = {});
-extern void Scene(Camera* camera, void (*draw_scene)() = nullptr);
+extern void Scene(const SceneStyle& style, void (*draw_scene)(void*) = nullptr);
 
 // @edgeinsets
 inline EdgeInsets EdgeInsetsAll(float v) { return EdgeInsets(v, v, v, v); }
@@ -252,13 +258,14 @@ inline EdgeInsets EdgeInsetsLeftRight(float l, float r) { return EdgeInsets(0,l,
 struct TextMesh {};
 
 struct TextRequest {
-    text_t text;
+    Text text;
     Font* font;
     int font_size;
 };
 
-TextMesh* CreateTextMesh(Allocator* allocator, const TextRequest& request);
-Vec2 MeasureText(const text_t& text, Font* font, float font_size);
-Mesh* GetMesh(TextMesh* tm);
-Material* GetMaterial(TextMesh* tm);
-Vec2 GetSize(TextMesh* tm);
+extern TextMesh* CreateTextMesh(Allocator* allocator, const TextRequest& request);
+extern Vec2 MeasureText(const Text& text, Font* font, float font_size);
+extern Bounds2 MeasureText(const Text& text, Font* font, float font_size, int start, int end);
+extern Mesh* GetMesh(TextMesh* tm);
+extern Material* GetMaterial(TextMesh* tm);
+extern Vec2 GetSize(TextMesh* tm);

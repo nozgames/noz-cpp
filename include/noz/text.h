@@ -4,25 +4,24 @@
 
 #pragma once
 
-constexpr size_t TEXT_SIZE = 128;
+constexpr size_t TEXT_MAX_LENGTH = 4095;
 
 // @text
-struct text_t
-{
-    char value[TEXT_SIZE];
-    size_t length;
+struct Text {
+    char value[TEXT_MAX_LENGTH + 1];
+    int length;
 };
 
-inline void Clear(text_t& text) { text.value[0] = 0; text.length = 0; }
-inline void Init(text_t& text) { Clear(text); }
-void SetValue(text_t& text, const char* value);
-void SetValue(text_t& text, const text_t& value);
-void Append(text_t& text, const char* value);
-void Append(text_t& text, const text_t& value);
-void Format(text_t& text, const char* fmt, ...);
-inline size_t GetLength(text_t& text) { return text.length; }
-void Trim(text_t& text);
-bool Equals(const text_t& a, const char* b);
-bool Equals(const text_t& a, const text_t& b);
-inline bool IsEmpty(const text_t& text) { return text.length == 0; }
-u64 Hash(const text_t& text);
+inline void Clear(Text& text) { text.value[0] = 0; text.length = 0; }
+inline void Init(Text& text) { Clear(text); }
+void SetValue(Text& text, const char* value);
+void SetValue(Text& text, const Text& value);
+void Append(Text& text, const char* value);
+void Append(Text& text, const Text& value);
+void Format(Text& text, const char* fmt, ...);
+inline size_t GetLength(Text& text) { return text.length; }
+void Trim(Text& text);
+bool Equals(const Text& a, const char* b);
+bool Equals(const Text& a, const Text& b);
+inline bool IsEmpty(const Text& text) { return text.length == 0; }
+u64 Hash(const Text& text);

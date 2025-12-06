@@ -87,6 +87,39 @@ void ClearTextInput() {
     return platform::ClearTextInput();
 }
 
+void ReplaceSelection(TextInput& input, const char* value) {
+    Text& text = input.value;
+
+    // Delete the selection
+    if (input.selection_end > input.selection_start) {
+        int selection_length = input.selection_end - input.selection_start;
+        for (int i = input.selection_start; i < text.length - selection_length; i++)
+            text.value[i] = text.value[i + selection_length];
+        text.length -= selection_length;
+        text.value[text.length] = 0;
+        input.cursor = input.selection_start;
+        input.selection_start = 0;
+        input.selection_end = 0;
+    }
+
+    if (!*value)
+        return;
+
+    // shift text up to make room for insertion
+    int insert_length = Length(value);
+    for (int i = 0; i<insert_length; i++)
+        text.value[text.length + insert_length - i] = text.value[text.length - i];
+
+    // copy in new text
+    for (int i = 0; value[i]; i++)
+        text.value[input.cursor + i] = value[i];
+
+    input.selection_start = 0;
+    input.selection_end = 0;
+    input.value.length += insert_length;
+    input.cursor += insert_length;
+}
+
 const TextInput& GetTextInput() {
     return platform::GetTextInput();
 }
@@ -96,7 +129,6 @@ void BeginTextInput() {
         return;
 
     g_input.text_input = true;
-
     ClearTextInput();
 }
 
