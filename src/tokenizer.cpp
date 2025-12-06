@@ -567,6 +567,13 @@ bool ExpectQuotedString(Tokenizer &tk)
     return true;
 }
 
+bool ExpectBool(Tokenizer& tk, bool* out_value) {
+    int i = 0;
+    if (!ExpectInt(tk, &i)) return false;
+    *out_value = i != 0;
+    return true;
+}
+
 bool ExpectInt(Tokenizer& tk, int* out_value)
 {
     if (!Equals(tk.next_token, TOKEN_TYPE_INT))

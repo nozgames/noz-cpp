@@ -1,8 +1,8 @@
-[editor]
-position = (-7.200000,-17.300001)
-
 [shader]
 blend = true
 depth = false
 premultiplied = true
+
+[editor]
+position = (-7.500000,-17.500000)
 

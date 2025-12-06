@@ -1,6 +1,6 @@
-[editor]
-position = (-2.200000,-17.300001)
-
 [shader]
 postproc = true
+
+[editor]
+position = (-2.500000,-17.500000)
 
