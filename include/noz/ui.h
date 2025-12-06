@@ -147,8 +147,7 @@ struct BorderStyle {
 
 struct RectangleStyle {
     Color color = COLOR_WHITE;
-    AnimatedColorFunc color_func = nullptr;
-    void* color_func_user_data = nullptr;
+    Vec2Int color_offset;
 };
 
 struct SizedBoxStyle {

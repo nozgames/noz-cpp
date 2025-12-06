@@ -962,11 +962,7 @@ static int RenderElement(int element_index) {
         RectangleElement* rectangle = static_cast<RectangleElement*>(e);
         BindTransform(transform * Scale(Vec2{e->rect.width, e->rect.height}));
         BindMaterial(g_ui.element_material);
-        if (rectangle->style.color_func) {
-            BindColor(rectangle->style.color_func(g_ui.element_states[e->index].flags, 0.0f, rectangle->style.color_func_user_data));
-        } else {
-            BindColor(rectangle->style.color);
-        }
+        BindColor(rectangle->style.color, ToVec2(rectangle->style.color_offset));
         DrawMesh(g_ui.element_quad);
     } else if (e->type == ELEMENT_TYPE_BORDER) {
         BorderElement* border = static_cast<BorderElement*>(e);
