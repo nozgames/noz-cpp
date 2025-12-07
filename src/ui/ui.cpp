@@ -262,7 +262,7 @@ void EndCanvas() {
 void BeginCenter() {
     IncrementChildCount();
     ContainerElement* e = static_cast<ContainerElement*>(CreateElement(ELEMENT_TYPE_CONTAINER));
-    e->style.align = ALIGNMENT_CENTER_CENTER;
+    e->style.align = ALIGN_CENTER_CENTER;
     PushElement(e);
 }
 
@@ -435,7 +435,7 @@ static void ApplyAlignment(ContainerElement* e, Element* parent) {
     assert(parent);
 
     EdgeInsets margin = GetMargin(e);
-    const Alignment& align = e->style.align;
+    const Align& align = e->style.align;
 
     float available_width = parent->rect.width - e->rect.width - margin.left - margin.right;
     float available_height = parent->rect.height - e->rect.height - margin.top - margin.bottom;
@@ -850,11 +850,7 @@ static int RenderElement(int element_index) {
         RectangleElement* rectangle = static_cast<RectangleElement*>(e);
         BindTransform(transform * Scale(Vec2{e->rect.width, e->rect.height}));
         BindMaterial(g_ui.element_material);
-        if (rectangle->style.color_func) {
-            BindColor(rectangle->style.color_func(g_ui.element_states[e->index].flags, 0.0f, rectangle->style.color_func_user_data));
-        } else {
-            BindColor(rectangle->style.color);
-        }
+        BindColor(rectangle->style.color, ToVec2(rectangle->style.color_offset));
         DrawMesh(g_ui.element_quad);
     } else if (e->type == ELEMENT_TYPE_SCENE) {
         SceneElement* scene_element = static_cast<SceneElement*>(e);

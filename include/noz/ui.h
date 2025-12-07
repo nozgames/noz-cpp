@@ -33,23 +33,23 @@ enum CanvasType {
     CANVAS_TYPE_WORLD
 };
 
-struct Alignment {
+struct Align {
     float x; // -1.0 (min) to 1.0 (max)
     float y; // -1.0 (min) to 1.0 (max)
 };
 
-constexpr Alignment ALIGNMENT_TOP           = {  F32_MAX, -1.0f };
-constexpr Alignment ALIGNMENT_TOP_LEFT      = { -1.0f, -1.0f };
-constexpr Alignment ALIGNMENT_TOP_CENTER    = {  0.0f, -1.0f };
-constexpr Alignment ALIGNMENT_TOP_RIGHT     = {  1.0f, -1.0f };
-constexpr Alignment ALIGNMENT_CENTER        = {  F32_MAX, 0.0f };
-constexpr Alignment ALIGNMENT_CENTER_CENTER = {  0.0f,  0.0f };
-constexpr Alignment ALIGNMENT_CENTER_LEFT   = { -1.0f,  0.0f };
-constexpr Alignment ALIGNMENT_CENTER_RIGHT  = {  1.0f,  0.0f };
-constexpr Alignment ALIGNMENT_BOTTOM        = {  F32_MAX, 1.0f };
-constexpr Alignment ALIGNMENT_BOTTOM_LEFT   = { -1.0f,  1.0f };
-constexpr Alignment ALIGNMENT_BOTTOM_RIGHT  = {  1.0f,  1.0f };
-constexpr Alignment ALIGNMENT_BOTTOM_CENTER = {  0.0f,  1.0f };
+constexpr Align ALIGN_TOP           = {  F32_MAX, -1.0f };
+constexpr Align ALIGN_TOP_LEFT      = { -1.0f, -1.0f };
+constexpr Align ALIGN_TOP_CENTER    = {  0.0f, -1.0f };
+constexpr Align ALIGN_TOP_RIGHT     = {  1.0f, -1.0f };
+constexpr Align ALIGN_CENTER        = {  F32_MAX, 0.0f };
+constexpr Align ALIGN_CENTER_CENTER = {  0.0f,  0.0f };
+constexpr Align ALIGN_CENTER_LEFT   = { -1.0f,  0.0f };
+constexpr Align ALIGN_CENTER_RIGHT  = {  1.0f,  0.0f };
+constexpr Align ALIGN_BOTTOM        = {  F32_MAX, 1.0f };
+constexpr Align ALIGN_BOTTOM_LEFT   = { -1.0f,  1.0f };
+constexpr Align ALIGN_BOTTOM_RIGHT  = {  1.0f,  1.0f };
+constexpr Align ALIGN_BOTTOM_CENTER = {  0.0f,  1.0f };
 
 struct RowStyle {
     float spacing = 0.0f;
@@ -99,7 +99,7 @@ struct LabelStyle {
     Font* font = nullptr;
     int font_size = 16;
     Color color = COLOR_WHITE;
-    Alignment align = ALIGNMENT_TOP_LEFT;
+    Align align = ALIGN_TOP_LEFT;
     Material* material;
 };
 
@@ -135,6 +135,7 @@ struct BorderStyle {
 
 struct RectangleStyle {
     Color color = COLOR_WHITE;
+    Vec2Int color_offset;
 };
 
 struct SizedBoxStyle {
@@ -153,7 +154,7 @@ struct CanvasStyle {
 struct ContainerStyle {
     float width = F32_MAX;
     float height = F32_MAX;
-    Alignment align = ALIGNMENT_TOP_LEFT;
+    Align align = ALIGN_TOP_LEFT;
     EdgeInsets margin;
     EdgeInsets padding;
     Color color;
