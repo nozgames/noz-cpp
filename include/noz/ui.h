@@ -6,6 +6,8 @@
 
 #include "input.h"
 
+constexpr float F32_AUTO = F32_MAX;
+
 typedef u32 ElementFlags;
 constexpr ElementFlags ELEMENT_FLAG_NONE        = 0;
 constexpr ElementFlags ELEMENT_FLAG_HOVERED     = 1 << 0;
@@ -33,23 +35,24 @@ enum CanvasType {
     CANVAS_TYPE_WORLD
 };
 
-struct Align {
-    float x; // -1.0 (min) to 1.0 (max)
-    float y; // -1.0 (min) to 1.0 (max)
-};
+enum Align {
+    ALIGN_NONE,
+    ALIGN_TOP,
+    ALIGN_LEFT,
+    ALIGN_BOTTOM,
+    ALIGN_RIGHT,
+    ALIGN_TOP_LEFT,
+    ALIGN_TOP_RIGHT,
+    ALIGN_TOP_CENTER,
+    ALIGN_CENTER_LEFT,
+    ALIGN_CENTER_RIGHT,
+    ALIGN_CENTER,
+    ALIGN_BOTTOM_LEFT,
+    ALIGN_BOTTOM_RIGHT,
+    ALIGN_BOTTOM_CENTER,
 
-constexpr Align ALIGN_TOP           = {  F32_MAX, -1.0f };
-constexpr Align ALIGN_TOP_LEFT      = { -1.0f, -1.0f };
-constexpr Align ALIGN_TOP_CENTER    = {  0.0f, -1.0f };
-constexpr Align ALIGN_TOP_RIGHT     = {  1.0f, -1.0f };
-constexpr Align ALIGN_CENTER        = {  F32_MAX, 0.0f };
-constexpr Align ALIGN_CENTER_CENTER = {  0.0f,  0.0f };
-constexpr Align ALIGN_CENTER_LEFT   = { -1.0f,  0.0f };
-constexpr Align ALIGN_CENTER_RIGHT  = {  1.0f,  0.0f };
-constexpr Align ALIGN_BOTTOM        = {  F32_MAX, 1.0f };
-constexpr Align ALIGN_BOTTOM_LEFT   = { -1.0f,  1.0f };
-constexpr Align ALIGN_BOTTOM_RIGHT  = {  1.0f,  1.0f };
-constexpr Align ALIGN_BOTTOM_CENTER = {  0.0f,  1.0f };
+    ALIGN_COUNT
+};
 
 struct RowStyle {
     float spacing = 0.0f;
@@ -134,13 +137,10 @@ struct BorderStyle {
 };
 
 struct RectangleStyle {
+    float width = F32_AUTO;
+    float height = F32_AUTO;
     Color color = COLOR_WHITE;
     Vec2Int color_offset;
-};
-
-struct SizedBoxStyle {
-    float width = F32_MAX;
-    float height = F32_MAX;
 };
 
 struct CanvasStyle {
@@ -152,8 +152,8 @@ struct CanvasStyle {
 };
 
 struct ContainerStyle {
-    float width = F32_MAX;
-    float height = F32_MAX;
+    float width = F32_AUTO;
+    float height = F32_AUTO;
     Align align = ALIGN_TOP_LEFT;
     EdgeInsets margin;
     EdgeInsets padding;
@@ -187,9 +187,11 @@ extern void EndColumn();
 extern void EndRow();
 extern void EndBorder();
 extern void EndCenter();
+extern void EndExpanded();
 extern void EndTransformed();
 extern void Container(const ContainerStyle& style);
-extern void Expanded(const ContainerStyle& style);
+extern void Expanded(const ExpandedStyle& style={});
+extern void Spacer(float size);
 
 // @input
 inline bool IsHovered() { return CheckElementFlags(ELEMENT_FLAG_HOVERED); }
@@ -200,6 +202,9 @@ inline bool IsDown() { return CheckElementFlags(ELEMENT_FLAG_DOWN); }
 extern void Label(const char* text, const LabelStyle& style = {});
 inline void Label(const Text& text, const LabelStyle& style = {}) {
     Label(text.value, style);
+}
+inline void Label(const Name* name, const LabelStyle& style = {}) {
+    Label(name->value, style);
 }
 extern void Image(Mesh* mesh, const ImageStyle& style = {});
 extern void Image(AnimatedMesh* mesh, float time, const ImageStyle& style = {});

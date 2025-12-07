@@ -34,7 +34,7 @@ struct DrawMeshData {
     float depth_scale;
     Color color;
     Color emission;
-    Vec2 color_uv_offset;
+    Vec2Int color_offset;
 };
 
 struct BeginPassData {
@@ -77,7 +77,7 @@ struct RenderBuffer {
     float current_depth;
     float current_depth_scale;
     Color current_color;
-    Vec2 current_color_uv_offset;
+    Vec2Int current_color_offset;
     Color current_emission;
 };
 
@@ -240,19 +240,25 @@ void BindTransform(const Mat3& transform) {
 
 void BindColor(Color color) {
     g_render_buffer->current_color = ToLinear(color);
-    g_render_buffer->current_color_uv_offset = VEC2_ZERO;
+    g_render_buffer->current_color_offset = VEC2INT_ZERO;
     g_render_buffer->current_emission = COLOR_TRANSPARENT;
 }
 
-void BindColor(Color color, const Vec2& color_uv_offset) {
+void BindColor(Color color, Color emission) {
     g_render_buffer->current_color = ToLinear(color);
-    g_render_buffer->current_color_uv_offset = color_uv_offset;
+    g_render_buffer->current_color_offset = VEC2INT_ZERO;
+    g_render_buffer->current_emission = emission;
+}
+
+void BindColor(Color color, const Vec2Int& color_offset) {
+    g_render_buffer->current_color = ToLinear(color);
+    g_render_buffer->current_color_offset = color_offset;
     g_render_buffer->current_emission = COLOR_TRANSPARENT;
 }
 
-void BindColor(Color color, const Vec2& color_uv_offset, Color emission) {
+void BindColor(Color color, const Vec2Int& color_uv_offset, Color emission) {
     g_render_buffer->current_color = ToLinear(color);
-    g_render_buffer->current_color_uv_offset = color_uv_offset;
+    g_render_buffer->current_color_offset = color_uv_offset;
     g_render_buffer->current_emission = ToLinear(emission);
 }
 
@@ -308,7 +314,7 @@ void DrawMesh(Mesh* mesh) {
                 .depth_scale = g_render_buffer->current_depth_scale,
                 .color = g_render_buffer->current_color,
                 .emission = g_render_buffer->current_emission,
-                .color_uv_offset = g_render_buffer->current_color_uv_offset,
+                .color_offset = g_render_buffer->current_color_offset,
             }
         }
     };
@@ -342,7 +348,7 @@ void ExecuteRenderCommands()
         case RENDER_COMMAND_TYPE_DRAW_MESH:
             platform::BindColor(
                 command->data.draw_mesh.color,
-                command->data.draw_mesh.color_uv_offset,
+                ToVec2(command->data.draw_mesh.color_offset),
                 command->data.draw_mesh.emission);
             platform::BindTransform(
                 command->data.draw_mesh.transform,

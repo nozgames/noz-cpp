@@ -574,6 +574,12 @@ bool ExpectBool(Tokenizer& tk, bool* out_value) {
     return true;
 }
 
+int ExpectInt(Tokenizer& tk, int default_value) {
+    int i = 0;
+    if (!ExpectInt(tk, &i)) return default_value;
+    return i;
+}
+
 bool ExpectInt(Tokenizer& tk, int* out_value)
 {
     if (!Equals(tk.next_token, TOKEN_TYPE_INT))

@@ -150,8 +150,9 @@ extern void BindSkeleton(const Mat3* bind_poses, int bind_pose_stride, Mat3* bon
 extern void BindIdentitySkeleton();
 extern void BindDefaultTexture(int texture_index);
 extern void BindColor(Color color);
-extern void BindColor(Color color, const Vec2& color_uv_offset);
-extern void BindColor(Color color, const Vec2& color_uv_offset, Color emission);
+extern void BindColor(Color color, Color emission);
+extern void BindColor(Color color, const Vec2Int& color_offset);
+extern void BindColor(Color color, const Vec2Int& color_offset, Color emission);
 extern void BindCamera(Camera* camera);
 extern void BindVertexUserData(const void* data, size_t size);
 extern void BindFragmentUserData(const void* data, size_t size);

@@ -1,3 +1,16 @@
+# incoming
+- [ ] color override push in render buffer (PushColorOverride / PopColorOverride)
+- [ ] notifcation ui is not aligning to bottom right
+- [ ] build tooltip detection into ui system (IsHoverTooltip?)
+- [ ] text mesh should not include font size, instead lets scale the mesh
+- [ ] text mesh no hash just list search for hash
+- [ ] text mesh should remove any that were not used last frame
+
+# UI
+- [ ] scrollable
+- [ ] hash the entity styles to see if they have changed, if not then dont redo transforms
+- [ ] optimize container alignment when top-left is being used.
+ 
 # Mesh
 - [ ] do not allow extruding an internal edge (check face count)
 - [ ] new mesh should use click to add verts to create shape, enter to close
