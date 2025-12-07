@@ -6,13 +6,6 @@
 
 #include "input.h"
 
-enum TextAlign
-{
-    TEXT_ALIGN_MIN,
-    TEXT_ALIGN_CENTER,
-    TEXT_ALIGN_MAX
-};
-
 typedef u32 ElementFlags;
 constexpr ElementFlags ELEMENT_FLAG_NONE        = 0;
 constexpr ElementFlags ELEMENT_FLAG_HOVERED     = 1 << 0;
@@ -57,11 +50,6 @@ constexpr Alignment ALIGNMENT_BOTTOM        = {  F32_MAX, 1.0f };
 constexpr Alignment ALIGNMENT_BOTTOM_LEFT   = { -1.0f,  1.0f };
 constexpr Alignment ALIGNMENT_BOTTOM_RIGHT  = {  1.0f,  1.0f };
 constexpr Alignment ALIGNMENT_BOTTOM_CENTER = {  0.0f,  1.0f };
-
-struct AlignStyle {
-    Alignment alignment;
-    EdgeInsets margin;
-};
 
 struct RowStyle {
     float spacing = 0.0f;
@@ -147,8 +135,6 @@ struct BorderStyle {
 
 struct RectangleStyle {
     Color color = COLOR_WHITE;
-    AnimatedColorFunc color_func = nullptr;
-    void* color_func_user_data = nullptr;
 };
 
 struct SizedBoxStyle {
@@ -167,6 +153,7 @@ struct CanvasStyle {
 struct ContainerStyle {
     float width = F32_MAX;
     float height = F32_MAX;
+    Alignment align = ALIGNMENT_TOP_LEFT;
     EdgeInsets margin;
     EdgeInsets padding;
     Color color;
@@ -182,46 +169,28 @@ extern void EndUI();
 extern Vec2 ScreenToUI(const Vec2& screen_pos);
 extern bool CheckElementFlags(ElementFlags flags);
 extern u64 GetElementId();
+extern Vec2 ScreenToElement(const Vec2& screen);
 
 // @layout
 extern void BeginCanvas(const CanvasStyle& style={});
-extern void BeginAlign(const AlignStyle& style={});
 extern void BeginContainer(const ContainerStyle& style={});
 extern void BeginColumn(const ColumnStyle& style={});
 extern void BeginRow(const RowStyle& style={});
 extern void BeginTransformed(const TransformStyle& style);
-extern void BeginSizedBox(const SizedBoxStyle& style);
 extern void BeginBorder(const BorderStyle& style);
-
-extern void End();
-
-extern void Align(const AlignStyle& style, const std::function<void()>& children = nullptr);
-extern void Canvas(const CanvasStyle& style, const std::function<void()>& children = nullptr);
-inline void Canvas(const std::function<void()>& children = nullptr) { Canvas({}, children); }
-extern void Stack(void (*children)() = nullptr);
-extern void Container(const ContainerStyle& style, const std::function<void()>& children=nullptr);
-extern void Column(const ColumnStyle& style, const std::function<void()>& children = nullptr);
-inline void Column(const std::function<void()>& children) { Column({}, children); }
-extern void Row(const RowStyle& style, const std::function<void()>& children = nullptr);
-inline void Row(const std::function<void()>& children = nullptr) { Row({}, children); }
-extern void Border(const BorderStyle& style, const std::function<void()>& children = nullptr);
-extern void Inset(const EdgeInsets& insets, void (*children)() = nullptr);
-extern void Inset(float amount, void (*children)() = nullptr);
-extern void SizedBox(const SizedBoxStyle& style, const std::function<void()>& children = nullptr);
-extern void Center(const std::function<void()>& children);
-
-// @modifiers
+extern void BeginCenter();
 extern void BeginExpanded(const ExpandedStyle& style={});
-extern void Transformed(const TransformStyle& style, const std::function<void()>& children = nullptr);
-extern void Expanded(const ExpandedStyle& style, const std::function<void()>& children = nullptr);
-inline void Expanded(const std::function<void()>& children = nullptr) { Expanded({}, children); }
+extern void EndCanvas();
+extern void EndContainer();
+extern void EndColumn();
+extern void EndRow();
+extern void EndBorder();
+extern void EndCenter();
+extern void EndTransformed();
+extern void Container(const ContainerStyle& style);
+extern void Expanded(const ContainerStyle& style);
 
 // @input
-extern void BeginGestureDetector(const GestureDetectorStyle& style);
-
-extern void GestureBlocker(const std::function<void()>& children);
-extern void GestureDetector(const GestureDetectorStyle& style, const std::function<void()>& children = nullptr);
-extern void MouseRegion(const MouseRegionStyle& style, const std::function<void()>& children = nullptr);
 inline bool IsHovered() { return CheckElementFlags(ELEMENT_FLAG_HOVERED); }
 inline bool WasPressed() { return CheckElementFlags(ELEMENT_FLAG_PRESSED); }
 inline bool IsDown() { return CheckElementFlags(ELEMENT_FLAG_DOWN); }
@@ -252,7 +221,6 @@ inline EdgeInsets EdgeInsetsRight(float v) { return EdgeInsets(0,0,0,v); }
 inline EdgeInsets EdgeInsetsLeft(float v) { return EdgeInsets(0,v,0,0); }
 inline EdgeInsets EdgeInsetsLeftRight(float v) { return EdgeInsets(0,v,0,v); }
 inline EdgeInsets EdgeInsetsLeftRight(float l, float r) { return EdgeInsets(0,l,0,r); }
-
 
 // @text_engine
 struct TextMesh {};

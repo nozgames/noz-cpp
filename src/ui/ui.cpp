@@ -11,10 +11,7 @@ extern void UpdateInputState(InputSet* input_set);
 enum ElementType : u8 {
     ELEMENT_TYPE_UNKNOWN = 0,
     ELEMENT_TYPE_NONE,
-    ELEMENT_TYPE_ALIGN,
-    ELEMENT_TYPE_BORDER,
     ELEMENT_TYPE_CANVAS,
-    ELEMENT_TYPE_CENTER,
     ELEMENT_TYPE_COLUMN,
     ELEMENT_TYPE_CONTAINER,
     ELEMENT_TYPE_EXPANDED,
@@ -52,10 +49,6 @@ struct Element {
     u32 child_count;
     Mat3 local_to_world;
     Mat3 world_to_local;
-};
-
-struct AlignElement : Element {
-    AlignStyle style;
 };
 
 struct BorderElement : Element {
@@ -132,7 +125,6 @@ struct TransformElement : Element {
 
 union FatElement {
     Element element;
-    AlignElement align;
     BorderElement border;
     CanvasElement canvas;
     ColumnElement column;
@@ -185,12 +177,24 @@ static Element* CreateElement(ElementType type) {
     return element;
 }
 
-u64 GetElementId() {
+static Element* GetCurrentElement() {
     if (g_ui.element_stack_count <= 0)
-        return 0;
+        return nullptr;
 
     Element* e = g_ui.element_stack[g_ui.element_stack_count - 1];
     assert(e);
+    return e;
+}
+
+Vec2 ScreenToElement(const Vec2& screen) {
+    Element* e = GetCurrentElement();
+    if (!e) return VEC2_ZERO;
+    return TransformPoint(e->world_to_local, ScreenToWorld(g_ui.camera, screen));
+}
+
+u64 GetElementId() {
+    Element* e = GetCurrentElement();
+    if (!e) return 0;
     return g_ui.element_states[e->index].hash;
 }
 
@@ -228,45 +232,20 @@ static void IncrementChildCount() {
     g_ui.element_stack[g_ui.element_stack_count-1]->child_count++;
 }
 
-static void ExecuteChildren(Element* element, const std::function<void()>& children) {
-    if (!children)
-        return;
-
-    PushElement(element);
-    children();
+static void EndElement(ElementType expected_type) {
+    assert(GetCurrentElement()->type == expected_type);
     PopElement();
-}
-
-void End() {
-    PopElement();
-}
-
-void BeginAlign(const AlignStyle& style) {
-    IncrementChildCount();
-    AlignElement* e = static_cast<AlignElement*>(CreateElement(ELEMENT_TYPE_ALIGN));
-    e->style = style;
-    PushElement(e);
-}
-
-void Align(const AlignStyle& style, const std::function<void()>& children) {
-    IncrementChildCount();
-    AlignElement* e = static_cast<AlignElement*>(CreateElement(ELEMENT_TYPE_ALIGN));
-    e->style = style;
-    ExecuteChildren(e, children);
 }
 
 void BeginBorder(const BorderStyle& style) {
     IncrementChildCount();
-    BorderElement* border = static_cast<BorderElement*>(CreateElement(ELEMENT_TYPE_BORDER));
-    border->style = style;
-    PushElement(border);
+    ContainerElement* e = static_cast<ContainerElement*>(CreateElement(ELEMENT_TYPE_CONTAINER));
+    e->style.border = style;
+    PushElement(e);
 }
 
-void Border(const BorderStyle& style, const std::function<void()>& children) {
-    IncrementChildCount();
-    BorderElement* border = static_cast<BorderElement*>(CreateElement(ELEMENT_TYPE_BORDER));
-    border->style = style;
-    ExecuteChildren(border, children);
+void EndBorder() {
+    EndElement(ELEMENT_TYPE_CONTAINER);
 }
 
 void BeginCanvas(const CanvasStyle& style) {
@@ -276,17 +255,19 @@ void BeginCanvas(const CanvasStyle& style) {
     PushElement(canvas);
 }
 
-void Canvas(const CanvasStyle& style, const std::function<void()>& children) {
-    IncrementChildCount();
-    CanvasElement* canvas = static_cast<CanvasElement*>(CreateElement(ELEMENT_TYPE_CANVAS));
-    canvas->style = style;
-    ExecuteChildren(canvas, children);
+void EndCanvas() {
+    EndElement(ELEMENT_TYPE_CANVAS);
 }
 
-void Center(const std::function<void()>& children) {
+void BeginCenter() {
     IncrementChildCount();
-    Element* center = CreateElement(ELEMENT_TYPE_CENTER);
-    ExecuteChildren(center, children);
+    ContainerElement* e = static_cast<ContainerElement*>(CreateElement(ELEMENT_TYPE_CONTAINER));
+    e->style.align = ALIGNMENT_CENTER_CENTER;
+    PushElement(e);
+}
+
+void EndCenter() {
+    EndElement(ELEMENT_TYPE_CONTAINER);
 }
 
 void BeginRow(const RowStyle& style) {
@@ -296,11 +277,8 @@ void BeginRow(const RowStyle& style) {
     PushElement(row);
 }
 
-void Row(const RowStyle& style, const std::function<void()>& children) {
-    IncrementChildCount();
-    RowElement* row = static_cast<RowElement*>(CreateElement(ELEMENT_TYPE_ROW));
-    row->style = style;
-    ExecuteChildren(row, children);
+void EndRow() {
+    EndElement(ELEMENT_TYPE_ROW);
 }
 
 void BeginColumn(const ColumnStyle& style) {
@@ -310,17 +288,8 @@ void BeginColumn(const ColumnStyle& style) {
     PushElement(column);
 }
 
-void Column(const ColumnStyle& style, const std::function<void()>& children) {
-    IncrementChildCount();
-    ColumnElement* column = static_cast<ColumnElement*>(CreateElement(ELEMENT_TYPE_COLUMN));
-    column->style = style;
-    ExecuteChildren(column, children);
-}
-
-void Stack(void (*children)()) {
-    IncrementChildCount();
-    StackElement* stack = static_cast<StackElement*>(CreateElement(ELEMENT_TYPE_STACK));
-    ExecuteChildren(stack, children);
+void EndColumn() {
+    EndElement(ELEMENT_TYPE_COLUMN);
 }
 
 void BeginContainer(const ContainerStyle& style) {
@@ -330,11 +299,14 @@ void BeginContainer(const ContainerStyle& style) {
     PushElement(container);
 }
 
-void Container(const ContainerStyle& style, const std::function<void()>& children) {
+void EndContainer() {
+    EndElement(ELEMENT_TYPE_CONTAINER);
+}
+
+void Container(const ContainerStyle& style) {
     IncrementChildCount();
     ContainerElement* container = static_cast<ContainerElement*>(CreateElement(ELEMENT_TYPE_CONTAINER));
     container->style = style;
-    ExecuteChildren(container, children);
 }
 
 void BeginExpanded(const ExpandedStyle& style) {
@@ -344,31 +316,14 @@ void BeginExpanded(const ExpandedStyle& style) {
     PushElement(e);
 }
 
-void Expanded(const ExpandedStyle& style, const std::function<void()>& children) {
+void EndExpanded() {
+    EndElement(ELEMENT_TYPE_EXPANDED);
+}
+
+void Expanded(const ExpandedStyle& style) {
     IncrementChildCount();
     ExpandedElement* e = static_cast<ExpandedElement*>(CreateElement(ELEMENT_TYPE_EXPANDED));
     e->style = style;
-    ExecuteChildren(e, children);
-}
-
-void GestureBlocker(const std::function<void()>& children) {
-    IncrementChildCount();
-    GestureBlockerElement* gesture_blocker = static_cast<GestureBlockerElement*>(CreateElement(ELEMENT_TYPE_GESTURE_BLOCKER));
-    ExecuteChildren(gesture_blocker, children);
-}
-
-void BeginGestureDetector(const GestureDetectorStyle& style) {
-    IncrementChildCount();
-    GestureDetectorElement* g = static_cast<GestureDetectorElement*>(CreateElement(ELEMENT_TYPE_GESTURE_DETECTOR));
-    g->style = style;
-    PushElement(g);
-}
-
-void GestureDetector(const GestureDetectorStyle& style, const std::function<void()>& children) {
-    IncrementChildCount();
-    GestureDetectorElement* gesture_detector = static_cast<GestureDetectorElement*>(CreateElement(ELEMENT_TYPE_GESTURE_DETECTOR));
-    gesture_detector->style = style;
-    ExecuteChildren(gesture_detector, children);
 }
 
 static u64 GetMeshHash(const TextRequest& request) {
@@ -416,20 +371,6 @@ void Label(const char* text, const LabelStyle& style) {
     label->cached_mesh = GetOrCreateTextMesh(text, style);
 }
 
-void Inset(float amount, void (*children)()) {
-    IncrementChildCount();
-    InsetElement* inset = static_cast<InsetElement*>(CreateElement(ELEMENT_TYPE_INSET));
-    inset->insets = amount;
-    ExecuteChildren(inset, children);
-}
-
-void Inset(const EdgeInsets& insets, void (*children)()) {
-    IncrementChildCount();
-    InsetElement* inset = static_cast<InsetElement*>(CreateElement(ELEMENT_TYPE_INSET));
-    inset->insets = insets;
-    ExecuteChildren(inset, children);
-}
-
 void Image(Mesh* mesh, const ImageStyle& style) {
     IncrementChildCount();
     ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
@@ -449,13 +390,6 @@ void Image(AnimatedMesh* mesh, float time, const ImageStyle& style) {
         image->style.material = g_ui.element_material;
 }
 
-void MouseRegion(const MouseRegionStyle& style, const std::function<void()>& children) {
-    IncrementChildCount();
-    MouseRegionElement* mouse_region = static_cast<MouseRegionElement*>(CreateElement(ELEMENT_TYPE_MOUSE_REGION));
-    mouse_region->style = style;
-    ExecuteChildren(mouse_region, children);
-}
-
 void Rectangle(const RectangleStyle& style) {
     IncrementChildCount();
     RectangleElement* rectangle = static_cast<RectangleElement*>(CreateElement(ELEMENT_TYPE_RECTANGLE));
@@ -469,20 +403,6 @@ void Scene(const SceneStyle& style, void (*draw_scene)(void*)) {
     e->draw_scene = draw_scene;
 }
 
-void BeginSizedBox(const SizedBoxStyle& style) {
-    IncrementChildCount();
-    SizedBoxElement* e = static_cast<SizedBoxElement*>(CreateElement(ELEMENT_TYPE_SIZED_BOX));
-    e->style = style;
-    PushElement(e);
-}
-
-void SizedBox(const SizedBoxStyle& style, const std::function<void()>& children) {
-    IncrementChildCount();
-    SizedBoxElement* e = static_cast<SizedBoxElement*>(CreateElement(ELEMENT_TYPE_SIZED_BOX));
-    e->style = style;
-    ExecuteChildren(e, children);
-}
-
 void BeginTransformed(const TransformStyle& style) {
     IncrementChildCount();
     TransformElement* transform = static_cast<TransformElement*>(CreateElement(ELEMENT_TYPE_TRANSFORM));
@@ -490,11 +410,8 @@ void BeginTransformed(const TransformStyle& style) {
     PushElement(transform);
 }
 
-void Transformed(const TransformStyle& style, const std::function<void()>& children) {
-    IncrementChildCount();
-    TransformElement* transform = static_cast<TransformElement*>(CreateElement(ELEMENT_TYPE_TRANSFORM));
-    transform->style = style;
-    ExecuteChildren(transform, children);
+void EndTransformed() {
+    EndElement(ELEMENT_TYPE_TRANSFORM);
 }
 
 static int LayoutElement(int element_index, const Vec2& constraints, Element* parent);
@@ -510,23 +427,28 @@ static EdgeInsets GetMargin(Element* e) {
     if (e->type == ELEMENT_TYPE_CONTAINER)
         return static_cast<ContainerElement*>(e)->style.margin;
 
-    if (e->type == ELEMENT_TYPE_ALIGN)
-        return static_cast<AlignElement*>(e)->style.margin;
-
     return {};
 }
 
-static void ApplyAlignment(Element* e, const Alignment& align, u32 element_stack_start, u32 element_stack_count) {
-    EdgeInsets parent_margin = GetMargin(e);
-    for (u32 i = 0; i < element_stack_count; i++) {
-        Element* child = g_ui.element_stack[element_stack_start + i];
-        EdgeInsets child_margin = GetMargin(child);
-        // Calculate available space excluding parent's margins
-        float available_width = e->rect.width - parent_margin.left - parent_margin.right;
-        float available_height = e->rect.height - parent_margin.top - parent_margin.bottom;
-        // Calculate final position including both parent and child margins
-        child->rect.x = parent_margin.left + child_margin.left + (available_width - child->rect.width - child_margin.left - child_margin.right) * 0.5f * (align.x + 1.0f);
-        child->rect.y = parent_margin.top + child_margin.top + (available_height - child->rect.height - child_margin.top - child_margin.bottom) * 0.5f * (align.y + 1.0f);
+static void ApplyAlignment(ContainerElement* e, Element* parent) {
+    assert(e);
+    assert(parent);
+
+    EdgeInsets margin = GetMargin(e);
+    const Alignment& align = e->style.align;
+
+    float available_width = parent->rect.width - e->rect.width - margin.left - margin.right;
+    float available_height = parent->rect.height - e->rect.height - margin.top - margin.bottom;
+
+    if (parent->type == ELEMENT_TYPE_ROW) {
+        if (align.x != F32_MAX) e->rect.x = margin.left;
+        if (align.y != F32_MAX) e->rect.y = margin.top + (available_height / 2.0f) * (align.y + 1.0f);
+    } else if (parent->type == ELEMENT_TYPE_COLUMN) {
+        if (align.x != F32_MAX) e->rect.x = margin.left + (available_width / 2.0f) * (align.x + 1.0f);
+        if (align.y != F32_MAX) e->rect.y = margin.top;
+    } else {
+        if (align.x != F32_MAX) e->rect.x = margin.left + (available_width / 2.0f) * (align.x + 1.0f);
+        if (align.y != F32_MAX) e->rect.y = margin.top + (available_height / 2.0f) * (align.y + 1.0f);
     }
 }
 
@@ -539,23 +461,21 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
     float flex_total = 0.0f;
     u32 element_stack_start = g_ui.element_stack_count;
 
-    // Get spacing from parent style
     float spacing = 0.0f;
-    if (parent->type == ELEMENT_TYPE_ROW) {
+    if (parent->type == ELEMENT_TYPE_ROW)
         spacing = static_cast<RowElement*>(parent)->style.spacing;
-    } else if (parent->type == ELEMENT_TYPE_COLUMN) {
+    else if (parent->type == ELEMENT_TYPE_COLUMN)
         spacing = static_cast<ColumnElement*>(parent)->style.spacing;
-    }
 
     Vec2 constraints = size;
     if (parent->type == ELEMENT_TYPE_ROW) {
         constraints.x = F32_MAX;
     } else if (parent->type == ELEMENT_TYPE_COLUMN) {
         constraints.y = F32_MAX;
-    } else if (parent->type == ELEMENT_TYPE_ALIGN) {
-        AlignElement* a = static_cast<AlignElement*>(parent);
-        if (a->style.alignment.x != F32_MAX) constraints.x = F32_MAX;
-        if (a->style.alignment.y != F32_MAX) constraints.y = F32_MAX;
+    } else if (parent->type == ELEMENT_TYPE_CONTAINER) {
+        ContainerElement* c = static_cast<ContainerElement*>(parent);
+        if (c->style.align.x != F32_MAX) c->rect.width = constraints.x = F32_MAX;
+        if (c->style.align.y != F32_MAX) c->rect.height = constraints.y = F32_MAX;
     }
 
     for (u32 i = 0; i < parent->child_count; i++) {
@@ -573,29 +493,15 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
 
         EdgeInsets child_margin = GetMargin(child);
 
-        // ALIGN/CENTER children handle their own margins internally, so don't add margin offsets
-        bool child_handles_own_margins = (child->type == ELEMENT_TYPE_ALIGN || child->type == ELEMENT_TYPE_CENTER);
+        child->rect.x = child_offset.x + child_margin.left;
+        child->rect.y = child_offset.y + child_margin.top;
 
-        // For ALIGN/CENTER parents, don't add margins yet - ApplyAlignment will handle positioning
-        if (parent->type == ELEMENT_TYPE_ALIGN || parent->type == ELEMENT_TYPE_CENTER) {
-            child->rect.x = 0;
-            child->rect.y = 0;
-        } else if (child_handles_own_margins) {
-            child->rect.x = child_offset.x;
-            child->rect.y = child_offset.y;
-        } else {
-            child->rect.x = child_offset.x + child_margin.left;
-            child->rect.y = child_offset.y + child_margin.top;
-        }
-
-        // ALIGN/CENTER elements already include their margins in their rect size
-        float child_total_width = child_handles_own_margins ? child->rect.width : (child->rect.width + child_margin.left + child_margin.right);
-        float child_total_height = child_handles_own_margins ? child->rect.height : (child->rect.height + child_margin.top + child_margin.bottom);
+        float child_total_width = child->rect.width + child_margin.left + child_margin.right;
+        float child_total_height = child->rect.height + child_margin.top + child_margin.bottom;
 
         if (parent->type == ELEMENT_TYPE_ROW) {
             child_offset.x += child_total_width;
             consumed_size.x += child_total_width;
-            // Add spacing between children (but not after the last child)
             if (i < parent->child_count - 1) {
                 child_offset.x += spacing;
                 consumed_size.x += spacing;
@@ -603,7 +509,6 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
         } else if (parent->type == ELEMENT_TYPE_COLUMN) {
             child_offset.y += child_total_height;
             consumed_size.y += child_total_height;
-            // Add spacing between children (but not after the last child)
             if (i < parent->child_count - 1) {
                 child_offset.y += spacing;
                 consumed_size.y += spacing;
@@ -616,7 +521,6 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
         };
     }
 
-    // For Row/Column, use consumed size instead of max size
     if (parent->type == ELEMENT_TYPE_ROW)
         max_size.x = consumed_size.x;
     else if (parent->type == ELEMENT_TYPE_COLUMN)
@@ -629,7 +533,7 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
             Element* child = g_ui.element_stack[element_stack_start + i];
             if (child->type != ELEMENT_TYPE_EXPANDED) {
                 EdgeInsets child_margin = GetMargin(child);
-                bool child_handles_own_margins = (child->type == ELEMENT_TYPE_ALIGN || child->type == ELEMENT_TYPE_CENTER);
+                bool child_handles_own_margins = (child->type == ELEMENT_TYPE_CONTAINER);
                 child->rect.x += offset;
                 float child_total_width = child_handles_own_margins ? child->rect.width : (child->rect.width + child_margin.right);
                 child_offset.x = child->rect.x + child_total_width;
@@ -667,7 +571,7 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
             Element* child = g_ui.element_stack[element_stack_start + i];
             if (child->type != ELEMENT_TYPE_EXPANDED) {
                 EdgeInsets child_margin = GetMargin(child);
-                bool child_handles_own_margins = (child->type == ELEMENT_TYPE_ALIGN || child->type == ELEMENT_TYPE_CENTER);
+                bool child_handles_own_margins = (child->type == ELEMENT_TYPE_CONTAINER);
                 child->rect.y += offset;
                 float child_total_height = child_handles_own_margins ? child->rect.height : (child->rect.height + child_margin.bottom);
                 child_offset.y = child->rect.y + child_total_height;
@@ -705,24 +609,12 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
         }
     }
 
-    if (parent->type == ELEMENT_TYPE_CENTER) {
-        ApplyAlignment(parent, ALIGNMENT_CENTER_CENTER, element_stack_start, parent->child_count);
-    } else if (parent->type == ELEMENT_TYPE_ALIGN) {
-        AlignElement* align = static_cast<AlignElement*>(parent);
-        ApplyAlignment(parent, align->style.alignment, element_stack_start, parent->child_count);
-    } else if (parent->type == ELEMENT_TYPE_CONTAINER) {
+    if (parent->type == ELEMENT_TYPE_CONTAINER) {
         ContainerElement* container = static_cast<ContainerElement*>(parent);
         for (u32 i = 0; i < parent->child_count; i++) {
             Element* child = g_ui.element_stack[element_stack_start + i];
             child->rect.x += container->style.padding.left + container->style.border.width;
             child->rect.y += container->style.padding.top + container->style.border.width;
-        }
-    } else if (parent->type == ELEMENT_TYPE_BORDER) {
-        BorderElement* border = static_cast<BorderElement*>(parent);
-        for (u32 i = 0; i < parent->child_count; i++) {
-            Element* child = g_ui.element_stack[element_stack_start + i];
-            child->rect.x += border->style.width;
-            child->rect.y += border->style.width;
         }
     }
 
@@ -731,7 +623,7 @@ static int LayoutChildren(int element_index, Element* parent, const Vec2& size) 
     return element_index;
 }
 
-static int LayoutElement(int element_index, const Vec2& constraints, Element* ) {
+static int LayoutElement(int element_index, const Vec2& constraints, Element* parent) {
     Element* e = g_ui.elements[element_index++];
     assert(e);
 
@@ -741,14 +633,11 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
     if (e->type == ELEMENT_TYPE_CONTAINER) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
         margin = container->style.margin;
-    } else if (e->type == ELEMENT_TYPE_ALIGN) {
-        AlignElement* align = static_cast<AlignElement*>(e);
-        margin = align->style.margin;
     }
 
     // For ALIGN/CENTER, don't reduce rect size by margins - they need the full size for alignment
     // The parent will position them with margin offsets
-    if (e->type != ELEMENT_TYPE_ALIGN && e->type != ELEMENT_TYPE_CENTER) {
+    if (e->type != ELEMENT_TYPE_CONTAINER) {
         if (margin_constrained.x != F32_MAX)
             margin_constrained.x -= margin.left + margin.right;
         if (margin_constrained.y != F32_MAX)
@@ -800,13 +689,12 @@ static int LayoutElement(int element_index, const Vec2& constraints, Element* ) 
         ContainerElement* container = static_cast<ContainerElement*>(e);
         if (child_constraints.x != F32_MAX) child_constraints.x -= (container->style.padding.left  + container->style.padding.right +  container->style.border.width * 2.0f);
         if (child_constraints.y != F32_MAX) child_constraints.y -= (container->style.padding.top   + container->style.padding.bottom +  container->style.border.width * 2.0f);
-    } else if (e->type == ELEMENT_TYPE_BORDER) {
-        BorderElement* border = static_cast<BorderElement*>(e);
-        if (child_constraints.x != F32_MAX) child_constraints.x -= border->style.width * 2.0f;
-        if (child_constraints.y != F32_MAX) child_constraints.y -= border->style.width * 2.0f;
     }
 
     element_index = LayoutChildren(element_index, e, child_constraints);
+
+    if (e->type == ELEMENT_TYPE_CONTAINER)
+        ApplyAlignment(static_cast<ContainerElement*>(e), parent);
 
     if (e->rect.width == F32_MAX) e->rect.width = 0;
     if (e->rect.height == F32_MAX) e->rect.height = 0;
@@ -968,20 +856,6 @@ static int RenderElement(int element_index) {
             BindColor(rectangle->style.color);
         }
         DrawMesh(g_ui.element_quad);
-    } else if (e->type == ELEMENT_TYPE_BORDER) {
-        BorderElement* border = static_cast<BorderElement*>(e);
-        float border_width = border->style.width;
-        BindColor(border->style.color);
-        BindMaterial(g_ui.element_material);
-
-        BindTransform(transform * Scale(Vec2{e->rect.width, border_width}));
-        DrawMesh(g_ui.element_quad);
-        BindTransform(transform * Translate(Vec2{0, e->rect.height - border_width}) * Scale(Vec2{e->rect.width, border_width}));
-        DrawMesh(g_ui.element_quad);
-        BindTransform(transform * Translate(Vec2{0, border_width}) * Scale(Vec2{border_width, e->rect.height - border_width * 2}));
-        DrawMesh(g_ui.element_quad);
-        BindTransform(transform * Translate(Vec2{e->rect.width - border_width, border_width}) * Scale(Vec2{border_width, e->rect.height - border_width * 2}));
-        DrawMesh(g_ui.element_quad);
     } else if (e->type == ELEMENT_TYPE_SCENE) {
         SceneElement* scene_element = static_cast<SceneElement*>(e);
         if (scene_element->style.camera && scene_element->draw_scene) {
@@ -1069,6 +943,10 @@ static void HandleInput() {
             prev_state.flags = prev_state.flags | ELEMENT_FLAG_PRESSED;
         } else {
             prev_state.flags = prev_state.flags & ~ELEMENT_FLAG_PRESSED;
+        }
+
+        if ((prev_state.flags & ELEMENT_FLAG_PRESSED) && e->type != ELEMENT_TYPE_CANVAS) {
+            ConsumeButton(MOUSE_LEFT);
         }
 
         if (mouse_over && IsButtonDown(g_ui.input, MOUSE_LEFT)) {
