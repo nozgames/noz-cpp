@@ -431,19 +431,20 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
 
     if (e->type == ELEMENT_TYPE_CONTAINER) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
-        Vec2 content_size = available_size;
+        Vec2 measured_size = available_size;
 
         Vec2 max_content_size = VEC2_ZERO;
         if (IsFixed(container->style.width))
-            max_content_size.x = content_size.x = container->style.width;
+            max_content_size.x = measured_size.x = container->style.width;
         else
-            content_size.x -= container->style.margin.left + container->style.margin.right;
+            measured_size.x -= container->style.margin.left + container->style.margin.right;
 
         if (IsFixed(container->style.height))
-            max_content_size.y = content_size.y = container->style.height;
+            max_content_size.y = measured_size.y = container->style.height;
         else
-            content_size.y -= container->style.margin.top + container->style.margin.bottom;
+            measured_size.y -= container->style.margin.top + container->style.margin.bottom;
 
+        Vec2 content_size = measured_size;
         content_size.x -=
             container->style.padding.left +
             container->style.padding.right +
@@ -467,11 +468,11 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
         }
 
         if (e->child_count == 0)
-            max_content_size = content_size;
+            max_content_size = measured_size;
 
         const AlignInfo& align_info = g_align_info[container->style.align];
-        container->measured_size.x = align_info.has_x ? max_content_size.x : content_size.x;
-        container->measured_size.y = align_info.has_y ? max_content_size.y : content_size.y;
+        container->measured_size.x = align_info.has_x ? max_content_size.x : measured_size.x;
+        container->measured_size.y = align_info.has_y ? max_content_size.y : measured_size.y;
     } else if (e->type == ELEMENT_TYPE_ROW) {
         Vec2 max_content_size = VEC2_ZERO;
         for (u16 i = 0; i < e->child_count; i++) {
@@ -612,9 +613,27 @@ static int LayoutElement(int element_index, const Vec2& size, Element* parent) {
             e->rect.y = container->style.margin.top + available_height * align_info.y;
         }
 
+        Vec2 child_offset = {
+            container->style.padding.left + container->style.border.width,
+            container->style.padding.top + container->style.border.width
+        };
+
         Vec2 content_size = GetSize(e->rect);
-        for (u16 i = 0; i < e->child_count; i++)
+        content_size.x -=
+            container->style.padding.left +
+            container->style.padding.right +
+            container->style.border.width * 2.0f;
+        content_size.y -=
+            container->style.padding.top +
+            container->style.padding.bottom +
+            container->style.border.width * 2.0f;
+
+        for (u16 i = 0; i < e->child_count; i++) {
+            Element* child = g_ui.elements[element_index];
             element_index = LayoutElement(element_index, content_size, e);
+            child->rect.x += child_offset.x;
+            child->rect.y += child_offset.y;
+        }
 
     } else if (e->type == ELEMENT_TYPE_COLUMN) {
         Vec2 content_size = GetSize(e->rect);
@@ -637,6 +656,17 @@ static int LayoutElement(int element_index, const Vec2& size, Element* parent) {
     } else if (e->type == ELEMENT_TYPE_LABEL) {
         LabelElement* l = static_cast<LabelElement*>(e);
         const AlignInfo& align_info = g_align_info[l->style.align];
+        if (align_info.has_x) {
+            float available_width = size.x - e->rect.width;
+            e->rect.x = available_width * align_info.x;
+        }
+        if (align_info.has_y) {
+            float available_height = size.y - e->rect.height;
+            e->rect.y = available_height * align_info.y;
+        }
+    } else if (e->type == ELEMENT_TYPE_IMAGE) {
+        ImageElement* i = static_cast<ImageElement*>(e);
+        const AlignInfo& align_info = g_align_info[i->style.align];
         if (align_info.has_x) {
             float available_width = size.x - e->rect.width;
             e->rect.x = available_width * align_info.x;
@@ -738,6 +768,7 @@ static int RenderElement(int element_index) {
             float scale_x = e->rect.width / mesh_size.x;
             float scale_y = e->rect.height / mesh_size.y;
             float uniform_scale = Min(scale_x, scale_y) * image->style.scale;
+
             image_transform = transform *
                 Translate(Vec2{-mesh_bounds.min.x, mesh_bounds.max.y} * uniform_scale) *
                 Scale(Vec2{uniform_scale, -uniform_scale});

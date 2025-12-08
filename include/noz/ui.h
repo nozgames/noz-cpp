@@ -122,12 +122,13 @@ enum ImageStretch {
 };
 
 struct ImageStyle {
+    ImageStretch stretch = IMAGE_STRETCH_UNIFORM;
+    Align align = ALIGN_NONE;
+    float scale = 1.0f;
     Color color = COLOR_WHITE;
     Vec2Int color_offset;
-    float scale = 1.0f;
     Vec2 uv = VEC2_ZERO;
     Vec2 st = VEC2_ONE;
-    ImageStretch stretch = IMAGE_STRETCH_UNIFORM;
     Material* material;
 };
 
