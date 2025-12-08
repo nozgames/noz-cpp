@@ -1,0 +1,64 @@
+//
+//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//
+
+#pragma once
+
+#include <functional>
+
+struct WebSocket;
+
+enum class WebSocketStatus
+{
+    None,
+    Connecting,
+    Connected,
+    Closing,
+    Closed,
+    Error
+};
+
+enum class WebSocketMessageType
+{
+    Text,
+    Binary
+};
+
+using WebSocketMessageCallback = std::function<void(WebSocket*, WebSocketMessageType type, const u8* data, u32 size)>;
+using WebSocketCloseCallback = std::function<void(WebSocket*, u16 code, const char* reason)>;
+using WebSocketConnectCallback = std::function<void(WebSocket*, bool success)>;
+
+// Connect to a WebSocket server
+// URL format: ws://host:port/path or wss://host:port/path
+WebSocket* WebSocketConnect(const char* url);
+
+// Set callbacks (optional - can also poll)
+void WebSocketOnConnect(WebSocket* ws, WebSocketConnectCallback callback);
+void WebSocketOnMessage(WebSocket* ws, WebSocketMessageCallback callback);
+void WebSocketOnClose(WebSocket* ws, WebSocketCloseCallback callback);
+
+// Query state
+WebSocketStatus WebSocketGetStatus(WebSocket* ws);
+bool WebSocketIsConnected(WebSocket* ws);
+bool WebSocketIsConnecting(WebSocket* ws);
+
+// Send data
+void WebSocketSend(WebSocket* ws, const char* text);
+void WebSocketSendBinary(WebSocket* ws, const void* data, u32 size);
+
+// Receive data (polling API - alternative to callbacks)
+bool WebSocketHasMessage(WebSocket* ws);
+bool WebSocketPeekMessage(WebSocket* ws, WebSocketMessageType* out_type, const u8** out_data, u32* out_size);
+const char* WebSocketPeekMessageText(WebSocket* ws);  // Convenience for text messages
+void WebSocketPopMessage(WebSocket* ws);
+
+// Close connection
+void WebSocketClose(WebSocket* ws, u16 code = 1000, const char* reason = nullptr);
+
+// Release resources (must call after close or error)
+void WebSocketRelease(WebSocket* ws);
+
+// Module init/shutdown (called by engine)
+void InitWebSocket();
+void ShutdownWebSocket();
+void UpdateWebSocket();  // Call each frame to dispatch callbacks

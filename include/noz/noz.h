@@ -38,6 +38,7 @@
 #include "vfx.h"
 #include "audio.h"
 #include "http.h"
+#include "websocket.h"
 #include "prefs.h"
 #include "core_events.h"
 #include "tween.h"

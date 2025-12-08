@@ -25,6 +25,7 @@ namespace platform {
     struct Sound {};
     struct SoundHandle { u64 value;};
     struct HttpHandle { u64 value; };
+    struct WebSocketHandle { u64 value; };
 
     enum class HttpStatus
     {
@@ -32,6 +33,22 @@ namespace platform {
         Pending,    // Request in progress
         Complete,   // Request completed successfully
         Error       // Request failed
+    };
+
+    enum class WebSocketStatus
+    {
+        None,
+        Connecting,
+        Connected,
+        Closing,
+        Closed,
+        Error
+    };
+
+    enum class WebSocketMessageType
+    {
+        Text,
+        Binary
     };
 
     // @app
@@ -158,4 +175,18 @@ namespace platform {
     const u8* HttpGetResponse(const HttpHandle& handle, u32* out_size);
     void HttpCancel(const HttpHandle& handle);            // Cancel pending request
     void HttpRelease(const HttpHandle& handle);           // Release completed request resources
+
+    // @websocket
+    void InitializeWebSocket();
+    void ShutdownWebSocket();
+    void UpdateWebSocket();
+    WebSocketHandle WebSocketConnect(const char* url);
+    void WebSocketSend(const WebSocketHandle& handle, const char* text);
+    void WebSocketSendBinary(const WebSocketHandle& handle, const void* data, u32 size);
+    void WebSocketClose(const WebSocketHandle& handle, u16 code, const char* reason);
+    void WebSocketRelease(const WebSocketHandle& handle);
+    WebSocketStatus WebSocketGetStatus(const WebSocketHandle& handle);
+    bool WebSocketHasMessage(const WebSocketHandle& handle);
+    bool WebSocketGetMessage(const WebSocketHandle& handle, WebSocketMessageType* out_type, const u8** out_data, u32* out_size);
+    void WebSocketPopMessage(const WebSocketHandle& handle);
 }

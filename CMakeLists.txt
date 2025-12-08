@@ -28,6 +28,7 @@ set(SOURCE_FILES
     src/tween.cpp
     src/job.cpp
     src/http.cpp
+    src/websocket.cpp
     src/memory/allocator.cpp
     src/memory/pool_allocator.cpp
     src/memory/arena_allocator.cpp
@@ -87,6 +88,7 @@ if(WIN32)
         src/platform/windows/windows_render.cpp
         src/platform/windows/windows_vulkan.cpp
         src/platform/windows/windows_http.cpp
+        src/platform/windows/windows_websocket.cpp
     )
 elseif(APPLE)
     list(APPEND SOURCE_FILES
