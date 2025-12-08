@@ -117,8 +117,7 @@ struct MouseRegionStyle {
 enum ImageStretch {
     IMAGE_STRETCH_NONE,
     IMAGE_STRETCH_FILL,
-    IMAGE_STRETCH_UNIFORM,
-    IMAGE_STRETCH_UNIFORM_FILL
+    IMAGE_STRETCH_UNIFORM
 };
 
 struct ImageStyle {
@@ -215,6 +214,7 @@ extern void Scene(const SceneStyle& style, void (*draw_scene)(void*) = nullptr);
 // @edgeinsets
 inline EdgeInsets EdgeInsetsAll(float v) { return EdgeInsets(v, v, v, v); }
 inline EdgeInsets EdgeInsetsTop(float v) { return EdgeInsets(v, 0, 0, 0); }
+inline EdgeInsets EdgeInsetsTopBottom(float v) { return EdgeInsets(v, 0, v, 0); }
 inline EdgeInsets EdgeInsetsTopLeft(float t, float l) { return EdgeInsets(t, l, 0, 0); }
 inline EdgeInsets EdgeInsetsTopLeft(float v) { return EdgeInsets(v, v, 0, 0); }
 inline EdgeInsets EdgeInsetsTopRight(float v) { return EdgeInsets(v, 0, 0, v); }
