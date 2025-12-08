@@ -35,6 +35,7 @@ extern void ShutdownAllocator();
 extern void ShutdownAudio();
 extern void ShutdownPrefs();
 extern void ResetInputState(InputSet* input_set);
+extern void UpdateHttp();
 
 // @traits
 static ApplicationTraits g_default_traits = 
@@ -155,6 +156,7 @@ void InitApplication(ApplicationTraits* traits, int argc, const char* argv[]) {
     InitJobs();
     InitTween();
     InitAudio();
+    InitHttp();
 
     g_app.traits.x = GetPrefInt(PREF_WINDOW_X, g_app.traits.x);
     g_app.traits.y = GetPrefInt(PREF_WINDOW_Y, g_app.traits.y);
@@ -240,6 +242,7 @@ void ShutdownApplication()
     if (g_app.window_created)
         ShutdownWindow();
 
+    ShutdownHttp();
     ShutdownTween();
     ShutdownJobs();
     ShutdownTime();
@@ -302,6 +305,7 @@ bool UpdateApplication()
     UpdateScreenSize();
     UpdateTime();
     UpdateInput();
+    UpdateHttp();
 
 #ifdef NOZ_EDITOR
     UpdateEditorClient();

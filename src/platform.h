@@ -24,6 +24,15 @@ namespace platform {
     struct Texture;
     struct Sound {};
     struct SoundHandle { u64 value;};
+    struct HttpHandle { u64 value; };
+
+    enum class HttpStatus
+    {
+        None,       // No request or invalid handle
+        Pending,    // Request in progress
+        Complete,   // Request completed successfully
+        Error       // Request failed
+    };
 
     // @app
     void InitApplication(const ApplicationTraits* traits);
@@ -138,4 +147,15 @@ namespace platform {
 
     // @thread
     void SetThreadName(const char* name);
+
+    // @http
+    void InitializeHttp();
+    void ShutdownHttp();
+    HttpHandle HttpGet(const char* url);
+    HttpHandle HttpPost(const char* url, const void* body, u32 body_size, const char* content_type = nullptr);
+    HttpStatus HttpGetStatus(const HttpHandle& handle);
+    int HttpGetStatusCode(const HttpHandle& handle);      // HTTP status code (200, 404, etc.)
+    const u8* HttpGetResponse(const HttpHandle& handle, u32* out_size);
+    void HttpCancel(const HttpHandle& handle);            // Cancel pending request
+    void HttpRelease(const HttpHandle& handle);           // Release completed request resources
 }
