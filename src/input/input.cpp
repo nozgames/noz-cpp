@@ -107,8 +107,8 @@ void ReplaceSelection(TextInput& input, const char* value) {
 
     // shift text up to make room for insertion
     int insert_length = Length(value);
-    for (int i = 0; i<insert_length; i++)
-        text.value[text.length + insert_length - i] = text.value[text.length - i];
+    for (int i=text.length + insert_length; i>=input.cursor+insert_length; i--)
+        text.value[i] = text.value[i - insert_length];
 
     // copy in new text
     for (int i = 0; value[i]; i++)
