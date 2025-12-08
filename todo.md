@@ -5,6 +5,7 @@
 - [ ] text mesh should not include font size, instead lets scale the mesh
 - [ ] text mesh no hash just list search for hash
 - [ ] text mesh should remove any that were not used last frame
+- [ ] write palettes to asset manifest
 
 # UI
 - [ ] scrollable

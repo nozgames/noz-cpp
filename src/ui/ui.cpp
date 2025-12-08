@@ -490,19 +490,30 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
 
     } else if (e->type == ELEMENT_TYPE_ROW) {
         Vec2 max_content_size = VEC2_ZERO;
+        int child_element_index = element_index;
+        float flex_total = 0.0f;
         for (u16 i = 0; i < e->child_count; i++) {
             Element* child = g_ui.elements[element_index];
             element_index = MeasureElement(element_index, available_size);
             max_content_size.x += child->measured_size.x;
             max_content_size.y = Max(max_content_size.y, child->measured_size.y);
-
-            if (child->type == ELEMENT_TYPE_ROW_EXPANDED) {
-                RowElement* row = static_cast<RowElement*>(e);
-                ExpandedElement* expanded = static_cast<ExpandedElement*>(child);
-                row->flex_total += expanded->style.flex;
-            }
+            if (child->type == ELEMENT_TYPE_ROW_EXPANDED)
+                flex_total += static_cast<ExpandedElement*>(child)->style.flex;
         }
         e->measured_size = max_content_size;
+        if (flex_total >= F32_EPSILON) {
+            e->measured_size.x = Max(max_content_size.x, available_size.x);
+            float flex_available = Max(0.0f, available_size.x - max_content_size.x);
+            for (u16 i = 0; i < e->child_count; i++) {
+                Element* child = g_ui.elements[child_element_index];
+                if (child->type == ELEMENT_TYPE_ROW_EXPANDED) {
+                    ExpandedElement* expanded = static_cast<ExpandedElement*>(child);
+                    child->measured_size.x = expanded->style.flex / flex_total * flex_available;
+                    MeasureElement(child_element_index, Vec2{child->measured_size.x, available_size.y});
+                }
+                child_element_index = child->next_sibling_index;
+            }
+        }
     } else if (e->type == ELEMENT_TYPE_COLUMN) {
         Vec2 max_content_size = VEC2_ZERO;
         int child_element_index = element_index;
@@ -565,8 +576,35 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
         if (i->style.stretch == IMAGE_STRETCH_FILL) {
             e->measured_size = available_size;
         } else if (i->style.stretch == IMAGE_STRETCH_UNIFORM) {
-            float aspect_ratio = e->measured_size.x / e->measured_size.y;
-            if (available_size.x / available_size.y > aspect_ratio) {
+            float image_aspect_ratio = e->measured_size.x / e->measured_size.y;
+            float available_aspect_ratio = available_size.x / available_size.y;
+
+            // pick the dimension that scales the best without exceeding the available size
+            if (available_aspect_ratio > image_aspect_ratio) {
+                e->measured_size.y = available_size.y;
+                e->measured_size.x = e->measured_size.y * image_aspect_ratio;
+
+                // if (align.has_x)
+                //     e->measured_size.x = available_size.x;
+                // else
+                //     e->measured_size.x = e->measured_size.y * image_aspect_ratio;
+
+            } else {
+                e->measured_size.x = available_size.x;
+                e->measured_size.y = e->measured_size.x / image_aspect_ratio;
+
+                // if (align.has_y)
+                //     e->measured_size.y = available_size.x;
+                // else
+                //     e->measured_size.y = e->measured_size.x / image_aspect_ratio;
+            }
+        }
+
+
+
+#if 0 // old code
+
+            if (available_aspect_ratio > image_aspect_ratio) {
                 e->measured_size.y = available_size.y;
                 if (align.has_x)
                     e->measured_size.x = available_size.x;
@@ -580,7 +618,7 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
                     e->measured_size.y = e->measured_size.x / aspect_ratio;
             }
         }
-
+#endif
         assert(e->child_count == 0);
     } else if (e->type == ELEMENT_TYPE_CANVAS) {
         CanvasElement* canvas = static_cast<CanvasElement*>(e);
@@ -605,7 +643,7 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
             // contraints = ui_size;
 
         } else {
-            assert(false && "Unknown canvas type");
+//            assert(false && "Unknown canvas type");
         }
     } else if (e->type == ELEMENT_TYPE_SCENE) {
         e->measured_size = available_size;
