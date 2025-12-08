@@ -504,12 +504,13 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
         }
         e->measured_size = max_content_size;
 
-        if (e->child_count > 1)
-            e->measured_size.x += static_cast<ColumnElement*>(e)->style.spacing * (e->child_count - 1);
+        float spacing = e->child_count > 1
+            ? static_cast<ColumnElement*>(e)->style.spacing * (e->child_count - 1)
+            : 0.0f;
 
         if (flex_total >= F32_EPSILON) {
             e->measured_size.x = Max(max_content_size.x, available_size.x);
-            float flex_available = Max(0.0f, available_size.x - max_content_size.x);
+            float flex_available = Max(0.0f, available_size.x - max_content_size.x) - spacing;
             for (u16 i = 0; i < e->child_count; i++) {
                 Element* child = g_ui.elements[child_element_index];
                 if (child->type == ELEMENT_TYPE_ROW_EXPANDED) {
@@ -520,6 +521,9 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
                 child_element_index = child->next_sibling_index;
             }
         }
+
+        if (e->child_count > 1)
+            e->measured_size.x += spacing;
 
     // @measure_column
     } else if (e->type == ELEMENT_TYPE_COLUMN) {
@@ -537,12 +541,13 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
 
         e->measured_size = max_content_size;
 
-        if (e->child_count > 1)
-            e->measured_size.y += static_cast<ColumnElement*>(e)->style.spacing * (e->child_count - 1);
+        float spacing = e->child_count > 1
+            ? static_cast<ColumnElement*>(e)->style.spacing * (e->child_count - 1)
+            : 0.0f;
 
         if (flex_total >= F32_EPSILON) {
             e->measured_size.y = Max(max_content_size.y, available_size.y);
-            float flex_available = Max(0.0f, available_size.y - max_content_size.y);
+            float flex_available = Max(0.0f, available_size.y - max_content_size.y) - spacing;
             for (u16 i = 0; i < e->child_count; i++) {
                 Element* child = g_ui.elements[child_element_index];
                 if (child->type == ELEMENT_TYPE_COLUMN_EXPANDED) {
@@ -553,6 +558,9 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
                 child_element_index = child->next_sibling_index;
             }
         }
+
+        if (e->child_count > 1)
+            e->measured_size.y += spacing;
 
     // @measure_label
     } else if (e->type == ELEMENT_TYPE_LABEL) {
