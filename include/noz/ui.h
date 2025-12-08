@@ -102,7 +102,7 @@ struct LabelStyle {
     Font* font = nullptr;
     int font_size = 16;
     Color color = COLOR_WHITE;
-    Align align = ALIGN_TOP_LEFT;
+    Align align = ALIGN_NONE;
     Material* material;
 };
 
@@ -154,7 +154,7 @@ struct CanvasStyle {
 struct ContainerStyle {
     float width = F32_AUTO;
     float height = F32_AUTO;
-    Align align = ALIGN_TOP_LEFT;
+    Align align = ALIGN_NONE;
     EdgeInsets margin;
     EdgeInsets padding;
     Color color;
