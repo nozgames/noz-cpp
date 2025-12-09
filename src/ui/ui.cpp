@@ -606,7 +606,6 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
             float image_aspect_ratio = e->measured_size.x / e->measured_size.y;
             float available_aspect_ratio = available_size.x / available_size.y;
 
-            // pick the dimension that scales the best without exceeding the available size
             if (available_aspect_ratio > image_aspect_ratio) {
                 e->measured_size.y = available_size.y;
                 e->measured_size.x = e->measured_size.y * image_aspect_ratio;
@@ -623,11 +622,8 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
         CanvasElement* canvas = static_cast<CanvasElement*>(e);
         if (canvas->style.type == CANVAS_TYPE_SCREEN) {
             e->measured_size = available_size;
-        } else if (canvas->style.type == CANVAS_TYPE_WORLD) {
-            // Vec2 screen_size = Abs(WorldToScreen(canvas->style.world_camera, canvas->style.world_size) - WorldToScreen(canvas->style.world_camera, VEC2_ZERO));
-            // Vec2 ui_size = ScreenToWorld(g_ui.camera, screen_size) - ScreenToWorld(g_ui.camera, VEC2_ZERO);
-            // e->measured_size = ui_size;
 
+        } else if (canvas->style.type == CANVAS_TYPE_WORLD) {
             Vec2 screen_pos = WorldToScreen(canvas->style.world_camera, canvas->style.world_position);
             Vec2 screen_size = Abs(WorldToScreen(canvas->style.world_camera, canvas->style.world_size) - WorldToScreen(canvas->style.world_camera, VEC2_ZERO));
             screen_pos = screen_pos - screen_size * 0.5f;
@@ -636,7 +632,6 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
             Vec2 ui_size = ScreenToWorld(g_ui.camera, screen_size) - ScreenToWorld(g_ui.camera, VEC2_ZERO);
             canvas->position = ui_pos;
             e->measured_size = ui_size;
-            //contraints = ui_size;
 
         } else {
             assert(false && "Unknown canvas type");
