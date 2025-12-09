@@ -1821,7 +1821,7 @@ void BindUIOffscreenTexture() {
     );
 }
 
-void EndSwapchainPass() {
+void PlatformEndSwapChain() {
     // End the UI render pass (ui_offscreen now contains resolved UI with alpha)
     vkCmdEndRenderPass(g_vulkan.command_buffer);
 

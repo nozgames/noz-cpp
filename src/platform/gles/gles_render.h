@@ -310,8 +310,3 @@ extern PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
 extern PFNGLUSEPROGRAMPROC glUseProgram;
 extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 extern PFNGLVIEWPORTPROC glViewport;
-
-// Function loading
-bool LoadGLESLibrary();
-void LoadGLESFunctions();
-void UnloadGLESLibrary();

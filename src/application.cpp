@@ -309,7 +309,7 @@ bool UpdateApplication() {
     return g_app.running;
 }
 
-bool PlatformIsWindowFocused() {
+bool IsWindowFocused() {
     return g_app.has_focus;
 }
 

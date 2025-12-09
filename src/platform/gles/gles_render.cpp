@@ -264,7 +264,7 @@ void PlatformFree(PlatformTexture* texture) {
     delete texture;
 }
 
-void BindTexture(PlatformTexture* texture, int slot) {
+void PlatformBindTexture(PlatformTexture* texture, int slot) {
     glActiveTexture(GL_TEXTURE0 + slot);
     if (texture)
         glBindTexture(GL_TEXTURE_2D, texture->gl_texture);
@@ -339,7 +339,7 @@ void PlatformBeginUI() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-void EndUIPass() {
+void PlatformEndUIPass() {
 }
 
 void BeginUICompositePass() {
@@ -361,57 +361,7 @@ void BindUITexture() {
     glBindTexture(GL_TEXTURE_2D, g_gl.ui_offscreen.texture);
 }
 
-void SetRenderState(RenderStateFlags flags) {
-    if (flags & RENDER_STATE_DEPTH_TEST) {
-        glEnable(GL_DEPTH_TEST);
-    } else {
-        glDisable(GL_DEPTH_TEST);
-    }
-
-    if (flags & RENDER_STATE_DEPTH_WRITE) {
-        glDepthMask(GL_TRUE);
-    } else {
-        glDepthMask(GL_FALSE);
-    }
-
-    if (flags & RENDER_STATE_CULL_BACK) {
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-    } else {
-        glDisable(GL_CULL_FACE);
-    }
-}
-
-void SetBlendState(BlendMode mode) {
-    switch (mode) {
-        case BLEND_MODE_NONE:
-            glDisable(GL_BLEND);
-            break;
-        case BLEND_MODE_ALPHA:
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            break;
-        case BLEND_MODE_ADD:
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-            break;
-        case BLEND_MODE_MULTIPLY:
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_DST_COLOR, GL_ZERO);
-            break;
-    }
-}
-
-void SetScissor(const Rect& rect) {
-    glEnable(GL_SCISSOR_TEST);
-    glScissor((GLint)rect.x, (GLint)rect.y, (GLsizei)rect.width, (GLsizei)rect.height);
-}
-
-void ClearScissor() {
-    glDisable(GL_SCISSOR_TEST);
-}
-
-void SetViewport(const Rect& viewport) {
+void PlatformSetViewport(const noz::Rect& viewport) {
     if (viewport.width <= 0 || viewport.height <= 0) {
         glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
     } else {
@@ -549,4 +499,12 @@ Vec2Int PlatformGetScreenSize() {
 
 float GetDepthConversionFactor() {
     return g_gl.depth_conversion_factor;
+}
+
+void PlatformEndSwapChain() {
+
+}
+
+void PlatformBindUITexture() {
+
 }

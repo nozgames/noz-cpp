@@ -556,16 +556,14 @@ bool PlatformHasMessages(const PlatformWebSocketHandle& handle)
     return has_message;
 }
 
-bool WebSocketGetMessage(const PlatformWebSocketHandle& handle, WebSocketMessageType* out_type, const u8** out_data, u32* out_size)
-{
+bool PlatformGetMessage(const PlatformWebSocketHandle& handle, WebSocketMessageType* out_type, const u8** out_data, u32* out_size) {
     WindowsWebSocket* ws = GetSocket(handle);
     if (!ws)
         return false;
 
     EnterCriticalSection(&ws->cs);
 
-    if (ws->message_count == 0)
-    {
+    if (ws->message_count == 0) {
         LeaveCriticalSection(&ws->cs);
         return false;
     }

@@ -50,8 +50,7 @@ static wglSwapIntervalEXT_t* wglSwapIntervalEXT_ptr = nullptr;
 #define WGL_SAMPLE_BUFFERS_ARB            0x2041
 #define WGL_SAMPLES_ARB                   0x2042
 
-static void* GetGLProcAddress(const char* name)
-{
+static void* GetGLProcAddress(const char* name) {
     void* proc = (void*)wglGetProcAddress_ptr(name);
     if (proc == nullptr || proc == (void*)0x1 || proc == (void*)0x2 || proc == (void*)0x3 || proc == (void*)-1)
     {
@@ -60,8 +59,7 @@ static void* GetGLProcAddress(const char* name)
     return proc;
 }
 
-bool LoadGLESLibrary()
-{
+static bool LoadGLESLibrary() {
     g_wgl.library = LoadLibraryA("opengl32.dll");
     if (!g_wgl.library)
         return false;
@@ -77,8 +75,7 @@ bool LoadGLESLibrary()
     return true;
 }
 
-void LoadGLESFunctions()
-{
+static void LoadGLESFunctions() {
     glActiveTexture = (PFNGLACTIVETEXTUREPROC)GetGLProcAddress("glActiveTexture");
     glAttachShader = (PFNGLATTACHSHADERPROC)GetGLProcAddress("glAttachShader");
     glBindBuffer = (PFNGLBINDBUFFERPROC)GetGLProcAddress("glBindBuffer");
@@ -158,26 +155,17 @@ void LoadGLESFunctions()
     wglSwapIntervalEXT_ptr = (wglSwapIntervalEXT_t*)GetGLProcAddress("wglSwapIntervalEXT");
 }
 
-void UnloadGLESLibrary()
-{
-    if (g_wgl.library)
-    {
-        FreeLibrary(g_wgl.library);
-        g_wgl.library = nullptr;
-    }
-}
+static void UnloadGLESLibrary() {
+    if (!g_wgl.library)
+        return;
 
-// ============================================================================
-// Platform-specific frame management
-// ============================================================================
+    FreeLibrary(g_wgl.library);
+    g_wgl.library = nullptr;
+}
 
 void PlatformEndRenderFrame() {
     SwapBuffers(g_wgl.hdc);
 }
-
-// ============================================================================
-// Initialization/Shutdown (called from windows_main.cpp)
-// ============================================================================
 
 void InitVulkan(const RendererTraits* traits, HWND hwnd) {
     g_gl = {};

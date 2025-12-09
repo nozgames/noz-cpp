@@ -61,18 +61,15 @@ static BOOL EnableDarkMode(HWND hwnd)
     return SUCCEEDED(hr);
 }
 
-bool GetWindowFocus()
-{
+bool PlatformIsWindowFocused() {
     return g_windows.has_focus;
 }
 
-void ThreadSleep(int milliseconds)
-{
+void ThreadSleep(int milliseconds) {
     std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
 
-void ThreadYield()
-{
+void ThreadYield() {
     std::this_thread::yield();
 }
 
@@ -216,8 +213,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-void PlatformInit(const ApplicationTraits* traits)
-{
+void PlatformInit(const ApplicationTraits* traits) {
     g_windows = {};
     g_windows.traits = traits;
     g_windows.cursor = SYSTEM_CURSOR_DEFAULT;
@@ -227,8 +223,7 @@ void PlatformInit(const ApplicationTraits* traits)
     g_windows.cursor_move = LoadCursor(nullptr, IDC_SIZEALL);
 }
 
-void PlatformInitWindow(void (*on_close)())
-{
+void PlatformInitWindow(void (*on_close)()) {
     SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
     
     HINSTANCE hInstance = GetModuleHandle(nullptr);
@@ -282,23 +277,16 @@ void PlatformInitWindow(void (*on_close)())
     }
 }
 
-void ShutdownPlatform()
-{
+void PlatformShutdown() {
     if (g_windows.hwnd)
         ::DestroyWindow((HWND)g_windows.hwnd);
 }
 
-bool PlatformIsWindowFocused() {
-    return g_windows.has_focus;
-}
-
-bool PlatformIsResizing()
-{
+bool PlatformIsResizing() {
     return g_windows.is_resizing;
 }
 
-bool UpdatePlatform()
-{
+bool PlatformUpdate() {
     MSG msg = {};
     bool running = true;
 
@@ -330,8 +318,7 @@ bool UpdatePlatform()
     return running;
 }
 
-Vec2Int PlatformGetScreenSize()
-{
+Vec2Int PlatformGetWindowSize() {
     return g_windows.screen_size;
 }
 
@@ -378,7 +365,7 @@ Vec2 PlatformGetMouseScroll() {
     return g_windows.mouse_scroll;
 }
 
-void FocusWindow() {
+void PlatformFocusWindow() {
     if (g_windows.hwnd)
         SetForegroundWindow(g_windows.hwnd);
 }
