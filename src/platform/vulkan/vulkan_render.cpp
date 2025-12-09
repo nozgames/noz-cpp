@@ -8,7 +8,7 @@
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_win32.h>
-#include "windows_vulkan.h"
+#include "vulkan_render.h"
 
 static HMODULE g_vulkan_library = nullptr;
 
