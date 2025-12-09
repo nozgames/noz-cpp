@@ -230,6 +230,38 @@ uint16_t ReadU16(Stream* stream)
     return value;
 }
 
+u16 ReadU16BigEndian(Stream* stream) {
+    uint16_t value;
+    ReadBytes(stream, &value, sizeof(u16));
+    value = ((value & 0x00FF) << 8) |
+            ((value & 0xFF00) >> 8);
+    return value;
+}
+
+u32 ReadU32BigEndian(Stream* stream) {
+    uint32_t value;
+    ReadBytes(stream, &value, sizeof(u32));
+    value = ((value & 0x000000FF) << 24) |
+            ((value & 0x0000FF00) << 8)  |
+            ((value & 0x00FF0000) >> 8)  |
+            ((value & 0xFF000000) >> 24);
+    return value;
+}
+
+u64 ReadU64BigEndian(Stream* stream) {
+    uint64_t value;
+    ReadBytes(stream, &value, sizeof(u64));
+    value = ((value & 0x00000000000000FFULL) << 56) |
+            ((value & 0x000000000000FF00ULL) << 40) |
+            ((value & 0x0000000000FF0000ULL) << 24) |
+            ((value & 0x00000000FF000000ULL) << 8)  |
+            ((value & 0x000000FF00000000ULL) >> 8)  |
+            ((value & 0x0000FF0000000000ULL) >> 24) |
+            ((value & 0x00FF000000000000ULL) >> 40) |
+            ((value & 0xFF00000000000000ULL) >> 56);
+    return value;
+}
+
 uint32_t ReadU32(Stream* stream)
 {
     uint32_t value;
@@ -297,14 +329,12 @@ bool ReadBool(Stream* stream)
     return ReadU8(stream) != 0;
 }
 
-void ReadBytes(Stream* stream, void* dest, u32 size)
-{
-    if (!stream || !dest || size == 0) return;
+int ReadBytes(Stream* stream, void* dest, u32 size) {
+    if (!stream || !dest || size == 0) return 0;
     
     StreamImpl* impl = static_cast<StreamImpl*>(stream);
     
-    if (impl->position + size > impl->size) 
-    {
+    if (impl->position + size > impl->size) {
         // Read what we can and zero the rest
         u32 available = impl->size - impl->position;
         if (available > 0) 
@@ -313,15 +343,16 @@ void ReadBytes(Stream* stream, void* dest, u32 size)
             impl->position += available;
         }
         // Zero remaining bytes
-        if (size > available) 
-        {
+        if (size > available) {
             memset((uint8_t*)dest + available, 0, size - available);
         }
-        return;
+        return static_cast<int>(available);
     }
     
     memcpy(dest, impl->data + impl->position, size);
     impl->position += size;
+
+    return static_cast<int>(size);
 }
 
 void WriteU8(Stream* stream, uint8_t value)
@@ -473,3 +504,21 @@ static void EnsureCapacity(StreamImpl* impl, u32 required_size)
     impl->capacity = new_capacity;
 }
 
+int ReadNullTerminatedString(Stream* stream, char* buffer, int buffer_size) {
+    int count = 0;
+    while (count < buffer_size - 1) {
+        char c = static_cast<char>(ReadU8(stream));
+        if (c == 0) break;
+        buffer[count++] = c;
+    }
+    buffer[count] = 0;
+    return count;
+}
+
+void AlignStream(Stream* stream, int alignment) {
+    StreamImpl* impl = static_cast<StreamImpl*>(stream);
+    const u32 pos = impl->position;
+    const u32 mod = pos % alignment;
+    if (mod != 0)
+        impl->position += alignment - mod;
+}

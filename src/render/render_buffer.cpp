@@ -205,8 +205,7 @@ void BindTransform(const Vec3& position, const Vec2& rotation, const Vec2& scale
     g_render_buffer->current_depth_scale = 1.0f;
 }
 
-void BindVertexUserData(const void* data, size_t size)
-{
+void BindVertexUserData(const void* data, size_t size) {
     assert(size <= MAX_UNIFORM_BUFFER_SIZE);
 
     RenderCommand cmd = {

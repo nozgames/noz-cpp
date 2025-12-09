@@ -32,8 +32,11 @@ bool IsEOS(Stream* stream);
 // @read
 u8 ReadU8(Stream* stream);
 u16 ReadU16(Stream* stream);
+extern u16 ReadU16BigEndian(Stream* stream);
 u32 ReadU32(Stream* stream);
+u32 ReadU32BigEndian(Stream* stream);
 u64 ReadU64(Stream* stream);
+u64 ReadU64BigEndian(Stream* stream);
 i8 ReadI8(Stream* stream);
 i16 ReadI16(Stream* stream);
 i32 ReadI32(Stream* stream);
@@ -46,7 +49,12 @@ const Name* ReadName(Stream* stream);
 Color ReadColor(Stream* stream);
 Vec3 ReadVec3(Stream* stream);
 Vec2 ReadVec2(Stream* stream);
-void ReadBytes(Stream* stream, void* dest, u32 count);
+extern int ReadBytes(Stream* stream, void* dest, u32 count);
+extern void AlignStream(Stream* stream, int alignment);
+extern int ReadNullTerminatedString(Stream* stream, char* buffer, int buffer_size);
+inline int ReadNullTerminatedString(Stream* stream, Text* text) {
+    return ReadNullTerminatedString(stream, text->value, sizeof(text->value));
+}
 
 template <typename TStruct> TStruct ReadStruct(Stream* stream)
 {

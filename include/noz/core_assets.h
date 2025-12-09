@@ -7,6 +7,7 @@
 struct Shader;
 extern Shader* SHADER_MESH;
 extern Shader* SHADER_UI;
+extern Shader* SHADER_UI_IMAGE;
 extern Shader* SHADER_UI_VIGNETTE;
 extern Shader* SHADER_TEXT;
 extern Shader* SHADER_VFX;
