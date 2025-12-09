@@ -1,0 +1,8 @@
+[editor]
+position = (0.521132,-0.251260)
+
+[shader]
+cull = none
+blend = true
+depth = true
+

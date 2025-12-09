@@ -97,6 +97,9 @@ typedef ptrdiff_t GLintptr;
 #define GL_ALPHA                          0x1906
 #define GL_LUMINANCE                      0x1909
 #define GL_LUMINANCE_ALPHA                0x190A
+#define GL_RED                            0x1903
+#define GL_R8                             0x8229
+#define GL_RGB8                           0x8051
 
 #define GL_NEAREST                        0x2600
 #define GL_LINEAR                         0x2601
@@ -155,6 +158,7 @@ typedef ptrdiff_t GLintptr;
 #define GL_FRAMEBUFFER_COMPLETE           0x8CD5
 
 #define GL_RGBA8                          0x8058
+#define GL_SRGB8_ALPHA8                   0x8C43
 #define GL_DEPTH_COMPONENT16              0x81A5
 #define GL_DEPTH_COMPONENT24              0x81A6
 #define GL_DEPTH_COMPONENT32F             0x8CAC
@@ -162,6 +166,16 @@ typedef ptrdiff_t GLintptr;
 
 #define GL_UNIFORM_BUFFER                 0x8A11
 #define GL_UNIFORM_BUFFER_BINDING         0x8A28
+#define GL_INVALID_INDEX                  0xFFFFFFFFu
+#define GL_FRAMEBUFFER_SRGB               0x8DB9
+
+// glClipControl constants (OpenGL 4.5+)
+#define GL_LOWER_LEFT                     0x8CA1
+#define GL_UPPER_LEFT                     0x8CA2
+#define GL_NEGATIVE_ONE_TO_ONE            0x935E
+#define GL_ZERO_TO_ONE                    0x935F
+
+#define GL_MULTISAMPLE                    0x809D
 
 // Function pointer typedefs
 typedef void (*PFNGLACTIVETEXTUREPROC)(GLenum texture);
@@ -236,6 +250,7 @@ typedef void (*PFNGLUNIFORMMATRIX4FVPROC)(GLint location, GLsizei count, GLboole
 typedef void (*PFNGLUSEPROGRAMPROC)(GLuint program);
 typedef void (*PFNGLVERTEXATTRIBPOINTERPROC)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* pointer);
 typedef void (*PFNGLVIEWPORTPROC)(GLint x, GLint y, GLsizei width, GLsizei height);
+typedef void (*PFNGLCLIPCONTROLPROC)(GLenum origin, GLenum depth);
 
 // Global function pointers
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
@@ -310,3 +325,4 @@ extern PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
 extern PFNGLUSEPROGRAMPROC glUseProgram;
 extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 extern PFNGLVIEWPORTPROC glViewport;
+extern PFNGLCLIPCONTROLPROC glClipControl;

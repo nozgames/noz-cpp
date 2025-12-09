@@ -80,42 +80,46 @@ PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv = nullptr;
 PFNGLUSEPROGRAMPROC glUseProgram = nullptr;
 PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = nullptr;
 PFNGLVIEWPORTPROC glViewport = nullptr;
+PFNGLCLIPCONTROLPROC glClipControl = nullptr;
 
 // Global GL state
 GLState g_gl = {};
+
+// Forward declarations
+void DrawTestQuad();
 
 // ============================================================================
 // Frame management
 // ============================================================================
 
 void PlatformBeginRenderFrame() {
-    glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void PlatformBindSkeleton(const Mat3* bone_transforms, u8 bone_count) {
     float* dst = (float*)g_gl.uniform_data[UNIFORM_BUFFER_SKELETON];
     for (u8 i = 0; i < bone_count && i < MAX_BONES; i++) {
         const Mat3& m = bone_transforms[i];
-        *dst++ = m.m[0]; *dst++ = m.m[1]; *dst++ = m.m[2]; *dst++ = 0.0f;
-        *dst++ = m.m[3]; *dst++ = m.m[4]; *dst++ = m.m[5]; *dst++ = 0.0f;
-        *dst++ = m.m[6]; *dst++ = m.m[7]; *dst++ = m.m[8]; *dst++ = 0.0f;
+        // Transpose for OpenGL column-major std140 layout
+        *dst++ = m.m[0]; *dst++ = m.m[3]; *dst++ = m.m[6]; *dst++ = 0.0f;
+        *dst++ = m.m[1]; *dst++ = m.m[4]; *dst++ = m.m[7]; *dst++ = 0.0f;
+        *dst++ = m.m[2]; *dst++ = m.m[5]; *dst++ = m.m[8]; *dst++ = 0.0f;
     }
 }
 
 void PlatformBindTransform(const Mat3& transform, float depth, float depth_scale) {
     ObjectBuffer* obj = (ObjectBuffer*)g_gl.uniform_data[UNIFORM_BUFFER_OBJECT];
     float* dst = obj->transform;
-    *dst++ = transform.m[0]; *dst++ = transform.m[1]; *dst++ = transform.m[2]; *dst++ = 0.0f;
-    *dst++ = transform.m[3]; *dst++ = transform.m[4]; *dst++ = transform.m[5]; *dst++ = 0.0f;
-    *dst++ = transform.m[6]; *dst++ = transform.m[7]; *dst++ = transform.m[8]; *dst++ = 0.0f;
+    // Transpose for OpenGL column-major std140 layout
+    *dst++ = transform.m[0]; *dst++ = transform.m[3]; *dst++ = transform.m[6]; *dst++ = 0.0f;
+    *dst++ = transform.m[1]; *dst++ = transform.m[4]; *dst++ = transform.m[7]; *dst++ = 0.0f;
+    *dst++ = transform.m[2]; *dst++ = transform.m[5]; *dst++ = transform.m[8]; *dst++ = 0.0f;
     obj->depth = depth;
     obj->depth_scale = depth_scale;
-    obj->depth_min = 0.0f;
-    obj->depth_max = 1.0f;
+    obj->depth_min = g_gl.traits.min_depth;
+    obj->depth_max = g_gl.traits.max_depth;
 }
 
-void PLatformBindVertexUserData(const u8* data, u32 size) {
+void PlatformBindVertexUserData(const u8* data, u32 size) {
     memcpy(g_gl.uniform_data[UNIFORM_BUFFER_VERTEX_USER], data, size);
 }
 
@@ -125,9 +129,10 @@ void PlatformBindFragmentUserData(const u8* data, u32 size) {
 
 void PlatformBindCamera(const Mat3& view_matrix) {
     float* dst = (float*)g_gl.uniform_data[UNIFORM_BUFFER_CAMERA];
-    *dst++ = view_matrix.m[0]; *dst++ = view_matrix.m[1]; *dst++ = view_matrix.m[2]; *dst++ = 0.0f;
-    *dst++ = view_matrix.m[3]; *dst++ = view_matrix.m[4]; *dst++ = view_matrix.m[5]; *dst++ = 0.0f;
-    *dst++ = view_matrix.m[6]; *dst++ = view_matrix.m[7]; *dst++ = view_matrix.m[8]; *dst++ = 0.0f;
+    // Transpose for OpenGL column-major std140 layout
+    *dst++ = view_matrix.m[0]; *dst++ = view_matrix.m[3]; *dst++ = view_matrix.m[6]; *dst++ = 0.0f;
+    *dst++ = view_matrix.m[1]; *dst++ = view_matrix.m[4]; *dst++ = view_matrix.m[7]; *dst++ = 0.0f;
+    *dst++ = view_matrix.m[2]; *dst++ = view_matrix.m[5]; *dst++ = view_matrix.m[8]; *dst++ = 0.0f;
 }
 
 void PlatformBindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission) {
@@ -137,15 +142,10 @@ void PlatformBindColor(const Color& color, const Vec2& color_uv_offset, const Co
     cb->uv_offset = color_uv_offset;
 }
 
-// ============================================================================
-// Buffer management
-// ============================================================================
-
 void PlatformFree(PlatformBuffer* buffer) {
-    if (buffer) {
-        GLuint buf = (GLuint)(uintptr_t)buffer;
-        glDeleteBuffers(1, &buf);
-    }
+    if (!buffer) return;
+    GLuint buf = (GLuint)(uintptr_t)buffer;
+    glDeleteBuffers(1, &buf);
 }
 
 PlatformBuffer* PlatformCreateVertexBuffer(const MeshVertex* vertices, u16 vertex_count, const char* name) {
@@ -215,6 +215,7 @@ void PlatformDrawIndexed(u16 index_count) {
     for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++) {
         glBindBuffer(GL_UNIFORM_BUFFER, g_gl.ubos[i]);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, MAX_UNIFORM_BUFFER_SIZE, g_gl.uniform_data[i]);
+        glBindBufferBase(GL_UNIFORM_BUFFER, i, g_gl.ubos[i]);
     }
 
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -237,8 +238,22 @@ PlatformTexture* PlatformCreateTexture(
     glGenTextures(1, &texture->gl_texture);
     glBindTexture(GL_TEXTURE_2D, texture->gl_texture);
 
-    GLenum format = (channels == 1) ? GL_LUMINANCE : GL_RGBA;
-    GLenum internal_format = (channels == 1) ? GL_LUMINANCE : GL_RGBA8;
+    GLenum format, internal_format;
+    switch (channels) {
+        case 1:
+            format = GL_RED;
+            internal_format = GL_R8;
+            break;
+        case 3:
+            format = GL_RGB;
+            internal_format = GL_RGB8;
+            break;
+        case 4:
+        default:
+            format = GL_RGBA;
+            internal_format = GL_RGBA8;
+            break;
+    }
 
     glTexImage2D(GL_TEXTURE_2D, 0, internal_format, (GLsizei)width, (GLsizei)height, 0, format, GL_UNSIGNED_BYTE, data);
 
@@ -272,7 +287,13 @@ void UpdateTexture(PlatformTexture* texture, void* data, const noz::Rect& rect) 
 
     glBindTexture(GL_TEXTURE_2D, texture->gl_texture);
 
-    GLenum format = (texture->channels == 1) ? GL_LUMINANCE : GL_RGBA;
+    GLenum format;
+    switch (texture->channels) {
+        case 1: format = GL_RED; break;
+        case 3: format = GL_RGB; break;
+        case 4:
+        default: format = GL_RGBA; break;
+    }
     glTexSubImage2D(GL_TEXTURE_2D, 0,
         (GLint)rect.x, (GLint)rect.y,
         (GLsizei)rect.width, (GLsizei)rect.height,
@@ -286,20 +307,20 @@ Vec2Int GetTextureSize(PlatformTexture* texture) {
 }
 
 void PlatformBeginRenderPass(Color clear_color) {
-    if (g_gl.postprocess_enabled) {
+    if (g_gl.postprocess_enabled)
         glBindFramebuffer(GL_FRAMEBUFFER, g_gl.offscreen.framebuffer);
-    } else {
+    else
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
 
     glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
     glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
+    glClearDepthf(1.0f);  // Clear to far plane (required with ZERO_TO_ONE depth range)
+    glDepthMask(GL_TRUE); // Enable depth writes for clear
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // Enable sRGB conversion (linear -> gamma-corrected output)
+    glEnable(GL_FRAMEBUFFER_SRGB);
+    // Depth/blend state will be set per-shader in PlatformBindShader
 }
 
 void PlatformEndRenderPass() {
@@ -320,14 +341,17 @@ void PlatformEnablePostProcess(bool enabled) {
 
 void PlatformBeginUI() {
     glBindFramebuffer(GL_FRAMEBUFFER, g_gl.ui_offscreen.framebuffer);
+
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+        LogError("UI framebuffer not complete: 0x%X", status);
+    }
+
     glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearDepthf(1.0f);
+    glDepthMask(GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void PlatformEndUIPass() {
@@ -367,9 +391,11 @@ static GLuint CompileGLShader(GLenum type, const char* source, u32 source_size, 
     GLint success;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
-        char info_log[512];
-        glGetShaderInfoLog(shader, 512, nullptr, info_log);
-        (void)name;
+        char info_log[1024];
+        glGetShaderInfoLog(shader, 1024, nullptr, info_log);
+        const char* type_str = (type == GL_VERTEX_SHADER) ? "vertex" :
+                               (type == GL_FRAGMENT_SHADER) ? "fragment" : "geometry";
+        LogError("GLSL %s shader compile error (%s): %s", type_str, name ? name : "unknown", info_log);
         glDeleteShader(shader);
         return 0;
     }
@@ -387,13 +413,12 @@ PlatformShader* PlatformCreateShader(
     ShaderFlags flags,
     const char* name)
 {
-    (void)flags;
-
     PlatformShader* shader = new PlatformShader();
     shader->program = 0;
+    shader->flags = flags;
 
     for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++)
-        shader->uniform_locations[i] = -1;
+        shader->uniform_block_indices[i] = GL_INVALID_INDEX;
 
     if (!vertex || !fragment)
         return shader;
@@ -427,8 +452,9 @@ PlatformShader* PlatformCreateShader(
     GLint success;
     glGetProgramiv(shader->program, GL_LINK_STATUS, &success);
     if (!success) {
-        char info_log[512];
-        glGetProgramInfoLog(shader->program, 512, nullptr, info_log);
+        char info_log[1024];
+        glGetProgramInfoLog(shader->program, 1024, nullptr, info_log);
+        LogError("GLSL program link error (%s): %s", name ? name : "unknown", info_log);
         glDeleteProgram(shader->program);
         shader->program = 0;
     }
@@ -440,11 +466,19 @@ PlatformShader* PlatformCreateShader(
 
     if (shader->program) {
         const char* uniform_names[] = {
-            "CameraBuffer", "TransformBuffer", "SkeletonBuffer",
-            "VertexUserBuffer", "ColorBuffer", "FragmentUserBuffer"
+            "CameraBuffer",
+            "ObjectBuffer",
+            "SkeletonBuffer",
+            "VertexUserBuffer",
+            "ColorBuffer",
+            "FragmentUserBuffer"
         };
+
         for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++) {
-            shader->uniform_locations[i] = glGetUniformBlockIndex(shader->program, uniform_names[i]);
+            shader->uniform_block_indices[i] = glGetUniformBlockIndex(shader->program, uniform_names[i]);
+            if (shader->uniform_block_indices[i] == GL_INVALID_INDEX) {
+                LogInfo("Shader '%s': Uniform block '%s' not found", name ? name : "unknown", uniform_names[i]);
+            }
         }
     }
 
@@ -452,37 +486,56 @@ PlatformShader* PlatformCreateShader(
 }
 
 void PlatformBindShader(PlatformShader* shader) {
-    if (shader && shader->program) {
-        glUseProgram(shader->program);
-        g_gl.current_program = shader->program;
+    if (!shader || !shader->program) return;
+
+    glUseProgram(shader->program);
+    g_gl.current_program = shader->program;
+
+    // Apply shader flags
+    ShaderFlags flags = shader->flags;
+
+    // Depth testing
+    bool depth_test = (flags & SHADER_FLAGS_DEPTH) != 0;
+    if (depth_test) {
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        bool depth_less = (flags & SHADER_FLAGS_DEPTH_LESS) != 0;
+        glDepthFunc(depth_less ? GL_LESS : GL_LEQUAL);
+    } else {
+        glDisable(GL_DEPTH_TEST);
+        glDepthMask(GL_FALSE);
     }
+
+    // Blending
+    bool is_premultiplied = (flags & SHADER_FLAGS_PREMULTIPLIED_ALPHA) != 0;
+    bool is_ui_composite = (flags & SHADER_FLAGS_UI_COMPOSITE) != 0;
+    bool is_blend = (flags & SHADER_FLAGS_BLEND) != 0;
+
+    if (is_premultiplied || is_ui_composite) {
+        // Premultiplied alpha: src * 1 + dst * (1 - src_alpha)
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    } else if (is_blend) {
+        // Standard alpha blending
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    } else {
+        glDisable(GL_BLEND);
+    }
+
+    for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++)
+        if (shader->uniform_block_indices[i] != GL_INVALID_INDEX)
+            glUniformBlockBinding(shader->program, shader->uniform_block_indices[i], i);
 }
 
 void PlatformFree(PlatformShader* shader) {
-    if (shader) {
-        if (shader->program) {
-            glDeleteProgram(shader->program);
-        }
-        delete shader;
-    }
-}
+    if (!shader) return;
 
-// ============================================================================
-// Screen info
-// ============================================================================
+    if (shader->program)
+        glDeleteProgram(shader->program);
 
-Vec2Int PlatformGetScreenSize() {
-    return g_gl.screen_size;
-}
-
-float GetDepthConversionFactor() {
-    return g_gl.depth_conversion_factor;
+    delete shader;
 }
 
 void PlatformEndSwapChain() {
-
-}
-
-void PlatformBindUITexture() {
-
 }
