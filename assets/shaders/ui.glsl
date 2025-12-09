@@ -14,7 +14,7 @@ layout(set = 1, binding = 0, row_major) uniform ObjectBuffer {
     float depth_max;
 } object;
 
-layout(set = 3, binding = 0, row_major) uniform UIBuffer {
+layout(set = 3, binding = 0, row_major) uniform VertexUserBuffer {
     float border_radius;
 } ui;
 
@@ -54,7 +54,7 @@ layout(set = 4, binding = 0) uniform ColorBuffer {
     vec2 padding;
 } color_buffer;
 
-layout(set = 5, binding = 0) uniform UIBuffer {
+layout(set = 5, binding = 0) uniform FragmentUserBuffer {
     vec4 border_color;
     float border_radius;
     float border_width;

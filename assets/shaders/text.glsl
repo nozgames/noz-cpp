@@ -34,7 +34,7 @@ layout(set = 4, binding = 0) uniform ColorBuffer {
     vec4 color;
 } color_buffer;
 
-layout(set = 5, binding = 0) uniform TextBuffer {
+layout(set = 5, binding = 0) uniform FragmentUserBuffer {
     vec4 outline_color;
     float outline_width;
     float padding0;
