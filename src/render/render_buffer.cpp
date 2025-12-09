@@ -332,7 +332,7 @@ void ExecuteRenderCommands()
         switch (command->type)
         {
         case RENDER_COMMAND_TYPE_BIND_VERTEX_USER:
-            PLatformBindVertexUserData(command->data.bind_user_data.data, MAX_UNIFORM_BUFFER_SIZE);
+            PlatformBindVertexUserData(command->data.bind_user_data.data, MAX_UNIFORM_BUFFER_SIZE);
             break;
 
         case RENDER_COMMAND_TYPE_BIND_FRAGMENT_USER:

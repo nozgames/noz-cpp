@@ -69,7 +69,7 @@ extern void PlatformBindOffscreenTexture();
 extern void PlatformBindUITexture();
 extern void PlatformSetViewport(const noz::Rect& viewport);
 extern void PlatformBindTransform(const Mat3& transform, float depth, float depth_scale);
-extern void PLatformBindVertexUserData(const u8* data, u32 size);
+extern void PlatformBindVertexUserData(const u8* data, u32 size);
 extern void PlatformBindFragmentUserData(const u8* data, u32 size);
 extern void PlatformBindCamera(const Mat3& view_matrix);
 extern void PlatformBindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission);
@@ -78,14 +78,14 @@ extern PlatformBuffer* PlatformCreateIndexBuffer(const u16* indices, u16 index_c
 extern void PlatformDrawIndexed(u16 index_count);
 extern void PlatformBindTexture(PlatformTexture* texture, int slot);
 extern PlatformShader* PlatformCreateShader(
-        const void* vertex,
-        u32 vertex_size,
-        const void* geometry,
-        u32 geometry_size,
-        const void* fragment,
-        u32 fragment_size,
-        ShaderFlags flags,
-        const char* name = nullptr);
+    const void* vertex,
+    u32 vertex_size,
+    const void* geometry,
+    u32 geometry_size,
+    const void* fragment,
+    u32 fragment_size,
+    ShaderFlags flags,
+    const char* name = nullptr);
 extern void PlatformFree(PlatformShader* module);
 extern void PlatformBindShader(PlatformShader* shader);
 

@@ -69,12 +69,17 @@ static void MeshDestructor(void* p) {
     MeshImpl* impl = (MeshImpl*)p;
 
     if (impl->vertex_buffer)
-        Free(impl->vertex_buffer);
+        PlatformFree(impl->vertex_buffer);
     if (impl->index_buffer)
-        Free(impl->index_buffer);
+        PlatformFree(impl->index_buffer);
 
     Free(impl->vertices);
     Free(impl->indices);
+
+    impl->vertex_buffer = nullptr;
+    impl->index_buffer = nullptr;
+    impl->vertices = nullptr;
+    impl->indices = nullptr;
 }
 
 inline size_t GetMeshImplSize(size_t vertex_count, size_t index_count) {

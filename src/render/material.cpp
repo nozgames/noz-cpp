@@ -68,7 +68,7 @@ void BindMaterialInternal(Material* material)
     }
 
     if (impl->has_vertex_data)
-        PLatformBindVertexUserData(impl->vertex_data, MAX_UNIFORM_BUFFER_SIZE);
+        PlatformBindVertexUserData(impl->vertex_data, MAX_UNIFORM_BUFFER_SIZE);
 
     if (impl->has_fragment_data)
         PlatformBindFragmentUserData(impl->fragment_data, MAX_UNIFORM_BUFFER_SIZE);

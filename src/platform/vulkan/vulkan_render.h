@@ -11,7 +11,6 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_win32.h>
 
-// Global function pointers
 extern PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr;
 extern PFN_vkCreateInstance vkCreateInstance;
 extern PFN_vkDestroyInstance vkDestroyInstance;
@@ -68,8 +67,6 @@ extern PFN_vkResetFences vkResetFences;
 extern PFN_vkAcquireNextImageKHR vkAcquireNextImageKHR;
 extern PFN_vkQueueSubmit vkQueueSubmit;
 extern PFN_vkQueuePresentKHR vkQueuePresentKHR;
-
-// Pipeline functions
 extern PFN_vkCreateGraphicsPipelines vkCreateGraphicsPipelines;
 extern PFN_vkDestroyPipeline vkDestroyPipeline;
 extern PFN_vkCreatePipelineLayout vkCreatePipelineLayout;
@@ -88,11 +85,7 @@ extern PFN_vkUpdateDescriptorSets vkUpdateDescriptorSets;
 extern PFN_vkFlushMappedMemoryRanges vkFlushMappedMemoryRanges;
 extern PFN_vkGetPhysicalDeviceMemoryProperties vkGetPhysicalDeviceMemoryProperties;
 extern PFN_vkGetPhysicalDeviceProperties vkGetPhysicalDeviceProperties;
-
-// Debug functions
 extern PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT;
-
-// Image/Texture functions
 extern PFN_vkCreateImage vkCreateImage;
 extern PFN_vkDestroyImage vkDestroyImage;
 extern PFN_vkGetImageMemoryRequirements vkGetImageMemoryRequirements;
@@ -103,8 +96,14 @@ extern PFN_vkCmdPipelineBarrier vkCmdPipelineBarrier;
 extern PFN_vkCmdCopyBufferToImage vkCmdCopyBufferToImage;
 extern PFN_vkQueueWaitIdle vkQueueWaitIdle;
 
-// Function loading
-bool LoadVulkanLibrary();
-void LoadInstanceFunctions(VkInstance instance);
-void LoadDeviceFunctions(VkInstance instance);
-void UnloadVulkanLibrary();
+extern bool InitVulkanLibrary();
+extern void UnloadVulkanLibrary();
+
+inline VkFilter ToVK(TextureFilter filter) {
+    return filter == TEXTURE_FILTER_LINEAR ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+}
+
+inline VkSamplerAddressMode ToVK(TextureClamp clamp) {
+    return clamp == TEXTURE_CLAMP_REPEAT ? VK_SAMPLER_ADDRESS_MODE_REPEAT : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+}
+

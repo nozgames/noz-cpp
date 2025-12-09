@@ -52,7 +52,7 @@ void BeginUIPass() {
     ExecuteRenderCommands();
 
     if (IsPostProcessEnabled() && g_renderer.postprocess_material) {
-        BeginPostProcessPass();
+        PlatformBeginPostProcess();
         DrawPostProcessQuad(g_renderer.postprocess_material);
         EndPostProcessPass();
     }
@@ -165,16 +165,13 @@ void EndPostProcessPass() {
 }
 
 void DrawPostProcessQuad(Material* material) {
-    // Set up identity transform for fullscreen quad (in NDC space, no camera transform needed)
     Mat3 identity = MAT3_IDENTITY;
-    PlatformBindCamera(identity);  // Identity camera for NDC space
+    PlatformBindCamera(identity);
     PlatformBindTransform(identity, 0.0f, 1.0f);
     PlatformBindColor(COLOR_WHITE, VEC2_ZERO, COLOR_TRANSPARENT);
 
-    // Bind material first (sets up shader and any material-specific uniforms)
     BindMaterialInternal(material);
 
-    // Bind the offscreen texture AFTER material, so it overrides any texture slot 0
     PlatformBindOffscreenTexture();
 
     RenderMesh(GetFullscreenQuad());

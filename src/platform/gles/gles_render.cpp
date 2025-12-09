@@ -209,20 +209,15 @@ void PlatformBindIndexBuffer(PlatformBuffer* buffer) {
     g_gl.bound_index_buffer = ibo;
 }
 
-// ============================================================================
-// Drawing
-// ============================================================================
-
 void PlatformDrawIndexed(u16 index_count) {
     assert(index_count > 0);
 
-    // Upload uniform buffer data to GPU before drawing
     for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++) {
         glBindBuffer(GL_UNIFORM_BUFFER, g_gl.ubos[i]);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, MAX_UNIFORM_BUFFER_SIZE, g_gl.uniform_data[i]);
     }
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glDrawElements(GL_TRIANGLES, index_count, GL_UNSIGNED_SHORT, nullptr);
 }
 
@@ -290,10 +285,6 @@ Vec2Int GetTextureSize(PlatformTexture* texture) {
     return texture ? texture->size : VEC2INT_ZERO;
 }
 
-// ============================================================================
-// Render passes
-// ============================================================================
-
 void PlatformBeginRenderPass(Color clear_color) {
     if (g_gl.postprocess_enabled) {
         glBindFramebuffer(GL_FRAMEBUFFER, g_gl.offscreen.framebuffer);
@@ -342,21 +333,12 @@ void PlatformBeginUI() {
 void PlatformEndUIPass() {
 }
 
-void BeginUICompositePass() {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
-    glDisable(GL_DEPTH_TEST);
-}
-
-void EndUICompositePass() {
-}
-
 void PlatformBindOffscreenTexture() {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, g_gl.offscreen.texture);
 }
 
-void BindUITexture() {
+void PlatformBindUITexture() {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, g_gl.ui_offscreen.texture);
 }
@@ -369,10 +351,6 @@ void PlatformSetViewport(const noz::Rect& viewport) {
                    (GLsizei)viewport.width, (GLsizei)viewport.height);
     }
 }
-
-// ============================================================================
-// Shader management
-// ============================================================================
 
 static GLuint CompileGLShader(GLenum type, const char* source, u32 source_size, const char* name) {
     if (!source || source_size == 0)
