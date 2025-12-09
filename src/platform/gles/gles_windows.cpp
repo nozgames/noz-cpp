@@ -255,6 +255,8 @@ void UnloadGLESLibrary()
     }
 }
 
+// TODO: Implement offscreen rendering for post-processing
+#if 0
 static bool CreateOffscreenTarget(OffscreenTarget* target, int width, int height) {
     glGenFramebuffers(1, &target->framebuffer);
     glGenTextures(1, &target->texture);
@@ -296,6 +298,7 @@ static void DestroyOffscreenTarget(OffscreenTarget* target) {
         target->depth_renderbuffer = 0;
     }
 }
+#endif
 
 // Platform render functions implementation
 void platform::BeginRenderFrame() {
@@ -359,6 +362,7 @@ void platform::DestroyBuffer(Buffer* buffer) {
 }
 
 platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, u16 vertex_count, const char* name) {
+    (void)name;
     assert(vertices);
     assert(vertex_count > 0);
 
@@ -372,6 +376,7 @@ platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, u16 v
 }
 
 platform::Buffer* platform::CreateIndexBuffer(const u16* indices, u16 index_count, const char* name) {
+    (void)name;
     assert(indices);
     assert(index_count > 0);
 
@@ -436,6 +441,7 @@ platform::Texture* platform::CreateTexture(
     const SamplerOptions& sampler_options,
     const char* name)
 {
+    (void)name;
     platform::Texture* texture = new platform::Texture();
     texture->size = {(i32)width, (i32)height};
     texture->channels = channels;
@@ -539,34 +545,121 @@ void platform::EndSwapchainPass() {
 }
 
 void platform::SetViewport(const noz::Rect& viewport) {
-    if (viewport.size.x <= 0 || viewport.size.y <= 0) {
+    if (viewport.width <= 0 || viewport.height <= 0) {
         glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
     } else {
-        glViewport((GLint)viewport.position.x, (GLint)viewport.position.y,
-                   (GLsizei)viewport.size.x, (GLsizei)viewport.size.y);
+        glViewport((GLint)viewport.x, (GLint)viewport.y,
+                   (GLsizei)viewport.width, (GLsizei)viewport.height);
     }
 }
 
+static GLuint CompileGLShader(GLenum type, const char* source, u32 source_size, const char* name) {
+    if (!source || source_size == 0)
+        return 0;
+
+    char* temp = new char[source_size+1];
+    memcpy(temp, source, source_size);
+    temp[source_size] = 0;
+
+    GLuint shader = glCreateShader(type);
+    if (!shader)
+        return 0;
+
+    GLint length = (GLint)source_size;
+    glShaderSource(shader, 1, &temp, &length);
+    glCompileShader(shader);
+
+    GLint success;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        char info_log[512];
+        glGetShaderInfoLog(shader, 512, nullptr, info_log);
+        // Log error
+        (void)name;
+        glDeleteShader(shader);
+        delete[] temp;
+        return 0;
+    }
+
+    delete[] temp;
+
+    return shader;
+}
+
 platform::Shader* platform::CreateShader(
-    const void* vertex_code,
-    u32 vertex_code_size,
-    const void* geometry_code,
-    u32 geometry_code_size,
-    const void* fragment_code,
-    u32 fragment_code_size,
+    const void* vertex,
+    u32 vertex_size,
+    const void* geometry,
+    u32 geometry_size,
+    const void* fragment,
+    u32 fragment_size,
     ShaderFlags flags,
     const char* name)
 {
-    // Note: OpenGL uses GLSL text, but this engine provides SPIR-V
-    // For a full implementation, you'd need SPIRV-Cross to convert SPIR-V to GLSL
-    // For now, we create a placeholder shader
+    (void)flags;
 
     platform::Shader* shader = new platform::Shader();
     shader->program = 0;
 
-    // Initialize uniform locations to -1 (not found)
-    for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++) {
+    for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++)
         shader->uniform_locations[i] = -1;
+
+    if (!vertex || !fragment)
+        return shader;
+
+    GLuint vert_shader = CompileGLShader(GL_VERTEX_SHADER, (const char*)vertex, vertex_size, name);
+    if (!vert_shader) {
+        delete shader;
+        return nullptr;
+    }
+
+    GLuint frag_shader = CompileGLShader(GL_FRAGMENT_SHADER, (const char*)fragment, fragment_size, name);
+    if (!frag_shader) {
+        glDeleteShader(vert_shader);
+        delete shader;
+        return nullptr;
+    }
+
+    GLuint geom_shader = 0;
+    if (geometry && geometry_size > 0) {
+        geom_shader = CompileGLShader(GL_GEOMETRY_SHADER, (const char*)geometry, geometry_size, name);
+    }
+
+    // Create and link program
+    shader->program = glCreateProgram();
+    glAttachShader(shader->program, vert_shader);
+    glAttachShader(shader->program, frag_shader);
+    if (geom_shader)
+        glAttachShader(shader->program, geom_shader);
+
+    glLinkProgram(shader->program);
+
+    // Check link status
+    GLint success;
+    glGetProgramiv(shader->program, GL_LINK_STATUS, &success);
+    if (!success) {
+        char info_log[512];
+        glGetProgramInfoLog(shader->program, 512, nullptr, info_log);
+        // Log error
+        glDeleteProgram(shader->program);
+        shader->program = 0;
+    }
+
+    // Cleanup shader objects (they're now part of the program)
+    glDeleteShader(vert_shader);
+    glDeleteShader(frag_shader);
+    if (geom_shader)
+        glDeleteShader(geom_shader);
+
+    // Get uniform locations for uniform buffers
+    if (shader->program) {
+        const char* uniform_names[] = {
+            "CameraBuffer", "TransformBuffer", "SkeletonBuffer",
+            "VertexUserBuffer", "ColorBuffer", "FragmentUserBuffer"
+        };
+        for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++) {
+            shader->uniform_locations[i] = glGetUniformBlockIndex(shader->program, uniform_names[i]);
+        }
     }
 
     return shader;
@@ -586,4 +679,150 @@ void platform::DestroyShader(Shader* shader) {
         }
         delete shader;
     }
+}
+
+// ============================================================================
+// Initialization/Shutdown functions (called from windows_main.cpp)
+// ============================================================================
+
+void InitVulkan(const RendererTraits* traits, HWND hwnd) {
+    g_gl = {};
+    g_gl.traits = *traits;
+    g_gl.hwnd = hwnd;
+    g_gl.depth_conversion_factor = 1.0f / (traits->max_depth - traits->min_depth);
+
+    // Load OpenGL library
+    if (!LoadGLESLibrary()) {
+        Exit("Failed to load OpenGL library");
+        return;
+    }
+
+    // Get device context
+    g_gl.hdc = GetDC(hwnd);
+    if (!g_gl.hdc) {
+        Exit("Failed to get device context");
+        return;
+    }
+
+    // Set pixel format
+    PIXELFORMATDESCRIPTOR pfd = {};
+    pfd.nSize = sizeof(pfd);
+    pfd.nVersion = 1;
+    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.cColorBits = 32;
+    pfd.cDepthBits = 24;
+    pfd.cStencilBits = 8;
+    pfd.iLayerType = PFD_MAIN_PLANE;
+
+    int pixel_format = ChoosePixelFormat(g_gl.hdc, &pfd);
+    if (!pixel_format) {
+        Exit("Failed to choose pixel format");
+        return;
+    }
+
+    if (!SetPixelFormat(g_gl.hdc, pixel_format, &pfd)) {
+        Exit("Failed to set pixel format");
+        return;
+    }
+
+    // Create temporary context to load WGL extensions
+    HGLRC temp_context = wglCreateContext_ptr(g_gl.hdc);
+    if (!temp_context) {
+        Exit("Failed to create temporary OpenGL context");
+        return;
+    }
+
+    if (!wglMakeCurrent_ptr(g_gl.hdc, temp_context)) {
+        Exit("Failed to make temporary OpenGL context current");
+        return;
+    }
+
+    // Load GL functions (needed for extension loading)
+    LoadGLESFunctions();
+
+    // Create modern OpenGL context if available
+    if (wglCreateContextAttribsARB_ptr) {
+        int attribs[] = {
+            WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+            WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+            WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+            0
+        };
+
+        g_gl.hglrc = wglCreateContextAttribsARB_ptr(g_gl.hdc, nullptr, attribs);
+        if (g_gl.hglrc) {
+            wglMakeCurrent_ptr(g_gl.hdc, nullptr);
+            wglDeleteContext_ptr(temp_context);
+            wglMakeCurrent_ptr(g_gl.hdc, g_gl.hglrc);
+            // Reload functions with new context
+            LoadGLESFunctions();
+        } else {
+            // Fall back to legacy context
+            g_gl.hglrc = temp_context;
+        }
+    } else {
+        g_gl.hglrc = temp_context;
+    }
+
+    // Enable vsync if available
+    if (wglSwapIntervalEXT_ptr) {
+        wglSwapIntervalEXT_ptr(1);
+    }
+
+    // Create default VAO (required in core profile)
+    glGenVertexArrays(1, &g_gl.current_vao);
+    glBindVertexArray(g_gl.current_vao);
+
+    // Set up default GL state
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Get screen size
+    RECT rect;
+    GetClientRect(hwnd, &rect);
+    g_gl.screen_size = { rect.right - rect.left, rect.bottom - rect.top };
+
+    // Set initial viewport
+    glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
+}
+
+void ResizeVulkan(const Vec2Int& size) {
+    if (size.x <= 0 || size.y <= 0)
+        return;
+
+    g_gl.screen_size = size;
+    glViewport(0, 0, size.x, size.y);
+
+    // TODO: Recreate offscreen targets if needed
+}
+
+void ShutdownVulkan() {
+    if (g_gl.current_vao) {
+        glDeleteVertexArrays(1, &g_gl.current_vao);
+        g_gl.current_vao = 0;
+    }
+
+    if (g_gl.hglrc) {
+        wglMakeCurrent_ptr(nullptr, nullptr);
+        wglDeleteContext_ptr(g_gl.hglrc);
+        g_gl.hglrc = nullptr;
+    }
+
+    if (g_gl.hdc && g_gl.hwnd) {
+        ReleaseDC(g_gl.hwnd, g_gl.hdc);
+        g_gl.hdc = nullptr;
+    }
+
+    UnloadGLESLibrary();
+}
+
+void WaitVulkan() {
+    // OpenGL doesn't have explicit sync like Vulkan
+    // glFinish() could be used but is generally not needed
 }

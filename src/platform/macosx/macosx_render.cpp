@@ -580,18 +580,34 @@ void platform::DestroyTexture(Texture* texture)
 }
 
 platform::Shader* platform::CreateShader(
-    const void* vertex_code,
-    u32 vertex_code_size,
-    const void* geometry_code,
-    u32 geometry_code_size,
-    const void* fragment_code,
-    u32 fragment_code_size,
+    const void* vertex_spirv,
+    u32 vertex_spirv_size,
+    const void* geometry_spirv,
+    u32 geometry_spirv_size,
+    const void* fragment_spirv,
+    u32 fragment_spirv_size,
+    const char* vertex_glsl,
+    u32 vertex_glsl_size,
+    const char* geometry_glsl,
+    u32 geometry_glsl_size,
+    const char* fragment_glsl,
+    u32 fragment_glsl_size,
     ShaderFlags flags,
     const char* name)
 {
     @autoreleasepool {
-        (void)geometry_code;
-        (void)geometry_code_size;
+        // Metal uses its own shader language - currently expects Metal source in vertex_spirv/fragment_spirv
+        // TODO: Add Metal shader support to the importer
+        (void)geometry_spirv;
+        (void)geometry_spirv_size;
+        (void)vertex_glsl; (void)vertex_glsl_size;
+        (void)geometry_glsl; (void)geometry_glsl_size;
+        (void)fragment_glsl; (void)fragment_glsl_size;
+
+        const void* vertex_code = vertex_spirv;
+        u32 vertex_code_size = vertex_spirv_size;
+        const void* fragment_code = fragment_spirv;
+        u32 fragment_code_size = fragment_spirv_size;
 
         MetalContext* ctx = GetMetalContext();
 

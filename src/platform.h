@@ -108,12 +108,12 @@ namespace platform {
 
     // @shader
     Shader* CreateShader(
-        const void* vertex_code,
-        u32 vertex_code_size,
-        const void* geometry_code,
-        u32 geometry_code_size,
-        const void* fragment_code,
-        u32 fragment_code_size,
+        const void* vertex,
+        u32 vertex_size,
+        const void* geometry,
+        u32 geometry_size,
+        const void* fragment,
+        u32 fragment_size,
         ShaderFlags flags,
         const char* name = nullptr);
     void DestroyShader(Shader* module);

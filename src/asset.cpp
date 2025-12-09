@@ -63,6 +63,12 @@ static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, Ass
     asset_path /= ToString(asset_type);
     asset_path /= asset_name->value;
 
+#ifdef NOZ_PLATFORM_GLES
+    if (asset_type == ASSET_TYPE_SHADER) {
+        asset_path += ".glsl";
+    }
+#endif
+
     std::string lowercase_path = asset_path.string();
     Lowercase(lowercase_path.data(), (u32)lowercase_path.size());
 

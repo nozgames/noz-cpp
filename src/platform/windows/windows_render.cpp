@@ -3083,16 +3083,27 @@ static void CleanupUICompositeFramebuffers() {
 }
 
 platform::Shader* platform::CreateShader(
-    const void* vertex_code,
-    u32 vertex_code_size,
-    const void* geometry_code,
-    u32 geometry_code_size,
-    const void* fragment_code,
-    u32 fragment_code_size,
+    const void* vertex_spirv,
+    u32 vertex_spirv_size,
+    const void* geometry_spirv,
+    u32 geometry_spirv_size,
+    const void* fragment_spirv,
+    u32 fragment_spirv_size,
+    const char* vertex_glsl,
+    u32 vertex_glsl_size,
+    const char* geometry_glsl,
+    u32 geometry_glsl_size,
+    const char* fragment_glsl,
+    u32 fragment_glsl_size,
     ShaderFlags flags,
     const char* name) {
+    // Vulkan uses SPIR-V, ignore GLSL parameters
+    (void)vertex_glsl; (void)vertex_glsl_size;
+    (void)geometry_glsl; (void)geometry_glsl_size;
+    (void)fragment_glsl; (void)fragment_glsl_size;
+
     Shader* shader = (Shader*)Alloc(ALLOCATOR_DEFAULT, sizeof(Shader));
-    if (!CreateShaderInternal(shader, vertex_code, vertex_code_size, geometry_code, geometry_code_size, fragment_code, fragment_code_size, flags, name)) {
+    if (!CreateShaderInternal(shader, vertex_spirv, vertex_spirv_size, geometry_spirv, geometry_spirv_size, fragment_spirv, fragment_spirv_size, flags, name)) {
         DestroyShader(shader);
         return nullptr;
     }

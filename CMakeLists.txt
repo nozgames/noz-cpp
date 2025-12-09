@@ -6,6 +6,10 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Renderer backend option (Windows only - macOS uses Metal)
+set(NOZ_RENDERER "GLES" CACHE STRING "Renderer backend (VULKAN or GLES)")
+set_property(CACHE NOZ_RENDERER PROPERTY STRINGS "VULKAN" "GLES")
+
 # Explicitly list all source files
 set(SOURCE_FILES
     src/application.cpp
@@ -86,11 +90,22 @@ if(WIN32)
         src/platform/windows/windows_input.cpp
         src/platform/windows/windows_audio.cpp
         src/platform/windows/windows_time.cpp
-        src/platform/windows/windows_render.cpp
-        src/platform/vulkan/vulkan_render.cpp
         src/platform/windows/windows_http.cpp
         src/platform/windows/windows_websocket.cpp
     )
+
+    # Add renderer-specific files based on NOZ_RENDERER option
+    if(NOZ_RENDERER STREQUAL "GLES")
+        list(APPEND SOURCE_FILES
+            src/platform/gles/gles_render.cpp
+            src/platform/gles/gles_windows.cpp
+        )
+    else()
+        list(APPEND SOURCE_FILES
+            src/platform/vulkan/vulkan_render.cpp
+            src/platform/windows/windows_render.cpp
+        )
+    endif()
 elseif(APPLE)
     list(APPEND SOURCE_FILES
         src/platform/macosx/macosx_main.cpp
@@ -130,6 +145,15 @@ if(WIN32)
         ${CMAKE_CURRENT_SOURCE_DIR}/external/vulkan
     )
     target_compile_definitions(noz PRIVATE _CRT_SECURE_NO_WARNINGS)
+
+    # Add renderer-specific compile definitions
+    if(NOZ_RENDERER STREQUAL "GLES")
+        target_compile_definitions(noz PUBLIC NOZ_PLATFORM_GLES)
+        message(STATUS "Using GLES renderer backend")
+    else()
+        target_compile_definitions(noz PUBLIC NOZ_PLATFORM_VULKAN)
+        message(STATUS "Using Vulkan renderer backend")
+    endif()
 elseif(APPLE)
     # macOS uses system frameworks, no additional include paths needed
 endif()
