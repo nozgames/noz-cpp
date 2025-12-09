@@ -71,7 +71,10 @@ void main() {
     color.rgb *= color.a;
     border_color.rgb *= border_color.a;
 
-    float dist = length(f_uv);
+    // Squircle distance using superellipse formula: |x|^n + |y|^n = 1
+    // n=2 is circle, n=4+ gives squircle, higher n = more square
+    float n = 4.0;
+    float dist = pow(pow(abs(f_uv.x), n) + pow(abs(f_uv.y), n), 1.0 / n);
     float edge = fwidth(dist);
 
     // border

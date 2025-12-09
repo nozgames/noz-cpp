@@ -145,11 +145,12 @@ struct UI {
     u16 element_count;
     u16 element_stack_count;
     Mesh* element_mesh;
-    Mesh* image_mesh;
+    Mesh* image_element_mesh;
     Mesh* element_with_border_mesh;
+    Material* element_material;
+    Material* image_element_material;
     Vec2 ortho_size;
     Vec2Int ref_size;
-    Material* element_material;
     InputSet* input;
     PoolAllocator* text_mesh_allocator;
     float depth;
@@ -391,7 +392,7 @@ void Image(Mesh* mesh, const ImageStyle& style) {
     image->mesh = mesh;
     image->style = style;
     if (!image->style.material)
-        image->style.material = g_ui.element_material;
+        image->style.material = g_ui.image_element_material;
 }
 
 void Image(AnimatedMesh* mesh, float time, const ImageStyle& style) {
@@ -400,7 +401,7 @@ void Image(AnimatedMesh* mesh, float time, const ImageStyle& style) {
     image->animated_time = time;
     image->style = style;
     if (!image->style.material)
-        image->style.material = g_ui.element_material;
+        image->style.material = g_ui.image_element_material;
 }
 
 void Rectangle(const RectangleStyle& style) {
@@ -1068,23 +1069,9 @@ void DrawUI() {
     }
 }
 
-static Mesh* CreateImageQuad(Allocator* allocator) {
-    PushScratch();
-    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddVertex(builder, Vec2{ -0.5f, -0.5f }, { 0.0f, 1.0f });
-    AddVertex(builder, Vec2{  0.5f, -0.5f }, { 1.0f, 1.0f });
-    AddVertex(builder, Vec2{  0.5f,  0.5f }, { 1.0f, 0.0f });
-    AddVertex(builder, Vec2{ -0.5f,  0.5f }, { 0.0f, 0.0f });
-    AddTriangle(builder, 0, 1, 2);
-    AddTriangle(builder, 0, 2, 3);
-    auto mesh = CreateMesh(allocator, builder, GetName("image"));
-    PopScratch();
-    return mesh;
-}
-
 void SetUIPaletteTexture(Texture* texture) {
     if (!texture) return;
-    SetTexture(g_ui.element_material, texture);
+    SetTexture(g_ui.image_element_material, texture);
 }
 
 static void CreateElementWithBorderMesh() {
@@ -1157,13 +1144,25 @@ static void CreateElementMesh() {
     PopScratch();
 }
 
+static void CreateImageElementMesh() {
+    PushScratch();
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
+    AddVertex(builder, Vec2{ -0.5f, -0.5f }, { 0.0f, 1.0f });
+    AddVertex(builder, Vec2{  0.5f, -0.5f }, { 1.0f, 1.0f });
+    AddVertex(builder, Vec2{  0.5f,  0.5f }, { 1.0f, 0.0f });
+    AddVertex(builder, Vec2{ -0.5f,  0.5f }, { 0.0f, 0.0f });
+    AddTriangle(builder, 0, 1, 2);
+    AddTriangle(builder, 0, 2, 3);
+    g_ui.image_element_mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, GetName("image"));
+    PopScratch();
+}
 
 void InitUI(const ApplicationTraits* traits) {
     g_ui = {};
     g_ui.allocator = CreateArenaAllocator(sizeof(FatElement) * MAX_ELEMENTS, "UI");
     g_ui.camera = CreateCamera(ALLOCATOR_DEFAULT);
-    g_ui.image_mesh = CreateImageQuad(ALLOCATOR_DEFAULT);
     g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
+    g_ui.image_element_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI_IMAGE);
     g_ui.input = CreateInputSet(ALLOCATOR_DEFAULT);
     g_ui.text_mesh_allocator = CreatePoolAllocator(sizeof(CachedTextMesh), MAX_TEXT_MESHES);
     g_ui.depth = traits->ui_depth >= F32_MAX ? traits->renderer.max_depth - 0.01f : traits->ui_depth;
@@ -1176,6 +1175,7 @@ void InitUI(const ApplicationTraits* traits) {
 
     CreateElementMesh();
     CreateElementWithBorderMesh();
+    CreateImageElementMesh();
 }
 
 void ShutdownUI() {
