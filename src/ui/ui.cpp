@@ -79,6 +79,7 @@ struct Element {
 
 struct CanvasElement : Element {
     CanvasStyle style;
+    Vec2 position;
 };
 
 struct ColumnElement : Element {
@@ -622,27 +623,27 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
         CanvasElement* canvas = static_cast<CanvasElement*>(e);
         if (canvas->style.type == CANVAS_TYPE_SCREEN) {
             e->measured_size = available_size;
-            for (u16 i = 0; i < e->child_count; i++)
-                element_index = MeasureElement(element_index, available_size);
-
-        // } else if (canvas->style.type == CANVAS_TYPE_WORLD) {
+        } else if (canvas->style.type == CANVAS_TYPE_WORLD) {
             // Vec2 screen_size = Abs(WorldToScreen(canvas->style.world_camera, canvas->style.world_size) - WorldToScreen(canvas->style.world_camera, VEC2_ZERO));
             // Vec2 ui_size = ScreenToWorld(g_ui.camera, screen_size) - ScreenToWorld(g_ui.camera, VEC2_ZERO);
             // e->measured_size = ui_size;
-            //
-            // Vec2 screen_pos = WorldToScreen(c->style.world_camera, c->style.world_position);
-            // Vec2 screen_size = Abs(WorldToScreen(c->style.world_camera, c->style.world_size) - WorldToScreen(c->style.world_camera, VEC2_ZERO));
-            // screen_pos = screen_pos - screen_size * 0.5f;
-            //
-            // Vec2 ui_pos = ScreenToWorld(g_ui.camera, screen_pos);
-            // Vec2 ui_size = ScreenToWorld(g_ui.camera, screen_size) - ScreenToWorld(g_ui.camera, VEC2_ZERO);
-            // e->rect.x = ui_pos.x;
-            // e->rect.y = ui_pos.y;
-            // contraints = ui_size;
+
+            Vec2 screen_pos = WorldToScreen(canvas->style.world_camera, canvas->style.world_position);
+            Vec2 screen_size = Abs(WorldToScreen(canvas->style.world_camera, canvas->style.world_size) - WorldToScreen(canvas->style.world_camera, VEC2_ZERO));
+            screen_pos = screen_pos - screen_size * 0.5f;
+
+            Vec2 ui_pos = ScreenToWorld(g_ui.camera, screen_pos);
+            Vec2 ui_size = ScreenToWorld(g_ui.camera, screen_size) - ScreenToWorld(g_ui.camera, VEC2_ZERO);
+            canvas->position = ui_pos;
+            e->measured_size = ui_size;
+            //contraints = ui_size;
 
         } else {
-//            assert(false && "Unknown canvas type");
+            assert(false && "Unknown canvas type");
         }
+
+        for (u16 i = 0; i < e->child_count; i++)
+            element_index = MeasureElement(element_index, e->measured_size);
 
     // @measure_scene
     } else if (e->type == ELEMENT_TYPE_SCENE) {
@@ -786,6 +787,13 @@ static int LayoutElement(int element_index, const Vec2& size, Element* parent) {
     } else if (e->type == ELEMENT_TYPE_LABEL) {
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
     } else if (e->type == ELEMENT_TYPE_CANVAS) {
+        CanvasElement* canvas = static_cast<CanvasElement*>(e);
+        canvas->rect.x = canvas->position.x;
+        canvas->rect.y = canvas->position.y;
+
+        Vec2 content_size = GetSize(e->rect);
+        for (u16 i = 0; i < e->child_count; i++)
+            element_index = LayoutElement(element_index, content_size, e);
     } else if (e->type == ELEMENT_TYPE_COLUMN_SPACER) {
     } else if (e->type == ELEMENT_TYPE_ROW_SPACER) {
     } else {
