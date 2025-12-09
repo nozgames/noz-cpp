@@ -850,30 +850,30 @@ static void DrawContainer(ContainerElement* container, const Mat3& transform) {
     BindMaterial(g_ui.element_material);
     BindColor(container->style.color,container->style.color_offset);
 
+    struct BorderVertex {
+        float radius;
+    };
+    struct BorderFragment {
+        Color color;
+        float radius;
+        float width;
+        float padding0;
+        float padding1;
+    };
+
+    BorderVertex v_border = {
+        .radius = container->style.border.radius
+    };
+    BindVertexUserData(&v_border, sizeof(BorderVertex));
+
+    BorderFragment f_border = {
+        .color = container->style.border.color,
+        .radius = v_border.radius,
+        .width = container->style.border.width
+    };
+    BindFragmentUserData(&f_border, sizeof(BorderFragment));
+
     if (has_border) {
-        struct BorderVertex {
-            float radius;
-        };
-        struct BorderFragment {
-            Color color;
-            float radius;
-            float width;
-            float padding0;
-            float padding1;
-        };
-
-        BorderVertex v_border = {
-            .radius = container->style.border.radius
-        };
-        BindVertexUserData(&v_border, sizeof(BorderVertex));
-
-        BorderFragment f_border = {
-            .color = container->style.border.color,
-            .radius = v_border.radius,
-            .width = container->style.border.width
-        };
-        BindFragmentUserData(&f_border, sizeof(BorderFragment));
-
         DrawMesh(g_ui.element_with_border_mesh);
     } else {
         DrawMesh(g_ui.element_mesh);

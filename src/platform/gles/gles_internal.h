@@ -8,6 +8,7 @@
 
 #include "gles_render.h"
 #include "../../platform.h"
+#include "../../internal.h"
 
 #include <cstring>
 
@@ -45,6 +46,7 @@ struct PlatformTexture {
 struct PlatformShader {
     GLuint program;
     GLuint uniform_block_indices[UNIFORM_BUFFER_COUNT];
+    ShaderFlags flags;
 };
 
 struct ObjectBuffer {

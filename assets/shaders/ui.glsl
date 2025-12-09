@@ -14,7 +14,7 @@ layout(set = 1, binding = 0, row_major) uniform ObjectBuffer {
     float depth_max;
 } object;
 
-layout(set = 3, binding = 0, row_major) uniform UIBuffer {
+layout(set = 3, binding = 0, row_major) uniform VertexUserBuffer {
     float border_radius;
 } ui;
 
@@ -54,7 +54,7 @@ layout(set = 4, binding = 0) uniform ColorBuffer {
     vec2 padding;
 } color_buffer;
 
-layout(set = 5, binding = 0) uniform UIBuffer {
+layout(set = 5, binding = 0) uniform FragmentUserBuffer {
     vec4 border_color;
     float border_radius;
     float border_width;
@@ -77,8 +77,10 @@ void main() {
     float dist = pow(pow(abs(f_uv.x), n) + pow(abs(f_uv.y), n), 1.0 / n);
     float edge = fwidth(dist);
 
-    // border
-    float border = (1 + edge) - (ui_buffer.border_width / ui_buffer.border_radius);
+    // border (avoid division by zero if border_radius is 0)
+    float border = (ui_buffer.border_radius > 0.0)
+        ? (1.0 + edge) - (ui_buffer.border_width / ui_buffer.border_radius)
+        : 1.0 + edge;
     color = mix(color, border_color, smoothstep(border - edge, border, dist));
 
     // radius (premultiplied alpha - multiply RGBA by the edge falloff)
