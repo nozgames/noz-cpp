@@ -44,7 +44,7 @@ struct PlatformTexture {
 
 struct PlatformShader {
     GLuint program;
-    GLint uniform_locations[UNIFORM_BUFFER_COUNT];
+    GLuint uniform_block_indices[UNIFORM_BUFFER_COUNT];
 };
 
 struct ObjectBuffer {
@@ -94,3 +94,6 @@ struct GLState {
 
 // Global GL state - defined in gles_render.cpp
 extern GLState g_gl;
+
+// Debug test quad
+void DrawTestQuad();

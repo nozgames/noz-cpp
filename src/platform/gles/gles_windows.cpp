@@ -148,6 +148,7 @@ static void LoadGLESFunctions() {
     glUseProgram = (PFNGLUSEPROGRAMPROC)GetGLProcAddress("glUseProgram");
     glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)GetGLProcAddress("glVertexAttribPointer");
     glViewport = (PFNGLVIEWPORTPROC)GetGLProcAddress("glViewport");
+    glClipControl = (PFNGLCLIPCONTROLPROC)GetGLProcAddress("glClipControl");
 
     // WGL extensions
     wglCreateContextAttribsARB_ptr = (wglCreateContextAttribsARB_t*)GetGLProcAddress("wglCreateContextAttribsARB");
@@ -165,6 +166,61 @@ static void UnloadGLESLibrary() {
 
 void PlatformEndRenderFrame() {
     SwapBuffers(g_wgl.hdc);
+}
+
+static void CreateOffscreenTarget(OffscreenTarget& target, int width, int height) {
+    // Delete existing resources
+    if (target.framebuffer) {
+        glDeleteFramebuffers(1, &target.framebuffer);
+        target.framebuffer = 0;
+    }
+    if (target.texture) {
+        glDeleteTextures(1, &target.texture);
+        target.texture = 0;
+    }
+    if (target.depth_renderbuffer) {
+        glDeleteRenderbuffers(1, &target.depth_renderbuffer);
+        target.depth_renderbuffer = 0;
+    }
+
+    // Create color texture
+    glGenTextures(1, &target.texture);
+    glBindTexture(GL_TEXTURE_2D, target.texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Create depth renderbuffer
+    glGenRenderbuffers(1, &target.depth_renderbuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, target.depth_renderbuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+
+    // Create framebuffer
+    glGenFramebuffers(1, &target.framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, target.framebuffer);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, target.texture, 0);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, target.depth_renderbuffer);
+
+    // Verify framebuffer is complete
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+        const char* error = "Unknown";
+        switch (status) {
+            case 0x8CDB: error = "GL_FRAMEBUFFER_UNDEFINED"; break;
+            case 0x8CD6: error = "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"; break;
+            case 0x8CD7: error = "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"; break;
+            case 0x8CD9: error = "GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS"; break;
+            case 0x8CDD: error = "GL_FRAMEBUFFER_UNSUPPORTED"; break;
+            case 0x8D56: error = "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"; break;
+        }
+        LogError("Framebuffer incomplete: %s (0x%X)", error, status);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
 void InitVulkan(const RendererTraits* traits, HWND hwnd) {
@@ -262,9 +318,17 @@ void InitVulkan(const RendererTraits* traits, HWND hwnd) {
     glDepthFunc(GL_LESS);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Use Vulkan-style clip control (upper-left origin, 0-1 depth range)
+    if (glClipControl) {
+        glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE);
+        // Flip winding order since Y is now flipped
+        glFrontFace(GL_CW);
+    } else {
+        glFrontFace(GL_CCW);
+    }
 
     // Get screen size
     RECT rect;
@@ -282,6 +346,10 @@ void InitVulkan(const RendererTraits* traits, HWND hwnd) {
         glBindBufferBase(GL_UNIFORM_BUFFER, i, g_gl.ubos[i]);
     }
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    // Create offscreen render targets
+    CreateOffscreenTarget(g_gl.offscreen, g_gl.screen_size.x, g_gl.screen_size.y);
+    CreateOffscreenTarget(g_gl.ui_offscreen, g_gl.screen_size.x, g_gl.screen_size.y);
 }
 
 void ResizeVulkan(const Vec2Int& size) {
@@ -290,6 +358,10 @@ void ResizeVulkan(const Vec2Int& size) {
 
     g_gl.screen_size = size;
     glViewport(0, 0, size.x, size.y);
+
+    // Recreate offscreen targets at new size
+    CreateOffscreenTarget(g_gl.offscreen, size.x, size.y);
+    CreateOffscreenTarget(g_gl.ui_offscreen, size.x, size.y);
 }
 
 void ShutdownVulkan() {

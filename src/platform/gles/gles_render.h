@@ -162,6 +162,14 @@ typedef ptrdiff_t GLintptr;
 
 #define GL_UNIFORM_BUFFER                 0x8A11
 #define GL_UNIFORM_BUFFER_BINDING         0x8A28
+#define GL_INVALID_INDEX                  0xFFFFFFFFu
+#define GL_FRAMEBUFFER_SRGB               0x8DB9
+
+// glClipControl constants (OpenGL 4.5+)
+#define GL_LOWER_LEFT                     0x8CA1
+#define GL_UPPER_LEFT                     0x8CA2
+#define GL_NEGATIVE_ONE_TO_ONE            0x935E
+#define GL_ZERO_TO_ONE                    0x935F
 
 // Function pointer typedefs
 typedef void (*PFNGLACTIVETEXTUREPROC)(GLenum texture);
@@ -236,6 +244,7 @@ typedef void (*PFNGLUNIFORMMATRIX4FVPROC)(GLint location, GLsizei count, GLboole
 typedef void (*PFNGLUSEPROGRAMPROC)(GLuint program);
 typedef void (*PFNGLVERTEXATTRIBPOINTERPROC)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* pointer);
 typedef void (*PFNGLVIEWPORTPROC)(GLint x, GLint y, GLsizei width, GLsizei height);
+typedef void (*PFNGLCLIPCONTROLPROC)(GLenum origin, GLenum depth);
 
 // Global function pointers
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
@@ -310,3 +319,4 @@ extern PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv;
 extern PFNGLUSEPROGRAMPROC glUseProgram;
 extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 extern PFNGLVIEWPORTPROC glViewport;
+extern PFNGLCLIPCONTROLPROC glClipControl;

@@ -313,17 +313,13 @@ void PlatfrormUpdateWebSocket()
     // Could add periodic cleanup of dead connections here
 }
 
-PlatformWebSocketHandle PlatformConnectWebSocket(const char* url)
-{
-    // Find free slot
+PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
     WindowsWebSocket* ws = nullptr;
     u32 socket_index = 0;
-    for (int i = 0; i < MAX_WEBSOCKETS; i++)
-    {
+    for (int i = 0; i < MAX_WEBSOCKETS; i++) {
         if (g_ws.sockets[i].status == WebSocketStatus::None ||
             g_ws.sockets[i].status == WebSocketStatus::Closed ||
-            g_ws.sockets[i].status == WebSocketStatus::Error)
-        {
+            g_ws.sockets[i].status == WebSocketStatus::Error) {
             if (g_ws.sockets[i].status != WebSocketStatus::None)
                 CleanupSocket(&g_ws.sockets[i]);
 
@@ -333,8 +329,7 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url)
         }
     }
 
-    if (!ws)
-    {
+    if (!ws) {
         LogWarning("No free WebSocket slots");
         return MakeWebSocketHandle(0, 0xFFFFFFFF);
     }
@@ -358,8 +353,7 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url)
     MultiByteToWideChar(CP_UTF8, 0, url, url_len, wide_url, wide_len);
     wide_url[wide_len] = 0;
 
-    if (!WinHttpCrackUrl(wide_url, wide_len, 0, &url_components))
-    {
+    if (!WinHttpCrackUrl(wide_url, wide_len, 0, &url_components)) {
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
@@ -380,8 +374,7 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url)
         WINHTTP_NO_PROXY_BYPASS,
         0);
 
-    if (!ws->session)
-    {
+    if (!ws->session) {
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
@@ -392,16 +385,14 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url)
         port = secure ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT;
 
     ws->connection = WinHttpConnect(ws->session, hostname, port, 0);
-    if (!ws->connection)
-    {
+    if (!ws->connection) {
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
 
     // Build path
     wchar_t path[1024] = L"/";
-    if (url_components.dwUrlPathLength > 0)
-    {
+    if (url_components.dwUrlPathLength > 0) {
         wcsncpy_s(path, url_components.lpszUrlPath, url_components.dwUrlPathLength);
     }
 
@@ -416,51 +407,37 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url)
         WINHTTP_DEFAULT_ACCEPT_TYPES,
         flags);
 
-    if (!ws->request)
-    {
+    if (!ws->request) {
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
 
-    // Set WebSocket upgrade option
-    if (!WinHttpSetOption(ws->request, WINHTTP_OPTION_UPGRADE_TO_WEB_SOCKET, nullptr, 0))
-    {
+    if (!WinHttpSetOption(ws->request, WINHTTP_OPTION_UPGRADE_TO_WEB_SOCKET, nullptr, 0)) {
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
 
-    // Send request
-    if (!WinHttpSendRequest(ws->request, WINHTTP_NO_ADDITIONAL_HEADERS, 0, nullptr, 0, 0, 0))
-    {
+    if (!WinHttpSendRequest(ws->request, WINHTTP_NO_ADDITIONAL_HEADERS, 0, nullptr, 0, 0, 0)) {
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
 
-    // Receive response
-    if (!WinHttpReceiveResponse(ws->request, nullptr))
-    {
+    if (!WinHttpReceiveResponse(ws->request, nullptr)) {
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
 
-    // Complete WebSocket upgrade
     ws->websocket = WinHttpWebSocketCompleteUpgrade(ws->request, 0);
-    if (!ws->websocket)
-    {
+    if (!ws->websocket) {
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
 
-    // Close the request handle (no longer needed)
     WinHttpCloseHandle(ws->request);
     ws->request = nullptr;
-
     ws->status = WebSocketStatus::Connected;
-
-    // Start receive thread
     ws->thread = CreateThread(nullptr, 0, WebSocketReceiveThread, ws, 0, nullptr);
-    if (!ws->thread)
-    {
+    if (!ws->thread) {
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
@@ -468,8 +445,7 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url)
     return MakeWebSocketHandle(socket_index, ws->generation);
 }
 
-void PlatformSend(const PlatformWebSocketHandle& handle, const char* text)
-{
+void PlatformSend(const PlatformWebSocketHandle& handle, const char* text) {
     WindowsWebSocket* ws = GetSocket(handle);
     if (!ws || ws->status != WebSocketStatus::Connected)
         return;
@@ -482,8 +458,7 @@ void PlatformSend(const PlatformWebSocketHandle& handle, const char* text)
         len);
 }
 
-void PlatformSendBinary(const PlatformWebSocketHandle& handle, const void* data, u32 size)
-{
+void PlatformSendBinary(const PlatformWebSocketHandle& handle, const void* data, u32 size) {
     WindowsWebSocket* ws = GetSocket(handle);
     if (!ws || ws->status != WebSocketStatus::Connected)
         return;
@@ -495,16 +470,14 @@ void PlatformSendBinary(const PlatformWebSocketHandle& handle, const void* data,
         size);
 }
 
-void PlatformClose(const PlatformWebSocketHandle& handle, u16 code, const char* reason)
-{
+void PlatformClose(const PlatformWebSocketHandle& handle, u16 code, const char* reason) {
     WindowsWebSocket* ws = GetSocket(handle);
     if (!ws)
         return;
 
     EnterCriticalSection(&ws->cs);
 
-    if (ws->status == WebSocketStatus::Connected)
-    {
+    if (ws->status == WebSocketStatus::Connected) {
         ws->status = WebSocketStatus::Closing;
         ws->should_close = true;
 
@@ -519,15 +492,14 @@ void PlatformClose(const PlatformWebSocketHandle& handle, u16 code, const char* 
     LeaveCriticalSection(&ws->cs);
 }
 
-void PlatformFree(const PlatformWebSocketHandle& handle)
-{
+void PlatformFree(const PlatformWebSocketHandle& handle) {
     WindowsWebSocket* ws = GetSocket(handle);
     if (!ws)
         return;
 
     CleanupSocket(ws);
     ws->status = WebSocketStatus::None;
-    ws->generation++;  // Invalidate handles
+    ws->generation++;
 }
 
 WebSocketStatus PlatformGetStatus(const PlatformWebSocketHandle& handle)

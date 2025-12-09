@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Renderer backend option (Windows only - macOS uses Metal)
-set(NOZ_RENDERER "VULKAN" CACHE STRING "Renderer backend (VULKAN or GLES)")
+set(NOZ_RENDERER "GLES" CACHE STRING "Renderer backend (VULKAN or GLES)")
 set_property(CACHE NOZ_RENDERER PROPERTY STRINGS "VULKAN" "GLES")
 
 # Explicitly list all source files
