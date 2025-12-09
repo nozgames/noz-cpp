@@ -68,10 +68,10 @@ void BindMaterialInternal(Material* material)
     }
 
     if (impl->has_vertex_data)
-        platform::BindVertexUserData(impl->vertex_data, MAX_UNIFORM_BUFFER_SIZE);
+        PLatformBindVertexUserData(impl->vertex_data, MAX_UNIFORM_BUFFER_SIZE);
 
     if (impl->has_fragment_data)
-        platform::BindFragmentUserData(impl->fragment_data, MAX_UNIFORM_BUFFER_SIZE);
+        PlatformBindFragmentUserData(impl->fragment_data, MAX_UNIFORM_BUFFER_SIZE);
 }
 
 void SetVertexData(Material* material, const void* data, size_t size) {

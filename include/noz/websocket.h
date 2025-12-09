@@ -8,8 +8,7 @@
 
 struct WebSocket;
 
-enum class WebSocketStatus
-{
+enum class WebSocketStatus {
     None,
     Connecting,
     Connected,
@@ -18,8 +17,7 @@ enum class WebSocketStatus
     Error
 };
 
-enum class WebSocketMessageType
-{
+enum class WebSocketMessageType {
     Text,
     Binary
 };

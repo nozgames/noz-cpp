@@ -18,7 +18,7 @@ constexpr u32 RECEIVE_BUFFER_SIZE = 16 * 1024;
 
 struct WebSocketMessage
 {
-    platform::WebSocketMessageType type;
+    WebSocketMessageType type;
     u8* data;
     u32 size;
 };
@@ -31,7 +31,7 @@ struct WindowsWebSocket
     HINTERNET websocket;
     HANDLE thread;
     CRITICAL_SECTION cs;
-    platform::WebSocketStatus status;
+    WebSocketStatus status;
     u32 generation;
     bool should_close;
     u16 close_code;
@@ -58,24 +58,24 @@ struct WindowsWebSocketState
 
 static WindowsWebSocketState g_ws = {};
 
-static u32 GetSocketIndex(const platform::WebSocketHandle& handle)
+static u32 GetSocketIndex(const PlatformWebSocketHandle& handle)
 {
     return (u32)(handle.value & 0xFFFFFFFF);
 }
 
-static u32 GetSocketGeneration(const platform::WebSocketHandle& handle)
+static u32 GetSocketGeneration(const PlatformWebSocketHandle& handle)
 {
     return (u32)(handle.value >> 32);
 }
 
-static platform::WebSocketHandle MakeWebSocketHandle(u32 index, u32 generation)
+static PlatformWebSocketHandle MakeWebSocketHandle(u32 index, u32 generation)
 {
-    platform::WebSocketHandle handle;
+    PlatformWebSocketHandle handle;
     handle.value = ((u64)generation << 32) | (u64)index;
     return handle;
 }
 
-static WindowsWebSocket* GetSocket(const platform::WebSocketHandle& handle)
+static WindowsWebSocket* GetSocket(const PlatformWebSocketHandle& handle)
 {
     u32 index = GetSocketIndex(handle);
     u32 generation = GetSocketGeneration(handle);
@@ -90,7 +90,7 @@ static WindowsWebSocket* GetSocket(const platform::WebSocketHandle& handle)
     return &ws;
 }
 
-static void QueueMessage(WindowsWebSocket* ws, platform::WebSocketMessageType type, const u8* data, u32 size)
+static void QueueMessage(WindowsWebSocket* ws, WebSocketMessageType type, const u8* data, u32 size)
 {
     EnterCriticalSection(&ws->cs);
 
@@ -148,7 +148,7 @@ static DWORD WINAPI WebSocketReceiveThread(LPVOID param)
     WindowsWebSocket* ws = (WindowsWebSocket*)param;
     u8 buffer[RECEIVE_BUFFER_SIZE];
 
-    while (!ws->should_close && ws->status == platform::WebSocketStatus::Connected)
+    while (!ws->should_close && ws->status == WebSocketStatus::Connected)
     {
         DWORD bytes_read = 0;
         WINHTTP_WEB_SOCKET_BUFFER_TYPE buffer_type;
@@ -165,7 +165,7 @@ static DWORD WINAPI WebSocketReceiveThread(LPVOID param)
             if (!ws->should_close)
             {
                 EnterCriticalSection(&ws->cs);
-                ws->status = platform::WebSocketStatus::Error;
+                ws->status = WebSocketStatus::Error;
                 LeaveCriticalSection(&ws->cs);
             }
             break;
@@ -177,10 +177,10 @@ static DWORD WINAPI WebSocketReceiveThread(LPVOID param)
             case WINHTTP_WEB_SOCKET_BINARY_MESSAGE_BUFFER_TYPE:
             {
                 // Complete message in one buffer
-                platform::WebSocketMessageType msg_type =
+                WebSocketMessageType msg_type =
                     (buffer_type == WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE)
-                    ? platform::WebSocketMessageType::Text
-                    : platform::WebSocketMessageType::Binary;
+                    ? WebSocketMessageType::Text
+                    : WebSocketMessageType::Binary;
 
                 if (ws->receive_size > 0)
                 {
@@ -211,7 +211,7 @@ static DWORD WINAPI WebSocketReceiveThread(LPVOID param)
             case WINHTTP_WEB_SOCKET_CLOSE_BUFFER_TYPE:
             {
                 EnterCriticalSection(&ws->cs);
-                ws->status = platform::WebSocketStatus::Closed;
+                ws->status = WebSocketStatus::Closed;
 
                 // Get close status
                 USHORT close_code = 0;
@@ -289,12 +289,12 @@ static void CleanupSocket(WindowsWebSocket* ws)
     DeleteCriticalSection(&ws->cs);
 }
 
-void platform::InitializeWebSocket()
+void PlatformInitWebSocket()
 {
     memset(&g_ws, 0, sizeof(g_ws));
 }
 
-void platform::ShutdownWebSocket()
+void PlatformShutdownWebSocket()
 {
     for (int i = 0; i < MAX_WEBSOCKETS; i++)
     {
@@ -307,13 +307,13 @@ void platform::ShutdownWebSocket()
     memset(&g_ws, 0, sizeof(g_ws));
 }
 
-void platform::UpdateWebSocket()
+void PlatfrormUpdateWebSocket()
 {
     // Currently handled by receive threads
     // Could add periodic cleanup of dead connections here
 }
 
-platform::WebSocketHandle platform::WebSocketConnect(const char* url)
+PlatformWebSocketHandle PlatformConnectWebSocket(const char* url)
 {
     // Find free slot
     WindowsWebSocket* ws = nullptr;
@@ -468,7 +468,7 @@ platform::WebSocketHandle platform::WebSocketConnect(const char* url)
     return MakeWebSocketHandle(socket_index, ws->generation);
 }
 
-void platform::WebSocketSend(const WebSocketHandle& handle, const char* text)
+void PlatformSend(const PlatformWebSocketHandle& handle, const char* text)
 {
     WindowsWebSocket* ws = GetSocket(handle);
     if (!ws || ws->status != WebSocketStatus::Connected)
@@ -482,7 +482,7 @@ void platform::WebSocketSend(const WebSocketHandle& handle, const char* text)
         len);
 }
 
-void platform::WebSocketSendBinary(const WebSocketHandle& handle, const void* data, u32 size)
+void PlatformSendBinary(const PlatformWebSocketHandle& handle, const void* data, u32 size)
 {
     WindowsWebSocket* ws = GetSocket(handle);
     if (!ws || ws->status != WebSocketStatus::Connected)
@@ -495,7 +495,7 @@ void platform::WebSocketSendBinary(const WebSocketHandle& handle, const void* da
         size);
 }
 
-void platform::WebSocketClose(const WebSocketHandle& handle, u16 code, const char* reason)
+void PlatformClose(const PlatformWebSocketHandle& handle, u16 code, const char* reason)
 {
     WindowsWebSocket* ws = GetSocket(handle);
     if (!ws)
@@ -519,7 +519,7 @@ void platform::WebSocketClose(const WebSocketHandle& handle, u16 code, const cha
     LeaveCriticalSection(&ws->cs);
 }
 
-void platform::WebSocketRelease(const WebSocketHandle& handle)
+void PlatformFree(const PlatformWebSocketHandle& handle)
 {
     WindowsWebSocket* ws = GetSocket(handle);
     if (!ws)
@@ -530,7 +530,7 @@ void platform::WebSocketRelease(const WebSocketHandle& handle)
     ws->generation++;  // Invalidate handles
 }
 
-platform::WebSocketStatus platform::WebSocketGetStatus(const WebSocketHandle& handle)
+WebSocketStatus PlatformGetStatus(const PlatformWebSocketHandle& handle)
 {
     WindowsWebSocket* ws = GetSocket(handle);
     if (!ws)
@@ -543,7 +543,7 @@ platform::WebSocketStatus platform::WebSocketGetStatus(const WebSocketHandle& ha
     return status;
 }
 
-bool platform::WebSocketHasMessage(const WebSocketHandle& handle)
+bool PlatformHasMessages(const PlatformWebSocketHandle& handle)
 {
     WindowsWebSocket* ws = GetSocket(handle);
     if (!ws)
@@ -556,7 +556,7 @@ bool platform::WebSocketHasMessage(const WebSocketHandle& handle)
     return has_message;
 }
 
-bool platform::WebSocketGetMessage(const WebSocketHandle& handle, WebSocketMessageType* out_type, const u8** out_data, u32* out_size)
+bool WebSocketGetMessage(const PlatformWebSocketHandle& handle, WebSocketMessageType* out_type, const u8** out_data, u32* out_size)
 {
     WindowsWebSocket* ws = GetSocket(handle);
     if (!ws)
@@ -579,7 +579,7 @@ bool platform::WebSocketGetMessage(const WebSocketHandle& handle, WebSocketMessa
     return true;
 }
 
-void platform::WebSocketPopMessage(const WebSocketHandle& handle)
+void PlatformPopMessage(const PlatformWebSocketHandle& handle)
 {
     WindowsWebSocket* ws = GetSocket(handle);
     if (!ws)

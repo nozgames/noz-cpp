@@ -116,13 +116,13 @@ void UpdateButtonState(InputSetImpl* impl, InputCode code, bool new_state, bool 
 float GetAxis(InputSet* set, InputCode code) {
     if (!static_cast<InputSetImpl*>(set)->active)
         return 0.0f;
-    return platform::GetInputAxisValue(code);
+    return PlatformGetInputAxisValue(code);
 }
 
 void UpdateButtonState(InputSetImpl* impl, bool reset) {
     for (u32 i = 0; i < impl->enabled_count; i++) {
         InputCode code = impl->enabled_codes[i];
-        bool button_down = platform::IsInputButtonDown(code);
+        bool button_down = PlatformIsInputButtonDown(code);
         UpdateButtonState(impl, code, button_down, reset);
     }
 }

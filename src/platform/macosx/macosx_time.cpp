@@ -5,12 +5,12 @@
 #include "../../platform.h"
 #include <mach/mach_time.h>
 
-u64 platform::GetPerformanceCounter()
+u64 GetPerformanceCounter()
 {
     return mach_absolute_time();
 }
 
-u64 platform::GetPerformanceFrequency()
+u64 GetPerformanceFrequency()
 {
     static u64 frequency = 0;
     if (frequency == 0)

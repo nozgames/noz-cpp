@@ -39,24 +39,24 @@ struct MacOSSound
 
 static MacOSAudio g_mac_audio = {};
 
-static u32 GetSourceIndex(const platform::SoundHandle& handle)
+static u32 GetSourceIndex(const SoundHandle& handle)
 {
     return (u32)handle.value & 0xFFFFFFFF;
 }
 
-static u32 GetSourceGeneration(const platform::SoundHandle& handle)
+static u32 GetSourceGeneration(const SoundHandle& handle)
 {
     return (u32)(handle.value >> 32);
 }
 
-static platform::SoundHandle MakeSoundHandle(u32 index, u32 generation)
+static SoundHandle MakeSoundHandle(u32 index, u32 generation)
 {
-    platform::SoundHandle handle;
+    SoundHandle handle;
     handle.value = ((u64)generation << 32) | (u64)index;
     return handle;
 }
 
-static MacOSAudioSource* GetAudioSource(const platform::SoundHandle& handle)
+static MacOSAudioSource* GetAudioSource(const SoundHandle& handle)
 {
     u32 source_index = GetSourceIndex(handle);
     u32 source_generation = GetSourceGeneration(handle);
@@ -96,7 +96,7 @@ static void AudioQueueOutputCallbackImpl(void* userData, AudioQueueRef queue, Au
     AudioQueueEnqueueBuffer(queue, buffer, 0, nullptr);
 }
 
-void platform::StopSound(const SoundHandle& handle)
+void StopSound(const SoundHandle& handle)
 {
     MacOSAudioSource* source = GetAudioSource(handle);
     if (!source || !source->queue)
@@ -107,7 +107,7 @@ void platform::StopSound(const SoundHandle& handle)
     source->playback_position = 0;
 }
 
-void platform::SetSoundVolume(const SoundHandle& handle, float volume)
+void SetSoundVolume(const SoundHandle& handle, float volume)
 {
     MacOSAudioSource* source = GetAudioSource(handle);
     if (!source || !source->queue)
@@ -117,7 +117,7 @@ void platform::SetSoundVolume(const SoundHandle& handle, float volume)
     AudioQueueSetParameter(source->queue, kAudioQueueParam_Volume, source->volume * g_mac_audio.master_volume);
 }
 
-float platform::GetSoundVolume(const SoundHandle& handle)
+float GetSoundVolume(const SoundHandle& handle)
 {
     MacOSAudioSource* source = GetAudioSource(handle);
     if (!source)
@@ -126,7 +126,7 @@ float platform::GetSoundVolume(const SoundHandle& handle)
     return source->volume;
 }
 
-bool platform::IsSoundPlaying(const SoundHandle& handle)
+bool IsSoundPlaying(const SoundHandle& handle)
 {
     MacOSAudioSource* source = GetAudioSource(handle);
     if (!source)
@@ -135,7 +135,7 @@ bool platform::IsSoundPlaying(const SoundHandle& handle)
     return source->is_playing;
 }
 
-platform::SoundHandle platform::PlaySound(Sound* sound, float volume, float pitch, bool loop)
+SoundHandle PlaySound(Sound* sound, float volume, float pitch, bool loop)
 {
     MacOSSound* msound = (MacOSSound*)sound;
 
@@ -215,7 +215,7 @@ platform::SoundHandle platform::PlaySound(Sound* sound, float volume, float pitc
     return MakeSoundHandle(0, 0xFFFFFFFF);
 }
 
-void platform::SetMasterVolume(float volume)
+void SetMasterVolume(float volume)
 {
     g_mac_audio.master_volume = Clamp(volume, 0.0f, 1.0f);
 
@@ -229,12 +229,12 @@ void platform::SetMasterVolume(float volume)
     }
 }
 
-float platform::GetMasterVolume()
+float GetMasterVolume()
 {
     return g_mac_audio.master_volume;
 }
 
-platform::Sound* platform::CreateSound(
+Sound* CreateSound(
     void* data,
     u32 data_size,
     u32 sample_rate,
@@ -257,12 +257,12 @@ platform::Sound* platform::CreateSound(
     return (Sound*)sound;
 }
 
-void platform::DestroySound(Sound* sound)
+void DestroySound(Sound* sound)
 {
     Free(sound);
 }
 
-void platform::InitializeAudio()
+void InitializeAudio()
 {
     g_mac_audio = {};
     g_mac_audio.master_volume = 1.0f;
@@ -280,7 +280,7 @@ void platform::InitializeAudio()
     }
 }
 
-void platform::ShutdownAudio()
+void ShutdownAudio()
 {
     // Stop and dispose all sources
     for (int i = 0; i < MAX_SOURCES; i++)

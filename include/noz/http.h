@@ -8,8 +8,7 @@
 
 struct HttpRequest;
 
-enum class HttpStatus
-{
+enum class HttpStatus {
     None,
     Pending,
     Complete,
@@ -18,28 +17,23 @@ enum class HttpStatus
 
 using HttpCallback = std::function<void(HttpRequest* request)>;
 
-// Create and send requests
-HttpRequest* HttpGet(const char* url, HttpCallback on_complete = nullptr);
-HttpRequest* HttpPost(const char* url, const void* body, u32 body_size, const char* content_type = nullptr, HttpCallback on_complete = nullptr);
-HttpRequest* HttpPostString(const char* url, const char* body, const char* content_type = "text/plain", HttpCallback on_complete = nullptr);
-HttpRequest* HttpPostJson(const char* url, const char* json, HttpCallback on_complete = nullptr);
+extern HttpRequest* HttpGet(const char* url, HttpCallback on_complete = nullptr);
+extern HttpRequest* HttpPost(const char* url, const void* body, u32 body_size, const char* content_type = nullptr, HttpCallback on_complete = nullptr);
+extern HttpRequest* HttpPostString(const char* url, const char* body, const char* content_type = "text/plain", HttpCallback on_complete = nullptr);
+extern HttpRequest* HttpPostJson(const char* url, const char* json, HttpCallback on_complete = nullptr);
 
-// Query request state
-HttpStatus   HttpGetStatus(HttpRequest* request);
-int          HttpGetStatusCode(HttpRequest* request);   // HTTP status code (200, 404, etc.)
-bool         HttpIsComplete(HttpRequest* request);
-bool         HttpIsSuccess(HttpRequest* request);       // Complete + status 2xx
+extern HttpStatus   HttpGetStatus(HttpRequest* request);
+extern int          HttpGetStatusCode(HttpRequest* request);   // HTTP status code (200, 404, etc.)
+extern bool         HttpIsComplete(HttpRequest* request);
+extern bool         HttpIsSuccess(HttpRequest* request);       // Complete + status 2xx
 
-// Get response data
-const u8*    HttpGetResponseData(HttpRequest* request, u32* out_size = nullptr);
-const char*  HttpGetResponseString(HttpRequest* request);  // Null-terminated string (adds \0)
-u32          HttpGetResponseSize(HttpRequest* request);
+extern const u8*    HttpGetResponseData(HttpRequest* request, u32* out_size = nullptr);
+extern const char*  HttpGetResponseString(HttpRequest* request);  // Null-terminated string (adds \0)
+extern u32          HttpGetResponseSize(HttpRequest* request);
 
-// Cleanup
-void         HttpCancel(HttpRequest* request);
-void         HttpRelease(HttpRequest* request);
+extern void         HttpCancel(HttpRequest* request);
+extern void         HttpRelease(HttpRequest* request);
 
-// Module init/shutdown (called by engine)
-void InitHttp();
-void ShutdownHttp();
-void UpdateHttp();  // Call each frame to dispatch callbacks
+extern void InitHttp();
+extern void ShutdownHttp();
+extern void UpdateHttp();  // Call each frame to dispatch callbacks

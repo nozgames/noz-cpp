@@ -7,9 +7,8 @@
 
 constexpr int MAX_WEBSOCKETS = 8;
 
-struct WebSocketImpl
-{
-    platform::WebSocketHandle handle;
+struct WebSocketImpl {
+    PlatformWebSocketHandle handle;
     WebSocketMessageCallback on_message;
     WebSocketCloseCallback on_close;
     WebSocketConnectCallback on_connect;
@@ -20,12 +19,9 @@ struct WebSocketImpl
 
 static WebSocketImpl g_websockets[MAX_WEBSOCKETS] = {};
 
-static WebSocketImpl* AllocWebSocket()
-{
-    for (int i = 0; i < MAX_WEBSOCKETS; i++)
-    {
-        if (!g_websockets[i].active)
-        {
+static WebSocketImpl* AllocWebSocket() {
+    for (int i = 0; i < MAX_WEBSOCKETS; i++) {
+        if (!g_websockets[i].active) {
             g_websockets[i] = {};
             g_websockets[i].active = true;
             return &g_websockets[i];
@@ -35,37 +31,12 @@ static WebSocketImpl* AllocWebSocket()
     return nullptr;
 }
 
-static WebSocketStatus ConvertStatus(platform::WebSocketStatus status)
-{
-    switch (status)
-    {
-        case platform::WebSocketStatus::None:       return WebSocketStatus::None;
-        case platform::WebSocketStatus::Connecting: return WebSocketStatus::Connecting;
-        case platform::WebSocketStatus::Connected:  return WebSocketStatus::Connected;
-        case platform::WebSocketStatus::Closing:    return WebSocketStatus::Closing;
-        case platform::WebSocketStatus::Closed:     return WebSocketStatus::Closed;
-        case platform::WebSocketStatus::Error:      return WebSocketStatus::Error;
-    }
-    return WebSocketStatus::None;
-}
-
-static WebSocketMessageType ConvertMessageType(platform::WebSocketMessageType type)
-{
-    switch (type)
-    {
-        case platform::WebSocketMessageType::Text:   return WebSocketMessageType::Text;
-        case platform::WebSocketMessageType::Binary: return WebSocketMessageType::Binary;
-    }
-    return WebSocketMessageType::Text;
-}
-
-WebSocket* WebSocketConnect(const char* url)
-{
+WebSocket* WebSocketConnect(const char* url) {
     WebSocketImpl* ws = AllocWebSocket();
     if (!ws)
         return nullptr;
 
-    ws->handle = platform::WebSocketConnect(url);
+    ws->handle = PlatformConnectWebSocket(url);
     ws->last_status = WebSocketStatus::Connecting;
     ws->connect_callback_fired = false;
 
@@ -99,13 +70,12 @@ void WebSocketOnClose(WebSocket* socket, WebSocketCloseCallback callback)
     ws->on_close = callback;
 }
 
-WebSocketStatus WebSocketGetStatus(WebSocket* socket)
-{
+WebSocketStatus WebSocketGetStatus(WebSocket* socket) {
     if (!socket)
         return WebSocketStatus::None;
 
     WebSocketImpl* ws = (WebSocketImpl*)socket;
-    return ConvertStatus(platform::WebSocketGetStatus(ws->handle));
+    return PlatformGetStatus(ws->handle);
 }
 
 bool WebSocketIsConnected(WebSocket* socket)
@@ -124,7 +94,7 @@ void WebSocketSend(WebSocket* socket, const char* text)
         return;
 
     WebSocketImpl* ws = (WebSocketImpl*)socket;
-    platform::WebSocketSend(ws->handle, text);
+    PlatformSend(ws->handle, text);
 }
 
 void WebSocketSendBinary(WebSocket* socket, const void* data, u32 size)
@@ -133,7 +103,7 @@ void WebSocketSendBinary(WebSocket* socket, const void* data, u32 size)
         return;
 
     WebSocketImpl* ws = (WebSocketImpl*)socket;
-    platform::WebSocketSendBinary(ws->handle, data, size);
+    PlatformSendBinary(ws->handle, data, size);
 }
 
 bool WebSocketHasMessage(WebSocket* socket)
@@ -142,7 +112,7 @@ bool WebSocketHasMessage(WebSocket* socket)
         return false;
 
     WebSocketImpl* ws = (WebSocketImpl*)socket;
-    return platform::WebSocketHasMessage(ws->handle);
+    return PlatformHasMessages(ws->handle);
 }
 
 bool WebSocketPeekMessage(WebSocket* socket, WebSocketMessageType* out_type, const u8** out_data, u32* out_size)
@@ -152,11 +122,11 @@ bool WebSocketPeekMessage(WebSocket* socket, WebSocketMessageType* out_type, con
 
     WebSocketImpl* ws = (WebSocketImpl*)socket;
 
-    platform::WebSocketMessageType ptype;
-    bool result = platform::WebSocketGetMessage(ws->handle, &ptype, out_data, out_size);
+    WebSocketMessageType ptype;
+    bool result = PlatformGetMessage(ws->handle, &ptype, out_data, out_size);
 
     if (result && out_type)
-        *out_type = ConvertMessageType(ptype);
+        *out_type = ptype;
 
     return result;
 }
@@ -183,7 +153,7 @@ void WebSocketPopMessage(WebSocket* socket)
         return;
 
     WebSocketImpl* ws = (WebSocketImpl*)socket;
-    platform::WebSocketPopMessage(ws->handle);
+    PlatformPopMessage(ws->handle);
 }
 
 void WebSocketClose(WebSocket* socket, u16 code, const char* reason)
@@ -192,7 +162,7 @@ void WebSocketClose(WebSocket* socket, u16 code, const char* reason)
         return;
 
     WebSocketImpl* ws = (WebSocketImpl*)socket;
-    platform::WebSocketClose(ws->handle, code, reason);
+    PlatformClose(ws->handle, code, reason);
 }
 
 void WebSocketRelease(WebSocket* socket)
@@ -202,7 +172,7 @@ void WebSocketRelease(WebSocket* socket)
 
     WebSocketImpl* ws = (WebSocketImpl*)socket;
 
-    platform::WebSocketRelease(ws->handle);
+    PlatformFree(ws->handle);
 
     ws->on_message = nullptr;
     ws->on_close = nullptr;
@@ -215,7 +185,7 @@ void InitWebSocket()
     for (int i = 0; i < MAX_WEBSOCKETS; i++)
         g_websockets[i] = {};
 
-    platform::InitializeWebSocket();
+    PlatformInitWebSocket();
 }
 
 void ShutdownWebSocket()
@@ -225,12 +195,12 @@ void ShutdownWebSocket()
         g_websockets[i] = {};
     }
 
-    platform::ShutdownWebSocket();
+    PlatformShutdownWebSocket();
 }
 
 void UpdateWebSocket()
 {
-    platform::UpdateWebSocket();
+    PlatfrormUpdateWebSocket();
 
     for (int i = 0; i < MAX_WEBSOCKETS; i++)
     {
@@ -238,7 +208,7 @@ void UpdateWebSocket()
         if (!ws.active)
             continue;
 
-        WebSocketStatus current = ConvertStatus(platform::WebSocketGetStatus(ws.handle));
+        WebSocketStatus current = PlatformGetStatus(ws.handle);
 
         // Check for connection success/failure
         if (!ws.connect_callback_fired)
@@ -258,21 +228,16 @@ void UpdateWebSocket()
         }
 
         // Dispatch messages
-        if (ws.on_message)
-        {
-            while (platform::WebSocketHasMessage(ws.handle))
-            {
-                platform::WebSocketMessageType ptype;
+        if (ws.on_message) {
+            while (PlatformHasMessages(ws.handle)) {
+                WebSocketMessageType ptype;
                 const u8* data;
                 u32 size;
 
-                if (platform::WebSocketGetMessage(ws.handle, &ptype, &data, &size))
-                {
-                    ws.on_message((WebSocket*)&ws, ConvertMessageType(ptype), data, size);
-                    platform::WebSocketPopMessage(ws.handle);
-                }
-                else
-                {
+                if (PlatformGetMessage(ws.handle, &ptype, &data, &size)) {
+                    ws.on_message((WebSocket*)&ws, ptype, data, size);
+                    PlatformPopMessage(ws.handle);
+                } else {
                     break;
                 }
             }
@@ -280,10 +245,8 @@ void UpdateWebSocket()
 
         // Check for close
         if (ws.last_status == WebSocketStatus::Connected &&
-            (current == WebSocketStatus::Closed || current == WebSocketStatus::Error))
-        {
-            if (ws.on_close)
-            {
+            (current == WebSocketStatus::Closed || current == WebSocketStatus::Error)) {
+            if (ws.on_close) {
                 // TODO: Get actual close code/reason from platform
                 u16 code = (current == WebSocketStatus::Error) ? 1006 : 1000;
                 ws.on_close((WebSocket*)&ws, code, nullptr);

@@ -1,8 +1,11 @@
 //
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
+//  Platform-independent OpenGL renderer implementation
+//
 
-#include "gles_render.h"
+#include "gles_internal.h"
+#include <cassert>
 
 // Global function pointers - definitions
 PFNGLACTIVETEXTUREPROC glActiveTexture = nullptr;
@@ -77,3 +80,473 @@ PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv = nullptr;
 PFNGLUSEPROGRAMPROC glUseProgram = nullptr;
 PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = nullptr;
 PFNGLVIEWPORTPROC glViewport = nullptr;
+
+// Global GL state
+GLState g_gl = {};
+
+// ============================================================================
+// Frame management
+// ============================================================================
+
+void PlatformBeginRenderFrame() {
+    glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void PlatformBindSkeleton(const Mat3* bone_transforms, u8 bone_count) {
+    float* dst = (float*)g_gl.uniform_data[UNIFORM_BUFFER_SKELETON];
+    for (u8 i = 0; i < bone_count && i < MAX_BONES; i++) {
+        const Mat3& m = bone_transforms[i];
+        *dst++ = m.m[0]; *dst++ = m.m[1]; *dst++ = m.m[2]; *dst++ = 0.0f;
+        *dst++ = m.m[3]; *dst++ = m.m[4]; *dst++ = m.m[5]; *dst++ = 0.0f;
+        *dst++ = m.m[6]; *dst++ = m.m[7]; *dst++ = m.m[8]; *dst++ = 0.0f;
+    }
+}
+
+void PlatformBindTransform(const Mat3& transform, float depth, float depth_scale) {
+    ObjectBuffer* obj = (ObjectBuffer*)g_gl.uniform_data[UNIFORM_BUFFER_OBJECT];
+    float* dst = obj->transform;
+    *dst++ = transform.m[0]; *dst++ = transform.m[1]; *dst++ = transform.m[2]; *dst++ = 0.0f;
+    *dst++ = transform.m[3]; *dst++ = transform.m[4]; *dst++ = transform.m[5]; *dst++ = 0.0f;
+    *dst++ = transform.m[6]; *dst++ = transform.m[7]; *dst++ = transform.m[8]; *dst++ = 0.0f;
+    obj->depth = depth;
+    obj->depth_scale = depth_scale;
+    obj->depth_min = 0.0f;
+    obj->depth_max = 1.0f;
+}
+
+void PLatformBindVertexUserData(const u8* data, u32 size) {
+    memcpy(g_gl.uniform_data[UNIFORM_BUFFER_VERTEX_USER], data, size);
+}
+
+void PlatformBindFragmentUserData(const u8* data, u32 size) {
+    memcpy(g_gl.uniform_data[UNIFORM_BUFFER_FRAGMENT_USER], data, size);
+}
+
+void PlatformBindCamera(const Mat3& view_matrix) {
+    float* dst = (float*)g_gl.uniform_data[UNIFORM_BUFFER_CAMERA];
+    *dst++ = view_matrix.m[0]; *dst++ = view_matrix.m[1]; *dst++ = view_matrix.m[2]; *dst++ = 0.0f;
+    *dst++ = view_matrix.m[3]; *dst++ = view_matrix.m[4]; *dst++ = view_matrix.m[5]; *dst++ = 0.0f;
+    *dst++ = view_matrix.m[6]; *dst++ = view_matrix.m[7]; *dst++ = view_matrix.m[8]; *dst++ = 0.0f;
+}
+
+void PlatformBindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission) {
+    ColorBuffer* cb = (ColorBuffer*)g_gl.uniform_data[UNIFORM_BUFFER_COLOR];
+    cb->color = color;
+    cb->emission = emission;
+    cb->uv_offset = color_uv_offset;
+}
+
+// ============================================================================
+// Buffer management
+// ============================================================================
+
+void PlatformFree(PlatformBuffer* buffer) {
+    if (buffer) {
+        GLuint buf = (GLuint)(uintptr_t)buffer;
+        glDeleteBuffers(1, &buf);
+    }
+}
+
+PlatformBuffer* PlatformCreateVertexBuffer(const MeshVertex* vertices, u16 vertex_count, const char* name) {
+    (void)name;
+    assert(vertices);
+    assert(vertex_count > 0);
+
+    GLuint vbo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(MeshVertex), vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    return (PlatformBuffer*)(uintptr_t)vbo;
+}
+
+PlatformBuffer* PlatformCreateIndexBuffer(const u16* indices, u16 index_count, const char* name) {
+    (void)name;
+    assert(indices);
+    assert(index_count > 0);
+
+    GLuint ibo;
+    glGenBuffers(1, &ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(u16), indices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    return (PlatformBuffer*)(uintptr_t)ibo;
+}
+
+void PlatformBindVertexBuffer(PlatformBuffer* buffer) {
+    assert(buffer);
+    GLuint vbo = (GLuint)(uintptr_t)buffer;
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    g_gl.bound_vertex_buffer = vbo;
+
+    // Set up vertex attributes for MeshVertex
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, position));
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, depth));
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, uv));
+
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, normal));
+
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 4, GL_INT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, bone_indices));
+
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, bone_weights));
+}
+
+void PlatformBindIndexBuffer(PlatformBuffer* buffer) {
+    assert(buffer);
+    GLuint ibo = (GLuint)(uintptr_t)buffer;
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    g_gl.bound_index_buffer = ibo;
+}
+
+// ============================================================================
+// Drawing
+// ============================================================================
+
+void PlatformDrawIndexed(u16 index_count) {
+    assert(index_count > 0);
+
+    // Upload uniform buffer data to GPU before drawing
+    for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++) {
+        glBindBuffer(GL_UNIFORM_BUFFER, g_gl.ubos[i]);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, MAX_UNIFORM_BUFFER_SIZE, g_gl.uniform_data[i]);
+    }
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    glDrawElements(GL_TRIANGLES, index_count, GL_UNSIGNED_SHORT, nullptr);
+}
+
+PlatformTexture* PlatformCreateTexture(
+    void* data,
+    size_t width,
+    size_t height,
+    int channels,
+    const SamplerOptions& sampler_options,
+    const char* name) {
+    (void)name;
+    PlatformTexture* texture = new PlatformTexture();
+    texture->size = {(i32)width, (i32)height};
+    texture->channels = channels;
+    texture->sampler_options = sampler_options;
+
+    glGenTextures(1, &texture->gl_texture);
+    glBindTexture(GL_TEXTURE_2D, texture->gl_texture);
+
+    GLenum format = (channels == 1) ? GL_LUMINANCE : GL_RGBA;
+    GLenum internal_format = (channels == 1) ? GL_LUMINANCE : GL_RGBA8;
+
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, (GLsizei)width, (GLsizei)height, 0, format, GL_UNSIGNED_BYTE, data);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, ToGL(sampler_options.filter));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, ToGL(sampler_options.filter));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, ToGL(sampler_options.clamp));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, ToGL(sampler_options.clamp));
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    return texture;
+}
+
+void PlatformFree(PlatformTexture* texture) {
+    if (!texture) return;
+    if (texture->gl_texture)
+        glDeleteTextures(1, &texture->gl_texture);
+    delete texture;
+}
+
+void BindTexture(PlatformTexture* texture, int slot) {
+    glActiveTexture(GL_TEXTURE0 + slot);
+    if (texture)
+        glBindTexture(GL_TEXTURE_2D, texture->gl_texture);
+    else
+        glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void UpdateTexture(PlatformTexture* texture, void* data, const noz::Rect& rect) {
+    if (!texture || !data) return;
+
+    glBindTexture(GL_TEXTURE_2D, texture->gl_texture);
+
+    GLenum format = (texture->channels == 1) ? GL_LUMINANCE : GL_RGBA;
+    glTexSubImage2D(GL_TEXTURE_2D, 0,
+        (GLint)rect.x, (GLint)rect.y,
+        (GLsizei)rect.width, (GLsizei)rect.height,
+        format, GL_UNSIGNED_BYTE, data);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+Vec2Int GetTextureSize(PlatformTexture* texture) {
+    return texture ? texture->size : VEC2INT_ZERO;
+}
+
+// ============================================================================
+// Render passes
+// ============================================================================
+
+void PlatformBeginRenderPass(Color clear_color) {
+    if (g_gl.postprocess_enabled) {
+        glBindFramebuffer(GL_FRAMEBUFFER, g_gl.offscreen.framebuffer);
+    } else {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
+    glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void PlatformEndRenderPass() {
+}
+
+void PlatformBeginPostProcess() {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
+    glDisable(GL_DEPTH_TEST);
+}
+
+void PlatformEndPostProcess() {
+}
+
+void PlatformEnablePostProcess(bool enabled) {
+    g_gl.postprocess_enabled = enabled;
+}
+
+void PlatformBeginUI() {
+    glBindFramebuffer(GL_FRAMEBUFFER, g_gl.ui_offscreen.framebuffer);
+    glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void EndUIPass() {
+}
+
+void BeginUICompositePass() {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
+    glDisable(GL_DEPTH_TEST);
+}
+
+void EndUICompositePass() {
+}
+
+void PlatformBindOffscreenTexture() {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, g_gl.offscreen.texture);
+}
+
+void BindUITexture() {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, g_gl.ui_offscreen.texture);
+}
+
+void SetRenderState(RenderStateFlags flags) {
+    if (flags & RENDER_STATE_DEPTH_TEST) {
+        glEnable(GL_DEPTH_TEST);
+    } else {
+        glDisable(GL_DEPTH_TEST);
+    }
+
+    if (flags & RENDER_STATE_DEPTH_WRITE) {
+        glDepthMask(GL_TRUE);
+    } else {
+        glDepthMask(GL_FALSE);
+    }
+
+    if (flags & RENDER_STATE_CULL_BACK) {
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+    } else {
+        glDisable(GL_CULL_FACE);
+    }
+}
+
+void SetBlendState(BlendMode mode) {
+    switch (mode) {
+        case BLEND_MODE_NONE:
+            glDisable(GL_BLEND);
+            break;
+        case BLEND_MODE_ALPHA:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            break;
+        case BLEND_MODE_ADD:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            break;
+        case BLEND_MODE_MULTIPLY:
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_DST_COLOR, GL_ZERO);
+            break;
+    }
+}
+
+void SetScissor(const Rect& rect) {
+    glEnable(GL_SCISSOR_TEST);
+    glScissor((GLint)rect.x, (GLint)rect.y, (GLsizei)rect.width, (GLsizei)rect.height);
+}
+
+void ClearScissor() {
+    glDisable(GL_SCISSOR_TEST);
+}
+
+void SetViewport(const Rect& viewport) {
+    if (viewport.width <= 0 || viewport.height <= 0) {
+        glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
+    } else {
+        glViewport((GLint)viewport.x, (GLint)viewport.y,
+                   (GLsizei)viewport.width, (GLsizei)viewport.height);
+    }
+}
+
+// ============================================================================
+// Shader management
+// ============================================================================
+
+static GLuint CompileGLShader(GLenum type, const char* source, u32 source_size, const char* name) {
+    if (!source || source_size == 0)
+        return 0;
+
+    GLuint shader = glCreateShader(type);
+    if (!shader)
+        return 0;
+
+    GLint length = (GLint)source_size;
+    glShaderSource(shader, 1, &source, &length);
+    glCompileShader(shader);
+
+    GLint success;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        char info_log[512];
+        glGetShaderInfoLog(shader, 512, nullptr, info_log);
+        (void)name;
+        glDeleteShader(shader);
+        return 0;
+    }
+
+    return shader;
+}
+
+PlatformShader* PlatformCreateShader(
+    const void* vertex,
+    u32 vertex_size,
+    const void* geometry,
+    u32 geometry_size,
+    const void* fragment,
+    u32 fragment_size,
+    ShaderFlags flags,
+    const char* name)
+{
+    (void)flags;
+
+    PlatformShader* shader = new PlatformShader();
+    shader->program = 0;
+
+    for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++)
+        shader->uniform_locations[i] = -1;
+
+    if (!vertex || !fragment)
+        return shader;
+
+    GLuint vert_shader = CompileGLShader(GL_VERTEX_SHADER, (const char*)vertex, vertex_size, name);
+    if (!vert_shader) {
+        delete shader;
+        return nullptr;
+    }
+
+    GLuint frag_shader = CompileGLShader(GL_FRAGMENT_SHADER, (const char*)fragment, fragment_size, name);
+    if (!frag_shader) {
+        glDeleteShader(vert_shader);
+        delete shader;
+        return nullptr;
+    }
+
+    GLuint geom_shader = 0;
+    if (geometry && geometry_size > 0) {
+        geom_shader = CompileGLShader(GL_GEOMETRY_SHADER, (const char*)geometry, geometry_size, name);
+    }
+
+    shader->program = glCreateProgram();
+    glAttachShader(shader->program, vert_shader);
+    glAttachShader(shader->program, frag_shader);
+    if (geom_shader)
+        glAttachShader(shader->program, geom_shader);
+
+    glLinkProgram(shader->program);
+
+    GLint success;
+    glGetProgramiv(shader->program, GL_LINK_STATUS, &success);
+    if (!success) {
+        char info_log[512];
+        glGetProgramInfoLog(shader->program, 512, nullptr, info_log);
+        glDeleteProgram(shader->program);
+        shader->program = 0;
+    }
+
+    glDeleteShader(vert_shader);
+    glDeleteShader(frag_shader);
+    if (geom_shader)
+        glDeleteShader(geom_shader);
+
+    if (shader->program) {
+        const char* uniform_names[] = {
+            "CameraBuffer", "TransformBuffer", "SkeletonBuffer",
+            "VertexUserBuffer", "ColorBuffer", "FragmentUserBuffer"
+        };
+        for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++) {
+            shader->uniform_locations[i] = glGetUniformBlockIndex(shader->program, uniform_names[i]);
+        }
+    }
+
+    return shader;
+}
+
+void PlatformBindShader(PlatformShader* shader) {
+    if (shader && shader->program) {
+        glUseProgram(shader->program);
+        g_gl.current_program = shader->program;
+    }
+}
+
+void PlatformFree(PlatformShader* shader) {
+    if (shader) {
+        if (shader->program) {
+            glDeleteProgram(shader->program);
+        }
+        delete shader;
+    }
+}
+
+// ============================================================================
+// Screen info
+// ============================================================================
+
+Vec2Int PlatformGetScreenSize() {
+    return g_gl.screen_size;
+}
+
+float GetDepthConversionFactor() {
+    return g_gl.depth_conversion_factor;
+}

@@ -18,10 +18,9 @@ struct Time
 
 static Time g_time = {};
 
-void UpdateTime()
-{
-    u64 current = platform::GetPerformanceCounter();
-    u64 frequency = platform::GetPerformanceFrequency();
+void UpdateTime() {
+    u64 current = PlatformGetTimeCounter();
+    u64 frequency = PlatformGetTimeFrequency();
 
     // Calculate delta time
     u64 delta_ticks = current - g_time.last_frame_time;
@@ -54,7 +53,7 @@ void SetFixedTimeRate(int rate) {
 
 void InitTime()
 {
-     g_time.start_time = g_time.last_frame_time = platform::GetPerformanceCounter();
+     g_time.start_time = g_time.last_frame_time = PlatformGetTimeCounter();
      SetFixedTimeRate(DEFAULT_FIXED_RATE);
 }
 

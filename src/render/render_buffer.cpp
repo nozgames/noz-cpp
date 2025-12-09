@@ -332,24 +332,24 @@ void ExecuteRenderCommands()
         switch (command->type)
         {
         case RENDER_COMMAND_TYPE_BIND_VERTEX_USER:
-            platform::BindVertexUserData(command->data.bind_user_data.data, MAX_UNIFORM_BUFFER_SIZE);
+            PLatformBindVertexUserData(command->data.bind_user_data.data, MAX_UNIFORM_BUFFER_SIZE);
             break;
 
         case RENDER_COMMAND_TYPE_BIND_FRAGMENT_USER:
-            platform::BindFragmentUserData(command->data.bind_user_data.data, MAX_UNIFORM_BUFFER_SIZE);
+            PlatformBindFragmentUserData(command->data.bind_user_data.data, MAX_UNIFORM_BUFFER_SIZE);
             break;
 
         case RENDER_COMMAND_TYPE_BIND_CAMERA:
-            platform::SetViewport(command->data.bind_camera.viewport);
-            platform::BindCamera(command->data.bind_camera.view_matrix);
+            PlatformSetViewport(command->data.bind_camera.viewport);
+            PlatformBindCamera(command->data.bind_camera.view_matrix);
             break;
 
         case RENDER_COMMAND_TYPE_DRAW_MESH:
-            platform::BindColor(
+            PlatformBindColor(
                 command->data.draw_mesh.color,
                 ToVec2(command->data.draw_mesh.color_offset),
                 command->data.draw_mesh.emission);
-            platform::BindTransform(
+            PlatformBindTransform(
                 command->data.draw_mesh.transform,
                 command->data.draw_mesh.depth,
                 command->data.draw_mesh.depth_scale);
@@ -358,7 +358,7 @@ void ExecuteRenderCommands()
             break;
 
         case RENDER_COMMAND_TYPE_BEGIN_PASS:
-            platform::BeginRenderPass(command->data.begin_pass.clear_color);
+            PlatformBeginRenderPass(command->data.begin_pass.clear_color);
             break;
 
         case RENDER_COMMAND_TYPE_BIND_DEFAULT_TEXTURE:
@@ -366,11 +366,11 @@ void ExecuteRenderCommands()
             break;
 
         case RENDER_COMMAND_TYPE_BIND_SKELETON:
-            platform::BindSkeleton(command->data.bind_skeleton.bones, (u8)command->data.bind_skeleton.bone_count);
+            PlatformBindSkeleton(command->data.bind_skeleton.bones, (u8)command->data.bind_skeleton.bone_count);
             break;
 
         case RENDER_COMMAND_TYPE_END_PASS:
-            platform::EndRenderPass();
+            PlatformEndRenderPass();
             break;
         }
     }

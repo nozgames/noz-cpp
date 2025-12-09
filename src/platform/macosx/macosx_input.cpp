@@ -121,7 +121,7 @@ static InputCode GetLeftStickButton(int gamepad_index) {
     return INPUT_CODE_NONE;
 }
 
-bool platform::IsInputButtonDown(InputCode code) {
+bool IsInputButtonDown(InputCode code) {
     if (IsMouse(code) || IsKeyboard(code))
         return g_input.key_states[code];
 
@@ -215,7 +215,7 @@ static bool WasGamepadUsed(int gamepad_index) {
     return false;
 }
 
-float platform::GetInputAxisValue(InputCode code) {
+float GetInputAxisValue(InputCode code) {
     // Handle mouse axes
     if (IsMouse(code) && IsAxis(code)) {
         switch (code) {
@@ -283,7 +283,7 @@ float platform::GetInputAxisValue(InputCode code) {
     return 0.0f;
 }
 
-void platform::UpdateInputState() {
+void UpdateInputState() {
     if (!HasFocus()) {
         for (int i = 0; i < INPUT_CODE_COUNT; i++)
             g_input.key_states[i] = false;
@@ -383,7 +383,7 @@ void HandleInputKeyDown(unsigned short keyCode) {
     }
 }
 
-void platform::ClearTextInput() {
+void ClearTextInput() {
     if (g_input.text_input.length == 0)
         return;
 
@@ -393,19 +393,19 @@ void platform::ClearTextInput() {
     Send(EVENT_TEXTINPUT_CHANGE, &g_input.text_input);
 }
 
-const TextInput& platform::GetTextInput() {
+const TextInput& GetTextInput() {
     return g_input.text_input;
 }
 
-void platform::SetTextInput(const TextInput& text_input) {
+void SetTextInput(const TextInput& text_input) {
     g_input.text_input = text_input;
 }
 
-bool platform::IsGamepadActive() {
+bool IsGamepadActive() {
     return g_input.active_controller != -1;
 }
 
-void platform::InitializeInput() {
+void InitializeInput() {
     ClearTextInput();
 
     // Initialize gamepad controllers
@@ -463,7 +463,7 @@ void platform::InitializeInput() {
     g_input.key_codes[MOUSE_MIDDLE] = 1;
 }
 
-void platform::ShutdownInput() {
+void ShutdownInput() {
     @autoreleasepool {
         [[NSNotificationCenter defaultCenter] removeObserver:nil
                                                          name:GCControllerDidConnectNotification

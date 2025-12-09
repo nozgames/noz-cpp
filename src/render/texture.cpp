@@ -9,7 +9,7 @@ Texture** TEXTURE = nullptr;
 int TEXTURE_COUNT = 0;
 
 struct TextureImpl : Texture {
-    platform::Texture* platform_texture = nullptr;
+    PlatformTexture* platform_texture = nullptr;
     SamplerOptions sampler_options;
     TextureFormat format;
     Vec2Int size;
@@ -45,7 +45,13 @@ static void CreateTexture(
     assert(width > 0);
     assert(height > 0);
 
-    impl->platform_texture = platform::CreateTexture(data, width, height, GetBytesPerPixel(format), impl->sampler_options, name->value);
+    impl->platform_texture = PlatformCreateTexture(
+        data,
+        width,
+        height,
+        GetBytesPerPixel(format),
+        impl->sampler_options,
+        name->value);
 }
 
 Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const Name* name) {
@@ -62,7 +68,13 @@ Texture* CreateTexture(Allocator* allocator, int width, int height, TextureForma
     impl->size.y = height;
     impl->name = name;
     impl->sampler_options = g_default_sampler_options;
-    impl->platform_texture = platform::CreateTexture(nullptr, width, height, GetBytesPerPixel(format), impl->sampler_options, name->value);
+    impl->platform_texture = PlatformCreateTexture(
+        nullptr,
+        width,
+        height,
+        GetBytesPerPixel(format),
+        impl->sampler_options,
+        name->value);
     return texture;
 }
 
@@ -144,7 +156,7 @@ void BindTextureInternal(Texture* texture, i32 slot) {
     if (!texture)
         texture = TEXTURE_WHITE;
 
-    return platform::BindTexture(static_cast<TextureImpl*>(texture)->platform_texture, slot);
+    return PlatformBindTexture(static_cast<TextureImpl*>(texture)->platform_texture, slot);
 }
 
 #ifdef NOZ_EDITOR
@@ -157,7 +169,7 @@ void ReloadTexture(Asset* asset, Stream* stream, const AssetHeader& header, cons
     assert(stream);
     TextureImpl* impl = static_cast<TextureImpl*>(asset);
 
-    platform::DestroyTexture(impl->platform_texture);
+    Free(impl->platform_texture);
 
     LoadTextureInternal(impl, stream, GetName(asset));
 }

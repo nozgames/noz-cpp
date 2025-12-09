@@ -9,7 +9,7 @@ constexpr int MAX_REQUESTS = 16;
 
 struct HttpRequestImpl
 {
-    platform::HttpHandle handle;
+    PlatformHttpHandle handle;
     HttpCallback callback;
     HttpStatus last_status;
     char* response_string;
@@ -39,7 +39,7 @@ HttpRequest* HttpGet(const char* url, HttpCallback on_complete)
     if (!req)
         return nullptr;
 
-    req->handle = platform::HttpGet(url);
+    req->handle = PlatformGetURL(url);
     req->callback = on_complete;
     req->last_status = HttpStatus::Pending;
 
@@ -52,7 +52,7 @@ HttpRequest* HttpPost(const char* url, const void* body, u32 body_size, const ch
     if (!req)
         return nullptr;
 
-    req->handle = platform::HttpPost(url, body, body_size, content_type);
+    req->handle = PlatformPostURL(url, body, body_size, content_type);
     req->callback = on_complete;
     req->last_status = HttpStatus::Pending;
 
@@ -75,14 +75,13 @@ HttpStatus HttpGetStatus(HttpRequest* request)
         return HttpStatus::None;
 
     HttpRequestImpl* req = (HttpRequestImpl*)request;
-    platform::HttpStatus pstatus = platform::HttpGetStatus(req->handle);
+    HttpStatus pstatus = PlatformGetStatus(req->handle);
 
-    switch (pstatus)
-    {
-        case platform::HttpStatus::None:     return HttpStatus::None;
-        case platform::HttpStatus::Pending:  return HttpStatus::Pending;
-        case platform::HttpStatus::Complete: return HttpStatus::Complete;
-        case platform::HttpStatus::Error:    return HttpStatus::Error;
+    switch (pstatus) {
+        case HttpStatus::None:     return HttpStatus::None;
+        case HttpStatus::Pending:  return HttpStatus::Pending;
+        case HttpStatus::Complete: return HttpStatus::Complete;
+        case HttpStatus::Error:    return HttpStatus::Error;
     }
 
     return HttpStatus::None;
@@ -94,7 +93,7 @@ int HttpGetStatusCode(HttpRequest* request)
         return 0;
 
     HttpRequestImpl* req = (HttpRequestImpl*)request;
-    return platform::HttpGetStatusCode(req->handle);
+    return PlatformGetStatusCode(req->handle);
 }
 
 bool HttpIsComplete(HttpRequest* request)
@@ -121,7 +120,7 @@ const u8* HttpGetResponseData(HttpRequest* request, u32* out_size)
     }
 
     HttpRequestImpl* req = (HttpRequestImpl*)request;
-    return platform::HttpGetResponse(req->handle, out_size);
+    return PlatformGetResponse(req->handle, out_size);
 }
 
 const char* HttpGetResponseString(HttpRequest* request)
@@ -136,7 +135,7 @@ const char* HttpGetResponseString(HttpRequest* request)
         return req->response_string;
 
     u32 size = 0;
-    const u8* data = platform::HttpGetResponse(req->handle, &size);
+    const u8* data = PlatformGetResponse(req->handle, &size);
     if (!data || size == 0)
         return nullptr;
 
@@ -161,7 +160,7 @@ void HttpCancel(HttpRequest* request)
         return;
 
     HttpRequestImpl* req = (HttpRequestImpl*)request;
-    platform::HttpCancel(req->handle);
+    PlatformCancel(req->handle);
     req->last_status = HttpStatus::None;
 }
 
@@ -172,7 +171,7 @@ void HttpRelease(HttpRequest* request)
 
     HttpRequestImpl* req = (HttpRequestImpl*)request;
 
-    platform::HttpRelease(req->handle);
+    PlatformFree(req->handle);
 
     if (req->response_string)
     {
@@ -189,7 +188,7 @@ void InitHttp()
     for (int i = 0; i < MAX_REQUESTS; i++)
         g_requests[i] = {};
 
-    platform::InitializeHttp();
+    PlatformInitHttp();
 }
 
 void ShutdownHttp()
@@ -204,7 +203,7 @@ void ShutdownHttp()
         g_requests[i] = {};
     }
 
-    platform::ShutdownHttp();
+    PlatformShutdownHttp();
 }
 
 void UpdateHttp()

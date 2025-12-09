@@ -8,27 +8,27 @@
 extern void PlayMusicInternal(Sound* sound);
 
 void SetMasterVolume(float volume) {
-    platform::SetMasterVolume(volume);
+    PlatformSetMasterVolume(volume);
 }
 
 float GetMasterVolume() {
-    return platform::GetMasterVolume();
+    return PlatformGetMasterVolume();
 }
 
 void SetSoundVolume(float volume) {
-    platform::SetSoundVolume(volume);
+    PlatformSetSoundVolume(volume);
 }
 
 float GetSoundVolume() {
-    return platform::GetSoundVolume();
+    return PlatformGetSoundVolume();
 }
 
 void SetMusicVolume(float volume) {
-    platform::SetMusicVolume(volume);
+    PlatformSetMusicVolume(volume);
 }
 
 float GetMusicVolume() {
-    return platform::GetMusicVolume();
+    return PlatformGetMusicVolume();
 }
 
 void PlayMusic(Sound* sound) {
@@ -42,22 +42,22 @@ void StopMusic() {
     if (!IsMusicPlaying())
         return;
 
-    platform::StopMusic();
+    PlatformStopMusic();
 }
 
 bool IsMusicPlaying() {
-    return platform::IsMusicPlaying();
+    return PlatformIsMusicPlaying();
 }
 
 void Stop(const SoundHandle& handle) {
-    platform::StopSound({handle.value});
+    PlatformStopSound({handle.value});
 }
 
 void InitAudio() {
-    platform::InitializeAudio();
+    PlatformInitAudio();
 }
 
 void ShutdownAudio() {
     StopMusic();
-    platform::ShutdownAudio();
+    PlatformShutdownAudio();
 }

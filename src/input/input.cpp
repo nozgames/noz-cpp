@@ -23,10 +23,10 @@ bool IsGamepadActive() {
 }
 
 void UpdateInput() {
-    platform::UpdateInputState();
+    PlatformUpdateInputState();
     UpdateInputState(static_cast<InputSet*>(GetBack(g_input.active_sets)));
 
-    bool gamepad_active = platform::IsGamepadActive();
+    bool gamepad_active = PlatformIsGamepadActive();
     if (gamepad_active != g_input.gamepad_active) {
         g_input.gamepad_active = gamepad_active;
         if (gamepad_active) {
@@ -72,19 +72,19 @@ void SetInputSet(InputSet* input_set) {
 }
 
 Vec2 GetMousePosition() {
-    return platform::GetMousePosition();
+    return PlatformGetMousePosition();
 }
 
 bool IsMouseOverWindow() {
-    return platform::IsMouseOverWindow();
+    return PlatformIsMouseOverWindow();
 }
 
 void SetTextInput(const TextInput& text_input) {
-    platform::SetTextInput(text_input);
+    PlatformSetTextInput(text_input);
 }
 
 void ClearTextInput() {
-    return platform::ClearTextInput();
+    return PlatformClearTextInput();
 }
 
 void ReplaceSelection(TextInput& input, const char* value) {
@@ -121,7 +121,7 @@ void ReplaceSelection(TextInput& input, const char* value) {
 }
 
 const TextInput& GetTextInput() {
-    return platform::GetTextInput();
+    return PlatformGetTextInput();
 }
 
 void BeginTextInput() {
@@ -147,14 +147,14 @@ bool IsTextInputEnabled() {
 
 void InitInput() {
     assert(INPUT_CODE_COUNT < 256);
-    platform::InitializeInput();
+    PlatformInitInput();
     InputActiveInputSetList(g_input.active_sets);
 }
 
 void ShutdownInput() {
-    platform::ShutdownInput();
+    PlatformShutdownInput();
 }
 
 bool IsButtonDown(InputCode code) {
-    return platform::IsInputButtonDown(code);
+    return PlatformIsInputButtonDown(code);
 }

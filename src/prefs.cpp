@@ -41,7 +41,7 @@ static void LoadPrefsInternal(const std::filesystem::path& path) {
 
 void LoadPrefs() {
     PushScratch();
-    LoadPrefsInternal(platform::GetSaveGamePath() / "prefs.dat");
+    LoadPrefsInternal(PlatformGetSaveGamePath() / "prefs.dat");
     PopScratch();
 }
 
@@ -72,7 +72,7 @@ static void SavePrefsInternal(const std::filesystem::path& path) {
 
 void SavePrefs() {
     PushScratch();
-    SavePrefsInternal(platform::GetSaveGamePath() / "prefs.dat");
+    SavePrefsInternal(PlatformGetSaveGamePath() / "prefs.dat");
     PopScratch();
 }
 

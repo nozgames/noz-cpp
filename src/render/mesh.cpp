@@ -10,8 +10,8 @@ int MESH_COUNT = 0;
 struct MeshImpl : Mesh {
     u16 vertex_count;
     u16 index_count;
-    platform::Buffer* vertex_buffer;
-    platform::Buffer* index_buffer;
+    PlatformBuffer* vertex_buffer;
+    PlatformBuffer* index_buffer;
     MeshVertex* vertices;
     u16* indices;
     Bounds2 bounds;
@@ -69,9 +69,9 @@ static void MeshDestructor(void* p) {
     MeshImpl* impl = (MeshImpl*)p;
 
     if (impl->vertex_buffer)
-        platform::DestroyBuffer(impl->vertex_buffer);
+        Free(impl->vertex_buffer);
     if (impl->index_buffer)
-        platform::DestroyBuffer(impl->index_buffer);
+        Free(impl->index_buffer);
 
     Free(impl->vertices);
     Free(impl->indices);
@@ -102,11 +102,11 @@ void UploadMesh(Mesh* mesh)
     assert(mesh);
     MeshImpl* impl = static_cast<MeshImpl*>(mesh);
     assert(!impl->vertex_buffer);
-    impl->vertex_buffer = platform::CreateVertexBuffer(
+    impl->vertex_buffer = PlatformCreateVertexBuffer(
         impl->vertices,
         impl->vertex_count,
         impl->name->value);
-    impl->index_buffer = platform::CreateIndexBuffer(
+    impl->index_buffer = PlatformCreateIndexBuffer(
         impl->indices,
         impl->index_count,
         impl->name->value);
@@ -155,9 +155,9 @@ bool OverlapPoint(Mesh* mesh, const Vec2& overlap_point) {
 void RenderMesh(Mesh* mesh) {
     assert(mesh);
     MeshImpl* impl = static_cast<MeshImpl*>(mesh);
-    platform::BindVertexBuffer(impl->vertex_buffer);
-    platform::BindIndexBuffer(impl->index_buffer);
-    platform::DrawIndexed(impl->index_count);
+    PlatformBindVertexBuffer(impl->vertex_buffer);
+    PlatformBindIndexBuffer(impl->index_buffer);
+    PlatformDrawIndexed(impl->index_count);
 }
 
 bool IsUploaded(Mesh* mesh) {

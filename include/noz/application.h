@@ -51,8 +51,8 @@ extern void InitWindow();
 extern void ShutdownApplication();
 extern void ShutdownWindow();
 extern bool IsWindowCreated();
-extern void FocusWindow();
-extern bool IsWindowFocused();
+extern void FocusApplication();
+extern bool PlatformIsWindowFocused();
 extern bool UpdateApplication();
 extern void BeginRenderFrame(Color clear_color);
 extern void EndRenderFrame();
@@ -67,7 +67,6 @@ Vec2Int GetScreenSize();
 Vec2 GetScreenCenter();
 float GetScreenAspectRatio();
 
-platform::Window* GetWindow();
 const ApplicationTraits* GetApplicationTraits();
 
 // @time

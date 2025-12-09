@@ -49,7 +49,7 @@ static void CopyMat3ToGPU(void* dst, const Mat3& src) {
     f[8] = src.m[6]; f[9] = src.m[7]; f[10]= src.m[8]; f[11]= 0.0f;
 }
 
-struct platform::Texture
+struct PlatformTexture
 {
     id<MTLTexture> metal_texture;
     id<MTLSamplerState> metal_sampler;
@@ -58,7 +58,7 @@ struct platform::Texture
     i32 channels;
 };
 
-struct platform::Shader
+struct Shader
 {
     id<MTLRenderPipelineState> pipeline_state;
     id<MTLFunction> vertex_function;
@@ -66,7 +66,7 @@ struct platform::Shader
     ShaderFlags flags;
 };
 
-struct platform::Buffer
+struct Buffer
 {
     id<MTLBuffer> metal_buffer;
     u32 size;
@@ -102,8 +102,8 @@ struct MetalRenderer {
     u32 frame_index;
 
     // Current render state
-    platform::Shader* current_shader;
-    platform::Texture* bound_textures[MAX_TEXTURES];
+    Shader* current_shader;
+    PlatformTexture* bound_textures[MAX_TEXTURES];
     Color clear_color;
 
     // Vertex buffers
@@ -113,7 +113,7 @@ struct MetalRenderer {
 
 static MetalRenderer g_renderer = {};
 
-void platform::BeginRenderFrame()
+void BeginRenderFrame()
 {
     @autoreleasepool {
         MetalContext* ctx = GetMetalContext();
@@ -146,7 +146,7 @@ void platform::BeginRenderFrame()
     }
 }
 
-void platform::EndRenderFrame()
+void EndRenderFrame()
 {
     @autoreleasepool {
         MetalContext* ctx = GetMetalContext();
@@ -161,7 +161,7 @@ void platform::EndRenderFrame()
     }
 }
 
-void platform::BeginRenderPass(Color clear_color)
+void BeginRenderPass(Color clear_color)
 {
     @autoreleasepool {
         MetalContext* ctx = GetMetalContext();
@@ -188,7 +188,7 @@ void platform::BeginRenderPass(Color clear_color)
     }
 }
 
-void platform::EndRenderPass()
+void EndRenderPass()
 {
     @autoreleasepool {
         MetalContext* ctx = GetMetalContext();
@@ -202,7 +202,7 @@ void platform::EndRenderPass()
     }
 }
 
-void platform::SetViewport(const noz::Rect& viewport)
+void SetViewport(const noz::Rect& viewport)
 {
     @autoreleasepool {
         MetalContext* ctx = GetMetalContext();
@@ -252,7 +252,7 @@ void platform::SetViewport(const noz::Rect& viewport)
     }
 }
 
-void platform::BindTransform(const Mat3& transform, float depth, float depth_scale)
+void BindTransform(const Mat3& transform, float depth, float depth_scale)
 {
     @autoreleasepool {
         ObjectBuffer obj_buffer;
@@ -282,7 +282,7 @@ void platform::BindTransform(const Mat3& transform, float depth, float depth_sca
     }
 }
 
-void platform::BindVertexUserData(const u8* data, u32 size)
+void BindVertexUserData(const u8* data, u32 size)
 {
     @autoreleasepool {
         MetalDynamicBuffer& uniform = g_renderer.uniform_buffers[UNIFORM_BUFFER_VERTEX_USER];
@@ -303,7 +303,7 @@ void platform::BindVertexUserData(const u8* data, u32 size)
     }
 }
 
-void platform::BindFragmentUserData(const u8* data, u32 size)
+void BindFragmentUserData(const u8* data, u32 size)
 {
     @autoreleasepool {
         MetalDynamicBuffer& uniform = g_renderer.uniform_buffers[UNIFORM_BUFFER_FRAGMENT_USER];
@@ -324,7 +324,7 @@ void platform::BindFragmentUserData(const u8* data, u32 size)
     }
 }
 
-void platform::BindCamera(const Mat3& view_matrix) {
+void BindCamera(const Mat3& view_matrix) {
     @autoreleasepool {
         struct CameraBuffer {
             float view[12];
@@ -351,7 +351,7 @@ void platform::BindCamera(const Mat3& view_matrix) {
     }
 }
 
-void platform::BindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission)
+void BindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission)
 {
     @autoreleasepool {
         ColorBuffer color_buffer;
@@ -377,7 +377,7 @@ void platform::BindColor(const Color& color, const Vec2& color_uv_offset, const 
     }
 }
 
-platform::Buffer* platform::CreateVertexBuffer(
+Buffer* CreateVertexBuffer(
     const MeshVertex* vertices,
     u16 vertex_count,
     const char* name)
@@ -402,7 +402,7 @@ platform::Buffer* platform::CreateVertexBuffer(
     }
 }
 
-platform::Buffer* platform::CreateIndexBuffer(const u16* indices, u16 index_count, const char* name)
+Buffer* CreateIndexBuffer(const u16* indices, u16 index_count, const char* name)
 {
     @autoreleasepool {
         MetalContext* ctx = GetMetalContext();
@@ -424,7 +424,7 @@ platform::Buffer* platform::CreateIndexBuffer(const u16* indices, u16 index_coun
     }
 }
 
-void platform::DestroyBuffer(Buffer* buffer)
+void DestroyBuffer(Buffer* buffer)
 {
     if (buffer) {
         buffer->metal_buffer = nil;
@@ -432,7 +432,7 @@ void platform::DestroyBuffer(Buffer* buffer)
     }
 }
 
-void platform::BindVertexBuffer(Buffer* buffer)
+void BindVertexBuffer(Buffer* buffer)
 {
     @autoreleasepool {
         if (buffer) {
@@ -448,14 +448,14 @@ void platform::BindVertexBuffer(Buffer* buffer)
     }
 }
 
-void platform::BindIndexBuffer(Buffer* buffer)
+void BindIndexBuffer(Buffer* buffer)
 {
     if (buffer) {
         g_renderer.current_index_buffer = buffer->metal_buffer;
     }
 }
 
-void platform::DrawIndexed(u16 index_count)
+void DrawIndexed(u16 index_count)
 {
     @autoreleasepool {
         MetalContext* ctx = GetMetalContext();
@@ -470,7 +470,7 @@ void platform::DrawIndexed(u16 index_count)
     }
 }
 
-void platform::BindTexture(Texture* texture, int slot)
+void BindTexture(PlatformTexture* texture, int slot)
 {
     @autoreleasepool {
         if (slot >= 0 && slot < MAX_TEXTURES) {
@@ -487,7 +487,7 @@ void platform::BindTexture(Texture* texture, int slot)
     }
 }
 
-platform::Texture* platform::CreateTexture(
+PlatformTexture* CreateTexture(
     void* data,
     size_t width,
     size_t height,
@@ -559,7 +559,7 @@ platform::Texture* platform::CreateTexture(
         id<MTLSamplerState> metal_sampler = [ctx->device newSamplerStateWithDescriptor:samplerDesc];
 
         // Create platform texture
-        Texture* texture = (Texture*)Alloc(ALLOCATOR_DEFAULT, sizeof(Texture));
+        PlatformTexture* texture = (PlatformTexture*)Alloc(ALLOCATOR_DEFAULT, sizeof(PlatformTexture));
         texture->metal_texture = metal_texture;
         texture->metal_sampler = metal_sampler;
         texture->sampler_options = sampler_options;
@@ -570,7 +570,7 @@ platform::Texture* platform::CreateTexture(
     }
 }
 
-void platform::DestroyTexture(Texture* texture)
+void DestroyTexture(PlatformTexture* texture)
 {
     if (texture) {
         texture->metal_texture = nil;
@@ -579,7 +579,7 @@ void platform::DestroyTexture(Texture* texture)
     }
 }
 
-platform::Shader* platform::CreateShader(
+Shader* CreateShader(
     const void* vertex_spirv,
     u32 vertex_spirv_size,
     const void* geometry_spirv,
@@ -686,7 +686,7 @@ platform::Shader* platform::CreateShader(
     }
 }
 
-void platform::DestroyShader(Shader* shader)
+void DestroyShader(Shader* shader)
 {
     if (shader) {
         shader->pipeline_state = nil;
@@ -696,7 +696,7 @@ void platform::DestroyShader(Shader* shader)
     }
 }
 
-void platform::BindShader(Shader* shader)
+void BindShader(Shader* shader)
 {
     @autoreleasepool {
         g_renderer.current_shader = shader;

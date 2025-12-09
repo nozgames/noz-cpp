@@ -76,7 +76,7 @@ void ThreadYield()
     std::this_thread::yield();
 }
 
-void platform::SetThreadName(const char* name)
+void PlatformSetThreadName(const char* name)
 {
     // Convert char* to wide string
     int size = MultiByteToWideChar(CP_UTF8, 0, name, -1, nullptr, 0);
@@ -216,7 +216,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-void platform::InitApplication(const ApplicationTraits* traits)
+void PlatformInit(const ApplicationTraits* traits)
 {
     g_windows = {};
     g_windows.traits = traits;
@@ -227,7 +227,7 @@ void platform::InitApplication(const ApplicationTraits* traits)
     g_windows.cursor_move = LoadCursor(nullptr, IDC_SIZEALL);
 }
 
-void platform::InitWindow(void (*on_close)())
+void PlatformInitWindow(void (*on_close)())
 {
     SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
     
@@ -282,22 +282,22 @@ void platform::InitWindow(void (*on_close)())
     }
 }
 
-void platform::ShutdownApplication()
+void ShutdownPlatform()
 {
     if (g_windows.hwnd)
         ::DestroyWindow((HWND)g_windows.hwnd);
 }
 
-bool platform::HasFocus() {
+bool PlatformIsWindowFocused() {
     return g_windows.has_focus;
 }
 
-bool platform::IsResizing()
+bool PlatformIsResizing()
 {
     return g_windows.is_resizing;
 }
 
-bool platform::UpdateApplication()
+bool UpdatePlatform()
 {
     MSG msg = {};
     bool running = true;
@@ -330,7 +330,7 @@ bool platform::UpdateApplication()
     return running;
 }
 
-Vec2Int platform::GetScreenSize()
+Vec2Int PlatformGetScreenSize()
 {
     return g_windows.screen_size;
 }
@@ -365,25 +365,25 @@ static void SetCursorInternal(SystemCursor cursor) {
     ShowCursorInternal(true);
 }
 
-void platform::SetCursor(SystemCursor cursor) {
+void PlatformSetCursor(SystemCursor cursor) {
     g_windows.cursor = cursor;
     SetCursorInternal(cursor);
 }
 
-Vec2 platform::GetMousePosition() {
+Vec2 PlatformGetMousePosition() {
     return g_windows.mouse_position;
 }
 
-Vec2 platform::GetMouseScroll() {
+Vec2 PlatformGetMouseScroll() {
     return g_windows.mouse_scroll;
 }
 
-void platform::FocusWindow() {
+void FocusWindow() {
     if (g_windows.hwnd)
         SetForegroundWindow(g_windows.hwnd);
 }
 
-std::filesystem::path platform::GetSaveGamePath() {
+std::filesystem::path PlatformGetSaveGamePath() {
     PWSTR appdata_path;
     if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, nullptr, &appdata_path)))
     {
@@ -443,7 +443,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     return result;
 }
 
-void platform::Log(LogType type, const char* message)
+void PlatformLog(LogType type, const char* message)
 {
     (void)type;
 
@@ -452,12 +452,12 @@ void platform::Log(LogType type, const char* message)
     OutputDebugStringA(temp.c_str());
 }
 
-noz::RectInt platform::GetWindowRect() {
+noz::RectInt PlatformGetWindowRect() {
     return g_windows.window_rect;
 }
 
 
-bool platform::IsMouseOverWindow(){
+bool PlatformIsMouseOverWindow(){
     return g_windows.mouse_on_screen;
 }
 

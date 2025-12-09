@@ -33,7 +33,7 @@ static Renderer g_renderer = {};
 Texture* TEXTURE_WHITE = nullptr;
 
 void BeginRenderFrame(Color clear_color) {
-    platform::BeginRenderFrame();
+    PlatformBeginRenderFrame();
     ClearRenderCommands();
     ResetRenderState();
     BeginRenderPass(clear_color);
@@ -59,7 +59,7 @@ void BeginUIPass() {
 
     ClearRenderCommands();
     ResetRenderState();
-    platform::BeginUIPass();
+    PlatformBeginUI();
 
     g_renderer.ui_pass_active = true;
 }
@@ -75,26 +75,26 @@ Material* GetUICompositeMaterial() {
 static void EndUIPass() {
     ExecuteRenderCommands();
 
-    platform::EndSwapchainPass();
+    PlatformEndSwapChain();
 
     if (g_renderer.ui_composite_material) {
         ClearRenderCommands();
         ResetRenderState();
 
         Mat3 identity = MAT3_IDENTITY;
-        platform::BindCamera(identity);
-        platform::BindTransform(identity, 0.0f, 1.0f);
-        platform::BindColor(COLOR_WHITE, VEC2_ZERO, COLOR_TRANSPARENT);
+        PlatformBindCamera(identity);
+        PlatformBindTransform(identity, 0.0f, 1.0f);
+        PlatformBindColor(COLOR_WHITE, VEC2_ZERO, COLOR_TRANSPARENT);
 
         BindMaterialInternal(g_renderer.ui_composite_material);
-        platform::BindUIOffscreenTexture();
+        PlatformBindUITexture();
 
         RenderMesh(GetFullscreenQuad());
 
         ExecuteRenderCommands();
     }
 
-    platform::EndRenderPass();
+    PlatformEndRenderPass();
     g_renderer.ui_pass_active = false;
 }
 
@@ -103,7 +103,7 @@ void EndRenderFrame() {
     DrawUI();
     EndUIPass();
 
-    platform::EndRenderFrame();
+    PlatformEndRenderFrame();
 }
 
 static void ResetRenderState() {
@@ -127,7 +127,7 @@ void ShutdownRenderer() {
 
 void EnablePostProcess(bool enabled) {
     g_renderer.postprocess_enabled = enabled;
-    platform::SetPostProcessEnabled(enabled);
+    PlatformEnablePostProcess(enabled);
 }
 
 bool IsPostProcessEnabled() {
@@ -157,25 +157,25 @@ static Mesh* GetFullscreenQuad() {
 }
 
 void BeginPostProcessPass() {
-    platform::BeginPostProcessPass();
+    PlatformBeginPostProcess();
 }
 
 void EndPostProcessPass() {
-    platform::EndPostProcessPass();
+    PlatformEndPostProcess();
 }
 
 void DrawPostProcessQuad(Material* material) {
     // Set up identity transform for fullscreen quad (in NDC space, no camera transform needed)
     Mat3 identity = MAT3_IDENTITY;
-    platform::BindCamera(identity);  // Identity camera for NDC space
-    platform::BindTransform(identity, 0.0f, 1.0f);
-    platform::BindColor(COLOR_WHITE, VEC2_ZERO, COLOR_TRANSPARENT);
+    PlatformBindCamera(identity);  // Identity camera for NDC space
+    PlatformBindTransform(identity, 0.0f, 1.0f);
+    PlatformBindColor(COLOR_WHITE, VEC2_ZERO, COLOR_TRANSPARENT);
 
     // Bind material first (sets up shader and any material-specific uniforms)
     BindMaterialInternal(material);
 
     // Bind the offscreen texture AFTER material, so it overrides any texture slot 0
-    platform::BindOffscreenTexture();
+    PlatformBindOffscreenTexture();
 
     RenderMesh(GetFullscreenQuad());
 }

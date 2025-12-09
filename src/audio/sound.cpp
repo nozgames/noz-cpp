@@ -17,9 +17,8 @@ struct SoundHeader {
 
 struct SoundImpl : Sound {
     SoundHeader header;
-    platform::Sound* platform;
+    PlatformSound* platform;
 };
-
 
 Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
     (void)name_table;
@@ -38,7 +37,7 @@ Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, cons
 
     void* data = Alloc(ALLOCATOR_SCRATCH, sound->header.data_size);
     ReadBytes(stream, data, sound->header.data_size);
-    sound->platform = platform::CreateSound(
+    sound->platform = PlatformCreateSound(
         data,
         sound->header.data_size,
         sound->header.sample_rate,
@@ -51,22 +50,22 @@ Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, cons
 
 bool IsPlaying(const SoundHandle& handle)
 {
-    return platform::IsSoundPlaying({handle.value});
+    return PlatformIsSoundPlaying({handle.value});
 }
 
 float GetSoundVolume(const SoundHandle& handle)
 {
-    return platform::GetSoundVolume({handle.value});
+    return PlatformGetSoundVolume({handle.value});
 }
 
 float GetSoundPitch(const SoundHandle& handle)
 {
-    return platform::GetSoundVolume({handle.value});
+    return PlatformGetSoundVolume({handle.value});
 }
 
 void SetSoundVolume(const SoundHandle& handle, float volume)
 {
-    platform::SetSoundVolume({handle.value}, volume);
+    PlatformSetSoundVolume({handle.value}, volume);
 }
 
 SoundHandle Play(Sound** sounds, int count, float volume, float pitch, bool loop) {
@@ -75,10 +74,10 @@ SoundHandle Play(Sound** sounds, int count, float volume, float pitch, bool loop
 
 SoundHandle Play(Sound* sound, float volume, float pitch, bool loop) {
     SoundImpl* impl = (SoundImpl*)sound;
-    platform::SoundHandle handle = platform::PlaySound(impl->platform, volume, pitch, loop);
+    PlatformSoundHandle handle = PlatformPlaySound(impl->platform, volume, pitch, loop);
     return { handle.value };
 }
 
 void PlayMusicInternal(Sound* sound) {
-    platform::PlayMusic(static_cast<SoundImpl*>(sound)->platform);
+    PlatformPlayMusic(static_cast<SoundImpl*>(sound)->platform);
 }

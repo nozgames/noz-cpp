@@ -21,7 +21,7 @@ struct WindowsHttpRequest
     u32 response_size;
     u32 response_capacity;
     u32 generation;
-    platform::HttpStatus status;
+    HttpStatus status;
     int status_code;
 };
 
@@ -34,24 +34,24 @@ struct WindowsHttp
 
 static WindowsHttp g_http = {};
 
-static u32 GetRequestIndex(const platform::HttpHandle& handle)
+static u32 GetRequestIndex(const PlatformHttpHandle& handle)
 {
     return (u32)(handle.value & 0xFFFFFFFF);
 }
 
-static u32 GetRequestGeneration(const platform::HttpHandle& handle)
+static u32 GetRequestGeneration(const PlatformHttpHandle& handle)
 {
     return (u32)(handle.value >> 32);
 }
 
-static platform::HttpHandle MakeHttpHandle(u32 index, u32 generation)
+static PlatformHttpHandle MakeHttpHandle(u32 index, u32 generation)
 {
-    platform::HttpHandle handle;
+    PlatformHttpHandle handle;
     handle.value = ((u64)generation << 32) | (u64)index;
     return handle;
 }
 
-static WindowsHttpRequest* GetRequest(const platform::HttpHandle& handle)
+static WindowsHttpRequest* GetRequest(const PlatformHttpHandle& handle)
 {
     u32 index = GetRequestIndex(handle);
     u32 generation = GetRequestGeneration(handle);
@@ -85,11 +85,11 @@ static void CleanupRequest(WindowsHttpRequest* request)
     }
     request->response_size = 0;
     request->response_capacity = 0;
-    request->status = platform::HttpStatus::None;
+    request->status = HttpStatus::None;
     request->status_code = 0;
 }
 
-void platform::InitializeHttp()
+void PlatformInitHttp()
 {
     g_http = {};
 
@@ -110,7 +110,7 @@ void platform::InitializeHttp()
     WinHttpSetTimeouts(g_http.session, 10000, 10000, 30000, 10000);
 }
 
-void platform::ShutdownHttp()
+void PlatformShutdownHttp()
 {
     for (int i = 0; i < MAX_HTTP_REQUESTS; i++)
     {
@@ -194,7 +194,7 @@ static void CALLBACK WindowHttpCallback(
             else
             {
                 // No more data - request complete
-                request->status = platform::HttpStatus::Complete;
+                request->status = HttpStatus::Complete;
             }
             break;
         }
@@ -209,20 +209,20 @@ static void CALLBACK WindowHttpCallback(
             }
             else
             {
-                request->status = platform::HttpStatus::Complete;
+                request->status = HttpStatus::Complete;
             }
             break;
         }
 
         case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR:
         {
-            request->status = platform::HttpStatus::Error;
+            request->status = HttpStatus::Error;
             break;
         }
     }
 }
 
-platform::HttpHandle platform::HttpGet(const char* url)
+PlatformHttpHandle PlatformGetURL(const char* url)
 {
     if (!g_http.session)
         return MakeHttpHandle(0, 0xFFFFFFFF);
@@ -331,7 +331,7 @@ platform::HttpHandle platform::HttpGet(const char* url)
     return MakeHttpHandle(request_index, request->generation);
 }
 
-platform::HttpHandle platform::HttpPost(const char* url, const void* body, u32 body_size, const char* content_type)
+PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type)
 {
     if (!g_http.session)
         return MakeHttpHandle(0, 0xFFFFFFFF);
@@ -445,7 +445,7 @@ platform::HttpHandle platform::HttpPost(const char* url, const void* body, u32 b
     return MakeHttpHandle(request_index, request->generation);
 }
 
-platform::HttpStatus platform::HttpGetStatus(const HttpHandle& handle)
+HttpStatus PlatformGetStatus(const PlatformHttpHandle& handle)
 {
     WindowsHttpRequest* request = GetRequest(handle);
     if (!request)
@@ -454,7 +454,7 @@ platform::HttpStatus platform::HttpGetStatus(const HttpHandle& handle)
     return request->status;
 }
 
-int platform::HttpGetStatusCode(const HttpHandle& handle)
+int PlatformGetStatusCode(const PlatformHttpHandle& handle)
 {
     WindowsHttpRequest* request = GetRequest(handle);
     if (!request)
@@ -463,7 +463,7 @@ int platform::HttpGetStatusCode(const HttpHandle& handle)
     return request->status_code;
 }
 
-const u8* platform::HttpGetResponse(const HttpHandle& handle, u32* out_size)
+const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size)
 {
     WindowsHttpRequest* request = GetRequest(handle);
     if (!request || request->status != HttpStatus::Complete)
@@ -476,7 +476,7 @@ const u8* platform::HttpGetResponse(const HttpHandle& handle, u32* out_size)
     return request->response_data;
 }
 
-void platform::HttpCancel(const HttpHandle& handle)
+void PlatformCancel(const PlatformHttpHandle& handle)
 {
     WindowsHttpRequest* request = GetRequest(handle);
     if (!request)
@@ -485,7 +485,7 @@ void platform::HttpCancel(const HttpHandle& handle)
     CleanupRequest(request);
 }
 
-void platform::HttpRelease(const HttpHandle& handle)
+void PlatformFree(const PlatformHttpHandle& handle)
 {
     WindowsHttpRequest* request = GetRequest(handle);
     if (!request)

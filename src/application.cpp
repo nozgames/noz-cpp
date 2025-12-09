@@ -116,7 +116,7 @@ void ExitOutOfMemory(const char* message)
 
 static void UpdateScreenSize()
 {
-    Vec2Int size = platform::GetScreenSize();
+    Vec2Int size = PlatformGetWindowSize();
     if (size == VEC2INT_ZERO || size == g_app.screen_size)
         return;
 
@@ -146,8 +146,7 @@ void InitApplication(ApplicationTraits* traits, int argc, const char* argv[]) {
     g_app.binary_path = argv[0];
     g_app.binary_dir = std::filesystem::path(argv[0]).parent_path().string();
 
-    platform::InitApplication(&g_app.traits);
-
+    PlatformInit(&g_app.traits);
     InitAllocator(traits);
     InitName(traits);
     InitRandom();
@@ -175,7 +174,7 @@ void InitWindow() {
 
     g_app.window_created = true;
 
-    platform::InitWindow(HandleClose);
+    PlatformInitWindow(HandleClose);
 
     UpdateScreenSize();
 
@@ -205,7 +204,7 @@ void InitWindow() {
 void ShutdownWindow() {
     assert(g_app.window_created);
 
-    noz::RectInt window_rect = platform::GetWindowRect();
+    noz::RectInt window_rect = PlatformGetWindowRect();
     SetPrefInt(PREF_WINDOW_X, window_rect.x);
     SetPrefInt(PREF_WINDOW_Y, window_rect.y);
     SetPrefInt(PREF_WINDOW_WIDTH, window_rect.width);
@@ -251,28 +250,21 @@ void ShutdownApplication()
     ShutdownTime();
     ShutdownAudio();
     ShutdownInput();
-    platform::ShutdownApplication();
+    PlatformShutdown();
     ShutdownEvent();
     ShutdownName();
     ShutdownPrefs();
     ShutdownAllocator();
 }
 
-bool IsWindowCreated()
-{
-    return g_app.window_created;
-}
-
-void FocusWindow()
-{
+void FocusApplication() {
     if (!g_app.window_created)
         return;
 
-    platform::FocusWindow();
+    PlatformFocusWindow();
 }
 
-static void UpdateFPS()
-{
+static void UpdateFPS() {
     // Update FPS tracking
     double frame_time = GetFrameTime();
     if (frame_time > 0.0)
@@ -288,16 +280,13 @@ static void UpdateFPS()
 }
 
 // @update
-bool UpdateApplication()
-{
+bool UpdateApplication() {
     ClearScratch();
 
-    bool had_focus = platform::HasFocus();
-    platform::UpdateApplication();
-    if (!IsWindowCreated())
-        return true;
+    bool had_focus = PlatformIsWindowFocused();
+    PlatformUpdate();
 
-    g_app.has_focus = platform::HasFocus();
+    g_app.has_focus = PlatformIsWindowFocused();
 
     if (had_focus != g_app.has_focus) {
         ResetInputState(GetInputSet());
@@ -320,7 +309,7 @@ bool UpdateApplication()
     return g_app.running;
 }
 
-bool IsWindowFocused() {
+bool PlatformIsWindowFocused() {
     return g_app.has_focus;
 }
 
@@ -342,7 +331,7 @@ float GetScreenAspectRatio() {
 }
 
 void SetSystemCursor(SystemCursor cursor) {
-    platform::SetCursor(cursor);
+    PlatformSetCursor(cursor);
 }
 
 const ApplicationTraits* GetApplicationTraits() {
@@ -378,10 +367,10 @@ void SetPaletteTexture(Texture* texture) {
 }
 
 bool WriteSaveFile(const char* path, Stream* stream) {
-    SaveStream(stream, platform::GetSaveGamePath() / path);
+    SaveStream(stream, PlatformGetSaveGamePath() / path);
     return true;
 }
 
 Stream* ReadSaveFile(Allocator* allocator, const char* path) {
-    return LoadStream(allocator, platform::GetSaveGamePath() / path);
+    return LoadStream(allocator, PlatformGetSaveGamePath() / path);
 }

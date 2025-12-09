@@ -4,63 +4,51 @@
 
 #include <cstdio>
 #include <cstdarg>
-#include <iostream>
 #include "platform.h"
 
 static LogFunc g_log_callback = nullptr;
 
-void LogImpl(LogType type, const char* format, va_list args)
-{
+void LogImpl(LogType type, const char* format, va_list args) {
     char buffer[2048];
     vsnprintf(buffer, sizeof(buffer), format, args);
     buffer[sizeof(buffer) - 1] = '\0';
 
-    platform::Log(type, buffer);
+    PlatformLog(type, buffer);
 
     if (g_log_callback) {
         g_log_callback(type, buffer);
     }
 }
 
-void InitLog(LogFunc callback)
-{
-    g_log_callback = callback;
-}
-
-void Log(LogType type, const char* format, ...)
-{
+void Log(LogType type, const char* format, ...) {
     va_list args;
     va_start(args, format);
     LogImpl(type, format, args);
     va_end(args);
 }
 
-void LogInfo(const char* format, ...)
-{
+void LogInfo(const char* format, ...) {
     va_list args;
     va_start(args, format);
     LogImpl(LOG_TYPE_INFO, format, args);
     va_end(args);
 }
 
-void LogWarning(const char* format, ...)
-{
+void LogWarning(const char* format, ...) {
     va_list args;
     va_start(args, format);
     LogImpl(LOG_TYPE_WARNING, format, args);
     va_end(args);
 }
 
-void LogError(const char* format, ...)
-{
+void LogError(const char* format, ...) {
     va_list args;
     va_start(args, format);
     LogImpl(LOG_TYPE_ERROR, format, args);
     va_end(args);
 }
 
-void LogFileError(const char* filename, const char* format, ...)
-{
+void LogFileError(const char* filename, const char* format, ...) {
     char buffer[2048];
     va_list args;
     va_start(args, format);
@@ -76,7 +64,11 @@ void LogFileError(const char* filename, const char* format, ...)
     }
 }
 
-void LogShutdown()
-{
+void LogShutdown() {
     g_log_callback = nullptr;
 }
+
+void InitLog(LogFunc callback) {
+    g_log_callback = callback;
+}
+

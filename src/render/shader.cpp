@@ -8,13 +8,13 @@ Shader** SHADER = nullptr;
 int SHADER_COUNT = 0;
 
 struct ShaderImpl : Shader {
-    platform::Shader* platform;
+    PlatformShader* platform;
     ShaderFlags flags;
 };
 
 void ShaderDestructor(void* p) {
     ShaderImpl* impl = static_cast<ShaderImpl*>(p);
-    platform::DestroyShader(impl->platform);
+    PlatformFree(impl->platform);
 }
 
 static bool LoadShaderInternal(ShaderImpl* impl, Stream* stream, const AssetHeader& header, const Name** name_table) {
@@ -61,7 +61,7 @@ static bool LoadShaderInternal(ShaderImpl* impl, Stream* stream, const AssetHead
         }
     }
 
-    impl->platform = platform::CreateShader(
+    impl->platform = PlatformCreateShader(
         vertex, vertex_length,
         geometry, geometry_length,
         fragment, fragment_length,
@@ -97,7 +97,7 @@ Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, con
 void BindShaderInternal(Shader* shader)
 {
     assert(shader);
-    platform::BindShader(static_cast<ShaderImpl*>(shader)->platform);
+    PlatformBindShader(static_cast<ShaderImpl*>(shader)->platform);
 }
 
 #ifdef NOZ_EDITOR
@@ -108,11 +108,11 @@ void ReloadShader(Asset* asset, Stream* stream, const AssetHeader& header, const
     assert(stream);
     assert(header.type == ASSET_TYPE_SHADER);
 
-    platform::Shader* old_shader = impl->platform;
+    PlatformShader* old_shader = impl->platform;
     LoadShaderInternal(impl, stream, header, name_table);
 
     if (old_shader)
-        platform::DestroyShader(old_shader);
+        PlatformFree(old_shader);
 }
 
 #endif

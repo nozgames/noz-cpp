@@ -137,7 +137,7 @@ static InputCode GetLeftStickButton(int gamepad_index) {
     return INPUT_CODE_NONE;
 }
 
-bool platform::IsInputButtonDown(InputCode code) {
+bool PlatformIsInputButtonDown(InputCode code) {
     if (IsMouse(code) || IsKeyboard(code))
         return g_windows_input.key_states[code];
 
@@ -225,15 +225,15 @@ static bool WasGamepadUsed(int gamepad_index) {
     return false;
 }
 
-float platform::GetInputAxisValue(InputCode code) {
+float PlatformGetInputAxisValue(InputCode code) {
     // Handle mouse axes
     if (IsMouse(code) && IsAxis(code)) {
         switch (code)
         {
-            case MOUSE_X: return GetMousePosition().x;
-            case MOUSE_Y: return GetMousePosition().y;
-            case MOUSE_SCROLL_X: return GetMouseScroll().x;
-            case MOUSE_SCROLL_Y: return GetMouseScroll().y;
+            case MOUSE_X: return PlatformGetMousePosition().x;
+            case MOUSE_Y: return PlatformGetMousePosition().y;
+            case MOUSE_SCROLL_X: return PlatformGetMouseScroll().x;
+            case MOUSE_SCROLL_Y: return PlatformGetMouseScroll().y;
             default: return 0.0f;
         }
     }
@@ -303,8 +303,8 @@ float platform::GetInputAxisValue(InputCode code) {
 }
 
 
-void platform::UpdateInputState() {
-    if (!HasFocus()) {
+void PlatformUpdateInputState() {
+    if (!PlatformIsWindowFocused()) {
         for (int i = 0; i < INPUT_CODE_COUNT; i++)
             g_windows_input.key_states[i] = false;
 
@@ -470,7 +470,7 @@ void HandleInputKeyDown(char c) {
     }
 }
 
-void platform::ClearTextInput() {
+void PlatformClearTextInput() {
     Text& text = g_windows_input.text_input.value;
     if (text.length == 0)
         return;
@@ -481,23 +481,23 @@ void platform::ClearTextInput() {
     Send(EVENT_TEXTINPUT_CHANGE, &g_windows_input.text_input);
 }
 
-const TextInput& platform::GetTextInput()
+const TextInput& PlatformGetTextInput()
 {
     return g_windows_input.text_input;
 }
 
-void platform::SetTextInput(const TextInput& text_input)
+void PlatformSetTextInput(const TextInput& text_input)
 {
     g_windows_input.text_input = text_input;
 }
 
-bool platform::IsGamepadActive() {
+bool PlatformIsGamepadActive() {
     return g_windows_input.active_controller != -1;
 }
 
-void platform::InitializeInput()
+void PlatformInitInput()
 {
-    ClearTextInput();
+    PlatformClearTextInput();
 
     for (int i = 0; i < XUSER_MAX_COUNT; i++) {
         ZeroMemory(&g_windows_input.gamepad_states[i], sizeof(XINPUT_STATE));
@@ -512,7 +512,7 @@ void platform::InitializeInput()
     }
 }
 
-void platform::ShutdownInput()
+void PlatformShutdownInput()
 {
     // Nothing to cleanup for XInput
 }

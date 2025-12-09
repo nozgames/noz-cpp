@@ -4,7 +4,6 @@
 
 #include "platform.h"
 
-void SetThreadName(const char* name)
-{
-    platform::SetThreadName(name);
+void SetThreadName(const char* name) {
+    PlatformSetThreadName(name);
 }

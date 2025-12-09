@@ -50,24 +50,24 @@ struct WindowsSound
 
 static WindowsAudio g_win_audio = {};
 
-static u32 GetSourceIndex(const platform::SoundHandle& handle)
+static u32 GetSourceIndex(const PlatformSoundHandle& handle)
 {
     return (u32)handle.value & 0xFFFFFFFF;
 }
 
-static u32 GetSourceGeneration(const platform::SoundHandle& handle)
+static u32 GetSourceGeneration(const PlatformSoundHandle& handle)
 {
     return (u32)(handle.value >> 32);
 }
 
-static platform::SoundHandle MakeSoundHandle(u32 index, u32 generation)
+static PlatformSoundHandle MakeSoundHandle(u32 index, u32 generation)
 {
-    platform::SoundHandle handle;
+    PlatformSoundHandle handle;
     handle.value = ((u64)generation << 32) | (u64)index;
     return handle;
 }
 
-static WindowsAudioSource* GetAudioSource(const platform::SoundHandle& handle)
+static WindowsAudioSource* GetAudioSource(const PlatformSoundHandle& handle)
 {
     u32 source_index = GetSourceIndex(handle);
     u32 source_generation = GetSourceGeneration(handle);
@@ -82,7 +82,7 @@ static WindowsAudioSource* GetAudioSource(const platform::SoundHandle& handle)
     return &source;
 }
 
-void platform::StopSound(const SoundHandle& handle) {
+void PlatformStopSound(const PlatformSoundHandle& handle) {
     WindowsAudioSource* source = GetAudioSource(handle);
     if (!source)
         return;
@@ -91,7 +91,7 @@ void platform::StopSound(const SoundHandle& handle) {
     source->voice->FlushSourceBuffers();
 }
 
-void platform::SetSoundVolume(const SoundHandle& handle, float volume)
+void PlatformSetSoundVolume(const PlatformSoundHandle& handle, float volume)
 {
     WindowsAudioSource* source = GetAudioSource(handle);
     if (!source)
@@ -101,7 +101,7 @@ void platform::SetSoundVolume(const SoundHandle& handle, float volume)
     source->voice->SetVolume(volume);
 }
 
-float platform::GetSoundVolume(const SoundHandle& handle)
+float PlatformGetSoundVolume(const PlatformSoundHandle& handle)
 {
     WindowsAudioSource* source = GetAudioSource(handle);
     if (!source)
@@ -110,7 +110,7 @@ float platform::GetSoundVolume(const SoundHandle& handle)
     return source->volume;
 }
 
-bool platform::IsSoundPlaying(const SoundHandle& handle) {
+bool PlatformIsSoundPlaying(const PlatformSoundHandle& handle) {
     u32 source_index = GetSourceIndex(handle);
     u32 source_generation = GetSourceGeneration(handle);
     assert(source_index < MAX_SOURCES);
@@ -126,7 +126,7 @@ bool platform::IsSoundPlaying(const SoundHandle& handle) {
     return state.BuffersQueued > 0;
 }
 
-platform::SoundHandle platform::PlaySound(Sound* sound, float volume, float pitch, bool loop)
+PlatformSoundHandle PlatformPlaySound(PlatformSound* sound, float volume, float pitch, bool loop)
 {
     WindowsSound* wsound = (WindowsSound*)sound;
 
@@ -159,7 +159,7 @@ platform::SoundHandle platform::PlaySound(Sound* sound, float volume, float pitc
     return MakeSoundHandle(0, 0xFFFFFFFF);
 }
 
-void platform::PlayMusic(Sound* sound) {
+void PlatformPlayMusic(PlatformSound* sound) {
     assert(g_win_audio.music_source_voice);
 
     WindowsSound* wsound = (WindowsSound*)sound;
@@ -180,7 +180,7 @@ void platform::PlayMusic(Sound* sound) {
     g_win_audio.music_source_voice->Start(0);
 }
 
-bool platform::IsMusicPlaying() {
+bool PlatformIsMusicPlaying() {
     assert(g_win_audio.music_source_voice);
 
     XAUDIO2_VOICE_STATE state;
@@ -188,7 +188,7 @@ bool platform::IsMusicPlaying() {
     return state.BuffersQueued > 0;
 }
 
-void platform::StopMusic() {
+void PlatformStopMusic() {
     assert(g_win_audio.music_source_voice);
 
     g_win_audio.music_source_voice->Stop();
@@ -204,40 +204,40 @@ static void UpdateVolume() {
     }
 }
 
-void platform::SetMasterVolume(float volume) {
+void PlatformSetMasterVolume(float volume) {
     assert(g_win_audio.mastering_voice);
     g_win_audio.master_volume = Clamp(volume, 0.0f, 1.0f);
     UpdateVolume();
 }
 
-void platform::SetSoundVolume(float volume) {
+void PlatformSetSoundVolume(float volume) {
     assert(g_win_audio.mastering_voice);
     g_win_audio.sound_volume = Clamp(volume, 0.0f, 1.0f);
     UpdateVolume();
 }
 
-void platform::SetMusicVolume(float volume) {
+void PlatformSetMusicVolume(float volume) {
     assert(g_win_audio.music_submix_voice);
     g_win_audio.music_volume = Clamp(volume, 0.0f, 1.0f);
     UpdateVolume();
 }
 
-float platform::GetMasterVolume() {
+float PlatformGetMasterVolume() {
     assert(g_win_audio.mastering_voice);
     return g_win_audio.master_volume;
 }
 
-float platform::GetSoundVolume() {
+float PlatformGetSoundVolume() {
     assert(g_win_audio.mastering_voice);
     return g_win_audio.sound_volume;
 }
 
-float platform::GetMusicVolume() {
+float PlatformGetMusicVolume() {
     assert(g_win_audio.mastering_voice);
     return g_win_audio.music_volume;
 }
 
-platform::Sound* platform::CreateSound(
+PlatformSound* PlatformCreateSound(
     void* data,
     u32 data_size,
     u32 sample_rate,
@@ -257,10 +257,10 @@ platform::Sound* platform::CreateSound(
     WindowsSound* sound = (WindowsSound*)Alloc(ALLOCATOR_DEFAULT, sizeof(WindowsSound) + data_size);
     sound->buffer_size = data_size;
     memcpy(sound + 1, data, data_size);
-    return (Sound*)sound;
+    return (PlatformSound*)sound;
 }
 
-void platform::DestroySound(Sound* sound) {
+void PlatformFree(PlatformSound* sound) {
     Free(sound);
 }
 
@@ -276,7 +276,7 @@ source.buffer.LoopCount = 0;
 */
 
 
-void platform::InitializeAudio()
+void PlatformInitAudio()
 {
     g_win_audio = {};
     g_win_audio.sound_volume = 1.0f;
@@ -349,7 +349,7 @@ void platform::InitializeAudio()
     // X3DAudioInitialize(channel_mask, X3DAUDIO_SPEED_OF_SOUND, g_audio.instance);
 }
 
-void platform::ShutdownAudio()
+void PlatformShutdownAudio()
 {
     for (int i=0; i<MAX_SOURCES; i++)
     {

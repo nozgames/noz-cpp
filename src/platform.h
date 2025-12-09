@@ -13,101 +13,71 @@ struct MeshVertex;
 struct SamplerOptions;
 struct RectInt;
 
-namespace platform {
-    struct Buffer;
-    struct BufferMemory {};
-    struct Shader;
-    struct Image {};
-    struct ImageView {};
-    struct Memory {};
-    struct Sampler {};
-    struct Texture;
-    struct Sound {};
-    struct SoundHandle { u64 value;};
-    struct HttpHandle { u64 value; };
-    struct WebSocketHandle { u64 value; };
+struct PlatformBuffer;
+struct PlatformBufferMemory {};
+struct PlatformShader;
+struct PlatformTexture;
+struct PlatformSound {};
+struct PlatformSoundHandle { u64 value;};
+struct PlatformHttpHandle { u64 value; };
+struct PlatformWebSocketHandle { u64 value; };
 
-    enum class HttpStatus
-    {
-        None,       // No request or invalid handle
-        Pending,    // Request in progress
-        Complete,   // Request completed successfully
-        Error       // Request failed
-    };
+// @platform
+extern void PlatformInit(const ApplicationTraits* traits);
+extern void PlatformShutdown();
+extern bool PlatformUpdate();
+extern void PlatformLog(LogType type, const char* message);
+extern std::filesystem::path PlatformGetSaveGamePath();
+extern u64 PlatformGetTimeCounter();
+extern u64 PlatformGetTimeFrequency();
 
-    enum class WebSocketStatus
-    {
-        None,
-        Connecting,
-        Connected,
-        Closing,
-        Closed,
-        Error
-    };
+// @thread
+extern void PlatformSetThreadName(const char* name);
 
-    enum class WebSocketMessageType
-    {
-        Text,
-        Binary
-    };
+// @window
+extern void PlatformInitWindow(void (*on_close)());
+extern void PlatformFocusWindow();
+extern bool PlatformIsWindowFocused();
+extern bool PlatformIsWindowResizing();
+extern noz::RectInt PlatformGetWindowRect();
+extern Vec2Int PlatformGetWindowSize();
+extern void PlatformSetCursor(SystemCursor cursor);
 
-    // @app
-    void InitApplication(const ApplicationTraits* traits);
-    void ShutdownApplication();
-    void InitWindow(void (*on_close)());
-    void FocusWindow();
-    bool UpdateApplication();
-    Vec2Int GetScreenSize();
-    void SetCursor(SystemCursor cursor);
-    bool HasFocus();
-    bool IsResizing();
-    void Log(LogType type, const char* message);
-    noz::RectInt GetWindowRect();
-
-    // @render
-    void BeginRenderFrame();
-    void EndRenderFrame();
-    void BeginRenderPass(Color clear_color);
-    void EndRenderPass();
-
-    // @postprocess
-    void SetPostProcessEnabled(bool enabled);
-    void BeginPostProcessPass();
-    void EndPostProcessPass();
-    void BeginUIPass();  // Begin UI render pass to ui_offscreen with MSAA
-    void EndSwapchainPass();    // End UI render pass and composite onto swapchain
-    void BindOffscreenTexture();
-    void BindUIOffscreenTexture();
-    void SetViewport(const noz::Rect& viewport); // Set viewport rect in screen pixels. Pass empty rect to reset to full screen.
-    void BindTransform(const Mat3& transform, float depth=0.0f, float depth_scale=1.0f);
-    void BindVertexUserData(const u8* data, u32 size);
-    void BindFragmentUserData(const u8* data, u32 size);
-    void BindCamera(const Mat3& view_matrix);
-    void BindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission);
-    void BindSkeleton(const Mat3* bone_transforms, u8 bone_count);
-    Buffer* CreateVertexBuffer(
-        const MeshVertex* vertices,
-        u16 vertex_count,
-        const char* name = nullptr);
-    Buffer* CreateIndexBuffer(const u16* indices, u16 index_count, const char* name = nullptr);
-    void DestroyBuffer(Buffer* buffer);
-    void BindVertexBuffer(Buffer* buffer);
-    void BindIndexBuffer(Buffer* buffer);
-    void DrawIndexed(u16 index_count);
-    void BindTexture(Texture* texture, int slot);
-
-    // @texture
-    Texture* CreateTexture(
-        void* data,
-        size_t width,
-        size_t height,
-        int channels,
-        const SamplerOptions& sampler_options,
-        const char* name);
-    void DestroyTexture(Texture* texture);
-
-    // @shader
-    Shader* CreateShader(
+// @render
+extern void PlatformBeginRenderFrame();
+extern void PlatformEndRenderFrame();
+extern void PlatformBeginRenderPass(Color clear_color);
+extern void PlatformEndRenderPass();
+extern void PlatformFree(PlatformBuffer* buffer);
+extern void PlatformBindVertexBuffer(PlatformBuffer* buffer);
+extern void PlatformBindIndexBuffer(PlatformBuffer* buffer);
+extern void PlatformBindSkeleton(const Mat3* bone_transforms, u8 bone_count);
+extern PlatformTexture* PlatformCreateTexture(
+    void* data,
+    size_t width,
+    size_t height,
+    int channels,
+    const SamplerOptions& sampler_options,
+    const char* name);
+extern void PlatformFree(PlatformTexture* texture);
+extern void PlatformEnablePostProcess(bool enabled);
+extern void PlatformBeginPostProcess();
+extern void PlatformEndPostProcess();
+extern void PlatformBeginUI();
+extern void PlatformEndSwapChain();
+extern void PlatformBindOffscreenTexture();
+extern void PlatformBindUITexture();
+extern void PlatformSetViewport(const noz::Rect& viewport);
+extern void PlatformBindTransform(const Mat3& transform, float depth, float depth_scale);
+extern void PLatformBindVertexUserData(const u8* data, u32 size);
+extern void PlatformBindFragmentUserData(const u8* data, u32 size);
+extern void PlatformBindCamera(const Mat3& view_matrix);
+extern void PlatformBindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission);
+extern PlatformBuffer* PlatformCreateVertexBuffer(const MeshVertex* vertices, u16 vertex_count, const char* name);
+extern PlatformBuffer* PlatformCreateIndexBuffer(const u16* indices, u16 index_count, const char* name);
+extern void PlatformDrawIndexed(u16 index_count);
+extern void PlatformBindTexture(PlatformTexture* texture, int slot);
+extern PlatformShader* PlatformCreateShader(
         const void* vertex,
         u32 vertex_size,
         const void* geometry,
@@ -116,77 +86,66 @@ namespace platform {
         u32 fragment_size,
         ShaderFlags flags,
         const char* name = nullptr);
-    void DestroyShader(Shader* module);
-    void BindShader(Shader* shader);
+extern void PlatformFree(PlatformShader* module);
+extern void PlatformBindShader(PlatformShader* shader);
 
-    // @time
-    u64 GetPerformanceCounter();
-    u64 GetPerformanceFrequency();
+// @websocket
+extern void PlatformInitWebSocket();
+extern void PlatformShutdownWebSocket();
+extern void PlatfrormUpdateWebSocket();
+extern PlatformWebSocketHandle PlatformConnectWebSocket(const char* url);
+extern void PlatformSend(const PlatformWebSocketHandle& handle, const char* text);
+extern void PlatformSendBinary(const PlatformWebSocketHandle& handle, const void* data, u32 size);
+extern void PlatformClose(const PlatformWebSocketHandle& handle, u16 code, const char* reason);
+extern void PlatformFree(const PlatformWebSocketHandle& handle);
+extern WebSocketStatus PlatformGetStatus(const PlatformWebSocketHandle& handle);
+extern bool PlatformHasMessages(const PlatformWebSocketHandle& handle);
+extern bool PlatformGetMessage(const PlatformWebSocketHandle& handle, WebSocketMessageType* out_type, const u8** out_data, u32* out_size);
+extern void PlatformPopMessage(const PlatformWebSocketHandle& handle);
 
-    // @input
-    bool IsInputButtonDown(InputCode code);
-    float GetInputAxisValue(InputCode code);
-    void UpdateInputState();
-    void InitializeInput();
-    void ShutdownInput();
-    Vec2 GetMousePosition();
-    Vec2 GetMouseScroll();
-    const TextInput& GetTextInput();
-    void ClearTextInput();
-    extern void SetTextInput(const TextInput& text_input);
-    bool IsGamepadActive();
-    bool IsMouseOverWindow();
+// @input
+extern bool PlatformIsInputButtonDown(InputCode code);
+extern float PlatformGetInputAxisValue(InputCode code);
+extern void PlatformUpdateInputState();
+extern void PlatformInitInput();
+extern void PlatformShutdownInput();
+extern Vec2 PlatformGetMousePosition();
+extern Vec2 PlatformGetMouseScroll();
+extern const TextInput& PlatformGetTextInput();
+extern void PlatformClearTextInput();
+extern void PlatformSetTextInput(const TextInput& text_input);
+extern bool PlatformIsGamepadActive();
+extern bool PlatformIsMouseOverWindow();
 
-    // @filesystem
-    std::filesystem::path GetSaveGamePath();
+// @audio
+extern void PlatformInitAudio();
+extern void PlatformShutdownAudio();
+extern PlatformSound* PlatformCreateSound(void* data, u32 data_size, u32 sample_rate, u32 channels, u32 bits_per_sample);
+extern void PlatformFree(PlatformSound*);
+extern PlatformSoundHandle PlatformPlaySound(PlatformSound* sound, float volume, float pitch, bool loop);
+extern void PlatformPlayMusic(PlatformSound* sound);
+extern bool PlatformIsMusicPlaying();
+extern void PlatformStopMusic();
+extern void PlatformStopSound(const PlatformSoundHandle& handle);
+extern void PlatformSetSoundVolume(const PlatformSoundHandle& handle, float volume);
+extern void PlatformSetSoundPitch(const PlatformSoundHandle& handle, float pitch);
+extern bool PlatformIsSoundPlaying(const PlatformSoundHandle& handle);
+extern float PlatformGetSoundVolume(const PlatformSoundHandle& handle);
+extern float PlatformGetSoundPitch(const PlatformSoundHandle& handle);
+extern void PlatformSetMasterVolume(float volume);
+extern void PlatformSetSoundVolume(float volume);
+extern void PlatformSetMusicVolume(float volume);
+extern float PlatformGetMasterVolume();
+extern float PlatformGetSoundVolume();
+extern float PlatformGetMusicVolume();
 
-    // @audio
-    void InitializeAudio();
-    void ShutdownAudio();
-    Sound* CreateSound(void* data, u32 data_size, u32 sample_rate, u32 channels, u32 bits_per_sample);
-    void DestroySound(Sound*);
-    SoundHandle PlaySound(Sound* sound, float volume, float pitch, bool loop);
-    void PlayMusic(Sound* sound);
-    bool IsMusicPlaying();
-    void StopMusic();
-    void StopSound(const SoundHandle& handle);
-    void SetSoundVolume(const SoundHandle& handle, float volume);
-    void SetSoundPitch(const SoundHandle& handle, float pitch);
-    bool IsSoundPlaying(const SoundHandle& handle);
-    float GetSoundVolume(const SoundHandle& handle);
-    float GetSoundPitch(const SoundHandle& handle);
-    void SetMasterVolume(float volume);
-    void SetSoundVolume(float volume);
-    void SetMusicVolume(float volume);
-    float GetMasterVolume();
-    float GetSoundVolume();
-    float GetMusicVolume();
-
-    // @thread
-    void SetThreadName(const char* name);
-
-    // @http
-    void InitializeHttp();
-    void ShutdownHttp();
-    HttpHandle HttpGet(const char* url);
-    HttpHandle HttpPost(const char* url, const void* body, u32 body_size, const char* content_type = nullptr);
-    HttpStatus HttpGetStatus(const HttpHandle& handle);
-    int HttpGetStatusCode(const HttpHandle& handle);      // HTTP status code (200, 404, etc.)
-    const u8* HttpGetResponse(const HttpHandle& handle, u32* out_size);
-    void HttpCancel(const HttpHandle& handle);            // Cancel pending request
-    void HttpRelease(const HttpHandle& handle);           // Release completed request resources
-
-    // @websocket
-    void InitializeWebSocket();
-    void ShutdownWebSocket();
-    void UpdateWebSocket();
-    WebSocketHandle WebSocketConnect(const char* url);
-    void WebSocketSend(const WebSocketHandle& handle, const char* text);
-    void WebSocketSendBinary(const WebSocketHandle& handle, const void* data, u32 size);
-    void WebSocketClose(const WebSocketHandle& handle, u16 code, const char* reason);
-    void WebSocketRelease(const WebSocketHandle& handle);
-    WebSocketStatus WebSocketGetStatus(const WebSocketHandle& handle);
-    bool WebSocketHasMessage(const WebSocketHandle& handle);
-    bool WebSocketGetMessage(const WebSocketHandle& handle, WebSocketMessageType* out_type, const u8** out_data, u32* out_size);
-    void WebSocketPopMessage(const WebSocketHandle& handle);
-}
+// @http
+extern void PlatformInitHttp();
+extern void PlatformShutdownHttp();
+extern PlatformHttpHandle PlatformGetURL(const char* url);
+extern PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type = nullptr);
+extern HttpStatus PlatformGetStatus(const PlatformHttpHandle& handle);
+extern int PlatformGetStatusCode(const PlatformHttpHandle& handle);      // HTTP status code (200, 404, etc.)
+extern const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size);
+extern void PlatformCancel(const PlatformHttpHandle& handle);            // Cancel pending request
+extern void PlatformFree(const PlatformHttpHandle& handle);           // Release completed request resources

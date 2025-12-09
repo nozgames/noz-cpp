@@ -42,7 +42,7 @@ static VkSamplerAddressMode ToVK(TextureClamp clamp) {
     return clamp == TEXTURE_CLAMP_REPEAT ? VK_SAMPLER_ADDRESS_MODE_REPEAT : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 }
 
-struct platform::Texture {
+struct PlatformTexture {
     VkImage vk_image;
     VkImageView vk_image_view;
     VkDeviceMemory vk_memory;
@@ -53,7 +53,7 @@ struct platform::Texture {
     i32 channels;
 };
 
-struct platform::Shader {
+struct Shader {
     VkShaderModule vertex_module;
     VkShaderModule geometry_module;
     VkShaderModule fragment_module;
@@ -701,7 +701,7 @@ static VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
     if (capabilities.currentExtent.width != UINT32_MAX)
         return capabilities.currentExtent;
 
-    Vec2Int screen_size = platform::GetScreenSize();
+    Vec2Int screen_size = GetScreenSize();
     VkExtent2D actualExtent = {static_cast<u32>(screen_size.x), static_cast<u32>(screen_size.y)};
 
     actualExtent.width = std::max(
@@ -1091,7 +1091,7 @@ void WaitVulkan() {
     vkResetFences(g_vulkan.device, 1, &g_vulkan.in_flight_fence);
 }
 
-void platform::BeginRenderFrame() {
+void BeginRenderFrame() {
     WaitVulkan();
 
     ResetFrameBuffers();
@@ -1126,7 +1126,7 @@ void platform::BeginRenderFrame() {
     vkBeginCommandBuffer(g_vulkan.command_buffer, &vg_begin_info);
 }
 
-void platform::EndRenderFrame() {
+void EndRenderFrame() {
     // End the command buffer
     vkEndCommandBuffer(g_vulkan.command_buffer);
 
@@ -1168,7 +1168,7 @@ static void CopyMat3ToGPU(void* dst, const Mat3& src) {
     f[8] = src.m[6]; f[9] = src.m[7]; f[10]= src.m[8]; f[11]= 0.0f;
 }
 
-void platform::BindSkeleton(const Mat3* bone_transforms, u8 bone_count) {
+void BindSkeleton(const Mat3* bone_transforms, u8 bone_count) {
     void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_SKELETON);
     if (!buffer_ptr)
         return;
@@ -1178,7 +1178,7 @@ void platform::BindSkeleton(const Mat3* bone_transforms, u8 bone_count) {
         CopyMat3ToGPU(bones + i * 12, bone_transforms[i]);
 }
 
-void platform::BindTransform(const Mat3& transform, float depth, float depth_scale) {
+void BindTransform(const Mat3& transform, float depth, float depth_scale) {
     void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_OBJECT);
     if (!buffer_ptr)
         return;
@@ -1191,7 +1191,7 @@ void platform::BindTransform(const Mat3& transform, float depth, float depth_sca
     CopyMat3ToGPU(&buffer->transform, transform);
 }
 
-void platform::BindVertexUserData(const u8* data, u32 size) {
+void BindVertexUserData(const u8* data, u32 size) {
     void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_VERTEX_USER);
     if (!buffer_ptr)
         return;
@@ -1199,7 +1199,7 @@ void platform::BindVertexUserData(const u8* data, u32 size) {
     memcpy(buffer_ptr, data, size);
 }
 
-void platform::BindFragmentUserData(const u8* data, u32 size) {
+void BindFragmentUserData(const u8* data, u32 size) {
     void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_FRAGMENT_USER);
     if (!buffer_ptr)
         return;
@@ -1207,7 +1207,7 @@ void platform::BindFragmentUserData(const u8* data, u32 size) {
     memcpy(buffer_ptr, data, size);
 }
 
-void platform::BindCamera(const Mat3& view_matrix) {
+void BindCamera(const Mat3& view_matrix) {
     void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_CAMERA);
     if (!buffer_ptr)
         return;
@@ -1215,7 +1215,7 @@ void platform::BindCamera(const Mat3& view_matrix) {
     CopyMat3ToGPU(buffer_ptr, view_matrix);
 }
 
-void platform::BindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission) {
+void BindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission) {
     void* buffer_ptr = AcquireUniformBuffer(UNIFORM_BUFFER_COLOR);
     if (!buffer_ptr)
         return;
@@ -1229,12 +1229,12 @@ void platform::BindColor(const Color& color, const Vec2& color_uv_offset, const 
     memcpy(buffer_ptr, &buffer, sizeof(ColorBuffer));
 }
 
-void platform::DestroyBuffer(Buffer* buffer) {
+void DestroyBuffer(PlatformBuffer* buffer) {
     if (buffer)
         vkDestroyBuffer(g_vulkan.device, (VkBuffer)buffer, nullptr);
 }
 
-platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, u16 vertex_count, const char* name) {
+PlatformBuffer* CreateVertexBuffer(const MeshVertex* vertices, u16 vertex_count, const char* name) {
     assert(vertices);
     assert(vertex_count > 0);
     assert(g_vulkan.device != VK_NULL_HANDLE);
@@ -1279,10 +1279,10 @@ platform::Buffer* platform::CreateVertexBuffer(const MeshVertex* vertices, u16 v
     // Set debug name for RenderDoc/debugging tools
     SetVulkanObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)vf_vertex_buffer, name);
     
-    return (Buffer*)vf_vertex_buffer;
+    return (PlatformBuffer*)vf_vertex_buffer;
 }
 
-platform::Buffer* platform::CreateIndexBuffer(const u16* indices, u16 index_count, const char* name) {
+PlatformBuffer* CreateIndexBuffer(const u16* indices, u16 index_count, const char* name) {
     assert(indices);
     assert(index_count > 0);
 
@@ -1324,10 +1324,10 @@ platform::Buffer* platform::CreateIndexBuffer(const u16* indices, u16 index_coun
     
     SetVulkanObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)index_buffer, name);
     
-    return (Buffer*)index_buffer;
+    return (PlatformBuffer*)index_buffer;
 }
 
-void platform::BindVertexBuffer(Buffer* buffer) {
+void BindVertexBuffer(PlatformBuffer* buffer) {
     assert(buffer);
     assert(g_vulkan.command_buffer);
     VkBuffer vertex_buffers[] = {(VkBuffer)buffer};
@@ -1335,19 +1335,19 @@ void platform::BindVertexBuffer(Buffer* buffer) {
     vkCmdBindVertexBuffers(g_vulkan.command_buffer, 0, 1, vertex_buffers, offsets);
 }
 
-void platform::BindIndexBuffer(Buffer* buffer) {
+void BindIndexBuffer(PlatformBuffer* buffer) {
     assert(buffer);
     assert(g_vulkan.command_buffer);
     vkCmdBindIndexBuffer(g_vulkan.command_buffer, (VkBuffer)buffer, 0, VK_INDEX_TYPE_UINT16);
 }
 
-void platform::DrawIndexed(u16 index_count) {
+void DrawIndexed(u16 index_count) {
     assert(g_vulkan.command_buffer);
     assert(index_count > 0);
     vkCmdDrawIndexed(g_vulkan.command_buffer, index_count, 1, 0, 0, 0);
 }
 
-static bool CreateTextureInternal(platform::Texture* texture, void* data, const SamplerOptions& sampler_options, const char* name) {
+static bool CreateTextureInternal(PlatformTexture* texture, void* data, const SamplerOptions& sampler_options, const char* name) {
     VkBuffer staging_buffer;
     VkDeviceMemory staging_buffer_memory;
     VkBufferCreateInfo buffer_info = {
@@ -1583,14 +1583,14 @@ static bool CreateTextureInternal(platform::Texture* texture, void* data, const 
     return true;
 }
 
-platform::Texture* platform::CreateTexture(
+PlatformTexture* CreateTexture(
     void* data,
     size_t width,
     size_t height,
     int channels,
     const SamplerOptions& sampler_options,
     const char* name) {
-    Texture* texture = new Texture{};
+    PlatformTexture* texture = new PlatformTexture{};
     texture->size = {(int)width, (int)height};
     texture->channels = channels;
     if (!CreateTextureInternal(texture, data, sampler_options, name)) {
@@ -1601,7 +1601,7 @@ platform::Texture* platform::CreateTexture(
     return texture;
 }
 
-void platform::DestroyTexture(Texture* texture) {
+void DestroyTexture(PlatformTexture* texture) {
     if (!texture)
         return;
 
@@ -1617,7 +1617,7 @@ void platform::DestroyTexture(Texture* texture) {
     delete texture;
 }
 
-void platform::BindTexture(Texture* texture, int slot) {
+void BindTexture(PlatformTexture* texture, int slot) {
     (void)slot;
 
     VkDescriptorSet texture_descriptor_set = texture->vk_descriptor_set;
@@ -1633,7 +1633,7 @@ void platform::BindTexture(Texture* texture, int slot) {
     );
 }
 
-void platform::BeginRenderPass(Color clear_color) {
+void BeginRenderPass(Color clear_color) {
     assert(g_vulkan.command_buffer);
 
     VkClearValue clear_values[3] = {};
@@ -1683,11 +1683,11 @@ void platform::BeginRenderPass(Color clear_color) {
     vkCmdSetScissor(g_vulkan.command_buffer, 0, 1, &scissor);
 }
 
-void platform::EndRenderPass() {
+void EndRenderPass() {
     vkCmdEndRenderPass(g_vulkan.command_buffer);
 }
 
-void platform::BeginPostProcessPass() {
+void BeginPostProcessPass() {
     VkImageMemoryBarrier barrier = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
@@ -1748,15 +1748,15 @@ void platform::BeginPostProcessPass() {
     vkCmdSetScissor(g_vulkan.command_buffer, 0, 1, &scissor);
 }
 
-void platform::EndPostProcessPass() {
+void EndPostProcessPass() {
     vkCmdEndRenderPass(g_vulkan.command_buffer);
 }
 
-void platform::SetPostProcessEnabled(bool enabled) {
+void SetPostProcessEnabled(bool enabled) {
     g_vulkan.postprocess_enabled = enabled;
 }
 
-void platform::BeginUIPass() {
+void BeginUIPass() {
     // Begin render pass for UI to ui_offscreen with MSAA
     // UI renders to ui_offscreen, then gets composited onto swapchain
     VkClearValue clear_values[3] = {};
@@ -1795,7 +1795,7 @@ void platform::BeginUIPass() {
     vkCmdSetScissor(g_vulkan.command_buffer, 0, 1, &scissor);
 }
 
-void platform::BindOffscreenTexture() {
+void BindOffscreenTexture() {
     vkCmdBindDescriptorSets(
         g_vulkan.command_buffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1808,7 +1808,7 @@ void platform::BindOffscreenTexture() {
     );
 }
 
-void platform::BindUIOffscreenTexture() {
+void BindUIOffscreenTexture() {
     vkCmdBindDescriptorSets(
         g_vulkan.command_buffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1821,7 +1821,7 @@ void platform::BindUIOffscreenTexture() {
     );
 }
 
-void platform::EndSwapchainPass() {
+void EndSwapchainPass() {
     // End the UI render pass (ui_offscreen now contains resolved UI with alpha)
     vkCmdEndRenderPass(g_vulkan.command_buffer);
 
@@ -1857,7 +1857,7 @@ void platform::EndSwapchainPass() {
     vkCmdSetScissor(g_vulkan.command_buffer, 0, 1, &scissor);
 }
 
-void platform::SetViewport(const noz::Rect& viewport) {
+void SetViewport(const noz::Rect& viewport) {
     VkViewport vk_viewport;
     VkRect2D scissor;
 
@@ -1916,7 +1916,7 @@ static VkShaderModule CreateShaderModule(const void* code, u32 code_size, const 
 }
 
 static bool CreateShaderInternal(
-    platform::Shader* shader,
+    Shader* shader,
     const void* vertex_code,
     u32 vertex_code_size,
     const void* geometry_code,
@@ -3082,7 +3082,7 @@ static void CleanupUICompositeFramebuffers() {
     g_vulkan.ui_composite_framebuffers.clear();
 }
 
-platform::Shader* platform::CreateShader(
+Shader* CreateShader(
     const void* vertex_spirv,
     u32 vertex_spirv_size,
     const void* geometry_spirv,
@@ -3111,11 +3111,11 @@ platform::Shader* platform::CreateShader(
     return shader;
 }
 
-void platform::BindShader(Shader* shader) {
+void BindShader(Shader* shader) {
     vkCmdBindPipeline(g_vulkan.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, shader->pipeline);
 }
 
-void platform::DestroyShader(Shader* shader) {
+void DestroyShader(Shader* shader) {
     assert(shader);
     assert(g_vulkan.device);
     if (shader->fragment_module != VK_NULL_HANDLE)

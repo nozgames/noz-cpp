@@ -134,12 +134,12 @@ void ThreadYield()
     std::this_thread::yield();
 }
 
-void platform::SetThreadName(const char* name)
+void SetThreadName(const char* name)
 {
     pthread_setname_np(name);
 }
 
-void platform::InitApplication(const ApplicationTraits* traits)
+void InitApplication(const ApplicationTraits* traits)
 {
     g_macos = {};
     g_macos.traits = traits;
@@ -150,7 +150,7 @@ void platform::InitApplication(const ApplicationTraits* traits)
     g_macos.cursor_move = [NSCursor openHandCursor];
 }
 
-void platform::InitWindow(void (*on_close)())
+void InitWindow(void (*on_close)())
 {
     @autoreleasepool {
         [NSApplication sharedApplication];
@@ -210,7 +210,7 @@ void platform::InitWindow(void (*on_close)())
     }
 }
 
-void platform::ShutdownApplication()
+void ShutdownApplication()
 {
     if (g_macos.window) {
         [g_macos.window close];
@@ -218,17 +218,17 @@ void platform::ShutdownApplication()
     }
 }
 
-bool platform::HasFocus()
+bool HasFocus()
 {
     return g_macos.has_focus;
 }
 
-bool platform::IsResizing()
+bool IsResizing()
 {
     return g_macos.is_resizing;
 }
 
-bool platform::UpdateApplication()
+bool UpdateApplication()
 {
     @autoreleasepool {
         g_macos.mouse_scroll = {0, 0};
@@ -251,12 +251,12 @@ bool platform::UpdateApplication()
     }
 }
 
-Vec2Int platform::GetScreenSize()
+Vec2Int GetScreenSize()
 {
     return g_macos.screen_size;
 }
 
-void platform::SetCursor(SystemCursor cursor)
+void SetCursor(SystemCursor cursor)
 {
     g_macos.cursor = cursor;
 
@@ -279,7 +279,7 @@ void platform::SetCursor(SystemCursor cursor)
     [ns_cursor set];
 }
 
-void platform::ShowCursor(bool show)
+void ShowCursor(bool show)
 {
     if (show)
         [NSCursor unhide];
@@ -287,7 +287,7 @@ void platform::ShowCursor(bool show)
         [NSCursor hide];
 }
 
-Vec2 platform::GetMousePosition()
+Vec2 GetMousePosition()
 {
     NSPoint mouse_location = [g_macos.window mouseLocationOutsideOfEventStream];
     // Flip Y coordinate (Cocoa uses bottom-left origin)
@@ -298,12 +298,12 @@ Vec2 platform::GetMousePosition()
     };
 }
 
-Vec2 platform::GetMouseScroll()
+Vec2 GetMouseScroll()
 {
     return g_macos.mouse_scroll;
 }
 
-void platform::FocusWindow()
+void FocusWindow()
 {
     if (g_macos.window) {
         [g_macos.window makeKeyAndOrderFront:nil];
@@ -311,7 +311,7 @@ void platform::FocusWindow()
     }
 }
 
-std::filesystem::path platform::GetSaveGamePath()
+std::filesystem::path GetSaveGamePath()
 {
     @autoreleasepool {
         NSArray* paths = NSSearchPathForDirectoriesInDomains(
@@ -344,13 +344,13 @@ int main(int argc, char* argv[])
     }
 }
 
-void platform::Log(LogType type, const char* message)
+void Log(LogType type, const char* message)
 {
     (void)type;
     NSLog(@"%s", message);
 }
 
-noz::RectInt platform::GetWindowRect()
+noz::RectInt GetWindowRect()
 {
     return g_macos.window_rect;
 }
