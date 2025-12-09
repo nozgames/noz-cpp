@@ -116,6 +116,8 @@ extern u16 GetVertexCount(MeshBuilder* builder);
 extern u16 GetIndexCount(MeshBuilder* builder);
 extern void AddIndex(MeshBuilder* builder, u16 index);
 extern void AddTriangle(MeshBuilder* builder, u16 a, u16 b, u16 c);
+extern void SetBaseVertex(MeshBuilder* builder, u16 base_vertex);
+extern void SetBaseVertex(MeshBuilder* builder);
 extern void AddRaw(
     MeshBuilder* builder,
     i16 vertex_count,

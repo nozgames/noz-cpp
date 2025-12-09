@@ -7,6 +7,7 @@ struct MeshBuilderImpl : MeshBuilder {
     u16* indices;
     u16 vertex_count;
     u16 vertex_max;
+    i16 vertex_base;
     u16 index_count;
     u16 index_max;
     bool is_full;
@@ -113,15 +114,25 @@ void AddIndex(MeshBuilder* builder, u16 index) {
     impl->index_count++;    
 }
 
+void SetBaseVertex(MeshBuilder* builder, u16 base_vertex) {
+    MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);
+    impl->vertex_base = base_vertex;
+}
+
+void SetBaseVertex(MeshBuilder* builder) {
+    MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);
+    impl->vertex_base = impl->vertex_count;
+}
+
 void AddTriangle(MeshBuilder* builder, u16 a, u16 b, u16 c) {
     MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);
     impl->is_full = impl->is_full && impl->index_count + 3 >= impl->index_max;
     if (impl->is_full)
         return;
 
-    impl->indices[impl->index_count + 0] = a;
-    impl->indices[impl->index_count + 1] = b;
-    impl->indices[impl->index_count + 2] = c;
+    impl->indices[impl->index_count + 0] = a + impl->vertex_base;
+    impl->indices[impl->index_count + 1] = b + impl->vertex_base;
+    impl->indices[impl->index_count + 2] = c + impl->vertex_base;
     impl->index_count+=3;
 }
 

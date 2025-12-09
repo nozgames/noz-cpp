@@ -144,8 +144,9 @@ struct UI {
     ElementState element_states[MAX_ELEMENTS];
     u16 element_count;
     u16 element_stack_count;
-    Mesh* element_quad;
+    Mesh* element_mesh;
     Mesh* image_mesh;
+    Mesh* element_with_border_mesh;
     Vec2 ortho_size;
     Vec2Int ref_size;
     Material* element_material;
@@ -823,29 +824,63 @@ static u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform) 
     return element_index;
 }
 
-void RenderCanvas(Element* e){
-    (void)e;
+static void DrawCanvas(CanvasElement* canvas, const Mat3& transform){
     UpdateCamera(g_ui.camera);
     BindCamera(g_ui.camera);
+
+    if (canvas->style.color.a > F32_EPSILON) {
+        BindTransform(transform * Scale(Vec2{canvas->rect.width, canvas->rect.height}));
+        BindMaterial(g_ui.element_material);
+        BindColor(canvas->style.color, canvas->style.color_offset);
+        DrawMesh(g_ui.element_mesh);
+    }
 }
 
-static void RenderBackground(const noz::Rect& rect, const Mat3& transform, const Color& color, const Vec2Int& color_offset) {
-    if (color.a <= 0.0f)
+static void DrawContainer(ContainerElement* container, const Mat3& transform) {
+    bool has_border = container->style.border.radius > 0.0f ||
+        (container->style.border.width > 0.0f && container->style.border.color.a > 0.0f);
+    if (container->style.color.a <= 0.0f && !has_border)
         return;
 
-    BindTransform(transform * Scale(Vec2{rect.width, rect.height}));
+    BindTransform(transform * Scale(Vec2{container->rect.width, container->rect.height}));
     BindMaterial(g_ui.element_material);
-    BindColor(color,color_offset);
-    DrawMesh(g_ui.element_quad);
+    BindColor(container->style.color,container->style.color_offset);
+
+    if (has_border) {
+        struct BorderVertex {
+            float radius;
+        };
+        struct BorderFragment {
+            Color color;
+            float radius;
+            float width;
+            float padding0;
+            float padding1;
+        };
+
+        BorderVertex v_border = {
+            .radius = container->style.border.radius
+        };
+        BindVertexUserData(&v_border, sizeof(BorderVertex));
+
+        BorderFragment f_border = {
+            .color = container->style.border.color,
+            .radius = v_border.radius,
+            .width = container->style.border.width
+        };
+        BindFragmentUserData(&f_border, sizeof(BorderFragment));
+
+        DrawMesh(g_ui.element_with_border_mesh);
+    } else {
+        DrawMesh(g_ui.element_mesh);
+    }
 }
 
-static int RenderElement(int element_index) {
+static int DrawElement(int element_index) {
     Element* e = g_ui.elements[element_index++];
     const Mat3& transform = e->local_to_world;
 
-    if (e->type == ELEMENT_TYPE_CANVAS)
-        RenderCanvas(e);
-
+    // @render_label
     if (e->type == ELEMENT_TYPE_LABEL) {
         LabelElement* l = static_cast<LabelElement*>(e);
         Mesh* mesh = l->cached_mesh ? GetMesh(l->cached_mesh->text_mesh) : nullptr;
@@ -863,6 +898,8 @@ static int RenderElement(int element_index) {
             BindMaterial(l->style.material ? l->style.material : GetMaterial(l->cached_mesh->text_mesh));
             DrawMesh(mesh);
         }
+
+    // @render_image
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* image = static_cast<ImageElement*>(e);
         BindMaterial(image->style.material);
@@ -893,27 +930,17 @@ static int RenderElement(int element_index) {
             DrawMesh(image->animated_mesh, image_transform, image->animated_time);
         else
             DrawMesh(image->mesh, image_transform);
+
+    // @render_container
     } else if (e->type == ELEMENT_TYPE_CONTAINER) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
-        RenderBackground(e->rect, transform, container->style.color, container->style.color_offset);
+        DrawContainer(container, transform);
 
-        if (container->style.border.width > 0.0f && container->style.border.color.a > 0) {
-            float border_width = container->style.border.width;
-            BindColor(container->style.border.color);
-            BindMaterial(g_ui.element_material);
-            BindTransform(transform * Scale(Vec2{e->rect.width, border_width}));
-            DrawMesh(g_ui.element_quad);
-            BindTransform(transform * Translate(Vec2{0, e->rect.height - border_width}) * Scale(Vec2{e->rect.width, border_width}));
-            DrawMesh(g_ui.element_quad);
-            BindTransform(transform * Translate(Vec2{0, border_width}) * Scale(Vec2{border_width, e->rect.height - border_width * 2}));
-            DrawMesh(g_ui.element_quad);
-            BindTransform(transform * Translate(Vec2{e->rect.width - border_width, border_width}) * Scale(Vec2{border_width, e->rect.height - border_width * 2}));
-            DrawMesh(g_ui.element_quad);
-        }
-
+    // @render_canvas
     } else if (e->type == ELEMENT_TYPE_CANVAS) {
-        CanvasElement* canvas = static_cast<CanvasElement*>(e);
-        RenderBackground(e->rect, transform, canvas->style.color, VEC2INT_ZERO);
+        DrawCanvas(static_cast<CanvasElement*>(e), transform);
+
+    // @render_scene
     } else if (e->type == ELEMENT_TYPE_SCENE) {
         SceneElement* scene_element = static_cast<SceneElement*>(e);
         if (scene_element->style.camera && scene_element->draw_scene) {
@@ -947,7 +974,7 @@ static int RenderElement(int element_index) {
     }
 
     for (u32 i = 0; i < e->child_count; i++)
-        element_index = RenderElement(element_index);
+        element_index = DrawElement(element_index);
 
     return element_index;
 }
@@ -1027,7 +1054,7 @@ void EndUI() {
 void DrawUI() {
     BindDepth(g_ui.depth, 0);
     for (u32 element_index = 0; element_index < g_ui.element_count; )
-        element_index = RenderElement(element_index);
+        element_index = DrawElement(element_index);
 
     // cursor
     BindDepth(g_ui.depth, 0);
@@ -1039,21 +1066,6 @@ void DrawUI() {
         BindCamera(g_ui.cursor_camera);
         GetApplicationTraits()->draw_cursor(Translate(cursor_pos));
     }
-}
-
-
-static Mesh* CreateElementQuad(Allocator* allocator) {
-    PushScratch();
-    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-    AddVertex(builder, Vec2{0.0f, 0.0f}, ColorUV(0,0));
-    AddVertex(builder, Vec2{1.0f, 0.0f}, ColorUV(0,0));
-    AddVertex(builder, Vec2{1.0f, 1.0f}, ColorUV(0,0));
-    AddVertex(builder, Vec2{0.0f, 1.0f}, ColorUV(0,0));
-    AddTriangle(builder, 0, 1, 2);
-    AddTriangle(builder, 0, 2, 3);
-    auto mesh = CreateMesh(allocator, builder, GetName("element"));
-    PopScratch();
-    return mesh;
 }
 
 static Mesh* CreateImageQuad(Allocator* allocator) {
@@ -1075,11 +1087,81 @@ void SetUIPaletteTexture(Texture* texture) {
     SetTexture(g_ui.element_material, texture);
 }
 
+static void CreateElementWithBorderMesh() {
+    PushScratch();
+    MeshBuilder* mb = CreateMeshBuilder(ALLOCATOR_SCRATCH, 1024, 1024);
+    // 0 - 3
+    AddVertex(mb, MeshVertex{.position=Vec2{0,0}, .uv=Vec2{ 1, 1}, .normal=Vec2{ 0, 0}});
+    AddVertex(mb, MeshVertex{.position=Vec2{0,0}, .uv=Vec2{ 0, 1}, .normal=Vec2{ 1, 0}});
+    AddVertex(mb, MeshVertex{.position=Vec2{1,0}, .uv=Vec2{ 0, 1}, .normal=Vec2{-1, 0}});
+    AddVertex(mb, MeshVertex{.position=Vec2{1,0}, .uv=Vec2{ 1, 1}, .normal=Vec2{ 0, 0}});
+
+    // 4 - 7
+    AddVertex(mb, MeshVertex{.position=Vec2{0,0}, .uv=Vec2{ 1, 0}, .normal=Vec2{ 0, 1}});
+    AddVertex(mb, MeshVertex{.position=Vec2{0,0}, .uv=Vec2{ 0, 0}, .normal=Vec2{ 1, 1}});
+    AddVertex(mb, MeshVertex{.position=Vec2{1,0}, .uv=Vec2{ 0, 0}, .normal=Vec2{-1, 1}});
+    AddVertex(mb, MeshVertex{.position=Vec2{1,0}, .uv=Vec2{ 1, 0}, .normal=Vec2{ 0, 1}});
+
+    // 8 - 11
+    AddVertex(mb, MeshVertex{.position=Vec2{0,1}, .uv=Vec2{ 1, 0}, .normal=Vec2{ 0,-1}});
+    AddVertex(mb, MeshVertex{.position=Vec2{0,1}, .uv=Vec2{ 0, 0}, .normal=Vec2{ 1,-1}});
+    AddVertex(mb, MeshVertex{.position=Vec2{1,1}, .uv=Vec2{ 0, 0}, .normal=Vec2{-1,-1}});
+    AddVertex(mb, MeshVertex{.position=Vec2{1,1}, .uv=Vec2{ 1, 0}, .normal=Vec2{ 0,-1}});
+
+    // 12 - 15
+    AddVertex(mb, MeshVertex{.position=Vec2{0,1}, .uv=Vec2{ 1, 1}, .normal=Vec2{ 0, 0}});
+    AddVertex(mb, MeshVertex{.position=Vec2{0,1}, .uv=Vec2{ 0, 1}, .normal=Vec2{ 1, 0}});
+    AddVertex(mb, MeshVertex{.position=Vec2{1,1}, .uv=Vec2{ 0, 1}, .normal=Vec2{-1, 0}});
+    AddVertex(mb, MeshVertex{.position=Vec2{1,1}, .uv=Vec2{ 1, 1}, .normal=Vec2{ 0, 0}});
+
+    // top
+    AddTriangle(mb, 0, 1, 4);
+    AddTriangle(mb, 4, 1, 5);
+    AddTriangle(mb, 1, 2, 5);
+    AddTriangle(mb, 5, 2, 6);
+    AddTriangle(mb, 2, 3, 6);
+    AddTriangle(mb, 6, 3, 7);
+
+    // middle
+    AddTriangle(mb, 4, 5, 8);
+    AddTriangle(mb, 8, 5, 9);
+    AddTriangle(mb, 9, 5, 6);
+    AddTriangle(mb, 9, 6, 10);
+    AddTriangle(mb, 6, 7, 10);
+    AddTriangle(mb, 10, 7, 11);
+
+    // bottom
+    AddTriangle(mb, 8, 9, 12);
+    AddTriangle(mb, 12, 9, 13);
+    AddTriangle(mb, 9, 10, 13);
+    AddTriangle(mb, 13, 10, 14);
+    AddTriangle(mb, 10, 11, 14);
+    AddTriangle(mb, 14, 11, 15);
+
+    g_ui.element_with_border_mesh = CreateMesh(ALLOCATOR_DEFAULT, mb, NAME_NONE);
+
+    PopScratch();
+}
+
+static void CreateElementMesh() {
+    PushScratch();
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
+    AddVertex(builder, MeshVertex{.position={0.0f,0.0f}, .uv={0.0f,0.0f}});
+    AddVertex(builder, MeshVertex{.position={1.0f,0.0f}, .uv={0.0f,0.0f}});
+    AddVertex(builder, MeshVertex{.position={1.0f,1.0f}, .uv={0.0f,0.0f}});
+    AddVertex(builder, MeshVertex{.position={0.0f,1.0f}, .uv={0.0f,0.0f}});
+    AddTriangle(builder, 0, 1, 2);
+    AddTriangle(builder, 0, 2, 3);
+
+    g_ui.element_mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, GetName("element"));
+    PopScratch();
+}
+
+
 void InitUI(const ApplicationTraits* traits) {
     g_ui = {};
     g_ui.allocator = CreateArenaAllocator(sizeof(FatElement) * MAX_ELEMENTS, "UI");
     g_ui.camera = CreateCamera(ALLOCATOR_DEFAULT);
-    g_ui.element_quad = CreateElementQuad(ALLOCATOR_DEFAULT);
     g_ui.image_mesh = CreateImageQuad(ALLOCATOR_DEFAULT);
     g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
     g_ui.input = CreateInputSet(ALLOCATOR_DEFAULT);
@@ -1091,6 +1173,9 @@ void InitUI(const ApplicationTraits* traits) {
     EnableButton(g_ui.input, MOUSE_LEFT);
     if (TEXTURE)
         SetUIPaletteTexture(TEXTURE[0]);
+
+    CreateElementMesh();
+    CreateElementWithBorderMesh();
 }
 
 void ShutdownUI() {

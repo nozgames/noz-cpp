@@ -132,6 +132,7 @@ struct ImageStyle {
 };
 
 struct BorderStyle {
+    float radius = 0.0f;
     float width = 0.0f;
     Color color = COLOR_WHITE;
 };
@@ -146,6 +147,7 @@ struct RectangleStyle {
 struct CanvasStyle {
     CanvasType type = CANVAS_TYPE_SCREEN;
     Color color;
+    Vec2Int color_offset;
     Camera* world_camera;
     Vec2 world_position;
     Vec2 world_size;
