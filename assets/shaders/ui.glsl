@@ -56,8 +56,8 @@ layout(set = 4, binding = 0) uniform ColorBuffer {
 
 layout(set = 5, binding = 0) uniform FragmentUserBuffer {
     vec4 border_color;
-    float border_radius;
-    float border_width;
+    float border_ratio;    // border_width / border_radius (precomputed)
+    float square_corners;  // 1.0 = square corners, 0.0 = squircle
     float padding0;
     float padding1;
 } ui_buffer;
@@ -71,19 +71,20 @@ void main() {
     color.rgb *= color.a;
     border_color.rgb *= border_color.a;
 
-    // Squircle distance using superellipse formula: |x|^n + |y|^n = 1
-    // n=2 is circle, n=4+ gives squircle, higher n = more square
+    // Distance calculation - blend between squircle and square based on square_corners
+    // Squircle: superellipse formula |x|^n + |y|^n = 1 (n=4)
+    // Square: Chebyshev distance (L-infinity norm)
     float n = 4.0;
-    float dist = pow(pow(abs(f_uv.x), n) + pow(abs(f_uv.y), n), 1.0 / n);
+    float squircle_dist = pow(pow(abs(f_uv.x), n) + pow(abs(f_uv.y), n), 1.0 / n);
+    float square_dist = max(abs(f_uv.x), abs(f_uv.y));
+    float dist = mix(squircle_dist, square_dist, ui_buffer.square_corners);
     float edge = fwidth(dist);
 
-    // border (avoid division by zero if border_radius is 0)
-    float border = (ui_buffer.border_radius > 0.0)
-        ? (1.0 + edge) - (ui_buffer.border_width / ui_buffer.border_radius)
-        : 1.0 + edge;
+    // border calculation (border_ratio is precomputed on CPU)
+    float border = (1.0 + edge) - ui_buffer.border_ratio;
     color = mix(color, border_color, smoothstep(border - edge, border, dist));
 
-    // radius (premultiplied alpha - multiply RGBA by the edge falloff)
+    // edge falloff (premultiplied alpha - multiply RGBA by the edge falloff)
     float radius_alpha = 1.0 - smoothstep(1.0 - edge, 1.0, dist);
     color *= radius_alpha;
 
