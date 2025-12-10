@@ -65,6 +65,10 @@ static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, Ass
 
 #ifdef NOZ_PLATFORM_GLES
     if (asset_type == ASSET_TYPE_SHADER) {
+        asset_path += ".gles";
+    }
+#elif NOZ_PLATFORM_GL
+    if (asset_type == ASSET_TYPE_SHADER) {
         asset_path += ".glsl";
     }
 #endif
