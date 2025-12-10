@@ -360,6 +360,8 @@ void PlatformBeginUI() {
 }
 
 void PlatformEndUIPass() {
+    // Unbind framebuffer before binding its texture to avoid feedback loop
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void PlatformBindOffscreenTexture() {
@@ -482,12 +484,8 @@ PlatformShader* PlatformCreateShader(
             "FragmentUserBuffer"
         };
 
-        for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++) {
+        for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++)
             shader->uniform_block_indices[i] = glGetUniformBlockIndex(shader->program, uniform_names[i]);
-            if (shader->uniform_block_indices[i] == GL_INVALID_INDEX) {
-                LogInfo("Shader '%s': Uniform block '%s' not found", name ? name : "unknown", uniform_names[i]);
-            }
-        }
     }
 
     return shader;
@@ -546,4 +544,6 @@ void PlatformFree(PlatformShader* shader) {
 }
 
 void PlatformEndSwapChain() {
+    // Unbind framebuffer before binding its texture to avoid feedback loop
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
