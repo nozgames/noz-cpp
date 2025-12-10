@@ -7,7 +7,8 @@
 #include "gles_internal.h"
 #include <cassert>
 
-// Global function pointers - definitions
+#ifndef NOZ_PLATFORM_WEB
+// Global function pointers - definitions (not needed on web, Emscripten provides them)
 PFNGLACTIVETEXTUREPROC glActiveTexture = nullptr;
 PFNGLATTACHSHADERPROC glAttachShader = nullptr;
 PFNGLBINDBUFFERPROC glBindBuffer = nullptr;
@@ -81,6 +82,7 @@ PFNGLUSEPROGRAMPROC glUseProgram = nullptr;
 PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = nullptr;
 PFNGLVIEWPORTPROC glViewport = nullptr;
 PFNGLCLIPCONTROLPROC glClipControl = nullptr;
+#endif // NOZ_PLATFORM_WEB
 
 // Global GL state
 GLState g_gl = {};
@@ -319,7 +321,10 @@ void PlatformBeginRenderPass(Color clear_color) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Enable sRGB conversion (linear -> gamma-corrected output)
+    // Note: WebGL doesn't support GL_FRAMEBUFFER_SRGB - sRGB is handled differently
+#ifndef NOZ_PLATFORM_WEB
     glEnable(GL_FRAMEBUFFER_SRGB);
+#endif
     // Depth/blend state will be set per-shader in PlatformBindShader
 }
 
@@ -437,9 +442,12 @@ PlatformShader* PlatformCreateShader(
     }
 
     GLuint geom_shader = 0;
+#ifndef NOZ_PLATFORM_WEB
+    // WebGL doesn't support geometry shaders
     if (geometry && geometry_size > 0) {
         geom_shader = CompileGLShader(GL_GEOMETRY_SHADER, (const char*)geometry, geometry_size, name);
     }
+#endif
 
     shader->program = glCreateProgram();
     glAttachShader(shader->program, vert_shader);

@@ -139,7 +139,7 @@ void InitApplication(ApplicationTraits* traits, int argc, const char* argv[]) {
 
     traits = traits ? traits : &g_default_traits;
 
-    memset(&g_app, 0, sizeof(Application));
+    g_app = {};
     g_app.title = traits->title;
     g_app.traits = *traits;
     g_app.running = true;

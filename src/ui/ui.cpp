@@ -222,6 +222,7 @@ static void PopElement() {
 }
 
 static void EndElement(ElementType expected_type) {
+    (void)expected_type;
     assert(GetCurrentElement()->type == expected_type);
     PopElement();
 }

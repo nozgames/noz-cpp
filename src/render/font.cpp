@@ -147,14 +147,14 @@ const FontGlyph* GetGlyph(Font* font, char ch)
     FontImpl* impl = static_cast<FontImpl*>(font);
 
     // Check if glyph exists (advance > 0 means valid glyph)
-    unsigned char index = (unsigned char)ch;
+    int index = (unsigned char)ch;
     if (index < MAX_GLYPHS && impl->glyphs[index].advance > 0.0f)
     {
         return &impl->glyphs[index];
     }
 
     // If character not found, try unknown glyph (ASCII DEL character)
-    unsigned char unknown_ch = 0x7F;
+    int unknown_ch = 0x7F;
     if (unknown_ch < MAX_GLYPHS && impl->glyphs[unknown_ch].advance > 0.0f)
     {
         return &impl->glyphs[unknown_ch];

@@ -10,7 +10,6 @@ extern void BindTextureInternal(Texture* texture, i32 slot);
 extern void UploadMesh(Mesh* mesh);
 
 enum RenderCommandType {
-    RENDER_COMMAND_TYPE_BIND_LIGHT,
     RENDER_COMMAND_TYPE_BIND_VERTEX_USER,
     RENDER_COMMAND_TYPE_BIND_FRAGMENT_USER,
     RENDER_COMMAND_TYPE_BIND_CAMERA,

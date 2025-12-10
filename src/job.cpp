@@ -2,6 +2,34 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#ifdef NOZ_PLATFORM_WEB
+// Web platform: No threading support, run jobs synchronously
+#include "platform.h"
+#include "internal.h"
+
+JobHandle CreateJob(JobRunFunc func, void* user_data, JobHandle depends_on) {
+    // Run immediately on web
+    if (func) {
+        func(user_data);
+    }
+    return { 0, 0 };
+}
+
+bool IsDone(JobHandle handle) {
+    return true; // Jobs complete immediately on web
+}
+
+void InitJobs() {
+    // No-op on web
+}
+
+void ShutdownJobs() {
+    // No-op on web
+}
+
+#else
+// Desktop platforms: Full threaded job system
+
 #include <mutex>
 #include <semaphore>
 #include <thread>
@@ -207,4 +235,6 @@ void ShutdownJobs()
 
     g_jobs = {};
 }
+
+#endif // NOZ_PLATFORM_WEB
 

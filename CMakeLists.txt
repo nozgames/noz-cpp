@@ -84,7 +84,18 @@ set(SOURCE_FILES
 )
 
 # Add platform-specific files
-if(WIN32)
+if(EMSCRIPTEN)
+    list(APPEND SOURCE_FILES
+        src/platform/web/web_main.cpp
+        src/platform/web/web_render.cpp
+        src/platform/web/web_input.cpp
+        src/platform/web/web_audio.cpp
+        src/platform/web/web_time.cpp
+        src/platform/web/web_http.cpp
+        src/platform/web/web_websocket.cpp
+        src/platform/gles/gles_render.cpp
+    )
+elseif(WIN32)
     list(APPEND SOURCE_FILES
         src/platform/windows/windows_main.cpp
         src/platform/windows/windows_input.cpp
@@ -139,7 +150,10 @@ target_include_directories(noz PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Platform-specific include directories
-if(WIN32)
+if(EMSCRIPTEN)
+    target_compile_definitions(noz PUBLIC NOZ_PLATFORM_WEB NOZ_PLATFORM_GLES)
+    message(STATUS "Building for Web/Emscripten with WebGL")
+elseif(WIN32)
     target_include_directories(noz PUBLIC
         ${CMAKE_SOURCE_DIR}/res/windows
         ${CMAKE_CURRENT_SOURCE_DIR}/external/vulkan
@@ -159,7 +173,20 @@ elseif(APPLE)
 endif()
 
 # Link dependencies for noz
-if(WIN32)
+if(EMSCRIPTEN)
+    # Emscripten link flags for web APIs
+    target_link_options(noz
+        PUBLIC
+            -sUSE_WEBGL2=1
+            -sFULL_ES3=1
+            -sFETCH=1
+            -sALLOW_MEMORY_GROWTH=1
+            -sINITIAL_MEMORY=33554432
+            -lwebsocket.js
+    )
+    # Box2D and enet would need to be compiled with emscripten separately
+    message(STATUS "Emscripten build - external libraries will need emscripten-compiled versions")
+elseif(WIN32)
     target_link_libraries(noz
         PUBLIC
             ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/box2d.lib

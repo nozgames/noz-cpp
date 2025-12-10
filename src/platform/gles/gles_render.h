@@ -6,6 +6,13 @@
 
 #include <cstddef>
 
+#ifdef NOZ_PLATFORM_WEB
+// For WebGL/Emscripten, use system GLES3 headers directly
+// since Emscripten provides GL functions as direct symbols
+#define GL_GLEXT_PROTOTYPES
+#include <GLES3/gl3.h>
+#else
+
 // OpenGL ES 3.0 type definitions
 typedef unsigned int GLenum;
 typedef unsigned char GLboolean;
@@ -326,3 +333,5 @@ extern PFNGLUSEPROGRAMPROC glUseProgram;
 extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 extern PFNGLVIEWPORTPROC glViewport;
 extern PFNGLCLIPCONTROLPROC glClipControl;
+
+#endif // NOZ_PLATFORM_WEB
