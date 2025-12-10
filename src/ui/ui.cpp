@@ -607,6 +607,7 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
             max_content_size = Max(max_content_size, child->measured_size);
         }
 
+        e->measured_size = max_content_size;
         e->measured_size[expanded->axis] = available_size[expanded->axis];
     } else {
         assert(false && "Unhandled element type in MeasureElements");
@@ -695,7 +696,7 @@ static int LayoutElement(int element_index, const Vec2& size) {
 
     // @layout_expanded
     } else if (e->type == ELEMENT_TYPE_EXPANDED) {
-        Vec2 content_size = GetSize(e->rect);
+        Vec2 content_size = size; //  GetSize(e->rect);
         for (u16 i = 0; i < e->child_count; i++)
             element_index = LayoutElement(element_index, content_size);
 
@@ -845,6 +846,7 @@ static int DrawElement(int element_index) {
             if (align.has_x) text_offset.x = (e->rect.width - text_size.x) * align.x;
             if (align.has_y) text_offset.y = (e->rect.height - text_size.y) * align.y;
 
+            // Debug
             // BindTransform(e->local_to_world * Scale({e->rect.width, e->rect.height}));
             // BindColor(COLOR_GREEN);
             // BindMaterial(g_ui.element_material);
