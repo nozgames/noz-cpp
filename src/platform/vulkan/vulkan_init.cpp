@@ -492,25 +492,34 @@ static void InitCommandPool() {
     VK_CHECK(vkCreateCommandPool(g_vulkan.device, &vf_pool_info, nullptr, &g_vulkan.command_pool));
 }
 
-static void InitCommandBuffer() {
-    VkCommandBufferAllocateInfo vf_alloc_info = {};
-    vf_alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    vf_alloc_info.commandPool = g_vulkan.command_pool;
-    vf_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    vf_alloc_info.commandBufferCount = 1;
-    VK_CHECK(vkAllocateCommandBuffers(g_vulkan.device, &vf_alloc_info, &g_vulkan.command_buffer));
+static void InitCommandBuffers() {
+    for (size_t i = 0; i < g_vulkan.swapchain_framebuffers.size(); i++) {
+        VkCommandBufferAllocateInfo alloc_info = {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .commandPool = g_vulkan.command_pool,
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            .commandBufferCount = 1
+        };
+        VK_CHECK(vkAllocateCommandBuffers(g_vulkan.device, &alloc_info, &g_vulkan.swapchain_framebuffers[i].command_buffer));
+    }
 }
 
 static void InitSyncObjects() {
-    VkFenceCreateInfo vk_fence_info = {};
-    vk_fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    vk_fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    VkFenceCreateInfo fence_info = {
+        .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+        .flags = VK_FENCE_CREATE_SIGNALED_BIT
+    };
+    VkSemaphoreCreateInfo semaphore_info = {
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+    };
 
-    VkSemaphoreCreateInfo vk_semaphore_info = {};
-    vk_semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    VK_CHECK(vkCreateSemaphore(g_vulkan.device, &vk_semaphore_info, nullptr, &g_vulkan.image_available_semaphore));
-    VK_CHECK(vkCreateSemaphore(g_vulkan.device, &vk_semaphore_info, nullptr, &g_vulkan.render_finished_semaphore));
-    VK_CHECK(vkCreateFence(g_vulkan.device, &vk_fence_info, nullptr, &g_vulkan.in_flight_fence));
+    for (size_t i = 0; i < g_vulkan.swapchain_framebuffers.size(); i++) {
+        Swapchain& swapchain = g_vulkan.swapchain_framebuffers[i];
+        VK_CHECK(vkCreateSemaphore(g_vulkan.device, &semaphore_info, nullptr, &swapchain.image_available_semaphore));
+        VK_CHECK(vkCreateSemaphore(g_vulkan.device, &semaphore_info, nullptr, &swapchain.render_finished_semaphore));
+        VK_CHECK(vkCreateFence(g_vulkan.device, &fence_info, nullptr, &swapchain.in_flight_fence));
+    }
+    g_vulkan.current_frame = 0;
 }
 
 static void InitPipeline() {
@@ -984,11 +993,11 @@ static void InitCompositePass() {
     VkAttachmentDescription color_attachment = {
         .format = g_vulkan.swapchain_image_format,
         .samples = VK_SAMPLE_COUNT_1_BIT,
-        .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
         .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
         .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
     };
 
@@ -1324,7 +1333,7 @@ static void InitInstance() {
         .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
         .pEngineName = "NoZ",
         .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-        .apiVersion = VK_API_VERSION_1_0,
+        .apiVersion = VK_API_VERSION_1_1,
     };
 
     VkInstanceCreateInfo create_info = {
@@ -1365,12 +1374,12 @@ void InitRenderDriver(const RendererTraits* traits, HWND hwnd) {
     InitLogicalDevice();
     InitDescriptorSetLayout();
     InitDescriptorPool();
-    InitDescriptorSets();
     InitUniformBuffers();
+    InitDescriptorSets();
     InitPipeline();
-    InitSyncObjects();
 
     InitSwapchains();
+    InitSyncObjects();
     InitMSAA();
     InitDepth();
     InitRenderPass();
@@ -1384,7 +1393,7 @@ void InitRenderDriver(const RendererTraits* traits, HWND hwnd) {
     InitComposite();
     InitSwapchainFrameBuffers();
     InitCommandPool();
-    InitCommandBuffer();
+    InitCommandBuffers();
 }
 
 void ReinitSwapchain() {
@@ -1393,6 +1402,7 @@ void ReinitSwapchain() {
 
     ShutdownFrameBuffers();
     InitSwapchains();
+    InitSyncObjects();
     InitMSAA();
     InitDepth();
     InitScene();
@@ -1400,4 +1410,5 @@ void ReinitSwapchain() {
     InitUI();
     InitComposite();
     InitSwapchainFrameBuffers();
+    InitCommandBuffers();
 }

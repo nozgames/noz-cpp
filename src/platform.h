@@ -69,7 +69,7 @@ extern void PlatformBeginUIPass();
 extern void PlatformEndUIPass();
 extern void PlatformBeginCompositePass();
 extern void PlatformEndCompositePass();
-extern void PlatformBindOffscreenTexture();
+extern void PlatformBindSceneTexture();
 extern void PlatformBindUITexture();
 extern void PlatformSetViewport(const noz::Rect& viewport);
 extern void PlatformBindTransform(const Mat3& transform, float depth, float depth_scale);

@@ -60,7 +60,11 @@ Material* GetUICompositeMaterial() {
 }
 
 void PostProcPass() {
-    if (!IsPostProcessEnabled() || !g_renderer.postprocess_material)
+    // Disabled for now - going straight from Scene -> UI -> Composite
+#if 0
+    PlatformTransitionSceneTexture();
+
+    if (!g_renderer.postprocess_material)
         return;
 
     PlatformBeginPostProcPass();
@@ -70,30 +74,39 @@ void PostProcPass() {
     PlatformBindTransform(identity, 0.0f, 1.0f);
     PlatformBindColor(COLOR_WHITE, VEC2_ZERO, COLOR_TRANSPARENT);
     BindMaterialInternal(g_renderer.postprocess_material);
-    PlatformBindOffscreenTexture();
+    PlatformBindSceneTexture();
     RenderMesh(GetFullscreenQuad());
 
     PlatformEndPostProcPass();
+#endif
 }
 
 void UIPass() {
     if (!g_renderer.ui_composite_material)
         return;
 
+    // Draw UI to offscreen target
     PlatformBeginUIPass();
     DrawUI();
     ExecuteRenderCommands();
     PlatformEndUIPass();
 
+    // Composite: draw scene, then blend UI on top
     PlatformBeginCompositePass();
     Mat3 identity = MAT3_IDENTITY;
     PlatformBindCamera(identity);
     PlatformBindTransform(identity, 0.0f, 1.0f);
     PlatformBindColor(COLOR_WHITE, VEC2_ZERO, COLOR_TRANSPARENT);
+
+    // Draw scene
     BindMaterialInternal(g_renderer.ui_composite_material);
+    PlatformBindSceneTexture();
+    RenderMesh(GetFullscreenQuad());
+
+    // Blend UI on top
     PlatformBindUITexture();
     RenderMesh(GetFullscreenQuad());
-    ExecuteRenderCommands();
+
     PlatformEndCompositePass();
 }
 
@@ -103,12 +116,25 @@ void BeginRender(Color clear_color) {
     PlatformBeginScenePass(clear_color);
 }
 
+void CompositePass() {
+    PlatformBeginCompositePass();
+    Mat3 identity = MAT3_IDENTITY;
+    PlatformBindCamera(identity);
+    PlatformBindTransform(identity, 0.0f, 1.0f);
+    PlatformBindColor(COLOR_WHITE, VEC2_ZERO, COLOR_TRANSPARENT);
+    if (g_renderer.ui_composite_material)
+        BindMaterialInternal(g_renderer.ui_composite_material);
+    PlatformBindSceneTexture();
+    RenderMesh(GetFullscreenQuad());
+    PlatformEndCompositePass();
+}
+
 void EndRender() {
     ExecuteRenderCommands();
     PlatformEndScenePass();
 
-    // PostProcPass();
-    // UIPass();
+    PostProcPass();
+    UIPass();
 
     PlatformEndRender();
 }

@@ -363,7 +363,7 @@ void PlatformEndUIPass() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void PlatformBindOffscreenTexture() {
+void PlatformBindSceneTexture() {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, g_gl.offscreen.texture);
     PlatformBindCamera(Translate(Vec2{0, 1}) * Scale(Vec2{1, -1}));

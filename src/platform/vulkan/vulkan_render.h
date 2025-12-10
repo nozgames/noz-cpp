@@ -40,6 +40,7 @@ extern PFN_vkDestroyFramebuffer vkDestroyFramebuffer;
 extern PFN_vkCreateCommandPool vkCreateCommandPool;
 extern PFN_vkDestroyCommandPool vkDestroyCommandPool;
 extern PFN_vkAllocateCommandBuffers vkAllocateCommandBuffers;
+extern PFN_vkFreeCommandBuffers vkFreeCommandBuffers;
 extern PFN_vkBeginCommandBuffer vkBeginCommandBuffer;
 extern PFN_vkEndCommandBuffer vkEndCommandBuffer;
 extern PFN_vkCmdBeginRenderPass vkCmdBeginRenderPass;
@@ -170,6 +171,10 @@ struct Swapchain {
     VkImage image;
     VkImageView view;
     VkFramebuffer framebuffer;
+    VkSemaphore image_available_semaphore;
+    VkSemaphore render_finished_semaphore;
+    VkFence in_flight_fence;
+    VkCommandBuffer command_buffer;
 };
 
 struct VulkanRenderer {
@@ -182,13 +187,11 @@ struct VulkanRenderer {
     VkDevice device;
     VkQueue graphics_queue;
     VkQueue present_queue;
-    VkFence in_flight_fence;
+    u32 current_frame;
     VkPipelineLayout pipeline_layout;
     VkCommandPool command_pool;
     VkCommandBuffer command_buffer;
     VkSampleCountFlagBits msaa_samples;
-    VkSemaphore image_available_semaphore;
-    VkSemaphore render_finished_semaphore;
     VkDescriptorPool descriptor_pool;
     VkDescriptorSetLayout sampler_descriptor_set_layout;
     VkDescriptorSet sampler_descriptor_set;

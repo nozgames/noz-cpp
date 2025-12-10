@@ -41,6 +41,7 @@ PFN_vkDestroyFramebuffer vkDestroyFramebuffer = nullptr;
 PFN_vkCreateCommandPool vkCreateCommandPool = nullptr;
 PFN_vkDestroyCommandPool vkDestroyCommandPool = nullptr;
 PFN_vkAllocateCommandBuffers vkAllocateCommandBuffers = nullptr;
+PFN_vkFreeCommandBuffers vkFreeCommandBuffers = nullptr;
 PFN_vkBeginCommandBuffer vkBeginCommandBuffer = nullptr;
 PFN_vkEndCommandBuffer vkEndCommandBuffer = nullptr;
 PFN_vkCmdBeginRenderPass vkCmdBeginRenderPass = nullptr;
