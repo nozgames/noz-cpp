@@ -81,8 +81,6 @@ extern void PlatformBindTexture(PlatformTexture* texture, int slot);
 extern PlatformShader* PlatformCreateShader(
     const void* vertex,
     u32 vertex_size,
-    const void* geometry,
-    u32 geometry_size,
     const void* fragment,
     u32 fragment_size,
     ShaderFlags flags,

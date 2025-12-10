@@ -4,7 +4,7 @@
 //  Web/Emscripten WebGL renderer implementation
 //
 
-#include "../gles/gles_internal.h"
+#include "../gl/gl_internal.h"
 
 #include <emscripten.h>
 #include <emscripten/html5.h>

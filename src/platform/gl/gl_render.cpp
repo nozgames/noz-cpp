@@ -4,7 +4,7 @@
 //  Platform-independent OpenGL renderer implementation
 //
 
-#include "gles_internal.h"
+#include "gl_internal.h"
 #include <cassert>
 
 #ifndef NOZ_PLATFORM_WEB
@@ -413,8 +413,6 @@ static GLuint CompileGLShader(GLenum type, const char* source, u32 source_size, 
 PlatformShader* PlatformCreateShader(
     const void* vertex,
     u32 vertex_size,
-    const void* geometry,
-    u32 geometry_size,
     const void* fragment,
     u32 fragment_size,
     ShaderFlags flags,
@@ -443,19 +441,9 @@ PlatformShader* PlatformCreateShader(
         return nullptr;
     }
 
-    GLuint geom_shader = 0;
-#ifndef NOZ_PLATFORM_WEB
-    // WebGL doesn't support geometry shaders
-    if (geometry && geometry_size > 0) {
-        geom_shader = CompileGLShader(GL_GEOMETRY_SHADER, (const char*)geometry, geometry_size, name);
-    }
-#endif
-
     shader->program = glCreateProgram();
     glAttachShader(shader->program, vert_shader);
     glAttachShader(shader->program, frag_shader);
-    if (geom_shader)
-        glAttachShader(shader->program, geom_shader);
 
     glLinkProgram(shader->program);
 
@@ -471,8 +459,6 @@ PlatformShader* PlatformCreateShader(
 
     glDeleteShader(vert_shader);
     glDeleteShader(frag_shader);
-    if (geom_shader)
-        glDeleteShader(geom_shader);
 
     if (shader->program) {
         const char* uniform_names[] = {
