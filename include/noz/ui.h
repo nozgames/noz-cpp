@@ -54,19 +54,11 @@ enum Align {
     ALIGN_COUNT
 };
 
-struct RowStyle {
-    float spacing = 0.0f;
-};
-
 struct TransformStyle {
     Vec2 origin = {0.5f, 0.5f};
     Vec2 translate = VEC2_ZERO;
     float rotate = 0.0f;
     Vec2 scale = VEC2_ONE;
-};
-
-struct ColumnStyle {
-    float spacing = 0.0f;
 };
 
 struct ExpandedStyle {
@@ -163,6 +155,7 @@ struct ContainerStyle {
     Vec2Int color_offset;
     BorderStyle border;
     void* user_data;
+    float spacing = 0.0f;
 };
 
 // @common
@@ -177,8 +170,8 @@ extern Vec2 ScreenToElement(const Vec2& screen);
 // @layout
 extern void BeginCanvas(const CanvasStyle& style={});
 extern void BeginContainer(const ContainerStyle& style={});
-extern void BeginColumn(const ColumnStyle& style={});
-extern void BeginRow(const RowStyle& style={});
+extern void BeginColumn(const ContainerStyle& style={});
+extern void BeginRow(const ContainerStyle& style={});
 extern void BeginTransformed(const TransformStyle& style);
 extern void BeginBorder(const BorderStyle& style);
 extern void BeginCenter();
