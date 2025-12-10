@@ -7,7 +7,7 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
-#include "gles_internal.h"
+#include "gl_internal.h"
 
 // Windows-specific extensions to GLState
 static struct {

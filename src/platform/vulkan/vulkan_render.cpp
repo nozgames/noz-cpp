@@ -1830,8 +1830,6 @@ static bool CreateShaderInternal(
     PlatformShader* shader,
     const void* vertex_code,
     u32 vertex_code_size,
-    const void* geometry_code,
-    u32 geometry_code_size,
     const void* fragment_code,
     u32 fragment_code_size,
     ShaderFlags flags,
@@ -1902,7 +1900,6 @@ static bool CreateShaderInternal(
     };
 
     shader->vertex_module = CreateShaderModule(vertex_code, vertex_code_size, name);
-    shader->geometry_module = geometry_code ? CreateShaderModule(geometry_code, geometry_code_size, name) : VK_NULL_HANDLE;
     shader->fragment_module = CreateShaderModule(fragment_code, fragment_code_size, name);
 
     // Build shader stages array dynamically based on what shaders are present
@@ -2983,15 +2980,13 @@ static void CleanupUICompositeFramebuffers() {
 PlatformShader* PlatformCreateShader(
     const void* vertex,
     u32 vertex_size,
-    const void* geometry,
-    u32 geometry_size,
     const void* fragment,
     u32 fragment_size,
     ShaderFlags flags,
     const char* name) {
 
     PlatformShader* shader = (PlatformShader*)Alloc(ALLOCATOR_DEFAULT, sizeof(PlatformShader));
-    if (!CreateShaderInternal(shader, vertex, vertex_size, geometry, geometry_size, fragment, fragment_size, flags, name)) {
+    if (!CreateShaderInternal(shader, vertex, vertex_size, fragment, fragment_size, flags, name)) {
         Free(shader);
         return nullptr;
     }

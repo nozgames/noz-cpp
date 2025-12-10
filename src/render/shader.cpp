@@ -22,34 +22,21 @@ static bool LoadShaderInternal(ShaderImpl* impl, Stream* stream, const AssetHead
     (void)header;
 
     auto vertex_length = ReadU32(stream);
-    auto* vertex = (u8*)Alloc(ALLOCATOR_DEFAULT, vertex_length);
+    char* vertex = static_cast<char *>(Alloc(ALLOCATOR_DEFAULT, vertex_length));
     if (!vertex)
         return false;
 
     ReadBytes(stream, vertex, vertex_length);
 
-    u32 geometry_length = ReadU32(stream);
-    u8* geometry = nullptr;
-    if (geometry_length > 0) {
-        geometry = (u8*)Alloc(ALLOCATOR_DEFAULT, geometry_length);
-        if (!geometry)
-        {
-            Free(vertex);
-            return false;
-        }
-        ReadBytes(stream, geometry, geometry_length);
-    }
-
     u32 fragment_length = ReadU32(stream);
-    u8* fragment = (u8*)Alloc(ALLOCATOR_DEFAULT, fragment_length);
+    char* fragment = static_cast<char*>(Alloc(ALLOCATOR_DEFAULT, fragment_length));
     if (!fragment) {
         Free(vertex);
-        if (geometry) Free(geometry);
         return false;
     }
     ReadBytes(stream, fragment, fragment_length);
 
-    impl->flags = (ShaderFlags)ReadU8(stream);
+    impl->flags = static_cast<ShaderFlags>(ReadU8(stream));
 
     // Auto-detect shader types by name
     if (impl->name) {
@@ -63,12 +50,10 @@ static bool LoadShaderInternal(ShaderImpl* impl, Stream* stream, const AssetHead
 
     impl->platform = PlatformCreateShader(
         vertex, vertex_length,
-        geometry, geometry_length,
         fragment, fragment_length,
         impl->flags, impl->name->value);
 
     Free(vertex);
-    if (geometry) Free(geometry);
     Free(fragment);
 
     return impl->platform != nullptr;
