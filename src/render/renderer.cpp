@@ -104,7 +104,7 @@ void BeginRender(Color clear_color) {
 }
 
 void EndRender() {
-    //ExecuteRenderCommands();
+    ExecuteRenderCommands();
     PlatformEndScenePass();
 
     // PostProcPass();
