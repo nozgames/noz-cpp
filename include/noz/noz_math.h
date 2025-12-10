@@ -86,6 +86,9 @@ struct Mat3
 struct Vec2 {
     f32 x;
     f32 y;
+
+    float& operator [] (int index) { return *(reinterpret_cast<float*>(this) + index); }
+    float operator [] (int index) const { return *((float*)this + index); }
 };
 
 inline Vec2 operator*(f32 scalar, const Vec2& v) { return Vec2{ v.x * scalar, v.y * scalar }; }
