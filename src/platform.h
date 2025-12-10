@@ -28,6 +28,7 @@ extern void PlatformShutdown();
 extern bool PlatformUpdate();
 extern void PlatformLog(LogType type, const char* message);
 extern std::filesystem::path PlatformGetSaveGamePath();
+extern std::filesystem::path PlatformGetBinaryPath();
 extern u64 PlatformGetTimeCounter();
 extern u64 PlatformGetTimeFrequency();
 
@@ -149,3 +150,5 @@ extern int PlatformGetStatusCode(const PlatformHttpHandle& handle);      // HTTP
 extern const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size);
 extern void PlatformCancel(const PlatformHttpHandle& handle);            // Cancel pending request
 extern void PlatformFree(const PlatformHttpHandle& handle);           // Release completed request resources
+
+extern void Main();

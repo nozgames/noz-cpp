@@ -42,12 +42,17 @@ struct ApplicationTraits {
     void (*unload_assets)();
     void (*hotload_asset)(const Name* incoming_name, AssetType incoming_type);
     void (*draw_cursor)(const Mat3& transform);
+    void (*update)();       // Called each frame - game logic goes here
+    void (*shutdown)();     // Called on application exit
 };
 
 extern void Init(ApplicationTraits& traits);
 
-extern void InitApplication(ApplicationTraits* traits, int argc, const char* argv[]);
+extern void InitApplication(ApplicationTraits* traits);
 extern void InitWindow();
+extern void RunApplicationFrame();      // Called each frame by platform
+extern bool IsApplicationRunning();     // Check if app should keep running
+extern void RequestApplicationExit();   // Request application to exit
 extern void ShutdownApplication();
 extern void ShutdownWindow();
 extern bool IsWindowCreated();

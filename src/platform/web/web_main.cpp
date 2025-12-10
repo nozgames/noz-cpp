@@ -30,13 +30,13 @@ struct WebApp {
 
 static WebApp g_web = {};
 
-// Main loop callback for Emscripten
-static void (*g_main_loop_callback)() = nullptr;
-
 static void EmscriptenMainLoop() {
-    if (g_main_loop_callback) {
-        g_main_loop_callback();
+    if (!IsApplicationRunning()) {
+        ShutdownApplication();
+        emscripten_cancel_main_loop();
+        return;
     }
+    RunApplicationFrame();
 }
 
 bool PlatformIsWindowFocused() {
@@ -293,6 +293,11 @@ std::filesystem::path PlatformGetSaveGamePath() {
     return std::filesystem::path("/save");
 }
 
+std::filesystem::path PlatformGetBinaryPath() {
+    // Web doesn't have a traditional binary path
+    return std::filesystem::path("/");
+}
+
 noz::RectInt PlatformGetWindowRect() {
     return noz::RectInt{0, 0, g_web.screen_size.x, g_web.screen_size.y};
 }
@@ -310,8 +315,12 @@ void PlatformLog(LogType type, const char* message) {
     }, message);
 }
 
-// Emscripten main loop setup - called from main()
-void PlatformSetMainLoop(void (*callback)()) {
-    g_main_loop_callback = callback;
+int main(int argc, char* argv[]) {
+    (void)argc;
+    (void)argv;
+
+    Main();
     emscripten_set_main_loop(EmscriptenMainLoop, 0, 1);
+
+    return 0;
 }

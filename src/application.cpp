@@ -134,19 +134,19 @@ static void HandleHotload(EventId event_id, const void* event_data) {
 #endif
 
 // @init
-void InitApplication(ApplicationTraits* traits, int argc, const char* argv[]) {
-    (void)argc;
-
+void InitApplication(ApplicationTraits* traits) {
     traits = traits ? traits : &g_default_traits;
 
     g_app = {};
     g_app.title = traits->title;
     g_app.traits = *traits;
     g_app.running = true;
-    g_app.binary_path = argv[0];
-    g_app.binary_dir = std::filesystem::path(argv[0]).parent_path().string();
 
     PlatformInit(&g_app.traits);
+
+    std::filesystem::path binary_path = PlatformGetBinaryPath();
+    g_app.binary_path = binary_path.string();
+    g_app.binary_dir = binary_path.parent_path().string();
     InitAllocator(traits);
     InitName(traits);
     InitRandom();
@@ -237,9 +237,33 @@ void ShutdownWindow() {
     g_app.window_created = false;
 }
 
+// @run - Called each frame by platform main loop
+void RunApplicationFrame() {
+    if (!g_app.running)
+        return;
+
+    if (!UpdateApplication())
+        return;
+
+    if (g_app.traits.update)
+        g_app.traits.update();
+}
+
+// Returns true while app should keep running
+bool IsApplicationRunning() {
+    return g_app.running;
+}
+
+// Request application to exit
+void RequestApplicationExit() {
+    g_app.running = false;
+}
+
 // @shutdown
-void ShutdownApplication()
-{
+void ShutdownApplication() {
+    if (g_app.traits.shutdown)
+        g_app.traits.shutdown();
+
     if (g_app.window_created)
         ShutdownWindow();
 

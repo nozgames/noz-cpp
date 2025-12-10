@@ -376,19 +376,23 @@ std::filesystem::path PlatformGetSaveGamePath() {
     {
         std::filesystem::path save_path = appdata_path;
         CoTaskMemFree(appdata_path);
-        
+
         save_path /= g_windows.traits->name;
-        
+
         std::error_code ec;
         std::filesystem::create_directories(save_path, ec);
-        
+
         return save_path;
     }
-    
+
     return std::filesystem::path(".");
 }
-    
-extern int main(int argc, char* argv[]);
+
+std::filesystem::path PlatformGetBinaryPath() {
+    char path[MAX_PATH];
+    GetModuleFileNameA(nullptr, path, MAX_PATH);
+    return std::filesystem::path(path);
+}
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -397,37 +401,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     (void)lpCmdLine;
     (void)nCmdShow;
 
-    // Convert command line arguments
-    int argc = 0;
-    LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-    if (!argv)
-        return 1;
+    Main();
 
-    char **args = new char*[argc];
-    for (int i = 0; i < argc; i++)
-    {
-        // Get required buffer size
-        int size = WideCharToMultiByte(CP_UTF8, 0, argv[i], -1, nullptr, 0, nullptr, nullptr);
-        if (size > 0)
-        {
-            char* buffer = new char[size];
-            WideCharToMultiByte(CP_UTF8, 0, argv[i], -1, buffer, size, nullptr, nullptr);
-            args[i] = buffer;  // or _strdup(buffer) if you need separate ownership
-        }
-        else
-        {
-            args[i] = _strdup("");  // Handle conversion failure
-        }
-    }
+    while (IsApplicationRunning())
+        RunApplicationFrame();
 
-    int result = main(argc, args);
+    ShutdownApplication();
 
-    for (int i = 0; i < argc; i++)
-        free(args[i]);
-
-    delete[] args;
-
-    return result;
+    return 0;
 }
 
 void PlatformLog(LogType type, const char* message)
