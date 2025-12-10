@@ -639,7 +639,7 @@ void PlatformEndScenePass() {
     vkCmdEndRenderPass(g_vulkan.command_buffer);
 }
 
-static void TransitionSceneTexture() {
+static void TransitionImageForRead(VkImage image) {
     VkImageMemoryBarrier barrier = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
@@ -648,7 +648,7 @@ static void TransitionSceneTexture() {
         .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .image = g_vulkan.scene_target.image,
+        .image = image,
         .subresourceRange = {
             .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
             .baseMipLevel = 0,
@@ -667,6 +667,14 @@ static void TransitionSceneTexture() {
         0, nullptr,
         1, &barrier
     );
+}
+
+static void TransitionSceneTexture() {
+    TransitionImageForRead(g_vulkan.scene_target.image);
+}
+
+static void TransitionUITexture() {
+    TransitionImageForRead(g_vulkan.ui_target.image);
 }
 
 void PlatformBeginPostProcPass() {
@@ -756,6 +764,9 @@ void PlatformEndUIPass() {
 }
 
 void PlatformBeginCompositePass() {
+    // Transition UI texture so it can be read in composite pass
+    TransitionUITexture();
+
     VkClearValue clear_value = {};
     clear_value.color = {0.0f, 0.0f, 0.0f, 1.0f};
 
@@ -1150,11 +1161,9 @@ void ResizeRenderDriver(const Vec2Int& size) {
 }
 
 void PlatformBeginRender() {
-    // Use current_frame to pick which swapchain slot's semaphore to use for acquire
-    Swapchain& acquire_sync = g_vulkan.swapchain_framebuffers[g_vulkan.current_frame];
-
-    // Wait for this slot's fence before reusing its semaphore
-    vkWaitForFences(g_vulkan.device, 1, &acquire_sync.in_flight_fence, VK_TRUE, UINT64_MAX);
+    // Wait for this frame slot to be available
+    Swapchain& frame = g_vulkan.swapchain_framebuffers[g_vulkan.current_frame];
+    vkWaitForFences(g_vulkan.device, 1, &frame.in_flight_fence, VK_TRUE, UINT64_MAX);
 
     for (u32 i = 0; i < UNIFORM_BUFFER_COUNT; i++)
         g_vulkan.uniform_buffers[i].offset = 0;
@@ -1163,7 +1172,7 @@ void PlatformBeginRender() {
         g_vulkan.device,
         g_vulkan.swapchain,
         UINT64_MAX,
-        acquire_sync.image_available_semaphore,
+        frame.image_available_semaphore,
         VK_NULL_HANDLE,
         &g_vulkan.current_image_index);
 
@@ -1173,7 +1182,7 @@ void PlatformBeginRender() {
             g_vulkan.device,
             g_vulkan.swapchain,
             UINT64_MAX,
-            acquire_sync.image_available_semaphore,
+            frame.image_available_semaphore,
             VK_NULL_HANDLE,
             &g_vulkan.current_image_index);
 
@@ -1183,17 +1192,11 @@ void PlatformBeginRender() {
         Exit("Failed to acquire swapchain image");
     }
 
-    // Now wait for the acquired image's fence (in case a different slot was using it)
-    Swapchain& swapchain = g_vulkan.swapchain_framebuffers[g_vulkan.current_image_index];
-    if (g_vulkan.current_image_index != g_vulkan.current_frame) {
-        vkWaitForFences(g_vulkan.device, 1, &swapchain.in_flight_fence, VK_TRUE, UINT64_MAX);
-    }
+    // Reset the fence now that we've waited on it
+    vkResetFences(g_vulkan.device, 1, &frame.in_flight_fence);
 
-    // Reset the fence for the acquired image
-    vkResetFences(g_vulkan.device, 1, &swapchain.in_flight_fence);
-
-    // Use this image's command buffer
-    g_vulkan.command_buffer = swapchain.command_buffer;
+    // Use this frame slot's command buffer
+    g_vulkan.command_buffer = frame.command_buffer;
 
     VkCommandBufferBeginInfo vg_begin_info = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
@@ -1219,14 +1222,11 @@ void PlatformBeginRender() {
 void PlatformEndRender() {
     vkEndCommandBuffer(g_vulkan.command_buffer);
 
-    // Use the acquired image's sync objects for submission
-    Swapchain& swapchain = g_vulkan.swapchain_framebuffers[g_vulkan.current_image_index];
-    // But we used current_frame's semaphore for acquire
-    Swapchain& acquire_sync = g_vulkan.swapchain_framebuffers[g_vulkan.current_frame];
+    Swapchain& frame = g_vulkan.swapchain_framebuffers[g_vulkan.current_frame];
 
-    VkSemaphore vk_wait_semaphores[] = {acquire_sync.image_available_semaphore};
+    VkSemaphore vk_wait_semaphores[] = {frame.image_available_semaphore};
     VkPipelineStageFlags vk_wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    VkSemaphore vk_signal_semaphores[] = {swapchain.render_finished_semaphore};
+    VkSemaphore vk_signal_semaphores[] = {frame.render_finished_semaphore};
     VkSubmitInfo vk_submit_info = {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .waitSemaphoreCount = 1,
@@ -1237,7 +1237,7 @@ void PlatformEndRender() {
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = vk_signal_semaphores
     };
-    vkQueueSubmit(g_vulkan.graphics_queue, 1, &vk_submit_info, swapchain.in_flight_fence);
+    vkQueueSubmit(g_vulkan.graphics_queue, 1, &vk_submit_info, frame.in_flight_fence);
 
     VkSwapchainKHR vk_swap_chains[] = {g_vulkan.swapchain};
     VkPresentInfoKHR vk_present_info = {
@@ -1250,7 +1250,11 @@ void PlatformEndRender() {
     };
     vkQueuePresentKHR(g_vulkan.present_queue, &vk_present_info);
 
-    g_vulkan.current_frame = (g_vulkan.current_frame + 1) % g_vulkan.swapchain_framebuffers.size();
+    // Use only 1 frame in flight since we have shared offscreen targets (scene_target, ui_target)
+    // Multiple frames in flight would cause race conditions where one frame reads while another writes
+    constexpr u32 MAX_FRAMES_IN_FLIGHT = 1;
+    u32 frame_count = std::min(static_cast<u32>(g_vulkan.swapchain_framebuffers.size()), MAX_FRAMES_IN_FLIGHT);
+    g_vulkan.current_frame = (g_vulkan.current_frame + 1) % frame_count;
 }
 
 void PlatformFree(PlatformShader* shader) {

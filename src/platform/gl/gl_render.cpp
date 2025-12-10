@@ -363,6 +363,17 @@ void PlatformEndUIPass() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void PlatformBeginCompositePass() {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+}
+
+void PlatformEndCompositePass() {
+}
+
 void PlatformBindSceneTexture() {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, g_gl.offscreen.texture);
