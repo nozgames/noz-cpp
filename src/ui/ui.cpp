@@ -855,21 +855,36 @@ static void DrawContainer(ContainerElement* container, const Mat3& transform) {
     };
     struct BorderFragment {
         Color color;
-        float radius;
-        float width;
+        float border_ratio;
+        float square_corners;
         float padding0;
         float padding1;
     };
 
+    // When border_radius is 0 but we have a visible border, use square corners
+    // and set the vertex radius to border_width so the mesh expands properly
+    bool use_square_corners = container->style.border.radius == 0.0f &&
+        container->style.border.width > 0.0f &&
+        container->style.border.color.a > 0.0f;
+
+    float vertex_radius = use_square_corners
+        ? container->style.border.width
+        : container->style.border.radius;
+
+    // Precompute border_ratio (border_width / vertex_radius)
+    float border_ratio = vertex_radius > 0.0f
+        ? container->style.border.width / vertex_radius
+        : 0.0f;
+
     BorderVertex v_border = {
-        .radius = container->style.border.radius
+        .radius = vertex_radius
     };
     BindVertexUserData(&v_border, sizeof(BorderVertex));
 
     BorderFragment f_border = {
         .color = container->style.border.color,
-        .radius = v_border.radius,
-        .width = container->style.border.width
+        .border_ratio = border_ratio,
+        .square_corners = use_square_corners ? 1.0f : 0.0f
     };
     BindFragmentUserData(&f_border, sizeof(BorderFragment));
 
