@@ -164,7 +164,7 @@ static void UnloadGLESLibrary() {
     g_wgl.library = nullptr;
 }
 
-void PlatformEndRenderFrame() {
+void PlatformEndRender() {
     SwapBuffers(g_wgl.hdc);
 }
 
@@ -223,7 +223,7 @@ static void CreateOffscreenTarget(OffscreenTarget& target, int width, int height
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
-void InitVulkan(const RendererTraits* traits, HWND hwnd) {
+void InitRenderDriver(const RendererTraits* traits, HWND hwnd) {
     g_gl = {};
     g_wgl = {};
     g_gl.traits = *traits;
@@ -316,19 +316,13 @@ void InitVulkan(const RendererTraits* traits, HWND hwnd) {
     // Set up default GL state
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
-    glDisable(GL_CULL_FACE);  // Match Vulkan's VK_CULL_MODE_NONE
+    glDisable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_MULTISAMPLE);
 
-    // Use Vulkan-style clip control (upper-left origin, 0-1 depth range)
-    if (glClipControl) {
-        glClipControl(GL_UPPER_LEFT, GL_ZERO_TO_ONE);
-        // Flip winding order since Y is now flipped
-        glFrontFace(GL_CW);
-    } else {
-        glFrontFace(GL_CCW);
-    }
+    // Use standard GL conventions (Y-up, bottom-left origin)
+    glFrontFace(GL_CCW);
 
     // Get screen size
     RECT rect;
@@ -352,7 +346,7 @@ void InitVulkan(const RendererTraits* traits, HWND hwnd) {
     CreateOffscreenTarget(g_gl.ui_offscreen, g_gl.screen_size.x, g_gl.screen_size.y);
 }
 
-void ResizeVulkan(const Vec2Int& size) {
+void ResizeRenderDriver(const Vec2Int& size) {
     if (size.x <= 0 || size.y <= 0)
         return;
 
@@ -364,7 +358,7 @@ void ResizeVulkan(const Vec2Int& size) {
     CreateOffscreenTarget(g_gl.ui_offscreen, size.x, size.y);
 }
 
-void ShutdownVulkan() {
+void ShutdownRenderDriver() {
     // Delete UBOs
     glDeleteBuffers(UNIFORM_BUFFER_COUNT, g_gl.ubos);
 
@@ -387,6 +381,5 @@ void ShutdownVulkan() {
     UnloadGLESLibrary();
 }
 
-void WaitVulkan() {
-    // OpenGL doesn't have explicit sync like Vulkan
+void WaitRenderDriver() {
 }

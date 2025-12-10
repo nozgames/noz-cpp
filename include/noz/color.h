@@ -36,12 +36,16 @@ bool color32_is_opaque(Color32* color);
 bool color32_equals(Color32* a, Color32* b);
 
 inline Color ToLinear(Color srgb) {
+#if !defined(NOZ_PLATFORM_GLES)
     return Color {
         .r = powf(srgb.r, 2.2f),
         .g = powf(srgb.g, 2.2f),
         .b = powf(srgb.b, 2.2f),
         .a = srgb.a
     };
+#else
+    return srgb;
+#endif
 }
 
 // Color24 functions

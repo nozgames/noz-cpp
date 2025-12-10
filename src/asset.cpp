@@ -59,32 +59,23 @@ const char* ToString(AssetType asset_type) {
 static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetType asset_type) {
     assert(asset_name);
 
-    std::filesystem::path asset_path = GetApplicationTraits()->assets_path;
-    asset_path /= ToString(asset_type);
-    asset_path /= asset_name->value;
+    std::filesystem ::path asset_name_path = std::filesystem::path(ToString(asset_type)) / asset_name->value;
 
 #ifdef NOZ_PLATFORM_GLES
     if (asset_type == ASSET_TYPE_SHADER) {
-        asset_path += ".gles";
+        asset_name_path += ".gles";
     }
 #elif NOZ_PLATFORM_GL
     if (asset_type == ASSET_TYPE_SHADER) {
-        asset_path += ".glsl";
+        asset_name_path += ".glsl";
     }
 #endif
 
-    std::string lowercase_path = asset_path.string();
-    Lowercase(lowercase_path.data(), (u32)lowercase_path.size());
+    std::string lower_asset_name_path = asset_name_path.string();
+    Lowercase(lower_asset_name_path.data(), (u32)lower_asset_name_path.size());
 
-    if (Stream* stream = LoadStream(allocator, lowercase_path))
-        return stream;
-
-    asset_path = GetBinaryDirectory();
-    asset_path /= "../assets";
-    asset_path /= ToString(asset_type);
-    asset_path /= asset_name->value;
-
-    return LoadStream(allocator, asset_path);
+    std::filesystem::path asset_path = std::filesystem::path(GetCurrentDirectory()) / GetApplicationTraits()->assets_path;
+    return LoadStream(allocator, asset_path / lower_asset_name_path);
 }
 
 const Name** ReadNameTable(const AssetHeader& header, Stream* stream) {

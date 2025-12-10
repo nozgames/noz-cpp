@@ -183,25 +183,25 @@ void ShutdownWebGL() {
     }
 }
 
-void PlatformEndRenderFrame() {
+void PlatformEndRender() {
     // WebGL handles buffer swapping automatically
     // Nothing to do here - the browser composites at the end of the frame
 }
 
 // These functions use the Vulkan naming convention for compatibility
 // with the existing platform abstraction
-void InitVulkan(const RendererTraits* traits, const char* canvas_id) {
+void InitRenderDriver(const RendererTraits* traits, const char* canvas_id) {
     InitWebGL(traits, canvas_id);
 }
 
-void ResizeVulkan(const Vec2Int& size) {
+void ResizeRenderDriver(const Vec2Int& size) {
     ResizeWebGL(size);
 }
 
-void ShutdownVulkan() {
+void ShutdownRenderDriver() {
     ShutdownWebGL();
 }
 
-void WaitVulkan() {
+void WaitRenderDriver() {
     // No explicit sync needed in WebGL
 }

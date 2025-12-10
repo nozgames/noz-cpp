@@ -285,11 +285,11 @@ float PlatformGetInputAxisValue(InputCode code) {
             case GAMEPAD_LEFT_STICK_X:
                 return NormalizeStick(gamepad.sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
             case GAMEPAD_LEFT_STICK_Y:
-                return NormalizeStick(gamepad.sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+                return -NormalizeStick(gamepad.sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
             case GAMEPAD_RIGHT_STICK_X:
                 return NormalizeStick(gamepad.sThumbRX, XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE);
             case GAMEPAD_RIGHT_STICK_Y:
-                return NormalizeStick(gamepad.sThumbRY, XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE);
+                return -NormalizeStick(gamepad.sThumbRY, XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE);
             case GAMEPAD_LEFT_TRIGGER:
                 return NormalizeTrigger(gamepad.bLeftTrigger);
             case GAMEPAD_RIGHT_TRIGGER:

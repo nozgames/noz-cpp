@@ -266,11 +266,11 @@ float GetInputAxisValue(InputCode code) {
             case GAMEPAD_LEFT_STICK_X:
                 return NormalizeStick(gamepad.leftThumbstick.xAxis.value, 0.1f);
             case GAMEPAD_LEFT_STICK_Y:
-                return NormalizeStick(gamepad.leftThumbstick.yAxis.value, 0.1f);
+                return -NormalizeStick(gamepad.leftThumbstick.yAxis.value, 0.1f);
             case GAMEPAD_RIGHT_STICK_X:
                 return NormalizeStick(gamepad.rightThumbstick.xAxis.value, 0.1f);
             case GAMEPAD_RIGHT_STICK_Y:
-                return NormalizeStick(gamepad.rightThumbstick.yAxis.value, 0.1f);
+                return -NormalizeStick(gamepad.rightThumbstick.yAxis.value, 0.1f);
             case GAMEPAD_LEFT_TRIGGER:
                 return gamepad.leftTrigger.value;
             case GAMEPAD_RIGHT_TRIGGER:

@@ -24,7 +24,7 @@ struct Animator;
 
 // @renderer_traits
 struct RendererTraits {
-    size_t max_frame_commands;
+    int max_frame_commands;
     i32 vsync;
     bool msaa;
     float min_depth;
@@ -203,7 +203,7 @@ extern const Vec2& GetPosition(Camera* camera);
 extern void SetPosition(Camera* camera, const Vec2& position);
 extern void SetRotation(Camera* camera, float rotation);
 extern void SetSize(Camera* camera, const Vec2& size);
-extern void SetExtents(Camera* camera, float left, float right, float bottom, float top, bool auto_size=true);
+extern void SetExtents(Camera* camera, float left, float right, float bottom, float top);
 extern void SetViewport(Camera* camera, const noz::Rect& viewport);
 extern const noz::Rect& GetViewport(Camera* camera);
 extern Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos);

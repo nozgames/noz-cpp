@@ -15,9 +15,7 @@ enum RenderCommandType {
     RENDER_COMMAND_TYPE_BIND_CAMERA,
     RENDER_COMMAND_TYPE_BIND_DEFAULT_TEXTURE,
     RENDER_COMMAND_TYPE_BIND_SKELETON,
-    RENDER_COMMAND_TYPE_DRAW_MESH,
-    RENDER_COMMAND_TYPE_BEGIN_PASS,
-    RENDER_COMMAND_TYPE_END_PASS,
+    RENDER_COMMAND_TYPE_DRAW_MESH
 };
 
 struct BindCameraData {
@@ -67,9 +65,8 @@ struct RenderCommand {
 
 struct RenderBuffer {
     RenderCommand* commands;
-    size_t command_count;
-    size_t command_count_max;
-    size_t transform_count_max;
+    int command_count;
+    int command_count_max;
     bool is_full;
     Material* current_material;
     Mat3 current_transform;
@@ -80,34 +77,17 @@ struct RenderBuffer {
     Color current_emission;
 };
 
-static RenderBuffer* g_render_buffer = nullptr;
+static RenderBuffer g_render_buffer = {};
 
 static void AddRenderCommand(RenderCommand* cmd) {
-    // don't add the command if we are full
-    if (g_render_buffer->is_full)
-        return;
-
-    g_render_buffer->commands[g_render_buffer->command_count++] = *cmd;
-    g_render_buffer->is_full = g_render_buffer->command_count == g_render_buffer->command_count_max;
+    if (g_render_buffer.is_full) return;
+    g_render_buffer.commands[g_render_buffer.command_count++] = *cmd;
+    g_render_buffer.is_full = g_render_buffer.command_count == g_render_buffer.command_count_max;
 }
 
 void ClearRenderCommands() {
-    g_render_buffer->command_count = 0;
-    g_render_buffer->is_full = false;
-}
-
-void BeginRenderPass(Color clear_color) {
-    RenderCommand cmd = {
-        .type = RENDER_COMMAND_TYPE_BEGIN_PASS,
-        .data = {
-            .begin_pass = {
-                .clear_color = clear_color}}};
-    AddRenderCommand(&cmd);
-}
-
-void EndRenderPass() {
-    RenderCommand cmd = { .type = RENDER_COMMAND_TYPE_END_PASS };
-    AddRenderCommand(&cmd);
+    g_render_buffer.command_count = 0;
+    g_render_buffer.is_full = false;
 }
 
 void BindIdentitySkeleton() {
@@ -167,8 +147,7 @@ void BindDefaultTexture(int texture_index) {
     AddRenderCommand(&cmd);
 }
 
-void BindCamera(Camera* camera)
-{
+void BindCamera(Camera* camera) {
     RenderCommand cmd = {
         .type = RENDER_COMMAND_TYPE_BIND_CAMERA,
         .data = {
@@ -184,24 +163,24 @@ void BindCamera(Camera* camera)
 void BindMaterial(Material* material)
 {
     assert(material);
-    g_render_buffer->current_material = material;
+    g_render_buffer.current_material = material;
 }
 
 void BindDepth(float depth, float depth_scale) {
-    g_render_buffer->current_depth = depth;
-    g_render_buffer->current_depth_scale = depth_scale;
+    g_render_buffer.current_depth = depth;
+    g_render_buffer.current_depth_scale = depth_scale;
 }
 
 void BindTransform(const Vec3& position, float rotation, const Vec2& scale) {
-    g_render_buffer->current_transform = TRS(XY(position), rotation, scale);
-    g_render_buffer->current_depth = position.z;
-    g_render_buffer->current_depth_scale = 1.0f;
+    g_render_buffer.current_transform = TRS(XY(position), rotation, scale);
+    g_render_buffer.current_depth = position.z;
+    g_render_buffer.current_depth_scale = 1.0f;
 }
 
 void BindTransform(const Vec3& position, const Vec2& rotation, const Vec2& scale) {
-    g_render_buffer->current_transform = TRS(XY(position), rotation, scale);
-    g_render_buffer->current_depth = position.z;
-    g_render_buffer->current_depth_scale = 1.0f;
+    g_render_buffer.current_transform = TRS(XY(position), rotation, scale);
+    g_render_buffer.current_depth = position.z;
+    g_render_buffer.current_depth_scale = 1.0f;
 }
 
 void BindVertexUserData(const void* data, size_t size) {
@@ -225,39 +204,39 @@ void BindFragmentUserData(const void* data, size_t size) {
 }
 
 void BindTransform(Transform& transform) {
-    g_render_buffer->current_transform = GetLocalToWorld(transform);
+    g_render_buffer.current_transform = GetLocalToWorld(transform);
 }
 
 void BindTransform(const Mat3& parent_transform, const Animator& animator, int bone_index) {
-    g_render_buffer->current_transform = parent_transform * animator.bones[bone_index];
+    g_render_buffer.current_transform = parent_transform * animator.bones[bone_index];
 }
 
 void BindTransform(const Mat3& transform) {
-    g_render_buffer->current_transform = transform;
+    g_render_buffer.current_transform = transform;
 }
 
 void BindColor(Color color) {
-    g_render_buffer->current_color = ToLinear(color);
-    g_render_buffer->current_color_offset = VEC2INT_ZERO;
-    g_render_buffer->current_emission = COLOR_TRANSPARENT;
+    g_render_buffer.current_color = ToLinear(color);
+    g_render_buffer.current_color_offset = VEC2INT_ZERO;
+    g_render_buffer.current_emission = COLOR_TRANSPARENT;
 }
 
 void BindColor(Color color, Color emission) {
-    g_render_buffer->current_color = ToLinear(color);
-    g_render_buffer->current_color_offset = VEC2INT_ZERO;
-    g_render_buffer->current_emission = emission;
+    g_render_buffer.current_color = ToLinear(color);
+    g_render_buffer.current_color_offset = VEC2INT_ZERO;
+    g_render_buffer.current_emission = emission;
 }
 
 void BindColor(Color color, const Vec2Int& color_offset) {
-    g_render_buffer->current_color = ToLinear(color);
-    g_render_buffer->current_color_offset = color_offset;
-    g_render_buffer->current_emission = COLOR_TRANSPARENT;
+    g_render_buffer.current_color = ToLinear(color);
+    g_render_buffer.current_color_offset = color_offset;
+    g_render_buffer.current_emission = COLOR_TRANSPARENT;
 }
 
 void BindColor(Color color, const Vec2Int& color_uv_offset, Color emission) {
-    g_render_buffer->current_color = ToLinear(color);
-    g_render_buffer->current_color_offset = color_uv_offset;
-    g_render_buffer->current_emission = ToLinear(emission);
+    g_render_buffer.current_color = ToLinear(color);
+    g_render_buffer.current_color_offset = color_uv_offset;
+    g_render_buffer.current_emission = ToLinear(emission);
 }
 
 void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index) {
@@ -306,13 +285,13 @@ void DrawMesh(Mesh* mesh) {
         .data = {
             .draw_mesh = {
                 .mesh = mesh,
-                .material = g_render_buffer->current_material,
-                .transform = g_render_buffer->current_transform,
-                .depth = g_render_buffer->current_depth,
-                .depth_scale = g_render_buffer->current_depth_scale,
-                .color = g_render_buffer->current_color,
-                .emission = g_render_buffer->current_emission,
-                .color_offset = g_render_buffer->current_color_offset,
+                .material = g_render_buffer.current_material,
+                .transform = g_render_buffer.current_transform,
+                .depth = g_render_buffer.current_depth,
+                .depth_scale = g_render_buffer.current_depth_scale,
+                .color = g_render_buffer.current_color,
+                .emission = g_render_buffer.current_emission,
+                .color_offset = g_render_buffer.current_color_offset,
             }
         }
     };
@@ -320,13 +299,11 @@ void DrawMesh(Mesh* mesh) {
     AddRenderCommand(&cmd);
 }
 
-void ExecuteRenderCommands()
-{
-    RenderCommand* commands = g_render_buffer->commands;
-    size_t command_count = g_render_buffer->command_count;
+void ExecuteRenderCommands() {
+    RenderCommand* commands = g_render_buffer.commands;
+    int command_count = g_render_buffer.command_count;
     
-    for (size_t command_index=0; command_index < command_count; ++command_index)
-    {
+    for (int command_index=0; command_index < command_count; ++command_index) {
         RenderCommand* command = commands + command_index;
         switch (command->type)
         {
@@ -356,10 +333,6 @@ void ExecuteRenderCommands()
             RenderMesh(command->data.draw_mesh.mesh);
             break;
 
-        case RENDER_COMMAND_TYPE_BEGIN_PASS:
-            PlatformBeginRenderPass(command->data.begin_pass.clear_color);
-            break;
-
         case RENDER_COMMAND_TYPE_BIND_DEFAULT_TEXTURE:
             BindTextureInternal(TEXTURE_WHITE, command->data.bind_default_texture.index);
             break;
@@ -367,31 +340,16 @@ void ExecuteRenderCommands()
         case RENDER_COMMAND_TYPE_BIND_SKELETON:
             PlatformBindSkeleton(command->data.bind_skeleton.bones, (u8)command->data.bind_skeleton.bone_count);
             break;
-
-        case RENDER_COMMAND_TYPE_END_PASS:
-            PlatformEndRenderPass();
-            break;
         }
     }
 }
 
 void InitRenderBuffer(const RendererTraits* traits) {
-    size_t commands_size = traits->max_frame_commands * sizeof(RenderCommand);
-    size_t buffer_size = sizeof(RenderBuffer) + commands_size;
-    
-    g_render_buffer = (RenderBuffer*)malloc(buffer_size);
-    if (!g_render_buffer) {
-        ExitOutOfMemory();
-        return;
-    }        
-
-    memset(g_render_buffer, 0, buffer_size);
-    g_render_buffer->commands = (RenderCommand*)((char*)g_render_buffer + sizeof(RenderBuffer));
-    g_render_buffer->command_count_max = traits->max_frame_commands;
+    g_render_buffer.command_count_max = traits->max_frame_commands;
+    g_render_buffer.commands = static_cast<RenderCommand*>(Alloc(ALLOCATOR_DEFAULT, traits->max_frame_commands * sizeof(RenderCommand)));
 }
 
 void ShutdownRenderBuffer() {
-    assert(g_render_buffer);
-    free(g_render_buffer);
-    g_render_buffer = nullptr;
+    Free(g_render_buffer.commands);
+    g_render_buffer = {};
 }

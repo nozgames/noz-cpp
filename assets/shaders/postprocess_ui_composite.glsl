@@ -18,8 +18,7 @@ layout(location = 2) in vec2 v_uv;
 layout(location = 0) out vec2 f_uv;
 
 void main() {
-    // Fullscreen quad: position is already in NDC (-1 to 1)
-    gl_Position = vec4(v_position, 0.0, 1.0);
+    gl_Position = vec4((camera.view_projection * vec3(v_position, 1.0)).xy, 0.0, 1.0);
     f_uv = v_uv;
 }
 
@@ -33,7 +32,6 @@ layout(location = 0) in vec2 f_uv;
 layout(location = 0) out vec4 FragColor;
 
 void main() {
-    // Simple passthrough - alpha blending is handled by pipeline state
     FragColor = texture(mainTexture, f_uv);
 }
 

@@ -113,6 +113,7 @@ elseif(WIN32)
         )
     else()
         list(APPEND SOURCE_FILES
+            src/platform/vulkan/vulkan_proc.cpp
             src/platform/vulkan/vulkan_render.cpp
             src/platform/vulkan/vulkan_windows.cpp
         )

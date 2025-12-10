@@ -16,10 +16,10 @@ constexpr int INPUT_BUFFER_SIZE = 1024;
 #include <thread>
 #include <dwmapi.h>
 
-extern void InitVulkan(const RendererTraits* traits, HWND hwnd);
-extern void ResizeVulkan(const Vec2Int& screen_size);
-extern void ShutdownVulkan();
-extern void WaitVulkan();
+extern void InitRenderDriver(const RendererTraits* traits, HWND hwnd);
+extern void ResizeRenderDriver(const Vec2Int& screen_size);
+extern void ShutdownRenderDriver();
+extern void WaitRenderDriver();
 extern void HandleInputCharacter(char c);
 extern void HandleInputKeyDown(char c);
 static void SetCursorInternal(SystemCursor cursor);
@@ -127,7 +127,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (g_windows.screen_size != new_size && new_size != VEC2INT_ZERO)
         {
             g_windows.screen_size = new_size;
-            ResizeVulkan(new_size);
+            ResizeRenderDriver(new_size);
         }
         UpdateWindowRect();
         return 0;
@@ -268,7 +268,7 @@ void PlatformInitWindow(void (*on_close)()) {
     GetClientRect(hwnd, &rect);
     g_windows.screen_size = { rect.right - rect.left, rect.bottom - rect.top };
 
-    InitVulkan(&g_windows.traits->renderer, hwnd);
+    InitRenderDriver(&g_windows.traits->renderer, hwnd);
 
     if (hwnd != nullptr)
     {
@@ -312,7 +312,7 @@ bool PlatformUpdate() {
     if (g_windows.screen_size != screen_size && screen_size != VEC2INT_ZERO)
     {
         g_windows.screen_size = screen_size;
-        ResizeVulkan(screen_size);
+        ResizeRenderDriver(screen_size);
     }
 
     return running;
@@ -391,6 +391,12 @@ std::filesystem::path PlatformGetSaveGamePath() {
 std::filesystem::path PlatformGetBinaryPath() {
     char path[MAX_PATH];
     GetModuleFileNameA(nullptr, path, MAX_PATH);
+    return std::filesystem::path(path);
+}
+
+std::filesystem::path PatformGetCurrentPath() {
+    char path[MAX_PATH];
+    GetCurrentDirectory(MAX_PATH, path);
     return std::filesystem::path(path);
 }
 

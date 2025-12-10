@@ -59,12 +59,14 @@ extern bool IsWindowCreated();
 extern void FocusApplication();
 extern bool PlatformIsWindowFocused();
 extern bool UpdateApplication();
-extern void BeginRenderFrame(Color clear_color);
-extern void EndRenderFrame();
+extern void BeginRender(Color clear_color);
+extern void EndRender();
 extern void SetSystemCursor(SystemCursor cursor);
 extern void SetPaletteTexture(Texture* texture);
 
 const char* GetBinaryDirectory();
+const char* GetCurrentDirectory();
+
 void Exit(const char* format, ...);
 void ExitOutOfMemory(const char* message=nullptr);
 

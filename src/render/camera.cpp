@@ -3,30 +3,28 @@
 //
 
 struct CameraImpl : Camera {
-    Vec2 position_offset; // Offset from the center of calculated extents
+    Vec2 position_offset;
     float rotation;
-    Vec4 extents; // left, right, bottom, top - F32_MIN/F32_MAX means auto-calculate
+    Vec4 extents;
     Mat3 view;
     Mat3 inv_view;
     Vec2Int last_screen_size;
     bool dirty;
-    bool auto_size_extents;
     Vec2 shake_offset;
     Vec2 shake_intensity;
     Vec2 shake_noise;
     float shake_duration;
     float shake_elapsed;
-    noz::Rect viewport; // Viewport rect in screen pixels. If width/height are 0, uses full screen
+    noz::Rect viewport;
 };
 
-// Returns the effective size for rendering - viewport size if set, otherwise screen size
 static Vec2Int GetEffectiveSize(CameraImpl* impl) {
     if (impl->viewport.width > 0 && impl->viewport.height > 0)
-        return Vec2Int{(i32)impl->viewport.width, (i32)impl->viewport.height};
+        return Vec2Int{static_cast<i32>(impl->viewport.width), static_cast<i32>(impl->viewport.height)};
     return GetScreenSize();
 }
 
-static bool IsDirty(CameraImpl* impl) {
+bool IsDirty(CameraImpl* impl) {
     if (impl->dirty)
         return true;
 
@@ -36,7 +34,7 @@ static bool IsDirty(CameraImpl* impl) {
 
 static CameraImpl* UpdateIfDirty(Camera* camera) {
     CameraImpl* impl = static_cast<CameraImpl*>(camera);
-    if (IsDirty(impl))
+    //if (IsDirty(impl))
         UpdateCamera(camera);
 
     return impl;
@@ -78,145 +76,62 @@ void UpdateCamera(Camera* camera) {
 
     UpdateCameraShake(impl);
 
-    if (!IsDirty(impl))
-        return;
+    // if (!IsDirty(impl))
+    //     return;
 
-    if (impl->auto_size_extents) {
-        Vec2Int effectiveSize = GetEffectiveSize(impl);
-        float aspectRatio = (float)effectiveSize.x / (float)effectiveSize.y;
+    float left = impl->extents.x;
+    float right = impl->extents.y;
+    float bottom = impl->extents.z;
+    float top = impl->extents.w;
 
-        // Calculate actual extents from smart extents
-        float left = impl->extents.x;
-        float right = impl->extents.y;
-        float bottom = impl->extents.z;
-        float top = impl->extents.w;
+    Vec2Int screen_size = GetEffectiveSize(impl);
+    float screen_aspect = (float)screen_size.x / (float)screen_size.y;
 
-        // Handle auto-calculation for each extent
-        bool auto_left = abs(left) >= F32_MAX;
-        bool auto_right = abs(right) >= F32_MAX;
-        bool auto_bottom = abs(bottom) >= F32_MAX;
-        bool auto_top = abs(top) >= F32_MAX;
+    bool is_auto_width = (abs(left) >= F32_MAX || abs(right) >= F32_MAX);
+    bool is_auto_height = (abs(bottom) >= F32_MAX || abs(top) >= F32_MAX);
 
-        // Determine if Y should be flipped
-        bool flip_y = false;
-        if ((auto_bottom && bottom < 0) || (auto_top && top < 0))
-        {
-            flip_y = true;
-        }
-
-        // Calculate width and height
-        float width, height;
-
-        if (!auto_left && !auto_right)
-        {
-            // Width is specified
-            width = right - left;
-            if (!auto_bottom && !auto_top)
-            {
-                // Both width and height specified
-                height = top - bottom;
-            }
-            else
-            {
-                // Width specified, height auto-calculated from aspect ratio
-                height = width / aspectRatio;
-            }
-        }
-        else if (!auto_bottom && !auto_top)
-        {
-            // Height is specified, width auto-calculated
-            height = top - bottom;
-            width = abs(height) * aspectRatio;
-        }
-        else
-        {
-            // Both auto - use default
-            width = 2.0f;
-            height = 2.0f / aspectRatio;
-        }
-
-        // Now calculate final extent values
-        if (auto_left && auto_right)
-        {
-            // Both horizontal extents auto - center around origin
-            left = -width * 0.5f;
-            right = width * 0.5f;
-        }
-        else if (auto_left)
-        {
-            left = right - width;
-        }
-        else if (auto_right)
-        {
-            right = left + width;
-        }
-
-        if (auto_bottom && auto_top)
-        {
-            // Both vertical extents auto - center around origin
-            bottom = -height * 0.5f;
-        }
-        else if (auto_bottom)
-        {
-            bottom = top - height;
-        }
-        // Note: auto_top case doesn't need to calculate top since we only use bottom for positioning
-
-        // Calculate zoom and position
-        float zoomX = 2.0f / width;
-        float zoomY = flip_y ? -2.0f / height : 2.0f / height;
-
-        // Position camera so that the viewport covers the specified extents
-        Vec2 center;
-        center.x = left + width * 0.5f;
-        center.y = bottom + height * 0.5f; // Camera Y = bottom edge + half height
-
-        Vec2 final_position = center + impl->position_offset + impl->shake_offset;
-
-        float c = cos(impl->rotation);
-        float s = sin(impl->rotation);
-
-        impl->view = Mat3{.m = {
-            c * zoomX, -s * zoomY, 0,
-            s * zoomX, c * zoomY, 0,
-            -(c * final_position.x + s * final_position.y) * zoomX,
-            -(-s * final_position.x + c * final_position.y) * zoomY,
-            1
-        }};
+    float width, height;
+    if (is_auto_width && is_auto_height) {
+        height = 2.0f;
+        width = height * screen_aspect;
+        left = -width * 0.5f;
+        right = width * 0.5f;
+        bottom = -height * 0.5f;
+        top = height * 0.5f;
+    } else if (is_auto_width) {
+        height = top - bottom;
+        width = abs(height) * screen_aspect;
+        left = -width * 0.5f;
+        right = width * 0.5f;
+    } else if (is_auto_height) {
+        width = right - left;
+        height = width / screen_aspect;
+        bottom = -height * 0.5f;
+        top = height * 0.5f;
+    } else {
+        width = right - left;
+        height = top - bottom;
     }
-    else
-    {
-        // Use the provided extents directly without any aspect ratio adjustments
-        float left = impl->extents.x;
-        float right = impl->extents.y;
-        float bottom = impl->extents.z;
-        float top = impl->extents.w;
-        
-        float width = right - left;
-        float height = top - bottom;
-        
-        // Use uniform scaling to maintain square aspect ratio
-        // Use the same zoom factor for both X and Y to prevent squishing
-        float zoomX = 2.0f / width;
-        float zoomY = 2.0f / height;
-        
-        // Position camera so that the viewport covers the specified extents exactly
-        Vec2 center;
-        center.x = (left + right) * 0.5f;
-        center.y = (bottom + top) * 0.5f;
-        
-        Vec2 final_position = center + impl->position_offset + impl->shake_offset;
-        
-        float c = cos(impl->rotation);
-        float s = sin(impl->rotation);
-        
-        impl->view = Mat3{.m = {
-            c * zoomX, -s * zoomY, 0,
-            s * zoomX, c * zoomY, 0,
-            -(c * final_position.x + s * final_position.y) * zoomX,
-            -(-s * final_position.x + c * final_position.y) * zoomY, 1
-        }};
-    }
+
+    float zoomX = 2.0f / abs(width);
+    float zoomY = 2.0f / abs(height);
+    if ((top - bottom) < 0) zoomY = -zoomY;
+
+    Vec2 center;
+    center.x = (left + right) * 0.5f;
+    center.y = (bottom + top) * 0.5f;
+
+    Vec2 final_position = center + impl->position_offset + impl->shake_offset;
+
+    float c = cos(impl->rotation);
+    float s = sin(impl->rotation);
+
+    impl->view = Mat3{.m = {
+        c * zoomX, -s * zoomY, 0,
+        s * zoomX, c * zoomY, 0,
+        -(c * final_position.x + s * final_position.y) * zoomX,
+        -(-s * final_position.x + c * final_position.y) * zoomY, 1
+    }};
 
     impl->inv_view = Inverse(impl->view);
     impl->last_screen_size = GetEffectiveSize(impl);
@@ -237,53 +152,31 @@ void SetRotation(Camera* camera, float rotation)
     impl->dirty = true;
 }
 
-void SetSize(Camera* camera, const Vec2& size)
-{
+void SetSize(Camera* camera, const Vec2& size) {
     CameraImpl* impl = static_cast<CameraImpl*>(camera);
 
-    // Convert size to extents centered around current position
     float hw = abs(size.x) * 0.5f;
     float hh = abs(size.y) * 0.5f;
 
     if (size.x == 0 && size.y == 0)
-    {
-        // Both dimensions auto - use F32_MAX for all extents
         impl->extents = Vec4{F32_MAX, F32_MAX, F32_MAX, F32_MAX};
-    }
     else if (size.x == 0)
-    {
-        // Width auto, height specified
-        float sign_y = (size.y < 0) ? -1.0f : 1.0f;
-        impl->extents = Vec4{F32_MAX, F32_MAX, -hh * sign_y, hh * sign_y};
-        impl->auto_size_extents = true;
-    }
+        impl->extents = Vec4{F32_MAX, F32_MAX, -hh, hh};
     else if (size.y == 0)
-    {
-        // Height auto, width specified
-        float sign_x = (size.x < 0) ? -1.0f : 1.0f;
-        impl->extents = Vec4{-hw * sign_x, hw * sign_x, F32_MAX, F32_MAX};
-    }
+        impl->extents = Vec4{-hw, hw, F32_MAX, F32_MAX};
     else
-    {
-        // Both dimensions specified
-        float sign_x = (size.x < 0) ? -1.0f : 1.0f;
-        float sign_y = (size.y < 0) ? -1.0f : 1.0f;
-        impl->extents = Vec4{-hw * sign_x, hw * sign_x, -hh * sign_y, hh * sign_y};
-    }
+        impl->extents = Vec4{-hw, hw, -hh, hh};
 
     impl->dirty = true;
 }
 
-void SetExtents(Camera* camera, float left, float right, float bottom, float top, bool auto_size)
-{
+void SetExtents(Camera* camera, float left, float right, float bottom, float top) {
     CameraImpl* impl = static_cast<CameraImpl*>(camera);
     impl->extents = Vec4{left, right, bottom, top};
     impl->dirty = true;
-    impl->auto_size_extents = auto_size;
 }
 
-Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos)
-{
+Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos) {
     CameraImpl* impl = UpdateIfDirty(camera);
 
     // Convert screen position to NDC (Normalized Device Coordinates)

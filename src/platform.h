@@ -29,6 +29,7 @@ extern bool PlatformUpdate();
 extern void PlatformLog(LogType type, const char* message);
 extern std::filesystem::path PlatformGetSaveGamePath();
 extern std::filesystem::path PlatformGetBinaryPath();
+extern std::filesystem::path PatformGetCurrentPath();
 extern u64 PlatformGetTimeCounter();
 extern u64 PlatformGetTimeFrequency();
 
@@ -45,10 +46,10 @@ extern Vec2Int PlatformGetWindowSize();
 extern void PlatformSetCursor(SystemCursor cursor);
 
 // @render
-extern void PlatformBeginRenderFrame();
-extern void PlatformEndRenderFrame();
-extern void PlatformBeginRenderPass(Color clear_color);
-extern void PlatformEndRenderPass();
+extern void PlatformBeginRender();
+extern void PlatformEndRender();
+extern void PlatformBeginScenePass(Color clear_color);
+extern void PlatformEndScenePass();
 extern void PlatformFree(PlatformBuffer* buffer);
 extern void PlatformBindVertexBuffer(PlatformBuffer* buffer);
 extern void PlatformBindIndexBuffer(PlatformBuffer* buffer);
@@ -62,10 +63,12 @@ extern PlatformTexture* PlatformCreateTexture(
     const char* name);
 extern void PlatformFree(PlatformTexture* texture);
 extern void PlatformEnablePostProcess(bool enabled);
-extern void PlatformBeginPostProcess();
-extern void PlatformEndPostProcess();
-extern void PlatformBeginUI();
-extern void PlatformEndSwapChain();
+extern void PlatformBeginPostProcPass();
+extern void PlatformEndPostProcPass();
+extern void PlatformBeginUIPass();
+extern void PlatformEndUIPass();
+extern void PlatformBeginCompositePass();
+extern void PlatformEndCompositePass();
 extern void PlatformBindOffscreenTexture();
 extern void PlatformBindUITexture();
 extern void PlatformSetViewport(const noz::Rect& viewport);
@@ -85,7 +88,7 @@ extern PlatformShader* PlatformCreateShader(
     u32 fragment_size,
     ShaderFlags flags,
     const char* name = nullptr);
-extern void PlatformFree(PlatformShader* module);
+extern void PlatformFree(PlatformShader* shader);
 extern void PlatformBindShader(PlatformShader* shader);
 
 // @websocket

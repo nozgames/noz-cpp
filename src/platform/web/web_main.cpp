@@ -169,6 +169,7 @@ static EM_BOOL OnCanvasResize(int event_type, const EmscriptenUiEvent* event, vo
     if (g_web.screen_size != new_size && new_size.x > 0 && new_size.y > 0) {
         g_web.screen_size = new_size;
         emscripten_set_canvas_element_size(g_web.canvas_id, new_size.x, new_size.y);
+        LogInfo("%f, %f", width, height);
         ResizeWebGL(new_size);
     }
 
@@ -294,9 +295,13 @@ std::filesystem::path PlatformGetSaveGamePath() {
 }
 
 std::filesystem::path PlatformGetBinaryPath() {
-    // Web doesn't have a traditional binary path
     return std::filesystem::path("/");
 }
+
+std::filesystem::path PatformGetCurrentPath() {
+    return std::filesystem::path("/");
+}
+
 
 noz::RectInt PlatformGetWindowRect() {
     return noz::RectInt{0, 0, g_web.screen_size.x, g_web.screen_size.y};

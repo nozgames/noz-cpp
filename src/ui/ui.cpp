@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include "../platform.h"
+
 constexpr int MAX_ELEMENTS = 4096;
 constexpr int MAX_ELEMENT_STACK = 128;
 constexpr int MAX_TEXT_MESHES = 4096;
@@ -931,6 +933,7 @@ static int DrawElement(int element_index) {
             SetViewport(scene_element->style.camera, viewport_rect);
             UpdateCamera(scene_element->style.camera);
             BindCamera(scene_element->style.camera);
+
             scene_element->draw_scene(scene_element->style.user_data);
 
             // Restore the UI camera
@@ -976,7 +979,7 @@ void BeginUI(u32 ref_width, u32 ref_height) {
         g_ui.ortho_size.x = rh * sw / sh;
     }
 
-    SetExtents(g_ui.camera, 0, g_ui.ortho_size.x, 0, g_ui.ortho_size.y, false);
+    SetExtents(g_ui.camera, 0, g_ui.ortho_size.x, 0, g_ui.ortho_size.y);
 
     UpdateInputState(g_ui.input);
 }
@@ -1033,8 +1036,7 @@ void DrawUI() {
     if (GetApplicationTraits()->draw_cursor) {
         Vec2 screen_size = ToVec2(GetScreenSize());
         Vec2 cursor_pos = GetMousePosition();
-        cursor_pos.y = screen_size.y - cursor_pos.y;
-        SetExtents(g_ui.cursor_camera, 0, screen_size.x, screen_size.y, 0);
+        SetExtents(g_ui.cursor_camera, 0, screen_size.x, 0, screen_size.y);
         BindCamera(g_ui.cursor_camera);
         GetApplicationTraits()->draw_cursor(Translate(cursor_pos));
     }

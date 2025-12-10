@@ -85,6 +85,7 @@ struct Application
     bool running;
     std::string binary_path;
     std::string binary_dir;
+    std::string current_dir;
 };
 
 static Application g_app = {};
@@ -95,8 +96,7 @@ void Init(ApplicationTraits& traits)
 }
 
 // @error
-void Exit(const char* format, ...)
-{
+void Exit(const char* format, ...) {
     extern void LogImpl(LogType, const char*, va_list);
 
     va_list args;
@@ -106,8 +106,7 @@ void Exit(const char* format, ...)
     exit(1);
 }
 
-void ExitOutOfMemory(const char* message)
-{
+void ExitOutOfMemory(const char* message) {
     if (message)
         Exit("out_of_memory: %s", message);
     else
@@ -147,6 +146,7 @@ void InitApplication(ApplicationTraits* traits) {
     std::filesystem::path binary_path = PlatformGetBinaryPath();
     g_app.binary_path = binary_path.string();
     g_app.binary_dir = binary_path.parent_path().string();
+    g_app.current_dir = PatformGetCurrentPath().string();
     InitAllocator(traits);
     InitName(traits);
     InitRandom();
@@ -368,6 +368,10 @@ float GetCurrentFPS() {
 
 const char* GetBinaryDirectory() {
     return g_app.binary_dir.c_str();
+}
+
+const char* GetCurrentDirectory() {
+    return g_app.current_dir.c_str();
 }
 
 void ThrowError(const char* fmt, ...) {

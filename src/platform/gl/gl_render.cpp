@@ -94,7 +94,7 @@ void DrawTestQuad();
 // Frame management
 // ============================================================================
 
-void PlatformBeginRenderFrame() {
+void PlatformBeginRender() {
 }
 
 void PlatformBindSkeleton(const Mat3* bone_transforms, u8 bone_count) {
@@ -308,7 +308,7 @@ Vec2Int GetTextureSize(PlatformTexture* texture) {
     return texture ? texture->size : VEC2INT_ZERO;
 }
 
-void PlatformBeginRenderPass(Color clear_color) {
+void PlatformBeginScenePass(Color clear_color) {
     if (g_gl.postprocess_enabled)
         glBindFramebuffer(GL_FRAMEBUFFER, g_gl.offscreen.framebuffer);
     else
@@ -328,23 +328,23 @@ void PlatformBeginRenderPass(Color clear_color) {
     // Depth/blend state will be set per-shader in PlatformBindShader
 }
 
-void PlatformEndRenderPass() {
+void PlatformEndScenePass() {
 }
 
-void PlatformBeginPostProcess() {
+void PlatformBeginPostProcPass() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
     glDisable(GL_DEPTH_TEST);
 }
 
-void PlatformEndPostProcess() {
+void PlatformEndPostProcPass() {
 }
 
 void PlatformEnablePostProcess(bool enabled) {
     g_gl.postprocess_enabled = enabled;
 }
 
-void PlatformBeginUI() {
+void PlatformBeginUIPass() {
     glBindFramebuffer(GL_FRAMEBUFFER, g_gl.ui_offscreen.framebuffer);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -360,18 +360,19 @@ void PlatformBeginUI() {
 }
 
 void PlatformEndUIPass() {
-    // Unbind framebuffer before binding its texture to avoid feedback loop
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void PlatformBindOffscreenTexture() {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, g_gl.offscreen.texture);
+    PlatformBindCamera(Translate(Vec2{0, 1}) * Scale(Vec2{1, -1}));
 }
 
 void PlatformBindUITexture() {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, g_gl.ui_offscreen.texture);
+    PlatformBindCamera(Translate(Vec2{0, 1}) * Scale(Vec2{1, -1}));
 }
 
 void PlatformSetViewport(const noz::Rect& viewport) {
