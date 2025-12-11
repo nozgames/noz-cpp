@@ -5,7 +5,21 @@ Place this file in your project directory or Visual Studio's natvis folder.
 -->
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
-  <Type Name="Animation">
+    <Type Name="HttpRequest">
+        <DisplayString>HttpRequest</DisplayString>
+        <Expand>
+            <ExpandedItem>(HttpRequestImpl*)this</ExpandedItem>
+        </Expand>
+    </Type>
+
+    <Type Name="Stream">
+        <DisplayString>Stream</DisplayString>
+        <Expand>
+            <ExpandedItem>(StreamImpl*)this</ExpandedItem>
+        </Expand>
+    </Type>
+
+    <Type Name="Animation">
     <DisplayString>Animation</DisplayString>
     <Expand>
       <ExpandedItem>(AnimationImpl*)this</ExpandedItem>

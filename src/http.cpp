@@ -7,23 +7,19 @@
 
 constexpr int MAX_REQUESTS = 16;
 
-struct HttpRequestImpl
-{
+struct HttpRequestImpl : HttpRequest {
     PlatformHttpHandle handle;
     HttpCallback callback;
     HttpStatus last_status;
-    char* response_string;
+    char *response_string;
     bool active;
 };
 
 static HttpRequestImpl g_requests[MAX_REQUESTS] = {};
 
-static HttpRequestImpl* AllocRequest()
-{
-    for (int i = 0; i < MAX_REQUESTS; i++)
-    {
-        if (!g_requests[i].active)
-        {
+static HttpRequestImpl *AllocRequest() {
+    for (int i = 0; i < MAX_REQUESTS; i++) {
+        if (!g_requests[i].active) {
             g_requests[i] = {};
             g_requests[i].active = true;
             return &g_requests[i];
@@ -33,9 +29,8 @@ static HttpRequestImpl* AllocRequest()
     return nullptr;
 }
 
-HttpRequest* HttpGet(const char* url, HttpCallback on_complete)
-{
-    HttpRequestImpl* req = AllocRequest();
+HttpRequest *GetUrl(const char *url, HttpCallback on_complete) {
+    HttpRequestImpl *req = AllocRequest();
     if (!req)
         return nullptr;
 
@@ -43,12 +38,12 @@ HttpRequest* HttpGet(const char* url, HttpCallback on_complete)
     req->callback = on_complete;
     req->last_status = HttpStatus::Pending;
 
-    return (HttpRequest*)req;
+    return req;
 }
 
-HttpRequest* HttpPost(const char* url, const void* body, u32 body_size, const char* content_type, HttpCallback on_complete)
-{
-    HttpRequestImpl* req = AllocRequest();
+HttpRequest *PostUrl(const char *url, const void *body, u32 body_size, const char *content_type,
+                     HttpCallback on_complete) {
+    HttpRequestImpl *req = AllocRequest();
     if (!req)
         return nullptr;
 
@@ -56,54 +51,48 @@ HttpRequest* HttpPost(const char* url, const void* body, u32 body_size, const ch
     req->callback = on_complete;
     req->last_status = HttpStatus::Pending;
 
-    return (HttpRequest*)req;
+    return req;
 }
 
-HttpRequest* HttpPostString(const char* url, const char* body, const char* content_type, HttpCallback on_complete)
-{
-    return HttpPost(url, body, (u32)strlen(body), content_type, on_complete);
+HttpRequest *HttpPostString(const char *url, const char *body, const char *content_type, HttpCallback on_complete) {
+    return PostUrl(url, body, (u32) strlen(body), content_type, on_complete);
 }
 
-HttpRequest* HttpPostJson(const char* url, const char* json, HttpCallback on_complete)
-{
-    return HttpPost(url, json, (u32)strlen(json), "application/json", on_complete);
+HttpRequest *HttpPostJson(const char *url, const char *json, HttpCallback on_complete) {
+    return PostUrl(url, json, (u32) strlen(json), "application/json", on_complete);
 }
 
-HttpStatus HttpGetStatus(HttpRequest* request)
-{
+HttpStatus HttpGetStatus(HttpRequest *request) {
     if (!request)
         return HttpStatus::None;
 
-    HttpRequestImpl* req = (HttpRequestImpl*)request;
+    HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
     HttpStatus pstatus = PlatformGetStatus(req->handle);
 
     switch (pstatus) {
-        case HttpStatus::None:     return HttpStatus::None;
-        case HttpStatus::Pending:  return HttpStatus::Pending;
+        case HttpStatus::None: return HttpStatus::None;
+        case HttpStatus::Pending: return HttpStatus::Pending;
         case HttpStatus::Complete: return HttpStatus::Complete;
-        case HttpStatus::Error:    return HttpStatus::Error;
+        case HttpStatus::Error: return HttpStatus::Error;
     }
 
     return HttpStatus::None;
 }
 
-int HttpGetStatusCode(HttpRequest* request)
-{
+int HttpGetStatusCode(HttpRequest *request) {
     if (!request)
         return 0;
 
-    HttpRequestImpl* req = (HttpRequestImpl*)request;
+    HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
     return PlatformGetStatusCode(req->handle);
 }
 
-bool HttpIsComplete(HttpRequest* request)
-{
+bool HttpIsComplete(HttpRequest *request) {
     HttpStatus status = HttpGetStatus(request);
     return status == HttpStatus::Complete || status == HttpStatus::Error;
 }
 
-bool HttpIsSuccess(HttpRequest* request)
-{
+bool HttpIsSuccess(HttpRequest *request) {
     if (HttpGetStatus(request) != HttpStatus::Complete)
         return false;
 
@@ -111,70 +100,62 @@ bool HttpIsSuccess(HttpRequest* request)
     return code >= 200 && code < 300;
 }
 
-const u8* HttpGetResponseData(HttpRequest* request, u32* out_size)
-{
-    if (!request)
-    {
-        if (out_size) *out_size = 0;
-        return nullptr;
-    }
-
-    HttpRequestImpl* req = (HttpRequestImpl*)request;
-    return PlatformGetResponse(req->handle, out_size);
+Stream *GetResponseStream(HttpRequest *request, Allocator *allocator) {
+    if (!request) return nullptr;
+    HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
+    u32 out_size = 0;
+    const u8 *res = PlatformGetResponse(req->handle, &out_size);
+    return LoadStream(allocator, res, out_size);
 }
 
-const char* HttpGetResponseString(HttpRequest* request)
-{
+const char *HttpGetResponseString(HttpRequest *request) {
     if (!request)
         return nullptr;
 
-    HttpRequestImpl* req = (HttpRequestImpl*)request;
+    HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
 
     // Return cached string if available
     if (req->response_string)
         return req->response_string;
 
     u32 size = 0;
-    const u8* data = PlatformGetResponse(req->handle, &size);
+    const u8 *data = PlatformGetResponse(req->handle, &size);
     if (!data || size == 0)
         return nullptr;
 
     // Allocate and null-terminate
-    req->response_string = (char*)Alloc(ALLOCATOR_DEFAULT, size + 1);
+    req->response_string = static_cast<char *>(Alloc(ALLOCATOR_DEFAULT, size + 1));
     memcpy(req->response_string, data, size);
     req->response_string[size] = '\0';
 
     return req->response_string;
 }
 
-u32 HttpGetResponseSize(HttpRequest* request)
-{
+u32 HttpGetResponseSize(HttpRequest *request) {
+    HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
     u32 size = 0;
-    HttpGetResponseData(request, &size);
+    PlatformGetResponse(req->handle, &size);
     return size;
 }
 
-void HttpCancel(HttpRequest* request)
-{
+void HttpCancel(HttpRequest *request) {
     if (!request)
         return;
 
-    HttpRequestImpl* req = (HttpRequestImpl*)request;
+    HttpRequestImpl *req = (HttpRequestImpl *) request;
     PlatformCancel(req->handle);
     req->last_status = HttpStatus::None;
 }
 
-void HttpRelease(HttpRequest* request)
-{
+void Free(HttpRequest *request) {
     if (!request)
         return;
 
-    HttpRequestImpl* req = (HttpRequestImpl*)request;
+    HttpRequestImpl *req = (HttpRequestImpl *) request;
 
     PlatformFree(req->handle);
 
-    if (req->response_string)
-    {
+    if (req->response_string) {
         Free(req->response_string);
         req->response_string = nullptr;
     }
@@ -183,20 +164,16 @@ void HttpRelease(HttpRequest* request)
     req->active = false;
 }
 
-void InitHttp()
-{
+void InitHttp() {
     for (int i = 0; i < MAX_REQUESTS; i++)
         g_requests[i] = {};
 
     PlatformInitHttp();
 }
 
-void ShutdownHttp()
-{
-    for (int i = 0; i < MAX_REQUESTS; i++)
-    {
-        if (g_requests[i].active)
-        {
+void ShutdownHttp() {
+    for (int i = 0; i < MAX_REQUESTS; i++) {
+        if (g_requests[i].active) {
             if (g_requests[i].response_string)
                 Free(g_requests[i].response_string);
         }
@@ -206,25 +183,24 @@ void ShutdownHttp()
     PlatformShutdownHttp();
 }
 
-void UpdateHttp()
-{
-    for (int i = 0; i < MAX_REQUESTS; i++)
-    {
-        HttpRequestImpl& req = g_requests[i];
+void UpdateHttp() {
+    PlatformUpdateHttp();
+
+    for (int i = 0; i < MAX_REQUESTS; i++) {
+        HttpRequestImpl &req = g_requests[i];
         if (!req.active)
             continue;
 
-        HttpStatus current = HttpGetStatus((HttpRequest*)&req);
+        HttpStatus current = HttpGetStatus((HttpRequest *) &req);
 
         // Check for state transition to complete/error
         if (req.last_status == HttpStatus::Pending &&
-            (current == HttpStatus::Complete || current == HttpStatus::Error))
-        {
+            (current == HttpStatus::Complete || current == HttpStatus::Error)) {
             req.last_status = current;
 
             // Fire callback
             if (req.callback)
-                req.callback((HttpRequest*)&req);
+                req.callback((HttpRequest *) &req);
         }
     }
 }

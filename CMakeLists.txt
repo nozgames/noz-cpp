@@ -7,8 +7,11 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Renderer backend option (Windows only - macOS uses Metal)
-set(NOZ_RENDERER "VULKAN" CACHE STRING "Renderer backend (VULKAN, GLES, or GL)")
+set(NOZ_RENDERER "GL" CACHE STRING "Renderer backend (VULKAN, GLES, or GL)")
 set_property(CACHE NOZ_RENDERER PROPERTY STRINGS "VULKAN" "GLES" "GL")
+
+option(NOZ_HTTP "Enable HTTP support" OFF)
+option(NOZ_WEBSOCKET "Enable WebSocket support" OFF)
 
 # Explicitly list all source files
 set(SOURCE_FILES
@@ -32,8 +35,6 @@ set(SOURCE_FILES
     src/log.cpp
     src/tween.cpp
     src/job.cpp
-    src/http.cpp
-    src/websocket.cpp
     src/memory/allocator.cpp
     src/memory/pool_allocator.cpp
     src/memory/arena_allocator.cpp
@@ -80,7 +81,8 @@ set(SOURCE_FILES
     src/audio/audio.cpp
     src/audio/sound.cpp
     src/prefs.cpp
-
+    src/http.cpp
+    src/websocket.cpp
 )
 
 # Add platform-specific files
@@ -91,19 +93,42 @@ if(EMSCRIPTEN)
         src/platform/web/web_input.cpp
         src/platform/web/web_audio.cpp
         src/platform/web/web_time.cpp
-        src/platform/web/web_http.cpp
-        src/platform/web/web_websocket.cpp
         src/platform/gl/gl_render.cpp
     )
+
+    # WebSocket backend selection for web
+    if(NOZ_WEBSOCKET)
+        list(APPEND SOURCE_FILES src/platform/web/web_websocket.cpp)
+    else()
+        list(APPEND SOURCE_FILES src/platform/null/null_websocket.cpp)
+    endif()
+
+    if(NOZ_HTTP)
+        list(APPEND SOURCE_FILES src/platform/web/web_http.cpp)
+    else()
+        list(APPEND SOURCE_FILES src/platform/null/null_http.cpp)
+    endif()
 elseif(WIN32)
     list(APPEND SOURCE_FILES
         src/platform/windows/windows_main.cpp
         src/platform/windows/windows_input.cpp
         src/platform/windows/windows_audio.cpp
         src/platform/windows/windows_time.cpp
-        src/platform/windows/windows_http.cpp
-        src/platform/windows/windows_websocket.cpp
     )
+
+    # WebSocket backend selection for Windows
+    if(NOZ_WEBSOCKET)
+        list(APPEND SOURCE_FILES src/platform/windows/windows_websocket.cpp)
+    else()
+        list(APPEND SOURCE_FILES src/platform/null/null_websocket.cpp)
+    endif()
+
+    # HTTP backend selection for Windows
+    if(NOZ_HTTP)
+        list(APPEND SOURCE_FILES src/platform/windows/windows_http.cpp)
+    else()
+        list(APPEND SOURCE_FILES src/platform/null/null_http.cpp)
+    endif()
 
     # Add renderer-specific files based on NOZ_RENDERER option
     if(NOZ_RENDERER STREQUAL "GLES" OR NOZ_RENDERER STREQUAL "GL")
@@ -139,23 +164,36 @@ elseif(APPLE)
         PROPERTIES
         COMPILE_FLAGS "-x objective-c++"
     )
+
+    # WebSocket backend selection for macOS (null stub for now)
+    list(APPEND SOURCE_FILES src/platform/null/null_websocket.cpp)
+
+    # HTTP backend selection for macOS (null stub for now)
+    list(APPEND SOURCE_FILES src/platform/null/null_http.cpp)
 endif()
 
 add_library(noz STATIC ${SOURCE_FILES})
+
+# Add WebSocket compile definition if enabled
+if(NOZ_WEBSOCKET)
+    target_compile_definitions(noz PUBLIC NOZ_WEBSOCKET)
+endif()
 
 target_precompile_headers(noz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.h)
 
 # Common include directories
 target_include_directories(noz PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external
         ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Platform-specific include directories
 if(EMSCRIPTEN)
-    target_compile_definitions(noz PUBLIC NOZ_PLATFORM_WEB NOZ_PLATFORM_GLES)
-    message(STATUS "Building for Web/Emscripten with WebGL")
+    target_compile_definitions(noz PUBLIC NOZ_PLATFORM_WEB NOZ_PLATFORM_GLES NOZ_JOB_THREAD_COUNT=4)
+    target_compile_options(noz PUBLIC -pthread)
+    if(NOZ_HTTP)
+        target_compile_definitions(noz PUBLIC NOZ_HTTP)
+    endif()
+    message(STATUS "Building for Web/Emscripten with WebGL and pthreads")
 elseif(WIN32)
     target_include_directories(noz PUBLIC
         ${CMAKE_SOURCE_DIR}/res/windows
@@ -164,9 +202,7 @@ elseif(WIN32)
     target_compile_definitions(noz PRIVATE _CRT_SECURE_NO_WARNINGS)
 
     # Add renderer-specific compile definitions
-    if(NOZ_RENDERER STREQUAL "GLES")
-        target_compile_definitions(noz PUBLIC NOZ_PLATFORM_GLES)
-    elseif(NOZ_RENDERER STREQUAL "GL")
+    if(NOZ_RENDERER STREQUAL "GL")
         target_compile_definitions(noz PUBLIC NOZ_PLATFORM_GL)
     else()
         target_compile_definitions(noz PUBLIC NOZ_PLATFORM_VULKAN)
@@ -184,28 +220,37 @@ if(EMSCRIPTEN)
             -sFULL_ES3=1
             -sFETCH=1
             -sALLOW_MEMORY_GROWTH=1
-            -sINITIAL_MEMORY=33554432
-            -lwebsocket.js
+            -sINITIAL_MEMORY=67108864
+            -pthread
+            -sPTHREAD_POOL_SIZE=5
     )
+    if(NOZ_WEBSOCKET)
+        target_link_options(noz PUBLIC -lwebsocket.js)
+    endif()
     # Box2D and enet would need to be compiled with emscripten separately
     message(STATUS "Emscripten build - external libraries will need emscripten-compiled versions")
 elseif(WIN32)
     target_link_libraries(noz
         PUBLIC
-            ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/box2d.lib
-            ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/enet.lib
-            ws2_32
             winmm
             dwmapi
             Shcore
             xaudio2
             ole32
     )
+
+    # Link HTTP backend libraries
+    if(NOZ_HTTP)
+        target_link_libraries(noz PUBLIC winhttp)
+        target_compile_definitions(noz PUBLIC NOZ_HTTP)
+    endif()
+    # Link winhttp for WebSocket (if not already linked by HTTP)
+    if(NOZ_WEBSOCKET AND NOT NOZ_HTTP)
+        target_link_libraries(noz PUBLIC winhttp)
+    endif()
 elseif(APPLE)
     target_link_libraries(noz
         PUBLIC
-            ${CMAKE_CURRENT_SOURCE_DIR}/external/box2d/libbox2d.a
-            ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/libenet.a
             "-framework Cocoa"
             "-framework Metal"
             "-framework MetalKit"

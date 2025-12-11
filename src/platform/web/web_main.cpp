@@ -123,6 +123,81 @@ static EM_BOOL OnMouseLeave(int event_type, const EmscriptenMouseEvent* event, v
     return EM_FALSE;
 }
 
+// Touch event callbacks - treat touch as mouse for mobile support
+extern bool* GetKeyStates();
+
+static EM_BOOL OnTouchStart(int event_type, const EmscriptenTouchEvent* event, void* user_data) {
+    (void)event_type;
+    (void)user_data;
+
+    if (event->numTouches > 0) {
+        const EmscriptenTouchPoint& touch = event->touches[0];
+        double dpr = emscripten_get_device_pixel_ratio();
+        g_web.mouse_position = {
+            static_cast<f32>(touch.targetX * dpr),
+            static_cast<f32>(touch.targetY * dpr)
+        };
+        g_web.mouse_on_screen = true;
+
+        // Simulate mouse left button press
+        bool* key_states = GetKeyStates();
+        if (key_states) {
+            key_states[MOUSE_LEFT] = true;
+        }
+    }
+
+    return EM_TRUE; // Consume event to prevent scrolling/zooming
+}
+
+static EM_BOOL OnTouchMove(int event_type, const EmscriptenTouchEvent* event, void* user_data) {
+    (void)event_type;
+    (void)user_data;
+
+    if (event->numTouches > 0) {
+        const EmscriptenTouchPoint& touch = event->touches[0];
+        double dpr = emscripten_get_device_pixel_ratio();
+        g_web.mouse_position = {
+            static_cast<f32>(touch.targetX * dpr),
+            static_cast<f32>(touch.targetY * dpr)
+        };
+    }
+
+    return EM_TRUE; // Consume event
+}
+
+static EM_BOOL OnTouchEnd(int event_type, const EmscriptenTouchEvent* event, void* user_data) {
+    (void)event_type;
+    (void)user_data;
+
+    // Simulate mouse left button release
+    bool* key_states = GetKeyStates();
+    if (key_states) {
+        key_states[MOUSE_LEFT] = false;
+    }
+
+    // If all touches ended, mouse is no longer on screen
+    if (event->numTouches == 0) {
+        g_web.mouse_on_screen = false;
+    }
+
+    return EM_TRUE; // Consume event
+}
+
+static EM_BOOL OnTouchCancel(int event_type, const EmscriptenTouchEvent* event, void* user_data) {
+    (void)event_type;
+    (void)event;
+    (void)user_data;
+
+    // Simulate mouse left button release
+    bool* key_states = GetKeyStates();
+    if (key_states) {
+        key_states[MOUSE_LEFT] = false;
+    }
+
+    g_web.mouse_on_screen = false;
+    return EM_TRUE;
+}
+
 static EM_BOOL OnMouseWheel(int event_type, const EmscriptenWheelEvent* event, void* user_data) {
     (void)event_type;
     (void)user_data;
@@ -219,6 +294,12 @@ void PlatformInitWindow(void (*on_close)()) {
     emscripten_set_focus_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_TRUE, OnFocus);
     emscripten_set_blur_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_TRUE, OnBlur);
     emscripten_set_resize_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_TRUE, OnCanvasResize);
+
+    // Touch events for mobile support
+    emscripten_set_touchstart_callback(g_web.canvas_id, nullptr, EM_TRUE, OnTouchStart);
+    emscripten_set_touchmove_callback(g_web.canvas_id, nullptr, EM_TRUE, OnTouchMove);
+    emscripten_set_touchend_callback(g_web.canvas_id, nullptr, EM_TRUE, OnTouchEnd);
+    emscripten_set_touchcancel_callback(g_web.canvas_id, nullptr, EM_TRUE, OnTouchCancel);
 }
 
 void PlatformShutdown() {

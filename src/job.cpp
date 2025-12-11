@@ -2,13 +2,18 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-#ifdef NOZ_PLATFORM_WEB
-// Web platform: No threading support, run jobs synchronously
+// Use threaded job system if pthreads are available
+// On Emscripten, this requires -pthread flag and SharedArrayBuffer support
+// TEMP: Force sync jobs to debug networking issue
+#if 1 // defined(NOZ_PLATFORM_WEB) && !defined(__EMSCRIPTEN_PTHREADS__)
+
+// Web platform without pthreads: run jobs synchronously
 #include "platform.h"
 #include "internal.h"
 
 JobHandle CreateJob(JobRunFunc func, void* user_data, JobHandle depends_on) {
-    // Run immediately on web
+    (void)depends_on;
+    // Run immediately on web without pthreads
     if (func) {
         func(user_data);
     }
@@ -16,25 +21,25 @@ JobHandle CreateJob(JobRunFunc func, void* user_data, JobHandle depends_on) {
 }
 
 bool IsDone(JobHandle handle) {
-    return true; // Jobs complete immediately on web
+    (void)handle;
+    return true; // Jobs complete immediately
 }
 
-void InitJobs() {
-    // No-op on web
-}
-
-void ShutdownJobs() {
-    // No-op on web
-}
+void InitJobs() {}
+void ShutdownJobs() {}
 
 #else
-// Desktop platforms: Full threaded job system
+// Threaded job system (Desktop and Web with pthreads)
 
 #include <mutex>
 #include <semaphore>
 #include <thread>
 
-constexpr int MAX_CONCURRENT_JOBS = 16;
+#ifndef NOZ_JOB_THREAD_COUNT
+#define NOZ_JOB_THREAD_COUNT 16
+#endif
+
+constexpr int MAX_CONCURRENT_JOBS = NOZ_JOB_THREAD_COUNT;
 constexpr int MAX_JOBS = 1024;
 
 struct Job
@@ -168,7 +173,7 @@ static void JobSchedulerProc()
 
         g_jobs.mutex->unlock();
 
-        std::this_thread::yield();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
 
@@ -236,5 +241,5 @@ void ShutdownJobs()
     g_jobs = {};
 }
 
-#endif // NOZ_PLATFORM_WEB
+#endif // Threaded job system
 

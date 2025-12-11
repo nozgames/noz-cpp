@@ -35,7 +35,11 @@ extern void ShutdownAllocator();
 extern void ShutdownAudio();
 extern void ShutdownPrefs();
 extern void ResetInputState(InputSet* input_set);
+extern void InitHttp();
+extern void ShutdownHttp();
 extern void UpdateHttp();
+extern void InitWebSocket();
+extern void ShutdownWebSocket();
 extern void UpdateWebSocket();
 
 // @traits

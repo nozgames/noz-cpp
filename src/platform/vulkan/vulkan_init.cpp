@@ -503,6 +503,12 @@ static void InitCommandBuffer() {
 }
 
 static void InitSyncObjects() {
+    // Create semaphores per swapchain image to avoid semaphore reuse issues
+    // Single fence to ensure command buffer is done before reuse
+    size_t image_count = g_vulkan.swapchain_images.size();
+    g_vulkan.image_available_semaphores.resize(image_count);
+    g_vulkan.render_finished_semaphores.resize(image_count);
+
     VkFenceCreateInfo fence_info = {
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
         .flags = VK_FENCE_CREATE_SIGNALED_BIT
@@ -511,9 +517,14 @@ static void InitSyncObjects() {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
     };
 
-    VK_CHECK(vkCreateSemaphore(g_vulkan.device, &semaphore_info, nullptr, &g_vulkan.image_available_semaphore));
-    VK_CHECK(vkCreateSemaphore(g_vulkan.device, &semaphore_info, nullptr, &g_vulkan.render_finished_semaphore));
+    for (size_t i = 0; i < image_count; i++) {
+        VK_CHECK(vkCreateSemaphore(g_vulkan.device, &semaphore_info, nullptr, &g_vulkan.image_available_semaphores[i]));
+        VK_CHECK(vkCreateSemaphore(g_vulkan.device, &semaphore_info, nullptr, &g_vulkan.render_finished_semaphores[i]));
+    }
+
     VK_CHECK(vkCreateFence(g_vulkan.device, &fence_info, nullptr, &g_vulkan.in_flight_fence));
+
+    g_vulkan.current_frame = 0;
 }
 
 static void InitPipeline() {
@@ -756,6 +767,9 @@ static void InitScene() {
 
     VK_CHECK(vkCreateFramebuffer(g_vulkan.device, &framebuffer_info, nullptr, &g_vulkan.scene_target.framebuffer));
     VK_NAME(VK_OBJECT_TYPE_FRAMEBUFFER, g_vulkan.scene_target.framebuffer, "Scene");
+
+    // Initialize layout tracking - image starts in UNDEFINED, first render pass will transition it
+    g_vulkan.scene_target.current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
 static void InitSceneRenderPass() {
@@ -1248,6 +1262,9 @@ static void InitUI() {
 
     VK_CHECK(vkCreateFramebuffer(g_vulkan.device, &framebuffer_info, nullptr, &g_vulkan.ui_target.framebuffer));
     VK_NAME(VK_OBJECT_TYPE_FRAMEBUFFER, g_vulkan.ui_target.framebuffer, "UI Framebuffer");
+
+    // Initialize layout tracking - image starts in UNDEFINED, first render pass will transition it
+    g_vulkan.ui_target.current_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
 static void InitComposite() {
@@ -1331,13 +1348,13 @@ static void InitInstance() {
         .ppEnabledExtensionNames = extensions.data(),
     };
 
-#ifdef _DEBUG
-    const char* validationLayer = "VK_LAYER_KHRONOS_validation";
-    if (CheckValidationLayerSupport()) {
-        create_info.enabledLayerCount = 1;
-        create_info.ppEnabledLayerNames = &validationLayer;
-    }
-#endif
+    #ifdef _DEBUG
+        const char* validationLayer = "VK_LAYER_KHRONOS_validation";
+        if (CheckValidationLayerSupport()) {
+            create_info.enabledLayerCount = 1;
+            create_info.ppEnabledLayerNames = &validationLayer;
+        }
+    #endif
 
     VK_CHECK(vkCreateInstance(&create_info, nullptr, &g_vulkan.instance));
 
@@ -1367,9 +1384,9 @@ void InitRenderDriver(const RendererTraits* traits, HWND hwnd) {
     InitPipeline();
     InitCommandPool();
     InitCommandBuffer();
-    InitSyncObjects();
 
     InitSwapchain();
+    InitSyncObjects();
     InitMSAA();
     InitDepth();
     InitRenderPass();

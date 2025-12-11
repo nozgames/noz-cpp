@@ -612,6 +612,17 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
 
         e->measured_size = max_content_size;
         e->measured_size[expanded->axis] = available_size[expanded->axis];
+
+    // @measure_transformed
+    } else if (e->type == ELEMENT_TYPE_TRANSFORM) {
+        Vec2 max_content_size = {};
+        for (u16 i = 0; i < e->child_count; i++) {
+            Element* child = g_ui.elements[element_index];
+            element_index = MeasureElement(element_index, available_size);
+            max_content_size = Max(max_content_size, child->measured_size);
+        }
+
+        e->measured_size = max_content_size;
     } else {
         assert(false && "Unhandled element type in MeasureElements");
     }
@@ -730,6 +741,7 @@ static int LayoutElement(int element_index, const Vec2& size) {
         for (u16 i = 0; i < e->child_count; i++)
             element_index = LayoutElement(element_index, content_size);
     } else if (e->type == ELEMENT_TYPE_SPACER) {
+    } else if (e->type == ELEMENT_TYPE_TRANSFORM) {
     } else {
         assert(false && "Unhandled element type in LayoutElements");
     }

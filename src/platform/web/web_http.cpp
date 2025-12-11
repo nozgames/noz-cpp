@@ -114,6 +114,10 @@ void PlatformInitHttp() {
     LogInfo("Web HTTP initialized");
 }
 
+void PlatformUpdateHttp() {
+    // Emscripten fetch uses callbacks, no polling needed
+}
+
 void PlatformShutdownHttp() {
     // Clean up any pending requests
     for (int i = 0; i < MAX_HTTP_REQUESTS; i++) {
