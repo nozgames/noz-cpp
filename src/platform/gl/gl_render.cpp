@@ -65,6 +65,8 @@ PFNGLGETUNIFORMBLOCKINDEXPROC glGetUniformBlockIndex = nullptr;
 PFNGLLINKPROGRAMPROC glLinkProgram = nullptr;
 PFNGLPIXELSTOREIPROC glPixelStorei = nullptr;
 PFNGLRENDERBUFFERSTORAGEPROC glRenderbufferStorage = nullptr;
+PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC glRenderbufferStorageMultisample = nullptr;
+PFNGLBLITFRAMEBUFFERPROC glBlitFramebuffer = nullptr;
 PFNGLSCISSORPROC glScissor = nullptr;
 PFNGLSHADERSOURCEPROC glShaderSource = nullptr;
 PFNGLTEXIMAGE2DPROC glTexImage2D = nullptr;
@@ -82,26 +84,20 @@ PFNGLUSEPROGRAMPROC glUseProgram = nullptr;
 PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = nullptr;
 PFNGLVIEWPORTPROC glViewport = nullptr;
 PFNGLCLIPCONTROLPROC glClipControl = nullptr;
+PFNGLGETINTEGERVPROC glGetIntegerv = nullptr;
 #endif // NOZ_PLATFORM_WEB
 
-// Global GL state
 GLState g_gl = {};
 
-// Forward declarations
 void DrawTestQuad();
-
-// ============================================================================
-// Frame management
-// ============================================================================
 
 void PlatformBeginRender() {
 }
 
 void PlatformBindSkeleton(const Mat3* bone_transforms, u8 bone_count) {
-    float* dst = (float*)g_gl.uniform_data[UNIFORM_BUFFER_SKELETON];
+    float* dst = reinterpret_cast<float *>(g_gl.uniform_data[UNIFORM_BUFFER_SKELETON]);
     for (u8 i = 0; i < bone_count && i < MAX_BONES; i++) {
         const Mat3& m = bone_transforms[i];
-        // Transpose for OpenGL column-major std140 layout
         *dst++ = m.m[0]; *dst++ = m.m[3]; *dst++ = m.m[6]; *dst++ = 0.0f;
         *dst++ = m.m[1]; *dst++ = m.m[4]; *dst++ = m.m[7]; *dst++ = 0.0f;
         *dst++ = m.m[2]; *dst++ = m.m[5]; *dst++ = m.m[8]; *dst++ = 0.0f;
@@ -109,9 +105,8 @@ void PlatformBindSkeleton(const Mat3* bone_transforms, u8 bone_count) {
 }
 
 void PlatformBindTransform(const Mat3& transform, float depth, float depth_scale) {
-    ObjectBuffer* obj = (ObjectBuffer*)g_gl.uniform_data[UNIFORM_BUFFER_OBJECT];
+    ObjectBuffer* obj = reinterpret_cast<ObjectBuffer *>(g_gl.uniform_data[UNIFORM_BUFFER_OBJECT]);
     float* dst = obj->transform;
-    // Transpose for OpenGL column-major std140 layout
     *dst++ = transform.m[0]; *dst++ = transform.m[3]; *dst++ = transform.m[6]; *dst++ = 0.0f;
     *dst++ = transform.m[1]; *dst++ = transform.m[4]; *dst++ = transform.m[7]; *dst++ = 0.0f;
     *dst++ = transform.m[2]; *dst++ = transform.m[5]; *dst++ = transform.m[8]; *dst++ = 0.0f;
@@ -130,15 +125,14 @@ void PlatformBindFragmentUserData(const u8* data, u32 size) {
 }
 
 void PlatformBindCamera(const Mat3& view_matrix) {
-    float* dst = (float*)g_gl.uniform_data[UNIFORM_BUFFER_CAMERA];
-    // Transpose for OpenGL column-major std140 layout
+    float* dst = reinterpret_cast<float*>(g_gl.uniform_data[UNIFORM_BUFFER_CAMERA]);
     *dst++ = view_matrix.m[0]; *dst++ = view_matrix.m[3]; *dst++ = view_matrix.m[6]; *dst++ = 0.0f;
     *dst++ = view_matrix.m[1]; *dst++ = view_matrix.m[4]; *dst++ = view_matrix.m[7]; *dst++ = 0.0f;
     *dst++ = view_matrix.m[2]; *dst++ = view_matrix.m[5]; *dst++ = view_matrix.m[8]; *dst++ = 0.0f;
 }
 
 void PlatformBindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission) {
-    ColorBuffer* cb = (ColorBuffer*)g_gl.uniform_data[UNIFORM_BUFFER_COLOR];
+    ColorBuffer* cb = reinterpret_cast<ColorBuffer*>(g_gl.uniform_data[UNIFORM_BUFFER_COLOR]);
     cb->color = color;
     cb->emission = emission;
     cb->uv_offset = color_uv_offset;
@@ -146,7 +140,7 @@ void PlatformBindColor(const Color& color, const Vec2& color_uv_offset, const Co
 
 void PlatformFree(PlatformBuffer* buffer) {
     if (!buffer) return;
-    GLuint buf = (GLuint)(uintptr_t)buffer;
+    GLuint buf = static_cast<GLuint>(reinterpret_cast<uintptr_t>(buffer));
     glDeleteBuffers(1, &buf);
 }
 
@@ -233,7 +227,7 @@ PlatformTexture* PlatformCreateTexture(
     const char* name) {
     (void)name;
     PlatformTexture* texture = new PlatformTexture();
-    texture->size = {(i32)width, (i32)height};
+    texture->size = {static_cast<i32>(width), static_cast<i32>(height)};
     texture->channels = channels;
     texture->sampler_options = sampler_options;
 
@@ -257,7 +251,16 @@ PlatformTexture* PlatformCreateTexture(
             break;
     }
 
-    glTexImage2D(GL_TEXTURE_2D, 0, internal_format, (GLsizei)width, (GLsizei)height, 0, format, GL_UNSIGNED_BYTE, data);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        internal_format,
+        static_cast<GLsizei>(width),
+        static_cast<GLsizei>(height),
+        0,
+        format,
+        GL_UNSIGNED_BYTE,
+        data);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, ToGL(sampler_options.filter));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, ToGL(sampler_options.filter));
@@ -296,10 +299,16 @@ void UpdateTexture(PlatformTexture* texture, void* data, const noz::Rect& rect) 
         case 4:
         default: format = GL_RGBA; break;
     }
-    glTexSubImage2D(GL_TEXTURE_2D, 0,
-        (GLint)rect.x, (GLint)rect.y,
-        (GLsizei)rect.width, (GLsizei)rect.height,
-        format, GL_UNSIGNED_BYTE, data);
+    glTexSubImage2D(
+        GL_TEXTURE_2D,
+        0,
+        static_cast<GLint>(rect.x),
+        static_cast<GLint>(rect.y),
+        static_cast<GLsizei>(rect.width),
+        static_cast<GLsizei>(rect.height),
+        format,
+        GL_UNSIGNED_BYTE,
+        data);
 
     glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -309,26 +318,29 @@ Vec2Int GetTextureSize(PlatformTexture* texture) {
 }
 
 void PlatformBeginScenePass(Color clear_color) {
-    if (g_gl.postprocess_enabled)
-        glBindFramebuffer(GL_FRAMEBUFFER, g_gl.offscreen.framebuffer);
-    else
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    GLuint fb = g_gl.offscreen.msaa_framebuffer
+        ? g_gl.offscreen.msaa_framebuffer
+        : g_gl.offscreen.framebuffer;
 
+    glBindFramebuffer(GL_FRAMEBUFFER, fb);
     glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
     glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
-    glClearDepthf(1.0f);  // Clear to far plane (required with ZERO_TO_ONE depth range)
-    glDepthMask(GL_TRUE); // Enable depth writes for clear
+    glClearDepthf(1.0f);
+    glDepthMask(GL_TRUE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // Enable sRGB conversion (linear -> gamma-corrected output)
-    // Note: WebGL doesn't support GL_FRAMEBUFFER_SRGB - sRGB is handled differently
-#ifndef NOZ_PLATFORM_WEB
-    glEnable(GL_FRAMEBUFFER_SRGB);
-#endif
-    // Depth/blend state will be set per-shader in PlatformBindShader
 }
 
 void PlatformEndScenePass() {
+    if (!g_gl.offscreen.msaa_framebuffer)
+        return;
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, g_gl.offscreen.msaa_framebuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, g_gl.offscreen.framebuffer);
+    glBlitFramebuffer(
+        0, 0, g_gl.screen_size.x, g_gl.screen_size.y,
+        0, 0, g_gl.screen_size.x, g_gl.screen_size.y,
+        GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void PlatformBeginPostProcPass() {
@@ -345,7 +357,9 @@ void PlatformEnablePostProcess(bool enabled) {
 }
 
 void PlatformBeginUIPass() {
-    glBindFramebuffer(GL_FRAMEBUFFER, g_gl.ui_offscreen.framebuffer);
+    // Render to MSAA framebuffer if available, otherwise resolve framebuffer
+    GLuint fb = g_gl.ui_offscreen.msaa_framebuffer ? g_gl.ui_offscreen.msaa_framebuffer : g_gl.ui_offscreen.framebuffer;
+    glBindFramebuffer(GL_FRAMEBUFFER, fb);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
@@ -360,7 +374,27 @@ void PlatformBeginUIPass() {
 }
 
 void PlatformEndUIPass() {
+    // Resolve MSAA if enabled
+    if (g_gl.ui_offscreen.msaa_framebuffer) {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, g_gl.ui_offscreen.msaa_framebuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, g_gl.ui_offscreen.framebuffer);
+        glBlitFramebuffer(
+            0, 0, g_gl.screen_size.x, g_gl.screen_size.y,
+            0, 0, g_gl.screen_size.x, g_gl.screen_size.y,
+            GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void PlatformBeginCompositePass() {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+}
+
+void PlatformEndCompositePass() {
 }
 
 void PlatformBindSceneTexture() {

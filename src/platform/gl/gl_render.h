@@ -184,6 +184,11 @@ typedef ptrdiff_t GLintptr;
 
 #define GL_MULTISAMPLE                    0x809D
 
+// MSAA framebuffer constants
+#define GL_READ_FRAMEBUFFER               0x8CA8
+#define GL_DRAW_FRAMEBUFFER               0x8CA9
+#define GL_MAX_SAMPLES                    0x8D57
+
 // Function pointer typedefs
 typedef void (*PFNGLACTIVETEXTUREPROC)(GLenum texture);
 typedef void (*PFNGLATTACHSHADERPROC)(GLuint program, GLuint shader);
@@ -241,6 +246,8 @@ typedef GLuint (*PFNGLGETUNIFORMBLOCKINDEXPROC)(GLuint program, const GLchar* un
 typedef void (*PFNGLLINKPROGRAMPROC)(GLuint program);
 typedef void (*PFNGLPIXELSTOREIPROC)(GLenum pname, GLint param);
 typedef void (*PFNGLRENDERBUFFERSTORAGEPROC)(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
+typedef void (*PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC)(GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
+typedef void (*PFNGLBLITFRAMEBUFFERPROC)(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
 typedef void (*PFNGLSCISSORPROC)(GLint x, GLint y, GLsizei width, GLsizei height);
 typedef void (*PFNGLSHADERSOURCEPROC)(GLuint shader, GLsizei count, const GLchar* const* string, const GLint* length);
 typedef void (*PFNGLTEXIMAGE2DPROC)(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* pixels);
@@ -258,6 +265,7 @@ typedef void (*PFNGLUSEPROGRAMPROC)(GLuint program);
 typedef void (*PFNGLVERTEXATTRIBPOINTERPROC)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* pointer);
 typedef void (*PFNGLVIEWPORTPROC)(GLint x, GLint y, GLsizei width, GLsizei height);
 typedef void (*PFNGLCLIPCONTROLPROC)(GLenum origin, GLenum depth);
+typedef void (*PFNGLGETINTEGERVPROC)(GLenum pname, GLint* data);
 
 // Global function pointers
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
@@ -316,6 +324,8 @@ extern PFNGLGETUNIFORMBLOCKINDEXPROC glGetUniformBlockIndex;
 extern PFNGLLINKPROGRAMPROC glLinkProgram;
 extern PFNGLPIXELSTOREIPROC glPixelStorei;
 extern PFNGLRENDERBUFFERSTORAGEPROC glRenderbufferStorage;
+extern PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC glRenderbufferStorageMultisample;
+extern PFNGLBLITFRAMEBUFFERPROC glBlitFramebuffer;
 extern PFNGLSCISSORPROC glScissor;
 extern PFNGLSHADERSOURCEPROC glShaderSource;
 extern PFNGLTEXIMAGE2DPROC glTexImage2D;
@@ -333,5 +343,6 @@ extern PFNGLUSEPROGRAMPROC glUseProgram;
 extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 extern PFNGLVIEWPORTPROC glViewport;
 extern PFNGLCLIPCONTROLPROC glClipControl;
+extern PFNGLGETINTEGERVPROC glGetIntegerv;
 
 #endif // NOZ_PLATFORM_WEB

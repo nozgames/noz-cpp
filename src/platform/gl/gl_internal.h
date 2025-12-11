@@ -65,9 +65,15 @@ struct ColorBuffer {
 };
 
 struct OffscreenTarget {
-    GLuint texture;
-    GLuint framebuffer;
-    GLuint depth_renderbuffer;
+    GLuint texture;              // Resolved (non-MSAA) texture for sampling
+    GLuint framebuffer;          // Resolve framebuffer (non-MSAA)
+    GLuint depth_renderbuffer;   // Non-MSAA depth (for resolve FB)
+
+    // MSAA resources
+    GLuint msaa_framebuffer;     // MSAA framebuffer for rendering
+    GLuint msaa_color_renderbuffer;
+    GLuint msaa_depth_renderbuffer;
+    int samples;
 };
 
 // Platform-independent GL state

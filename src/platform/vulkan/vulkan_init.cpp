@@ -271,9 +271,9 @@ static void InitPhysicsDevice() {
 }
 
 static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {
+    // Prefer non-sRGB format to avoid automatic gamma correction
     for (const auto& availableFormat : availableFormats)
-        if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
-            availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+        if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM)
             return availableFormat;
 
     return availableFormats[0];
@@ -306,7 +306,7 @@ static VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
     return actual_extent;
 }
 
-static void InitSwapchains() {
+static void InitSwapchain() {
     SwapchainSupportDetails swapchain_support = QuerySwapchainSupport(g_vulkan.physical_device);
     VkSurfaceFormatKHR surface_format = ChooseSwapSurfaceFormat(swapchain_support.formats);
     VkPresentModeKHR present_mode = ChooseSwapPresentMode(swapchain_support.present_modes);
@@ -347,7 +347,7 @@ static void InitSwapchains() {
     VK_CHECK(vkCreateSwapchainKHR(g_vulkan.device, &createInfo, nullptr, &g_vulkan.swapchain));
 
     vkGetSwapchainImagesKHR(g_vulkan.device, g_vulkan.swapchain, &image_count, nullptr);
-    g_vulkan.swapchain_framebuffers.resize(image_count);
+    g_vulkan.swapchain_images.resize(image_count);
 
     std::vector<VkImage> swapchain_images(image_count);
     vkGetSwapchainImagesKHR(g_vulkan.device, g_vulkan.swapchain, &image_count, swapchain_images.data());
@@ -355,13 +355,13 @@ static void InitSwapchains() {
     g_vulkan.swapchain_image_format = surface_format.format;
     g_vulkan.swapchain_extent = extent;
 
-    for (size_t i = 0; i < g_vulkan.swapchain_framebuffers.size(); i++) {
-        Swapchain& swapchain = g_vulkan.swapchain_framebuffers[i];
-        swapchain.image = swapchain_images[i];
+    for (size_t i = 0; i < g_vulkan.swapchain_images.size(); i++) {
+        SwapchainImage& img = g_vulkan.swapchain_images[i];
+        img.image = swapchain_images[i];
 
         VkImageViewCreateInfo vk_image_create_info = {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .image = swapchain.image,
+            .image = img.image,
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
             .format = g_vulkan.swapchain_image_format,
             .components = {
@@ -379,22 +379,22 @@ static void InitSwapchains() {
             }
         };
 
-        VK_CHECK(vkCreateImageView(g_vulkan.device, &vk_image_create_info, nullptr, &swapchain.view));
+        VK_CHECK(vkCreateImageView(g_vulkan.device, &vk_image_create_info, nullptr, &img.view));
 
         Text image_name = {};
         Format(image_name, "Swapchain%zu", i);
-        VK_NAME(VK_OBJECT_TYPE_IMAGE,swapchain.image, image_name.value);
-        VK_NAME(VK_OBJECT_TYPE_IMAGE_VIEW,swapchain.view, image_name.value);
+        VK_NAME(VK_OBJECT_TYPE_IMAGE, img.image, image_name.value);
+        VK_NAME(VK_OBJECT_TYPE_IMAGE_VIEW, img.view, image_name.value);
     }
 }
 
 static void InitSwapchainFrameBuffers() {
-    for (size_t i = 0; i < g_vulkan.swapchain_framebuffers.size(); i++) {
-        Swapchain& swapchain = g_vulkan.swapchain_framebuffers[i];
+    for (size_t i = 0; i < g_vulkan.swapchain_images.size(); i++) {
+        SwapchainImage& img = g_vulkan.swapchain_images[i];
         VkImageView vk_attachments[] = {
-            g_vulkan.msaa_target.view,
-            swapchain.view,
-            g_vulkan.depth_target.view
+            g_vulkan.scene_msaa_target.view,
+            img.view,
+            g_vulkan.scene_depth_target.view
         };
 
         VkFramebufferCreateInfo vk_frame_buffer_info = {};
@@ -405,11 +405,11 @@ static void InitSwapchainFrameBuffers() {
         vk_frame_buffer_info.width = g_vulkan.swapchain_extent.width;
         vk_frame_buffer_info.height = g_vulkan.swapchain_extent.height;
         vk_frame_buffer_info.layers = 1;
-        VK_CHECK(vkCreateFramebuffer(g_vulkan.device, &vk_frame_buffer_info, nullptr, &swapchain.framebuffer));
+        VK_CHECK(vkCreateFramebuffer(g_vulkan.device, &vk_frame_buffer_info, nullptr, &img.framebuffer));
 
         Text name = {};
         Format(name, "Swapchain%zu", i);
-        VK_NAME(VK_OBJECT_TYPE_FRAMEBUFFER, swapchain.framebuffer, name.value);
+        VK_NAME(VK_OBJECT_TYPE_FRAMEBUFFER, img.framebuffer, name.value);
     }
 }
 
@@ -492,16 +492,14 @@ static void InitCommandPool() {
     VK_CHECK(vkCreateCommandPool(g_vulkan.device, &vf_pool_info, nullptr, &g_vulkan.command_pool));
 }
 
-static void InitCommandBuffers() {
-    for (size_t i = 0; i < g_vulkan.swapchain_framebuffers.size(); i++) {
-        VkCommandBufferAllocateInfo alloc_info = {
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .commandPool = g_vulkan.command_pool,
-            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            .commandBufferCount = 1
-        };
-        VK_CHECK(vkAllocateCommandBuffers(g_vulkan.device, &alloc_info, &g_vulkan.swapchain_framebuffers[i].command_buffer));
-    }
+static void InitCommandBuffer() {
+    VkCommandBufferAllocateInfo alloc_info = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .commandPool = g_vulkan.command_pool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1
+    };
+    VK_CHECK(vkAllocateCommandBuffers(g_vulkan.device, &alloc_info, &g_vulkan.command_buffer));
 }
 
 static void InitSyncObjects() {
@@ -513,13 +511,9 @@ static void InitSyncObjects() {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
     };
 
-    for (size_t i = 0; i < g_vulkan.swapchain_framebuffers.size(); i++) {
-        Swapchain& swapchain = g_vulkan.swapchain_framebuffers[i];
-        VK_CHECK(vkCreateSemaphore(g_vulkan.device, &semaphore_info, nullptr, &swapchain.image_available_semaphore));
-        VK_CHECK(vkCreateSemaphore(g_vulkan.device, &semaphore_info, nullptr, &swapchain.render_finished_semaphore));
-        VK_CHECK(vkCreateFence(g_vulkan.device, &fence_info, nullptr, &swapchain.in_flight_fence));
-    }
-    g_vulkan.current_frame = 0;
+    VK_CHECK(vkCreateSemaphore(g_vulkan.device, &semaphore_info, nullptr, &g_vulkan.image_available_semaphore));
+    VK_CHECK(vkCreateSemaphore(g_vulkan.device, &semaphore_info, nullptr, &g_vulkan.render_finished_semaphore));
+    VK_CHECK(vkCreateFence(g_vulkan.device, &fence_info, nullptr, &g_vulkan.in_flight_fence));
 }
 
 static void InitPipeline() {
@@ -543,7 +537,7 @@ static void InitPipeline() {
 }
 
 static void InitMSAA() {
-    OffscreenTarget& target = g_vulkan.msaa_target;
+    OffscreenTarget& target = g_vulkan.scene_msaa_target;
     VkFormat color_format = g_vulkan.swapchain_image_format;
     VkImageCreateInfo image_info = {};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -593,7 +587,7 @@ static void InitMSAA() {
 }
 
 static void InitDepth() {
-    OffscreenTarget& target = g_vulkan.depth_target;
+    OffscreenTarget& target = g_vulkan.scene_depth_target;
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT;
     VkImageCreateInfo image_info = {};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -620,8 +614,8 @@ static void InitDepth() {
         .memoryTypeIndex = FindMemoryType(mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
     };
 
-    VK_CHECK(vkAllocateMemory(g_vulkan.device, &alloc_info, nullptr, &g_vulkan.depth_target.memory));
-    VK_CHECK(vkBindImageMemory(g_vulkan.device, g_vulkan.depth_target.image, g_vulkan.depth_target.memory, 0));
+    VK_CHECK(vkAllocateMemory(g_vulkan.device, &alloc_info, nullptr, &g_vulkan.scene_depth_target.memory));
+    VK_CHECK(vkBindImageMemory(g_vulkan.device, g_vulkan.scene_depth_target.image, g_vulkan.scene_depth_target.memory, 0));
 
     VkImageViewCreateInfo view_info = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -637,9 +631,9 @@ static void InitDepth() {
         }
     };
 
-    VK_CHECK(vkCreateImageView(g_vulkan.device, &view_info, nullptr, &g_vulkan.depth_target.view));
-    VK_NAME(VK_OBJECT_TYPE_IMAGE,g_vulkan.depth_target.image,"Depth");
-    VK_NAME(VK_OBJECT_TYPE_IMAGE_VIEW,g_vulkan.depth_target.view,"Depth");
+    VK_CHECK(vkCreateImageView(g_vulkan.device, &view_info, nullptr, &g_vulkan.scene_depth_target.view));
+    VK_NAME(VK_OBJECT_TYPE_IMAGE,g_vulkan.scene_depth_target.image,"Depth");
+    VK_NAME(VK_OBJECT_TYPE_IMAGE_VIEW,g_vulkan.scene_depth_target.view,"Depth");
 }
 
 static void InitScene() {
@@ -745,9 +739,9 @@ static void InitScene() {
     VK_NAME(VK_OBJECT_TYPE_DESCRIPTOR_SET, g_vulkan.scene_target.descriptor_set, "Scene");
 
     VkImageView attachments[] = {
-        g_vulkan.msaa_target.view,
+        g_vulkan.scene_msaa_target.view,
         g_vulkan.scene_target.view,
-        g_vulkan.depth_target.view
+        g_vulkan.scene_depth_target.view
     };
 
     VkFramebufferCreateInfo framebuffer_info = {
@@ -840,10 +834,10 @@ static void InitSceneRenderPass() {
 }
 
 static void InitPostProc() {
-    g_vulkan.postprocess_framebuffers.resize(g_vulkan.swapchain_framebuffers.size());
+    g_vulkan.postprocess_framebuffers.resize(g_vulkan.swapchain_images.size());
 
     for (size_t i = 0; i < g_vulkan.postprocess_framebuffers.size(); i++) {
-        VkImageView attachments[] = { g_vulkan.swapchain_framebuffers[i].view };
+        VkImageView attachments[] = { g_vulkan.swapchain_images[i].view };
         VkFramebufferCreateInfo framebuffer_info = {
             .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
             .renderPass = g_vulkan.post_proc_render_pass,
@@ -1054,10 +1048,10 @@ static void InitUI() {
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
     };
 
-    VK_CHECK(vkCreateImage(g_vulkan.device, &msaa_info, nullptr, &g_vulkan.ui_msaa_color_image));
+    VK_CHECK(vkCreateImage(g_vulkan.device, &msaa_info, nullptr, &g_vulkan.ui_msaa_target.image));
 
     VkMemoryRequirements msaa_mem_req;
-    vkGetImageMemoryRequirements(g_vulkan.device, g_vulkan.ui_msaa_color_image, &msaa_mem_req);
+    vkGetImageMemoryRequirements(g_vulkan.device, g_vulkan.ui_msaa_target.image, &msaa_mem_req);
 
     VkMemoryAllocateInfo msaa_alloc = {
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
@@ -1065,12 +1059,12 @@ static void InitUI() {
         .memoryTypeIndex = FindMemoryType(msaa_mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
     };
 
-    VK_CHECK(vkAllocateMemory(g_vulkan.device, &msaa_alloc, nullptr, &g_vulkan.ui_msaa_color_image_memory));
-    VK_CHECK(vkBindImageMemory(g_vulkan.device, g_vulkan.ui_msaa_color_image, g_vulkan.ui_msaa_color_image_memory, 0));
+    VK_CHECK(vkAllocateMemory(g_vulkan.device, &msaa_alloc, nullptr, &g_vulkan.ui_msaa_target.memory));
+    VK_CHECK(vkBindImageMemory(g_vulkan.device, g_vulkan.ui_msaa_target.image, g_vulkan.ui_msaa_target.memory, 0));
 
     VkImageViewCreateInfo msaa_view_info = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .image = g_vulkan.ui_msaa_color_image,
+        .image = g_vulkan.ui_msaa_target.image,
         .viewType = VK_IMAGE_VIEW_TYPE_2D,
         .format = g_vulkan.swapchain_image_format,
         .subresourceRange = {
@@ -1082,10 +1076,10 @@ static void InitUI() {
         }
     };
 
-    VK_CHECK(vkCreateImageView(g_vulkan.device, &msaa_view_info, nullptr, &g_vulkan.ui_msaa_color_image_view));
+    VK_CHECK(vkCreateImageView(g_vulkan.device, &msaa_view_info, nullptr, &g_vulkan.ui_msaa_target.view));
 
-    VK_NAME(VK_OBJECT_TYPE_IMAGE, g_vulkan.ui_msaa_color_image, "UI MSAA");
-    VK_NAME(VK_OBJECT_TYPE_IMAGE_VIEW, g_vulkan.ui_msaa_color_image_view, "UI MSAA");
+    VK_NAME(VK_OBJECT_TYPE_IMAGE, g_vulkan.ui_msaa_target.image, "UI MSAA");
+    VK_NAME(VK_OBJECT_TYPE_IMAGE_VIEW, g_vulkan.ui_msaa_target.view, "UI MSAA");
 
     VkImageCreateInfo depth_info = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -1105,10 +1099,10 @@ static void InitUI() {
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
     };
 
-    VK_CHECK(vkCreateImage(g_vulkan.device, &depth_info, nullptr, &g_vulkan.ui_depth_image));
+    VK_CHECK(vkCreateImage(g_vulkan.device, &depth_info, nullptr, &g_vulkan.ui_depth_target.image));
 
     VkMemoryRequirements depth_mem_req;
-    vkGetImageMemoryRequirements(g_vulkan.device, g_vulkan.ui_depth_image, &depth_mem_req);
+    vkGetImageMemoryRequirements(g_vulkan.device, g_vulkan.ui_depth_target.image, &depth_mem_req);
 
     VkMemoryAllocateInfo depth_alloc = {
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
@@ -1116,12 +1110,12 @@ static void InitUI() {
         .memoryTypeIndex = FindMemoryType(depth_mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
     };
 
-    VK_CHECK(vkAllocateMemory(g_vulkan.device, &depth_alloc, nullptr, &g_vulkan.ui_depth_image_memory));
-    VK_CHECK(vkBindImageMemory(g_vulkan.device, g_vulkan.ui_depth_image, g_vulkan.ui_depth_image_memory, 0));
+    VK_CHECK(vkAllocateMemory(g_vulkan.device, &depth_alloc, nullptr, &g_vulkan.ui_depth_target.memory));
+    VK_CHECK(vkBindImageMemory(g_vulkan.device, g_vulkan.ui_depth_target.image, g_vulkan.ui_depth_target.memory, 0));
 
     VkImageViewCreateInfo depth_view_info = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .image = g_vulkan.ui_depth_image,
+        .image = g_vulkan.ui_depth_target.image,
         .viewType = VK_IMAGE_VIEW_TYPE_2D,
         .format = VK_FORMAT_D32_SFLOAT,
         .subresourceRange = {
@@ -1133,16 +1127,10 @@ static void InitUI() {
         }
     };
 
-    VK_CHECK(vkCreateImageView(g_vulkan.device, &depth_view_info, nullptr, &g_vulkan.ui_depth_image_view));
+    VK_CHECK(vkCreateImageView(g_vulkan.device, &depth_view_info, nullptr, &g_vulkan.ui_depth_target.view));
 
-    SetVulkanObjectName(
-        VK_OBJECT_TYPE_IMAGE,
-        reinterpret_cast<uint64_t>(g_vulkan.ui_depth_image),
-        "UI Depth");
-    SetVulkanObjectName(
-        VK_OBJECT_TYPE_IMAGE_VIEW,
-        reinterpret_cast<uint64_t>(g_vulkan.ui_depth_image_view),
-        "UI Depth");
+    VK_NAME(VK_OBJECT_TYPE_IMAGE, g_vulkan.ui_depth_target.image, "UI Depth");
+    VK_NAME(VK_OBJECT_TYPE_IMAGE_VIEW, g_vulkan.ui_depth_target.view, "UI Depth");
 
     VkImageCreateInfo image_info = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -1244,9 +1232,9 @@ static void InitUI() {
     VK_NAME(VK_OBJECT_TYPE_DESCRIPTOR_SET,g_vulkan.ui_target.descriptor_set, "UI");
 
     VkImageView attachments[] = {
-        g_vulkan.ui_msaa_color_image_view,
+        g_vulkan.ui_msaa_target.view,
         g_vulkan.ui_target.view,
-        g_vulkan.ui_depth_image_view
+        g_vulkan.ui_depth_target.view
     };
     VkFramebufferCreateInfo framebuffer_info = {
         .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
@@ -1258,15 +1246,15 @@ static void InitUI() {
         .layers = 1
     };
 
-    VK_CHECK(vkCreateFramebuffer(g_vulkan.device, &framebuffer_info, nullptr, &g_vulkan.ui_framebuffer));
-    VK_NAME(VK_OBJECT_TYPE_FRAMEBUFFER, g_vulkan.ui_framebuffer, "UI Framebuffer");
+    VK_CHECK(vkCreateFramebuffer(g_vulkan.device, &framebuffer_info, nullptr, &g_vulkan.ui_target.framebuffer));
+    VK_NAME(VK_OBJECT_TYPE_FRAMEBUFFER, g_vulkan.ui_target.framebuffer, "UI Framebuffer");
 }
 
 static void InitComposite() {
-    g_vulkan.composite_framebuffers.resize(g_vulkan.swapchain_framebuffers.size());
+    g_vulkan.composite_framebuffers.resize(g_vulkan.swapchain_images.size());
 
     for (size_t i = 0; i < g_vulkan.composite_framebuffers.size(); i++) {
-        VkImageView attachments[] = { g_vulkan.swapchain_framebuffers[i].view };
+        VkImageView attachments[] = { g_vulkan.swapchain_images[i].view };
         VkFramebufferCreateInfo framebuffer_info = {
             .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
             .renderPass = g_vulkan.composite_render_pass,
@@ -1280,7 +1268,7 @@ static void InitComposite() {
         VK_CHECK(vkCreateFramebuffer(g_vulkan.device, &framebuffer_info, nullptr, &g_vulkan.composite_framebuffers[i]));
 
         Text name = {};
-        Format(name, "UI Framebuffer %zu", i);
+        Format(name, "Composite Framebuffer %zu", i);
         VK_NAME(VK_OBJECT_TYPE_FRAMEBUFFER, g_vulkan.composite_framebuffers[i], name.value);
     }
 }
@@ -1377,9 +1365,11 @@ void InitRenderDriver(const RendererTraits* traits, HWND hwnd) {
     InitUniformBuffers();
     InitDescriptorSets();
     InitPipeline();
-
-    InitSwapchains();
+    InitCommandPool();
+    InitCommandBuffer();
     InitSyncObjects();
+
+    InitSwapchain();
     InitMSAA();
     InitDepth();
     InitRenderPass();
@@ -1392,8 +1382,6 @@ void InitRenderDriver(const RendererTraits* traits, HWND hwnd) {
     InitUI();
     InitComposite();
     InitSwapchainFrameBuffers();
-    InitCommandPool();
-    InitCommandBuffers();
 }
 
 void ReinitSwapchain() {
@@ -1401,8 +1389,7 @@ void ReinitSwapchain() {
     assert(g_vulkan.swapchain);
 
     ShutdownFrameBuffers();
-    InitSwapchains();
-    InitSyncObjects();
+    InitSwapchain();
     InitMSAA();
     InitDepth();
     InitScene();
@@ -1410,5 +1397,4 @@ void ReinitSwapchain() {
     InitUI();
     InitComposite();
     InitSwapchainFrameBuffers();
-    InitCommandBuffers();
 }

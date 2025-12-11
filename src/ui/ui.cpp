@@ -887,13 +887,13 @@ static int DrawElement(int element_index) {
                 image_offset.y = (e->rect.height - mesh_size.y * uniform_scale) * align.y;
 
             image_transform = transform *
-                Translate(Vec2{-mesh_bounds.min.x, mesh_bounds.max.y} * uniform_scale + image_offset) *
-                Scale(Vec2{uniform_scale, -uniform_scale});
+                Translate(Vec2{-mesh_bounds.min.x, -mesh_bounds.min.y} * uniform_scale + image_offset) *
+                Scale(Vec2{uniform_scale, uniform_scale});
         } else {
             Vec2 image_scale = {e->rect.width / mesh_size.x, e->rect.height / mesh_size.y};
             Vec2 image_offset = Vec2{
                 -mesh_bounds.min.x * image_scale.x,
-                mesh_bounds.max.y * image_scale.y
+                -mesh_bounds.min.y * image_scale.y
             };
             image_transform = transform * Translate(image_offset) * Scale(image_scale);
         }

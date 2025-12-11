@@ -94,9 +94,11 @@ static EM_BOOL OnMouseMove(int event_type, const EmscriptenMouseEvent* event, vo
     (void)event_type;
     (void)user_data;
 
+    // Scale mouse position by device pixel ratio to match canvas buffer coordinates
+    double dpr = emscripten_get_device_pixel_ratio();
     g_web.mouse_position = {
-        static_cast<f32>(event->targetX),
-        static_cast<f32>(event->targetY)
+        static_cast<f32>(event->targetX * dpr),
+        static_cast<f32>(event->targetY * dpr)
     };
     g_web.mouse_on_screen = true;
 
@@ -157,19 +159,21 @@ static EM_BOOL OnCanvasResize(int event_type, const EmscriptenUiEvent* event, vo
     (void)event;
     (void)user_data;
 
-    // Get new canvas size
-    double width, height;
-    emscripten_get_element_css_size(g_web.canvas_id, &width, &height);
+    // Get CSS size and device pixel ratio for proper high-DPI support
+    double css_width, css_height;
+    emscripten_get_element_css_size(g_web.canvas_id, &css_width, &css_height);
 
+    double dpr = emscripten_get_device_pixel_ratio();
+
+    // Canvas buffer size should be CSS size * devicePixelRatio for sharp rendering
     Vec2Int new_size = {
-        static_cast<i32>(width),
-        static_cast<i32>(height)
+        static_cast<i32>(css_width * dpr),
+        static_cast<i32>(css_height * dpr)
     };
 
     if (g_web.screen_size != new_size && new_size.x > 0 && new_size.y > 0) {
         g_web.screen_size = new_size;
         emscripten_set_canvas_element_size(g_web.canvas_id, new_size.x, new_size.y);
-        LogInfo("%f, %f", width, height);
         ResizeWebGL(new_size);
     }
 
@@ -187,16 +191,19 @@ void PlatformInit(const ApplicationTraits* traits) {
 void PlatformInitWindow(void (*on_close)()) {
     g_web.on_close = on_close;
 
-    // Get initial canvas size
-    double width, height;
-    emscripten_get_element_css_size(g_web.canvas_id, &width, &height);
+    // Get initial canvas CSS size and device pixel ratio
+    double css_width, css_height;
+    emscripten_get_element_css_size(g_web.canvas_id, &css_width, &css_height);
 
+    double dpr = emscripten_get_device_pixel_ratio();
+
+    // Canvas buffer size should be CSS size * devicePixelRatio for sharp rendering
     g_web.screen_size = {
-        static_cast<i32>(width),
-        static_cast<i32>(height)
+        static_cast<i32>(css_width * dpr),
+        static_cast<i32>(css_height * dpr)
     };
 
-    // Set canvas size to match CSS size
+    // Set canvas drawing buffer size (physical pixels)
     emscripten_set_canvas_element_size(g_web.canvas_id, g_web.screen_size.x, g_web.screen_size.y);
 
     // Initialize WebGL
@@ -226,13 +233,15 @@ bool PlatformUpdate() {
     // Reset per-frame state
     g_web.mouse_scroll = {0, 0};
 
-    // Check for canvas size changes
-    double width, height;
-    emscripten_get_element_css_size(g_web.canvas_id, &width, &height);
+    // Check for canvas size changes (including DPI changes)
+    double css_width, css_height;
+    emscripten_get_element_css_size(g_web.canvas_id, &css_width, &css_height);
+
+    double dpr = emscripten_get_device_pixel_ratio();
 
     Vec2Int new_size = {
-        static_cast<i32>(width),
-        static_cast<i32>(height)
+        static_cast<i32>(css_width * dpr),
+        static_cast<i32>(css_height * dpr)
     };
 
     if (g_web.screen_size != new_size && new_size.x > 0 && new_size.y > 0) {
