@@ -144,6 +144,7 @@ extern float PlatformGetMusicVolume();
 // @http
 extern void PlatformInitHttp();
 extern void PlatformShutdownHttp();
+extern void PlatformUpdateHttp();
 extern PlatformHttpHandle PlatformGetURL(const char* url);
 extern PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type = nullptr);
 extern HttpStatus PlatformGetStatus(const PlatformHttpHandle& handle);

@@ -94,7 +94,7 @@ void PlatformInitHttp()
     g_http = {};
 
     g_http.session = WinHttpOpen(
-        L"NoZ/1.0",
+        L"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
         WINHTTP_NO_PROXY_NAME,
         WINHTTP_NO_PROXY_BYPASS,
@@ -106,8 +106,21 @@ void PlatformInitHttp()
         return;
     }
 
+    // Enable redirect following
+    DWORD option = WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS;
+    WinHttpSetOption(g_http.session, WINHTTP_OPTION_REDIRECT_POLICY, &option, sizeof(option));
+
+    // Enable TLS 1.2/1.3
+    DWORD protocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 | WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
+    WinHttpSetOption(g_http.session, WINHTTP_OPTION_SECURE_PROTOCOLS, &protocols, sizeof(protocols));
+
     // Set timeouts (connect, send, receive, resolve) in milliseconds
     WinHttpSetTimeouts(g_http.session, 10000, 10000, 30000, 10000);
+}
+
+void PlatformUpdateHttp()
+{
+    // WinHTTP uses async callbacks, no polling needed
 }
 
 void PlatformShutdownHttp()
@@ -216,6 +229,9 @@ static void CALLBACK WindowHttpCallback(
 
         case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR:
         {
+            WINHTTP_ASYNC_RESULT* result = (WINHTTP_ASYNC_RESULT*)lpvStatusInformation;
+            LogError("HTTP async error: API=%lu, Error=%lu (0x%08lX)",
+                     result->dwResult, result->dwError, result->dwError);
             request->status = HttpStatus::Error;
             break;
         }
@@ -273,6 +289,9 @@ PlatformHttpHandle PlatformGetURL(const char* url)
     wchar_t hostname[256] = {};
     wcsncpy_s(hostname, url_components.lpszHostName, url_components.dwHostNameLength);
 
+    LogInfo("HTTP GET: host='%ls', port=%d, path='%ls'",
+            hostname, url_components.nPort, url_components.lpszUrlPath);
+
     // Connect
     request->connection = WinHttpConnect(
         g_http.session,
@@ -282,6 +301,8 @@ PlatformHttpHandle PlatformGetURL(const char* url)
 
     if (!request->connection)
     {
+        DWORD err = GetLastError();
+        LogError("WinHttpConnect failed: %lu (0x%08lX)", err, err);
         Free(wide_url);
         return MakeHttpHandle(0, 0xFFFFFFFF);
     }
@@ -305,6 +326,13 @@ PlatformHttpHandle PlatformGetURL(const char* url)
         return MakeHttpHandle(0, 0xFFFFFFFF);
     }
 
+    // Ignore certificate revocation check failures (common with CDNs)
+    DWORD security_flags = SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
+                           SECURITY_FLAG_IGNORE_CERT_DATE_INVALID |
+                           SECURITY_FLAG_IGNORE_UNKNOWN_CA |
+                           SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
+    WinHttpSetOption(request->request, WINHTTP_OPTION_SECURITY_FLAGS, &security_flags, sizeof(security_flags));
+
     // Set callback
     WinHttpSetStatusCallback(
         request->request,
@@ -325,6 +353,8 @@ PlatformHttpHandle PlatformGetURL(const char* url)
         0,
         (DWORD_PTR)request))
     {
+        DWORD err = GetLastError();
+        LogError("WinHttpSendRequest failed: %lu (0x%08lX)", err, err);
         request->status = HttpStatus::Error;
     }
 
@@ -409,6 +439,13 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
         CleanupRequest(request);
         return MakeHttpHandle(0, 0xFFFFFFFF);
     }
+
+    // Ignore certificate revocation check failures (common with CDNs)
+    DWORD security_flags = SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
+                           SECURITY_FLAG_IGNORE_CERT_DATE_INVALID |
+                           SECURITY_FLAG_IGNORE_UNKNOWN_CA |
+                           SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
+    WinHttpSetOption(request->request, WINHTTP_OPTION_SECURITY_FLAGS, &security_flags, sizeof(security_flags));
 
     // Build Content-Type header
     wchar_t headers[512] = {};

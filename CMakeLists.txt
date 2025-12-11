@@ -10,6 +10,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(NOZ_RENDERER "VULKAN" CACHE STRING "Renderer backend (VULKAN, GLES, or GL)")
 set_property(CACHE NOZ_RENDERER PROPERTY STRINGS "VULKAN" "GLES" "GL")
 
+# HTTP backend option (CURL, PLATFORM, or empty to disable)
+set(NOZ_HTTP "" CACHE STRING "HTTP backend (CURL, PLATFORM, or empty to disable)")
+set_property(CACHE NOZ_HTTP PROPERTY STRINGS "" "PLATFORM" "CURL")
+
 # Explicitly list all source files
 set(SOURCE_FILES
     src/application.cpp
@@ -32,7 +36,6 @@ set(SOURCE_FILES
     src/log.cpp
     src/tween.cpp
     src/job.cpp
-    src/http.cpp
     src/websocket.cpp
     src/memory/allocator.cpp
     src/memory/pool_allocator.cpp
@@ -91,19 +94,31 @@ if(EMSCRIPTEN)
         src/platform/web/web_input.cpp
         src/platform/web/web_audio.cpp
         src/platform/web/web_time.cpp
-        src/platform/web/web_http.cpp
         src/platform/web/web_websocket.cpp
         src/platform/gl/gl_render.cpp
     )
+
+    # HTTP backend selection for web
+    if(NOZ_HTTP STREQUAL "PLATFORM")
+        list(APPEND SOURCE_FILES src/platform/web/web_http.cpp src/http.cpp)
+    elseif(NOZ_HTTP STREQUAL "CURL")
+        message(FATAL_ERROR "CURL HTTP backend not supported on Emscripten")
+    endif()
 elseif(WIN32)
     list(APPEND SOURCE_FILES
         src/platform/windows/windows_main.cpp
         src/platform/windows/windows_input.cpp
         src/platform/windows/windows_audio.cpp
         src/platform/windows/windows_time.cpp
-        src/platform/windows/windows_http.cpp
         src/platform/windows/windows_websocket.cpp
     )
+
+    # HTTP backend selection for Windows
+    if(NOZ_HTTP STREQUAL "CURL")
+        list(APPEND SOURCE_FILES src/platform/curl/curl_http.cpp src/http.cpp)
+    elseif(NOZ_HTTP STREQUAL "PLATFORM")
+        list(APPEND SOURCE_FILES src/platform/windows/windows_http.cpp src/http.cpp)
+    endif()
 
     # Add renderer-specific files based on NOZ_RENDERER option
     if(NOZ_RENDERER STREQUAL "GLES" OR NOZ_RENDERER STREQUAL "GL")
@@ -201,6 +216,38 @@ elseif(WIN32)
             xaudio2
             ole32
     )
+
+    # Link HTTP backend libraries
+    if(NOZ_HTTP STREQUAL "CURL")
+        include(FetchContent)
+        set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
+        set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+        set(CURL_USE_SCHANNEL ON CACHE BOOL "" FORCE)
+        set(CURL_USE_OPENSSL OFF CACHE BOOL "" FORCE)
+        set(CURL_DISABLE_LDAP ON CACHE BOOL "" FORCE)
+        set(CURL_DISABLE_LDAPS ON CACHE BOOL "" FORCE)
+        set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+        set(HTTP_ONLY ON CACHE BOOL "" FORCE)
+        set(ENABLE_THREADED_RESOLVER OFF CACHE BOOL "" FORCE)
+        set(CURL_ZLIB OFF CACHE BOOL "" FORCE)
+        set(USE_NGHTTP2 OFF CACHE BOOL "" FORCE)
+        set(USE_LIBIDN2 OFF CACHE BOOL "" FORCE)
+        set(CURL_USE_LIBPSL OFF CACHE BOOL "" FORCE)
+        set(BUILD_LIBCURL_DOCS OFF CACHE BOOL "" FORCE)
+        set(ENABLE_CURL_MANUAL OFF CACHE BOOL "" FORCE)
+        FetchContent_Declare(
+            curl
+            GIT_REPOSITORY https://github.com/curl/curl.git
+            GIT_TAG curl-8_11_1
+            GIT_SHALLOW TRUE
+        )
+        FetchContent_MakeAvailable(curl)
+        target_link_libraries(noz PUBLIC libcurl_static)
+        target_compile_definitions(noz PUBLIC NOZ_HTTP_CURL CURL_STATICLIB)
+    elseif(NOZ_HTTP STREQUAL "PLATFORM")
+        target_link_libraries(noz PUBLIC winhttp)
+        target_compile_definitions(noz PUBLIC NOZ_HTTP_PLATFORM)
+    endif()
 elseif(APPLE)
     target_link_libraries(noz
         PUBLIC

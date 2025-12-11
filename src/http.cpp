@@ -7,8 +7,7 @@
 
 constexpr int MAX_REQUESTS = 16;
 
-struct HttpRequestImpl
-{
+struct HttpRequestImpl : HttpRequest {
     PlatformHttpHandle handle;
     HttpCallback callback;
     HttpStatus last_status;
@@ -33,8 +32,7 @@ static HttpRequestImpl* AllocRequest()
     return nullptr;
 }
 
-HttpRequest* HttpGet(const char* url, HttpCallback on_complete)
-{
+HttpRequest* GetUrl(const char* url, HttpCallback on_complete) {
     HttpRequestImpl* req = AllocRequest();
     if (!req)
         return nullptr;
@@ -43,10 +41,10 @@ HttpRequest* HttpGet(const char* url, HttpCallback on_complete)
     req->callback = on_complete;
     req->last_status = HttpStatus::Pending;
 
-    return (HttpRequest*)req;
+    return req;
 }
 
-HttpRequest* HttpPost(const char* url, const void* body, u32 body_size, const char* content_type, HttpCallback on_complete)
+HttpRequest* PostUrl(const char* url, const void* body, u32 body_size, const char* content_type, HttpCallback on_complete)
 {
     HttpRequestImpl* req = AllocRequest();
     if (!req)
@@ -56,17 +54,17 @@ HttpRequest* HttpPost(const char* url, const void* body, u32 body_size, const ch
     req->callback = on_complete;
     req->last_status = HttpStatus::Pending;
 
-    return (HttpRequest*)req;
+    return req;
 }
 
 HttpRequest* HttpPostString(const char* url, const char* body, const char* content_type, HttpCallback on_complete)
 {
-    return HttpPost(url, body, (u32)strlen(body), content_type, on_complete);
+    return PostUrl(url, body, (u32)strlen(body), content_type, on_complete);
 }
 
 HttpRequest* HttpPostJson(const char* url, const char* json, HttpCallback on_complete)
 {
-    return HttpPost(url, json, (u32)strlen(json), "application/json", on_complete);
+    return PostUrl(url, json, (u32)strlen(json), "application/json", on_complete);
 }
 
 HttpStatus HttpGetStatus(HttpRequest* request)
@@ -74,7 +72,7 @@ HttpStatus HttpGetStatus(HttpRequest* request)
     if (!request)
         return HttpStatus::None;
 
-    HttpRequestImpl* req = (HttpRequestImpl*)request;
+    HttpRequestImpl* req = static_cast<HttpRequestImpl *>(request);
     HttpStatus pstatus = PlatformGetStatus(req->handle);
 
     switch (pstatus) {
@@ -92,7 +90,7 @@ int HttpGetStatusCode(HttpRequest* request)
     if (!request)
         return 0;
 
-    HttpRequestImpl* req = (HttpRequestImpl*)request;
+    HttpRequestImpl* req = static_cast<HttpRequestImpl *>(request);
     return PlatformGetStatusCode(req->handle);
 }
 
@@ -111,16 +109,12 @@ bool HttpIsSuccess(HttpRequest* request)
     return code >= 200 && code < 300;
 }
 
-const u8* HttpGetResponseData(HttpRequest* request, u32* out_size)
-{
-    if (!request)
-    {
-        if (out_size) *out_size = 0;
-        return nullptr;
-    }
-
-    HttpRequestImpl* req = (HttpRequestImpl*)request;
-    return PlatformGetResponse(req->handle, out_size);
+Stream* GetResponseStream(HttpRequest* request, Allocator* allocator) {
+    if (!request) return nullptr;
+    HttpRequestImpl* req = static_cast<HttpRequestImpl*>(request);
+    u32 out_size = 0;
+    const u8* res = PlatformGetResponse(req->handle, &out_size);
+    return LoadStream(allocator, res, out_size);
 }
 
 const char* HttpGetResponseString(HttpRequest* request)
@@ -128,7 +122,7 @@ const char* HttpGetResponseString(HttpRequest* request)
     if (!request)
         return nullptr;
 
-    HttpRequestImpl* req = (HttpRequestImpl*)request;
+    HttpRequestImpl* req = static_cast<HttpRequestImpl *>(request);
 
     // Return cached string if available
     if (req->response_string)
@@ -140,17 +134,17 @@ const char* HttpGetResponseString(HttpRequest* request)
         return nullptr;
 
     // Allocate and null-terminate
-    req->response_string = (char*)Alloc(ALLOCATOR_DEFAULT, size + 1);
+    req->response_string = static_cast<char *>(Alloc(ALLOCATOR_DEFAULT, size + 1));
     memcpy(req->response_string, data, size);
     req->response_string[size] = '\0';
 
     return req->response_string;
 }
 
-u32 HttpGetResponseSize(HttpRequest* request)
-{
+u32 HttpGetResponseSize(HttpRequest* request) {
+    HttpRequestImpl* req = static_cast<HttpRequestImpl *>(request);
     u32 size = 0;
-    HttpGetResponseData(request, &size);
+    PlatformGetResponse(req->handle, &size);
     return size;
 }
 
@@ -164,7 +158,7 @@ void HttpCancel(HttpRequest* request)
     req->last_status = HttpStatus::None;
 }
 
-void HttpRelease(HttpRequest* request)
+void Free(HttpRequest* request)
 {
     if (!request)
         return;
@@ -208,6 +202,8 @@ void ShutdownHttp()
 
 void UpdateHttp()
 {
+    PlatformUpdateHttp();
+
     for (int i = 0; i < MAX_REQUESTS; i++)
     {
         HttpRequestImpl& req = g_requests[i];
