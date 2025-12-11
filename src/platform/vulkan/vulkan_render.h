@@ -190,8 +190,11 @@ struct VulkanRenderer {
     VkDescriptorPool descriptor_pool;
     VkDescriptorSetLayout sampler_descriptor_set_layout;
     VkDescriptorSet sampler_descriptor_set;
+    u32 min_uniform_buffer_offset_alignment;
+    u32 current_image_index;
+    float depth_conversion_factor;
+    bool postprocess_enabled;
 
-    // Sync objects (single set - one frame in flight)
     VkSemaphore image_available_semaphore;
     VkSemaphore render_finished_semaphore;
     VkFence in_flight_fence;
@@ -212,25 +215,11 @@ struct VulkanRenderer {
     VkRenderPass composite_render_pass;
 
     OffscreenTarget scene_target;
+    OffscreenTarget scene_msaa_target;
+    OffscreenTarget scene_depth_target;
     OffscreenTarget ui_target;
-    OffscreenTarget msaa_target;
-    OffscreenTarget depth_target;
-
-    u32 min_uniform_buffer_offset_alignment;
-    u32 current_image_index;
-    float depth_conversion_factor;
-
-    VkFramebuffer ui_framebuffer;
-
-    VkImage ui_msaa_color_image;
-    VkDeviceMemory ui_msaa_color_image_memory;
-    VkImageView ui_msaa_color_image_view;
-
-    VkImage ui_depth_image;
-    VkDeviceMemory ui_depth_image_memory;
-    VkImageView ui_depth_image_view;
-
-    bool postprocess_enabled;
+    OffscreenTarget ui_msaa_target;
+    OffscreenTarget ui_depth_target;
 
 #ifdef _DEBUG
     VkDebugUtilsMessengerEXT debug_messenger;

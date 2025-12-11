@@ -392,9 +392,9 @@ static void InitSwapchainFrameBuffers() {
     for (size_t i = 0; i < g_vulkan.swapchain_images.size(); i++) {
         SwapchainImage& img = g_vulkan.swapchain_images[i];
         VkImageView vk_attachments[] = {
-            g_vulkan.msaa_target.view,
+            g_vulkan.scene_msaa_target.view,
             img.view,
-            g_vulkan.depth_target.view
+            g_vulkan.scene_depth_target.view
         };
 
         VkFramebufferCreateInfo vk_frame_buffer_info = {};
@@ -537,7 +537,7 @@ static void InitPipeline() {
 }
 
 static void InitMSAA() {
-    OffscreenTarget& target = g_vulkan.msaa_target;
+    OffscreenTarget& target = g_vulkan.scene_msaa_target;
     VkFormat color_format = g_vulkan.swapchain_image_format;
     VkImageCreateInfo image_info = {};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -587,7 +587,7 @@ static void InitMSAA() {
 }
 
 static void InitDepth() {
-    OffscreenTarget& target = g_vulkan.depth_target;
+    OffscreenTarget& target = g_vulkan.scene_depth_target;
     VkFormat depth_format = VK_FORMAT_D32_SFLOAT;
     VkImageCreateInfo image_info = {};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -614,8 +614,8 @@ static void InitDepth() {
         .memoryTypeIndex = FindMemoryType(mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
     };
 
-    VK_CHECK(vkAllocateMemory(g_vulkan.device, &alloc_info, nullptr, &g_vulkan.depth_target.memory));
-    VK_CHECK(vkBindImageMemory(g_vulkan.device, g_vulkan.depth_target.image, g_vulkan.depth_target.memory, 0));
+    VK_CHECK(vkAllocateMemory(g_vulkan.device, &alloc_info, nullptr, &g_vulkan.scene_depth_target.memory));
+    VK_CHECK(vkBindImageMemory(g_vulkan.device, g_vulkan.scene_depth_target.image, g_vulkan.scene_depth_target.memory, 0));
 
     VkImageViewCreateInfo view_info = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -631,9 +631,9 @@ static void InitDepth() {
         }
     };
 
-    VK_CHECK(vkCreateImageView(g_vulkan.device, &view_info, nullptr, &g_vulkan.depth_target.view));
-    VK_NAME(VK_OBJECT_TYPE_IMAGE,g_vulkan.depth_target.image,"Depth");
-    VK_NAME(VK_OBJECT_TYPE_IMAGE_VIEW,g_vulkan.depth_target.view,"Depth");
+    VK_CHECK(vkCreateImageView(g_vulkan.device, &view_info, nullptr, &g_vulkan.scene_depth_target.view));
+    VK_NAME(VK_OBJECT_TYPE_IMAGE,g_vulkan.scene_depth_target.image,"Depth");
+    VK_NAME(VK_OBJECT_TYPE_IMAGE_VIEW,g_vulkan.scene_depth_target.view,"Depth");
 }
 
 static void InitScene() {
@@ -739,9 +739,9 @@ static void InitScene() {
     VK_NAME(VK_OBJECT_TYPE_DESCRIPTOR_SET, g_vulkan.scene_target.descriptor_set, "Scene");
 
     VkImageView attachments[] = {
-        g_vulkan.msaa_target.view,
+        g_vulkan.scene_msaa_target.view,
         g_vulkan.scene_target.view,
-        g_vulkan.depth_target.view
+        g_vulkan.scene_depth_target.view
     };
 
     VkFramebufferCreateInfo framebuffer_info = {
@@ -1048,10 +1048,10 @@ static void InitUI() {
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
     };
 
-    VK_CHECK(vkCreateImage(g_vulkan.device, &msaa_info, nullptr, &g_vulkan.ui_msaa_color_image));
+    VK_CHECK(vkCreateImage(g_vulkan.device, &msaa_info, nullptr, &g_vulkan.ui_msaa_target.image));
 
     VkMemoryRequirements msaa_mem_req;
-    vkGetImageMemoryRequirements(g_vulkan.device, g_vulkan.ui_msaa_color_image, &msaa_mem_req);
+    vkGetImageMemoryRequirements(g_vulkan.device, g_vulkan.ui_msaa_target.image, &msaa_mem_req);
 
     VkMemoryAllocateInfo msaa_alloc = {
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
@@ -1059,12 +1059,12 @@ static void InitUI() {
         .memoryTypeIndex = FindMemoryType(msaa_mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
     };
 
-    VK_CHECK(vkAllocateMemory(g_vulkan.device, &msaa_alloc, nullptr, &g_vulkan.ui_msaa_color_image_memory));
-    VK_CHECK(vkBindImageMemory(g_vulkan.device, g_vulkan.ui_msaa_color_image, g_vulkan.ui_msaa_color_image_memory, 0));
+    VK_CHECK(vkAllocateMemory(g_vulkan.device, &msaa_alloc, nullptr, &g_vulkan.ui_msaa_target.memory));
+    VK_CHECK(vkBindImageMemory(g_vulkan.device, g_vulkan.ui_msaa_target.image, g_vulkan.ui_msaa_target.memory, 0));
 
     VkImageViewCreateInfo msaa_view_info = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .image = g_vulkan.ui_msaa_color_image,
+        .image = g_vulkan.ui_msaa_target.image,
         .viewType = VK_IMAGE_VIEW_TYPE_2D,
         .format = g_vulkan.swapchain_image_format,
         .subresourceRange = {
@@ -1076,10 +1076,10 @@ static void InitUI() {
         }
     };
 
-    VK_CHECK(vkCreateImageView(g_vulkan.device, &msaa_view_info, nullptr, &g_vulkan.ui_msaa_color_image_view));
+    VK_CHECK(vkCreateImageView(g_vulkan.device, &msaa_view_info, nullptr, &g_vulkan.ui_msaa_target.view));
 
-    VK_NAME(VK_OBJECT_TYPE_IMAGE, g_vulkan.ui_msaa_color_image, "UI MSAA");
-    VK_NAME(VK_OBJECT_TYPE_IMAGE_VIEW, g_vulkan.ui_msaa_color_image_view, "UI MSAA");
+    VK_NAME(VK_OBJECT_TYPE_IMAGE, g_vulkan.ui_msaa_target.image, "UI MSAA");
+    VK_NAME(VK_OBJECT_TYPE_IMAGE_VIEW, g_vulkan.ui_msaa_target.view, "UI MSAA");
 
     VkImageCreateInfo depth_info = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -1099,10 +1099,10 @@ static void InitUI() {
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
     };
 
-    VK_CHECK(vkCreateImage(g_vulkan.device, &depth_info, nullptr, &g_vulkan.ui_depth_image));
+    VK_CHECK(vkCreateImage(g_vulkan.device, &depth_info, nullptr, &g_vulkan.ui_depth_target.image));
 
     VkMemoryRequirements depth_mem_req;
-    vkGetImageMemoryRequirements(g_vulkan.device, g_vulkan.ui_depth_image, &depth_mem_req);
+    vkGetImageMemoryRequirements(g_vulkan.device, g_vulkan.ui_depth_target.image, &depth_mem_req);
 
     VkMemoryAllocateInfo depth_alloc = {
         .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
@@ -1110,12 +1110,12 @@ static void InitUI() {
         .memoryTypeIndex = FindMemoryType(depth_mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
     };
 
-    VK_CHECK(vkAllocateMemory(g_vulkan.device, &depth_alloc, nullptr, &g_vulkan.ui_depth_image_memory));
-    VK_CHECK(vkBindImageMemory(g_vulkan.device, g_vulkan.ui_depth_image, g_vulkan.ui_depth_image_memory, 0));
+    VK_CHECK(vkAllocateMemory(g_vulkan.device, &depth_alloc, nullptr, &g_vulkan.ui_depth_target.memory));
+    VK_CHECK(vkBindImageMemory(g_vulkan.device, g_vulkan.ui_depth_target.image, g_vulkan.ui_depth_target.memory, 0));
 
     VkImageViewCreateInfo depth_view_info = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .image = g_vulkan.ui_depth_image,
+        .image = g_vulkan.ui_depth_target.image,
         .viewType = VK_IMAGE_VIEW_TYPE_2D,
         .format = VK_FORMAT_D32_SFLOAT,
         .subresourceRange = {
@@ -1127,16 +1127,10 @@ static void InitUI() {
         }
     };
 
-    VK_CHECK(vkCreateImageView(g_vulkan.device, &depth_view_info, nullptr, &g_vulkan.ui_depth_image_view));
+    VK_CHECK(vkCreateImageView(g_vulkan.device, &depth_view_info, nullptr, &g_vulkan.ui_depth_target.view));
 
-    SetVulkanObjectName(
-        VK_OBJECT_TYPE_IMAGE,
-        reinterpret_cast<uint64_t>(g_vulkan.ui_depth_image),
-        "UI Depth");
-    SetVulkanObjectName(
-        VK_OBJECT_TYPE_IMAGE_VIEW,
-        reinterpret_cast<uint64_t>(g_vulkan.ui_depth_image_view),
-        "UI Depth");
+    VK_NAME(VK_OBJECT_TYPE_IMAGE, g_vulkan.ui_depth_target.image, "UI Depth");
+    VK_NAME(VK_OBJECT_TYPE_IMAGE_VIEW, g_vulkan.ui_depth_target.view, "UI Depth");
 
     VkImageCreateInfo image_info = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -1238,9 +1232,9 @@ static void InitUI() {
     VK_NAME(VK_OBJECT_TYPE_DESCRIPTOR_SET,g_vulkan.ui_target.descriptor_set, "UI");
 
     VkImageView attachments[] = {
-        g_vulkan.ui_msaa_color_image_view,
+        g_vulkan.ui_msaa_target.view,
         g_vulkan.ui_target.view,
-        g_vulkan.ui_depth_image_view
+        g_vulkan.ui_depth_target.view
     };
     VkFramebufferCreateInfo framebuffer_info = {
         .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
@@ -1252,8 +1246,8 @@ static void InitUI() {
         .layers = 1
     };
 
-    VK_CHECK(vkCreateFramebuffer(g_vulkan.device, &framebuffer_info, nullptr, &g_vulkan.ui_framebuffer));
-    VK_NAME(VK_OBJECT_TYPE_FRAMEBUFFER, g_vulkan.ui_framebuffer, "UI Framebuffer");
+    VK_CHECK(vkCreateFramebuffer(g_vulkan.device, &framebuffer_info, nullptr, &g_vulkan.ui_target.framebuffer));
+    VK_NAME(VK_OBJECT_TYPE_FRAMEBUFFER, g_vulkan.ui_target.framebuffer, "UI Framebuffer");
 }
 
 static void InitComposite() {

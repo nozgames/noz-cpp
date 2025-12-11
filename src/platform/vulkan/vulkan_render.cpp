@@ -72,41 +72,21 @@ void ShutdownFrameBuffers() {
         if (framebuffer != VK_NULL_HANDLE)
             vkDestroyFramebuffer(g_vulkan.device, framebuffer, nullptr);
 
-    if (g_vulkan.ui_framebuffer != VK_NULL_HANDLE)
-        vkDestroyFramebuffer(g_vulkan.device, g_vulkan.ui_framebuffer, nullptr);
-    if (g_vulkan.ui_msaa_color_image_view != VK_NULL_HANDLE)
-        vkDestroyImageView(g_vulkan.device, g_vulkan.ui_msaa_color_image_view, nullptr);
-    if (g_vulkan.ui_msaa_color_image != VK_NULL_HANDLE)
-        vkDestroyImage(g_vulkan.device, g_vulkan.ui_msaa_color_image, nullptr);
-    if (g_vulkan.ui_msaa_color_image_memory != VK_NULL_HANDLE)
-        vkFreeMemory(g_vulkan.device, g_vulkan.ui_msaa_color_image_memory, nullptr);
-    if (g_vulkan.ui_depth_image_view != VK_NULL_HANDLE)
-        vkDestroyImageView(g_vulkan.device, g_vulkan.ui_depth_image_view, nullptr);
-    if (g_vulkan.ui_depth_image != VK_NULL_HANDLE)
-        vkDestroyImage(g_vulkan.device, g_vulkan.ui_depth_image, nullptr);
-    if (g_vulkan.ui_depth_image_memory != VK_NULL_HANDLE)
-        vkFreeMemory(g_vulkan.device, g_vulkan.ui_depth_image_memory, nullptr);
-
     if (g_vulkan.swapchain != VK_NULL_HANDLE)
         vkDestroySwapchainKHR(g_vulkan.device, g_vulkan.swapchain, nullptr);
 
     DestroyOffscreenTarget(g_vulkan.scene_target);
+    DestroyOffscreenTarget(g_vulkan.scene_msaa_target);
+    DestroyOffscreenTarget(g_vulkan.scene_depth_target);
     DestroyOffscreenTarget(g_vulkan.ui_target);
-    DestroyOffscreenTarget(g_vulkan.msaa_target);
-    DestroyOffscreenTarget(g_vulkan.depth_target);
-
-    g_vulkan.ui_framebuffer = VK_NULL_HANDLE;
-    g_vulkan.ui_msaa_color_image_view = VK_NULL_HANDLE;
-    g_vulkan.ui_msaa_color_image = VK_NULL_HANDLE;
-    g_vulkan.ui_msaa_color_image_memory = VK_NULL_HANDLE;
-    g_vulkan.ui_depth_image_view = VK_NULL_HANDLE;
-    g_vulkan.ui_depth_image = VK_NULL_HANDLE;
-    g_vulkan.ui_depth_image_memory = VK_NULL_HANDLE;
-    g_vulkan.swapchain = VK_NULL_HANDLE;
+    DestroyOffscreenTarget(g_vulkan.ui_msaa_target);
+    DestroyOffscreenTarget(g_vulkan.ui_depth_target);
 
     g_vulkan.swapchain_images.clear();
     g_vulkan.postprocess_framebuffers.clear();
     g_vulkan.composite_framebuffers.clear();
+
+    g_vulkan.swapchain = VK_NULL_HANDLE;
 }
 
 static void CopyMat3ToGPU(void* dst, const Mat3& src) {
@@ -723,7 +703,7 @@ void PlatformBeginUIPass() {
     VkRenderPassBeginInfo render_pass_info = {
         .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
         .renderPass = g_vulkan.ui_render_pass,
-        .framebuffer = g_vulkan.ui_framebuffer,
+        .framebuffer = g_vulkan.ui_target.framebuffer,
         .renderArea = {
             .offset = {0, 0},
             .extent = g_vulkan.swapchain_extent

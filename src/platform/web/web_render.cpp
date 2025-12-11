@@ -18,7 +18,7 @@ static struct {
 // Note: The gles_render.cpp provides most of the rendering implementation.
 // This file provides the WebGL-specific initialization and frame management.
 
-static void CreateOffscreenTarget(OffscreenTarget& target, int width, int height) {
+static void CreateOffscreenTarget(OffscreenTarget& target, int width, int height, int samples) {
     // Delete existing resources
     if (target.framebuffer) {
         glDeleteFramebuffers(1, &target.framebuffer);
@@ -32,8 +32,22 @@ static void CreateOffscreenTarget(OffscreenTarget& target, int width, int height
         glDeleteRenderbuffers(1, &target.depth_renderbuffer);
         target.depth_renderbuffer = 0;
     }
+    if (target.msaa_framebuffer) {
+        glDeleteFramebuffers(1, &target.msaa_framebuffer);
+        target.msaa_framebuffer = 0;
+    }
+    if (target.msaa_color_renderbuffer) {
+        glDeleteRenderbuffers(1, &target.msaa_color_renderbuffer);
+        target.msaa_color_renderbuffer = 0;
+    }
+    if (target.msaa_depth_renderbuffer) {
+        glDeleteRenderbuffers(1, &target.msaa_depth_renderbuffer);
+        target.msaa_depth_renderbuffer = 0;
+    }
 
-    // Create color texture
+    target.samples = samples;
+
+    // Create resolve texture (non-MSAA, for sampling)
     glGenTextures(1, &target.texture);
     glBindTexture(GL_TEXTURE_2D, target.texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
@@ -42,18 +56,42 @@ static void CreateOffscreenTarget(OffscreenTarget& target, int width, int height
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    // Create depth renderbuffer
+    // Create depth renderbuffer for resolve framebuffer (needed for FBO completeness)
     glGenRenderbuffers(1, &target.depth_renderbuffer);
     glBindRenderbuffer(GL_RENDERBUFFER, target.depth_renderbuffer);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
 
-    // Create framebuffer
+    // Create resolve framebuffer (non-MSAA)
     glGenFramebuffers(1, &target.framebuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, target.framebuffer);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, target.texture, 0);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, target.depth_renderbuffer);
 
-    // Verify framebuffer is complete
+    if (samples > 1) {
+        // Create MSAA color renderbuffer
+        glGenRenderbuffers(1, &target.msaa_color_renderbuffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, target.msaa_color_renderbuffer);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, width, height);
+
+        // Create MSAA depth renderbuffer
+        glGenRenderbuffers(1, &target.msaa_depth_renderbuffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, target.msaa_depth_renderbuffer);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, width, height);
+
+        // Create MSAA framebuffer (for rendering)
+        glGenFramebuffers(1, &target.msaa_framebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, target.msaa_framebuffer);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, target.msaa_color_renderbuffer);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, target.msaa_depth_renderbuffer);
+
+        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            LogError("WebGL MSAA framebuffer incomplete: 0x%X", status);
+        }
+    }
+
+    // Verify resolve framebuffer is complete
+    glBindFramebuffer(GL_FRAMEBUFFER, target.framebuffer);
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
         LogError("WebGL framebuffer incomplete: 0x%X", status);
@@ -135,11 +173,23 @@ void InitWebGL(const RendererTraits* traits, const char* canvas_id) {
     }
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    // Create offscreen render targets
-    CreateOffscreenTarget(g_gl.offscreen, g_gl.screen_size.x, g_gl.screen_size.y);
-    CreateOffscreenTarget(g_gl.ui_offscreen, g_gl.screen_size.x, g_gl.screen_size.y);
+    // Determine MSAA sample count
+    int samples = 1;
+    if (traits->msaa) {
+        GLint max_samples = 0;
+        glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
+        if (max_samples >= 4) {
+            samples = 4;
+        } else if (max_samples >= 2) {
+            samples = max_samples;
+        }
+    }
 
-    LogInfo("WebGL initialized: %dx%d", g_gl.screen_size.x, g_gl.screen_size.y);
+    // Create offscreen render targets
+    CreateOffscreenTarget(g_gl.offscreen, g_gl.screen_size.x, g_gl.screen_size.y, samples);
+    CreateOffscreenTarget(g_gl.ui_offscreen, g_gl.screen_size.x, g_gl.screen_size.y, samples);
+
+    LogInfo("WebGL initialized: %dx%d, MSAA=%d", g_gl.screen_size.x, g_gl.screen_size.y, samples);
 }
 
 void ResizeWebGL(const Vec2Int& size) {
@@ -149,25 +199,45 @@ void ResizeWebGL(const Vec2Int& size) {
     g_gl.screen_size = size;
     glViewport(0, 0, size.x, size.y);
 
-    // Recreate offscreen targets at new size
-    CreateOffscreenTarget(g_gl.offscreen, size.x, size.y);
-    CreateOffscreenTarget(g_gl.ui_offscreen, size.x, size.y);
+    // Recreate offscreen targets at new size (preserve MSAA sample count)
+    int samples = g_gl.offscreen.samples;
+    CreateOffscreenTarget(g_gl.offscreen, size.x, size.y, samples);
+    CreateOffscreenTarget(g_gl.ui_offscreen, size.x, size.y, samples);
 
     LogInfo("WebGL resized: %dx%d", size.x, size.y);
 }
 
+static void DestroyOffscreenTarget(OffscreenTarget& target) {
+    if (target.framebuffer) {
+        glDeleteFramebuffers(1, &target.framebuffer);
+        target.framebuffer = 0;
+    }
+    if (target.texture) {
+        glDeleteTextures(1, &target.texture);
+        target.texture = 0;
+    }
+    if (target.depth_renderbuffer) {
+        glDeleteRenderbuffers(1, &target.depth_renderbuffer);
+        target.depth_renderbuffer = 0;
+    }
+    if (target.msaa_framebuffer) {
+        glDeleteFramebuffers(1, &target.msaa_framebuffer);
+        target.msaa_framebuffer = 0;
+    }
+    if (target.msaa_color_renderbuffer) {
+        glDeleteRenderbuffers(1, &target.msaa_color_renderbuffer);
+        target.msaa_color_renderbuffer = 0;
+    }
+    if (target.msaa_depth_renderbuffer) {
+        glDeleteRenderbuffers(1, &target.msaa_depth_renderbuffer);
+        target.msaa_depth_renderbuffer = 0;
+    }
+}
+
 void ShutdownWebGL() {
     // Delete offscreen targets
-    if (g_gl.offscreen.framebuffer) {
-        glDeleteFramebuffers(1, &g_gl.offscreen.framebuffer);
-        glDeleteTextures(1, &g_gl.offscreen.texture);
-        glDeleteRenderbuffers(1, &g_gl.offscreen.depth_renderbuffer);
-    }
-    if (g_gl.ui_offscreen.framebuffer) {
-        glDeleteFramebuffers(1, &g_gl.ui_offscreen.framebuffer);
-        glDeleteTextures(1, &g_gl.ui_offscreen.texture);
-        glDeleteRenderbuffers(1, &g_gl.ui_offscreen.depth_renderbuffer);
-    }
+    DestroyOffscreenTarget(g_gl.offscreen);
+    DestroyOffscreenTarget(g_gl.ui_offscreen);
 
     // Delete UBOs
     glDeleteBuffers(UNIFORM_BUFFER_COUNT, g_gl.ubos);
@@ -185,7 +255,6 @@ void ShutdownWebGL() {
 
 void PlatformEndRender() {
     // WebGL handles buffer swapping automatically
-    // Nothing to do here - the browser composites at the end of the frame
 }
 
 // These functions use the Vulkan naming convention for compatibility
