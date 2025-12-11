@@ -407,12 +407,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     (void)lpCmdLine;
     (void)nCmdShow;
 
+    // Parse command line arguments
+    int argc;
+    LPWSTR* argv_wide = CommandLineToArgvW(GetCommandLineW(), &argc);
+
+    // Convert wide strings to UTF-8
+    char** argv = (char**)malloc(argc * sizeof(char*));
+    for (int i = 0; i < argc; i++) {
+        int size = WideCharToMultiByte(CP_UTF8, 0, argv_wide[i], -1, nullptr, 0, nullptr, nullptr);
+        argv[i] = (char*)malloc(size);
+        WideCharToMultiByte(CP_UTF8, 0, argv_wide[i], -1, argv[i], size, nullptr, nullptr);
+    }
+    LocalFree(argv_wide);
+
+    InitCommandLine(argc, argv);
+
     Main();
 
     while (IsApplicationRunning())
         RunApplicationFrame();
 
     ShutdownApplication();
+
+    // Free command line memory
+    for (int i = 0; i < argc; i++)
+        free(argv[i]);
+    free(argv);
 
     return 0;
 }
