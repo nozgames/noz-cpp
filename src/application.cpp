@@ -130,6 +130,7 @@ static void UpdateScreenSize()
     g_app.screen_aspect_ratio = (float)g_app.screen_size.x / (float)g_app.screen_size.y;
 }
 
+#if 0
 #ifdef NOZ_EDITOR
 static void HandleHotload(EventId event_id, const void* event_data) {
     (void)event_id;
@@ -137,6 +138,7 @@ static void HandleHotload(EventId event_id, const void* event_data) {
     if (g_app.traits.hotload_asset)
         g_app.traits.hotload_asset(hotload_event->name, hotload_event->type);
 }
+#endif
 #endif
 
 // @init
@@ -202,12 +204,14 @@ void InitWindow() {
 
     LoadRendererAssets(g_app.asset_allocator);
 
+#if 0
 #ifdef NOZ_EDITOR
     if (g_app.traits.editor_port != 0) {
         Listen(EVENT_HOTLOAD, HandleHotload);
         InitEditorClient("127.0.0.1", g_app.traits.editor_port);
     }
 #endif // NOZ_EDITOR
+#endif
 
     InitVfx();
     InitUI(&g_app.traits);
@@ -223,6 +227,7 @@ void ShutdownWindow() {
     SetPrefInt(PREF_WINDOW_WIDTH, window_rect.width);
     SetPrefInt(PREF_WINDOW_HEIGHT, window_rect.height);
 
+#if 0
 #ifdef NOZ_EDITOR
     // Shutdown editor client
     if (g_app.traits.editor_port != 0)
@@ -231,6 +236,7 @@ void ShutdownWindow() {
         ShutdownEditorClient();
     }
 #endif // NOZ_EDITOR
+#endif
 
     if (g_app.traits.unload_assets)
         g_app.traits.unload_assets();
@@ -337,8 +343,10 @@ bool UpdateApplication() {
     UpdateHttp();
     UpdateWebSocket();
 
+#if 0
 #ifdef NOZ_EDITOR
     UpdateEditorClient();
+#endif
 #endif
 
     UpdateFPS();

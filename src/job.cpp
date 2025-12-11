@@ -5,7 +5,7 @@
 // Use threaded job system if pthreads are available
 // On Emscripten, this requires -pthread flag and SharedArrayBuffer support
 // TEMP: Force sync jobs to debug networking issue
-#if 1 // defined(NOZ_PLATFORM_WEB) && !defined(__EMSCRIPTEN_PTHREADS__)
+#if defined(NOZ_PLATFORM_WEB) && !defined(__EMSCRIPTEN_PTHREADS__)
 
 // Web platform without pthreads: run jobs synchronously
 #include "platform.h"
