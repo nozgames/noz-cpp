@@ -1095,6 +1095,8 @@ void PlatformBindShader(PlatformShader* shader) {
 
 
 void ResizeRenderDriver(const Vec2Int& size) {
+    (void)size;
+
     assert(g_vulkan.device);
     assert(g_vulkan.hwnd);
     assert(g_vulkan.swapchain);
@@ -1108,8 +1110,14 @@ void ResizeRenderDriver(const Vec2Int& size) {
 
 void PlatformBeginRender() {
     // Wait for previous frame's command buffer to complete before reusing
+#if 1    
     vkWaitForFences(g_vulkan.device, 1, &g_vulkan.in_flight_fence, VK_TRUE, UINT64_MAX);
     vkResetFences(g_vulkan.device, 1, &g_vulkan.in_flight_fence);
+#else
+    while (vkWaitForFences(g_vulkan.device, 1, &g_vulkan.in_flight_fence, VK_TRUE, 0) == VK_TIMEOUT) {
+        Sleep(1);
+    }
+#endif
 
     for (u32 i = 0; i < UNIFORM_BUFFER_COUNT; i++)
         g_vulkan.uniform_buffers[i].offset = 0;

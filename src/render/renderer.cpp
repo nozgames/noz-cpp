@@ -132,10 +132,8 @@ void CompositePass() {
 void EndRender() {
     ExecuteRenderCommands();
     PlatformEndScenePass();
-
     PostProcPass();
     UIPass();
-
     PlatformEndRender();
 }
 

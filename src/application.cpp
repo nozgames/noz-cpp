@@ -35,24 +35,12 @@ extern void ShutdownAllocator();
 extern void ShutdownAudio();
 extern void ShutdownPrefs();
 extern void ResetInputState(InputSet* input_set);
-#ifdef NOZ_HTTP
 extern void InitHttp();
 extern void ShutdownHttp();
 extern void UpdateHttp();
-#else
-inline void InitHttp() {}
-inline void ShutdownHttp() {}
-inline void UpdateHttp() {}
-#endif
-#ifdef NOZ_WEBSOCKET
 extern void InitWebSocket();
 extern void ShutdownWebSocket();
 extern void UpdateWebSocket();
-#else
-inline void InitWebSocket() {}
-inline void ShutdownWebSocket() {}
-inline void UpdateWebSocket() {}
-#endif
 
 // @traits
 static ApplicationTraits g_default_traits = 

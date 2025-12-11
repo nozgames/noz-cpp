@@ -7,14 +7,10 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Renderer backend option (Windows only - macOS uses Metal)
-set(NOZ_RENDERER "VULKAN" CACHE STRING "Renderer backend (VULKAN, GLES, or GL)")
+set(NOZ_RENDERER "GL" CACHE STRING "Renderer backend (VULKAN, GLES, or GL)")
 set_property(CACHE NOZ_RENDERER PROPERTY STRINGS "VULKAN" "GLES" "GL")
 
-# HTTP backend option (CURL, PLATFORM, or empty to disable)
-set(NOZ_HTTP "" CACHE STRING "HTTP backend (CURL, PLATFORM, or empty to disable)")
-set_property(CACHE NOZ_HTTP PROPERTY STRINGS "" "PLATFORM" "CURL")
-
-# WebSocket option (ON or OFF)
+option(NOZ_HTTP "Enable HTTP support" OFF)
 option(NOZ_WEBSOCKET "Enable WebSocket support" OFF)
 
 # Explicitly list all source files
@@ -85,13 +81,9 @@ set(SOURCE_FILES
     src/audio/audio.cpp
     src/audio/sound.cpp
     src/prefs.cpp
-
+    src/http.cpp
+    src/websocket.cpp
 )
-
-# Add WebSocket source files if enabled
-if(NOZ_WEBSOCKET)
-    list(APPEND SOURCE_FILES src/websocket.cpp)
-endif()
 
 # Add platform-specific files
 if(EMSCRIPTEN)
@@ -103,15 +95,18 @@ if(EMSCRIPTEN)
         src/platform/web/web_time.cpp
         src/platform/gl/gl_render.cpp
     )
+
+    # WebSocket backend selection for web
     if(NOZ_WEBSOCKET)
         list(APPEND SOURCE_FILES src/platform/web/web_websocket.cpp)
+    else()
+        list(APPEND SOURCE_FILES src/platform/null/null_websocket.cpp)
     endif()
 
-    # HTTP backend selection for web
-    if(NOZ_HTTP STREQUAL "PLATFORM")
-        list(APPEND SOURCE_FILES src/platform/web/web_http.cpp src/http.cpp)
-    elseif(NOZ_HTTP STREQUAL "CURL")
-        message(FATAL_ERROR "CURL HTTP backend not supported on Emscripten")
+    if(NOZ_HTTP)
+        list(APPEND SOURCE_FILES src/platform/web/web_http.cpp)
+    else()
+        list(APPEND SOURCE_FILES src/platform/null/null_http.cpp)
     endif()
 elseif(WIN32)
     list(APPEND SOURCE_FILES
@@ -120,15 +115,19 @@ elseif(WIN32)
         src/platform/windows/windows_audio.cpp
         src/platform/windows/windows_time.cpp
     )
+
+    # WebSocket backend selection for Windows
     if(NOZ_WEBSOCKET)
         list(APPEND SOURCE_FILES src/platform/windows/windows_websocket.cpp)
+    else()
+        list(APPEND SOURCE_FILES src/platform/null/null_websocket.cpp)
     endif()
 
     # HTTP backend selection for Windows
-    if(NOZ_HTTP STREQUAL "CURL")
-        list(APPEND SOURCE_FILES src/platform/curl/curl_http.cpp src/http.cpp)
-    elseif(NOZ_HTTP STREQUAL "PLATFORM")
-        list(APPEND SOURCE_FILES src/platform/windows/windows_http.cpp src/http.cpp)
+    if(NOZ_HTTP)
+        list(APPEND SOURCE_FILES src/platform/windows/windows_http.cpp)
+    else()
+        list(APPEND SOURCE_FILES src/platform/null/null_http.cpp)
     endif()
 
     # Add renderer-specific files based on NOZ_RENDERER option
@@ -165,6 +164,12 @@ elseif(APPLE)
         PROPERTIES
         COMPILE_FLAGS "-x objective-c++"
     )
+
+    # WebSocket backend selection for macOS (null stub for now)
+    list(APPEND SOURCE_FILES src/platform/null/null_websocket.cpp)
+
+    # HTTP backend selection for macOS (null stub for now)
+    list(APPEND SOURCE_FILES src/platform/null/null_http.cpp)
 endif()
 
 add_library(noz STATIC ${SOURCE_FILES})
@@ -185,9 +190,8 @@ target_include_directories(noz PUBLIC
 if(EMSCRIPTEN)
     target_compile_definitions(noz PUBLIC NOZ_PLATFORM_WEB NOZ_PLATFORM_GLES NOZ_JOB_THREAD_COUNT=4)
     target_compile_options(noz PUBLIC -pthread)
-    # HTTP compile definitions for Emscripten
-    if(NOZ_HTTP STREQUAL "PLATFORM")
-        target_compile_definitions(noz PUBLIC NOZ_HTTP NOZ_HTTP_PLATFORM)
+    if(NOZ_HTTP)
+        target_compile_definitions(noz PUBLIC NOZ_HTTP)
     endif()
     message(STATUS "Building for Web/Emscripten with WebGL and pthreads")
 elseif(WIN32)
@@ -198,9 +202,7 @@ elseif(WIN32)
     target_compile_definitions(noz PRIVATE _CRT_SECURE_NO_WARNINGS)
 
     # Add renderer-specific compile definitions
-    if(NOZ_RENDERER STREQUAL "GLES")
-        target_compile_definitions(noz PUBLIC NOZ_PLATFORM_GLES)
-    elseif(NOZ_RENDERER STREQUAL "GL")
+    if(NOZ_RENDERER STREQUAL "GL")
         target_compile_definitions(noz PUBLIC NOZ_PLATFORM_GL)
     else()
         target_compile_definitions(noz PUBLIC NOZ_PLATFORM_VULKAN)
@@ -238,38 +240,12 @@ elseif(WIN32)
     )
 
     # Link HTTP backend libraries
-    if(NOZ_HTTP STREQUAL "CURL")
-        include(FetchContent)
-        set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
-        set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-        set(CURL_USE_SCHANNEL ON CACHE BOOL "" FORCE)
-        set(CURL_USE_OPENSSL OFF CACHE BOOL "" FORCE)
-        set(CURL_DISABLE_LDAP ON CACHE BOOL "" FORCE)
-        set(CURL_DISABLE_LDAPS ON CACHE BOOL "" FORCE)
-        set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
-        set(HTTP_ONLY ON CACHE BOOL "" FORCE)
-        set(ENABLE_THREADED_RESOLVER OFF CACHE BOOL "" FORCE)
-        set(CURL_ZLIB OFF CACHE BOOL "" FORCE)
-        set(USE_NGHTTP2 OFF CACHE BOOL "" FORCE)
-        set(USE_LIBIDN2 OFF CACHE BOOL "" FORCE)
-        set(CURL_USE_LIBPSL OFF CACHE BOOL "" FORCE)
-        set(BUILD_LIBCURL_DOCS OFF CACHE BOOL "" FORCE)
-        set(ENABLE_CURL_MANUAL OFF CACHE BOOL "" FORCE)
-        FetchContent_Declare(
-            curl
-            GIT_REPOSITORY https://github.com/curl/curl.git
-            GIT_TAG curl-8_11_1
-            GIT_SHALLOW TRUE
-        )
-        FetchContent_MakeAvailable(curl)
-        target_link_libraries(noz PUBLIC libcurl_static)
-        target_compile_definitions(noz PUBLIC NOZ_HTTP NOZ_HTTP_CURL CURL_STATICLIB)
-    elseif(NOZ_HTTP STREQUAL "PLATFORM")
+    if(NOZ_HTTP)
         target_link_libraries(noz PUBLIC winhttp)
-        target_compile_definitions(noz PUBLIC NOZ_HTTP NOZ_HTTP_PLATFORM)
+        target_compile_definitions(noz PUBLIC NOZ_HTTP)
     endif()
-    # Link winhttp for WebSocket (if not already linked by HTTP PLATFORM)
-    if(NOZ_WEBSOCKET AND NOT NOZ_HTTP STREQUAL "PLATFORM")
+    # Link winhttp for WebSocket (if not already linked by HTTP)
+    if(NOZ_WEBSOCKET AND NOT NOZ_HTTP)
         target_link_libraries(noz PUBLIC winhttp)
     endif()
 elseif(APPLE)
