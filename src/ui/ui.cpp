@@ -864,6 +864,9 @@ static int DrawElement(int element_index) {
     // @render_image
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* image = static_cast<ImageElement*>(e);
+        if (!image->mesh)
+            return element_index;
+
         BindMaterial(image->style.material);
         Bounds2 mesh_bounds = image->animated_mesh ? GetBounds(image->animated_mesh) : GetBounds(image->mesh);
         Vec2 mesh_size = GetSize(mesh_bounds);
