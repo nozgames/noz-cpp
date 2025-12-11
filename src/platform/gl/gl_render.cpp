@@ -309,10 +309,8 @@ Vec2Int GetTextureSize(PlatformTexture* texture) {
 }
 
 void PlatformBeginScenePass(Color clear_color) {
-    if (g_gl.postprocess_enabled)
-        glBindFramebuffer(GL_FRAMEBUFFER, g_gl.offscreen.framebuffer);
-    else
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // Always render to offscreen framebuffer - needed for UI composite pass
+    glBindFramebuffer(GL_FRAMEBUFFER, g_gl.offscreen.framebuffer);
 
     glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
     glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
@@ -320,11 +318,6 @@ void PlatformBeginScenePass(Color clear_color) {
     glDepthMask(GL_TRUE); // Enable depth writes for clear
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Enable sRGB conversion (linear -> gamma-corrected output)
-    // Note: WebGL doesn't support GL_FRAMEBUFFER_SRGB - sRGB is handled differently
-#ifndef NOZ_PLATFORM_WEB
-    glEnable(GL_FRAMEBUFFER_SRGB);
-#endif
     // Depth/blend state will be set per-shader in PlatformBindShader
 }
 

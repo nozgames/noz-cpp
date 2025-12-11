@@ -342,6 +342,8 @@ void ExecuteRenderCommands() {
             break;
         }
     }
+
+    ClearRenderCommands();
 }
 
 void InitRenderBuffer(const RendererTraits* traits) {

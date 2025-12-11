@@ -167,14 +167,10 @@ struct OffscreenTarget {
     VkFramebuffer framebuffer;
 };
 
-struct Swapchain {
+struct SwapchainImage {
     VkImage image;
     VkImageView view;
     VkFramebuffer framebuffer;
-    VkSemaphore image_available_semaphore;
-    VkSemaphore render_finished_semaphore;
-    VkFence in_flight_fence;
-    VkCommandBuffer command_buffer;
 };
 
 struct VulkanRenderer {
@@ -187,7 +183,6 @@ struct VulkanRenderer {
     VkDevice device;
     VkQueue graphics_queue;
     VkQueue present_queue;
-    u32 current_frame;
     VkPipelineLayout pipeline_layout;
     VkCommandPool command_pool;
     VkCommandBuffer command_buffer;
@@ -196,10 +191,15 @@ struct VulkanRenderer {
     VkDescriptorSetLayout sampler_descriptor_set_layout;
     VkDescriptorSet sampler_descriptor_set;
 
+    // Sync objects (single set - one frame in flight)
+    VkSemaphore image_available_semaphore;
+    VkSemaphore render_finished_semaphore;
+    VkFence in_flight_fence;
+
     VkSwapchainKHR swapchain;
     VkFormat swapchain_image_format;
     VkExtent2D swapchain_extent;
-    std::vector<Swapchain> swapchain_framebuffers;
+    std::vector<SwapchainImage> swapchain_images;
     std::vector<VkFramebuffer> postprocess_framebuffers;
     std::vector<VkFramebuffer> composite_framebuffers;
 

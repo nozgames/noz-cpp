@@ -57,19 +57,11 @@ static void DestroyOffscreenTarget(OffscreenTarget& target) {
 }
 
 void ShutdownFrameBuffers() {
-    for (auto& swapchain : g_vulkan.swapchain_framebuffers) {
-        if (swapchain.framebuffer != VK_NULL_HANDLE)
-            vkDestroyFramebuffer(g_vulkan.device, swapchain.framebuffer, nullptr);
-        if (swapchain.view != VK_NULL_HANDLE)
-            vkDestroyImageView(g_vulkan.device, swapchain.view, nullptr);
-        if (swapchain.in_flight_fence != VK_NULL_HANDLE)
-            vkDestroyFence(g_vulkan.device, swapchain.in_flight_fence, nullptr);
-        if (swapchain.image_available_semaphore != VK_NULL_HANDLE)
-            vkDestroySemaphore(g_vulkan.device, swapchain.image_available_semaphore, nullptr);
-        if (swapchain.render_finished_semaphore != VK_NULL_HANDLE)
-            vkDestroySemaphore(g_vulkan.device, swapchain.render_finished_semaphore, nullptr);
-        if (swapchain.command_buffer != VK_NULL_HANDLE)
-            vkFreeCommandBuffers(g_vulkan.device, g_vulkan.command_pool, 1, &swapchain.command_buffer);
+    for (auto& img : g_vulkan.swapchain_images) {
+        if (img.framebuffer != VK_NULL_HANDLE)
+            vkDestroyFramebuffer(g_vulkan.device, img.framebuffer, nullptr);
+        if (img.view != VK_NULL_HANDLE)
+            vkDestroyImageView(g_vulkan.device, img.view, nullptr);
     }
 
     for (auto framebuffer : g_vulkan.postprocess_framebuffers)
@@ -112,7 +104,7 @@ void ShutdownFrameBuffers() {
     g_vulkan.ui_depth_image_memory = VK_NULL_HANDLE;
     g_vulkan.swapchain = VK_NULL_HANDLE;
 
-    g_vulkan.swapchain_framebuffers.clear();
+    g_vulkan.swapchain_images.clear();
     g_vulkan.postprocess_framebuffers.clear();
     g_vulkan.composite_framebuffers.clear();
 }
@@ -1047,6 +1039,8 @@ static bool CreateShaderInternal(
             ? VK_SAMPLE_COUNT_1_BIT
             : g_vulkan.msaa_samples,
         .sampleShadingEnable = VK_FALSE,
+        .alphaToCoverageEnable = VK_FALSE,
+        .alphaToOneEnable = VK_FALSE,
     };
 
     bool depth_test = (flags & SHADER_FLAGS_DEPTH) != 0;
@@ -1099,7 +1093,7 @@ static bool CreateShaderInternal(
         .pDynamicStates = dynamic_states
     };
 
-    VkRenderPass render_pass = g_vulkan.render_pass;
+    VkRenderPass render_pass = g_vulkan.scene_render_pass;
     if (is_ui_composite)
         render_pass = g_vulkan.composite_render_pass;
     else if (is_postprocess)
@@ -1161,9 +1155,8 @@ void ResizeRenderDriver(const Vec2Int& size) {
 }
 
 void PlatformBeginRender() {
-    // Wait for this frame slot to be available
-    Swapchain& frame = g_vulkan.swapchain_framebuffers[g_vulkan.current_frame];
-    vkWaitForFences(g_vulkan.device, 1, &frame.in_flight_fence, VK_TRUE, UINT64_MAX);
+    // Wait for previous frame to complete
+    vkWaitForFences(g_vulkan.device, 1, &g_vulkan.in_flight_fence, VK_TRUE, UINT64_MAX);
 
     for (u32 i = 0; i < UNIFORM_BUFFER_COUNT; i++)
         g_vulkan.uniform_buffers[i].offset = 0;
@@ -1172,7 +1165,7 @@ void PlatformBeginRender() {
         g_vulkan.device,
         g_vulkan.swapchain,
         UINT64_MAX,
-        frame.image_available_semaphore,
+        g_vulkan.image_available_semaphore,
         VK_NULL_HANDLE,
         &g_vulkan.current_image_index);
 
@@ -1182,7 +1175,7 @@ void PlatformBeginRender() {
             g_vulkan.device,
             g_vulkan.swapchain,
             UINT64_MAX,
-            frame.image_available_semaphore,
+            g_vulkan.image_available_semaphore,
             VK_NULL_HANDLE,
             &g_vulkan.current_image_index);
 
@@ -1192,11 +1185,7 @@ void PlatformBeginRender() {
         Exit("Failed to acquire swapchain image");
     }
 
-    // Reset the fence now that we've waited on it
-    vkResetFences(g_vulkan.device, 1, &frame.in_flight_fence);
-
-    // Use this frame slot's command buffer
-    g_vulkan.command_buffer = frame.command_buffer;
+    vkResetFences(g_vulkan.device, 1, &g_vulkan.in_flight_fence);
 
     VkCommandBufferBeginInfo vg_begin_info = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
@@ -1222,11 +1211,9 @@ void PlatformBeginRender() {
 void PlatformEndRender() {
     vkEndCommandBuffer(g_vulkan.command_buffer);
 
-    Swapchain& frame = g_vulkan.swapchain_framebuffers[g_vulkan.current_frame];
-
-    VkSemaphore vk_wait_semaphores[] = {frame.image_available_semaphore};
+    VkSemaphore vk_wait_semaphores[] = {g_vulkan.image_available_semaphore};
     VkPipelineStageFlags vk_wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    VkSemaphore vk_signal_semaphores[] = {frame.render_finished_semaphore};
+    VkSemaphore vk_signal_semaphores[] = {g_vulkan.render_finished_semaphore};
     VkSubmitInfo vk_submit_info = {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .waitSemaphoreCount = 1,
@@ -1237,7 +1224,7 @@ void PlatformEndRender() {
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = vk_signal_semaphores
     };
-    vkQueueSubmit(g_vulkan.graphics_queue, 1, &vk_submit_info, frame.in_flight_fence);
+    vkQueueSubmit(g_vulkan.graphics_queue, 1, &vk_submit_info, g_vulkan.in_flight_fence);
 
     VkSwapchainKHR vk_swap_chains[] = {g_vulkan.swapchain};
     VkPresentInfoKHR vk_present_info = {
@@ -1249,12 +1236,6 @@ void PlatformEndRender() {
         .pImageIndices = &g_vulkan.current_image_index
     };
     vkQueuePresentKHR(g_vulkan.present_queue, &vk_present_info);
-
-    // Use only 1 frame in flight since we have shared offscreen targets (scene_target, ui_target)
-    // Multiple frames in flight would cause race conditions where one frame reads while another writes
-    constexpr u32 MAX_FRAMES_IN_FLIGHT = 1;
-    u32 frame_count = std::min(static_cast<u32>(g_vulkan.swapchain_framebuffers.size()), MAX_FRAMES_IN_FLIGHT);
-    g_vulkan.current_frame = (g_vulkan.current_frame + 1) % frame_count;
 }
 
 void PlatformFree(PlatformShader* shader) {
@@ -1274,6 +1255,14 @@ void PlatformFree(PlatformShader* shader) {
 void ShutdownRenderDriver() {
     if (g_vulkan.device) {
         vkDeviceWaitIdle(g_vulkan.device);
+
+        // Destroy sync objects
+        if (g_vulkan.in_flight_fence != VK_NULL_HANDLE)
+            vkDestroyFence(g_vulkan.device, g_vulkan.in_flight_fence, nullptr);
+        if (g_vulkan.image_available_semaphore != VK_NULL_HANDLE)
+            vkDestroySemaphore(g_vulkan.device, g_vulkan.image_available_semaphore, nullptr);
+        if (g_vulkan.render_finished_semaphore != VK_NULL_HANDLE)
+            vkDestroySemaphore(g_vulkan.device, g_vulkan.render_finished_semaphore, nullptr);
 
         vkDestroyCommandPool(g_vulkan.device, g_vulkan.command_pool, nullptr);
 
