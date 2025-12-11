@@ -4,9 +4,10 @@
 
 #pragma once
 
-#ifdef _DEBUG
-#define NOZ_EDITOR
-#endif
+// Editor support disabled - will handle hot loading differently
+// #ifdef _DEBUG
+// #define NOZ_EDITOR
+// #endif
 
 #include <assert.h>
 #include <stdint.h>
