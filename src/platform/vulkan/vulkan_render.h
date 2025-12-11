@@ -165,6 +165,7 @@ struct OffscreenTarget {
     VkSampler sampler;
     VkDescriptorSet descriptor_set;
     VkFramebuffer framebuffer;
+    VkImageLayout current_layout;
 };
 
 struct SwapchainImage {
@@ -195,9 +196,10 @@ struct VulkanRenderer {
     float depth_conversion_factor;
     bool postprocess_enabled;
 
-    VkSemaphore image_available_semaphore;
-    VkSemaphore render_finished_semaphore;
+    std::vector<VkSemaphore> image_available_semaphores;
+    std::vector<VkSemaphore> render_finished_semaphores;
     VkFence in_flight_fence;
+    u32 current_frame;
 
     VkSwapchainKHR swapchain;
     VkFormat swapchain_image_format;
@@ -264,5 +266,10 @@ extern std::vector<const char*> GetRequiredExtensions();
 extern bool CheckValidationLayerSupport();
 extern void ReinitSwapchain();
 extern void ShutdownFrameBuffers();
+extern void TransitionSceneTextureForRead();
+extern void TransitionUITextureForRead();
+extern void TransitionUITextureForWrite();
+extern void TransitionSceneTextureForWrite();
 
 extern VulkanRenderer g_vulkan;
+

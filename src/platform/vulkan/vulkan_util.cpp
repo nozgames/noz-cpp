@@ -130,3 +130,80 @@ bool CheckValidationLayerSupport() {
     }
     return false;
 }
+
+static void TransitionOffscreenTarget(OffscreenTarget& target, VkImageLayout new_layout) {
+    if (target.current_layout == new_layout)
+        return;
+
+    VkAccessFlags src_access = 0;
+    VkAccessFlags dst_access = 0;
+    VkPipelineStageFlags src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags dst_stage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+    // Source layout determines source access mask and stage
+    if (target.current_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+        src_access = 0;
+        src_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    } else if (target.current_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+        src_access = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        src_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    } else if (target.current_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        src_access = VK_ACCESS_SHADER_READ_BIT;
+        src_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    }
+
+    // Destination layout determines destination access mask and stage
+    if (new_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+        dst_access = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dst_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    } else if (new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        dst_access = VK_ACCESS_SHADER_READ_BIT;
+        dst_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    }
+
+    VkImageMemoryBarrier barrier = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .srcAccessMask = src_access,
+        .dstAccessMask = dst_access,
+        .oldLayout = target.current_layout,
+        .newLayout = new_layout,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = target.image,
+        .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        }
+    };
+
+    vkCmdPipelineBarrier(
+        g_vulkan.command_buffer,
+        src_stage,
+        dst_stage,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier
+    );
+
+    target.current_layout = new_layout;
+}
+
+void TransitionSceneTextureForRead() {
+    TransitionOffscreenTarget(g_vulkan.scene_target, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+void TransitionUITextureForRead() {
+    TransitionOffscreenTarget(g_vulkan.ui_target, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
+void TransitionUITextureForWrite() {
+    TransitionOffscreenTarget(g_vulkan.ui_target, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+}
+
+void TransitionSceneTextureForWrite() {
+    TransitionOffscreenTarget(g_vulkan.scene_target, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+}
