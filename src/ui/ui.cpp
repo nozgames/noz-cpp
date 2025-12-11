@@ -456,7 +456,7 @@ static int MeasureRowColumnContent(int element_index, const Vec2& available_size
     }
 
     if (e->child_count > 1)
-        max_content_size.y += spacing;
+        max_content_size[axis] += spacing;
 
     return element_index;
 }
@@ -876,11 +876,13 @@ static int DrawElement(int element_index) {
     // @render_image
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* image = static_cast<ImageElement*>(e);
-        if (!image->mesh)
+        if (!image->mesh && !image->animated_mesh)
             return element_index;
 
         BindMaterial(image->style.material);
-        Bounds2 mesh_bounds = image->animated_mesh ? GetBounds(image->animated_mesh) : GetBounds(image->mesh);
+        Bounds2 mesh_bounds = image->animated_mesh
+            ? GetBounds(image->animated_mesh)
+            : GetBounds(image->mesh);
         Vec2 mesh_size = GetSize(mesh_bounds);
 
         BindColor(image->style.color, image->style.color_offset);
@@ -916,7 +918,7 @@ static int DrawElement(int element_index) {
             DrawMesh(image->mesh, image_transform);
 
     // @render_container
-    } else if (e->type == ELEMENT_TYPE_CONTAINER) {
+    } else if (e->type == ELEMENT_TYPE_CONTAINER || e->type == ELEMENT_TYPE_COLUMN || e->type == ELEMENT_TYPE_ROW) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
         DrawContainer(container, transform);
 
