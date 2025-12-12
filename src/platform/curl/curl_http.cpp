@@ -202,11 +202,13 @@ PlatformHttpHandle PlatformGetURL(const char* url) {
     return MakeHttpHandle(slot, req.generation);
 }
 
-PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type) {
+PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type, const char* headers, const char* method) {
     (void)url;
     (void)body;
     (void)body_size;
     (void)content_type;
+    (void)headers;
+    (void)method;
     LogError("HTTP POST not implemented");
     return MakeHttpHandle(0, 0xFFFFFFFF);
 }
@@ -234,6 +236,14 @@ const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size) {
 
     if (out_size) *out_size = request->response_size;
     return request->response_data;
+}
+
+char* PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, Allocator* allocator) {
+    (void)handle;
+    (void)name;
+    (void)allocator;
+    // TODO: Implement header capture in curl callbacks
+    return nullptr;
 }
 
 void PlatformCancel(const PlatformHttpHandle& handle) {

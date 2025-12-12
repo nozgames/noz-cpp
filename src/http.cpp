@@ -42,24 +42,43 @@ HttpRequest *GetUrl(const char *url, HttpCallback on_complete) {
 }
 
 HttpRequest *PostUrl(const char *url, const void *body, u32 body_size, const char *content_type,
-                     HttpCallback on_complete) {
+                     const char *headers, HttpCallback on_complete) {
     HttpRequestImpl *req = AllocRequest();
     if (!req)
         return nullptr;
 
-    req->handle = PlatformPostURL(url, body, body_size, content_type);
+    req->handle = PlatformPostURL(url, body, body_size, content_type, headers, "POST");
     req->callback = on_complete;
     req->last_status = HttpStatus::Pending;
 
     return req;
 }
 
+HttpRequest *PutUrl (
+    const char *url,
+    const void *body,
+    u32 body_size,
+    const char *content_type,
+    const char *headers,
+    HttpCallback on_complete) {
+    HttpRequestImpl *req = AllocRequest();
+    if (!req)
+        return nullptr;
+
+    req->handle = PlatformPostURL(url, body, body_size, content_type, headers, "PUT");
+    req->callback = on_complete;
+    req->last_status = HttpStatus::Pending;
+
+    return req;
+}
+
+
 HttpRequest *HttpPostString(const char *url, const char *body, const char *content_type, HttpCallback on_complete) {
-    return PostUrl(url, body, (u32) strlen(body), content_type, on_complete);
+    return PostUrl(url, body, (u32) strlen(body), content_type, nullptr, on_complete);
 }
 
 HttpRequest *HttpPostJson(const char *url, const char *json, HttpCallback on_complete) {
-    return PostUrl(url, json, (u32) strlen(json), "application/json", on_complete);
+    return PostUrl(url, json, (u32) strlen(json), "application/json", nullptr, on_complete);
 }
 
 HttpStatus HttpGetStatus(HttpRequest *request) {
@@ -136,6 +155,14 @@ u32 HttpGetResponseSize(HttpRequest *request) {
     u32 size = 0;
     PlatformGetResponse(req->handle, &size);
     return size;
+}
+
+char* GetResponseHeader(HttpRequest *request, const char *name, Allocator *allocator) {
+    if (!request)
+        return nullptr;
+
+    HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
+    return PlatformGetResponseHeader(req->handle, name, allocator);
 }
 
 void HttpCancel(HttpRequest *request) {

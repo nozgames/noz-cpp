@@ -20,11 +20,13 @@ PlatformHttpHandle PlatformGetURL(const char* url) {
     return handle;
 }
 
-PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type) {
+PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type, const char* headers, const char* method) {
     (void)url;
     (void)body;
     (void)body_size;
     (void)content_type;
+    (void)headers;
+    (void)method;
     PlatformHttpHandle handle;
     handle.value = 0xFFFFFFFFFFFFFFFF;
     return handle;
@@ -43,6 +45,13 @@ int PlatformGetStatusCode(const PlatformHttpHandle& handle) {
 const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size) {
     (void)handle;
     if (out_size) *out_size = 0;
+    return nullptr;
+}
+
+char* PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, Allocator* allocator) {
+    (void)handle;
+    (void)name;
+    (void)allocator;
     return nullptr;
 }
 
