@@ -26,6 +26,7 @@ struct NativeTextInputStyle {
     Color background_color;
     Color text_color;
     int font_size;
+    bool password;
 };
 
 // @platform

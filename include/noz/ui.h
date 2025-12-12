@@ -116,6 +116,7 @@ struct TextBoxStyle {
     Color text_color = COLOR_WHITE;
     Color placeholder_color = Color8ToColor(100);
     const char* placeholder = nullptr;
+    bool password = false;
 };
 
 struct CanvasStyle {

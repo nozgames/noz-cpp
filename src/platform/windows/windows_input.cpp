@@ -627,9 +627,12 @@ void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initi
 
     // Create edit control if needed
     if (!g_windows_input.edit_hwnd) {
+        DWORD edit_style = WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_LEFT;
+        if (style.password) edit_style |= ES_PASSWORD;
+
         g_windows_input.edit_hwnd = CreateWindowExA(
             0, "EDIT", initial_value ? initial_value : "",
-            WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_LEFT,
+            edit_style,
             x, y, width, height,
             parent, nullptr, GetModuleHandle(nullptr), nullptr
         );
@@ -638,6 +641,16 @@ void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initi
                 g_windows_input.edit_hwnd, GWLP_WNDPROC, (LONG_PTR)NativeEditProc);
         }
     } else {
+        // Update password style if needed
+        LONG_PTR current_style = GetWindowLongPtr(g_windows_input.edit_hwnd, GWL_STYLE);
+        if (style.password) {
+            SetWindowLongPtr(g_windows_input.edit_hwnd, GWL_STYLE, current_style | ES_PASSWORD);
+            SendMessage(g_windows_input.edit_hwnd, EM_SETPASSWORDCHAR, (WPARAM)'*', 0);
+        } else {
+            SetWindowLongPtr(g_windows_input.edit_hwnd, GWL_STYLE, current_style & ~ES_PASSWORD);
+            SendMessage(g_windows_input.edit_hwnd, EM_SETPASSWORDCHAR, 0, 0);
+        }
+
         SetWindowPos(g_windows_input.edit_hwnd, HWND_TOP, x, y, width, height, SWP_SHOWWINDOW);
         if (initial_value) {
             SetWindowTextA(g_windows_input.edit_hwnd, initial_value);

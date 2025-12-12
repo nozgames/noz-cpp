@@ -435,24 +435,23 @@ static void CommitTextBox() {
 bool TextBox(Text& text, const TextBoxStyle& style) {
     bool changed = false;
     constexpr float PADDING = 4.0f;
-    constexpr float BORDER_SIZE = 1.0f;
+    constexpr float BORDER_SIZE = 2.0f;
 
-    BeginContainer({.height=style.height, .padding=EdgeInsetsAll(1), .border={.width=BORDER_SIZE, .color=Color8ToColor(80)}});
+    BeginContainer({
+        .height=style.height,
+        .padding=EdgeInsetsAll(PADDING),
+        .color = style.background_color,
+        .border={.width=BORDER_SIZE, .color=Color8ToColor(80)}});
     {
         u64 id = GetElementId();
         bool is_active = (g_textbox.active_id == id);
+        bool pressed = WasPressed();
 
-        // Inner container for background color
-        BeginContainer({.color=style.background_color});
-        {
-            // Container with padding - native input should match this rect
-            BeginContainer({.padding=EdgeInsetsAll(PADDING)});
-            {
-                BeginContainer();
-                noz::Rect text_rect = GetElementScreenRect();
+        BeginContainer();
+        noz::Rect text_rect = GetElementScreenRect();
 
                 // Handle click to activate
-                if (!is_active && WasPressed()) {
+                if (!is_active && pressed) {
                     // Commit any other active textbox first
                     if (g_textbox.active_id != 0) {
                         CommitTextBox();
@@ -464,7 +463,8 @@ bool TextBox(Text& text, const TextBoxStyle& style) {
                     g_textbox.active_style = {
                         style.background_color,
                         style.text_color,
-                        static_cast<int>(style.font_size * GetUIScale())
+                        static_cast<int>(style.font_size * GetUIScale()),
+                        style.password
                     };
 
                     PlatformShowNativeTextInput(g_textbox.active_rect, text.value, g_textbox.active_style);
@@ -521,10 +521,6 @@ bool TextBox(Text& text, const TextBoxStyle& style) {
                 }
             }
             EndContainer();
-        }
-        EndContainer();
-    }
-    EndContainer();
 
     return changed;
 }
