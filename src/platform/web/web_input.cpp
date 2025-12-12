@@ -629,7 +629,7 @@ void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initi
     }, screen_rect.x, screen_rect.y, screen_rect.width, screen_rect.height, style.font_size, bg_color, text_color, initial_value ? initial_value : "");
 }
 
-void PlatformHideNativeTextInput() {
+void PlatformHideTextbox() {
     g_native_text_input_visible = false;
     EM_ASM({
         var input = document.getElementById('native-text-input');
@@ -643,11 +643,11 @@ void PlatformHideNativeTextInput() {
     });
 }
 
-bool PlatformIsNativeTextInputVisible() {
+bool PlatformIsTextboxVisible() {
     return g_native_text_input_visible;
 }
 
-const char* PlatformGetNativeTextInputValue() {
+const char* PlatformGetTextboxValue() {
     return g_native_text_input_value;
 }
 

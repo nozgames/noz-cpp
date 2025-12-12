@@ -216,15 +216,15 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_LBUTTONDOWN:
         // Take focus from any child control (like edit box) when clicking on main window
-        if (GetFocus() != hwnd) {
-            SetFocus(hwnd);
-        }
+        // if (GetFocus() != hwnd) {
+        //     SetFocus(hwnd);
+        // }
         break;
 
     case WM_ACTIVATEAPP:
         // Hide native text input when app is deactivated
         if (wParam == FALSE) {
-            PlatformHideNativeTextInput();
+            PlatformHideTextbox();
         }
         break;
 

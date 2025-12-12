@@ -66,6 +66,6 @@ extern bool WasButtonReleased(InputCode code);
 // Native text input overlay for web and desktop platforms
 // Shows a platform-native text input element positioned over the UI
 extern void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initial_value);
-extern void PlatformHideNativeTextInput();
-extern bool PlatformIsNativeTextInputVisible();
-extern const char* PlatformGetNativeTextInputValue();
+extern void PlatformHideTextbox();
+extern bool PlatformIsTextboxVisible();
+extern const char* PlatformGetTextboxValue();

@@ -586,7 +586,7 @@ static void UpdateEditFont(int font_size) {
     SendMessage(g_windows_input.edit_hwnd, WM_SETFONT, (WPARAM)g_windows_input.edit_font, TRUE);
 }
 
-static void PositionEditCentered(int x, int y, int width, int height, UINT flags) {
+static void CenterTextbox(int x, int y, int width, int height, UINT flags) {
     HDC hdc = GetDC(g_windows_input.edit_hwnd);
     HFONT old_font = (HFONT)SelectObject(hdc, g_windows_input.edit_font);
     TEXTMETRIC tm;
@@ -600,14 +600,14 @@ static void PositionEditCentered(int x, int y, int width, int height, UINT flags
     SendMessage(g_windows_input.edit_hwnd, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, MAKELPARAM(0, 0));
 }
 
-void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initial_value, const NativeTextInputStyle& style) {
+void PlatformShowTextbox(const noz::Rect& rect, const char* initial_value, const NativeTextInputStyle& style) {
     HWND parent = PlatformGetWindowHandle();
     if (!parent) return;
 
-    int x = static_cast<int>(screen_rect.x);
-    int y = static_cast<int>(screen_rect.y);
-    int width = static_cast<int>(screen_rect.width);
-    int height = static_cast<int>(screen_rect.height);
+    int x = static_cast<int>(rect.x);
+    int y = static_cast<int>(rect.y);
+    int width = static_cast<int>(rect.width);
+    int height = static_cast<int>(rect.height);
 
     // Update colors
     g_windows_input.edit_text_color = ColorToColorRef(style.text_color);
@@ -620,7 +620,7 @@ void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initi
     // Update existing edit control
     if (g_windows_input.edit_hwnd && g_windows_input.edit_visible && initial_value == nullptr) {
         UpdateEditFont(style.font_size);
-        PositionEditCentered(x, y, width, height, SWP_NOACTIVATE);
+        CenterTextbox(x, y, width, height, SWP_NOACTIVATE);
         InvalidateRect(g_windows_input.edit_hwnd, nullptr, TRUE);
         return;
     }
@@ -659,7 +659,7 @@ void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initi
 
     if (g_windows_input.edit_hwnd) {
         UpdateEditFont(style.font_size);
-        PositionEditCentered(x, y, width, height, SWP_SHOWWINDOW);
+        CenterTextbox(x, y, width, height, SWP_SHOWWINDOW);
         SetFocus(g_windows_input.edit_hwnd);
 
         if (initial_value) {
@@ -672,7 +672,7 @@ void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initi
     }
 }
 
-void PlatformHideNativeTextInput() {
+void PlatformHideTextbox() {
     if (!g_windows_input.edit_hwnd || !g_windows_input.edit_visible)
         return;
 
@@ -683,16 +683,23 @@ void PlatformHideNativeTextInput() {
     g_windows_input.edit_visible = false;
 }
 
-bool PlatformIsNativeTextInputVisible() {
+void PlatformUpdateTextbox(const noz::Rect& rect) {
+    int x = static_cast<int>(rect.x);
+    int y = static_cast<int>(rect.y);
+    int width = static_cast<int>(rect.width);
+    int height = static_cast<int>(rect.height);
+    SetWindowPos(g_windows_input.edit_hwnd, HWND_TOP, x, y, width, height, SWP_SHOWWINDOW);
+}
+
+bool PlatformIsTextboxVisible() {
     return g_windows_input.edit_visible;
 }
 
-const char* PlatformGetNativeTextInputValue() {
-    return g_windows_input.edit_text.value;
+void PlatformGetTextboxValue(Text& text) {
+    SetValue(text, g_windows_input.edit_text);
 }
 
-void PlatformInitInput()
-{
+void PlatformInitInput() {
     PlatformClearTextInput();
 
     for (int i = 0; i < XUSER_MAX_COUNT; i++) {

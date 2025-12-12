@@ -98,7 +98,7 @@ struct ImageStyle {
 struct BorderStyle {
     float radius = 0.0f;
     float width = 0.0f;
-    Color color = COLOR_WHITE;
+    Color color = COLOR_TRANSPARENT;
 };
 
 struct RectangleStyle {
@@ -112,10 +112,12 @@ struct TextBoxStyle {
     float height = 28.0f;
     Font* font = nullptr;
     int font_size = 16;
+    const char* placeholder = nullptr;
     Color background_color = Color8ToColor(55);
     Color text_color = COLOR_WHITE;
     Color placeholder_color = Color8ToColor(100);
-    const char* placeholder = nullptr;
+    BorderStyle border;
+    BorderStyle focus_border;
     bool password = false;
 };
 
@@ -139,6 +141,7 @@ struct ContainerStyle {
     BorderStyle border;
     void* user_data;
     float spacing = 0.0f;
+    bool focasable;
 };
 
 // @common
@@ -176,6 +179,10 @@ extern void Spacer(float size);
 inline bool IsHovered() { return CheckElementFlags(ELEMENT_FLAG_HOVERED); }
 inline bool WasPressed() { return CheckElementFlags(ELEMENT_FLAG_PRESSED); }
 inline bool IsDown() { return CheckElementFlags(ELEMENT_FLAG_DOWN); }
+
+// @focus
+extern u64 GetFocusElementId();
+inline bool HasFocus() { return GetElementId() == GetFocusElementId(); }
 
 // @textbox
 extern bool TextBox(Text& text, const TextBoxStyle& style = {});
