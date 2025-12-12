@@ -65,29 +65,9 @@ struct ExpandedStyle {
     float flex = 1.0f;
 };
 
-struct TapDetails {
-    Vec2 position;
-    void* user_data;
-    int id;
-};
-
-struct DragDetails {
-    void* user_data;
-    int id;
-};
-
 struct SceneStyle {
     Camera* camera;
     void* user_data;
-};
-
-struct GestureDetectorStyle {
-    void (*on_tap)(const TapDetails& details);
-    void (*on_tap_down)(const TapDetails& details);
-    void (*on_tap_up)(const TapDetails& details);
-    void (*on_drag)(const DragDetails& details);
-    void* user_data;
-    int id;
 };
 
 struct LabelStyle {
@@ -96,14 +76,6 @@ struct LabelStyle {
     Color color = COLOR_WHITE;
     Align align = ALIGN_NONE;
     Material* material;
-};
-
-struct MouseRegionStyle {
-    // todo: cursor
-    void (*on_enter)(void*) = nullptr;
-    void (*on_exit)(void*) = nullptr;
-    void (*on_hover)(void*) = nullptr;
-    void* user_data;
 };
 
 enum ImageStretch {
@@ -134,6 +106,16 @@ struct RectangleStyle {
     float height = F32_AUTO;
     Color color = COLOR_WHITE;
     Vec2Int color_offset;
+};
+
+struct TextBoxStyle {
+    float height = 28.0f;
+    Font* font = nullptr;
+    int font_size = 16;
+    Color background_color = Color8ToColor(55);
+    Color text_color = COLOR_WHITE;
+    Color placeholder_color = Color8ToColor(100);
+    const char* placeholder = nullptr;
 };
 
 struct CanvasStyle {
@@ -195,15 +177,6 @@ inline bool WasPressed() { return CheckElementFlags(ELEMENT_FLAG_PRESSED); }
 inline bool IsDown() { return CheckElementFlags(ELEMENT_FLAG_DOWN); }
 
 // @textbox
-struct TextBoxStyle {
-    float height = 28.0f;
-    Font* font = nullptr;
-    int font_size = 16;
-    Color background_color = Color8ToColor(55);
-    Color text_color = COLOR_WHITE;
-    Color placeholder_color = Color8ToColor(100);
-    const char* placeholder = nullptr;
-};
 extern bool TextBox(Text& text, const TextBoxStyle& style = {});
 
 // @drawing

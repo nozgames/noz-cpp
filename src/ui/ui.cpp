@@ -461,7 +461,11 @@ bool TextBox(Text& text, const TextBoxStyle& style) {
                     g_textbox.active_id = id;
                     g_textbox.active_text = &text;
                     g_textbox.active_rect = text_rect;
-                    g_textbox.active_style = {style.background_color, style.text_color, static_cast<int>(style.font_size * GetUIScale())};
+                    g_textbox.active_style = {
+                        style.background_color,
+                        style.text_color,
+                        static_cast<int>(style.font_size * GetUIScale())
+                    };
 
                     PlatformShowNativeTextInput(g_textbox.active_rect, text.value, g_textbox.active_style);
                 }

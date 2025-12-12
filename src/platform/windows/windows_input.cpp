@@ -551,14 +551,6 @@ static LRESULT CALLBACK NativeEditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
                 CommitNativeEdit(hwnd);
             }
             break;
-        case WM_COMMAND:
-            // Handle EN_CHANGE notification for text changes
-            if (HIWORD(wParam) == EN_CHANGE) {
-                int len = GetWindowTextA(hwnd, g_windows_input.edit_text.value, TEXT_MAX_LENGTH);
-                g_windows_input.edit_text.length = len;
-                Send(EVENT_TEXTINPUT_CHANGE, nullptr);
-            }
-            break;
     }
     return CallWindowProc(g_windows_input.edit_proc, hwnd, msg, wParam, lParam);
 }
