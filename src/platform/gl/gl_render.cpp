@@ -82,6 +82,7 @@ PFNGLUNIFORMMATRIX3FVPROC glUniformMatrix3fv = nullptr;
 PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv = nullptr;
 PFNGLUSEPROGRAMPROC glUseProgram = nullptr;
 PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = nullptr;
+PFNGLVERTEXATTRIBIPOINTERPROC glVertexAttribIPointer = nullptr;
 PFNGLVIEWPORTPROC glViewport = nullptr;
 PFNGLCLIPCONTROLPROC glClipControl = nullptr;
 PFNGLGETINTEGERVPROC glGetIntegerv = nullptr;
@@ -192,7 +193,7 @@ void PlatformBindVertexBuffer(PlatformBuffer* buffer) {
     glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, normal));
 
     glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 4, GL_INT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, bone_indices));
+    glVertexAttribIPointer(4, 4, GL_INT, sizeof(MeshVertex), (void*)offsetof(MeshVertex, bone_indices));
 
     glEnableVertexAttribArray(5);
     glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, bone_weights));

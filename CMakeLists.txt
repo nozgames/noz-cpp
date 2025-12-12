@@ -26,8 +26,6 @@ set(SOURCE_FILES
     src/collections/ring_buffer.cpp
     src/collections/free_list.cpp
     src/color.cpp
-    src/editor/editor_client.cpp
-    src/editor/editor_messages.cpp
     src/hash.cpp
     src/event.cpp
     src/input/input.cpp

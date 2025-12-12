@@ -22,7 +22,7 @@ enum SystemCursor {
 struct ApplicationTraits {
     const char* name;
     const char* title;
-    const char* assets_path;
+    const char** asset_paths;       // Null-terminated list of asset search paths (resolved to full paths)
     int x;
     int y;
     int width;
@@ -66,6 +66,7 @@ extern void SetPaletteTexture(Texture* texture);
 
 const char* GetBinaryDirectory();
 const char* GetCurrentDirectory();
+const char* GetProjectDirectory();
 
 void Exit(const char* format, ...);
 void ExitOutOfMemory(const char* message=nullptr);
@@ -112,4 +113,9 @@ typedef void (*JobRunFunc)(void* user_data);
 extern JobHandle CreateJob(JobRunFunc func, void* user_data = nullptr, JobHandle depends_on = INVALID_JOB_HANDLE);
 extern bool IsDone(JobHandle handle);
 
-
+// @cmdline
+extern void InitCommandLine(int argc, char** argv);
+extern int GetArgCount();
+extern const char* GetArg(int index);
+extern const char* GetArgValue(const char* name);  // Returns value for --name <value> or nullptr
+extern bool HasArg(const char* name);              // Returns true if --name exists

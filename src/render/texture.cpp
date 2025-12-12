@@ -170,6 +170,7 @@ void ReloadTexture(Asset* asset, Stream* stream, const AssetHeader& header, cons
     TextureImpl* impl = static_cast<TextureImpl*>(asset);
 
     Free(impl->platform_texture);
+    impl->platform_texture = nullptr;
 
     LoadTextureInternal(impl, stream, GetName(asset));
 }

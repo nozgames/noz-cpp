@@ -456,7 +456,7 @@ static int MeasureRowColumnContent(int element_index, const Vec2& available_size
     }
 
     if (e->child_count > 1)
-        max_content_size.y += spacing;
+        max_content_size[axis] += spacing;
 
     return element_index;
 }
@@ -565,6 +565,8 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
                 e->measured_size.x = available_size.x;
                 e->measured_size.y = e->measured_size.x / image_aspect_ratio;
             }
+        } else {
+            e->measured_size = VEC2_ZERO;
         }
 
         assert(e->child_count == 0);
@@ -742,6 +744,10 @@ static int LayoutElement(int element_index, const Vec2& size) {
             element_index = LayoutElement(element_index, content_size);
     } else if (e->type == ELEMENT_TYPE_SPACER) {
     } else if (e->type == ELEMENT_TYPE_TRANSFORM) {
+        Vec2 content_size = GetSize(e->rect);
+        for (u16 i = 0; i < e->child_count; i++)
+            element_index = LayoutElement(element_index, content_size);
+
     } else {
         assert(false && "Unhandled element type in LayoutElements");
     }
@@ -876,11 +882,13 @@ static int DrawElement(int element_index) {
     // @render_image
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* image = static_cast<ImageElement*>(e);
-        if (!image->mesh)
+        if (!image->mesh && !image->animated_mesh)
             return element_index;
 
         BindMaterial(image->style.material);
-        Bounds2 mesh_bounds = image->animated_mesh ? GetBounds(image->animated_mesh) : GetBounds(image->mesh);
+        Bounds2 mesh_bounds = image->animated_mesh
+            ? GetBounds(image->animated_mesh)
+            : GetBounds(image->mesh);
         Vec2 mesh_size = GetSize(mesh_bounds);
 
         BindColor(image->style.color, image->style.color_offset);
@@ -901,13 +909,20 @@ static int DrawElement(int element_index) {
             image_transform = transform *
                 Translate(Vec2{-mesh_bounds.min.x, -mesh_bounds.min.y} * uniform_scale + image_offset) *
                 Scale(Vec2{uniform_scale, uniform_scale});
-        } else {
+        } else if (image->style.stretch == IMAGE_STRETCH_FILL) {
             Vec2 image_scale = {e->rect.width / mesh_size.x, e->rect.height / mesh_size.y};
             Vec2 image_offset = Vec2{
                 -mesh_bounds.min.x * image_scale.x,
                 -mesh_bounds.min.y * image_scale.y
             };
             image_transform = transform * Translate(image_offset) * Scale(image_scale);
+        } else {
+            // render the image at the align point
+            const AlignInfo& align = g_align_info[image->style.align];
+            Vec2 image_offset = VEC2_ZERO;
+            if (align.has_x) image_offset.x = e->rect.width * align.x;
+            if (align.has_y) image_offset.y = e->rect.height * align.y;
+            image_transform = transform * Translate(image_offset) * Scale(image->style.scale);
         }
 
         if (image->animated_mesh)
@@ -916,7 +931,7 @@ static int DrawElement(int element_index) {
             DrawMesh(image->mesh, image_transform);
 
     // @render_container
-    } else if (e->type == ELEMENT_TYPE_CONTAINER) {
+    } else if (e->type == ELEMENT_TYPE_CONTAINER || e->type == ELEMENT_TYPE_COLUMN || e->type == ELEMENT_TYPE_ROW) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
         DrawContainer(container, transform);
 

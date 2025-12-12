@@ -14,14 +14,15 @@ struct Text {
 
 inline void Clear(Text& text) { text.value[0] = 0; text.length = 0; }
 inline void Init(Text& text) { Clear(text); }
-void SetValue(Text& text, const char* value);
-void SetValue(Text& text, const Text& value);
-void Append(Text& text, const char* value);
-void Append(Text& text, const Text& value);
-void Format(Text& text, const char* fmt, ...);
+extern void SetValue(Text& text, const char* value);
+extern void SetValue(Text& text, const Text& value);
+extern void Append(Text& text, const char* value);
+extern void Append(Text& text, const Text& value);
+extern void Format(Text& text, const char* fmt, ...);
 inline size_t GetLength(Text& text) { return text.length; }
-void Trim(Text& text);
-bool Equals(const Text& a, const char* b);
-bool Equals(const Text& a, const Text& b);
+extern void Trim(Text& text);
+extern bool Equals(const Text& a, const char* b);
+extern bool Equals(const Text& a, const Text& b);
 inline bool IsEmpty(const Text& text) { return text.length == 0; }
-u64 Hash(const Text& text);
+extern u64 Hash(const Text& text);
+inline void Lowercase(Text& text) { Lowercase(text.value, sizeof(text.value)); }

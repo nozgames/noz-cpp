@@ -149,6 +149,7 @@ static void LoadGLESFunctions() {
     glUniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC)GetGLProcAddress("glUniformMatrix4fv");
     glUseProgram = (PFNGLUSEPROGRAMPROC)GetGLProcAddress("glUseProgram");
     glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)GetGLProcAddress("glVertexAttribPointer");
+    glVertexAttribIPointer = (PFNGLVERTEXATTRIBIPOINTERPROC)GetGLProcAddress("glVertexAttribIPointer");
     glViewport = (PFNGLVIEWPORTPROC)GetGLProcAddress("glViewport");
     glClipControl = (PFNGLCLIPCONTROLPROC)GetGLProcAddress("glClipControl");
     glGetIntegerv = (PFNGLGETINTEGERVPROC)GetGLProcAddress("glGetIntegerv");
