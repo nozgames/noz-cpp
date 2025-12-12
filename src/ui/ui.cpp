@@ -64,6 +64,7 @@ struct CachedTextMesh {
 struct ElementState {
     ElementFlags flags;
     u64 hash;
+    noz::Rect screen_rect;  // Cached screen rect for native input positioning
 };
 
 struct Element {
@@ -186,6 +187,14 @@ Vec2 ScreenToElement(const Vec2& screen) {
     Element* e = GetCurrentElement();
     if (!e) return VEC2_ZERO;
     return TransformPoint(e->world_to_local, ScreenToWorld(g_ui.camera, screen));
+}
+
+noz::Rect GetElementScreenRect() {
+    Element* e = GetCurrentElement();
+    if (!e) return {};
+
+    // Return cached screen rect from previous frame's CalculateTransforms
+    return g_ui.element_states[e->index].screen_rect;
 }
 
 u64 GetElementId() {
@@ -396,6 +405,97 @@ void Rectangle(const RectangleStyle& style) {
     e->style.width = style.width;
     e->style.height = style.height;
     e->style.color = style.color;
+}
+
+// TextBox state
+static struct {
+    u64 active_id = 0;
+    Text* active_text = nullptr;
+    noz::Rect active_rect = {};
+} g_textbox;
+
+static void CommitTextBox() {
+    if (g_textbox.active_id != 0 && PlatformIsNativeTextInputVisible()) {
+        // Get final value from native input
+        const char* value = PlatformGetNativeTextInputValue();
+        if (value && g_textbox.active_text) {
+            SetValue(*g_textbox.active_text, value);
+        }
+    }
+    PlatformHideNativeTextInput();
+    g_textbox.active_id = 0;
+    g_textbox.active_text = nullptr;
+}
+
+bool TextBox(Text& text, const TextBoxStyle& style) {
+    bool changed = false;
+    constexpr float PADDING = 4.0f;
+    constexpr float BORDER_SIZE = 1.0f;
+
+    BeginContainer({.height=style.height, .color=style.background_color, .border={.width=BORDER_SIZE, .color=Color8ToColor(80)}});
+    {
+        u64 id = GetElementId();
+        bool is_active = (g_textbox.active_id == id);
+
+        // Handle click to activate
+        if (!is_active && WasPressed()) {
+            // Commit any other active textbox first
+            if (g_textbox.active_id != 0) {
+                CommitTextBox();
+            }
+
+            g_textbox.active_id = id;
+            g_textbox.active_text = &text;
+            g_textbox.active_rect = GetElementScreenRect();
+
+            PlatformShowNativeTextInput(g_textbox.active_rect, text.value);
+        }
+
+        // Update position each frame when active (handles window resize)
+        if (is_active && PlatformIsNativeTextInputVisible()) {
+            noz::Rect new_rect = GetElementScreenRect();
+            if (new_rect.x != g_textbox.active_rect.x || new_rect.y != g_textbox.active_rect.y ||
+                new_rect.width != g_textbox.active_rect.width || new_rect.height != g_textbox.active_rect.height) {
+                g_textbox.active_rect = new_rect;
+                PlatformShowNativeTextInput(g_textbox.active_rect, nullptr);
+            }
+
+            // Update text from native input
+            const char* value = PlatformGetNativeTextInputValue();
+            if (value && !Equals(text, value)) {
+                SetValue(text, value);
+                changed = true;
+            }
+        }
+
+        // Check if native input lost focus (was hidden externally)
+        if (is_active && !PlatformIsNativeTextInputVisible()) {
+            g_textbox.active_id = 0;
+            g_textbox.active_text = nullptr;
+        }
+
+        // Draw label only when native input is not visible
+        BeginContainer({.align=ALIGN_CENTER_LEFT, .padding=EdgeInsetsLeftRight(PADDING)});
+        if (!is_active || !PlatformIsNativeTextInputVisible()) {
+            if (text.length > 0) {
+                Label(text.value, {
+                    .font=style.font,
+                    .font_size=style.font_size,
+                    .color=style.text_color,
+                    .align=ALIGN_CENTER_LEFT});
+            } else if (style.placeholder) {
+                Label(style.placeholder, {
+                    .font=style.font,
+                    .font_size=style.font_size,
+                    .color=style.placeholder_color,
+                    .align=ALIGN_CENTER_LEFT});
+            }
+        }
+        EndContainer();
+    }
+    EndContainer();
+
+    return changed;
 }
 
 void Scene(const SceneStyle& style, void (*draw_scene)(void*)) {
@@ -778,6 +878,20 @@ static u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform) 
     }
 
     e->world_to_local = Inverse(e->local_to_world);
+
+    // Cache screen rect in element state for native input positioning
+    {
+        Vec2 ui_top_left = TransformPoint(e->local_to_world, VEC2_ZERO);
+        Vec2 ui_bottom_right = TransformPoint(e->local_to_world, Vec2{e->rect.width, e->rect.height});
+        Vec2 screen_top_left = WorldToScreen(g_ui.camera, ui_top_left);
+        Vec2 screen_bottom_right = WorldToScreen(g_ui.camera, ui_bottom_right);
+        g_ui.element_states[e->index].screen_rect = noz::Rect{
+            screen_top_left.x,
+            screen_top_left.y,
+            screen_bottom_right.x - screen_top_left.x,
+            screen_bottom_right.y - screen_top_left.y
+        };
+    }
 
     for (u32 i = 0; i < e->child_count; i++)
         element_index = CalculateTransforms(element_index, e->local_to_world);

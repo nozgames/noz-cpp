@@ -119,6 +119,12 @@ extern void PlatformSetTextInput(const TextInput& text_input);
 extern bool PlatformIsGamepadActive();
 extern bool PlatformIsMouseOverWindow();
 
+// @native_text_input
+extern void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initial_value);
+extern void PlatformHideNativeTextInput();
+extern bool PlatformIsNativeTextInputVisible();
+extern const char* PlatformGetNativeTextInputValue();
+
 // @audio
 extern void PlatformInitAudio();
 extern void PlatformShutdownAudio();

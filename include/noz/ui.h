@@ -166,6 +166,7 @@ extern Vec2 ScreenToUI(const Vec2& screen_pos);
 extern bool CheckElementFlags(ElementFlags flags);
 extern u64 GetElementId();
 extern Vec2 ScreenToElement(const Vec2& screen);
+extern noz::Rect GetElementScreenRect();
 
 // @layout
 extern void BeginCanvas(const CanvasStyle& style={});
@@ -192,6 +193,18 @@ extern void Spacer(float size);
 inline bool IsHovered() { return CheckElementFlags(ELEMENT_FLAG_HOVERED); }
 inline bool WasPressed() { return CheckElementFlags(ELEMENT_FLAG_PRESSED); }
 inline bool IsDown() { return CheckElementFlags(ELEMENT_FLAG_DOWN); }
+
+// @textbox
+struct TextBoxStyle {
+    float height = 28.0f;
+    int font_size = 16;
+    Font* font = nullptr;
+    Color background_color = Color8ToColor(55);
+    Color text_color = COLOR_WHITE;
+    Color placeholder_color = Color8ToColor(100);
+    const char* placeholder = nullptr;
+};
+extern bool TextBox(Text& text, const TextBoxStyle& style = {});
 
 // @drawing
 extern void Label(const char* text, const LabelStyle& style = {});

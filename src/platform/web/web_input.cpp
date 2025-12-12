@@ -532,3 +532,129 @@ void PlatformInitInput() {
 void PlatformShutdownInput() {
     // Nothing to cleanup
 }
+
+// Native text input overlay
+static bool g_native_text_input_visible = false;
+static char g_native_text_input_value[TEXT_MAX_LENGTH + 1] = {};
+
+void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initial_value) {
+    // If already visible and no initial_value, just update position
+    if (g_native_text_input_visible && initial_value == nullptr) {
+        EM_ASM({
+            var input = document.getElementById('native-text-input');
+            if (input) {
+                input.style.left = $0 + 'px';
+                input.style.top = $1 + 'px';
+                input.style.width = $2 + 'px';
+                input.style.height = $3 + 'px';
+            }
+        }, screen_rect.x, screen_rect.y, screen_rect.width, screen_rect.height);
+        return;
+    }
+
+    g_native_text_input_visible = true;
+    if (initial_value) {
+        strncpy(g_native_text_input_value, initial_value, TEXT_MAX_LENGTH);
+        g_native_text_input_value[TEXT_MAX_LENGTH] = 0;
+    }
+
+    EM_ASM({
+        var input = document.getElementById('native-text-input');
+        if (!input) {
+            input = document.createElement('input');
+            input.id = 'native-text-input';
+            input.type = 'text';
+            input.style.position = 'absolute';
+            input.style.zIndex = '1000';
+            input.style.outline = 'none';
+            input.style.border = '1px solid #888';
+            input.style.backgroundColor = '#333';
+            input.style.color = '#fff';
+            input.style.fontFamily = 'sans-serif';
+            input.style.padding = '2px 4px';
+            input.style.boxSizing = 'border-box';
+            document.body.appendChild(input);
+
+            input.addEventListener('input', function() {
+                var value = input.value;
+                var ptr = Module._malloc(value.length + 1);
+                Module.stringToUTF8(value, ptr, value.length + 1);
+                Module.ccall('NativeTextInputChanged', null, ['number'], [ptr]);
+                Module._free(ptr);
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    Module.ccall('NativeTextInputCommit', null, [], []);
+                    e.preventDefault();
+                } else if (e.key === 'Escape') {
+                    Module.ccall('NativeTextInputCancel', null, [], []);
+                    e.preventDefault();
+                }
+                e.stopPropagation();
+            });
+
+            input.addEventListener('keyup', function(e) {
+                e.stopPropagation();
+            });
+
+            input.addEventListener('keypress', function(e) {
+                e.stopPropagation();
+            });
+        }
+
+        input.style.left = $0 + 'px';
+        input.style.top = $1 + 'px';
+        input.style.width = $2 + 'px';
+        input.style.height = $3 + 'px';
+        input.style.fontSize = ($3 * 0.6) + 'px';
+        input.value = UTF8ToString($4);
+        input.style.display = 'block';
+        input.focus();
+        input.select();
+    }, screen_rect.x, screen_rect.y, screen_rect.width, screen_rect.height, initial_value ? initial_value : "");
+}
+
+void PlatformHideNativeTextInput() {
+    g_native_text_input_visible = false;
+    EM_ASM({
+        var input = document.getElementById('native-text-input');
+        if (input) {
+            input.style.display = 'none';
+            input.blur();
+        }
+        // Return focus to canvas
+        var canvas = document.getElementById('canvas');
+        if (canvas) canvas.focus();
+    });
+}
+
+bool PlatformIsNativeTextInputVisible() {
+    return g_native_text_input_visible;
+}
+
+const char* PlatformGetNativeTextInputValue() {
+    return g_native_text_input_value;
+}
+
+// C callbacks for JavaScript
+extern "C" {
+    EMSCRIPTEN_KEEPALIVE
+    void NativeTextInputChanged(const char* value) {
+        if (value) {
+            strncpy(g_native_text_input_value, value, TEXT_MAX_LENGTH);
+            g_native_text_input_value[TEXT_MAX_LENGTH] = 0;
+        }
+        Send(EVENT_TEXTINPUT_CHANGE, nullptr);
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void NativeTextInputCommit() {
+        Send(EVENT_TEXTINPUT_COMMIT, nullptr);
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void NativeTextInputCancel() {
+        Send(EVENT_TEXTINPUT_CANCEL, nullptr);
+    }
+}

@@ -145,6 +145,37 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         g_windows.is_resizing = false;
         break;
 
+    case WM_SIZING:
+        {
+            // Run game loop every frame during resize, with guard to prevent recursion
+            static bool in_sizing_update = false;
+            if (g_windows.is_resizing && !in_sizing_update) {
+                in_sizing_update = true;
+
+                // Update screen size from the new window rect
+                RECT* window_rect = (RECT*)lParam;
+
+                // Calculate frame size by comparing a zero client rect to its adjusted window rect
+                RECT frame = {0, 0, 0, 0};
+                AdjustWindowRect(&frame, WS_OVERLAPPEDWINDOW, FALSE);
+
+                Vec2Int new_size = {
+                    (window_rect->right - window_rect->left) - (frame.right - frame.left),
+                    (window_rect->bottom - window_rect->top) - (frame.bottom - frame.top)
+                };
+
+                if (g_windows.screen_size != new_size && new_size.x > 0 && new_size.y > 0) {
+                    g_windows.screen_size = new_size;
+                    ResizeRenderDriver(new_size);
+                }
+
+                extern void RunApplicationFrame();
+                RunApplicationFrame();
+                in_sizing_update = false;
+            }
+        }
+        break;
+
     case WM_MOUSEWHEEL:
     {
         // Get wheel delta (positive = forward/up, negative = backward/down)
@@ -183,6 +214,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         ShowCursorInternal(true);
         break;
 
+    case WM_ACTIVATEAPP:
+        // Hide native text input when app is deactivated
+        if (wParam == FALSE) {
+            PlatformHideNativeTextInput();
+        }
+        break;
+
     case WM_SETCURSOR:
         if (LOWORD(lParam) == HTCLIENT) {
             SetCursorInternal(g_windows.cursor);
@@ -209,6 +247,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_KEYUP:
         return 0;
+
+    case WM_COMMAND:
+        // Pass through to allow child control notifications
+        break;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
@@ -292,12 +334,18 @@ bool PlatformUpdate() {
 
     g_windows.mouse_scroll = {0, 0};
 
-    int count = 0;
-    while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) && count < 10)
-    {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-        count++;
+    // Skip message processing during resize - Windows' modal loop handles it
+    if (!g_windows.is_resizing) {
+        int count = 0;
+        while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) && count < 10)
+        {
+            // Let dialog/control messages be processed properly
+            if (!IsDialogMessage(g_windows.hwnd, &msg)) {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+            count++;
+        }
     }
 
     g_windows.has_focus = GetActiveWindow() == g_windows.hwnd;
@@ -320,6 +368,10 @@ bool PlatformUpdate() {
 
 Vec2Int PlatformGetWindowSize() {
     return g_windows.screen_size;
+}
+
+HWND PlatformGetWindowHandle() {
+    return g_windows.hwnd;
 }
 
 static void ShowCursorInternal(bool show) {

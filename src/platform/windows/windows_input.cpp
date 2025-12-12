@@ -516,3 +516,137 @@ void PlatformShutdownInput()
 {
     // Nothing to cleanup for XInput
 }
+
+// Native text input implementation for Windows
+extern HWND PlatformGetWindowHandle();
+
+static HWND g_native_edit = nullptr;
+static WNDPROC g_original_edit_proc = nullptr;
+static char g_native_text_value[TEXT_MAX_LENGTH + 1] = {};
+static bool g_native_text_visible = false;
+
+static LRESULT CALLBACK NativeEditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+        case WM_KEYDOWN:
+            if (wParam == VK_RETURN) {
+                // Commit and hide
+                GetWindowTextA(hwnd, g_native_text_value, TEXT_MAX_LENGTH);
+                ShowWindow(hwnd, SW_HIDE);
+                g_native_text_visible = false;
+                // Return focus to main window
+                HWND parent = PlatformGetWindowHandle();
+                if (parent) SetFocus(parent);
+                return 0;
+            } else if (wParam == VK_ESCAPE) {
+                // Cancel and hide (don't update text value)
+                ShowWindow(hwnd, SW_HIDE);
+                g_native_text_visible = false;
+                HWND parent = PlatformGetWindowHandle();
+                if (parent) SetFocus(parent);
+                return 0;
+            }
+            // Let all other keys pass through to default handler
+            break;
+        case WM_KILLFOCUS:
+            // Commit and hide when edit loses focus
+            if (g_native_text_visible) {
+                    GetWindowTextA(hwnd, g_native_text_value, TEXT_MAX_LENGTH);
+                ShowWindow(hwnd, SW_HIDE);
+                g_native_text_visible = false;
+            }
+            break;
+        case WM_COMMAND:
+            // Handle EN_CHANGE notification for text changes
+            if (HIWORD(wParam) == EN_CHANGE) {
+                GetWindowTextA(hwnd, g_native_text_value, TEXT_MAX_LENGTH);
+                Send(EVENT_TEXTINPUT_CHANGE, nullptr);
+            }
+            break;
+    }
+    return CallWindowProc(g_original_edit_proc, hwnd, msg, wParam, lParam);
+}
+
+void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initial_value) {
+    HWND parent = PlatformGetWindowHandle();
+    if (!parent) return;
+
+    // Convert client coordinates to screen coordinates for popup window
+    POINT pt = { static_cast<LONG>(screen_rect.x), static_cast<LONG>(screen_rect.y) };
+    ClientToScreen(parent, &pt);
+
+    int x = pt.x;
+    int y = pt.y;
+    int width = static_cast<int>(screen_rect.width);
+    int height = static_cast<int>(screen_rect.height);
+
+    // If already visible and no initial_value, just update position
+    if (g_native_edit && g_native_text_visible && initial_value == nullptr) {
+        SetWindowPos(g_native_edit, HWND_TOPMOST, x, y, width, height, SWP_NOACTIVATE);
+        return;
+    }
+
+    if (!g_native_edit) {
+        // Create as popup window so it floats on top of OpenGL rendering
+        g_native_edit = CreateWindowExA(
+            WS_EX_TOPMOST | WS_EX_TOOLWINDOW,  // Topmost, no taskbar button
+            "EDIT",
+            initial_value ? initial_value : "",
+            WS_POPUP | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_LEFT,
+            x, y, width, height,
+            parent,
+            nullptr,
+            GetModuleHandle(nullptr),
+            nullptr
+        );
+
+        if (g_native_edit) {
+            // Subclass to handle Enter/Escape
+            g_original_edit_proc = (WNDPROC)SetWindowLongPtr(g_native_edit, GWLP_WNDPROC, (LONG_PTR)NativeEditProc);
+
+            // Set font
+            HFONT font = CreateFontA(
+                static_cast<int>(height * 0.7f), 0, 0, 0,
+                FW_NORMAL, FALSE, FALSE, FALSE,
+                DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
+                "Segoe UI"
+            );
+            SendMessage(g_native_edit, WM_SETFONT, (WPARAM)font, TRUE);
+        }
+    } else {
+        // Reposition and update text
+        SetWindowPos(g_native_edit, HWND_TOPMOST, x, y, width, height, SWP_SHOWWINDOW);
+        if (initial_value) {
+            SetWindowTextA(g_native_edit, initial_value);
+        }
+    }
+
+    if (g_native_edit) {
+        ShowWindow(g_native_edit, SW_SHOW);
+        SetFocus(g_native_edit);
+        if (initial_value) {
+            SendMessage(g_native_edit, EM_SETSEL, 0, -1); // Select all only on initial show
+            strncpy(g_native_text_value, initial_value, TEXT_MAX_LENGTH);
+            g_native_text_value[TEXT_MAX_LENGTH] = 0;
+        }
+        g_native_text_visible = true;
+    }
+}
+
+void PlatformHideNativeTextInput() {
+    if (g_native_edit) {
+        ShowWindow(g_native_edit, SW_HIDE);
+        // Return focus to main window
+        HWND parent = PlatformGetWindowHandle();
+        if (parent) SetFocus(parent);
+    }
+    g_native_text_visible = false;
+}
+
+bool PlatformIsNativeTextInputVisible() {
+    return g_native_text_visible;
+}
+
+const char* PlatformGetNativeTextInputValue() {
+    return g_native_text_value;
+}
