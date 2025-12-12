@@ -442,72 +442,78 @@ bool TextBox(Text& text, const TextBoxStyle& style) {
         u64 id = GetElementId();
         bool is_active = (g_textbox.active_id == id);
 
-        // Inner container for native input positioning (excludes border)
+        // Inner container for background color
         BeginContainer({.color=style.background_color});
         {
-            noz::Rect inner_rect = GetElementScreenRect();
+            // Container with padding - native input should match this rect
+            BeginContainer({.padding=EdgeInsetsAll(PADDING)});
+            {
+                BeginContainer();
+                noz::Rect text_rect = GetElementScreenRect();
 
-            // Handle click to activate
-            if (!is_active && WasPressed()) {
-                // Commit any other active textbox first
-                if (g_textbox.active_id != 0) {
-                    CommitTextBox();
+                // Handle click to activate
+                if (!is_active && WasPressed()) {
+                    // Commit any other active textbox first
+                    if (g_textbox.active_id != 0) {
+                        CommitTextBox();
+                    }
+
+                    g_textbox.active_id = id;
+                    g_textbox.active_text = &text;
+                    g_textbox.active_rect = text_rect;
+                    g_textbox.active_style = {style.background_color, style.text_color, static_cast<int>(style.font_size * GetUIScale())};
+
+                    PlatformShowNativeTextInput(g_textbox.active_rect, text.value, g_textbox.active_style);
                 }
 
-                g_textbox.active_id = id;
-                g_textbox.active_text = &text;
-                g_textbox.active_rect = inner_rect;
-                g_textbox.active_style = {style.background_color, style.text_color, static_cast<int>(style.font_size * GetUIScale())};
+                // Update position each frame when active (handles window resize)
+                if (is_active && PlatformIsNativeTextInputVisible()) {
+                    int scaled_font_size = static_cast<int>(style.font_size * GetUIScale());
+                    if (text_rect.x != g_textbox.active_rect.x || text_rect.y != g_textbox.active_rect.y ||
+                        text_rect.width != g_textbox.active_rect.width || text_rect.height != g_textbox.active_rect.height ||
+                        scaled_font_size != g_textbox.active_style.font_size) {
+                        g_textbox.active_rect = text_rect;
+                        g_textbox.active_style.font_size = scaled_font_size;
+                        PlatformShowNativeTextInput(g_textbox.active_rect, nullptr, g_textbox.active_style);
+                    }
 
-                PlatformShowNativeTextInput(g_textbox.active_rect, text.value, g_textbox.active_style);
-            }
-
-            // Update position each frame when active (handles window resize)
-            if (is_active && PlatformIsNativeTextInputVisible()) {
-                int scaled_font_size = static_cast<int>(style.font_size * GetUIScale());
-                if (inner_rect.x != g_textbox.active_rect.x || inner_rect.y != g_textbox.active_rect.y ||
-                    inner_rect.width != g_textbox.active_rect.width || inner_rect.height != g_textbox.active_rect.height ||
-                    scaled_font_size != g_textbox.active_style.font_size) {
-                    g_textbox.active_rect = inner_rect;
-                    g_textbox.active_style.font_size = scaled_font_size;
-                    PlatformShowNativeTextInput(g_textbox.active_rect, nullptr, g_textbox.active_style);
+                    // Update text from native input
+                    const char* value = PlatformGetNativeTextInputValue();
+                    if (value && !Equals(text, value)) {
+                        SetValue(text, value);
+                        changed = true;
+                    }
                 }
 
-                // Update text from native input
-                const char* value = PlatformGetNativeTextInputValue();
-                if (value && !Equals(text, value)) {
-                    SetValue(text, value);
-                    changed = true;
+                // Check if native input lost focus (was hidden externally)
+                if (is_active && !PlatformIsNativeTextInputVisible()) {
+                    // Get final value before clearing active state
+                    const char* value = PlatformGetNativeTextInputValue();
+                    if (value && !Equals(text, value)) {
+                        SetValue(text, value);
+                        changed = true;
+                    }
+                    g_textbox.active_id = 0;
+                    g_textbox.active_text = nullptr;
                 }
-            }
 
-            // Check if native input lost focus (was hidden externally)
-            if (is_active && !PlatformIsNativeTextInputVisible()) {
-                // Get final value before clearing active state
-                const char* value = PlatformGetNativeTextInputValue();
-                if (value && !Equals(text, value)) {
-                    SetValue(text, value);
-                    changed = true;
-                }
-                g_textbox.active_id = 0;
-                g_textbox.active_text = nullptr;
-            }
+                EndContainer();
 
-            // Draw label only when native input is not visible
-            BeginContainer({.align=ALIGN_CENTER_LEFT, .padding=EdgeInsetsLeftRight(PADDING)});
-            if (!PlatformIsNativeTextInputVisible()) {
-                if (text.value[0] != '\0') {
-                    Label(text.value, {
-                        .font=style.font,
-                        .font_size=style.font_size,
-                        .color=style.text_color,
-                        .align=ALIGN_CENTER_LEFT});
-                } else if (style.placeholder) {
-                    Label(style.placeholder, {
-                        .font=style.font,
-                        .font_size=style.font_size,
-                        .color=style.placeholder_color,
-                        .align=ALIGN_CENTER_LEFT});
+                // Draw label only when THIS textbox's native input is not active
+                if (!is_active) {
+                    if (text.value[0] != '\0') {
+                        Label(text.value, {
+                            .font=style.font,
+                            .font_size=style.font_size,
+                            .color=style.text_color,
+                            .align=ALIGN_CENTER_LEFT});
+                    } else if (style.placeholder) {
+                        Label(style.placeholder, {
+                            .font=style.font,
+                            .font_size=style.font_size,
+                            .color=style.placeholder_color,
+                            .align=ALIGN_CENTER_LEFT});
+                    }
                 }
             }
             EndContainer();
@@ -1002,13 +1008,14 @@ static int DrawElement(int element_index) {
             if (align.has_x) text_offset.x = (e->rect.width - text_size.x) * align.x;
             if (align.has_y) text_offset.y = (e->rect.height - text_size.y) * align.y;
 
-            // Debug
-            // BindTransform(e->local_to_world * Scale({e->rect.width, e->rect.height}));
-            // BindColor(COLOR_GREEN);
-            // BindMaterial(g_ui.element_material);
-            // DrawMesh(g_ui.element_mesh);
+            // Snap text position to integer pixel boundaries for crisp rendering
+            Vec2 ui_pos = TransformPoint(e->local_to_world, text_offset);
+            Vec2 screen_pos = WorldToScreen(g_ui.camera, ui_pos);
+            screen_pos.x = Ceil(screen_pos.x);
+            screen_pos.y = Ceil(screen_pos.y);
+            Vec2 snapped_ui_pos = ScreenToWorld(g_ui.camera, screen_pos);
 
-            BindTransform(e->local_to_world * Translate(text_offset));
+            BindTransform(Translate(snapped_ui_pos));
             BindColor(l->style.color);
             BindMaterial(l->style.material ? l->style.material : GetMaterial(l->cached_mesh->text_mesh));
             DrawMesh(mesh);

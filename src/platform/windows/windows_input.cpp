@@ -504,7 +504,6 @@ bool PlatformIsGamepadActive() {
 }
 
 extern HWND PlatformGetWindowHandle();
-extern void SetSuppressNCDeactivate(bool suppress);
 
 HBRUSH GetNativeEditBrush() {
     return g_windows_input.edit_bg_brush;
@@ -523,7 +522,6 @@ static void CommitNativeEdit(HWND hwnd) {
     g_windows_input.edit_text.length = len;
     ShowWindow(hwnd, SW_HIDE);
     g_windows_input.edit_visible = false;
-    SetSuppressNCDeactivate(false);
     HWND parent = PlatformGetWindowHandle();
     if (parent) SetFocus(parent);
 }
@@ -543,7 +541,6 @@ static LRESULT CALLBACK NativeEditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARA
                 // Cancel and hide (don't update text value)
                 ShowWindow(hwnd, SW_HIDE);
                 g_windows_input.edit_visible = false;
-                SetSuppressNCDeactivate(false);
                 HWND parent = PlatformGetWindowHandle();
                 if (parent) SetFocus(parent);
                 return 0;
@@ -578,12 +575,9 @@ void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initi
     HWND parent = PlatformGetWindowHandle();
     if (!parent) return;
 
-    // Convert client coordinates to screen coordinates for popup window
-    POINT pt = { static_cast<LONG>(screen_rect.x), static_cast<LONG>(screen_rect.y) };
-    ClientToScreen(parent, &pt);
-
-    int x = pt.x;
-    int y = pt.y;
+    // Use client coordinates for child window
+    int x = static_cast<int>(screen_rect.x);
+    int y = static_cast<int>(screen_rect.y);
     int width = static_cast<int>(screen_rect.width);
     int height = static_cast<int>(screen_rect.height);
 
@@ -597,20 +591,53 @@ void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initi
     }
     g_windows_input.edit_bg_brush = CreateSolidBrush(g_windows_input.edit_bg_color);
 
-    // If already visible and no initial_value, just update position
+    // If already visible and no initial_value, just update position and font
     if (g_windows_input.edit_hwnd && g_windows_input.edit_visible && initial_value == nullptr) {
-        SetWindowPos(g_windows_input.edit_hwnd, HWND_TOP, x, y, width, height, SWP_NOACTIVATE);
+        // Update font size for window resize
+        if (g_windows_input.edit_font) {
+            DeleteObject(g_windows_input.edit_font);
+        }
+        g_windows_input.edit_font = CreateFontA(
+            -style.font_size, 0, 0, 0,
+            FW_MEDIUM,
+            FALSE,
+            FALSE,
+            FALSE,
+            DEFAULT_CHARSET,
+            OUT_DEFAULT_PRECIS,
+            CLIP_DEFAULT_PRECIS,
+            CLEARTYPE_QUALITY,
+            DEFAULT_PITCH | FF_DONTCARE,
+            "Segoe UI"
+        );
+        SendMessage(g_windows_input.edit_hwnd, WM_SETFONT, (WPARAM)g_windows_input.edit_font, TRUE);
+
+        // Calculate vertical centering based on font metrics
+        HDC hdc = GetDC(g_windows_input.edit_hwnd);
+        HFONT old_font = (HFONT)SelectObject(hdc, g_windows_input.edit_font);
+        TEXTMETRIC tm;
+        GetTextMetrics(hdc, &tm);
+        SelectObject(hdc, old_font);
+        ReleaseDC(g_windows_input.edit_hwnd, hdc);
+
+        int font_height = tm.tmHeight;
+        int y_offset = (height - font_height) / 2;
+        SetWindowPos(g_windows_input.edit_hwnd, HWND_TOP, x, y + y_offset, width, font_height, SWP_NOACTIVATE);
+
+        // Remove default left/right margins
+        SendMessage(g_windows_input.edit_hwnd, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, MAKELPARAM(0, 0));
+
         InvalidateRect(g_windows_input.edit_hwnd, nullptr, TRUE);
         return;
     }
 
     if (!g_windows_input.edit_hwnd) {
-        // Create as popup window owned by parent
+        // Create as child window of parent
         g_windows_input.edit_hwnd = CreateWindowExA(
             0,
             "EDIT",
             initial_value ? initial_value : "",
-            WS_POPUP | WS_VISIBLE | ES_AUTOHSCROLL | ES_LEFT,
+            WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL | ES_LEFT,
             x, y, width, height,
             parent,
             nullptr,
@@ -631,24 +658,35 @@ void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initi
     }
 
     if (g_windows_input.edit_hwnd) {
-        // Update font with style size
+        // Update font with style size (negative height = character height, not cell height)
         if (g_windows_input.edit_font) {
             DeleteObject(g_windows_input.edit_font);
         }
         g_windows_input.edit_font = CreateFontA(
-            style.font_size, 0, 0, 0,
-            FW_NORMAL, FALSE, FALSE, FALSE,
+            -style.font_size, 0, 0, 0,
+            FW_SEMIBOLD, FALSE, FALSE, FALSE,
             DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
             CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
             "Segoe UI"
         );
         SendMessage(g_windows_input.edit_hwnd, WM_SETFONT, (WPARAM)g_windows_input.edit_font, TRUE);
 
-        SetSuppressNCDeactivate(true);
+        // Calculate vertical centering based on font metrics
+        HDC hdc = GetDC(g_windows_input.edit_hwnd);
+        HFONT old_font = (HFONT)SelectObject(hdc, g_windows_input.edit_font);
+        TEXTMETRIC tm;
+        GetTextMetrics(hdc, &tm);
+        SelectObject(hdc, old_font);
+        ReleaseDC(g_windows_input.edit_hwnd, hdc);
 
-        SetWindowPos(g_windows_input.edit_hwnd, HWND_TOP, x, y, width, height, SWP_SHOWWINDOW);
+        int font_height = tm.tmHeight;
+        int y_offset = (height - font_height) / 2;
+        SetWindowPos(g_windows_input.edit_hwnd, HWND_TOP, x, y + y_offset, width, font_height, SWP_SHOWWINDOW);
+
+        // Remove default left/right margins
+        SendMessage(g_windows_input.edit_hwnd, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, MAKELPARAM(0, 0));
+
         SetFocus(g_windows_input.edit_hwnd);
-        SendMessage(parent, WM_NCACTIVATE, TRUE, 0);
 
         if (initial_value) {
             SendMessage(g_windows_input.edit_hwnd, EM_SETSEL, 0, -1); // Select all only on initial show
@@ -669,7 +707,6 @@ void PlatformHideNativeTextInput() {
     HWND parent = PlatformGetWindowHandle();
     if (parent) SetFocus(parent);
     g_windows_input.edit_visible = false;
-    SetSuppressNCDeactivate(false);
 }
 
 bool PlatformIsNativeTextInputVisible() {

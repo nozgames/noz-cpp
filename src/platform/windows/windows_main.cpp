@@ -44,7 +44,6 @@ struct WindowsApp {
     SystemCursor cursor;
     bool mouse_on_screen;
     bool show_cursor;
-    bool suppress_nc_deactivate;
 };
 
 static WindowsApp g_windows = {};
@@ -215,6 +214,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         ShowCursorInternal(true);
         break;
 
+    case WM_LBUTTONDOWN:
+        // Take focus from any child control (like edit box) when clicking on main window
+        if (GetFocus() != hwnd) {
+            SetFocus(hwnd);
+        }
+        break;
+
     case WM_ACTIVATEAPP:
         // Hide native text input when app is deactivated
         if (wParam == FALSE) {
@@ -222,13 +228,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         break;
 
-    case WM_NCACTIVATE:
-        // When suppress_nc_deactivate is set and we're being deactivated (wParam=FALSE),
-        // return TRUE without calling DefWindowProc to keep titlebar looking active
-        if (g_windows.suppress_nc_deactivate && wParam == FALSE) {
-            return TRUE;
-        }
-        break;
 
     case WM_SETCURSOR:
         if (LOWORD(lParam) == HTCLIENT) {
@@ -305,7 +304,7 @@ void PlatformInitWindow(void (*on_close)()) {
         0,
         CLASS_NAME,
         g_windows.traits->title,
-        WS_OVERLAPPEDWINDOW,
+        WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
         g_windows.traits->x < 0 ? CW_USEDEFAULT : g_windows.traits->x,
         g_windows.traits->y < 0 ? CW_USEDEFAULT : g_windows.traits->y,
         g_windows.traits->width,
@@ -529,7 +528,4 @@ bool PlatformIsMouseOverWindow(){
     return g_windows.mouse_on_screen;
 }
 
-void SetSuppressNCDeactivate(bool suppress) {
-    g_windows.suppress_nc_deactivate = suppress;
-}
 
