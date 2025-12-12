@@ -1008,14 +1008,28 @@ static int DrawElement(int element_index) {
             if (align.has_x) text_offset.x = (e->rect.width - text_size.x) * align.x;
             if (align.has_y) text_offset.y = (e->rect.height - text_size.y) * align.y;
 
-            // Snap text position to integer pixel boundaries for crisp rendering
+            // Snap text position and size to integer pixel boundaries for crisp rendering
             Vec2 ui_pos = TransformPoint(e->local_to_world, text_offset);
-            Vec2 screen_pos = WorldToScreen(g_ui.camera, ui_pos);
-            screen_pos.x = Ceil(screen_pos.x);
-            screen_pos.y = Ceil(screen_pos.y);
-            Vec2 snapped_ui_pos = ScreenToWorld(g_ui.camera, screen_pos);
+            Vec2 ui_end = TransformPoint(e->local_to_world, text_offset + text_size);
 
-            BindTransform(Translate(snapped_ui_pos));
+            Vec2 screen_pos = WorldToScreen(g_ui.camera, ui_pos);
+            Vec2 screen_end = WorldToScreen(g_ui.camera, ui_end);
+            Vec2 screen_size = screen_end - screen_pos;
+
+            // Snap position, then size, then calculate end from snapped values
+            screen_pos.x = Floor(screen_pos.x);
+            screen_pos.y = Floor(screen_pos.y);
+            screen_size.x = Floor(screen_size.x);
+            screen_size.y = Ceil(screen_size.y) + 1;
+            screen_end = screen_pos + screen_size;
+
+            Vec2 snapped_ui_pos = ScreenToWorld(g_ui.camera, screen_pos);
+            Vec2 snapped_ui_end = ScreenToWorld(g_ui.camera, screen_end);
+            Vec2 snapped_ui_size = snapped_ui_end - snapped_ui_pos;
+
+            Vec2 scale = snapped_ui_size / text_size;
+
+            BindTransform(Translate(snapped_ui_pos) * Scale(scale));
             BindColor(l->style.color);
             BindMaterial(l->style.material ? l->style.material : GetMaterial(l->cached_mesh->text_mesh));
             DrawMesh(mesh);

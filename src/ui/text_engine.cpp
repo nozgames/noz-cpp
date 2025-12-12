@@ -88,8 +88,7 @@ static void CreateTextMesh(Allocator* allocator, TextMeshImpl* impl, const TextR
 
     // Calculate total width
     float total_width = 0.0f;
-    for (size_t i = 0; i < text.length; ++i)
-    {
+    for (size_t i = 0; i < text.length; ++i) {
         char ch = text.value[i];
         auto glyph = GetGlyph(request.font, ch);
         total_width += glyph->advance * font_size;
