@@ -14,6 +14,16 @@ constexpr ElementFlags ELEMENT_FLAG_HOVERED     = 1 << 0;
 constexpr ElementFlags ELEMENT_FLAG_PRESSED     = 1 << 1;
 constexpr ElementFlags ELEMENT_FLAG_DOWN        = 1 << 2;
 
+typedef u8 ElementId;
+constexpr ElementId ELEMENT_ID_NONE = 0;
+constexpr ElementId ELEMENT_ID_MIN = 1;
+constexpr ElementId ELEMENT_ID_MAX = 255;
+
+typedef u32 CanvasId;
+constexpr CanvasId CANVAS_ID_NONE = 0;
+constexpr CanvasId CANVAS_ID_MIN = 1;
+
+
 typedef Color (*AnimatedColorFunc)(ElementFlags state, float time, void* user_data);
 
 struct EdgeInsets {
@@ -108,6 +118,13 @@ struct RectangleStyle {
     Vec2Int color_offset;
 };
 
+struct NavigationStyle {
+    ElementId next;
+    ElementId prev;
+    ElementId left;
+    ElementId right;
+};
+
 struct TextBoxStyle {
     float height = 28.0f;
     Font* font = nullptr;
@@ -119,6 +136,8 @@ struct TextBoxStyle {
     BorderStyle border;
     BorderStyle focus_border;
     bool password = false;
+    ElementId id;
+    NavigationStyle nav;
 };
 
 struct CanvasStyle {
@@ -128,6 +147,7 @@ struct CanvasStyle {
     Camera* world_camera;
     Vec2 world_position;
     Vec2 world_size;
+    int id;
 };
 
 struct ContainerStyle {
@@ -141,7 +161,8 @@ struct ContainerStyle {
     BorderStyle border;
     void* user_data;
     float spacing = 0.0f;
-    bool focasable;
+    ElementId id;
+    NavigationStyle nav;
 };
 
 // @common
@@ -150,7 +171,7 @@ extern void DrawUI();
 extern void EndUI();
 extern Vec2 ScreenToUI(const Vec2& screen_pos);
 extern bool CheckElementFlags(ElementFlags flags);
-extern u64 GetElementId();
+extern ElementId GetElementId();
 extern Vec2 ScreenToElement(const Vec2& screen);
 extern noz::Rect GetElementScreenRect();
 
@@ -179,10 +200,8 @@ extern void Spacer(float size);
 inline bool IsHovered() { return CheckElementFlags(ELEMENT_FLAG_HOVERED); }
 inline bool WasPressed() { return CheckElementFlags(ELEMENT_FLAG_PRESSED); }
 inline bool IsDown() { return CheckElementFlags(ELEMENT_FLAG_DOWN); }
-
-// @focus
-extern u64 GetFocusElementId();
-inline bool HasFocus() { return GetElementId() == GetFocusElementId(); }
+extern bool HasFocus();
+extern void SetFocus(CanvasId canvas_id, ElementId element_id);
 
 // @textbox
 extern bool TextBox(Text& text, const TextBoxStyle& style = {});

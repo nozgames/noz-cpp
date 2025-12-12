@@ -11,9 +11,6 @@ constexpr int MAX_TEXT_MESHES = 4096;
 
 extern void UpdateInputState(InputSet* input_set);
 
-inline bool IsAuto(float v) { return v >= F32_AUTO; }
-inline bool IsFixed(float v) { return !IsAuto(v); }
-
 enum ElementType : u8 {
     ELEMENT_TYPE_UNKNOWN = 0,
     ELEMENT_TYPE_NONE,
@@ -36,6 +33,14 @@ struct AlignInfo {
     bool has_y;
     float y;
 };
+
+inline bool IsAuto(float v) { return v >= F32_AUTO; }
+inline bool IsFixed(float v) { return !IsAuto(v); }
+inline bool IsContainerType(ElementType type) {
+    return type == ELEMENT_TYPE_CONTAINER ||
+        type == ELEMENT_TYPE_COLUMN ||
+        type == ELEMENT_TYPE_ROW;
+}
 
 constexpr AlignInfo g_align_info[] = {
     { false, 0.0f, false, 0.0f },       // ALIGN_NONE
@@ -64,12 +69,13 @@ struct CachedTextMesh {
 
 struct ElementState {
     ElementFlags flags;
-    u64 id;
-    noz::Rect screen_rect;  // Cached screen rect for native input positioning
+    noz::Rect screen_rect;
+    u16 index;
 };
 
 struct Element {
     ElementType type;
+    ElementId id;
     u16 index;
     u16 next_sibling_index;
     u16 child_count;
@@ -135,12 +141,11 @@ struct UI {
     Camera* cursor_camera;
     Element* elements[MAX_ELEMENTS];
     Element* element_stack[MAX_ELEMENTS];
-    ElementState element_states[MAX_ELEMENTS];
-    u64 focus_elements[MAX_ELEMENTS];
+    ElementState element_states[ELEMENT_ID_MAX + 1];
     u16 element_count;
     u16 element_stack_count;
-    u16 focus_element_count;
-    u64 focus_id;
+    ElementId focus_id;
+    ElementId textbox_id;
     Mesh* element_mesh;
     Mesh* image_element_mesh;
     Mesh* element_with_border_mesh;
@@ -151,28 +156,25 @@ struct UI {
     InputSet* input;
     PoolAllocator* text_mesh_allocator;
     float depth;
-    u64 hash;
     Text password_mask;
-
-    u64 textbox_id;
+    CanvasId last_focus_canvas_id;
+    CanvasId current_focus_canvas_id;
 };
 
 static UI g_ui = {};
 
-static Element* CreateElement(ElementType type) {
-    g_ui.hash = Hash(g_ui.hash, type);
+static void SetId(Element* e, ElementId id) {
+    e->id = id;
+    ElementState& state = g_ui.element_states[id];
+    state.index = e->index;
+}
 
+static Element* CreateElement(ElementType type) {
     Element* element = static_cast<Element*>(Alloc(g_ui.allocator, sizeof(FatElement)));
     element->type = type;
     element->index = g_ui.element_count;
     element->next_sibling_index = element->index + 1;
     g_ui.elements[g_ui.element_count++] = element;
-
-    ElementState& state = g_ui.element_states[element->index];
-    if (state.id != g_ui.hash) {
-        state.flags = 0;
-        state.id = g_ui.hash;
-    }
 
     if (g_ui.element_stack_count > 0) {
         g_ui.element_stack[g_ui.element_stack_count-1]->child_count++;
@@ -198,7 +200,11 @@ static void CommitTextBox() {
     g_ui.textbox_id = 0;
 }
 
-static void SetFocus(u64 focus_id) {
+bool HasFocus() {
+    return g_ui.focus_id != 0 && GetCurrentElement()->id == g_ui.focus_id;
+}
+
+static void SetFocus(ElementId focus_id) {
     if (g_ui.focus_id == focus_id)
         return;
 
@@ -206,13 +212,17 @@ static void SetFocus(u64 focus_id) {
         CommitTextBox();
 
     g_ui.focus_id = focus_id;
-
-    LogInfo("focus = %ld", g_ui.focus_id);
-
 }
 
-u64 GetFocusElementId() {
-    return g_ui.focus_id;
+void SetFocus(CanvasId canvas_id, ElementId element_id) {
+    // Canvas id changing?  if so reset the states
+    if (canvas_id != g_ui.last_focus_canvas_id) {
+        memset(&g_ui.element_states, 0, sizeof(g_ui.element_states));
+        g_ui.last_focus_canvas_id = canvas_id;
+        g_ui.current_focus_canvas_id = canvas_id;
+    }
+
+    SetFocus(element_id);
 }
 
 Vec2 ScreenToElement(const Vec2& screen) {
@@ -229,10 +239,10 @@ noz::Rect GetElementScreenRect() {
     return g_ui.element_states[e->index].screen_rect;
 }
 
-u64 GetElementId() {
+ElementId GetElementId() {
     Element* e = GetCurrentElement();
     if (!e) return 0;
-    return g_ui.element_states[e->index].id;
+    return e->id;
 }
 
 bool CheckElementFlags(ElementFlags flags) {
@@ -299,6 +309,15 @@ void BeginCanvas(const CanvasStyle& style) {
     CanvasElement* canvas = static_cast<CanvasElement*>(CreateElement(ELEMENT_TYPE_CANVAS));
     canvas->style = style;
     PushElement(canvas);
+
+    // only one canvas can have focus
+    if (style.id > 0) {
+        assert(g_ui.current_focus_canvas_id <= 0);
+        g_ui.current_focus_canvas_id = style.id;
+        if (g_ui.current_focus_canvas_id != g_ui.last_focus_canvas_id) {
+            memset(&g_ui.element_states, 0, sizeof(g_ui.element_states));
+        }
+    }
 }
 
 void EndCanvas() {
@@ -321,9 +340,7 @@ void BeginContainer(const ContainerStyle& style) {
     ContainerElement* e = static_cast<ContainerElement*>(CreateElement(ELEMENT_TYPE_CONTAINER));
     e->style = style;
     PushElement(e);
-
-    if (style.focasable)
-        g_ui.focus_elements[g_ui.focus_element_count++] = g_ui.element_states[e->index].id;
+    SetId(e, style.id);
 }
 
 void EndContainer() {
@@ -449,8 +466,8 @@ void Rectangle(const RectangleStyle& style) {
 bool TextBox(Text& text, const TextBoxStyle& style) {
     constexpr float PADDING = 4.0f;
 
-    BeginContainer({.height=style.height, .focasable=true});
-    u64 id = GetElementId();
+    BeginContainer({.height=style.height, .id=style.id, .nav=style.nav});
+    ElementId id = GetElementId();
     bool has_focus = HasFocus();
     bool text_changed = false;
 
@@ -587,7 +604,7 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
     assert(e);
 
     // @measure_container
-    if (e->type == ELEMENT_TYPE_CONTAINER || e->type == ELEMENT_TYPE_COLUMN || e->type == ELEMENT_TYPE_ROW) {
+    if (IsContainerType(e->type)) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
         Vec2 content_size = VEC2_ZERO;
         bool is_auto_width = IsAuto(container->style.width);
@@ -760,9 +777,7 @@ static int LayoutElement(int element_index, const Vec2& size) {
     e->rect = noz::Rect{0, 0, e->measured_size.x, e->measured_size.y};
 
     // @layout_container
-    if (e->type == ELEMENT_TYPE_CONTAINER ||
-        e->type == ELEMENT_TYPE_ROW ||
-        e->type == ELEMENT_TYPE_COLUMN) {
+    if (IsContainerType(e->type)) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
         const AlignInfo& align_info = g_align_info[container->style.align];
         bool subtract_margin_x = false;
@@ -1081,7 +1096,7 @@ static int DrawElement(int element_index) {
             DrawMesh(image->mesh, image_transform);
 
     // @render_container
-    } else if (e->type == ELEMENT_TYPE_CONTAINER || e->type == ELEMENT_TYPE_COLUMN || e->type == ELEMENT_TYPE_ROW) {
+    } else if (IsContainerType(e->type)) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
         DrawContainer(container, transform);
 
@@ -1138,8 +1153,8 @@ void BeginUI(u32 ref_width, u32 ref_height) {
     g_ui.ref_size = { static_cast<i32>(ref_width), static_cast<i32>(ref_height) };
     g_ui.element_stack_count = 0;
     g_ui.element_count = 0;
-    g_ui.hash = 0;
-    g_ui.focus_element_count = 0;
+    g_ui.last_focus_canvas_id = g_ui.current_focus_canvas_id;
+    g_ui.current_focus_canvas_id = 0;
 
     Clear(g_ui.allocator);
 
@@ -1165,13 +1180,13 @@ void BeginUI(u32 ref_width, u32 ref_height) {
     UpdateInputState(g_ui.input);
 }
 
-
-static int GetFocusIndex() {
-    for (u32 i = 0; i < g_ui.focus_element_count; i++) {
-        if (g_ui.focus_elements[i] == g_ui.focus_id)
-            return i;
-    }
-    return -1;
+inline u8 WrapElementId(u8 id, int offset) {
+    int new_id = static_cast<int>(id) + offset;
+    if (new_id < ELEMENT_ID_MIN)
+        new_id = ELEMENT_ID_MAX;
+    else if (new_id >= ELEMENT_ID_MAX)
+        new_id = ELEMENT_ID_MIN;
+    return static_cast<u8>(new_id);
 }
 
 static void HandleInput() {
@@ -1182,13 +1197,13 @@ static void HandleInput() {
     bool focus_element_found = false;
 
     // First pass: set flags for all elements (don't consume yet)
-    for (u32 element_index=g_ui.element_count; element_index>0; element_index--) {
+    for (u16 element_index=g_ui.element_count; element_index>0; element_index--) {
         Element* e = g_ui.elements[element_index-1];
         ElementState& state = g_ui.element_states[element_index-1];
         Vec2 local_mouse = TransformPoint(e->world_to_local, mouse);
         bool mouse_over = Contains(Bounds2{0,0,e->rect.width, e->rect.height}, local_mouse);
 
-        focus_element_found &= state.id == g_ui.focus_id;
+        focus_element_found &= e->id == g_ui.focus_id;
 
         if (mouse_over)
             state.flags = state.flags | ELEMENT_FLAG_HOVERED;
@@ -1197,10 +1212,10 @@ static void HandleInput() {
 
         if (mouse_over && mouse_left_pressed) {
             state.flags = state.flags | ELEMENT_FLAG_PRESSED;
-            if (!focus_element_pressed && e->type == ELEMENT_TYPE_CONTAINER && static_cast<ContainerElement*>(e)->style.focasable) {
+            if (!focus_element_pressed && e->id != 0) {
                 focus_element_pressed = true;
                 focus_element_found = true;
-                SetFocus(state.id);
+                SetFocus(e->id);
             }
         } else {
             state.flags = state.flags & ~ELEMENT_FLAG_PRESSED;
@@ -1224,27 +1239,44 @@ static void HandleInput() {
     }
 
     // Cycle through ui elements
-    if (WasButtonPressed(KEY_TAB) && g_ui.focus_element_count > 0) {
-        int focus_index = GetFocusIndex();
+    if (WasButtonPressed(KEY_TAB) && g_ui.focus_id != 0) {
+        int focus_offset = IsShiftDown() ? -1 : 1;
+        ElementId focus_id = g_ui.focus_id;
 
-        for (int i=0; i<g_ui.focus_element_count; i++)
-            LogInfo("focusable: %d = %ld", i, g_ui.focus_elements[i]);
+        if (focus_id != 0) {
+            u16 focus_index = g_ui.element_states[focus_id].index;
+            if (focus_index > 0) {
+                Element* f = g_ui.elements[focus_index];
+                assert(IsContainerType(f->type));
+                ContainerElement* container = static_cast<ContainerElement*>(f);
+                if (IsShiftDown() && container->style.nav.prev != 0)
+                    focus_id = container->style.nav.prev;
+                else if (!IsShiftDown() && container->style.nav.next != 0)
+                    focus_id = container->style.nav.next;
+            } else {
+                focus_id = ELEMENT_ID_NONE;
+            }
+        }
 
-        if (focus_index == -1)
-            SetFocus(g_ui.focus_elements[0]);
-        else if (IsShiftDown())
-            SetFocus(g_ui.focus_elements[(focus_index - 1 + g_ui.focus_element_count) % g_ui.focus_element_count]);
-        else
-            SetFocus(g_ui.focus_elements[(focus_index + 1) % g_ui.focus_element_count]);
+        if (focus_id == ELEMENT_ID_NONE) {
+            for (focus_id = ELEMENT_ID_MIN;
+                 g_ui.element_states[focus_id].index == 0 && focus_id < ELEMENT_ID_MAX;
+                 focus_id++);
+        } else if (focus_id == g_ui.focus_id) {
+            for (focus_id = WrapElementId(focus_id, focus_offset);
+                 g_ui.element_states[focus_id].index == 0 && focus_id != g_ui.focus_id;
+                 focus_id = WrapElementId(focus_id, focus_offset));
+        }
+
+        SetFocus(focus_id);
     }
 
     // Clear focus when clicking outside of focused element and a textbox is active
     if (mouse_left_pressed && !focus_element_pressed && g_ui.textbox_id != 0)
         SetFocus(0);
-
-    if (g_ui.focus_id == g_ui.textbox_id && !PlatformIsTextboxVisible()) {
+    // Native textbox lost focus?
+    else if (g_ui.focus_id == g_ui.textbox_id && !PlatformIsTextboxVisible())
         SetFocus(0);
-    }
 }
 
 void EndUI() {
