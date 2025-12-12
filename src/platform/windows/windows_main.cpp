@@ -44,6 +44,7 @@ struct WindowsApp {
     SystemCursor cursor;
     bool mouse_on_screen;
     bool show_cursor;
+    bool suppress_nc_deactivate;
 };
 
 static WindowsApp g_windows = {};
@@ -218,6 +219,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         // Hide native text input when app is deactivated
         if (wParam == FALSE) {
             PlatformHideNativeTextInput();
+        }
+        break;
+
+    case WM_NCACTIVATE:
+        // When suppress_nc_deactivate is set and we're being deactivated (wParam=FALSE),
+        // return TRUE without calling DefWindowProc to keep titlebar looking active
+        if (g_windows.suppress_nc_deactivate && wParam == FALSE) {
+            return TRUE;
         }
         break;
 
@@ -505,5 +514,9 @@ noz::RectInt PlatformGetWindowRect() {
 
 bool PlatformIsMouseOverWindow(){
     return g_windows.mouse_on_screen;
+}
+
+void PlatformSetSuppressNCDeactivate(bool suppress) {
+    g_windows.suppress_nc_deactivate = suppress;
 }
 
