@@ -24,6 +24,10 @@ struct WindowsInput {
     WNDPROC edit_proc = nullptr;
     Text edit_text;
     bool edit_visible = false;
+    HBRUSH edit_bg_brush = nullptr;
+    HFONT edit_font = nullptr;
+    COLORREF edit_text_color = RGB(255, 255, 255);
+    COLORREF edit_bg_color = RGB(55, 55, 55);
 };
 
 static WindowsInput g_windows_input = {};
@@ -499,6 +503,183 @@ bool PlatformIsGamepadActive() {
     return g_windows_input.active_controller != -1;
 }
 
+extern HWND PlatformGetWindowHandle();
+extern void SetSuppressNCDeactivate(bool suppress);
+
+HBRUSH GetNativeEditBrush() {
+    return g_windows_input.edit_bg_brush;
+}
+
+COLORREF GetNativeEditTextColor() {
+    return g_windows_input.edit_text_color;
+}
+
+COLORREF GetNativeEditBgColor() {
+    return g_windows_input.edit_bg_color;
+}
+
+static void CommitNativeEdit(HWND hwnd) {
+    int len = GetWindowTextA(hwnd, g_windows_input.edit_text.value, TEXT_MAX_LENGTH);
+    g_windows_input.edit_text.length = len;
+    ShowWindow(hwnd, SW_HIDE);
+    g_windows_input.edit_visible = false;
+    SetSuppressNCDeactivate(false);
+    HWND parent = PlatformGetWindowHandle();
+    if (parent) SetFocus(parent);
+}
+
+static LRESULT CALLBACK NativeEditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+        case WM_CHAR:
+            // Suppress beep for Enter and Escape
+            if (wParam == '\r' || wParam == 27)
+                return 0;
+            break;
+        case WM_KEYDOWN:
+            if (wParam == VK_RETURN) {
+                CommitNativeEdit(hwnd);
+                return 0;
+            } else if (wParam == VK_ESCAPE) {
+                // Cancel and hide (don't update text value)
+                ShowWindow(hwnd, SW_HIDE);
+                g_windows_input.edit_visible = false;
+                SetSuppressNCDeactivate(false);
+                HWND parent = PlatformGetWindowHandle();
+                if (parent) SetFocus(parent);
+                return 0;
+            }
+            break;
+        case WM_KILLFOCUS:
+            if (g_windows_input.edit_visible) {
+                CommitNativeEdit(hwnd);
+            }
+            break;
+        case WM_COMMAND:
+            // Handle EN_CHANGE notification for text changes
+            if (HIWORD(wParam) == EN_CHANGE) {
+                int len = GetWindowTextA(hwnd, g_windows_input.edit_text.value, TEXT_MAX_LENGTH);
+                g_windows_input.edit_text.length = len;
+                Send(EVENT_TEXTINPUT_CHANGE, nullptr);
+            }
+            break;
+    }
+    return CallWindowProc(g_windows_input.edit_proc, hwnd, msg, wParam, lParam);
+}
+
+static COLORREF ColorToColorRef(const Color& c) {
+    return RGB(
+        static_cast<BYTE>(c.r * 255.0f),
+        static_cast<BYTE>(c.g * 255.0f),
+        static_cast<BYTE>(c.b * 255.0f)
+    );
+}
+
+void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initial_value, const NativeTextInputStyle& style) {
+    HWND parent = PlatformGetWindowHandle();
+    if (!parent) return;
+
+    // Convert client coordinates to screen coordinates for popup window
+    POINT pt = { static_cast<LONG>(screen_rect.x), static_cast<LONG>(screen_rect.y) };
+    ClientToScreen(parent, &pt);
+
+    int x = pt.x;
+    int y = pt.y;
+    int width = static_cast<int>(screen_rect.width);
+    int height = static_cast<int>(screen_rect.height);
+
+    // Update colors from style
+    g_windows_input.edit_text_color = ColorToColorRef(style.text_color);
+    g_windows_input.edit_bg_color = ColorToColorRef(style.background_color);
+
+    // Update background brush
+    if (g_windows_input.edit_bg_brush) {
+        DeleteObject(g_windows_input.edit_bg_brush);
+    }
+    g_windows_input.edit_bg_brush = CreateSolidBrush(g_windows_input.edit_bg_color);
+
+    // If already visible and no initial_value, just update position
+    if (g_windows_input.edit_hwnd && g_windows_input.edit_visible && initial_value == nullptr) {
+        SetWindowPos(g_windows_input.edit_hwnd, HWND_TOP, x, y, width, height, SWP_NOACTIVATE);
+        InvalidateRect(g_windows_input.edit_hwnd, nullptr, TRUE);
+        return;
+    }
+
+    if (!g_windows_input.edit_hwnd) {
+        // Create as popup window owned by parent
+        g_windows_input.edit_hwnd = CreateWindowExA(
+            0,
+            "EDIT",
+            initial_value ? initial_value : "",
+            WS_POPUP | WS_VISIBLE | ES_AUTOHSCROLL | ES_LEFT,
+            x, y, width, height,
+            parent,
+            nullptr,
+            GetModuleHandle(nullptr),
+            nullptr
+        );
+
+        if (g_windows_input.edit_hwnd) {
+            // Subclass to handle Enter/Escape
+            g_windows_input.edit_proc = (WNDPROC)SetWindowLongPtr(g_windows_input.edit_hwnd, GWLP_WNDPROC, (LONG_PTR)NativeEditProc);
+        }
+    } else {
+        // Reposition and update text
+        SetWindowPos(g_windows_input.edit_hwnd, HWND_TOP, x, y, width, height, SWP_SHOWWINDOW);
+        if (initial_value) {
+            SetWindowTextA(g_windows_input.edit_hwnd, initial_value);
+        }
+    }
+
+    if (g_windows_input.edit_hwnd) {
+        // Update font with style size
+        if (g_windows_input.edit_font) {
+            DeleteObject(g_windows_input.edit_font);
+        }
+        g_windows_input.edit_font = CreateFontA(
+            style.font_size, 0, 0, 0,
+            FW_NORMAL, FALSE, FALSE, FALSE,
+            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+            CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
+            "Segoe UI"
+        );
+        SendMessage(g_windows_input.edit_hwnd, WM_SETFONT, (WPARAM)g_windows_input.edit_font, TRUE);
+
+        SetSuppressNCDeactivate(true);
+
+        SetWindowPos(g_windows_input.edit_hwnd, HWND_TOP, x, y, width, height, SWP_SHOWWINDOW);
+        SetFocus(g_windows_input.edit_hwnd);
+        SendMessage(parent, WM_NCACTIVATE, TRUE, 0);
+
+        if (initial_value) {
+            SendMessage(g_windows_input.edit_hwnd, EM_SETSEL, 0, -1); // Select all only on initial show
+            strncpy(g_windows_input.edit_text.value, initial_value, TEXT_MAX_LENGTH);
+            g_windows_input.edit_text.value[TEXT_MAX_LENGTH] = 0;
+        }
+
+        g_windows_input.edit_visible = true;
+    }
+}
+
+void PlatformHideNativeTextInput() {
+    if (!g_windows_input.edit_hwnd || !g_windows_input.edit_visible)
+        return;
+
+    ShowWindow(g_windows_input.edit_hwnd, SW_HIDE);
+
+    HWND parent = PlatformGetWindowHandle();
+    if (parent) SetFocus(parent);
+    g_windows_input.edit_visible = false;
+    SetSuppressNCDeactivate(false);
+}
+
+bool PlatformIsNativeTextInputVisible() {
+    return g_windows_input.edit_visible;
+}
+
+const char* PlatformGetNativeTextInputValue() {
+    return g_windows_input.edit_text.value;
+}
+
 void PlatformInitInput()
 {
     PlatformClearTextInput();
@@ -516,148 +697,5 @@ void PlatformInitInput()
     }
 }
 
-void PlatformShutdownInput()
-{
-    // Nothing to cleanup for XInput
-}
-
-// Native text input implementation for Windows
-extern HWND PlatformGetWindowHandle();
-extern void PlatformSetSuppressNCDeactivate(bool suppress);
-
-static LRESULT CALLBACK NativeEditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    switch (msg) {
-        case WM_KEYDOWN:
-            if (wParam == VK_RETURN) {
-                // Commit and hide
-                GetWindowTextA(hwnd, g_windows_input.edit_text.value, TEXT_MAX_LENGTH);
-                ShowWindow(hwnd, SW_HIDE);
-                g_windows_input.edit_visible = false;
-                PlatformSetSuppressNCDeactivate(false);
-                // Return focus to main window
-                HWND parent = PlatformGetWindowHandle();
-                if (parent) SetFocus(parent);
-                return 0;
-            } else if (wParam == VK_ESCAPE) {
-                // Cancel and hide (don't update text value)
-                ShowWindow(hwnd, SW_HIDE);
-                g_windows_input.edit_visible = false;
-                PlatformSetSuppressNCDeactivate(false);
-                HWND parent = PlatformGetWindowHandle();
-                if (parent) SetFocus(parent);
-                return 0;
-            }
-            // Let all other keys pass through to default handler
-            break;
-        case WM_KILLFOCUS:
-            // Commit and hide when edit loses focus
-            if (g_windows_input.edit_visible) {
-                GetWindowTextA(hwnd, g_windows_input.edit_text.value, TEXT_MAX_LENGTH);
-                ShowWindow(hwnd, SW_HIDE);
-                g_windows_input.edit_visible = false;
-                PlatformSetSuppressNCDeactivate(false);
-            }
-            break;
-        case WM_COMMAND:
-            // Handle EN_CHANGE notification for text changes
-            if (HIWORD(wParam) == EN_CHANGE) {
-                GetWindowTextA(hwnd, g_windows_input.edit_text.value, TEXT_MAX_LENGTH);
-                Send(EVENT_TEXTINPUT_CHANGE, nullptr);
-            }
-            break;
-    }
-    return CallWindowProc(g_windows_input.edit_proc, hwnd, msg, wParam, lParam);
-}
-
-void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initial_value) {
-    HWND parent = PlatformGetWindowHandle();
-    if (!parent) return;
-
-    // Convert client coordinates to screen coordinates for popup window
-    POINT pt = { static_cast<LONG>(screen_rect.x), static_cast<LONG>(screen_rect.y) };
-    ClientToScreen(parent, &pt);
-
-    int x = pt.x;
-    int y = pt.y;
-    int width = static_cast<int>(screen_rect.width);
-    int height = static_cast<int>(screen_rect.height);
-
-    // If already visible and no initial_value, just update position
-    if (g_windows_input.edit_hwnd && g_windows_input.edit_visible && initial_value == nullptr) {
-        SetWindowPos(g_windows_input.edit_hwnd, HWND_TOPMOST, x, y, width, height, SWP_NOACTIVATE);
-        return;
-    }
-
-    if (!g_windows_input.edit_hwnd) {
-        // Create as popup window so it floats on top of OpenGL rendering
-        g_windows_input.edit_hwnd = CreateWindowExA(
-            WS_EX_TOPMOST,
-            "EDIT",
-            initial_value ? initial_value : "",
-            WS_POPUP | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_LEFT,
-            x, y, width, height,
-            parent,
-            nullptr,
-            GetModuleHandle(nullptr),
-            nullptr
-        );
-
-        if (g_windows_input.edit_hwnd) {
-            // Subclass to handle Enter/Escape
-            g_windows_input.edit_proc = (WNDPROC)SetWindowLongPtr(g_windows_input.edit_hwnd, GWLP_WNDPROC, (LONG_PTR)NativeEditProc);
-
-            // Set font
-            HFONT font = CreateFontA(
-                static_cast<int>(height * 0.7f), 0, 0, 0,
-                FW_NORMAL, FALSE, FALSE, FALSE,
-                DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
-                "Segoe UI"
-            );
-            SendMessage(g_windows_input.edit_hwnd, WM_SETFONT, (WPARAM)font, TRUE);
-        }
-    } else {
-        // Reposition and update text
-        SetWindowPos(g_windows_input.edit_hwnd, HWND_TOPMOST, x, y, width, height, SWP_SHOWWINDOW);
-        if (initial_value) {
-            SetWindowTextA(g_windows_input.edit_hwnd, initial_value);
-        }
-    }
-
-    if (g_windows_input.edit_hwnd) {
-        // Suppress parent window's titlebar from deactivating when edit takes focus
-        PlatformSetSuppressNCDeactivate(true);
-
-        SetWindowPos(g_windows_input.edit_hwnd, HWND_TOPMOST, x, y, width, height, SWP_SHOWWINDOW);
-        SetFocus(g_windows_input.edit_hwnd);
-
-        // Force parent titlebar to stay active-looking
-        SendMessage(parent, WM_NCACTIVATE, TRUE, 0);
-
-        if (initial_value) {
-            SendMessage(g_windows_input.edit_hwnd, EM_SETSEL, 0, -1); // Select all only on initial show
-            strncpy(g_windows_input.edit_text.value, initial_value, TEXT_MAX_LENGTH);
-            g_windows_input.edit_text.value[TEXT_MAX_LENGTH] = 0;
-        }
-        g_windows_input.edit_visible = true;
-    }
-}
-
-void PlatformHideNativeTextInput() {
-    if (g_windows_input.edit_hwnd) {
-        ShowWindow(g_windows_input.edit_hwnd, SW_HIDE);
-        // Return focus to main window
-        HWND parent = PlatformGetWindowHandle();
-        if (parent) SetFocus(parent);
-    }
-    g_windows_input.edit_visible = false;
-    PlatformSetSuppressNCDeactivate(false);
-}
-
-bool PlatformIsNativeTextInputVisible() {
-    return g_windows_input.edit_visible;
-}
-
-const char* PlatformGetNativeTextInputValue() {
-    return g_windows_input.edit_text.value;
+void PlatformShutdownInput() {
 }

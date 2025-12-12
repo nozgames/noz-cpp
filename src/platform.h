@@ -22,6 +22,12 @@ struct PlatformSoundHandle { u64 value;};
 struct PlatformHttpHandle { u64 value; };
 struct PlatformWebSocketHandle { u64 value; };
 
+struct NativeTextInputStyle {
+    Color background_color;
+    Color text_color;
+    int font_size;
+};
+
 // @platform
 extern void PlatformInit(const ApplicationTraits* traits);
 extern void PlatformShutdown();
@@ -120,7 +126,7 @@ extern bool PlatformIsGamepadActive();
 extern bool PlatformIsMouseOverWindow();
 
 // @native_text_input
-extern void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initial_value);
+extern void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initial_value, const NativeTextInputStyle& style);
 extern void PlatformHideNativeTextInput();
 extern bool PlatformIsNativeTextInputVisible();
 extern const char* PlatformGetNativeTextInputValue();

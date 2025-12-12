@@ -217,6 +217,10 @@ Vec2 ScreenToUI(const Vec2& screen_pos) {
     return screen_pos / ToVec2(GetScreenSize()) * g_ui.ortho_size;
 }
 
+static float GetUIScale() {
+    return ToVec2(GetScreenSize()).y / g_ui.ortho_size.y;
+}
+
 static void PushElement(Element* element) {
     if (g_ui.element_stack_count >= MAX_ELEMENT_STACK)
         return;
@@ -412,6 +416,7 @@ static struct {
     u64 active_id = 0;
     Text* active_text = nullptr;
     noz::Rect active_rect = {};
+    NativeTextInputStyle active_style = {};
 } g_textbox;
 
 static void CommitTextBox() {
@@ -432,64 +437,80 @@ bool TextBox(Text& text, const TextBoxStyle& style) {
     constexpr float PADDING = 4.0f;
     constexpr float BORDER_SIZE = 1.0f;
 
-    BeginContainer({.height=style.height, .color=style.background_color, .border={.width=BORDER_SIZE, .color=Color8ToColor(80)}});
+    BeginContainer({.height=style.height, .padding=EdgeInsetsAll(1), .border={.width=BORDER_SIZE, .color=Color8ToColor(80)}});
     {
         u64 id = GetElementId();
         bool is_active = (g_textbox.active_id == id);
 
-        // Handle click to activate
-        if (!is_active && WasPressed()) {
-            // Commit any other active textbox first
-            if (g_textbox.active_id != 0) {
-                CommitTextBox();
+        // Inner container for native input positioning (excludes border)
+        BeginContainer({.color=style.background_color});
+        {
+            noz::Rect inner_rect = GetElementScreenRect();
+
+            // Handle click to activate
+            if (!is_active && WasPressed()) {
+                // Commit any other active textbox first
+                if (g_textbox.active_id != 0) {
+                    CommitTextBox();
+                }
+
+                g_textbox.active_id = id;
+                g_textbox.active_text = &text;
+                g_textbox.active_rect = inner_rect;
+                g_textbox.active_style = {style.background_color, style.text_color, static_cast<int>(style.font_size * GetUIScale())};
+
+                PlatformShowNativeTextInput(g_textbox.active_rect, text.value, g_textbox.active_style);
             }
 
-            g_textbox.active_id = id;
-            g_textbox.active_text = &text;
-            g_textbox.active_rect = GetElementScreenRect();
+            // Update position each frame when active (handles window resize)
+            if (is_active && PlatformIsNativeTextInputVisible()) {
+                int scaled_font_size = static_cast<int>(style.font_size * GetUIScale());
+                if (inner_rect.x != g_textbox.active_rect.x || inner_rect.y != g_textbox.active_rect.y ||
+                    inner_rect.width != g_textbox.active_rect.width || inner_rect.height != g_textbox.active_rect.height ||
+                    scaled_font_size != g_textbox.active_style.font_size) {
+                    g_textbox.active_rect = inner_rect;
+                    g_textbox.active_style.font_size = scaled_font_size;
+                    PlatformShowNativeTextInput(g_textbox.active_rect, nullptr, g_textbox.active_style);
+                }
 
-            PlatformShowNativeTextInput(g_textbox.active_rect, text.value);
-        }
-
-        // Update position each frame when active (handles window resize)
-        if (is_active && PlatformIsNativeTextInputVisible()) {
-            noz::Rect new_rect = GetElementScreenRect();
-            if (new_rect.x != g_textbox.active_rect.x || new_rect.y != g_textbox.active_rect.y ||
-                new_rect.width != g_textbox.active_rect.width || new_rect.height != g_textbox.active_rect.height) {
-                g_textbox.active_rect = new_rect;
-                PlatformShowNativeTextInput(g_textbox.active_rect, nullptr);
+                // Update text from native input
+                const char* value = PlatformGetNativeTextInputValue();
+                if (value && !Equals(text, value)) {
+                    SetValue(text, value);
+                    changed = true;
+                }
             }
 
-            // Update text from native input
-            const char* value = PlatformGetNativeTextInputValue();
-            if (value && !Equals(text, value)) {
-                SetValue(text, value);
-                changed = true;
+            // Check if native input lost focus (was hidden externally)
+            if (is_active && !PlatformIsNativeTextInputVisible()) {
+                // Get final value before clearing active state
+                const char* value = PlatformGetNativeTextInputValue();
+                if (value && !Equals(text, value)) {
+                    SetValue(text, value);
+                    changed = true;
+                }
+                g_textbox.active_id = 0;
+                g_textbox.active_text = nullptr;
             }
-        }
 
-        // Check if native input lost focus (was hidden externally)
-        if (is_active && !PlatformIsNativeTextInputVisible()) {
-            g_textbox.active_id = 0;
-            g_textbox.active_text = nullptr;
-        }
-
-        // Draw label only when native input is not visible
-        BeginContainer({.align=ALIGN_CENTER_LEFT, .padding=EdgeInsetsLeftRight(PADDING)});
-        if (!is_active || !PlatformIsNativeTextInputVisible()) {
-            if (text.length > 0) {
-                Label(text.value, {
-                    .font=style.font,
-                    .font_size=style.font_size,
-                    .color=style.text_color,
-                    .align=ALIGN_CENTER_LEFT});
-            } else if (style.placeholder) {
-                Label(style.placeholder, {
-                    .font=style.font,
-                    .font_size=style.font_size,
-                    .color=style.placeholder_color,
-                    .align=ALIGN_CENTER_LEFT});
+            // Draw label only when native input is not visible
+            BeginContainer({.align=ALIGN_CENTER_LEFT, .padding=EdgeInsetsLeftRight(PADDING)});
+            if (!PlatformIsNativeTextInputVisible()) {
+                if (text.value[0] != '\0') {
+                    Label(text.value, {
+                        .font=style.font,
+                        .font_size=style.font_size,
+                        .color=style.text_color,
+                        .align=ALIGN_CENTER_LEFT});
+                } else if (style.placeholder) {
+                    Label(style.placeholder, {
+                        .font=style.font,
+                        .font_size=style.font_size,
+                        .color=style.placeholder_color,
+                        .align=ALIGN_CENTER_LEFT});
+                }
             }
+            EndContainer();
         }
         EndContainer();
     }

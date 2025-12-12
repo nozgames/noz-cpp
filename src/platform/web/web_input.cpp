@@ -537,8 +537,20 @@ void PlatformShutdownInput() {
 static bool g_native_text_input_visible = false;
 static char g_native_text_input_value[TEXT_MAX_LENGTH + 1] = {};
 
-void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initial_value) {
-    // If already visible and no initial_value, just update position
+static void ColorToRgbString(const Color& c, char* out, int max_len) {
+    snprintf(out, max_len, "rgb(%d,%d,%d)",
+        static_cast<int>(c.r * 255.0f),
+        static_cast<int>(c.g * 255.0f),
+        static_cast<int>(c.b * 255.0f));
+}
+
+void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initial_value, const NativeTextInputStyle& style) {
+    char bg_color[32];
+    char text_color[32];
+    ColorToRgbString(style.background_color, bg_color, sizeof(bg_color));
+    ColorToRgbString(style.text_color, text_color, sizeof(text_color));
+
+    // If already visible and no initial_value, just update position and colors
     if (g_native_text_input_visible && initial_value == nullptr) {
         EM_ASM({
             var input = document.getElementById('native-text-input');
@@ -547,8 +559,10 @@ void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initi
                 input.style.top = $1 + 'px';
                 input.style.width = $2 + 'px';
                 input.style.height = $3 + 'px';
+                input.style.backgroundColor = UTF8ToString($4);
+                input.style.color = UTF8ToString($5);
             }
-        }, screen_rect.x, screen_rect.y, screen_rect.width, screen_rect.height);
+        }, screen_rect.x, screen_rect.y, screen_rect.width, screen_rect.height, bg_color, text_color);
         return;
     }
 
@@ -567,9 +581,7 @@ void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initi
             input.style.position = 'absolute';
             input.style.zIndex = '1000';
             input.style.outline = 'none';
-            input.style.border = '1px solid #888';
-            input.style.backgroundColor = '#333';
-            input.style.color = '#fff';
+            input.style.border = 'none';
             input.style.fontFamily = 'sans-serif';
             input.style.padding = '2px 4px';
             input.style.boxSizing = 'border-box';
@@ -607,12 +619,14 @@ void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initi
         input.style.top = $1 + 'px';
         input.style.width = $2 + 'px';
         input.style.height = $3 + 'px';
-        input.style.fontSize = ($3 * 0.6) + 'px';
-        input.value = UTF8ToString($4);
+        input.style.fontSize = $4 + 'px';
+        input.style.backgroundColor = UTF8ToString($5);
+        input.style.color = UTF8ToString($6);
+        input.value = UTF8ToString($7);
         input.style.display = 'block';
         input.focus();
         input.select();
-    }, screen_rect.x, screen_rect.y, screen_rect.width, screen_rect.height, initial_value ? initial_value : "");
+    }, screen_rect.x, screen_rect.y, screen_rect.width, screen_rect.height, style.font_size, bg_color, text_color, initial_value ? initial_value : "");
 }
 
 void PlatformHideNativeTextInput() {

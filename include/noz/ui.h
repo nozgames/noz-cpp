@@ -197,8 +197,8 @@ inline bool IsDown() { return CheckElementFlags(ELEMENT_FLAG_DOWN); }
 // @textbox
 struct TextBoxStyle {
     float height = 28.0f;
-    int font_size = 16;
     Font* font = nullptr;
+    int font_size = 16;
     Color background_color = Color8ToColor(55);
     Color text_color = COLOR_WHITE;
     Color placeholder_color = Color8ToColor(100);

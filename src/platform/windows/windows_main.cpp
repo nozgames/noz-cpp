@@ -260,6 +260,19 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_COMMAND:
         // Pass through to allow child control notifications
         break;
+
+    case WM_CTLCOLOREDIT:
+        {
+            extern HBRUSH GetNativeEditBrush();
+            extern COLORREF GetNativeEditTextColor();
+            extern COLORREF GetNativeEditBgColor();
+            HDC hdc = (HDC)wParam;
+            SetTextColor(hdc, GetNativeEditTextColor());
+            SetBkColor(hdc, GetNativeEditBgColor());
+            HBRUSH brush = GetNativeEditBrush();
+            if (brush) return (LRESULT)brush;
+        }
+        break;
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
@@ -516,7 +529,7 @@ bool PlatformIsMouseOverWindow(){
     return g_windows.mouse_on_screen;
 }
 
-void PlatformSetSuppressNCDeactivate(bool suppress) {
+void SetSuppressNCDeactivate(bool suppress) {
     g_windows.suppress_nc_deactivate = suppress;
 }
 
