@@ -8,7 +8,6 @@
 constexpr int MAX_ELEMENTS = 4096;
 constexpr int MAX_ELEMENT_STACK = 128;
 constexpr int MAX_TEXT_MESHES = 4096;
-constexpr u16 UI_NO_FOCUS = 0xFFFF;
 
 extern void UpdateInputState(InputSet* input_set);
 
@@ -65,7 +64,7 @@ struct CachedTextMesh {
 
 struct ElementState {
     ElementFlags flags;
-    u64 hash;
+    u64 id;
     noz::Rect screen_rect;  // Cached screen rect for native input positioning
 };
 
@@ -141,7 +140,7 @@ struct UI {
     u16 element_count;
     u16 element_stack_count;
     u16 focus_element_count;
-    u16 current_focus_element = UI_NO_FOCUS;
+    u64 focus_id;
     Mesh* element_mesh;
     Mesh* image_element_mesh;
     Mesh* element_with_border_mesh;
@@ -153,12 +152,9 @@ struct UI {
     PoolAllocator* text_mesh_allocator;
     float depth;
     u64 hash;
+    Text password_mask;
 
-    struct {
-        u64 id = 0;
-        Text* text = nullptr;
-        NativeTextInputStyle style = {};
-    } textbox;
+    u64 textbox_id;
 };
 
 static UI g_ui = {};
@@ -173,9 +169,9 @@ static Element* CreateElement(ElementType type) {
     g_ui.elements[g_ui.element_count++] = element;
 
     ElementState& state = g_ui.element_states[element->index];
-    if (state.hash != g_ui.hash) {
+    if (state.id != g_ui.hash) {
         state.flags = 0;
-        state.hash = g_ui.hash;
+        state.id = g_ui.hash;
     }
 
     if (g_ui.element_stack_count > 0) {
@@ -194,9 +190,29 @@ static Element* GetCurrentElement() {
     return e;
 }
 
+static void CommitTextBox() {
+    if (!g_ui.textbox_id)
+        return;
+
+    PlatformHideTextbox();
+    g_ui.textbox_id = 0;
+}
+
+static void SetFocus(u64 focus_id) {
+    if (g_ui.focus_id == focus_id)
+        return;
+
+    if (g_ui.textbox_id != focus_id)
+        CommitTextBox();
+
+    g_ui.focus_id = focus_id;
+
+    LogInfo("focus = %ld", g_ui.focus_id);
+
+}
+
 u64 GetFocusElementId() {
-    if (g_ui.current_focus_element == UI_NO_FOCUS) return 0;
-    return g_ui.focus_elements[g_ui.current_focus_element];
+    return g_ui.focus_id;
 }
 
 Vec2 ScreenToElement(const Vec2& screen) {
@@ -216,7 +232,7 @@ noz::Rect GetElementScreenRect() {
 u64 GetElementId() {
     Element* e = GetCurrentElement();
     if (!e) return 0;
-    return g_ui.element_states[e->index].hash;
+    return g_ui.element_states[e->index].id;
 }
 
 bool CheckElementFlags(ElementFlags flags) {
@@ -306,13 +322,8 @@ void BeginContainer(const ContainerStyle& style) {
     e->style = style;
     PushElement(e);
 
-    if (style.focasable) {
-        g_ui.focus_elements[g_ui.focus_element_count++] = g_ui.element_states[e->index].hash;
-
-        if (WasPressed()) {
-            g_ui.current_focus_element = g_ui.focus_element_count - 1;
-        }
-    }
+    if (style.focasable)
+        g_ui.focus_elements[g_ui.focus_element_count++] = g_ui.element_states[e->index].id;
 }
 
 void EndContainer() {
@@ -435,32 +446,13 @@ void Rectangle(const RectangleStyle& style) {
     e->style.color = style.color;
 }
 
-static void CommitTextBox() {
-    if (!g_ui.textbox.id)
-        return;
-
-    if (PlatformIsTextboxVisible()) {
-        // Get final value from native input
-        // const char* value = PlatformGetNativeTextInputValue();
-        // if (value && g_ui.textbox.text) {
-        //     SetValue(*g_ui.textbox.text, value);
-        // }
-    }
-    PlatformHideTextbox();
-    g_ui.textbox.id = 0;
-    g_ui.textbox.text = nullptr;
-}
-
 bool TextBox(Text& text, const TextBoxStyle& style) {
-    bool changed = false;
     constexpr float PADDING = 4.0f;
 
     BeginContainer({.height=style.height, .focasable=true});
     u64 id = GetElementId();
     bool has_focus = HasFocus();
-    bool is_active = g_ui.textbox.id == id;
-    //bool pressed = WasPressed();
-
+    bool text_changed = false;
 
     BeginContainer({
         .padding=EdgeInsetsAll(PADDING),
@@ -471,101 +463,60 @@ bool TextBox(Text& text, const TextBoxStyle& style) {
         BeginContainer();
         noz::Rect text_rect = GetElementScreenRect();
 
-        if (is_active && !has_focus)
-            CommitTextBox();
+        if (g_ui.textbox_id == id) {
+            text_changed = PlatformUpdateTextbox(text_rect, text);
+        } else if (has_focus) {
+            g_ui.textbox_id = id;
 
-        if (!is_active && has_focus) {
-            is_active = true;
-            g_ui.textbox.id = id;
-            g_ui.textbox.text = &text;
-            g_ui.textbox.style = {
+            PlatformShowTextbox(text_rect, text.value, {
                 style.background_color,
                 style.text_color,
                 static_cast<int>(style.font_size * GetUIScale()),
                 style.password
-            };
-
-            PlatformShowTextbox(text_rect, text.value, g_ui.textbox.style);
-        } else if (is_active) {
-            PlatformUpdateTextbox(text_rect);
+            });
         }
 
         EndContainer();
 
-#if 0
-        // Handle click to activate
-        if (has_focus && pressed
-            // Commit any other active textbox first
-            if (g_ui.textbox.id != 0) {
-                CommitTextBox();
-            }
-
-            g_ui.textbox.id = id;
-            g_ui.textbox.text = &text;
-            g_ui.textbox.rect = text_rect;
-            g_ui.textbox.style = {
-                style.background_color,
-                style.text_color,
-                static_cast<int>(style.font_size * GetUIScale()),
-                style.password
-            };
-
-            PlatformShowNativeTextInput(g_ui.textbox.rect, text.value, g_ui.textbox.style);
-        }
-
-        if (is_active && PlatformIsTextboxVisible()) {
-            int scaled_font_size = static_cast<int>(style.font_size * GetUIScale());
-            if (text_rect.x != g_ui.textbox.rect.x || text_rect.y != g_ui.textbox.rect.y ||
-                text_rect.width != g_ui.textbox.rect.width || text_rect.height != g_ui.textbox.rect.height ||
-                scaled_font_size != g_ui.textbox.style.font_size) {
-                g_ui.textbox.rect = text_rect;
-                g_ui.textbox.style.font_size = scaled_font_size;
-                PlatformShowNativeTextInput(g_ui.textbox.rect, nullptr, g_ui.textbox.style);
-            }
-
-            // Update text from native input
-            const char* value = PlatformGetTextboxValue();
-            if (value && !Equals(text, value)) {
-                SetValue(text, value);
-                changed = true;
-            }
-        }
-
-        // Check if native input lost focus (was hidden externally)
-        if (is_active && !PlatformIsTextboxVisible()) {
-            // Get final value before clearing active state
-            const char* value = PlatformGetTextboxValue();
-            if (value && !Equals(text, value)) {
-                SetValue(text, value);
-                changed = true;
-            }
-            g_ui.textbox.id = 0;
-            g_ui.textbox.text = nullptr;
-        }
-#endif
-
-        // Draw label only when THIS textbox's native input is not active
-        if (!is_active) {
+        if (g_ui.textbox_id != id) {
             if (text.value[0] != '\0') {
-                Label(text.value, {
-                    .font=style.font,
-                    .font_size=style.font_size,
-                    .color=style.text_color,
-                    .align=ALIGN_CENTER_LEFT});
+                // password
+                if (style.password) {
+                    g_ui.password_mask.value[text.length] = 0;
+                    g_ui.password_mask.length = text.length;
+                    Label(g_ui.password_mask, {
+                        .font=style.font,
+                        .font_size=style.font_size,
+                        .color=style.text_color,
+                        .align=ALIGN_CENTER_LEFT});
+                    g_ui.password_mask.value[text.length] = '*';
+                    // default
+                } else {
+                    Label(text, {
+                        .font=style.font,
+                        .font_size=style.font_size,
+                        .color=style.text_color,
+                        .align=ALIGN_CENTER_LEFT});
+                }
+            // placeholder
             } else if (style.placeholder) {
                 Label(style.placeholder, {
                     .font=style.font,
                     .font_size=style.font_size,
                     .color=style.placeholder_color,
                     .align=ALIGN_CENTER_LEFT});
+            } else {
+                Container({});
             }
+        } else {
+            Container({});
         }
     }
     EndContainer();
 
     EndContainer();
 
-    return changed;
+    return text_changed;
 }
 
 void Scene(const SceneStyle& style, void (*draw_scene)(void*)) {
@@ -1214,36 +1165,51 @@ void BeginUI(u32 ref_width, u32 ref_height) {
     UpdateInputState(g_ui.input);
 }
 
+
+static int GetFocusIndex() {
+    for (u32 i = 0; i < g_ui.focus_element_count; i++) {
+        if (g_ui.focus_elements[i] == g_ui.focus_id)
+            return i;
+    }
+    return -1;
+}
+
 static void HandleInput() {
     Vec2 mouse = ScreenToWorld(g_ui.camera, GetMousePosition());
     bool mouse_left_pressed = WasButtonPressed(g_ui.input, MOUSE_LEFT);
     bool button_down = IsButtonDown(g_ui.input, MOUSE_LEFT);
     bool focus_element_pressed = false;
+    bool focus_element_found = false;
 
     // First pass: set flags for all elements (don't consume yet)
-    for (u32 i=g_ui.element_count; i>0; i--) {
-        Element* e = g_ui.elements[i-1];
-        ElementState& prev_state = g_ui.element_states[i-1];
+    for (u32 element_index=g_ui.element_count; element_index>0; element_index--) {
+        Element* e = g_ui.elements[element_index-1];
+        ElementState& state = g_ui.element_states[element_index-1];
         Vec2 local_mouse = TransformPoint(e->world_to_local, mouse);
         bool mouse_over = Contains(Bounds2{0,0,e->rect.width, e->rect.height}, local_mouse);
 
+        focus_element_found &= state.id == g_ui.focus_id;
+
         if (mouse_over)
-            prev_state.flags = prev_state.flags | ELEMENT_FLAG_HOVERED;
+            state.flags = state.flags | ELEMENT_FLAG_HOVERED;
         else
-            prev_state.flags = prev_state.flags & ~ELEMENT_FLAG_HOVERED;
+            state.flags = state.flags & ~ELEMENT_FLAG_HOVERED;
 
         if (mouse_over && mouse_left_pressed) {
-            prev_state.flags = prev_state.flags | ELEMENT_FLAG_PRESSED;
-            if (!focus_element_pressed && e->type == ELEMENT_TYPE_CONTAINER && static_cast<ContainerElement*>(e)->style.focasable)
+            state.flags = state.flags | ELEMENT_FLAG_PRESSED;
+            if (!focus_element_pressed && e->type == ELEMENT_TYPE_CONTAINER && static_cast<ContainerElement*>(e)->style.focasable) {
                 focus_element_pressed = true;
+                focus_element_found = true;
+                SetFocus(state.id);
+            }
         } else {
-            prev_state.flags = prev_state.flags & ~ELEMENT_FLAG_PRESSED;
+            state.flags = state.flags & ~ELEMENT_FLAG_PRESSED;
         }
 
         if (mouse_over && button_down) {
-            prev_state.flags = prev_state.flags | ELEMENT_FLAG_DOWN;
+            state.flags = state.flags | ELEMENT_FLAG_DOWN;
         } else {
-            prev_state.flags = prev_state.flags & ~ELEMENT_FLAG_DOWN;
+            state.flags = state.flags & ~ELEMENT_FLAG_DOWN;
         }
     }
 
@@ -1258,24 +1224,26 @@ static void HandleInput() {
     }
 
     // Cycle through ui elements
-    if (WasButtonPressed(KEY_TAB)) {
-        u64 old_focus_id = GetFocusElementId();
+    if (WasButtonPressed(KEY_TAB) && g_ui.focus_element_count > 0) {
+        int focus_index = GetFocusIndex();
 
-        if (g_ui.current_focus_element == UI_NO_FOCUS) {
-            g_ui.current_focus_element = 0;
-        } else if (IsShiftDown())
-            g_ui.current_focus_element = (g_ui.current_focus_element - 1 + g_ui.focus_element_count) % g_ui.focus_element_count;
+        for (int i=0; i<g_ui.focus_element_count; i++)
+            LogInfo("focusable: %d = %ld", i, g_ui.focus_elements[i]);
+
+        if (focus_index == -1)
+            SetFocus(g_ui.focus_elements[0]);
+        else if (IsShiftDown())
+            SetFocus(g_ui.focus_elements[(focus_index - 1 + g_ui.focus_element_count) % g_ui.focus_element_count]);
         else
-            g_ui.current_focus_element = (g_ui.current_focus_element + 1) % g_ui.focus_element_count;
-
-        // Textbox losing focus?
-        if (old_focus_id == g_ui.textbox.id)
-            CommitTextBox();
+            SetFocus(g_ui.focus_elements[(focus_index + 1) % g_ui.focus_element_count]);
     }
 
-    if (mouse_left_pressed && !focus_element_pressed) {
-        CommitTextBox();
-        g_ui.current_focus_element = UI_NO_FOCUS;
+    // Clear focus when clicking outside of focused element and a textbox is active
+    if (mouse_left_pressed && !focus_element_pressed && g_ui.textbox_id != 0)
+        SetFocus(0);
+
+    if (g_ui.focus_id == g_ui.textbox_id && !PlatformIsTextboxVisible()) {
+        SetFocus(0);
     }
 }
 
@@ -1413,6 +1381,10 @@ void InitUI(const ApplicationTraits* traits) {
     CreateElementMesh();
     CreateElementWithBorderMesh();
     CreateImageElementMesh();
+
+    for (int i=0; i<TEXT_MAX_LENGTH; i++)
+        g_ui.password_mask.value[i] = '*';
+    g_ui.password_mask.value[TEXT_MAX_LENGTH] = 0;
 }
 
 void ShutdownUI() {

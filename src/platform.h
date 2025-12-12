@@ -129,9 +129,8 @@ extern bool PlatformIsMouseOverWindow();
 // @native_text_input
 extern void PlatformShowTextbox(const noz::Rect& rect, const char* initial_value, const NativeTextInputStyle& style);
 extern void PlatformHideTextbox();
-extern void PlatformUpdateTextbox(const noz::Rect& rect);
+extern bool PlatformUpdateTextbox(const noz::Rect& rect, Text& text);
 extern bool PlatformIsTextboxVisible();
-extern void PlatformGetTextboxValue(Text& text);
 
 // @audio
 extern void PlatformInitAudio();

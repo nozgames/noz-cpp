@@ -24,6 +24,7 @@ extern void HandleInputCharacter(char c);
 extern void HandleInputKeyDown(char c);
 static void SetCursorInternal(SystemCursor cursor);
 static void ShowCursorInternal(bool show);
+extern void MarkTextboxChanged();
 
 struct WindowsApp {
     const ApplicationTraits* traits;
@@ -214,13 +215,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         ShowCursorInternal(true);
         break;
 
-    case WM_LBUTTONDOWN:
-        // Take focus from any child control (like edit box) when clicking on main window
-        // if (GetFocus() != hwnd) {
-        //     SetFocus(hwnd);
-        // }
-        break;
-
     case WM_ACTIVATEAPP:
         // Hide native text input when app is deactivated
         if (wParam == FALSE) {
@@ -257,7 +251,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_COMMAND:
-        // Pass through to allow child control notifications
+        if (HIWORD(wParam) == EN_CHANGE)
+            MarkTextboxChanged();
+
         break;
 
     case WM_CTLCOLOREDIT:
@@ -391,7 +387,7 @@ Vec2Int PlatformGetWindowSize() {
     return g_windows.screen_size;
 }
 
-HWND PlatformGetWindowHandle() {
+HWND GetWindowHandle() {
     return g_windows.hwnd;
 }
 
