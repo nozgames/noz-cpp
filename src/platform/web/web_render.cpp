@@ -199,12 +199,9 @@ void ResizeWebGL(const Vec2Int& size) {
     g_gl.screen_size = size;
     glViewport(0, 0, size.x, size.y);
 
-    // Recreate offscreen targets at new size (preserve MSAA sample count)
     int samples = g_gl.offscreen.samples;
     CreateOffscreenTarget(g_gl.offscreen, size.x, size.y, samples);
     CreateOffscreenTarget(g_gl.ui_offscreen, size.x, size.y, samples);
-
-    LogInfo("WebGL resized: %dx%d", size.x, size.y);
 }
 
 static void DestroyOffscreenTarget(OffscreenTarget& target) {

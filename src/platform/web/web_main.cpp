@@ -53,7 +53,7 @@ void ThreadYield() {
     // No-op for single-threaded Emscripten
 }
 
-void SetThreadName(const char* name) {
+void PlatformSetThreadName(const char* name) {
     (void)name;
     // No thread naming support in web
 }

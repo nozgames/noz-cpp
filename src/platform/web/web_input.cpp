@@ -11,8 +11,6 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 
-extern void HandleInputKeyDown(char c);
-
 struct WebInput {
     bool key_states[INPUT_CODE_COUNT];
     bool gamepad_connected[4];
@@ -22,6 +20,21 @@ struct WebInput {
 };
 
 static WebInput g_web_input = {};
+
+// Functions needed by web_main.cpp for touch input simulation
+bool* GetKeyStates() {
+    return g_web_input.key_states;
+}
+
+void HandleInputKeyDown(char c) {
+    // Handle special keys for text input (unused with native textbox)
+    (void)c;
+}
+
+void HandleInputCharacter(char c) {
+    // Handle character input (unused with native textbox)
+    (void)c;
+}
 
 // Map browser key codes to InputCode
 static InputCode KeyCodeToInputCode(const char* code) {
@@ -445,7 +458,10 @@ void PlatformShutdownInput() {
 
 // Native text input overlay
 static bool g_native_text_input_visible = false;
+static bool g_native_text_input_dirty = false;
 static char g_native_text_input_value[TEXT_MAX_LENGTH + 1] = {};
+static noz::Rect g_native_text_input_rect = {};
+static int g_native_text_input_font_size = 0;
 
 static void ColorToRgbString(const Color& c, char* out, int max_len) {
     snprintf(out, max_len, "rgb(%d,%d,%d)",
@@ -454,55 +470,43 @@ static void ColorToRgbString(const Color& c, char* out, int max_len) {
         static_cast<int>(c.b * 255.0f));
 }
 
-void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initial_value, const NativeTextboxStyle& style) {
+void PlatformShowTextbox(const noz::Rect& rect, const Text& text, const NativeTextboxStyle& style) {
     char bg_color[32];
     char text_color[32];
     ColorToRgbString(style.background_color, bg_color, sizeof(bg_color));
     ColorToRgbString(style.text_color, text_color, sizeof(text_color));
 
-    // If already visible and no initial_value, just update position and colors
-    if (g_native_text_input_visible && initial_value == nullptr) {
-        EM_ASM({
-            var input = document.getElementById('native-text-input');
-            if (input) {
-                input.style.left = $0 + 'px';
-                input.style.top = $1 + 'px';
-                input.style.width = $2 + 'px';
-                input.style.height = $3 + 'px';
-                input.style.backgroundColor = UTF8ToString($4);
-                input.style.color = UTF8ToString($5);
-            }
-        }, screen_rect.x, screen_rect.y, screen_rect.width, screen_rect.height, bg_color, text_color);
-        return;
+    g_native_text_input_visible = true;
+    g_native_text_input_dirty = false;
+    g_native_text_input_rect = rect;
+    g_native_text_input_font_size = style.font_size;
+
+    if (text.length > 0) {
+        strncpy(g_native_text_input_value, text.value, TEXT_MAX_LENGTH);
+        g_native_text_input_value[TEXT_MAX_LENGTH] = 0;
+    } else {
+        g_native_text_input_value[0] = 0;
     }
 
-    g_native_text_input_visible = true;
-    if (initial_value) {
-        strncpy(g_native_text_input_value, initial_value, TEXT_MAX_LENGTH);
-        g_native_text_input_value[TEXT_MAX_LENGTH] = 0;
-    }
+    const char* input_type = style.password ? "password" : "text";
 
     EM_ASM({
         var input = document.getElementById('native-text-input');
         if (!input) {
             input = document.createElement('input');
             input.id = 'native-text-input';
-            input.type = 'text';
+            input.autocomplete = 'off';
             input.style.position = 'absolute';
             input.style.zIndex = '1000';
             input.style.outline = 'none';
             input.style.border = 'none';
             input.style.fontFamily = 'sans-serif';
-            input.style.padding = '2px 4px';
+            input.style.padding = '0';
             input.style.boxSizing = 'border-box';
             document.body.appendChild(input);
 
             input.addEventListener('input', function() {
-                var value = input.value;
-                var ptr = Module._malloc(value.length + 1);
-                Module.stringToUTF8(value, ptr, value.length + 1);
-                Module.ccall('NativeTextInputChanged', null, ['number'], [ptr]);
-                Module._free(ptr);
+                Module.ccall('NativeTextInputChanged', null, ['string'], [input.value]);
             });
 
             input.addEventListener('keydown', function(e) {
@@ -512,6 +516,9 @@ void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initi
                 } else if (e.key === 'Escape') {
                     Module.ccall('NativeTextInputCancel', null, [], []);
                     e.preventDefault();
+                } else if (e.key === 'Tab') {
+                    e.preventDefault(); // Stop browser focus change, but let game see it
+                    return;
                 }
                 e.stopPropagation();
             });
@@ -525,22 +532,91 @@ void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initi
             });
         }
 
-        input.style.left = $0 + 'px';
-        input.style.top = $1 + 'px';
-        input.style.width = $2 + 'px';
-        input.style.height = $3 + 'px';
-        input.style.fontSize = $4 + 'px';
+        // Get canvas position and device pixel ratio to convert canvas coords to page coords
+        var canvas = document.getElementById('canvas');
+        var canvasLeft = 0;
+        var canvasTop = 0;
+        if (canvas) {
+            var canvasRect = canvas.getBoundingClientRect();
+            canvasLeft = canvasRect.left;
+            canvasTop = canvasRect.top;
+        }
+        var dpr = window.devicePixelRatio || 1;
+
+        // Convert from canvas buffer coordinates to CSS pixels, then add canvas offset
+        var cssX = ($0 / dpr) + canvasLeft;
+        var cssY = ($1 / dpr) + canvasTop;
+        var cssWidth = $2 / dpr;
+        var cssHeight = $3 / dpr;
+        var cssFontSize = $4 / dpr;
+
+        input.type = UTF8ToString($8);
+        input.style.left = cssX + 'px';
+        input.style.top = cssY + 'px';
+        input.style.width = cssWidth + 'px';
+        input.style.height = cssHeight + 'px';
+        input.style.fontSize = cssFontSize + 'px';
         input.style.backgroundColor = UTF8ToString($5);
         input.style.color = UTF8ToString($6);
         input.value = UTF8ToString($7);
         input.style.display = 'block';
         input.focus();
         input.select();
-    }, screen_rect.x, screen_rect.y, screen_rect.width, screen_rect.height, style.font_size, bg_color, text_color, initial_value ? initial_value : "");
+    }, rect.x, rect.y, rect.width, rect.height, style.font_size, bg_color, text_color, text.value, input_type);
+}
+
+void PlatformUpdateTextboxRect(const noz::Rect& rect, int font_size) {
+    if (!g_native_text_input_visible)
+        return;
+
+    // Only update if rect or font_size changed
+    if (g_native_text_input_rect.x == rect.x &&
+        g_native_text_input_rect.y == rect.y &&
+        g_native_text_input_rect.width == rect.width &&
+        g_native_text_input_rect.height == rect.height &&
+        g_native_text_input_font_size == font_size) {
+        return;
+    }
+
+    g_native_text_input_rect = rect;
+    g_native_text_input_font_size = font_size;
+
+    EM_ASM({
+        var input = document.getElementById('native-text-input');
+        if (input) {
+            // Get canvas position and device pixel ratio to convert canvas coords to page coords
+            var canvas = document.getElementById('canvas');
+            var canvasLeft = 0;
+            var canvasTop = 0;
+            if (canvas) {
+                var canvasRect = canvas.getBoundingClientRect();
+                canvasLeft = canvasRect.left;
+                canvasTop = canvasRect.top;
+            }
+            var dpr = window.devicePixelRatio || 1;
+
+            var cssX = ($0 / dpr) + canvasLeft;
+            var cssY = ($1 / dpr) + canvasTop;
+            var cssWidth = $2 / dpr;
+            var cssHeight = $3 / dpr;
+            var cssFontSize = $4 / dpr;
+
+            input.style.left = cssX + 'px';
+            input.style.top = cssY + 'px';
+            input.style.width = cssWidth + 'px';
+            input.style.height = cssHeight + 'px';
+            input.style.fontSize = cssFontSize + 'px';
+        }
+    }, rect.x, rect.y, rect.width, rect.height, font_size);
 }
 
 void PlatformHideTextbox() {
+    if (!g_native_text_input_visible)
+        return;
+
     g_native_text_input_visible = false;
+    g_native_text_input_rect = {0, 0, 0, 0};
+
     EM_ASM({
         var input = document.getElementById('native-text-input');
         if (input) {
@@ -557,8 +633,20 @@ bool PlatformIsTextboxVisible() {
     return g_native_text_input_visible;
 }
 
-const char* PlatformGetTextboxValue() {
-    return g_native_text_input_value;
+bool PlatformUpdateTextboxText(Text& text) {
+    if (!g_native_text_input_dirty)
+        return false;
+
+    size_t len = strlen(g_native_text_input_value);
+    if (len > TEXT_MAX_LENGTH)
+        len = TEXT_MAX_LENGTH;
+
+    memcpy(text.value, g_native_text_input_value, len);
+    text.value[len] = 0;
+    text.length = static_cast<int>(len);
+
+    g_native_text_input_dirty = false;
+    return true;
 }
 
 // C callbacks for JavaScript
@@ -569,16 +657,16 @@ extern "C" {
             strncpy(g_native_text_input_value, value, TEXT_MAX_LENGTH);
             g_native_text_input_value[TEXT_MAX_LENGTH] = 0;
         }
-        Send(EVENT_TEXTINPUT_CHANGE, nullptr);
+        g_native_text_input_dirty = true;
     }
 
     EMSCRIPTEN_KEEPALIVE
     void NativeTextInputCommit() {
-        Send(EVENT_TEXTINPUT_COMMIT, nullptr);
+        PlatformHideTextbox();
     }
 
     EMSCRIPTEN_KEEPALIVE
     void NativeTextInputCancel() {
-        Send(EVENT_TEXTINPUT_CANCEL, nullptr);
+        PlatformHideTextbox();
     }
 }
