@@ -25,6 +25,13 @@ struct String32 {
     operator const char*() const { return value; }
 };
 
+struct String128 {
+    char value[128];
+    int length;
+
+    operator const char*() const { return value; }
+};
+
 struct String256 {
     char value[256];
     int length;
@@ -41,8 +48,10 @@ struct String4096 {
 
 
 extern void Set(String32& str, const char* src);
+extern void Set(String128& str, const char* src);
 extern void Set(String256& str, const char* src);
 extern void Set(String4096& str, const char* src);
 extern void Set(String32& str, const char* src, u32 length);
+extern void Set(String128& str, const char* src, u32 length);
 extern void Set(String256& str, const char* src, u32 length);
 extern void Set(String4096& str, const char* src, u32 length);

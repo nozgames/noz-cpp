@@ -183,6 +183,10 @@ void Set(String32& str, const char* src) {
 
 }
 
+void Set(String128& str, const char* src) {
+    Copy(str.value, 128, src);
+}
+
 void Set(String256& str, const char* src) {
     Copy(str.value, 256, src);
 }
@@ -193,6 +197,10 @@ void Set(String4096& str, const char* src) {
 
 void Set(String32& str, const char* src, u32 length) {
     Copy(str.value, 32, src, length);
+}
+
+void Set(String128& str, const char* src, u32 length) {
+    Copy(str.value, 128, src, length);
 }
 
 void Set(String256& str, const char* src, u32 length) {

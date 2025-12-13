@@ -224,8 +224,8 @@ void ShutdownWindow() {
     noz::RectInt window_rect = PlatformGetWindowRect();
     SetIntPref(PREF_WINDOW_X, window_rect.x);
     SetIntPref(PREF_WINDOW_Y, window_rect.y);
-    SetIntPref(PREF_WINDOW_WIDTH, window_rect.width);
-    SetIntPref(PREF_WINDOW_HEIGHT, window_rect.height);
+    SetIntPref(PREF_WINDOW_WIDTH, window_rect.w);
+    SetIntPref(PREF_WINDOW_HEIGHT, window_rect.h);
 
 #if 0
 #ifdef NOZ_EDITOR

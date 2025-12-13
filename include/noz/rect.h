@@ -13,21 +13,6 @@ namespace noz {
         f32 height;
     };
 
-    struct RectInt {
-        i32 x;
-        i32 y;
-        i32 width;
-        i32 height;
-
-        bool operator== (const RectInt& o) const {
-            return x == o.x && y == o.y && width == o.width && height == o.height;
-        }
-
-        bool operator!= (const RectInt& o) const {
-            return !(*this == o);
-        }
-    };
-
     inline f32 GetLeft(const Rect& rect) { return rect.x; }
     inline f32 GetTop(const Rect& rect) { return rect.y; }
     inline f32 GetBottom(const Rect& rect) { return rect.y + rect.height; }
@@ -46,14 +31,37 @@ namespace noz {
     inline bool Contains(const Rect& rect, const Vec2& pos) { return Contains(rect, pos.x, pos.y); }
     inline Rect Intersection(const Rect& rect, const Rect& other);
 
-    inline i32 GetLeft(const RectInt& rect) { return rect.x; }
-    inline i32 GetRight(const RectInt& rect) { return rect.x + rect.width; }
-    inline i32 GetTop(const RectInt& rect) { return rect.y; }
-    inline i32 GetBottom(const RectInt& rect) { return rect.y + rect.height; }
-
     inline bool Intersects(const Rect& rect, const Rect& other) {
         return !(other.x > rect.x + rect.width || other.x + other.width < rect.x ||
                  other.y > rect.y + rect.height || other.y + other.height < rect.y);
     }
 
+    struct RectInt {
+        i32 x;
+        i32 y;
+        i32 w;
+        i32 h;
+
+        bool operator== (const RectInt& o) const {
+            return x == o.x && y == o.y && w == o.w && h == o.h;
+        }
+
+        bool operator!= (const RectInt& o) const {
+            return !(*this == o);
+        }
+    };
+
+    // @rect_int
+    inline i32 GetLeft(const RectInt& rect) { return rect.x; }
+    inline i32 GetRight(const RectInt& rect) { return rect.x + rect.w; }
+    inline i32 GetTop(const RectInt& rect) { return rect.y; }
+    inline i32 GetBottom(const RectInt& rect) { return rect.y + rect.h; }
+    inline RectInt Scale(const RectInt& r, int scale) {
+        return RectInt{ r.x * scale, r.y * scale, r.w * scale, r.h * scale };
+    }
+    inline RectInt Expand(const RectInt& r, int size) {
+        return RectInt{ r.x - size, r.y - size, r.w + size * 2, r.h + size * 2 };
+    }
+
+    extern RectInt Union(const RectInt& r1, const RectInt& r2);
 }

@@ -32,11 +32,16 @@ enum WebSocketEvent {
     WEBSOCKET_EVENT_CLOSED
 };
 
-typedef void (*WebSocketProc)(WebSocket* socket, WebSocketEvent event, const u8* event_data, u32 event_data_size);
+typedef void (*WebSocketProc)(WebSocket* socket, WebSocketEvent event, void* event_data, u32 event_data_size, void* user_data);
+
+struct WebSocketEventMessage {
+    const u8* data;
+    u32 size;
+};
 
 // Connect to a WebSocket server
 // URL format: ws://host:port/path or wss://host:port/path
-WebSocket* CreateWebSocket(Allocator* allocator, const char* url, WebSocketProc proc);
+WebSocket* CreateWebSocket(Allocator* allocator, const char* url, WebSocketProc proc, void* user_data=nullptr);
 
 // Set callbacks (optional - can also poll)
 void WebSocketOnConnect(WebSocket* ws, WebSocketConnectCallback callback);
@@ -59,10 +64,8 @@ const char* WebSocketPeekMessageText(WebSocket* ws);  // Convenience for text me
 void WebSocketPopMessage(WebSocket* ws);
 
 // Close connection
-void WebSocketClose(WebSocket* ws, u16 code = 1000, const char* reason = nullptr);
-
-// Release resources (must call after close or error)
-void WebSocketRelease(WebSocket* ws);
+void Close(WebSocket* socket, u16 code = 1000, const char* reason = nullptr);
+void Free(WebSocket* socket);
 
 // Module init/shutdown (called by engine)
 void InitWebSocket();

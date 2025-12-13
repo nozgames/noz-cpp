@@ -432,8 +432,8 @@ static void PlatformUpdateTextboxRectInternal(const noz::RectInt& rect, int font
 
     if (g_windows_input.edit_rect != rect) {
         g_windows_input.edit_rect = rect;
-        SetWindowPos(g_windows_input.edit_hwnd, HWND_TOP, rect.x, rect.y, rect.width, rect.height, SWP_SHOWWINDOW);
-        CenterTextbox(rect.x, rect.y, rect.width, rect.height, SWP_SHOWWINDOW);
+        SetWindowPos(g_windows_input.edit_hwnd, HWND_TOP, rect.x, rect.y, rect.w, rect.h, SWP_SHOWWINDOW);
+        CenterTextbox(rect.x, rect.y, rect.w, rect.h, SWP_SHOWWINDOW);
         InvalidateRect(g_windows_input.edit_hwnd, nullptr, TRUE);
         UpdateWindow(g_windows_input.edit_hwnd);
     }

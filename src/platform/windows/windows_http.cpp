@@ -484,7 +484,6 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
     else
         wcscpy_s(w_content_type, L"Content-Type: application/octet-stream");
 
-    LogInfo("Adding Content-Type: [%ls]", w_content_type);
     if (!WinHttpAddRequestHeaders(request->request, w_content_type, (DWORD)-1, WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE))
     {
         LogError("WinHttpAddRequestHeaders (Content-Type) failed: %lu", GetLastError());
@@ -499,8 +498,6 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
     // Add custom headers if provided
     if (headers && headers[0])
     {
-        LogInfo("Custom headers input: [%s]", headers);
-
         // Parse and add headers one at a time
         char* headers_copy = (char*)Alloc(ALLOCATOR_SCRATCH, Length(headers) + 1);
         strcpy(headers_copy, headers);
@@ -521,7 +518,6 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
                 wchar_t* w_header = (wchar_t*)Alloc(ALLOCATOR_SCRATCH, w_len * sizeof(wchar_t));
                 MultiByteToWideChar(CP_UTF8, 0, line, -1, w_header, w_len);
 
-                LogInfo("Adding header: [%ls]", w_header);
                 if (!WinHttpAddRequestHeaders(request->request, w_header, (DWORD)-1, WINHTTP_ADDREQ_FLAG_ADD))
                 {
                     LogError("WinHttpAddRequestHeaders failed for [%ls]: %lu", w_header, GetLastError());
