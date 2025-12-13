@@ -15,7 +15,6 @@ extern void HandleInputKeyDown(char c);
 
 struct WebInput {
     bool key_states[INPUT_CODE_COUNT];
-    TextInput text_input;
     bool gamepad_connected[4];
     double gamepad_axes[4][6];  // 4 gamepads, 6 axes each
     bool gamepad_buttons[4][20]; // 4 gamepads, 20 buttons each

@@ -19,7 +19,6 @@ constexpr int INPUT_BUFFER_SIZE = 1024;
 extern void InitRenderDriver(const RendererTraits* traits, HWND hwnd);
 extern void ResizeRenderDriver(const Vec2Int& screen_size);
 extern void ShutdownRenderDriver();
-extern void WaitRenderDriver();
 static void SetCursorInternal(SystemCursor cursor);
 static void ShowCursorInternal(bool show);
 extern void MarkTextboxChanged();
@@ -116,116 +115,115 @@ static void UpdateWindowRect() {
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    switch (uMsg)
-    {
-    case WM_DESTROY:
-        if (g_windows.on_close)
-            g_windows.on_close();
-        return 0;
+    switch (uMsg) {
+        case WM_DESTROY:
+            if (g_windows.on_close)
+                g_windows.on_close();
+            return 0;
 
-    case WM_PAINT: {
-        PAINTSTRUCT ps;
-        BeginPaint(hwnd, &ps);
-        EndPaint(hwnd, &ps);
-        return 0;
-    }
+        case WM_ERASEBKGND:
+            return 1;
 
-    case WM_SIZE: {
-        UpdateWindowRect();
-        return 0;
-    }
-
-    case WM_MOVE:
-        UpdateWindowRect();
-        break;
-
-    case WM_ENTERSIZEMOVE:
-        g_windows.is_resizing = true;
-        break;
-
-    case WM_EXITSIZEMOVE:
-        g_windows.is_resizing = false;
-        break;
-
-    case WM_SIZING: {
-        UpdateWindowRect();
-        extern void RunApplicationFrame();
-        RunApplicationFrame();
-        break;
-    }
-
-    case WM_MOUSEWHEEL: {
-        int wheel_delta = GET_WHEEL_DELTA_WPARAM(wParam);
-        g_windows.mouse_scroll.y += static_cast<f32>(wheel_delta) / 120.0f;
-        break;
-    }
-
-    case WM_MOUSEMOVE: {
-        int x = LOWORD(lParam);
-        int y = HIWORD(lParam);
-        g_windows.mouse_position = {
-            static_cast<f32>(x),
-            static_cast<f32>(y)
-        };
-
-        if (!g_windows.mouse_on_screen) {
-            g_windows.mouse_on_screen = true;
-            TRACKMOUSEEVENT tme = {};
-            tme.cbSize = sizeof(tme);
-            tme.dwFlags = TME_LEAVE;
-            tme.hwndTrack = hwnd;
-            TrackMouseEvent(&tme);
-            ShowCursorInternal(g_windows.cursor != SYSTEM_CURSOR_NONE);
-        }
-
-        return 0;
-    }
-
-    case WM_MOUSELEAVE:
-        g_windows.mouse_on_screen = false;
-        ShowCursorInternal(true);
-        break;
-
-    case WM_ACTIVATEAPP:
-        if (wParam == FALSE)
-            PlatformHideTextbox();
-        break;
-
-
-    case WM_SETCURSOR:
-        if (LOWORD(lParam) == HTCLIENT) {
-            SetCursorInternal(g_windows.cursor);
+        case WM_PAINT: {
+            PAINTSTRUCT ps;
+            BeginPaint(hwnd, &ps);
+            EndPaint(hwnd, &ps);
             return 0;
         }
 
-        g_windows.mouse_on_screen = false;
-        ShowCursorInternal(true);
-        break;
+        case WM_SIZE:
+            UpdateWindowRect();
+            return 0;
 
-    case WM_SYSCHAR:
-        return 0;
+        case WM_MOVE:
+            UpdateWindowRect();
+            break;
 
-    case WM_SYSKEYDOWN:
-        return 0;
+        case WM_ENTERSIZEMOVE:
+            g_windows.is_resizing = true;
+            break;
 
-    case WM_KEYUP:
-        return 0;
+        case WM_EXITSIZEMOVE:
+            g_windows.is_resizing = false;
+            break;
 
-    case WM_COMMAND:
-        if (HIWORD(wParam) == EN_CHANGE)
-            MarkTextboxChanged();
+        case WM_SIZING:
+            UpdateWindowRect();
+            extern void RunApplicationFrame();
+            RunApplicationFrame();
+            break;
 
-        break;
+        case WM_MOUSEWHEEL: {
+            int wheel_delta = GET_WHEEL_DELTA_WPARAM(wParam);
+            g_windows.mouse_scroll.y += static_cast<f32>(wheel_delta) / 120.0f;
+            break;
+        }
 
-    case WM_CTLCOLOREDIT: {
-        HDC hdc = reinterpret_cast<HDC>(wParam);
-        SetTextColor(hdc, GetNativeEditTextColor());
-        SetBkColor(hdc, GetNativeEditBgColor());
-        HBRUSH brush = GetNativeEditBrush();
-        if (brush) return reinterpret_cast<LRESULT>(brush);
-        break;
+        case WM_MOUSEMOVE: {
+            int x = LOWORD(lParam);
+            int y = HIWORD(lParam);
+            g_windows.mouse_position = {
+                static_cast<f32>(x),
+                static_cast<f32>(y)
+            };
+
+            if (!g_windows.mouse_on_screen) {
+                g_windows.mouse_on_screen = true;
+                TRACKMOUSEEVENT tme = {};
+                tme.cbSize = sizeof(tme);
+                tme.dwFlags = TME_LEAVE;
+                tme.hwndTrack = hwnd;
+                TrackMouseEvent(&tme);
+                ShowCursorInternal(g_windows.cursor != SYSTEM_CURSOR_NONE);
+            }
+
+            return 0;
+        }
+
+        case WM_MOUSELEAVE:
+            g_windows.mouse_on_screen = false;
+            ShowCursorInternal(true);
+            break;
+
+        case WM_ACTIVATEAPP:
+            if (wParam == FALSE)
+                PlatformHideTextbox();
+            break;
+
+
+        case WM_SETCURSOR:
+            if (LOWORD(lParam) == HTCLIENT) {
+                SetCursorInternal(g_windows.cursor);
+                return 0;
+            }
+
+            g_windows.mouse_on_screen = false;
+            ShowCursorInternal(true);
+            break;
+
+        case WM_SYSCHAR:
+            return 0;
+
+        case WM_SYSKEYDOWN:
+            return 0;
+
+        case WM_KEYUP:
+            return 0;
+
+        case WM_COMMAND:
+            if (HIWORD(wParam) == EN_CHANGE)
+                MarkTextboxChanged();
+            break;
+
+        case WM_CTLCOLOREDIT: {
+            HDC hdc = reinterpret_cast<HDC>(wParam);
+            SetTextColor(hdc, GetNativeEditTextColor());
+            SetBkColor(hdc, GetNativeEditBgColor());
+            HBRUSH brush = GetNativeEditBrush();
+            return reinterpret_cast<LRESULT>(brush);
+        }
     }
-    }
+
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
@@ -296,14 +294,11 @@ void PlatformShutdown() {
     g_windows.hwnd = nullptr;
 }
 
-extern void UpdateNativeTextbox();
 
 bool PlatformUpdate() {
     MSG msg = {};
 
     g_windows.mouse_scroll = {0, 0};
-
-    UpdateNativeTextbox();
 
     if (!g_windows.is_resizing) {
         int count = 0;

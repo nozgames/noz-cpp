@@ -124,9 +124,10 @@ extern bool PlatformIsGamepadActive();
 extern bool PlatformIsMouseOverWindow();
 
 // @native_text_input
-extern void PlatformShowTextbox(const noz::Rect& rect, const char* initial_value, const NativeTextboxStyle& style);
+extern void PlatformShowTextbox(const noz::Rect& rect, const Text& text, const NativeTextboxStyle& style);
 extern void PlatformHideTextbox();
-extern bool PlatformUpdateTextbox(const noz::Rect& rect, Text& text);
+extern void PlatformUpdateTextboxRect(const noz::Rect& rect, int font_size);
+extern bool PlatformUpdateTextboxText(Text& text);
 extern bool PlatformIsTextboxVisible();
 
 // @audio

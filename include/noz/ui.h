@@ -173,7 +173,6 @@ extern Vec2 ScreenToUI(const Vec2& screen_pos);
 extern bool CheckElementFlags(ElementFlags flags);
 extern ElementId GetElementId();
 extern Vec2 ScreenToElement(const Vec2& screen);
-extern noz::Rect GetElementScreenRect();
 
 // @layout
 extern void BeginCanvas(const CanvasStyle& style={});

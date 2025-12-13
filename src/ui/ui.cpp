@@ -24,6 +24,7 @@ enum ElementType : u8 {
     ELEMENT_TYPE_SCENE,
     ELEMENT_TYPE_SPACER,
     ELEMENT_TYPE_TRANSFORM,
+    ELEMENT_TYPE_TEXTBOX,
     ELEMENT_TYPE_COUNT
 };
 
@@ -69,8 +70,8 @@ struct CachedTextMesh {
 
 struct ElementState {
     ElementFlags flags;
-    noz::Rect screen_rect;
     u16 index;
+    Text text;
 };
 
 struct Element {
@@ -125,6 +126,10 @@ struct TransformElement : Element {
     TransformStyle style;
 };
 
+struct TextboxElement : Element {
+    TextBoxStyle style;
+};
+
 union FatElement {
     Element element;
     CanvasElement canvas;
@@ -133,6 +138,7 @@ union FatElement {
     LabelElement label;
     ImageElement image;
     SpacerElement spacer;
+    TextboxElement textbox;
 };
 
 struct UI {
@@ -145,6 +151,7 @@ struct UI {
     u16 element_count;
     u16 element_stack_count;
     ElementId focus_id;
+    ElementId pending_focus_id;
     ElementId textbox_id;
     Mesh* element_mesh;
     Mesh* image_element_mesh;
@@ -161,7 +168,7 @@ struct UI {
     CanvasId current_focus_canvas_id;
 };
 
-static UI g_ui = {};
+static UI g_ui;
 
 static void SetId(Element* e, ElementId id) {
     e->id = id;
@@ -212,6 +219,11 @@ static void SetFocus(ElementId focus_id) {
         CommitTextBox();
 
     g_ui.focus_id = focus_id;
+    g_ui.pending_focus_id = focus_id;
+}
+
+static void SetPendingFocus(ElementId focus_id) {
+    g_ui.pending_focus_id = focus_id;
 }
 
 void SetFocus(CanvasId canvas_id, ElementId element_id) {
@@ -229,14 +241,6 @@ Vec2 ScreenToElement(const Vec2& screen) {
     Element* e = GetCurrentElement();
     if (!e) return VEC2_ZERO;
     return TransformPoint(e->world_to_local, ScreenToWorld(g_ui.camera, screen));
-}
-
-noz::Rect GetElementScreenRect() {
-    Element* e = GetCurrentElement();
-    if (!e) return {};
-
-    // Return cached screen rect from previous frame's CalculateTransforms
-    return g_ui.element_states[e->index].screen_rect;
 }
 
 ElementId GetElementId() {
@@ -394,6 +398,7 @@ void Spacer(float size) {
     e->size[parent->type == ELEMENT_TYPE_ROW ? 0 : 1] = size;
 }
 
+
 static u64 GetMeshHash(const TextRequest& request) {
     return Hash(Hash(request.text), reinterpret_cast<u64>(request.font), static_cast<u64>(request.font_size));
 }
@@ -468,7 +473,6 @@ bool TextBox(Text& text, const TextBoxStyle& style) {
 
     BeginContainer({.height=style.height, .id=style.id, .nav=style.nav});
     ElementId id = GetElementId();
-    bool has_focus = HasFocus();
     bool text_changed = false;
 
     BeginContainer({
@@ -477,25 +481,15 @@ bool TextBox(Text& text, const TextBoxStyle& style) {
         .border=HasFocus() ? style.focus_border : style.border
     });
     {
-        BeginContainer();
-        noz::Rect text_rect = GetElementScreenRect();
+        TextboxElement* textbox = static_cast<TextboxElement*>(CreateElement(ELEMENT_TYPE_TEXTBOX));
+        textbox->id = id;
+        textbox->style = style;
+        SetValue(g_ui.element_states[id].text, text);
 
-        if (g_ui.textbox_id == id) {
-            text_changed = PlatformUpdateTextbox(text_rect, text);
-        } else if (has_focus) {
-            g_ui.textbox_id = id;
+        if (g_ui.focus_id == id)
+            text_changed = PlatformUpdateTextboxText(text);
 
-            PlatformShowTextbox(text_rect, text.value, {
-                style.background_color,
-                style.text_color,
-                static_cast<int>(style.font_size * GetUIScale()),
-                style.password
-            });
-        }
-
-        EndContainer();
-
-        if (g_ui.textbox_id != id) {
+        if (id == 0 || g_ui.textbox_id != id) {
             if (text.value[0] != '\0') {
                 // password
                 if (style.password) {
@@ -529,8 +523,8 @@ bool TextBox(Text& text, const TextBoxStyle& style) {
             Container({});
         }
     }
-    EndContainer();
 
+    EndContainer();
     EndContainer();
 
     return text_changed;
@@ -763,6 +757,11 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
         }
 
         e->measured_size = max_content_size;
+
+    // @measure_textbox
+    } else if (e->type == ELEMENT_TYPE_TEXTBOX) {
+        e->measured_size = available_size;
+
     } else {
         assert(false && "Unhandled element type in MeasureElements");
     }
@@ -884,6 +883,11 @@ static int LayoutElement(int element_index, const Vec2& size) {
         for (u16 i = 0; i < e->child_count; i++)
             element_index = LayoutElement(element_index, content_size);
 
+    // @layout_textbox
+    } else if (e->type == ELEMENT_TYPE_TEXTBOX) {
+        e->rect.width = size.x;
+        e->rect.height = size.y;
+
     } else {
         assert(false && "Unhandled element type in LayoutElements");
     }
@@ -914,20 +918,6 @@ static u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform) 
     }
 
     e->world_to_local = Inverse(e->local_to_world);
-
-    // Cache screen rect in element state for native input positioning
-    {
-        Vec2 ui_top_left = TransformPoint(e->local_to_world, VEC2_ZERO);
-        Vec2 ui_bottom_right = TransformPoint(e->local_to_world, Vec2{e->rect.width, e->rect.height});
-        Vec2 screen_top_left = WorldToScreen(g_ui.camera, ui_top_left);
-        Vec2 screen_bottom_right = WorldToScreen(g_ui.camera, ui_bottom_right);
-        g_ui.element_states[e->index].screen_rect = noz::Rect{
-            screen_top_left.x,
-            screen_top_left.y,
-            screen_bottom_right.x - screen_top_left.x,
-            screen_bottom_right.y - screen_top_left.y
-        };
-    }
 
     for (u32 i = 0; i < e->child_count; i++)
         element_index = CalculateTransforms(element_index, e->local_to_world);
@@ -1178,6 +1168,8 @@ void BeginUI(u32 ref_width, u32 ref_height) {
     SetExtents(g_ui.camera, 0, g_ui.ortho_size.x, 0, g_ui.ortho_size.y);
 
     UpdateInputState(g_ui.input);
+
+    SetFocus(g_ui.pending_focus_id);
 }
 
 inline u8 WrapElementId(u8 id, int offset) {
@@ -1195,6 +1187,8 @@ static void HandleInput() {
     bool button_down = IsButtonDown(g_ui.input, MOUSE_LEFT);
     bool focus_element_pressed = false;
     bool focus_element_found = false;
+    TextboxElement* focused_textbox = nullptr;
+    noz::Rect focused_textbox_rect = {};
 
     // First pass: set flags for all elements (don't consume yet)
     for (u16 element_index=g_ui.element_count; element_index>0; element_index--) {
@@ -1204,6 +1198,13 @@ static void HandleInput() {
         bool mouse_over = Contains(Bounds2{0,0,e->rect.width, e->rect.height}, local_mouse);
 
         focus_element_found &= e->id == g_ui.focus_id;
+
+        if (g_ui.focus_id == e->id && e->type == ELEMENT_TYPE_TEXTBOX) {
+            focused_textbox = static_cast<TextboxElement*>(e);
+            Vec2 tl = WorldToScreen(g_ui.camera, TransformPoint(focused_textbox->local_to_world));
+            Vec2 br = WorldToScreen(g_ui.camera, TransformPoint(focused_textbox->local_to_world, Vec2{focused_textbox->rect.width, focused_textbox->rect.height}));
+            focused_textbox_rect = noz::Rect{tl.x, tl.y, br.x - tl.x, br.y - tl.y};
+        }
 
         if (mouse_over)
             state.flags = state.flags | ELEMENT_FLAG_HOVERED;
@@ -1215,7 +1216,7 @@ static void HandleInput() {
             if (!focus_element_pressed && e->id != 0) {
                 focus_element_pressed = true;
                 focus_element_found = true;
-                SetFocus(e->id);
+                SetPendingFocus(e->id);
             }
         } else {
             state.flags = state.flags & ~ELEMENT_FLAG_PRESSED;
@@ -1226,6 +1227,25 @@ static void HandleInput() {
         } else {
             state.flags = state.flags & ~ELEMENT_FLAG_DOWN;
         }
+    }
+
+    if (focused_textbox) {
+        Text& text = g_ui.element_states[focused_textbox->id].text;
+        int font_size = static_cast<int>(focused_textbox->style.font_size * GetUIScale());
+        if (g_ui.textbox_id != focused_textbox->id) {
+            g_ui.textbox_id = focused_textbox->id;
+            PlatformShowTextbox(focused_textbox_rect, text, {
+                focused_textbox->style.background_color,
+                focused_textbox->style.text_color,
+                font_size,
+                focused_textbox->style.password
+            });
+        } else {
+            PlatformUpdateTextboxRect(focused_textbox_rect, font_size);
+        }
+    } else if (g_ui.textbox_id) {
+        PlatformHideTextbox();
+        g_ui.textbox_id = 0;
     }
 
     // Second pass: consume button for topmost pressed element
@@ -1239,7 +1259,7 @@ static void HandleInput() {
     }
 
     // Cycle through ui elements
-    if (WasButtonPressed(KEY_TAB) && g_ui.focus_id != 0) {
+    if (WasButtonPressed(KEY_TAB)) {
         int focus_offset = IsShiftDown() ? -1 : 1;
         ElementId focus_id = g_ui.focus_id;
 
@@ -1268,15 +1288,15 @@ static void HandleInput() {
                  focus_id = WrapElementId(focus_id, focus_offset));
         }
 
-        SetFocus(focus_id);
+        SetPendingFocus(focus_id);
     }
 
     // Clear focus when clicking outside of focused element and a textbox is active
     if (mouse_left_pressed && !focus_element_pressed && g_ui.textbox_id != 0)
-        SetFocus(0);
+        SetPendingFocus(ELEMENT_ID_NONE);
     // Native textbox lost focus?
-    else if (g_ui.focus_id == g_ui.textbox_id && !PlatformIsTextboxVisible())
-        SetFocus(0);
+    else if (g_ui.textbox_id != ELEMENT_ID_NONE && g_ui.focus_id == g_ui.textbox_id && !PlatformIsTextboxVisible())
+        SetPendingFocus(ELEMENT_ID_NONE);
 }
 
 void EndUI() {
@@ -1395,7 +1415,7 @@ static void CreateImageElementMesh() {
 }
 
 void InitUI(const ApplicationTraits* traits) {
-    g_ui = {};
+    memset(&g_ui, 0, sizeof(g_ui));
     g_ui.allocator = CreateArenaAllocator(sizeof(FatElement) * MAX_ELEMENTS, "UI");
     g_ui.camera = CreateCamera(ALLOCATOR_DEFAULT);
     g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
@@ -1421,5 +1441,5 @@ void InitUI(const ApplicationTraits* traits) {
 
 void ShutdownUI() {
     Destroy(g_ui.allocator);
-    g_ui = {};
+    memset(&g_ui, 0, sizeof(g_ui));
 }

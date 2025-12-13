@@ -18,6 +18,14 @@ namespace noz {
         i32 y;
         i32 width;
         i32 height;
+
+        bool operator== (const RectInt& o) const {
+            return x == o.x && y == o.y && width == o.width && height == o.height;
+        }
+
+        bool operator!= (const RectInt& o) const {
+            return !(*this == o);
+        }
     };
 
     inline f32 GetLeft(const Rect& rect) { return rect.x; }

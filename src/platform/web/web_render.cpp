@@ -271,6 +271,3 @@ void ShutdownRenderDriver() {
     ShutdownWebGL();
 }
 
-void WaitRenderDriver() {
-    // No explicit sync needed in WebGL
-}

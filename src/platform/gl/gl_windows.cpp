@@ -433,6 +433,3 @@ void ShutdownRenderDriver() {
 
     UnloadGLESLibrary();
 }
-
-void WaitRenderDriver() {
-}

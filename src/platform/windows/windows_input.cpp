@@ -20,21 +20,17 @@ struct WindowsInput {
     bool gamepad_connected[XUSER_MAX_COUNT] = {0};
     Vec2 gamepad_left_stick[XUSER_MAX_COUNT] = {0};
     int active_controller;
+
     HWND edit_hwnd = nullptr;
     WNDPROC edit_proc = nullptr;
     bool edit_visible = false;
     bool edit_dirty = false;
     noz::RectInt edit_rect;
-    HBRUSH edit_bg_brush = nullptr;
-    HFONT edit_font = nullptr;
     COLORREF edit_text_color = RGB(255, 255, 255);
     COLORREF edit_bg_color = RGB(55, 55, 55);
+    HBRUSH edit_bg_brush = nullptr;
+    HFONT edit_font = nullptr;
     int edit_font_size = -1;
-
-    noz::RectInt new_edit_rect;
-    bool new_edit_visible;
-    Text new_edit_text;
-    NativeTextboxStyle new_edit_style;
 };
 
 static WindowsInput g_windows_input = {};
@@ -377,37 +373,6 @@ void CommitNativeEdit(HWND hwnd) {
     g_windows_input.edit_visible = false;
 }
 
-static LRESULT CALLBACK NativeEditProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    switch (msg) {
-        case WM_CHAR:
-            // Suppress beep for Enter and Escape
-            // if (wParam == '\r' || wParam == 27)
-            //     return 0;
-            break;
-        case WM_KEYDOWN:
-            // if (wParam == VK_RETURN) {
-            //     CommitNativeEdit(hwnd);
-            //     return 0;
-            // }
-            //
-            // if (wParam == VK_ESCAPE) {
-            //     ShowWindow(hwnd, SW_HIDE);
-            //     g_windows_input.edit_visible = false;
-            //     HWND parent = GetWindowHandle();
-            //     if (parent) SetFocus(parent);
-            //     return 0;
-            // }
-            break;
-        case WM_KILLFOCUS:
-            // if (g_windows_input.edit_visible) {
-            //     CommitNativeEdit(hwnd);
-            // }
-            break;
-    }
-
-    return CallWindowProc(g_windows_input.edit_proc, hwnd, msg, wParam, lParam);
-}
-
 static COLORREF ColorToColorRef(const Color& c) {
     return RGB(
         static_cast<BYTE>(c.r * 255.0f),
@@ -416,12 +381,14 @@ static COLORREF ColorToColorRef(const Color& c) {
     );
 }
 
-void UpdateEditFont(int font_size) {
-    //g_windows_input.edit_font_size = font_size;
+static void UpdateEditFont(int font_size) {
+    if (g_windows_input.edit_font_size == font_size)
+        return;
 
-    if (g_windows_input.edit_font) {
+    if (g_windows_input.edit_font)
         DeleteObject(g_windows_input.edit_font);
-    }
+
+    g_windows_input.edit_font_size = font_size;
     g_windows_input.edit_font = CreateFontA(
         -font_size,
         0,
@@ -438,7 +405,8 @@ void UpdateEditFont(int font_size) {
         DEFAULT_PITCH | FF_DONTCARE,
         "Segoe UI"
     );
-    SendMessage(g_windows_input.edit_hwnd, WM_SETFONT, (WPARAM)g_windows_input.edit_font, TRUE);
+
+    SendMessage(g_windows_input.edit_hwnd, WM_SETFONT, reinterpret_cast<WPARAM>(g_windows_input.edit_font), TRUE);
 }
 
 void CenterTextbox(int x, int y, int width, int height, UINT flags) {
@@ -459,89 +427,82 @@ void MarkTextboxChanged() {
     g_windows_input.edit_dirty = true;
 }
 
-void PlatformShowTextboxInternal(const noz::RectInt& rect, const char* initial_value, const NativeTextboxStyle& style) {
+static void PlatformUpdateTextboxRectInternal(const noz::RectInt& rect, int font_size) {
+    UpdateEditFont(font_size);
+
+    if (g_windows_input.edit_rect != rect) {
+        g_windows_input.edit_rect = rect;
+        SetWindowPos(g_windows_input.edit_hwnd, HWND_TOP, rect.x, rect.y, rect.width, rect.height, SWP_SHOWWINDOW);
+        CenterTextbox(rect.x, rect.y, rect.width, rect.height, SWP_SHOWWINDOW);
+        InvalidateRect(g_windows_input.edit_hwnd, nullptr, TRUE);
+        UpdateWindow(g_windows_input.edit_hwnd);
+    }
+}
+
+void PlatformUpdateTextboxRect(const noz::Rect& rect, int font_size) {
+    int x = static_cast<int>(rect.x);
+    int y = static_cast<int>(rect.y);
+    int width = static_cast<int>(rect.width);
+    int height = static_cast<int>(rect.height);
+    PlatformUpdateTextboxRectInternal({x, y, width, height}, font_size);
+}
+
+void PlatformShowTextboxInternal(const noz::RectInt& rect, const Text& initial_value, const NativeTextboxStyle& style) {
     // colors
+    COLORREF background_color = ColorToColorRef(style.background_color);
     g_windows_input.edit_text_color = ColorToColorRef(style.text_color);
-    g_windows_input.edit_bg_color = ColorToColorRef(style.background_color);
-    if (!g_windows_input.edit_bg_brush)
-//        DeleteObject(g_windows_input.edit_bg_brush);
-    g_windows_input.edit_bg_brush = CreateSolidBrush(g_windows_input.edit_bg_color);
+    if (g_windows_input.edit_bg_color != background_color) {
+        g_windows_input.edit_bg_color = ColorToColorRef(style.background_color);
+        if (!g_windows_input.edit_bg_brush)
+            DeleteObject(g_windows_input.edit_bg_brush);
+        g_windows_input.edit_bg_brush = CreateSolidBrush(g_windows_input.edit_bg_color);
+    }
 
     // password
     LONG_PTR current_style = GetWindowLongPtr(g_windows_input.edit_hwnd, GWL_STYLE);
     if (style.password) {
         SetWindowLongPtr(g_windows_input.edit_hwnd, GWL_STYLE, current_style | ES_PASSWORD);
-        SendMessage(g_windows_input.edit_hwnd, EM_SETPASSWORDCHAR, (WPARAM)'*', 0);
+        SendMessage(g_windows_input.edit_hwnd, EM_SETPASSWORDCHAR, '*', 0);
     } else {
         SetWindowLongPtr(g_windows_input.edit_hwnd, GWL_STYLE, current_style & ~ES_PASSWORD);
         SendMessage(g_windows_input.edit_hwnd, EM_SETPASSWORDCHAR, 0, 0);
     }
 
-    if (initial_value) {
-        SetWindowTextA(g_windows_input.edit_hwnd, initial_value);
+    // value
+    if (initial_value.length > 0) {
+        SetWindowTextA(g_windows_input.edit_hwnd, initial_value.value);
         SendMessage(g_windows_input.edit_hwnd, EM_SETSEL, 0, -1);
     } else {
         SetWindowTextA(g_windows_input.edit_hwnd, "");
     }
 
-    //UpdateEditFont(style.font_size);
-    //CenterTextbox(x, y, width, height, SWP_SHOWWINDOW);
     SetFocus(g_windows_input.edit_hwnd);
-    SetWindowPos(g_windows_input.edit_hwnd, HWND_TOP, rect.x, rect.y, rect.width, rect.height, SWP_SHOWWINDOW|SWP_DRAWFRAME);
-    InvalidateRect(g_windows_input.edit_hwnd, nullptr, TRUE);
-    UpdateWindow(g_windows_input.edit_hwnd);
+
+    PlatformUpdateTextboxRectInternal(rect, style.font_size);
 
     g_windows_input.edit_visible = true;
 }
 
-void PlatformShowTextbox(const noz::Rect& rect, const char* initial_value, const NativeTextboxStyle& style) {
+void PlatformShowTextbox(const noz::Rect& rect, const Text& text, const NativeTextboxStyle& style) {
     int x = static_cast<int>(rect.x);
     int y = static_cast<int>(rect.y);
     int width = static_cast<int>(rect.width);
     int height = static_cast<int>(rect.height);
-    g_windows_input.new_edit_rect = {x, y, width, height};
-    g_windows_input.new_edit_visible = true;
-    SetValue(g_windows_input.new_edit_text, initial_value);
-    g_windows_input.new_edit_style = style;
+    PlatformShowTextboxInternal({x, y, width, height}, text, style);
 }
-
-void UpdateNativeTextbox() {
-    if (g_windows_input.new_edit_visible != g_windows_input.edit_visible) {
-        if (g_windows_input.new_edit_visible)
-            PlatformShowTextboxInternal(g_windows_input.new_edit_rect, g_windows_input.new_edit_text.value, g_windows_input.new_edit_style);
-        else
-            PlatformHideTextbox();
-    }
-}
-
 
 void PlatformHideTextbox() {
     if (!g_windows_input.edit_visible)
         return;
 
-    LogInfo("HIDE");
-
     ShowWindow(g_windows_input.edit_hwnd, SW_HIDE);
     InvalidateRect(g_windows_input.edit_hwnd, nullptr, TRUE);
     UpdateWindow(g_windows_input.edit_hwnd);
     g_windows_input.edit_visible = false;
+    g_windows_input.edit_rect = {0,0,0,0};
 }
 
-bool PlatformUpdateTextbox(const noz::Rect& rect, Text& text) {
-    int x = static_cast<int>(rect.x);
-    int y = static_cast<int>(rect.y);
-    int width = static_cast<int>(rect.width);
-    int height = static_cast<int>(rect.height);
-    if (x != g_windows_input.edit_rect.x ||
-        y != g_windows_input.edit_rect.y ||
-        width != g_windows_input.edit_rect.width ||
-        height != g_windows_input.edit_rect.height) {
-        g_windows_input.edit_rect = {x, y, width, height};
-        SetWindowPos(g_windows_input.edit_hwnd, HWND_TOP, x, y, width, height, SWP_SHOWWINDOW);
-        InvalidateRect(g_windows_input.edit_hwnd, nullptr, TRUE);
-        UpdateWindow(g_windows_input.edit_hwnd);
-    }
-
+bool PlatformUpdateTextboxText(Text& text) {
     if (!g_windows_input.edit_dirty)
         return false;
 
@@ -578,15 +539,6 @@ void PlatformInitInput() {
         GetModuleHandle(nullptr),
         nullptr
     );
-
-    if (g_windows_input.edit_hwnd) {
-        g_windows_input.edit_proc = reinterpret_cast<WNDPROC>(
-            SetWindowLongPtr(
-                g_windows_input.edit_hwnd,
-                GWLP_WNDPROC,
-                reinterpret_cast<LONG_PTR>(NativeEditProc)));
-    }
-
 }
 
 void PlatformShutdownInput() {
