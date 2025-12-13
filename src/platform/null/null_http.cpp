@@ -62,3 +62,18 @@ void PlatformCancel(const PlatformHttpHandle& handle) {
 void PlatformFree(const PlatformHttpHandle& handle) {
     (void)handle;
 }
+
+void PlatformEncodeUrl(char* out, u32 out_size, const char* input, u32 input_length) {
+    if (!out || out_size == 0)
+        return;
+
+    out[0] = '\0';
+
+    if (!input || input_length == 0)
+        return;
+
+    // Null implementation - just copy the input
+    u32 copy_len = (input_length < out_size - 1) ? input_length : out_size - 1;
+    memcpy(out, input, copy_len);
+    out[copy_len] = '\0';
+}

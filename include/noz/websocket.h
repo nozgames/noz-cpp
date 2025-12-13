@@ -26,9 +26,17 @@ using WebSocketMessageCallback = std::function<void(WebSocket*, WebSocketMessage
 using WebSocketCloseCallback = std::function<void(WebSocket*, u16 code, const char* reason)>;
 using WebSocketConnectCallback = std::function<void(WebSocket*, bool success)>;
 
+enum WebSocketEvent {
+    WEBSOCKET_EVENT_CONNECTED,
+    WEBSOCKET_EVENT_MESSAGE,
+    WEBSOCKET_EVENT_CLOSED
+};
+
+typedef void (*WebSocketProc)(WebSocket* socket, WebSocketEvent event, const u8* event_data, u32 event_data_size);
+
 // Connect to a WebSocket server
 // URL format: ws://host:port/path or wss://host:port/path
-WebSocket* WebSocketConnect(const char* url);
+WebSocket* CreateWebSocket(Allocator* allocator, const char* url, WebSocketProc proc);
 
 // Set callbacks (optional - can also poll)
 void WebSocketOnConnect(WebSocket* ws, WebSocketConnectCallback callback);

@@ -9,6 +9,7 @@ constexpr int MAX_WEBSOCKETS = 8;
 
 struct WebSocketImpl {
     PlatformWebSocketHandle handle;
+    WebSocketProc proc;
     WebSocketMessageCallback on_message;
     WebSocketCloseCallback on_close;
     WebSocketConnectCallback on_connect;
@@ -31,7 +32,8 @@ static WebSocketImpl* AllocWebSocket() {
     return nullptr;
 }
 
-WebSocket* WebSocketConnect(const char* url) {
+WebSocket* CreateWebSocket(Allocator* allocator, const char* url, WebSocketProc proc) {
+    (void)allocator;
     WebSocketImpl* ws = AllocWebSocket();
     if (!ws)
         return nullptr;
@@ -39,8 +41,9 @@ WebSocket* WebSocketConnect(const char* url) {
     ws->handle = PlatformConnectWebSocket(url);
     ws->last_status = WebSocketStatus::Connecting;
     ws->connect_callback_fired = false;
+    ws->proc = proc;
 
-    return (WebSocket*)ws;
+    return reinterpret_cast<WebSocket *>(ws);
 }
 
 void WebSocketOnConnect(WebSocket* socket, WebSocketConnectCallback callback)
@@ -50,6 +53,8 @@ void WebSocketOnConnect(WebSocket* socket, WebSocketConnectCallback callback)
 
     WebSocketImpl* ws = (WebSocketImpl*)socket;
     ws->on_connect = callback;
+
+    ws->proc(socket, WEBSOCKET_EVENT_CONNECTED, nullptr, 0);
 }
 
 void WebSocketOnMessage(WebSocket* socket, WebSocketMessageCallback callback)

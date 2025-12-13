@@ -98,7 +98,7 @@ HttpStatus HttpGetStatus(HttpRequest *request) {
     return HttpStatus::None;
 }
 
-int HttpGetStatusCode(HttpRequest *request) {
+int GetResponseStatusCode(HttpRequest *request) {
     if (!request)
         return 0;
 
@@ -115,7 +115,7 @@ bool HttpIsSuccess(HttpRequest *request) {
     if (HttpGetStatus(request) != HttpStatus::Complete)
         return false;
 
-    int code = HttpGetStatusCode(request);
+    int code = GetResponseStatusCode(request);
     return code >= 200 && code < 300;
 }
 
@@ -230,4 +230,9 @@ void UpdateHttp() {
                 req.callback((HttpRequest *) &req);
         }
     }
+}
+
+void EncodeUrl(Text& out, const Text& input) {
+    PlatformEncodeUrl(out.value, TEXT_MAX_LENGTH + 1, input.value, input.length);
+    out.length = (int)strlen(out.value);
 }

@@ -24,7 +24,7 @@ extern HttpRequest* HttpPostString(const char* url, const char* body, const char
 extern HttpRequest* HttpPostJson(const char* url, const char* json, HttpCallback on_complete = nullptr);
 
 extern HttpStatus   HttpGetStatus(HttpRequest* request);
-extern int          HttpGetStatusCode(HttpRequest* request);   // HTTP status code (200, 404, etc.)
+extern int          GetResponseStatusCode(HttpRequest* request);   // HTTP status code (200, 404, etc.)
 extern bool         HttpIsComplete(HttpRequest* request);
 extern bool         HttpIsSuccess(HttpRequest* request);       // Complete + status 2xx
 
@@ -39,3 +39,5 @@ extern void         Free(HttpRequest* request);
 extern void InitHttp();
 extern void ShutdownHttp();
 extern void UpdateHttp();  // Call each frame to dispatch callbacks
+
+extern void EncodeUrl(Text& out, const Text& input);

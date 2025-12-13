@@ -8,8 +8,10 @@
 #define NOMINMAX
 #include <windows.h>
 #include <winhttp.h>
+#include <shlwapi.h>
 
 #pragma comment(lib, "winhttp.lib")
+#pragma comment(lib, "shlwapi.lib")
 
 constexpr int MAX_HTTP_REQUESTS = 16;
 
@@ -670,4 +672,41 @@ void PlatformFree(const PlatformHttpHandle& handle)
 
     CleanupRequest(request);
     request->generation++; // Invalidate any existing handles
+}
+
+void PlatformEncodeUrl(char* out, u32 out_size, const char* input, u32 input_length)
+{
+    if (!out || out_size == 0)
+        return;
+
+    out[0] = '\0';
+
+    if (!input || input_length == 0)
+        return;
+
+    // Convert input to wide string
+    int w_len = MultiByteToWideChar(CP_UTF8, 0, input, input_length, nullptr, 0);
+    wchar_t* w_input = (wchar_t*)Alloc(ALLOCATOR_SCRATCH, (w_len + 1) * sizeof(wchar_t));
+    MultiByteToWideChar(CP_UTF8, 0, input, input_length, w_input, w_len);
+    w_input[w_len] = 0;
+
+    // Encode using WinHTTP
+    DWORD encoded_len = out_size;
+    wchar_t* w_output = (wchar_t*)Alloc(ALLOCATOR_SCRATCH, out_size * sizeof(wchar_t));
+
+    // Use UrlEscapeW with URL_ESCAPE_SEGMENT_ONLY to encode query string parts
+    // This encodes special characters but preserves path structure
+    if (SUCCEEDED(UrlEscapeW(w_input, w_output, &encoded_len, URL_ESCAPE_SEGMENT_ONLY | URL_ESCAPE_PERCENT)))
+    {
+        // Convert back to UTF-8
+        WideCharToMultiByte(CP_UTF8, 0, w_output, -1, out, out_size, nullptr, nullptr);
+    }
+    else
+    {
+        // Fallback: just copy the input if encoding fails
+        WideCharToMultiByte(CP_UTF8, 0, w_input, -1, out, out_size, nullptr, nullptr);
+    }
+
+    Free(w_input);
+    Free(w_output);
 }

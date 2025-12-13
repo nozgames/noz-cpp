@@ -174,10 +174,10 @@ void InitApplication(ApplicationTraits* traits) {
     InitHttp();
     InitWebSocket();
 
-    g_app.traits.x = GetPrefInt(PREF_WINDOW_X, g_app.traits.x);
-    g_app.traits.y = GetPrefInt(PREF_WINDOW_Y, g_app.traits.y);
-    g_app.traits.width = GetPrefInt(PREF_WINDOW_WIDTH, g_app.traits.width);
-    g_app.traits.height = GetPrefInt(PREF_WINDOW_HEIGHT, g_app.traits.height);
+    g_app.traits.x = GetIntPref(PREF_WINDOW_X, g_app.traits.x);
+    g_app.traits.y = GetIntPref(PREF_WINDOW_Y, g_app.traits.y);
+    g_app.traits.width = GetIntPref(PREF_WINDOW_WIDTH, g_app.traits.width);
+    g_app.traits.height = GetIntPref(PREF_WINDOW_HEIGHT, g_app.traits.height);
 }
 
 static void HandleClose() {
@@ -222,10 +222,10 @@ void ShutdownWindow() {
     assert(g_app.window_created);
 
     noz::RectInt window_rect = PlatformGetWindowRect();
-    SetPrefInt(PREF_WINDOW_X, window_rect.x);
-    SetPrefInt(PREF_WINDOW_Y, window_rect.y);
-    SetPrefInt(PREF_WINDOW_WIDTH, window_rect.width);
-    SetPrefInt(PREF_WINDOW_HEIGHT, window_rect.height);
+    SetIntPref(PREF_WINDOW_X, window_rect.x);
+    SetIntPref(PREF_WINDOW_Y, window_rect.y);
+    SetIntPref(PREF_WINDOW_WIDTH, window_rect.width);
+    SetIntPref(PREF_WINDOW_HEIGHT, window_rect.height);
 
 #if 0
 #ifdef NOZ_EDITOR

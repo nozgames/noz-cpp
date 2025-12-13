@@ -339,3 +339,20 @@ void PlatformFree(const PlatformHttpHandle& handle) {
 
     CleanupRequest(request);
 }
+
+void PlatformEncodeUrl(char* out, u32 out_size, const char* input, u32 input_length) {
+    if (!out || out_size == 0)
+        return;
+
+    out[0] = '\0';
+
+    if (!input || input_length == 0)
+        return;
+
+    // Use JavaScript's encodeURIComponent
+    EM_ASM({
+        var input_str = UTF8ToString($0);
+        var encoded = encodeURIComponent(input_str);
+        stringToUTF8(encoded, $1, $2);
+    }, input, out, out_size);
+}

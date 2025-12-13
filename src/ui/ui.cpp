@@ -3,7 +3,6 @@
 //
 
 #include "../platform.h"
-#include "../../../src/game.h"
 
 constexpr int MAX_ELEMENTS = 4096;
 constexpr int MAX_ELEMENT_STACK = 128;

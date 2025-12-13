@@ -496,6 +496,7 @@ void PlatformShowTextbox(const noz::Rect& rect, const Text& text, const NativeTe
             input = document.createElement('input');
             input.id = 'native-text-input';
             input.autocomplete = 'off';
+            input.spellcheck = false;
             input.style.position = 'absolute';
             input.style.zIndex = '1000';
             input.style.outline = 'none';

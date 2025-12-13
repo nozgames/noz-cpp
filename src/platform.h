@@ -164,5 +164,6 @@ extern const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_
 extern char* PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, Allocator* allocator);
 extern void PlatformCancel(const PlatformHttpHandle& handle);            // Cancel pending request
 extern void PlatformFree(const PlatformHttpHandle& handle);           // Release completed request resources
+extern void PlatformEncodeUrl(char* out, u32 out_size, const char* input, u32 input_length);
 
 extern void Main();
