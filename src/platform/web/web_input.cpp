@@ -11,7 +11,6 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 
-extern void HandleInputCharacter(char c);
 extern void HandleInputKeyDown(char c);
 
 struct WebInput {
@@ -420,92 +419,6 @@ void PlatformUpdateInputState() {
     UpdateGamepads();
 }
 
-void HandleInputCharacter(char c) {
-    if (!IsTextInputEnabled())
-        return;
-
-    if (g_web_input.text_input.value.length >= TEXT_MAX_LENGTH)
-        return;
-
-    if (c == 27) {
-        Send(EVENT_TEXTINPUT_CANCEL, &g_web_input.text_input);
-        return;
-    }
-
-    if (c == 13 || c == '\r') {
-        Send(EVENT_TEXTINPUT_COMMIT, &g_web_input.text_input);
-        return;
-    }
-
-    if (c < 32)
-        return;
-
-    char text[] = { c, 0 };
-    ReplaceSelection(g_web_input.text_input, text);
-
-    Send(EVENT_TEXTINPUT_CHANGE, &g_web_input.text_input);
-}
-
-void HandleInputKeyDown(char c) {
-    if (!IsTextInputEnabled())
-        return;
-
-    TextInput& input = g_web_input.text_input;
-
-    if (c == '\b') {  // Backspace
-        if (input.selection_end > input.selection_start) {
-            ReplaceSelection(input, "");
-            Send(EVENT_TEXTINPUT_CHANGE, &g_web_input.text_input);
-            return;
-        }
-
-        if (input.cursor < 1)
-            return;
-
-        input.selection_start = input.cursor - 1;
-        input.selection_end = input.cursor;
-        ReplaceSelection(input, "");
-
-        Send(EVENT_TEXTINPUT_CHANGE, &g_web_input.text_input);
-        return;
-    } else if (c == 127) {  // Delete
-        if (input.selection_end > input.selection_start) {
-            ReplaceSelection(input, "");
-            Send(EVENT_TEXTINPUT_CHANGE, &g_web_input.text_input);
-            return;
-        }
-
-        if (input.cursor >= input.value.length)
-            return;
-
-        input.selection_start = input.cursor;
-        input.selection_end = input.cursor + 1;
-        ReplaceSelection(input, "");
-
-        Send(EVENT_TEXTINPUT_CHANGE, &g_web_input.text_input);
-        return;
-    }
-}
-
-void PlatformClearTextInput() {
-    Text& text = g_web_input.text_input.value;
-    if (text.length == 0)
-        return;
-
-    text.value[0] = 0;
-    text.length = 0;
-    g_web_input.text_input.cursor = 0;
-    Send(EVENT_TEXTINPUT_CHANGE, &g_web_input.text_input);
-}
-
-const TextInput& PlatformGetTextInput() {
-    return g_web_input.text_input;
-}
-
-void PlatformSetTextInput(const TextInput& text_input) {
-    g_web_input.text_input = text_input;
-}
-
 bool PlatformIsGamepadActive() {
     return g_web_input.active_controller != -1;
 }
@@ -513,8 +426,6 @@ bool PlatformIsGamepadActive() {
 void PlatformInitInput() {
     g_web_input = {};
     g_web_input.active_controller = -1;
-
-    PlatformClearTextInput();
 
     // Register keyboard events
     emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_DOCUMENT, nullptr, EM_TRUE, OnKeyDownInput);
@@ -544,7 +455,7 @@ static void ColorToRgbString(const Color& c, char* out, int max_len) {
         static_cast<int>(c.b * 255.0f));
 }
 
-void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initial_value, const NativeTextInputStyle& style) {
+void PlatformShowNativeTextInput(const noz::Rect& screen_rect, const char* initial_value, const NativeTextboxStyle& style) {
     char bg_color[32];
     char text_color[32];
     ColorToRgbString(style.background_color, bg_color, sizeof(bg_color));

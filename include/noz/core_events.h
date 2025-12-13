@@ -6,11 +6,8 @@
 
 constexpr EventId EVENT_FOCUS_CHANGED = -1;
 constexpr EventId EVENT_HOTLOAD = -2;
-constexpr EventId EVENT_TEXTINPUT_CHANGE  = -3;
-constexpr EventId EVENT_TEXTINPUT_CANCEL = -4;
-constexpr EventId EVENT_TEXTINPUT_COMMIT = -5;
-constexpr EventId EVENT_GAMEPAD_ACTIVATED = -6;
-constexpr EventId EVENT_GAMEPAD_DEACTIVATED = -7;
+constexpr EventId EVENT_GAMEPAD_ACTIVATED = -3;
+constexpr EventId EVENT_GAMEPAD_DEACTIVATED = -4;
 
 struct FocusChangedEvent {
     bool has_focus;

@@ -53,7 +53,7 @@ void ThreadYield() {
     // No-op for single-threaded Emscripten
 }
 
-void PlatformSetThreadName(const char* name) {
+void SetThreadName(const char* name) {
     (void)name;
     // No thread naming support in web
 }
@@ -304,10 +304,6 @@ void PlatformInitWindow(void (*on_close)()) {
 
 void PlatformShutdown() {
     ShutdownWebGL();
-}
-
-bool PlatformIsResizing() {
-    return false; // Web doesn't have the same resize behavior as desktop
 }
 
 bool PlatformUpdate() {

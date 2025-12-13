@@ -20,20 +20,23 @@ extern void InitRenderDriver(const RendererTraits* traits, HWND hwnd);
 extern void ResizeRenderDriver(const Vec2Int& screen_size);
 extern void ShutdownRenderDriver();
 extern void WaitRenderDriver();
-extern void HandleInputCharacter(char c);
-extern void HandleInputKeyDown(char c);
 static void SetCursorInternal(SystemCursor cursor);
 static void ShowCursorInternal(bool show);
 extern void MarkTextboxChanged();
+extern HBRUSH GetNativeEditBrush();
+extern COLORREF GetNativeEditTextColor();
+extern COLORREF GetNativeEditBgColor();
 
 struct WindowsApp {
     const ApplicationTraits* traits;
+    noz::RectInt window_rect;
     Vec2Int screen_size;
     Vec2 mouse_position;
     Vec2 mouse_scroll;
     HWND hwnd;
     bool has_focus;
     bool is_resizing;
+    bool driver_initialized;
     void (*on_close) ();
     char input_buffer[INPUT_BUFFER_SIZE];
     int input_buffer_start;
@@ -41,13 +44,24 @@ struct WindowsApp {
     HCURSOR cursor_wait;
     HCURSOR cursor_cross;
     HCURSOR cursor_move;
-    noz::RectInt window_rect;
     SystemCursor cursor;
     bool mouse_on_screen;
     bool show_cursor;
 };
 
 static WindowsApp g_windows = {};
+
+HWND GetWindowHandle() {
+    return g_windows.hwnd;
+}
+
+Vec2Int PlatformGetWindowSize() {
+    return g_windows.screen_size;
+}
+
+bool PlatformIsWindowFocused() {
+    return g_windows.has_focus;
+}
 
 static BOOL EnableDarkMode(HWND hwnd)
 {
@@ -62,10 +76,6 @@ static BOOL EnableDarkMode(HWND hwnd)
     return SUCCEEDED(hr);
 }
 
-bool PlatformIsWindowFocused() {
-    return g_windows.has_focus;
-}
-
 void ThreadSleep(int milliseconds) {
     std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
@@ -74,34 +84,36 @@ void ThreadYield() {
     std::this_thread::yield();
 }
 
-void PlatformSetThreadName(const char* name)
-{
-    // Convert char* to wide string
+void PlatformSetThreadName(const char* name) {
     int size = MultiByteToWideChar(CP_UTF8, 0, name, -1, nullptr, 0);
     std::wstring wname(size, 0);
     MultiByteToWideChar(CP_UTF8, 0, name, -1, wname.data(), size);
-
     SetThreadDescription(GetCurrentThread(), wname.c_str());
 }
 
-static void UpdateWindowRect()
-{
+static void UpdateWindowRect() {
     RECT rect;
     GetWindowRect(g_windows.hwnd, &rect);
-    noz::RectInt window_rect = noz::RectInt{
+    g_windows.window_rect = noz::RectInt{
         rect.left,
         rect.top,
         rect.right - rect.left,
         rect.bottom - rect.top
     };
 
-    if (window_rect.width <= 0 || window_rect.height <= 0)
-        return;
+    GetClientRect(g_windows.hwnd, &rect);
+    Vec2Int screen_size = {
+        rect.right - rect.left,
+        rect.bottom - rect.top
+    };
 
-    g_windows.window_rect = window_rect;
+    if (screen_size != g_windows.screen_size && screen_size != VEC2INT_ZERO) {
+        g_windows.screen_size = screen_size;
+        if (g_windows.driver_initialized)
+            ResizeRenderDriver(screen_size);
+    }
 }
 
-// Window procedure
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
@@ -111,25 +123,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             g_windows.on_close();
         return 0;
 
-    case WM_PAINT:
-    {
+    case WM_PAINT: {
         PAINTSTRUCT ps;
         BeginPaint(hwnd, &ps);
         EndPaint(hwnd, &ps);
         return 0;
     }
 
-    case WM_SIZE:
-    {
-        // Update global screen size when window is resized
-        RECT rect;
-        GetClientRect(hwnd, &rect);
-        Vec2Int new_size = { rect.right - rect.left, rect.bottom - rect.top };
-        if (g_windows.screen_size != new_size && new_size != VEC2INT_ZERO)
-        {
-            g_windows.screen_size = new_size;
-            ResizeRenderDriver(new_size);
-        }
+    case WM_SIZE: {
         UpdateWindowRect();
         return 0;
     }
@@ -146,48 +147,20 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         g_windows.is_resizing = false;
         break;
 
-    case WM_SIZING:
-        {
-            // Run game loop every frame during resize, with guard to prevent recursion
-            static bool in_sizing_update = false;
-            if (g_windows.is_resizing && !in_sizing_update) {
-                in_sizing_update = true;
-
-                // Update screen size from the new window rect
-                RECT* window_rect = (RECT*)lParam;
-
-                // Calculate frame size by comparing a zero client rect to its adjusted window rect
-                RECT frame = {0, 0, 0, 0};
-                AdjustWindowRect(&frame, WS_OVERLAPPEDWINDOW, FALSE);
-
-                Vec2Int new_size = {
-                    (window_rect->right - window_rect->left) - (frame.right - frame.left),
-                    (window_rect->bottom - window_rect->top) - (frame.bottom - frame.top)
-                };
-
-                if (g_windows.screen_size != new_size && new_size.x > 0 && new_size.y > 0) {
-                    g_windows.screen_size = new_size;
-                    ResizeRenderDriver(new_size);
-                }
-
-                extern void RunApplicationFrame();
-                RunApplicationFrame();
-                in_sizing_update = false;
-            }
-        }
+    case WM_SIZING: {
+        UpdateWindowRect();
+        extern void RunApplicationFrame();
+        RunApplicationFrame();
         break;
-
-    case WM_MOUSEWHEEL:
-    {
-        // Get wheel delta (positive = forward/up, negative = backward/down)
-        int wheel_delta = GET_WHEEL_DELTA_WPARAM(wParam);
-        // Normalize to a reasonable scroll value (Windows default is 120 per notch)
-        g_windows.mouse_scroll.y += static_cast<f32>(wheel_delta) / 120.0f;
     }
+
+    case WM_MOUSEWHEEL: {
+        int wheel_delta = GET_WHEEL_DELTA_WPARAM(wParam);
+        g_windows.mouse_scroll.y += static_cast<f32>(wheel_delta) / 120.0f;
         break;
-    case WM_MOUSEMOVE:
-    {
-        // Cache mouse position for smooth tracking
+    }
+
+    case WM_MOUSEMOVE: {
         int x = LOWORD(lParam);
         int y = HIWORD(lParam);
         g_windows.mouse_position = {
@@ -197,13 +170,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         if (!g_windows.mouse_on_screen) {
             g_windows.mouse_on_screen = true;
-
             TRACKMOUSEEVENT tme = {};
             tme.cbSize = sizeof(tme);
             tme.dwFlags = TME_LEAVE;
             tme.hwndTrack = hwnd;
             TrackMouseEvent(&tme);
-
             ShowCursorInternal(g_windows.cursor != SYSTEM_CURSOR_NONE);
         }
 
@@ -216,10 +187,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_ACTIVATEAPP:
-        // Hide native text input when app is deactivated
-        if (wParam == FALSE) {
+        if (wParam == FALSE)
             PlatformHideTextbox();
-        }
         break;
 
 
@@ -232,14 +201,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         g_windows.mouse_on_screen = false;
         ShowCursorInternal(true);
         break;
-
-    case WM_CHAR:
-        HandleInputCharacter((char)wParam);
-        return 0;
-
-    case WM_KEYDOWN:
-        HandleInputKeyDown((char)wParam);
-        return 0;
 
     case WM_SYSCHAR:
         return 0;
@@ -256,18 +217,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         break;
 
-    case WM_CTLCOLOREDIT:
-        {
-            extern HBRUSH GetNativeEditBrush();
-            extern COLORREF GetNativeEditTextColor();
-            extern COLORREF GetNativeEditBgColor();
-            HDC hdc = (HDC)wParam;
-            SetTextColor(hdc, GetNativeEditTextColor());
-            SetBkColor(hdc, GetNativeEditBgColor());
-            HBRUSH brush = GetNativeEditBrush();
-            if (brush) return (LRESULT)brush;
-        }
+    case WM_CTLCOLOREDIT: {
+        HDC hdc = reinterpret_cast<HDC>(wParam);
+        SetTextColor(hdc, GetNativeEditTextColor());
+        SetBkColor(hdc, GetNativeEditBgColor());
+        HBRUSH brush = GetNativeEditBrush();
+        if (brush) return reinterpret_cast<LRESULT>(brush);
         break;
+    }
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
@@ -312,8 +269,8 @@ void PlatformInitWindow(void (*on_close)()) {
     );
 
     HICON hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APP));
-    SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-    SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+    SendMessage(hwnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
+    SendMessage(hwnd, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(hIcon));
 
     EnableDarkMode(hwnd);
 
@@ -322,41 +279,35 @@ void PlatformInitWindow(void (*on_close)()) {
     g_windows.show_cursor = true;
     g_windows.cursor = SYSTEM_CURSOR_DEFAULT;
 
-    // Initial screen size
-    RECT rect;
-    GetClientRect(hwnd, &rect);
-    g_windows.screen_size = { rect.right - rect.left, rect.bottom - rect.top };
+    UpdateWindowRect();
 
     InitRenderDriver(&g_windows.traits->renderer, hwnd);
+    g_windows.driver_initialized = true;
 
-    if (hwnd != nullptr)
-    {
-        ShowWindow(hwnd, SW_SHOW);
-        UpdateWindow(hwnd);
-    }
+    ShowWindow(hwnd, SW_SHOW);
+    UpdateWindow(hwnd);
 }
 
 void PlatformShutdown() {
-    if (g_windows.hwnd)
-        ::DestroyWindow((HWND)g_windows.hwnd);
+    if (!g_windows.hwnd)
+        return;
+
+    ::DestroyWindow(g_windows.hwnd);
+    g_windows.hwnd = nullptr;
 }
 
-bool PlatformIsResizing() {
-    return g_windows.is_resizing;
-}
+extern void UpdateNativeTextbox();
 
 bool PlatformUpdate() {
     MSG msg = {};
-    bool running = true;
 
     g_windows.mouse_scroll = {0, 0};
 
-    // Skip message processing during resize - Windows' modal loop handles it
+    UpdateNativeTextbox();
+
     if (!g_windows.is_resizing) {
         int count = 0;
-        while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) && count < 10)
-        {
-            // Let dialog/control messages be processed properly
+        while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) && count < 20) {
             if (!IsDialogMessage(g_windows.hwnd, &msg)) {
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
@@ -367,28 +318,7 @@ bool PlatformUpdate() {
 
     g_windows.has_focus = GetActiveWindow() == g_windows.hwnd;
 
-    RECT rect;
-    GetClientRect(g_windows.hwnd, &rect);
-    Vec2Int screen_size = {
-        rect.right - rect.left,
-        rect.bottom - rect.top
-    };
-
-    if (g_windows.screen_size != screen_size && screen_size != VEC2INT_ZERO)
-    {
-        g_windows.screen_size = screen_size;
-        ResizeRenderDriver(screen_size);
-    }
-
-    return running;
-}
-
-Vec2Int PlatformGetWindowSize() {
-    return g_windows.screen_size;
-}
-
-HWND GetWindowHandle() {
-    return g_windows.hwnd;
+    return true;
 }
 
 static void ShowCursorInternal(bool show) {
