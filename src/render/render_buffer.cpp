@@ -7,6 +7,7 @@
 extern void RenderMesh(Mesh* mesh);
 extern void BindMaterialInternal(Material* material);
 extern void BindTextureInternal(Texture* texture, i32 slot);
+extern void BindShaderInternal(Shader* shader);
 extern void UploadMesh(Mesh* mesh);
 
 enum RenderCommandType {
@@ -26,6 +27,8 @@ struct BindCameraData {
 struct DrawMeshData {
     Mesh* mesh;
     Material* material;
+    Texture* texture;
+    Shader* shader;
     Mat3 transform;
     float depth;
     float depth_scale;
@@ -69,6 +72,8 @@ struct RenderBuffer {
     int command_count_max;
     bool is_full;
     Material* current_material;
+    Texture* current_texture;
+    Shader* current_shader;
     Mat3 current_transform;
     float current_depth;
     float current_depth_scale;
@@ -160,10 +165,21 @@ void BindCamera(Camera* camera) {
     AddRenderCommand(&cmd);
 }
 
-void BindMaterial(Material* material)
-{
+void BindShader(Shader* shader) {
+    g_render_buffer.current_shader = shader;
+    g_render_buffer.current_material = nullptr;
+}
+
+void BindTexture(Texture* texture) {
+    g_render_buffer.current_texture = texture;
+    g_render_buffer.current_material = nullptr;
+}
+
+void BindMaterial(Material* material) {
     assert(material);
     g_render_buffer.current_material = material;
+    g_render_buffer.current_texture = nullptr;
+    g_render_buffer.current_shader = nullptr;
 }
 
 void BindDepth(float depth, float depth_scale) {
@@ -286,6 +302,8 @@ void DrawMesh(Mesh* mesh) {
             .draw_mesh = {
                 .mesh = mesh,
                 .material = g_render_buffer.current_material,
+                .texture = g_render_buffer.current_texture,
+                .shader = g_render_buffer.current_shader,
                 .transform = g_render_buffer.current_transform,
                 .depth = g_render_buffer.current_depth,
                 .depth_scale = g_render_buffer.current_depth_scale,
@@ -329,7 +347,13 @@ void ExecuteRenderCommands() {
                 command->data.draw_mesh.transform,
                 command->data.draw_mesh.depth,
                 command->data.draw_mesh.depth_scale);
-            BindMaterialInternal(command->data.draw_mesh.material);
+            if (command->data.draw_mesh.material)
+                BindMaterialInternal(command->data.draw_mesh.material);
+            if (command->data.draw_mesh.shader)
+                BindShaderInternal(command->data.draw_mesh.shader);
+            if (command->data.draw_mesh.texture)
+                BindTextureInternal(command->data.draw_mesh.texture, SAMPLER_REGISTER_TEX0);
+
             RenderMesh(command->data.draw_mesh.mesh);
             break;
 

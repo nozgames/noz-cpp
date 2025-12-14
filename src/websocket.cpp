@@ -6,7 +6,7 @@
 #include "platform.h"
 #include <zlib.h>
 
-constexpr int MAX_WEBSOCKETS = 8;
+constexpr int MAX_WEBSOCKETS = 32;
 
 struct WebSocketImpl {
     PlatformWebSocketHandle handle;
@@ -204,7 +204,6 @@ void Free(WebSocket* socket) {
     impl->proc = nullptr;
     impl->user_data = nullptr;
     impl->active = false;
-    Free(impl);
 }
 
 void InitWebSocket()

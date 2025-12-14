@@ -244,7 +244,8 @@ if(EMSCRIPTEN)
             -sPTHREAD_POOL_SIZE=5
     )
     if(NOZ_WEBSOCKET)
-        target_link_options(noz PUBLIC -lwebsocket.js)
+        target_compile_options(noz PUBLIC -sUSE_ZLIB=1)
+        target_link_options(noz PUBLIC -lwebsocket.js -sUSE_ZLIB=1)
     endif()
     # Box2D and enet would need to be compiled with emscripten separately
     message(STATUS "Emscripten build - external libraries will need emscripten-compiled versions")

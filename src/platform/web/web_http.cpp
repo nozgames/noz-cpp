@@ -20,6 +20,7 @@ struct WebHttpRequest {
     HttpStatus status;
     int status_code;
     char* response_headers;
+    char* body_copy;
 };
 
 struct WebHttp {
@@ -70,6 +71,10 @@ static void CleanupRequest(WebHttpRequest* request) {
         Free(request->response_headers);
         request->response_headers = nullptr;
     }
+    if (request->body_copy) {
+        Free(request->body_copy);
+        request->body_copy = nullptr;
+    }
     request->response_size = 0;
     request->status = HttpStatus::None;
     request->status_code = 0;
@@ -97,6 +102,12 @@ static void OnFetchSuccess(emscripten_fetch_t* fetch) {
         emscripten_fetch_get_response_headers(fetch, request->response_headers, headers_len + 1);
     }
 
+    // Free body copy now that request is complete
+    if (request->body_copy) {
+        Free(request->body_copy);
+        request->body_copy = nullptr;
+    }
+
     request->status = HttpStatus::Complete;
     request->fetch = nullptr;
 
@@ -113,6 +124,12 @@ static void OnFetchError(emscripten_fetch_t* fetch) {
     request->status_code = fetch->status;
     request->status = HttpStatus::Error;
     request->fetch = nullptr;
+
+    // Free body copy now that request is complete
+    if (request->body_copy) {
+        Free(request->body_copy);
+        request->body_copy = nullptr;
+    }
 
     LogError("HTTP request failed: %s (status %d)", fetch->url, fetch->status);
 
@@ -170,11 +187,15 @@ static PlatformHttpHandle StartRequest(const char* url, const char* method, cons
     attr.onerror = OnFetchError;
     attr.userData = &request;
 
+    char* body_copy = nullptr;
     if (body && body_size > 0) {
-        // Make a copy of the body data
-        attr.requestData = (const char*)body;
+        // Make a copy of the body data (emscripten fetch is async)
+        body_copy = (char*)Alloc(ALLOCATOR_DEFAULT, body_size);
+        memcpy(body_copy, body, body_size);
+        attr.requestData = body_copy;
         attr.requestDataSize = body_size;
     }
+    request.body_copy = body_copy;
 
     // Build headers array for emscripten (format: name, value, name, value, ..., nullptr)
     // Max 32 headers (64 strings + nullptr)

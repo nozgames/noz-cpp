@@ -127,6 +127,7 @@ struct NavigationStyle {
 
 struct TextBoxStyle {
     float height = 28.0f;
+    float padding = 4.0f;
     Font* font = nullptr;
     int font_size = 16;
     const char* placeholder = nullptr;
@@ -215,6 +216,7 @@ inline void Label(const Name* name, const LabelStyle& style = {}) {
 }
 extern void Image(Mesh* mesh, const ImageStyle& style = {});
 extern void Image(AnimatedMesh* mesh, float time, const ImageStyle& style = {});
+extern void Image(Texture* texture, const ImageStyle& style = {});
 extern void Rectangle(const RectangleStyle& style = {});
 extern void Scene(const SceneStyle& style, void (*draw_scene)(void*) = nullptr);
 

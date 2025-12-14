@@ -22,6 +22,7 @@ extern HttpRequest* PostUrl(const char* url, const void* body, u32 body_size, co
 extern HttpRequest* PutUrl(const char* url, const void* body, u32 body_size, const char* content_type = nullptr, const char* headers = nullptr, HttpCallback on_complete = nullptr);
 extern HttpRequest* HttpPostString(const char* url, const char* body, const char* content_type = "text/plain", HttpCallback on_complete = nullptr);
 extern HttpRequest* HttpPostJson(const char* url, const char* json, HttpCallback on_complete = nullptr);
+extern const char* GetUrl(HttpRequest* request);
 
 extern HttpStatus   HttpGetStatus(HttpRequest* request);
 extern int          GetResponseStatusCode(HttpRequest* request);   // HTTP status code (200, 404, etc.)

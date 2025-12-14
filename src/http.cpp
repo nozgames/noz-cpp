@@ -5,70 +5,185 @@
 #include "pch.h"
 #include "platform.h"
 
-constexpr int MAX_REQUESTS = 16;
+constexpr int MAX_CONCURRENT_REQUESTS = 16;
+
+enum class HttpRequestState {
+    Idle,
+    Queued,
+    Active,
+};
 
 struct HttpRequestImpl : HttpRequest {
     PlatformHttpHandle handle;
     HttpCallback callback;
     HttpStatus last_status;
     char *response_string;
-    bool active;
+    HttpRequestState state;
+    String1024 url;
+
+    // Stored request data for deferred execution
+    char *body;
+    u32 body_size;
+    char *content_type;
+    char *headers;
+    char *method;  // "GET", "POST", "PUT"
+
+    HttpRequestImpl *next;  // For queue linked list
 };
 
-static HttpRequestImpl g_requests[MAX_REQUESTS] = {};
+static HttpRequestImpl *g_active_head = nullptr;
+static HttpRequestImpl *g_queue_head = nullptr;
+static HttpRequestImpl *g_queue_tail = nullptr;
+static int g_active_count = 0;
 
 static HttpRequestImpl *AllocRequest() {
-    for (int i = 0; i < MAX_REQUESTS; i++) {
-        if (!g_requests[i].active) {
-            g_requests[i] = {};
-            g_requests[i].active = true;
-            return &g_requests[i];
-        }
+    HttpRequestImpl *req = (HttpRequestImpl *)Alloc(ALLOCATOR_DEFAULT, sizeof(HttpRequestImpl));
+    *req = {};
+    return req;
+}
+
+static void QueuePush(HttpRequestImpl *req) {
+    req->next = nullptr;
+    if (g_queue_tail) {
+        g_queue_tail->next = req;
+        g_queue_tail = req;
+    } else {
+        g_queue_head = g_queue_tail = req;
     }
-    LogWarning("No free HTTP request slots");
-    return nullptr;
+    req->state = HttpRequestState::Queued;
+}
+
+static HttpRequestImpl *QueuePop() {
+    if (!g_queue_head)
+        return nullptr;
+
+    HttpRequestImpl *req = g_queue_head;
+    g_queue_head = req->next;
+    if (!g_queue_head)
+        g_queue_tail = nullptr;
+    req->next = nullptr;
+    return req;
+}
+
+static void ActiveListAdd(HttpRequestImpl *req) {
+    req->next = g_active_head;
+    g_active_head = req;
+    g_active_count++;
+    req->state = HttpRequestState::Active;
+}
+
+static void ActiveListRemove(HttpRequestImpl *req) {
+    HttpRequestImpl **pp = &g_active_head;
+    while (*pp) {
+        if (*pp == req) {
+            *pp = req->next;
+            g_active_count--;
+            req->next = nullptr;
+            return;
+        }
+        pp = &(*pp)->next;
+    }
+}
+
+static void StartRequest(HttpRequestImpl *req) {
+    if (req->method && strcmp(req->method, "GET") == 0) {
+        req->handle = PlatformGetURL(req->url);
+    } else {
+        req->handle = PlatformPostURL(req->url, req->body, req->body_size,
+                                       req->content_type, req->headers, req->method);
+    }
+    req->last_status = HttpStatus::Pending;
+    ActiveListAdd(req);
+
+    // Free stored body data after sending
+    if (req->body) {
+        Free(req->body);
+        req->body = nullptr;
+    }
+    if (req->content_type) {
+        Free(req->content_type);
+        req->content_type = nullptr;
+    }
+    if (req->headers) {
+        Free(req->headers);
+        req->headers = nullptr;
+    }
+    if (req->method) {
+        Free(req->method);
+        req->method = nullptr;
+    }
+}
+
+static void TryStartQueued() {
+    while (g_active_count < MAX_CONCURRENT_REQUESTS) {
+        HttpRequestImpl *req = QueuePop();
+        if (!req)
+            break;
+        StartRequest(req);
+    }
+}
+
+const char* GetUrl(HttpRequest* request) {
+    if (!request) return nullptr;
+    return static_cast<HttpRequestImpl*>(request)->url;
+}
+
+static char *DupString(const char *str) {
+    if (!str) return nullptr;
+    size_t len = strlen(str) + 1;
+    char *copy = static_cast<char *>(Alloc(ALLOCATOR_DEFAULT, (int)len));
+    memcpy(copy, str, len);
+    return copy;
 }
 
 HttpRequest *GetUrl(const char *url, HttpCallback on_complete) {
     HttpRequestImpl *req = AllocRequest();
-    if (!req)
-        return nullptr;
-
-    req->handle = PlatformGetURL(url);
+    Set(req->url, url);
     req->callback = on_complete;
-    req->last_status = HttpStatus::Pending;
+    req->method = DupString("GET");
+
+    if (g_active_count < MAX_CONCURRENT_REQUESTS) {
+        StartRequest(req);
+    } else {
+        QueuePush(req);
+    }
 
     return req;
+}
+
+static void SetupPostRequest(HttpRequestImpl *req, const char *url, const void *body, u32 body_size,
+                              const char *content_type, const char *headers, const char *method,
+                              HttpCallback on_complete) {
+    Set(req->url, url);
+    req->callback = on_complete;
+    req->method = DupString(method);
+    req->content_type = DupString(content_type);
+    req->headers = DupString(headers);
+
+    if (body && body_size > 0) {
+        req->body = (char *)Alloc(ALLOCATOR_DEFAULT, body_size);
+        memcpy(req->body, body, body_size);
+        req->body_size = body_size;
+    }
+
+    if (g_active_count < MAX_CONCURRENT_REQUESTS) {
+        StartRequest(req);
+    } else {
+        QueuePush(req);
+    }
 }
 
 HttpRequest *PostUrl(const char *url, const void *body, u32 body_size, const char *content_type,
                      const char *headers, HttpCallback on_complete) {
     HttpRequestImpl *req = AllocRequest();
-    if (!req)
-        return nullptr;
-
-    req->handle = PlatformPostURL(url, body, body_size, content_type, headers, "POST");
-    req->callback = on_complete;
-    req->last_status = HttpStatus::Pending;
-
+    SetupPostRequest(req, url, body, body_size, content_type, headers, "POST", on_complete);
     return req;
 }
 
-HttpRequest *PutUrl (
-    const char *url,
-    const void *body,
-    u32 body_size,
-    const char *content_type,
-    const char *headers,
-    HttpCallback on_complete) {
+HttpRequest *PutUrl(const char *url, const void *body, u32 body_size, const char *content_type,
+                    const char *headers, HttpCallback on_complete) {
     HttpRequestImpl *req = AllocRequest();
-    if (!req)
-        return nullptr;
-
-    req->handle = PlatformPostURL(url, body, body_size, content_type, headers, "PUT");
-    req->callback = on_complete;
-    req->last_status = HttpStatus::Pending;
-
+    SetupPostRequest(req, url, body, body_size, content_type, headers, "PUT", on_complete);
     return req;
 }
 
@@ -86,6 +201,14 @@ HttpStatus HttpGetStatus(HttpRequest *request) {
         return HttpStatus::None;
 
     HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
+
+    // Queued requests are pending but not yet started
+    if (req->state == HttpRequestState::Queued)
+        return HttpStatus::Pending;
+
+    if (req->state == HttpRequestState::Idle)
+        return HttpStatus::None;
+
     HttpStatus pstatus = PlatformGetStatus(req->handle);
 
     switch (pstatus) {
@@ -165,47 +288,107 @@ char* GetResponseHeader(HttpRequest *request, const char *name, Allocator *alloc
     return PlatformGetResponseHeader(req->handle, name, allocator);
 }
 
+static void QueueRemove(HttpRequestImpl *req) {
+    HttpRequestImpl **pp = &g_queue_head;
+    while (*pp) {
+        if (*pp == req) {
+            *pp = req->next;
+            if (req == g_queue_tail)
+                g_queue_tail = nullptr;
+            req->next = nullptr;
+            return;
+        }
+        pp = &(*pp)->next;
+    }
+}
+
 void HttpCancel(HttpRequest *request) {
     if (!request)
         return;
 
-    HttpRequestImpl *req = (HttpRequestImpl *) request;
-    PlatformCancel(req->handle);
+    HttpRequestImpl *req = (HttpRequestImpl *)request;
+
+    if (req->state == HttpRequestState::Active) {
+        PlatformCancel(req->handle);
+        ActiveListRemove(req);
+    } else if (req->state == HttpRequestState::Queued) {
+        QueueRemove(req);
+    }
+
+    req->state = HttpRequestState::Idle;
     req->last_status = HttpStatus::None;
 }
 
-void Free(HttpRequest *request) {
-    if (!request)
-        return;
-
-    HttpRequestImpl *req = (HttpRequestImpl *) request;
-
+static void FreeRequestData(HttpRequestImpl *req) {
     PlatformFree(req->handle);
 
     if (req->response_string) {
         Free(req->response_string);
         req->response_string = nullptr;
     }
+    if (req->body) {
+        Free(req->body);
+        req->body = nullptr;
+    }
+    if (req->content_type) {
+        Free(req->content_type);
+        req->content_type = nullptr;
+    }
+    if (req->headers) {
+        Free(req->headers);
+        req->headers = nullptr;
+    }
+    if (req->method) {
+        Free(req->method);
+        req->method = nullptr;
+    }
+}
 
-    req->callback = nullptr;
-    req->active = false;
+void Free(HttpRequest *request) {
+    if (!request)
+        return;
+
+    HttpRequestImpl *req = (HttpRequestImpl *)request;
+
+    if (req->state == HttpRequestState::Active) {
+        ActiveListRemove(req);
+    } else if (req->state == HttpRequestState::Queued) {
+        QueueRemove(req);
+    }
+
+    FreeRequestData(req);
+
+    TryStartQueued();
 }
 
 void InitHttp() {
-    for (int i = 0; i < MAX_REQUESTS; i++)
-        g_requests[i] = {};
+    g_active_head = nullptr;
+    g_queue_head = nullptr;
+    g_queue_tail = nullptr;
+    g_active_count = 0;
 
     PlatformInitHttp();
 }
 
 void ShutdownHttp() {
-    for (int i = 0; i < MAX_REQUESTS; i++) {
-        if (g_requests[i].active) {
-            if (g_requests[i].response_string)
-                Free(g_requests[i].response_string);
-        }
-        g_requests[i] = {};
+    // Free all active requests
+    while (g_active_head) {
+        HttpRequestImpl *req = g_active_head;
+        g_active_head = req->next;
+        FreeRequestData(req);
+        Free(req);
     }
+
+    // Free all queued requests
+    while (g_queue_head) {
+        HttpRequestImpl *req = g_queue_head;
+        g_queue_head = req->next;
+        FreeRequestData(req);
+        Free(req);
+    }
+
+    g_queue_tail = nullptr;
+    g_active_count = 0;
 
     PlatformShutdownHttp();
 }
@@ -213,23 +396,30 @@ void ShutdownHttp() {
 void UpdateHttp() {
     PlatformUpdateHttp();
 
-    for (int i = 0; i < MAX_REQUESTS; i++) {
-        HttpRequestImpl &req = g_requests[i];
-        if (!req.active)
-            continue;
+    HttpRequestImpl *req = g_active_head;
+    while (req) {
+        HttpRequestImpl *next = req->next;
 
-        HttpStatus current = HttpGetStatus((HttpRequest *) &req);
+        HttpStatus current = HttpGetStatus((HttpRequest *)req);
 
-        // Check for state transition to complete/error
-        if (req.last_status == HttpStatus::Pending &&
-            (current == HttpStatus::Complete || current == HttpStatus::Error)) {
-            req.last_status = current;
+        // Check for state transition to complete/error/none
+        if (req->last_status == HttpStatus::Pending && current != HttpStatus::Pending) {
+            // Treat None as Error (platform may return None on failure)
+            req->last_status = (current == HttpStatus::Complete) ? HttpStatus::Complete : HttpStatus::Error;
+
+            // Remove from active list to free up slot for queued requests
+            ActiveListRemove(req);
+            req->state = HttpRequestState::Idle;
 
             // Fire callback
-            if (req.callback)
-                req.callback((HttpRequest *) &req);
+            if (req->callback)
+                req->callback((HttpRequest *)req);
         }
+
+        req = next;
     }
+
+    TryStartQueued();
 }
 
 void EncodeUrl(Text& out, const Text& input) {

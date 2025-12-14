@@ -108,9 +108,9 @@ struct ImageElement : Element {
     ImageStyle style;
     Mesh* mesh = nullptr;
     AnimatedMesh* animated_mesh = nullptr;
+    Texture* texture;
     float animated_time = 0.0f;
 };
-
 
 struct SceneElement : Element {
     SceneStyle style;
@@ -442,6 +442,12 @@ void Label(const char* text, const LabelStyle& style) {
     label->cached_mesh = GetOrCreateTextMesh(text, style);
 }
 
+void Image(Texture* texture, const ImageStyle& style) {
+    ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
+    image->texture = texture;
+    image->style = style;
+}
+
 void Image(Mesh* mesh, const ImageStyle& style) {
     ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
     image->mesh = mesh;
@@ -468,14 +474,12 @@ void Rectangle(const RectangleStyle& style) {
 }
 
 bool TextBox(Text& text, const TextBoxStyle& style) {
-    constexpr float PADDING = 4.0f;
-
     BeginContainer({.height=style.height, .id=style.id, .nav=style.nav});
     ElementId id = GetElementId();
     bool text_changed = false;
 
     BeginContainer({
-        .padding=EdgeInsetsAll(PADDING),
+        .padding=EdgeInsetsAll(style.padding),
         .color=style.background_color,
         .border=HasFocus() ? style.focus_border : style.border
     });
@@ -670,13 +674,16 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* i = static_cast<ImageElement*>(e);
         if (i->animated_mesh) {
-            Vec2 mesh_size = GetSize(i->animated_mesh);
-            e->measured_size = mesh_size * i->style.scale;
+            e->measured_size = GetSize(i->animated_mesh) * i->style.scale * 72.0f;
         } else if (i->mesh) {
-            Vec2 mesh_size = GetSize(i->mesh);
-            e->measured_size = mesh_size * i->style.scale;
+            e->measured_size = GetSize(i->mesh) * i->style.scale * 72.0f;
+        } else if (i->texture) {
+            e->measured_size = ToVec2(GetSize(i->texture)) * i->style.scale;
+        } else {
+            e->measured_size = VEC2_ZERO;
         }
 
+#if 0
         const AlignInfo& align = g_align_info[i->style.align];
         if (align.has_x)
             e->measured_size.x = Max(e->measured_size.x, available_size.x);
@@ -699,6 +706,7 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
         } else {
             e->measured_size = VEC2_ZERO;
         }
+#endif
 
         assert(e->child_count == 0);
 
@@ -1036,38 +1044,52 @@ static int DrawElement(int element_index) {
     // @render_image
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* image = static_cast<ImageElement*>(e);
-        if (!image->mesh && !image->animated_mesh)
+        Bounds2 image_bounds;
+        Vec2 image_size;
+        Vec2 image_scale = VEC2_ONE;
+        if (image->mesh) {
+            image_bounds = GetBounds(image->mesh);
+            image_size = GetSize(image_bounds);
+            BindMaterial(image->style.material);
+        } else if (image->animated_mesh) {
+            image_bounds = GetBounds(image->animated_mesh);
+            image_size = GetSize(image_bounds);
+            BindMaterial(image->style.material);
+        } else if (image->texture) {
+            image_scale = ToVec2(GetSize(image->texture)) * Vec2{1,-1};
+            image_size = ToVec2(GetSize(image->texture));
+            image_bounds = GetBounds(g_ui.image_element_mesh);
+            image_bounds.min *= image_size;
+            image_bounds.max *= image_size;
+            BindShader(SHADER_UI_IMAGE_TEXTURE);
+            BindTexture(image->texture);
+        } else {
             return element_index;
-
-        BindMaterial(image->style.material);
-        Bounds2 mesh_bounds = image->animated_mesh
-            ? GetBounds(image->animated_mesh)
-            : GetBounds(image->mesh);
-        Vec2 mesh_size = GetSize(mesh_bounds);
+        }
 
         BindColor(image->style.color, image->style.color_offset);
 
         Mat3 image_transform;
         if (image->style.stretch == IMAGE_STRETCH_UNIFORM) {
-            float scale_x = e->rect.width / mesh_size.x;
-            float scale_y = e->rect.height / mesh_size.y;
+            float scale_x = e->rect.width / image_size.x;
+            float scale_y = e->rect.height / image_size.y;
             float uniform_scale = Min(scale_x, scale_y) * image->style.scale;
 
             const AlignInfo& align = g_align_info[image->style.align];
             Vec2 image_offset = VEC2_ZERO;
             if (align.has_x)
-                image_offset.x = (e->rect.width - mesh_size.x * uniform_scale) * align.x;
+                image_offset.x = (e->rect.width - image_size.x * uniform_scale) * align.x;
             if (align.has_y)
-                image_offset.y = (e->rect.height - mesh_size.y * uniform_scale) * align.y;
+                image_offset.y = (e->rect.height - image_size.y * uniform_scale) * align.y;
 
             image_transform = transform *
-                Translate(Vec2{-mesh_bounds.min.x, -mesh_bounds.min.y} * uniform_scale + image_offset) *
-                Scale(Vec2{uniform_scale, uniform_scale});
+                Translate(Vec2{-image_bounds.min.x, -image_bounds.min.y} * uniform_scale + image_offset) *
+                Scale(image_scale * uniform_scale);
         } else if (image->style.stretch == IMAGE_STRETCH_FILL) {
-            Vec2 image_scale = {e->rect.width / mesh_size.x, e->rect.height / mesh_size.y};
+            image_scale = {e->rect.width / image_size.x, e->rect.height / image_size.y} * image_scale;
             Vec2 image_offset = Vec2{
-                -mesh_bounds.min.x * image_scale.x,
-                -mesh_bounds.min.y * image_scale.y
+                -image_bounds.min.x * image_scale.x,
+                -image_bounds.min.y * image_scale.y
             };
             image_transform = transform * Translate(image_offset) * Scale(image_scale);
         } else {
@@ -1076,13 +1098,15 @@ static int DrawElement(int element_index) {
             Vec2 image_offset = VEC2_ZERO;
             if (align.has_x) image_offset.x = e->rect.width * align.x;
             if (align.has_y) image_offset.y = e->rect.height * align.y;
-            image_transform = transform * Translate(image_offset) * Scale(image->style.scale);
+            image_transform = transform * Translate(image_offset) * Scale(image_scale * image->style.scale);
         }
 
         if (image->animated_mesh)
             DrawMesh(image->animated_mesh, image_transform, image->animated_time);
-        else
+        else if (image->mesh)
             DrawMesh(image->mesh, image_transform);
+        else if (image->texture)
+            DrawMesh(g_ui.image_element_mesh, image_transform);
 
     // @render_container
     } else if (IsContainerType(e->type)) {
@@ -1153,15 +1177,27 @@ void BeginUI(u32 ref_width, u32 ref_height) {
     f32 rh = static_cast<f32>(g_ui.ref_size.y);
     f32 sw = static_cast<f32>(screen_size.x);
     f32 sh = static_cast<f32>(screen_size.y);
-    f32 sw_rw = sw / rw;
-    f32 sh_rh = sh / rh;
 
-    if (Abs(sw_rw - 1.0f) < Abs(sh_rh - 1.0f)) {
+    if (rw > 0 && rh > 0) {
+        f32 aspect_ref = rw / rh;
+        f32 aspect_screen = sw / sh;
+
+        if (aspect_screen >= aspect_ref) {
+            g_ui.ortho_size.y = rh;
+            g_ui.ortho_size.x = rh * aspect_screen;
+        } else {
+            g_ui.ortho_size.x = rw;
+            g_ui.ortho_size.y = rw / aspect_screen;
+        }
+    } else if (rw > 0) {
         g_ui.ortho_size.x = rw;
-        g_ui.ortho_size.y = rw * sh / sw;
-    } else {
+        g_ui.ortho_size.y = rw * (sh / sw);
+    } else if (rh > 0) {
         g_ui.ortho_size.y = rh;
-        g_ui.ortho_size.x = rh * sw / sh;
+        g_ui.ortho_size.x = rh * (sw / sh);
+    } else {
+        g_ui.ortho_size.x = sw;
+        g_ui.ortho_size.y = sh;
     }
 
     SetExtents(g_ui.camera, 0, g_ui.ortho_size.x, 0, g_ui.ortho_size.y);
