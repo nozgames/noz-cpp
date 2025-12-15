@@ -14,11 +14,14 @@ struct Time
     float total;
     u64 start_time;
     u64 last_frame_time;
+    u64 frame_index;
 };
 
 static Time g_time = {};
 
 void UpdateTime() {
+    g_time.frame_index ++;
+
     u64 current = PlatformGetTimeCounter();
     u64 frequency = PlatformGetTimeFrequency();
 
@@ -43,6 +46,10 @@ float GetFixedTime() {
 float GetTotalTime()
 {
     return g_time.total;
+}
+
+u64 GetFrameIndex() {
+    return g_time.frame_index;
 }
 
 void SetFixedTimeRate(int rate) {

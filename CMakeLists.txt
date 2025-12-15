@@ -50,6 +50,7 @@ set(SOURCE_FILES
     src/bin.cpp
     src/tween.cpp
     src/job.cpp
+    src/task.cpp
     src/memory/allocator.cpp
     src/memory/pool_allocator.cpp
     src/memory/arena_allocator.cpp
@@ -209,7 +210,7 @@ target_include_directories(noz PUBLIC
 # Platform-specific include directories
 if(EMSCRIPTEN)
     target_compile_definitions(noz PUBLIC NOZ_PLATFORM_WEB NOZ_PLATFORM_GLES NOZ_JOB_THREAD_COUNT=4)
-    target_compile_options(noz PUBLIC -pthread)
+    target_compile_options(noz PUBLIC -pthread )
     if(NOZ_HTTP)
         target_compile_definitions(noz PUBLIC NOZ_HTTP)
     endif()

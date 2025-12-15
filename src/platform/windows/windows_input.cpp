@@ -515,6 +515,13 @@ bool PlatformIsTextboxVisible() {
     return g_windows_input.edit_visible;
 }
 
+static LRESULT CALLBACK EditSubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    if (uMsg == WM_CHAR && wParam == VK_RETURN) {
+        return 0;
+    }
+    return CallWindowProc(g_windows_input.edit_proc, hwnd, uMsg, wParam, lParam);
+}
+
 void PlatformInitInput() {
     for (int i = 0; i < XUSER_MAX_COUNT; i++) {
         ZeroMemory(&g_windows_input.gamepad_states[i], sizeof(XINPUT_STATE));
@@ -538,6 +545,10 @@ void PlatformInitInput() {
         nullptr,
         GetModuleHandle(nullptr),
         nullptr
+    );
+
+    g_windows_input.edit_proc = reinterpret_cast<WNDPROC>(
+        SetWindowLongPtr(g_windows_input.edit_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(EditSubclassProc))
     );
 }
 

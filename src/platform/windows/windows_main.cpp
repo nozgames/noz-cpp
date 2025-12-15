@@ -207,7 +207,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         case WM_SYSKEYDOWN:
             return 0;
 
+        case WM_KEYDOWN:
+            return 0;
+
         case WM_KEYUP:
+            return 0;
+
+        case WM_CHAR:
             return 0;
 
         case WM_COMMAND:

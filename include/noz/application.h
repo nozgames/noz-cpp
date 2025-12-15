@@ -35,6 +35,7 @@ struct ApplicationTraits {
     u32 max_event_listeners;
     u32 max_prefs;
     u32 max_event_stack;
+    u32 max_tasks;
     u16 editor_port;
     float ui_depth;
     RendererTraits renderer;
@@ -78,11 +79,12 @@ float GetScreenAspectRatio();
 const ApplicationTraits* GetApplicationTraits();
 
 // @time
-float GetFrameTime();
-float GetFixedTime();
-void GetFixedTimeRate(int rate);
-float GetTotalTime();
-float GetCurrentFPS();
+extern float GetFrameTime();
+extern float GetFixedTime();
+extern void GetFixedTimeRate(int rate);
+extern float GetTotalTime();
+extern float GetCurrentFPS();
+extern u64 GetFrameIndex();
 
 // @thread
 void ThreadYield();
@@ -119,3 +121,10 @@ extern int GetArgCount();
 extern const char* GetArg(int index);
 extern const char* GetArgValue(const char* name);  // Returns value for --name <value> or nullptr
 extern bool HasArg(const char* name);              // Returns true if --name exists
+
+
+// @task
+namespace noz {
+    struct Task {};
+}
+

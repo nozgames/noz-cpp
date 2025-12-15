@@ -23,6 +23,7 @@ extern void InitRenderer(const RendererTraits* traits);
 extern void InitAllocator(ApplicationTraits* traits);
 extern void InitAudio();
 extern void InitPrefs(const ApplicationTraits& traits);
+extern void InitTasks(const ApplicationTraits& traits);
 extern void UpdateTime();
 extern void ShutdownRenderer();
 extern void ShutdownEvent();
@@ -62,6 +63,7 @@ static ApplicationTraits g_default_traits =
     .max_event_listeners = 4,
     .max_prefs = 256,
     .max_event_stack = 32,
+    .max_tasks = 1024,
     .editor_port = 8080,
     .ui_depth = F32_MAX,
     .renderer = {
@@ -168,6 +170,7 @@ void InitApplication(ApplicationTraits* traits) {
     InitPrefs(g_app.traits);
     InitEvent(traits);
     InitTime();
+    InitTasks(g_app.traits);
     InitJobs();
     InitTween();
     InitAudio();
