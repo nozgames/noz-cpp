@@ -1086,7 +1086,7 @@ static int DrawElement(int element_index) {
                 Translate(Vec2{-image_bounds.min.x, -image_bounds.min.y} * uniform_scale + image_offset) *
                 Scale(image_scale * uniform_scale);
         } else if (image->style.stretch == IMAGE_STRETCH_FILL) {
-            image_scale = {e->rect.width / image_size.x, e->rect.height / image_size.y} * image_scale;
+            image_scale = Vec2 {e->rect.width / image_size.x, e->rect.height / image_size.y} * image_scale;
             Vec2 image_offset = Vec2{
                 -image_bounds.min.x * image_scale.x,
                 -image_bounds.min.y * image_scale.y
