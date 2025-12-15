@@ -315,7 +315,6 @@ void BeginCanvas(const CanvasStyle& style) {
 
     // only one canvas can have focus
     if (style.id > 0) {
-        assert(g_ui.current_focus_canvas_id <= 0);
         g_ui.current_focus_canvas_id = style.id;
         if (g_ui.current_focus_canvas_id != g_ui.last_focus_canvas_id) {
             memset(&g_ui.element_states, 0, sizeof(g_ui.element_states));
@@ -863,18 +862,14 @@ static int LayoutElement(int element_index, const Vec2& size) {
     // @layout_label
     } else if (e->type == ELEMENT_TYPE_LABEL) {
         LabelElement* label = static_cast<LabelElement*>(e);
-        if (label->style.align != ALIGN_NONE) {
-            label->rect.width = size.x;
-            label->rect.height = size.y;
-        }
+        label->rect.width = size.x;
+        label->rect.height = size.y;
 
     // @layout_image
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* image = static_cast<ImageElement*>(e);
-        if (image->style.align != ALIGN_NONE) {
-            image->rect.width = size.x;
-            image->rect.height = size.y;
-        }
+        image->rect.width = size.x;
+        image->rect.height = size.y;
 
     } else if (e->type == ELEMENT_TYPE_CANVAS) {
         CanvasElement* canvas = static_cast<CanvasElement*>(e);
@@ -1300,14 +1295,15 @@ static void HandleInput() {
 
         if (focus_id != 0) {
             u16 focus_index = g_ui.element_states[focus_id].index;
-            if (focus_index > 0) {
+            if (focus_index > 0 && focus_index < g_ui.element_count) {
                 Element* f = g_ui.elements[focus_index];
-                assert(IsContainerType(f->type));
-                ContainerElement* container = static_cast<ContainerElement*>(f);
-                if (IsShiftDown() && container->style.nav.prev != 0)
-                    focus_id = container->style.nav.prev;
-                else if (!IsShiftDown() && container->style.nav.next != 0)
-                    focus_id = container->style.nav.next;
+                if (f->type == ELEMENT_TYPE_CONTAINER) {
+                    ContainerElement* container = static_cast<ContainerElement*>(f);
+                    if (IsShiftDown() && container->style.nav.prev != 0)
+                        focus_id = container->style.nav.prev;
+                    else if (!IsShiftDown() && container->style.nav.next != 0)
+                        focus_id = container->style.nav.next;
+                }
             } else {
                 focus_id = ELEMENT_ID_NONE;
             }

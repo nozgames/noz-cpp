@@ -303,10 +303,10 @@ bool PlatformUpdate() {
     if (!g_windows.is_resizing) {
         int count = 0;
         while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) && count < 20) {
-            if (!IsDialogMessage(g_windows.hwnd, &msg)) {
+            //if (!IsDialogMessage(g_windows.hwnd, &msg)) {
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
-            }
+            //}
             count++;
         }
     }

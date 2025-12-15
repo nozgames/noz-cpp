@@ -514,4 +514,5 @@ void Copy(Stream* dst, Stream* src) {
     EnsureCapacity(dst_impl, dst_impl->position + src_impl->size);
     ReadBytes(src, dst_impl->data + dst_impl->position, src_impl->size);
     dst_impl->position += src_impl->size;
+    dst_impl->size += src_impl->size;
 }
