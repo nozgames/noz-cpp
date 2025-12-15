@@ -61,8 +61,7 @@ void BindMaterialInternal(Material* material)
     
     BindShaderInternal(impl->shader);
     
-    for (size_t i = 0, c = impl->texture_count; i < c; ++i)
-    {
+    for (size_t i = 0, c = impl->texture_count; i < c; ++i) {
         int slot = static_cast<int>(SAMPLER_REGISTER_TEX0) + static_cast<int>(i);
         BindTextureInternal(impl->textures[i], slot);
     }

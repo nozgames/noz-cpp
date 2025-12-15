@@ -4,51 +4,52 @@
 
 #include <cstdarg>
 #include <cstdio>
+#include "string.h"
 
-void Copy(char* dst, u32 dst_size, const char* src)
-{
+int Copy(char* dst, int dst_size, const char* src) {
     assert(dst);
     assert(src);
 
     if (dst_size == 0)
-        return;
+        return 0;
 
-    u32 i=0;
+    int i=0;
     for (i=0; i<dst_size-1 && src[i]; i++)
         dst[i] = src[i];
 
     dst[i] = 0;
+
+    return i;
 }
 
-void Copy(char* dst, u32 dst_size, const char* src, u32 length)
-{
+int Copy(char* dst, int dst_size, const char* src, int length) {
     assert(dst);
     assert(src);
 
     if (dst_size == 0)
-        return;
+        return 0;
 
-    u32 i=0;
+    int i=0;
     for (i=0; i<dst_size-1 && src[i] && length > 0; i++, length--)
         dst[i] = src[i];
 
     dst[i] = 0;
+
+    return i;
 }
 
-u32 Length(const char* str)
-{
+int Length(const char* str) {
     if (!str)
         return 0;
 
-    u32 len = 0;
+    int len = 0;
     while (str[len])
         len++;
 
     return len;
 }
 
-void Format(char* dst, u32 dst_size, const char* fmt, ...)
-{
+void Format(char* dst, u32 dst_size, const char* fmt, ...) {
     assert(dst);
     assert(fmt);
 

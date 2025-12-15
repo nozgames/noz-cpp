@@ -10,7 +10,7 @@
 #include <emscripten.h>
 #include <emscripten/websocket.h>
 
-constexpr int MAX_WEBSOCKETS = 8;
+constexpr int MAX_WEBSOCKETS = 32;
 constexpr int MAX_MESSAGES_PER_SOCKET = 32;
 constexpr u32 MAX_MESSAGE_SIZE = 64 * 1024;
 
@@ -171,6 +171,12 @@ static EM_BOOL OnClose(int event_type, const EmscriptenWebSocketCloseEvent* even
 void PlatformInitWebSocket() {
     g_ws = {};
     g_ws.next_id = 1;
+
+    // Mark all slots as available (Closed with handle 0)
+    for (int i = 0; i < MAX_WEBSOCKETS; i++) {
+        g_ws.sockets[i].status = WebSocketStatus::Closed;
+        g_ws.sockets[i].handle = 0;
+    }
 
     LogInfo("Web WebSocket initialized");
 }

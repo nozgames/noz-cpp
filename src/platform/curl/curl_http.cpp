@@ -202,11 +202,13 @@ PlatformHttpHandle PlatformGetURL(const char* url) {
     return MakeHttpHandle(slot, req.generation);
 }
 
-PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type) {
+PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type, const char* headers, const char* method) {
     (void)url;
     (void)body;
     (void)body_size;
     (void)content_type;
+    (void)headers;
+    (void)method;
     LogError("HTTP POST not implemented");
     return MakeHttpHandle(0, 0xFFFFFFFF);
 }
@@ -234,6 +236,14 @@ const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size) {
 
     if (out_size) *out_size = request->response_size;
     return request->response_data;
+}
+
+char* PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, Allocator* allocator) {
+    (void)handle;
+    (void)name;
+    (void)allocator;
+    // TODO: Implement header capture in curl callbacks
+    return nullptr;
 }
 
 void PlatformCancel(const PlatformHttpHandle& handle) {
@@ -293,4 +303,33 @@ void PlatformUpdateHttp() {
             }
         }
     }
+}
+
+void PlatformEncodeUrl(char* out, u32 out_size, const char* input, u32 input_length) {
+    if (!out || out_size == 0)
+        return;
+
+    out[0] = '\0';
+
+    if (!input || input_length == 0)
+        return;
+
+    // Create a temporary null-terminated string for curl
+    char* temp = (char*)Alloc(ALLOCATOR_SCRATCH, input_length + 1);
+    memcpy(temp, input, input_length);
+    temp[input_length] = '\0';
+
+    // Use curl_easy_escape to encode the URL
+    CURL* curl = curl_easy_init();
+    if (curl) {
+        char* encoded = curl_easy_escape(curl, temp, input_length);
+        if (encoded) {
+            strncpy(out, encoded, out_size - 1);
+            out[out_size - 1] = '\0';
+            curl_free(encoded);
+        }
+        curl_easy_cleanup(curl);
+    }
+
+    Free(temp);
 }

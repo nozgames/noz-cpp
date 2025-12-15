@@ -171,6 +171,8 @@ inline void BindTransform(const Vec2& position, const Vec2& rotation, const Vec2
 extern void BindTransform(const Mat3& transform);
 extern void BindTransform(Transform& transform);
 extern void BindMaterial(Material* material);
+extern void BindShader(Shader* shader);
+extern void BindTexture(Texture* texture);
 extern void DrawMesh(Mesh* mesh);
 extern void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index);
 extern void DrawMesh(Mesh* mesh, const Mat3& transform);

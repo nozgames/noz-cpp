@@ -4,7 +4,7 @@
 
 #pragma once
 
-constexpr size_t TEXT_MAX_LENGTH = 4095;
+constexpr int TEXT_MAX_LENGTH = 4095;
 
 // @text
 struct Text {
@@ -15,6 +15,7 @@ struct Text {
 inline void Clear(Text& text) { text.value[0] = 0; text.length = 0; }
 inline void Init(Text& text) { Clear(text); }
 extern void SetValue(Text& text, const char* value);
+extern void SetValue(Text& text, const char* value, int length);
 extern void SetValue(Text& text, const Text& value);
 extern void Append(Text& text, const char* value);
 extern void Append(Text& text, const Text& value);

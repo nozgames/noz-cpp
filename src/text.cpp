@@ -12,8 +12,19 @@ void SetValue(Text& dst, const Text& src)
     memcpy(dst.value, src.value, src.length + 1);
 }
 
-void SetValue(Text& dst, const char* src)
-{
+void SetValue(Text& text, const char* value, int length) {
+    assert(value);
+    if (length == 0 || *value == 0) {
+        Clear(text);
+        return;
+    }
+
+    text.length = Min(length, TEXT_MAX_LENGTH - 1);
+    memcpy(text.value, value, text.length);
+    text.value[text.length] = 0;
+}
+
+void SetValue(Text& dst, const char* src) {
     assert(src);
 
     u32 src_len = Length(src);

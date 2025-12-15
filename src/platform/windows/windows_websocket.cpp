@@ -13,7 +13,7 @@
 
 constexpr int MAX_WEBSOCKETS = 8;
 constexpr int MAX_MESSAGES_PER_SOCKET = 32;
-constexpr u32 MAX_MESSAGE_SIZE = 64 * 1024;  // 64KB per message
+constexpr u32 MAX_MESSAGE_SIZE = 1024 * 1024;  // 1MB per message
 constexpr u32 RECEIVE_BUFFER_SIZE = 16 * 1024;
 
 struct WebSocketMessage
@@ -151,7 +151,7 @@ static DWORD WINAPI WebSocketReceiveThread(LPVOID param)
     while (!ws->should_close && ws->status == WebSocketStatus::Connected)
     {
         DWORD bytes_read = 0;
-        WINHTTP_WEB_SOCKET_BUFFER_TYPE buffer_type;
+        WINHTTP_WEB_SOCKET_BUFFER_TYPE buffer_type = WINHTTP_WEB_SOCKET_BINARY_FRAGMENT_BUFFER_TYPE;
 
         DWORD error = WinHttpWebSocketReceive(
             ws->websocket,
@@ -176,21 +176,27 @@ static DWORD WINAPI WebSocketReceiveThread(LPVOID param)
             case WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE:
             case WINHTTP_WEB_SOCKET_BINARY_MESSAGE_BUFFER_TYPE:
             {
-                // Complete message in one buffer
-                WebSocketMessageType msg_type =
-                    (buffer_type == WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE)
-                    ? WebSocketMessageType::Text
-                    : WebSocketMessageType::Binary;
-
+                // Complete message (or final fragment)
                 if (ws->receive_size > 0)
                 {
-                    // Had fragments, append and queue
+                    // This is the final fragment - use the fragment type we've been accumulating
+                    WebSocketMessageType msg_type =
+                        (ws->receive_type == WINHTTP_WEB_SOCKET_UTF8_FRAGMENT_BUFFER_TYPE)
+                        ? WebSocketMessageType::Text
+                        : WebSocketMessageType::Binary;
+
                     AppendToReceiveBuffer(ws, buffer, bytes_read);
                     QueueMessage(ws, msg_type, ws->receive_buffer, ws->receive_size);
                     ws->receive_size = 0;
                 }
                 else
                 {
+                    // Single complete message, no fragments
+                    WebSocketMessageType msg_type =
+                        (buffer_type == WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE)
+                        ? WebSocketMessageType::Text
+                        : WebSocketMessageType::Binary;
+
                     QueueMessage(ws, msg_type, buffer, bytes_read);
                 }
                 break;
@@ -346,14 +352,29 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
     url_components.dwSchemeLength = (DWORD)-1;
     url_components.dwHostNameLength = (DWORD)-1;
     url_components.dwUrlPathLength = (DWORD)-1;
+    url_components.dwExtraInfoLength = (DWORD)-1;
 
-    int url_len = (int)strlen(url);
-    int wide_len = MultiByteToWideChar(CP_UTF8, 0, url, url_len, nullptr, 0);
+    // WinHttpCrackUrl doesn't recognize wss:// scheme, so replace with https:// for parsing
+    bool is_wss = strncmp(url, "wss://", 6) == 0;
+    bool is_ws = strncmp(url, "ws://", 5) == 0;
+
+    const char* parse_url = url;
+    char temp_url[2048];
+    if (is_wss) {
+        snprintf(temp_url, sizeof(temp_url), "https://%s", url + 6);
+        parse_url = temp_url;
+    } else if (is_ws) {
+        snprintf(temp_url, sizeof(temp_url), "http://%s", url + 5);
+        parse_url = temp_url;
+    }
+
+    int url_len = (int)strlen(parse_url);
+    int wide_len = MultiByteToWideChar(CP_UTF8, 0, parse_url, url_len, nullptr, 0);
     wchar_t* wide_url = (wchar_t*)Alloc(ALLOCATOR_SCRATCH, (wide_len + 1) * sizeof(wchar_t));
-    MultiByteToWideChar(CP_UTF8, 0, url, url_len, wide_url, wide_len);
+    MultiByteToWideChar(CP_UTF8, 0, parse_url, url_len, wide_url, wide_len);
     wide_url[wide_len] = 0;
 
-    if (!WinHttpCrackUrl(wide_url, wide_len, 0, &url_components)) {
+    if (!WinHttpCrackUrl(wide_url, 0, 0, &url_components)) {
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
@@ -370,8 +391,8 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
     ws->session = WinHttpOpen(
         L"NoZ/1.0",
         WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-        WINHTTP_NO_PROXY_NAME,
-        WINHTTP_NO_PROXY_BYPASS,
+        nullptr,
+        nullptr,
         0);
 
     if (!ws->session) {
@@ -384,16 +405,23 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
     if (port == 0)
         port = secure ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT;
 
-    ws->connection = WinHttpConnect(ws->session, hostname, port, 0);
+    ws->connection = WinHttpConnect(
+        ws->session,
+        hostname,
+        port,
+        0);
     if (!ws->connection) {
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
 
-    // Build path
-    wchar_t path[1024] = L"/";
+    // Build path with query string
+    wchar_t path[2048] = L"/";
     if (url_components.dwUrlPathLength > 0) {
         wcsncpy_s(path, url_components.lpszUrlPath, url_components.dwUrlPathLength);
+    }
+    if (url_components.dwExtraInfoLength > 0) {
+        wcsncat_s(path, url_components.lpszExtraInfo, url_components.dwExtraInfoLength);
     }
 
     // Create request
@@ -403,8 +431,8 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
         L"GET",
         path,
         nullptr,
-        WINHTTP_NO_REFERER,
-        WINHTTP_DEFAULT_ACCEPT_TYPES,
+        nullptr,
+        nullptr,
         flags);
 
     if (!ws->request) {
@@ -416,6 +444,10 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
+
+    // const wchar_t* compression_header = L"Accept-Encoding: gzip\r\n";
+    // if (!WinHttpAddRequestHeaders(ws->request, compression_header, (DWORD)-1, WINHTTP_ADDREQ_FLAG_ADD)) {
+    // }
 
     if (!WinHttpSendRequest(ws->request, WINHTTP_NO_ADDITIONAL_HEADERS, 0, nullptr, 0, 0, 0)) {
         ws->status = WebSocketStatus::Error;
@@ -434,6 +466,7 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
     }
 
     WinHttpCloseHandle(ws->request);
+
     ws->request = nullptr;
     ws->status = WebSocketStatus::Connected;
     ws->thread = CreateThread(nullptr, 0, WebSocketReceiveThread, ws, 0, nullptr);

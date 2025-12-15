@@ -9,9 +9,9 @@ static bool IsIdentifier(char c, bool first_char);
 static bool IsNumber(char c);
 static bool IsWhitespace(char c);
 
-static bool HasTokens(Tokenizer& tok)
+static bool HasTokens(Tokenizer& tk)
 {
-    return tok.position < tok.length;
+    return tk.position < tk.length;
 }
 
 bool IsEOF(Tokenizer& tk)
@@ -119,6 +119,10 @@ char* GetString(const Token& token, char* dst, u32 dst_size)
 
     Copy(dst, dst_size, token.raw, token.length);
     return dst;
+}
+
+void GetText(const Token& token, Text& value) {
+    SetValue(value, token.raw, token.length);
 }
 
 static bool Equals(const Token& token, const char* value, bool ignore_case=false)
@@ -711,8 +715,7 @@ bool ExpectDelimiter(Tokenizer& tk, char c)
     return result;
 }
 
-void Init(Tokenizer& tk, const char* input)
-{
+void Init(Tokenizer& tk, const char* input) {
     tk.input = input;
     tk.position = 0;
     tk.length = (u32)(input ? Length(input) : 0);
@@ -723,6 +726,18 @@ void Init(Tokenizer& tk, const char* input)
 
     tk.current_token = tk.next_token;
 }
+
+void Init(Tokenizer& tk, Stream* stream) {
+    tk.input = reinterpret_cast<const char *>(GetData(stream));
+    tk.position = 0;
+    tk.length = GetSize(stream);
+    tk.line = 1;
+    tk.column = 1;
+
+    ReadToken(tk);
+    tk.current_token = tk.next_token;
+}
+
 
 #if defined(_STRING_)
 std::string ToString(const Token& token) {

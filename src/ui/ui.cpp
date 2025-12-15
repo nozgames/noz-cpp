@@ -10,9 +10,6 @@ constexpr int MAX_TEXT_MESHES = 4096;
 
 extern void UpdateInputState(InputSet* input_set);
 
-inline bool IsAuto(float v) { return v >= F32_AUTO; }
-inline bool IsFixed(float v) { return !IsAuto(v); }
-
 enum ElementType : u8 {
     ELEMENT_TYPE_UNKNOWN = 0,
     ELEMENT_TYPE_NONE,
@@ -26,6 +23,7 @@ enum ElementType : u8 {
     ELEMENT_TYPE_SCENE,
     ELEMENT_TYPE_SPACER,
     ELEMENT_TYPE_TRANSFORM,
+    ELEMENT_TYPE_TEXTBOX,
     ELEMENT_TYPE_COUNT
 };
 
@@ -35,6 +33,14 @@ struct AlignInfo {
     bool has_y;
     float y;
 };
+
+inline bool IsAuto(float v) { return v >= F32_AUTO; }
+inline bool IsFixed(float v) { return !IsAuto(v); }
+inline bool IsContainerType(ElementType type) {
+    return type == ELEMENT_TYPE_CONTAINER ||
+        type == ELEMENT_TYPE_COLUMN ||
+        type == ELEMENT_TYPE_ROW;
+}
 
 constexpr AlignInfo g_align_info[] = {
     { false, 0.0f, false, 0.0f },       // ALIGN_NONE
@@ -63,11 +69,13 @@ struct CachedTextMesh {
 
 struct ElementState {
     ElementFlags flags;
-    u64 hash;
+    u16 index;
+    Text text;
 };
 
 struct Element {
     ElementType type;
+    ElementId id;
     u16 index;
     u16 next_sibling_index;
     u16 child_count;
@@ -100,9 +108,9 @@ struct ImageElement : Element {
     ImageStyle style;
     Mesh* mesh = nullptr;
     AnimatedMesh* animated_mesh = nullptr;
+    Texture* texture;
     float animated_time = 0.0f;
 };
-
 
 struct SceneElement : Element {
     SceneStyle style;
@@ -117,6 +125,10 @@ struct TransformElement : Element {
     TransformStyle style;
 };
 
+struct TextboxElement : Element {
+    TextBoxStyle style;
+};
+
 union FatElement {
     Element element;
     CanvasElement canvas;
@@ -125,6 +137,7 @@ union FatElement {
     LabelElement label;
     ImageElement image;
     SpacerElement spacer;
+    TextboxElement textbox;
 };
 
 struct UI {
@@ -133,9 +146,12 @@ struct UI {
     Camera* cursor_camera;
     Element* elements[MAX_ELEMENTS];
     Element* element_stack[MAX_ELEMENTS];
-    ElementState element_states[MAX_ELEMENTS];
+    ElementState element_states[ELEMENT_ID_MAX + 1];
     u16 element_count;
     u16 element_stack_count;
+    ElementId focus_id;
+    ElementId pending_focus_id;
+    ElementId textbox_id;
     Mesh* element_mesh;
     Mesh* image_element_mesh;
     Mesh* element_with_border_mesh;
@@ -146,25 +162,25 @@ struct UI {
     InputSet* input;
     PoolAllocator* text_mesh_allocator;
     float depth;
-    u64 hash;
+    Text password_mask;
+    CanvasId last_focus_canvas_id;
+    CanvasId current_focus_canvas_id;
 };
 
-static UI g_ui = {};
+static UI g_ui;
+
+static void SetId(Element* e, ElementId id) {
+    e->id = id;
+    ElementState& state = g_ui.element_states[id];
+    state.index = e->index;
+}
 
 static Element* CreateElement(ElementType type) {
-    g_ui.hash = Hash(g_ui.hash, type);
-
     Element* element = static_cast<Element*>(Alloc(g_ui.allocator, sizeof(FatElement)));
     element->type = type;
     element->index = g_ui.element_count;
     element->next_sibling_index = element->index + 1;
     g_ui.elements[g_ui.element_count++] = element;
-
-    ElementState& state = g_ui.element_states[element->index];
-    if (state.hash != g_ui.hash) {
-        state.flags = 0;
-        state.hash = g_ui.hash;
-    }
 
     if (g_ui.element_stack_count > 0) {
         g_ui.element_stack[g_ui.element_stack_count-1]->child_count++;
@@ -182,16 +198,54 @@ static Element* GetCurrentElement() {
     return e;
 }
 
+static void CommitTextBox() {
+    if (!g_ui.textbox_id)
+        return;
+
+    PlatformHideTextbox();
+    g_ui.textbox_id = 0;
+}
+
+bool HasFocus() {
+    return g_ui.focus_id != 0 && GetCurrentElement()->id == g_ui.focus_id;
+}
+
+static void SetFocus(ElementId focus_id) {
+    if (g_ui.focus_id == focus_id)
+        return;
+
+    if (g_ui.textbox_id != focus_id)
+        CommitTextBox();
+
+    g_ui.focus_id = focus_id;
+    g_ui.pending_focus_id = focus_id;
+}
+
+static void SetPendingFocus(ElementId focus_id) {
+    g_ui.pending_focus_id = focus_id;
+}
+
+void SetFocus(CanvasId canvas_id, ElementId element_id) {
+    // Canvas id changing?  if so reset the states
+    if (canvas_id != g_ui.last_focus_canvas_id) {
+        memset(&g_ui.element_states, 0, sizeof(g_ui.element_states));
+        g_ui.last_focus_canvas_id = canvas_id;
+        g_ui.current_focus_canvas_id = canvas_id;
+    }
+
+    SetFocus(element_id);
+}
+
 Vec2 ScreenToElement(const Vec2& screen) {
     Element* e = GetCurrentElement();
     if (!e) return VEC2_ZERO;
     return TransformPoint(e->world_to_local, ScreenToWorld(g_ui.camera, screen));
 }
 
-u64 GetElementId() {
+ElementId GetElementId() {
     Element* e = GetCurrentElement();
     if (!e) return 0;
-    return g_ui.element_states[e->index].hash;
+    return e->id;
 }
 
 bool CheckElementFlags(ElementFlags flags) {
@@ -206,6 +260,10 @@ bool CheckElementFlags(ElementFlags flags) {
 
 Vec2 ScreenToUI(const Vec2& screen_pos) {
     return screen_pos / ToVec2(GetScreenSize()) * g_ui.ortho_size;
+}
+
+static float GetUIScale() {
+    return ToVec2(GetScreenSize()).y / g_ui.ortho_size.y;
 }
 
 static void PushElement(Element* element) {
@@ -254,6 +312,15 @@ void BeginCanvas(const CanvasStyle& style) {
     CanvasElement* canvas = static_cast<CanvasElement*>(CreateElement(ELEMENT_TYPE_CANVAS));
     canvas->style = style;
     PushElement(canvas);
+
+    // only one canvas can have focus
+    if (style.id > 0) {
+        assert(g_ui.current_focus_canvas_id <= 0);
+        g_ui.current_focus_canvas_id = style.id;
+        if (g_ui.current_focus_canvas_id != g_ui.last_focus_canvas_id) {
+            memset(&g_ui.element_states, 0, sizeof(g_ui.element_states));
+        }
+    }
 }
 
 void EndCanvas() {
@@ -276,6 +343,7 @@ void BeginContainer(const ContainerStyle& style) {
     ContainerElement* e = static_cast<ContainerElement*>(CreateElement(ELEMENT_TYPE_CONTAINER));
     e->style = style;
     PushElement(e);
+    SetId(e, style.id);
 }
 
 void EndContainer() {
@@ -329,6 +397,7 @@ void Spacer(float size) {
     e->size[parent->type == ELEMENT_TYPE_ROW ? 0 : 1] = size;
 }
 
+
 static u64 GetMeshHash(const TextRequest& request) {
     return Hash(Hash(request.text), reinterpret_cast<u64>(request.font), static_cast<u64>(request.font_size));
 }
@@ -373,6 +442,12 @@ void Label(const char* text, const LabelStyle& style) {
     label->cached_mesh = GetOrCreateTextMesh(text, style);
 }
 
+void Image(Texture* texture, const ImageStyle& style) {
+    ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
+    image->texture = texture;
+    image->style = style;
+}
+
 void Image(Mesh* mesh, const ImageStyle& style) {
     ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
     image->mesh = mesh;
@@ -396,6 +471,66 @@ void Rectangle(const RectangleStyle& style) {
     e->style.width = style.width;
     e->style.height = style.height;
     e->style.color = style.color;
+}
+
+bool TextBox(Text& text, const TextBoxStyle& style) {
+    BeginContainer({.height=style.height, .id=style.id, .nav=style.nav});
+    ElementId id = GetElementId();
+    bool text_changed = false;
+
+    BeginContainer({
+        .padding=EdgeInsetsAll(style.padding),
+        .color=style.background_color,
+        .border=HasFocus() ? style.focus_border : style.border
+    });
+    {
+        TextboxElement* textbox = static_cast<TextboxElement*>(CreateElement(ELEMENT_TYPE_TEXTBOX));
+        textbox->id = id;
+        textbox->style = style;
+        SetValue(g_ui.element_states[id].text, text);
+
+        if (g_ui.focus_id == id)
+            text_changed = PlatformUpdateTextboxText(text);
+
+        if (id == 0 || g_ui.textbox_id != id) {
+            if (text.value[0] != '\0') {
+                // password
+                if (style.password) {
+                    g_ui.password_mask.value[text.length] = 0;
+                    g_ui.password_mask.length = text.length;
+                    Label(g_ui.password_mask, {
+                        .font=style.font,
+                        .font_size=style.font_size,
+                        .color=style.text_color,
+                        .align=ALIGN_CENTER_LEFT});
+                    g_ui.password_mask.value[text.length] = '*';
+                    // default
+                } else {
+                    Label(text, {
+                        .font=style.font,
+                        .font_size=style.font_size,
+                        .color=style.text_color,
+                        .align=ALIGN_CENTER_LEFT});
+                }
+            // placeholder
+            } else if (style.placeholder) {
+                Label(style.placeholder, {
+                    .font=style.font,
+                    .font_size=style.font_size,
+                    .color=style.placeholder_color,
+                    .align=ALIGN_CENTER_LEFT});
+            } else {
+                Container({});
+            }
+        } else {
+            Container({});
+        }
+    }
+
+    EndContainer();
+    EndContainer();
+
+    return text_changed;
 }
 
 void Scene(const SceneStyle& style, void (*draw_scene)(void*)) {
@@ -456,7 +591,7 @@ static int MeasureRowColumnContent(int element_index, const Vec2& available_size
     }
 
     if (e->child_count > 1)
-        max_content_size.y += spacing;
+        max_content_size[axis] += spacing;
 
     return element_index;
 }
@@ -466,7 +601,7 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
     assert(e);
 
     // @measure_container
-    if (e->type == ELEMENT_TYPE_CONTAINER || e->type == ELEMENT_TYPE_COLUMN || e->type == ELEMENT_TYPE_ROW) {
+    if (IsContainerType(e->type)) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
         Vec2 content_size = VEC2_ZERO;
         bool is_auto_width = IsAuto(container->style.width);
@@ -539,13 +674,16 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* i = static_cast<ImageElement*>(e);
         if (i->animated_mesh) {
-            Vec2 mesh_size = GetSize(i->animated_mesh);
-            e->measured_size = mesh_size * i->style.scale;
+            e->measured_size = GetSize(i->animated_mesh) * i->style.scale * 72.0f;
         } else if (i->mesh) {
-            Vec2 mesh_size = GetSize(i->mesh);
-            e->measured_size = mesh_size * i->style.scale;
+            e->measured_size = GetSize(i->mesh) * i->style.scale * 72.0f;
+        } else if (i->texture) {
+            e->measured_size = ToVec2(GetSize(i->texture)) * i->style.scale;
+        } else {
+            e->measured_size = VEC2_ZERO;
         }
 
+#if 0
         const AlignInfo& align = g_align_info[i->style.align];
         if (align.has_x)
             e->measured_size.x = Max(e->measured_size.x, available_size.x);
@@ -565,7 +703,10 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
                 e->measured_size.x = available_size.x;
                 e->measured_size.y = e->measured_size.x / image_aspect_ratio;
             }
+        } else {
+            e->measured_size = VEC2_ZERO;
         }
+#endif
 
         assert(e->child_count == 0);
 
@@ -623,6 +764,11 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
         }
 
         e->measured_size = max_content_size;
+
+    // @measure_textbox
+    } else if (e->type == ELEMENT_TYPE_TEXTBOX) {
+        e->measured_size = available_size;
+
     } else {
         assert(false && "Unhandled element type in MeasureElements");
     }
@@ -637,9 +783,7 @@ static int LayoutElement(int element_index, const Vec2& size) {
     e->rect = noz::Rect{0, 0, e->measured_size.x, e->measured_size.y};
 
     // @layout_container
-    if (e->type == ELEMENT_TYPE_CONTAINER ||
-        e->type == ELEMENT_TYPE_ROW ||
-        e->type == ELEMENT_TYPE_COLUMN) {
+    if (IsContainerType(e->type)) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
         const AlignInfo& align_info = g_align_info[container->style.align];
         bool subtract_margin_x = false;
@@ -742,6 +886,15 @@ static int LayoutElement(int element_index, const Vec2& size) {
             element_index = LayoutElement(element_index, content_size);
     } else if (e->type == ELEMENT_TYPE_SPACER) {
     } else if (e->type == ELEMENT_TYPE_TRANSFORM) {
+        Vec2 content_size = GetSize(e->rect);
+        for (u16 i = 0; i < e->child_count; i++)
+            element_index = LayoutElement(element_index, content_size);
+
+    // @layout_textbox
+    } else if (e->type == ELEMENT_TYPE_TEXTBOX) {
+        e->rect.width = size.x;
+        e->rect.height = size.y;
+
     } else {
         assert(false && "Unhandled element type in LayoutElements");
     }
@@ -861,13 +1014,28 @@ static int DrawElement(int element_index) {
             if (align.has_x) text_offset.x = (e->rect.width - text_size.x) * align.x;
             if (align.has_y) text_offset.y = (e->rect.height - text_size.y) * align.y;
 
-            // Debug
-            // BindTransform(e->local_to_world * Scale({e->rect.width, e->rect.height}));
-            // BindColor(COLOR_GREEN);
-            // BindMaterial(g_ui.element_material);
-            // DrawMesh(g_ui.element_mesh);
+            // Snap text position and size to integer pixel boundaries for crisp rendering
+            Vec2 ui_pos = TransformPoint(e->local_to_world, text_offset);
+            Vec2 ui_end = TransformPoint(e->local_to_world, text_offset + text_size);
 
-            BindTransform(e->local_to_world * Translate(text_offset));
+            Vec2 screen_pos = WorldToScreen(g_ui.camera, ui_pos);
+            Vec2 screen_end = WorldToScreen(g_ui.camera, ui_end);
+            Vec2 screen_size = screen_end - screen_pos;
+
+            // Snap position, then size, then calculate end from snapped values
+            screen_pos.x = Floor(screen_pos.x);
+            screen_pos.y = Floor(screen_pos.y);
+            screen_size.x = Floor(screen_size.x);
+            screen_size.y = Ceil(screen_size.y) + 1;
+            screen_end = screen_pos + screen_size;
+
+            Vec2 snapped_ui_pos = ScreenToWorld(g_ui.camera, screen_pos);
+            Vec2 snapped_ui_end = ScreenToWorld(g_ui.camera, screen_end);
+            Vec2 snapped_ui_size = snapped_ui_end - snapped_ui_pos;
+
+            Vec2 scale = snapped_ui_size / text_size;
+
+            BindTransform(Translate(snapped_ui_pos) * Scale(scale));
             BindColor(l->style.color);
             BindMaterial(l->style.material ? l->style.material : GetMaterial(l->cached_mesh->text_mesh));
             DrawMesh(mesh);
@@ -876,47 +1044,72 @@ static int DrawElement(int element_index) {
     // @render_image
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* image = static_cast<ImageElement*>(e);
-        if (!image->mesh)
+        Bounds2 image_bounds;
+        Vec2 image_size;
+        Vec2 image_scale = VEC2_ONE;
+        if (image->mesh) {
+            image_bounds = GetBounds(image->mesh);
+            image_size = GetSize(image_bounds);
+            BindMaterial(image->style.material);
+        } else if (image->animated_mesh) {
+            image_bounds = GetBounds(image->animated_mesh);
+            image_size = GetSize(image_bounds);
+            BindMaterial(image->style.material);
+        } else if (image->texture) {
+            image_scale = ToVec2(GetSize(image->texture)) * Vec2{1,-1};
+            image_size = ToVec2(GetSize(image->texture));
+            image_bounds = GetBounds(g_ui.image_element_mesh);
+            image_bounds.min *= image_size;
+            image_bounds.max *= image_size;
+            BindShader(SHADER_UI_IMAGE_TEXTURE);
+            BindTexture(image->texture);
+        } else {
             return element_index;
-
-        BindMaterial(image->style.material);
-        Bounds2 mesh_bounds = image->animated_mesh ? GetBounds(image->animated_mesh) : GetBounds(image->mesh);
-        Vec2 mesh_size = GetSize(mesh_bounds);
+        }
 
         BindColor(image->style.color, image->style.color_offset);
 
         Mat3 image_transform;
         if (image->style.stretch == IMAGE_STRETCH_UNIFORM) {
-            float scale_x = e->rect.width / mesh_size.x;
-            float scale_y = e->rect.height / mesh_size.y;
+            float scale_x = e->rect.width / image_size.x;
+            float scale_y = e->rect.height / image_size.y;
             float uniform_scale = Min(scale_x, scale_y) * image->style.scale;
 
             const AlignInfo& align = g_align_info[image->style.align];
             Vec2 image_offset = VEC2_ZERO;
             if (align.has_x)
-                image_offset.x = (e->rect.width - mesh_size.x * uniform_scale) * align.x;
+                image_offset.x = (e->rect.width - image_size.x * uniform_scale) * align.x;
             if (align.has_y)
-                image_offset.y = (e->rect.height - mesh_size.y * uniform_scale) * align.y;
+                image_offset.y = (e->rect.height - image_size.y * uniform_scale) * align.y;
 
             image_transform = transform *
-                Translate(Vec2{-mesh_bounds.min.x, -mesh_bounds.min.y} * uniform_scale + image_offset) *
-                Scale(Vec2{uniform_scale, uniform_scale});
-        } else {
-            Vec2 image_scale = {e->rect.width / mesh_size.x, e->rect.height / mesh_size.y};
+                Translate(Vec2{-image_bounds.min.x, -image_bounds.min.y} * uniform_scale + image_offset) *
+                Scale(image_scale * uniform_scale);
+        } else if (image->style.stretch == IMAGE_STRETCH_FILL) {
+            image_scale = {e->rect.width / image_size.x, e->rect.height / image_size.y} * image_scale;
             Vec2 image_offset = Vec2{
-                -mesh_bounds.min.x * image_scale.x,
-                -mesh_bounds.min.y * image_scale.y
+                -image_bounds.min.x * image_scale.x,
+                -image_bounds.min.y * image_scale.y
             };
             image_transform = transform * Translate(image_offset) * Scale(image_scale);
+        } else {
+            // render the image at the align point
+            const AlignInfo& align = g_align_info[image->style.align];
+            Vec2 image_offset = VEC2_ZERO;
+            if (align.has_x) image_offset.x = e->rect.width * align.x;
+            if (align.has_y) image_offset.y = e->rect.height * align.y;
+            image_transform = transform * Translate(image_offset) * Scale(image_scale * image->style.scale);
         }
 
         if (image->animated_mesh)
             DrawMesh(image->animated_mesh, image_transform, image->animated_time);
-        else
+        else if (image->mesh)
             DrawMesh(image->mesh, image_transform);
+        else if (image->texture)
+            DrawMesh(g_ui.image_element_mesh, image_transform);
 
     // @render_container
-    } else if (e->type == ELEMENT_TYPE_CONTAINER) {
+    } else if (IsContainerType(e->type)) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
         DrawContainer(container, transform);
 
@@ -973,7 +1166,8 @@ void BeginUI(u32 ref_width, u32 ref_height) {
     g_ui.ref_size = { static_cast<i32>(ref_width), static_cast<i32>(ref_height) };
     g_ui.element_stack_count = 0;
     g_ui.element_count = 0;
-    g_ui.hash = 0;
+    g_ui.last_focus_canvas_id = g_ui.current_focus_canvas_id;
+    g_ui.current_focus_canvas_id = 0;
 
     Clear(g_ui.allocator);
 
@@ -983,51 +1177,161 @@ void BeginUI(u32 ref_width, u32 ref_height) {
     f32 rh = static_cast<f32>(g_ui.ref_size.y);
     f32 sw = static_cast<f32>(screen_size.x);
     f32 sh = static_cast<f32>(screen_size.y);
-    f32 sw_rw = sw / rw;
-    f32 sh_rh = sh / rh;
 
-    if (Abs(sw_rw - 1.0f) < Abs(sh_rh - 1.0f)) {
+    if (rw > 0 && rh > 0) {
+        f32 aspect_ref = rw / rh;
+        f32 aspect_screen = sw / sh;
+
+        if (aspect_screen >= aspect_ref) {
+            g_ui.ortho_size.y = rh;
+            g_ui.ortho_size.x = rh * aspect_screen;
+        } else {
+            g_ui.ortho_size.x = rw;
+            g_ui.ortho_size.y = rw / aspect_screen;
+        }
+    } else if (rw > 0) {
         g_ui.ortho_size.x = rw;
-        g_ui.ortho_size.y = rw * sh / sw;
-    } else {
+        g_ui.ortho_size.y = rw * (sh / sw);
+    } else if (rh > 0) {
         g_ui.ortho_size.y = rh;
-        g_ui.ortho_size.x = rh * sw / sh;
+        g_ui.ortho_size.x = rh * (sw / sh);
+    } else {
+        g_ui.ortho_size.x = sw;
+        g_ui.ortho_size.y = sh;
     }
 
     SetExtents(g_ui.camera, 0, g_ui.ortho_size.x, 0, g_ui.ortho_size.y);
 
     UpdateInputState(g_ui.input);
+
+    SetFocus(g_ui.pending_focus_id);
+}
+
+inline u8 WrapElementId(u8 id, int offset) {
+    int new_id = static_cast<int>(id) + offset;
+    if (new_id < ELEMENT_ID_MIN)
+        new_id = ELEMENT_ID_MAX;
+    else if (new_id >= ELEMENT_ID_MAX)
+        new_id = ELEMENT_ID_MIN;
+    return static_cast<u8>(new_id);
 }
 
 static void HandleInput() {
     Vec2 mouse = ScreenToWorld(g_ui.camera, GetMousePosition());
-    for (u32 i=g_ui.element_count; i>0; i--) {
-        Element* e = g_ui.elements[i-1];
-        ElementState& prev_state = g_ui.element_states[i-1];
+    bool mouse_left_pressed = WasButtonPressed(g_ui.input, MOUSE_LEFT);
+    bool button_down = IsButtonDown(g_ui.input, MOUSE_LEFT);
+    bool focus_element_pressed = false;
+    bool focus_element_found = false;
+    TextboxElement* focused_textbox = nullptr;
+    noz::Rect focused_textbox_rect = {};
+
+    // First pass: set flags for all elements (don't consume yet)
+    for (u16 element_index=g_ui.element_count; element_index>0; element_index--) {
+        Element* e = g_ui.elements[element_index-1];
+        ElementState& state = g_ui.element_states[element_index-1];
         Vec2 local_mouse = TransformPoint(e->world_to_local, mouse);
         bool mouse_over = Contains(Bounds2{0,0,e->rect.width, e->rect.height}, local_mouse);
 
+        focus_element_found &= e->id == g_ui.focus_id;
+
+        if (g_ui.focus_id == e->id && e->type == ELEMENT_TYPE_TEXTBOX) {
+            focused_textbox = static_cast<TextboxElement*>(e);
+            Vec2 tl = WorldToScreen(g_ui.camera, TransformPoint(focused_textbox->local_to_world));
+            Vec2 br = WorldToScreen(g_ui.camera, TransformPoint(focused_textbox->local_to_world, Vec2{focused_textbox->rect.width, focused_textbox->rect.height}));
+            focused_textbox_rect = noz::Rect{tl.x, tl.y, br.x - tl.x, br.y - tl.y};
+        }
+
         if (mouse_over)
-            prev_state.flags = prev_state.flags | ELEMENT_FLAG_HOVERED;
+            state.flags = state.flags | ELEMENT_FLAG_HOVERED;
         else
-            prev_state.flags = prev_state.flags & ~ELEMENT_FLAG_HOVERED;
+            state.flags = state.flags & ~ELEMENT_FLAG_HOVERED;
 
-        if (mouse_over && WasButtonPressed(g_ui.input, MOUSE_LEFT)) {
-            prev_state.flags = prev_state.flags | ELEMENT_FLAG_PRESSED;
+        if (mouse_over && mouse_left_pressed) {
+            state.flags = state.flags | ELEMENT_FLAG_PRESSED;
+            if (!focus_element_pressed && e->id != 0) {
+                focus_element_pressed = true;
+                focus_element_found = true;
+                SetPendingFocus(e->id);
+            }
         } else {
-            prev_state.flags = prev_state.flags & ~ELEMENT_FLAG_PRESSED;
+            state.flags = state.flags & ~ELEMENT_FLAG_PRESSED;
         }
 
-        if ((prev_state.flags & ELEMENT_FLAG_PRESSED) && e->type != ELEMENT_TYPE_CANVAS) {
-            ConsumeButton(MOUSE_LEFT);
-        }
-
-        if (mouse_over && IsButtonDown(g_ui.input, MOUSE_LEFT)) {
-            prev_state.flags = prev_state.flags | ELEMENT_FLAG_DOWN;
+        if (mouse_over && button_down) {
+            state.flags = state.flags | ELEMENT_FLAG_DOWN;
         } else {
-            prev_state.flags = prev_state.flags & ~ELEMENT_FLAG_DOWN;
+            state.flags = state.flags & ~ELEMENT_FLAG_DOWN;
         }
     }
+
+    if (focused_textbox) {
+        Text& text = g_ui.element_states[focused_textbox->id].text;
+        int font_size = static_cast<int>(focused_textbox->style.font_size * GetUIScale());
+        if (g_ui.textbox_id != focused_textbox->id) {
+            g_ui.textbox_id = focused_textbox->id;
+            PlatformShowTextbox(focused_textbox_rect, text, {
+                focused_textbox->style.background_color,
+                focused_textbox->style.text_color,
+                font_size,
+                focused_textbox->style.password
+            });
+        } else {
+            PlatformUpdateTextboxRect(focused_textbox_rect, font_size);
+        }
+    } else if (g_ui.textbox_id) {
+        PlatformHideTextbox();
+        g_ui.textbox_id = 0;
+    }
+
+    // Second pass: consume button for topmost pressed element
+    for (u32 i=g_ui.element_count; i>0; i--) {
+        Element* e = g_ui.elements[i-1];
+        ElementState& prev_state = g_ui.element_states[i-1];
+        if ((prev_state.flags & ELEMENT_FLAG_PRESSED) && e->type != ELEMENT_TYPE_CANVAS) {
+            ConsumeButton(MOUSE_LEFT);
+            break;  // Only consume once for the topmost element
+        }
+    }
+
+    // Cycle through ui elements
+    if (WasButtonPressed(KEY_TAB)) {
+        int focus_offset = IsShiftDown() ? -1 : 1;
+        ElementId focus_id = g_ui.focus_id;
+
+        if (focus_id != 0) {
+            u16 focus_index = g_ui.element_states[focus_id].index;
+            if (focus_index > 0) {
+                Element* f = g_ui.elements[focus_index];
+                assert(IsContainerType(f->type));
+                ContainerElement* container = static_cast<ContainerElement*>(f);
+                if (IsShiftDown() && container->style.nav.prev != 0)
+                    focus_id = container->style.nav.prev;
+                else if (!IsShiftDown() && container->style.nav.next != 0)
+                    focus_id = container->style.nav.next;
+            } else {
+                focus_id = ELEMENT_ID_NONE;
+            }
+        }
+
+        if (focus_id == ELEMENT_ID_NONE) {
+            for (focus_id = ELEMENT_ID_MIN;
+                 g_ui.element_states[focus_id].index == 0 && focus_id < ELEMENT_ID_MAX;
+                 focus_id++);
+        } else if (focus_id == g_ui.focus_id) {
+            for (focus_id = WrapElementId(focus_id, focus_offset);
+                 g_ui.element_states[focus_id].index == 0 && focus_id != g_ui.focus_id;
+                 focus_id = WrapElementId(focus_id, focus_offset));
+        }
+
+        SetPendingFocus(focus_id);
+    }
+
+    // Clear focus when clicking outside of focused element and a textbox is active
+    if (mouse_left_pressed && !focus_element_pressed && g_ui.textbox_id != 0)
+        SetPendingFocus(ELEMENT_ID_NONE);
+    // Native textbox lost focus?
+    else if (g_ui.textbox_id != ELEMENT_ID_NONE && g_ui.focus_id == g_ui.textbox_id && !PlatformIsTextboxVisible())
+        SetPendingFocus(ELEMENT_ID_NONE);
 }
 
 void EndUI() {
@@ -1146,7 +1450,7 @@ static void CreateImageElementMesh() {
 }
 
 void InitUI(const ApplicationTraits* traits) {
-    g_ui = {};
+    memset(&g_ui, 0, sizeof(g_ui));
     g_ui.allocator = CreateArenaAllocator(sizeof(FatElement) * MAX_ELEMENTS, "UI");
     g_ui.camera = CreateCamera(ALLOCATOR_DEFAULT);
     g_ui.element_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
@@ -1164,9 +1468,13 @@ void InitUI(const ApplicationTraits* traits) {
     CreateElementMesh();
     CreateElementWithBorderMesh();
     CreateImageElementMesh();
+
+    for (int i=0; i<TEXT_MAX_LENGTH; i++)
+        g_ui.password_mask.value[i] = '*';
+    g_ui.password_mask.value[TEXT_MAX_LENGTH] = 0;
 }
 
 void ShutdownUI() {
     Destroy(g_ui.allocator);
-    g_ui = {};
+    memset(&g_ui, 0, sizeof(g_ui));
 }

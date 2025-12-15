@@ -14,6 +14,16 @@ constexpr ElementFlags ELEMENT_FLAG_HOVERED     = 1 << 0;
 constexpr ElementFlags ELEMENT_FLAG_PRESSED     = 1 << 1;
 constexpr ElementFlags ELEMENT_FLAG_DOWN        = 1 << 2;
 
+typedef u8 ElementId;
+constexpr ElementId ELEMENT_ID_NONE = 0;
+constexpr ElementId ELEMENT_ID_MIN = 1;
+constexpr ElementId ELEMENT_ID_MAX = 255;
+
+typedef u32 CanvasId;
+constexpr CanvasId CANVAS_ID_NONE = 0;
+constexpr CanvasId CANVAS_ID_MIN = 1;
+
+
 typedef Color (*AnimatedColorFunc)(ElementFlags state, float time, void* user_data);
 
 struct EdgeInsets {
@@ -65,29 +75,9 @@ struct ExpandedStyle {
     float flex = 1.0f;
 };
 
-struct TapDetails {
-    Vec2 position;
-    void* user_data;
-    int id;
-};
-
-struct DragDetails {
-    void* user_data;
-    int id;
-};
-
 struct SceneStyle {
     Camera* camera;
     void* user_data;
-};
-
-struct GestureDetectorStyle {
-    void (*on_tap)(const TapDetails& details);
-    void (*on_tap_down)(const TapDetails& details);
-    void (*on_tap_up)(const TapDetails& details);
-    void (*on_drag)(const DragDetails& details);
-    void* user_data;
-    int id;
 };
 
 struct LabelStyle {
@@ -96,14 +86,6 @@ struct LabelStyle {
     Color color = COLOR_WHITE;
     Align align = ALIGN_NONE;
     Material* material;
-};
-
-struct MouseRegionStyle {
-    // todo: cursor
-    void (*on_enter)(void*) = nullptr;
-    void (*on_exit)(void*) = nullptr;
-    void (*on_hover)(void*) = nullptr;
-    void* user_data;
 };
 
 enum ImageStretch {
@@ -126,7 +108,7 @@ struct ImageStyle {
 struct BorderStyle {
     float radius = 0.0f;
     float width = 0.0f;
-    Color color = COLOR_WHITE;
+    Color color = COLOR_TRANSPARENT;
 };
 
 struct RectangleStyle {
@@ -136,6 +118,29 @@ struct RectangleStyle {
     Vec2Int color_offset;
 };
 
+struct NavigationStyle {
+    ElementId next;
+    ElementId prev;
+    ElementId left;
+    ElementId right;
+};
+
+struct TextBoxStyle {
+    float height = 28.0f;
+    float padding = 4.0f;
+    Font* font = nullptr;
+    int font_size = 16;
+    const char* placeholder = nullptr;
+    Color background_color = Color8ToColor(55);
+    Color text_color = COLOR_WHITE;
+    Color placeholder_color = Color8ToColor(100);
+    BorderStyle border;
+    BorderStyle focus_border;
+    bool password = false;
+    ElementId id;
+    NavigationStyle nav;
+};
+
 struct CanvasStyle {
     CanvasType type = CANVAS_TYPE_SCREEN;
     Color color;
@@ -143,6 +148,7 @@ struct CanvasStyle {
     Camera* world_camera;
     Vec2 world_position;
     Vec2 world_size;
+    int id;
 };
 
 struct ContainerStyle {
@@ -156,6 +162,8 @@ struct ContainerStyle {
     BorderStyle border;
     void* user_data;
     float spacing = 0.0f;
+    ElementId id;
+    NavigationStyle nav;
 };
 
 // @common
@@ -164,7 +172,7 @@ extern void DrawUI();
 extern void EndUI();
 extern Vec2 ScreenToUI(const Vec2& screen_pos);
 extern bool CheckElementFlags(ElementFlags flags);
-extern u64 GetElementId();
+extern ElementId GetElementId();
 extern Vec2 ScreenToElement(const Vec2& screen);
 
 // @layout
@@ -192,6 +200,11 @@ extern void Spacer(float size);
 inline bool IsHovered() { return CheckElementFlags(ELEMENT_FLAG_HOVERED); }
 inline bool WasPressed() { return CheckElementFlags(ELEMENT_FLAG_PRESSED); }
 inline bool IsDown() { return CheckElementFlags(ELEMENT_FLAG_DOWN); }
+extern bool HasFocus();
+extern void SetFocus(CanvasId canvas_id, ElementId element_id);
+
+// @textbox
+extern bool TextBox(Text& text, const TextBoxStyle& style = {});
 
 // @drawing
 extern void Label(const char* text, const LabelStyle& style = {});
@@ -203,6 +216,7 @@ inline void Label(const Name* name, const LabelStyle& style = {}) {
 }
 extern void Image(Mesh* mesh, const ImageStyle& style = {});
 extern void Image(AnimatedMesh* mesh, float time, const ImageStyle& style = {});
+extern void Image(Texture* texture, const ImageStyle& style = {});
 extern void Rectangle(const RectangleStyle& style = {});
 extern void Scene(const SceneStyle& style, void (*draw_scene)(void*) = nullptr);
 

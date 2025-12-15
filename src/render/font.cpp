@@ -178,7 +178,6 @@ float GetKerning(Font* font, char first, char second)
     (void)first;
     (void)second;
 
-#if 0
     FontImpl* impl = static_cast<FontImpl*>(font);
     u8 f = (u8)first;
     u8 s = (u8)second;
@@ -187,7 +186,7 @@ float GetKerning(Font* font, char first, char second)
     uint16_t value_index = impl->kerning_index[index];
     if (value_index != 0xFFFF && value_index < impl->kerning_count)
         return impl->kerning_values[value_index];
-#endif
+
     return 0.0f;
 }
 

@@ -11,12 +11,8 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 
-extern void HandleInputCharacter(char c);
-extern void HandleInputKeyDown(char c);
-
 struct WebInput {
     bool key_states[INPUT_CODE_COUNT];
-    TextInput text_input;
     bool gamepad_connected[4];
     double gamepad_axes[4][6];  // 4 gamepads, 6 axes each
     bool gamepad_buttons[4][20]; // 4 gamepads, 20 buttons each
@@ -24,6 +20,21 @@ struct WebInput {
 };
 
 static WebInput g_web_input = {};
+
+// Functions needed by web_main.cpp for touch input simulation
+bool* GetKeyStates() {
+    return g_web_input.key_states;
+}
+
+void HandleInputKeyDown(char c) {
+    // Handle special keys for text input (unused with native textbox)
+    (void)c;
+}
+
+void HandleInputCharacter(char c) {
+    // Handle character input (unused with native textbox)
+    (void)c;
+}
 
 // Map browser key codes to InputCode
 static InputCode KeyCodeToInputCode(const char* code) {
@@ -420,92 +431,6 @@ void PlatformUpdateInputState() {
     UpdateGamepads();
 }
 
-void HandleInputCharacter(char c) {
-    if (!IsTextInputEnabled())
-        return;
-
-    if (g_web_input.text_input.value.length >= TEXT_MAX_LENGTH)
-        return;
-
-    if (c == 27) {
-        Send(EVENT_TEXTINPUT_CANCEL, &g_web_input.text_input);
-        return;
-    }
-
-    if (c == 13 || c == '\r') {
-        Send(EVENT_TEXTINPUT_COMMIT, &g_web_input.text_input);
-        return;
-    }
-
-    if (c < 32)
-        return;
-
-    char text[] = { c, 0 };
-    ReplaceSelection(g_web_input.text_input, text);
-
-    Send(EVENT_TEXTINPUT_CHANGE, &g_web_input.text_input);
-}
-
-void HandleInputKeyDown(char c) {
-    if (!IsTextInputEnabled())
-        return;
-
-    TextInput& input = g_web_input.text_input;
-
-    if (c == '\b') {  // Backspace
-        if (input.selection_end > input.selection_start) {
-            ReplaceSelection(input, "");
-            Send(EVENT_TEXTINPUT_CHANGE, &g_web_input.text_input);
-            return;
-        }
-
-        if (input.cursor < 1)
-            return;
-
-        input.selection_start = input.cursor - 1;
-        input.selection_end = input.cursor;
-        ReplaceSelection(input, "");
-
-        Send(EVENT_TEXTINPUT_CHANGE, &g_web_input.text_input);
-        return;
-    } else if (c == 127) {  // Delete
-        if (input.selection_end > input.selection_start) {
-            ReplaceSelection(input, "");
-            Send(EVENT_TEXTINPUT_CHANGE, &g_web_input.text_input);
-            return;
-        }
-
-        if (input.cursor >= input.value.length)
-            return;
-
-        input.selection_start = input.cursor;
-        input.selection_end = input.cursor + 1;
-        ReplaceSelection(input, "");
-
-        Send(EVENT_TEXTINPUT_CHANGE, &g_web_input.text_input);
-        return;
-    }
-}
-
-void PlatformClearTextInput() {
-    Text& text = g_web_input.text_input.value;
-    if (text.length == 0)
-        return;
-
-    text.value[0] = 0;
-    text.length = 0;
-    g_web_input.text_input.cursor = 0;
-    Send(EVENT_TEXTINPUT_CHANGE, &g_web_input.text_input);
-}
-
-const TextInput& PlatformGetTextInput() {
-    return g_web_input.text_input;
-}
-
-void PlatformSetTextInput(const TextInput& text_input) {
-    g_web_input.text_input = text_input;
-}
-
 bool PlatformIsGamepadActive() {
     return g_web_input.active_controller != -1;
 }
@@ -513,8 +438,6 @@ bool PlatformIsGamepadActive() {
 void PlatformInitInput() {
     g_web_input = {};
     g_web_input.active_controller = -1;
-
-    PlatformClearTextInput();
 
     // Register keyboard events
     emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_DOCUMENT, nullptr, EM_TRUE, OnKeyDownInput);
@@ -531,4 +454,220 @@ void PlatformInitInput() {
 
 void PlatformShutdownInput() {
     // Nothing to cleanup
+}
+
+// Native text input overlay
+static bool g_native_text_input_visible = false;
+static bool g_native_text_input_dirty = false;
+static char g_native_text_input_value[TEXT_MAX_LENGTH + 1] = {};
+static noz::Rect g_native_text_input_rect = {};
+static int g_native_text_input_font_size = 0;
+
+static void ColorToRgbString(const Color& c, char* out, int max_len) {
+    snprintf(out, max_len, "rgb(%d,%d,%d)",
+        static_cast<int>(c.r * 255.0f),
+        static_cast<int>(c.g * 255.0f),
+        static_cast<int>(c.b * 255.0f));
+}
+
+void PlatformShowTextbox(const noz::Rect& rect, const Text& text, const NativeTextboxStyle& style) {
+    char bg_color[32];
+    char text_color[32];
+    ColorToRgbString(style.background_color, bg_color, sizeof(bg_color));
+    ColorToRgbString(style.text_color, text_color, sizeof(text_color));
+
+    g_native_text_input_visible = true;
+    g_native_text_input_dirty = false;
+    g_native_text_input_rect = rect;
+    g_native_text_input_font_size = style.font_size;
+
+    if (text.length > 0) {
+        strncpy(g_native_text_input_value, text.value, TEXT_MAX_LENGTH);
+        g_native_text_input_value[TEXT_MAX_LENGTH] = 0;
+    } else {
+        g_native_text_input_value[0] = 0;
+    }
+
+    const char* input_type = style.password ? "password" : "text";
+
+    EM_ASM({
+        var input = document.getElementById('native-text-input');
+        if (!input) {
+            input = document.createElement('input');
+            input.id = 'native-text-input';
+            input.autocomplete = 'off';
+            input.spellcheck = false;
+            input.style.position = 'absolute';
+            input.style.zIndex = '1000';
+            input.style.outline = 'none';
+            input.style.border = 'none';
+            input.style.fontFamily = 'sans-serif';
+            input.style.padding = '0';
+            input.style.boxSizing = 'border-box';
+            document.body.appendChild(input);
+
+            input.addEventListener('input', function() {
+                Module.ccall('NativeTextInputChanged', null, ['string'], [input.value]);
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    Module.ccall('NativeTextInputCommit', null, [], []);
+                    e.preventDefault();
+                } else if (e.key === 'Escape') {
+                    Module.ccall('NativeTextInputCancel', null, [], []);
+                    e.preventDefault();
+                } else if (e.key === 'Tab') {
+                    e.preventDefault(); // Stop browser focus change, but let game see it
+                    return;
+                }
+                e.stopPropagation();
+            });
+
+            input.addEventListener('keyup', function(e) {
+                e.stopPropagation();
+            });
+
+            input.addEventListener('keypress', function(e) {
+                e.stopPropagation();
+            });
+        }
+
+        // Get canvas position and device pixel ratio to convert canvas coords to page coords
+        var canvas = document.getElementById('canvas');
+        var canvasLeft = 0;
+        var canvasTop = 0;
+        if (canvas) {
+            var canvasRect = canvas.getBoundingClientRect();
+            canvasLeft = canvasRect.left;
+            canvasTop = canvasRect.top;
+        }
+        var dpr = window.devicePixelRatio || 1;
+
+        // Convert from canvas buffer coordinates to CSS pixels, then add canvas offset
+        var cssX = ($0 / dpr) + canvasLeft;
+        var cssY = ($1 / dpr) + canvasTop;
+        var cssWidth = $2 / dpr;
+        var cssHeight = $3 / dpr;
+        var cssFontSize = $4 / dpr;
+
+        input.type = UTF8ToString($8);
+        input.style.left = cssX + 'px';
+        input.style.top = cssY + 'px';
+        input.style.width = cssWidth + 'px';
+        input.style.height = cssHeight + 'px';
+        input.style.fontSize = cssFontSize + 'px';
+        input.style.backgroundColor = UTF8ToString($5);
+        input.style.color = UTF8ToString($6);
+        input.value = UTF8ToString($7);
+        input.style.display = 'block';
+        input.focus();
+        input.select();
+    }, rect.x, rect.y, rect.width, rect.height, style.font_size, bg_color, text_color, text.value, input_type);
+}
+
+void PlatformUpdateTextboxRect(const noz::Rect& rect, int font_size) {
+    if (!g_native_text_input_visible)
+        return;
+
+    // Only update if rect or font_size changed
+    if (g_native_text_input_rect.x == rect.x &&
+        g_native_text_input_rect.y == rect.y &&
+        g_native_text_input_rect.width == rect.width &&
+        g_native_text_input_rect.height == rect.height &&
+        g_native_text_input_font_size == font_size) {
+        return;
+    }
+
+    g_native_text_input_rect = rect;
+    g_native_text_input_font_size = font_size;
+
+    EM_ASM({
+        var input = document.getElementById('native-text-input');
+        if (input) {
+            // Get canvas position and device pixel ratio to convert canvas coords to page coords
+            var canvas = document.getElementById('canvas');
+            var canvasLeft = 0;
+            var canvasTop = 0;
+            if (canvas) {
+                var canvasRect = canvas.getBoundingClientRect();
+                canvasLeft = canvasRect.left;
+                canvasTop = canvasRect.top;
+            }
+            var dpr = window.devicePixelRatio || 1;
+
+            var cssX = ($0 / dpr) + canvasLeft;
+            var cssY = ($1 / dpr) + canvasTop;
+            var cssWidth = $2 / dpr;
+            var cssHeight = $3 / dpr;
+            var cssFontSize = $4 / dpr;
+
+            input.style.left = cssX + 'px';
+            input.style.top = cssY + 'px';
+            input.style.width = cssWidth + 'px';
+            input.style.height = cssHeight + 'px';
+            input.style.fontSize = cssFontSize + 'px';
+        }
+    }, rect.x, rect.y, rect.width, rect.height, font_size);
+}
+
+void PlatformHideTextbox() {
+    if (!g_native_text_input_visible)
+        return;
+
+    g_native_text_input_visible = false;
+    g_native_text_input_rect = {0, 0, 0, 0};
+
+    EM_ASM({
+        var input = document.getElementById('native-text-input');
+        if (input) {
+            input.style.display = 'none';
+            input.blur();
+        }
+        // Return focus to canvas
+        var canvas = document.getElementById('canvas');
+        if (canvas) canvas.focus();
+    });
+}
+
+bool PlatformIsTextboxVisible() {
+    return g_native_text_input_visible;
+}
+
+bool PlatformUpdateTextboxText(Text& text) {
+    if (!g_native_text_input_dirty)
+        return false;
+
+    size_t len = strlen(g_native_text_input_value);
+    if (len > TEXT_MAX_LENGTH)
+        len = TEXT_MAX_LENGTH;
+
+    memcpy(text.value, g_native_text_input_value, len);
+    text.value[len] = 0;
+    text.length = static_cast<int>(len);
+
+    g_native_text_input_dirty = false;
+    return true;
+}
+
+// C callbacks for JavaScript
+extern "C" {
+    EMSCRIPTEN_KEEPALIVE
+    void NativeTextInputChanged(const char* value) {
+        if (value) {
+            strncpy(g_native_text_input_value, value, TEXT_MAX_LENGTH);
+            g_native_text_input_value[TEXT_MAX_LENGTH] = 0;
+        }
+        g_native_text_input_dirty = true;
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void NativeTextInputCommit() {
+        PlatformHideTextbox();
+    }
+
+    EMSCRIPTEN_KEEPALIVE
+    void NativeTextInputCancel() {
+        PlatformHideTextbox();
+    }
 }

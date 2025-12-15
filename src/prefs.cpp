@@ -3,43 +3,69 @@
 //
 
 #include "platform.h"
+#include <noz/tokenizer.h>
 
 constexpr u16 PREFS_VERSION = 4;
-constexpr u32 PREFS_SIGNATURE = FourCC('N', 'Z', 'P', 'R');
-constexpr i32 PREF_DEFAULT = I32_MIN;
+
+struct Pref {
+    Text string_value;
+    int int_value;
+    bool is_default;
+};
 
 struct Prefs {
-    i32* ints;
+    Pref* values;
     i32 max_prefs;
 };
 
 static Prefs g_prefs = {};
 
 static void LoadPrefsInternal(const std::filesystem::path& path) {
-    for (i32 i = 0; i < g_prefs.max_prefs; ++i)
-        g_prefs.ints[i] = PREF_DEFAULT;
-
     Stream* stream = LoadStream(ALLOCATOR_SCRATCH, path);
     if (!stream)
         return;
 
-    u32 sig = ReadU32(stream);
-    if (sig != PREFS_SIGNATURE)
-        return;
+    Tokenizer tk;
+    Init(tk, stream);
 
-    u16 version = ReadU16(stream);
-    if (PREFS_VERSION > version)
-        return;
-
-    u16 int_count = ReadU16(stream);
-    for (u16 i = 0; i < int_count; ++i) {
-        u32 index = ReadI32(stream);
-        i32 value = ReadI32(stream);
-        g_prefs.ints[index] = value;
+    while (!IsEOF(tk)) {
+        int pref_index = 0;
+        if (ExpectIdentifier(tk, "v")) {
+            ExpectInt(tk);
+        } else if (ExpectInt(tk, &pref_index)) {
+            int pref_int_value = 0;
+            if (ExpectInt(tk, &pref_int_value)) {
+                if (pref_index >= 0 && pref_index < g_prefs.max_prefs)
+                    g_prefs.values[pref_index] = {
+                        .string_value = {},
+                        .int_value = pref_int_value,
+                        .is_default = false
+                    };
+            } else if (ExpectQuotedString(tk)) {
+                if (pref_index >= 0 && pref_index < g_prefs.max_prefs) {
+                    g_prefs.values[pref_index] = {
+                        .string_value = {},
+                        .int_value = pref_int_value,
+                        .is_default = false
+                    };
+                    SetValue(g_prefs.values[pref_index].string_value, tk.current_token.raw, tk.current_token.length);
+                }
+            }
+        } else {
+            break;
+        }
     }
 }
 
 void LoadPrefs() {
+    for (int i=0; i<g_prefs.max_prefs; i++) {
+        g_prefs.values[i] = {
+            .string_value = {},
+            .int_value = 0,
+            .is_default = true
+        };
+    }
+
     PushScratch();
     LoadPrefsInternal(PlatformGetSaveGamePath() / "prefs.dat");
     PopScratch();
@@ -50,21 +76,18 @@ static void SavePrefsInternal(const std::filesystem::path& path) {
     if (!stream)
         return;
 
-    WriteU32(stream, PREFS_SIGNATURE);
-    WriteU16(stream, PREFS_VERSION);
+    WriteCSTR(stream, "v %d\n", PREFS_VERSION);
 
-    i32 pref_count = 0;
-    for (i32 i = 0; i < g_prefs.max_prefs; ++i)
-        if (g_prefs.ints[i] != PREF_DEFAULT)
-            ++pref_count;
 
-    WriteU16(stream, (u16)pref_count);
+    for (int i=0; i<g_prefs.max_prefs; i++) {
+        const Pref& pref = g_prefs.values[i];
+        if (pref.is_default) continue;
 
-    for (i32 i = 0; i < g_prefs.max_prefs; ++i) {
-        if (g_prefs.ints[i] == PREF_DEFAULT)
-            continue;
-        WriteI32(stream, i);
-        WriteI32(stream, g_prefs.ints[i]);
+        if (!IsEmpty(pref.string_value)) {
+            WriteCSTR(stream, "%d \"%s\"\n", i, pref.string_value.value);
+        } else if (pref.int_value != 0) {
+            WriteCSTR(stream, "%d %d\n", i, pref.int_value);
+        }
     }
 
     SaveStream(stream, path);
@@ -76,37 +99,64 @@ void SavePrefs() {
     PopScratch();
 }
 
-void SetPrefInt(i32 id, i32 value) {
+void SetIntPref(i32 id, i32 value) {
     id += PREF_CORE_COUNT;
     assert(id >= 0 && id < g_prefs.max_prefs);
-    g_prefs.ints[id] = value;
+    g_prefs.values[id] = {
+        .string_value = {},
+        .int_value = value,
+        .is_default = false
+    };
 }
 
-i32 GetPrefInt(int id, i32 default_value) {
+void SetStringPref(i32 id, const char* value) {
     id += PREF_CORE_COUNT;
     assert(id >= 0 && id < g_prefs.max_prefs);
-    if (g_prefs.ints[id] == PREF_DEFAULT)
+    g_prefs.values[id] = {
+        .string_value = {},
+        .int_value = 0,
+        .is_default = false
+    };
+    Text& text = g_prefs.values[id].string_value;
+    SetValue(text, value);
+}
+
+i32 GetIntPref(int id, i32 default_value) {
+    id += PREF_CORE_COUNT;
+    assert(id >= 0 && id < g_prefs.max_prefs);
+    if (g_prefs.values[id].is_default)
         return default_value;
-    return g_prefs.ints[id];
+    return g_prefs.values[id].int_value;
+}
+
+const char* GetStringPref(int id, const char* default_value) {
+    id += PREF_CORE_COUNT;
+    assert(id >= 0 && id < g_prefs.max_prefs);
+    if (g_prefs.values[id].is_default)
+        return default_value;
+    return g_prefs.values[id].string_value.value;
 }
 
 void ClearPref(int id) {
     id += PREF_CORE_COUNT;
     assert(id >= 0 && id < g_prefs.max_prefs);
-    g_prefs.ints[id] = PREF_DEFAULT;
+    g_prefs.values[id] = {
+        .string_value = {},
+        .int_value = 0,
+        .is_default = true
+    };
 }
 
 void InitPrefs(const ApplicationTraits& traits) {
     g_prefs = {};
-    g_prefs.max_prefs = (i32)traits.max_prefs + PREF_CORE_COUNT;
-    g_prefs.ints = static_cast<int*>(Alloc(ALLOCATOR_DEFAULT, sizeof(i32) * g_prefs.max_prefs));
-
+    g_prefs.max_prefs = static_cast<i32>(traits.max_prefs) + PREF_CORE_COUNT;
+    g_prefs.values = static_cast<Pref*>(Alloc(ALLOCATOR_DEFAULT, sizeof(Pref) * g_prefs.max_prefs));
     LoadPrefs();
 }
 
 void ShutdownPrefs() {
     SavePrefs();
 
-    Free(g_prefs.ints);
+    Free(g_prefs.values);
     g_prefs = {};
 }

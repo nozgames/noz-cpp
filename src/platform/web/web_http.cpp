@@ -19,6 +19,8 @@ struct WebHttpRequest {
     u32 generation;
     HttpStatus status;
     int status_code;
+    char* response_headers;
+    char* body_copy;
 };
 
 struct WebHttp {
@@ -65,6 +67,14 @@ static void CleanupRequest(WebHttpRequest* request) {
         Free(request->response_data);
         request->response_data = nullptr;
     }
+    if (request->response_headers) {
+        Free(request->response_headers);
+        request->response_headers = nullptr;
+    }
+    if (request->body_copy) {
+        Free(request->body_copy);
+        request->body_copy = nullptr;
+    }
     request->response_size = 0;
     request->status = HttpStatus::None;
     request->status_code = 0;
@@ -85,6 +95,19 @@ static void OnFetchSuccess(emscripten_fetch_t* fetch) {
         request->response_size = fetch->numBytes;
     }
 
+    // Capture response headers before closing fetch
+    size_t headers_len = emscripten_fetch_get_response_headers_length(fetch);
+    if (headers_len > 0) {
+        request->response_headers = static_cast<char*>(Alloc(ALLOCATOR_DEFAULT, headers_len + 1));
+        emscripten_fetch_get_response_headers(fetch, request->response_headers, headers_len + 1);
+    }
+
+    // Free body copy now that request is complete
+    if (request->body_copy) {
+        Free(request->body_copy);
+        request->body_copy = nullptr;
+    }
+
     request->status = HttpStatus::Complete;
     request->fetch = nullptr;
 
@@ -101,6 +124,12 @@ static void OnFetchError(emscripten_fetch_t* fetch) {
     request->status_code = fetch->status;
     request->status = HttpStatus::Error;
     request->fetch = nullptr;
+
+    // Free body copy now that request is complete
+    if (request->body_copy) {
+        Free(request->body_copy);
+        request->body_copy = nullptr;
+    }
 
     LogError("HTTP request failed: %s (status %d)", fetch->url, fetch->status);
 
@@ -127,7 +156,7 @@ void PlatformShutdownHttp() {
     }
 }
 
-static PlatformHttpHandle StartRequest(const char* url, const char* method, const void* body, u32 body_size, const char* content_type) {
+static PlatformHttpHandle StartRequest(const char* url, const char* method, const void* body, u32 body_size, const char* content_type, const char* custom_headers) {
     // Find free slot
     int slot = -1;
     for (int i = 0; i < MAX_HTTP_REQUESTS; i++) {
@@ -158,18 +187,68 @@ static PlatformHttpHandle StartRequest(const char* url, const char* method, cons
     attr.onerror = OnFetchError;
     attr.userData = &request;
 
+    char* body_copy = nullptr;
     if (body && body_size > 0) {
-        // Make a copy of the body data
-        attr.requestData = (const char*)body;
+        // Make a copy of the body data (emscripten fetch is async)
+        body_copy = (char*)Alloc(ALLOCATOR_DEFAULT, body_size);
+        memcpy(body_copy, body, body_size);
+        attr.requestData = body_copy;
         attr.requestDataSize = body_size;
     }
+    request.body_copy = body_copy;
+
+    // Build headers array for emscripten (format: name, value, name, value, ..., nullptr)
+    // Max 32 headers (64 strings + nullptr)
+    const char* headers_array[65] = {};
+    int header_count = 0;
 
     if (content_type) {
-        const char* headers[] = {"Content-Type", content_type, nullptr};
-        attr.requestHeaders = headers;
+        headers_array[header_count++] = "Content-Type";
+        headers_array[header_count++] = content_type;
+    }
+
+    // Parse custom headers (format: "Name: Value\r\n")
+    char* headers_copy = nullptr;
+    if (custom_headers && custom_headers[0]) {
+        headers_copy = (char*)Alloc(ALLOCATOR_SCRATCH, strlen(custom_headers) + 1);
+        strcpy(headers_copy, custom_headers);
+
+        char* p = headers_copy;
+        while (*p && header_count < 62) {
+            // Find header name end
+            char* colon = strchr(p, ':');
+            if (!colon) break;
+            *colon = '\0';
+            headers_array[header_count++] = p;
+
+            // Skip ": " and find value
+            char* value = colon + 1;
+            while (*value == ' ') value++;
+
+            // Find end of line
+            char* eol = value;
+            while (*eol && *eol != '\r' && *eol != '\n') eol++;
+            char next = *eol;
+            *eol = '\0';
+            headers_array[header_count++] = value;
+
+            // Move to next line
+            p = eol;
+            if (next) p++;
+            if (*p == '\n') p++;
+        }
+    }
+
+    headers_array[header_count] = nullptr;
+    if (header_count > 0) {
+        attr.requestHeaders = headers_array;
     }
 
     request.fetch = emscripten_fetch(&attr, url);
+
+    if (headers_copy) {
+        Free(headers_copy);
+    }
 
     if (!request.fetch) {
         request.status = HttpStatus::Error;
@@ -180,11 +259,11 @@ static PlatformHttpHandle StartRequest(const char* url, const char* method, cons
 }
 
 PlatformHttpHandle PlatformGetURL(const char* url) {
-    return StartRequest(url, "GET", nullptr, 0, nullptr);
+    return StartRequest(url, "GET", nullptr, 0, nullptr, nullptr);
 }
 
-PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type) {
-    return StartRequest(url, "POST", body, body_size, content_type ? content_type : "application/octet-stream");
+PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type, const char* headers, const char* method) {
+    return StartRequest(url, method, body, body_size, content_type ? content_type : "application/octet-stream", headers);
 }
 
 HttpStatus PlatformGetStatus(const PlatformHttpHandle& handle) {
@@ -214,6 +293,54 @@ const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size) {
     return request->response_data;
 }
 
+char* PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, Allocator* allocator) {
+    WebHttpRequest* request = GetRequest(handle);
+    if (!request || !request->response_headers)
+        return nullptr;
+
+    // Headers are in format "Header-Name: value\r\n"
+    size_t name_len = strlen(name);
+    const char* p = request->response_headers;
+
+    while (*p) {
+        // Check if this line starts with our header name (case-insensitive)
+        bool match = true;
+        for (size_t i = 0; i < name_len && p[i]; i++) {
+            char c1 = p[i];
+            char c2 = name[i];
+            if (c1 >= 'A' && c1 <= 'Z') c1 += 32;
+            if (c2 >= 'A' && c2 <= 'Z') c2 += 32;
+            if (c1 != c2) {
+                match = false;
+                break;
+            }
+        }
+
+        if (match && p[name_len] == ':') {
+            // Found the header, skip ": " and extract value
+            const char* value_start = p + name_len + 1;
+            while (*value_start == ' ') value_start++;
+
+            // Find end of line
+            const char* value_end = value_start;
+            while (*value_end && *value_end != '\r' && *value_end != '\n')
+                value_end++;
+
+            size_t value_len = value_end - value_start;
+            char* result = static_cast<char*>(Alloc(allocator ? allocator : ALLOCATOR_DEFAULT, value_len + 1));
+            memcpy(result, value_start, value_len);
+            result[value_len] = '\0';
+            return result;
+        }
+
+        // Skip to next line
+        while (*p && *p != '\n') p++;
+        if (*p == '\n') p++;
+    }
+
+    return nullptr;
+}
+
 void PlatformCancel(const PlatformHttpHandle& handle) {
     WebHttpRequest* request = GetRequest(handle);
     if (!request)
@@ -232,4 +359,21 @@ void PlatformFree(const PlatformHttpHandle& handle) {
         return;
 
     CleanupRequest(request);
+}
+
+void PlatformEncodeUrl(char* out, u32 out_size, const char* input, u32 input_length) {
+    if (!out || out_size == 0)
+        return;
+
+    out[0] = '\0';
+
+    if (!input || input_length == 0)
+        return;
+
+    // Use JavaScript's encodeURIComponent
+    EM_ASM({
+        var input_str = UTF8ToString($0);
+        var encoded = encodeURIComponent(input_str);
+        stringToUTF8(encoded, $1, $2);
+    }, input, out, out_size);
 }

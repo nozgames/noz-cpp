@@ -51,9 +51,11 @@ struct Tokenizer {
 
 // @tokenizer
 extern void Init(Tokenizer& tk, const char* input);
+extern void Init(Tokenizer& tk, Stream* stream);
 extern const Name* GetName(const Tokenizer& tk);
 extern char* GetString(const Tokenizer& tk, char* dst, u32 dst_size);
 extern char* GetString(const Token& token, char* dst, u32 dst_size);
+extern void GetText(const Token& token, Text& value);
 extern bool Equals(Tokenizer& tk, const char* value, bool ignore_case=false);
 extern bool Peek(Tokenizer& tk, const char* value, bool ignore_case=false);
 extern bool Equals(Tokenizer& tk, TokenType type);

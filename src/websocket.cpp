@@ -4,20 +4,74 @@
 
 #include "pch.h"
 #include "platform.h"
+#include <zlib.h>
 
-constexpr int MAX_WEBSOCKETS = 8;
+constexpr int MAX_WEBSOCKETS = 32;
 
 struct WebSocketImpl {
     PlatformWebSocketHandle handle;
-    WebSocketMessageCallback on_message;
-    WebSocketCloseCallback on_close;
-    WebSocketConnectCallback on_connect;
+    WebSocketProc proc;
+    void* user_data;
     WebSocketStatus last_status;
     bool active;
     bool connect_callback_fired;
 };
 
 static WebSocketImpl g_websockets[MAX_WEBSOCKETS] = {};
+
+// Helper to decompress gzip data
+static u8* DecompressGzip(const u8* compressed_data, u32 compressed_size, u32* out_decompressed_size) {
+    // Check for gzip magic number
+    if (compressed_size < 2 || compressed_data[0] != 0x1f || compressed_data[1] != 0x8b) {
+        // Not gzip, return null
+        return nullptr;
+    }
+
+    // Start with a reasonable buffer size (small gzip messages decompress to much larger)
+    u32 buffer_size = 1024 * 1024;  // 1MB initial buffer
+    u8* decompressed = (u8*)Alloc(ALLOCATOR_DEFAULT, buffer_size);
+
+    z_stream stream = {};
+    stream.next_in = (Bytef*)compressed_data;
+    stream.avail_in = compressed_size;
+    stream.next_out = decompressed;
+    stream.avail_out = buffer_size;
+
+    // Initialize with gzip decoding (windowBits = 15 + 16 for gzip)
+    if (inflateInit2(&stream, 15 + 16) != Z_OK) {
+        Free(decompressed);
+        return nullptr;
+    }
+
+    int ret = inflate(&stream, Z_FINISH);
+
+    // If buffer was too small, grow and retry
+    while (ret == Z_BUF_ERROR) {
+        u32 new_buffer_size = buffer_size * 2;
+        u8* new_buffer = (u8*)Alloc(ALLOCATOR_DEFAULT, new_buffer_size);
+        memcpy(new_buffer, decompressed, stream.total_out);
+        Free(decompressed);
+        decompressed = new_buffer;
+
+        stream.next_out = decompressed + stream.total_out;
+        stream.avail_out = new_buffer_size - stream.total_out;
+        buffer_size = new_buffer_size;
+
+        ret = inflate(&stream, Z_FINISH);
+    }
+
+    if (ret != Z_STREAM_END) {
+        inflateEnd(&stream);
+        Free(decompressed);
+        LogWarning("Gzip decompression failed: %d", ret);
+        return nullptr;
+    }
+
+    *out_decompressed_size = stream.total_out;
+    inflateEnd(&stream);
+
+    return decompressed;
+}
 
 static WebSocketImpl* AllocWebSocket() {
     for (int i = 0; i < MAX_WEBSOCKETS; i++) {
@@ -31,7 +85,8 @@ static WebSocketImpl* AllocWebSocket() {
     return nullptr;
 }
 
-WebSocket* WebSocketConnect(const char* url) {
+WebSocket* CreateWebSocket(Allocator* allocator, const char* url, WebSocketProc proc, void* user_data) {
+    (void)allocator;
     WebSocketImpl* ws = AllocWebSocket();
     if (!ws)
         return nullptr;
@@ -39,35 +94,10 @@ WebSocket* WebSocketConnect(const char* url) {
     ws->handle = PlatformConnectWebSocket(url);
     ws->last_status = WebSocketStatus::Connecting;
     ws->connect_callback_fired = false;
+    ws->proc = proc;
+    ws->user_data = user_data;
 
-    return (WebSocket*)ws;
-}
-
-void WebSocketOnConnect(WebSocket* socket, WebSocketConnectCallback callback)
-{
-    if (!socket)
-        return;
-
-    WebSocketImpl* ws = (WebSocketImpl*)socket;
-    ws->on_connect = callback;
-}
-
-void WebSocketOnMessage(WebSocket* socket, WebSocketMessageCallback callback)
-{
-    if (!socket)
-        return;
-
-    WebSocketImpl* ws = (WebSocketImpl*)socket;
-    ws->on_message = callback;
-}
-
-void WebSocketOnClose(WebSocket* socket, WebSocketCloseCallback callback)
-{
-    if (!socket)
-        return;
-
-    WebSocketImpl* ws = (WebSocketImpl*)socket;
-    ws->on_close = callback;
+    return reinterpret_cast<WebSocket *>(ws);
 }
 
 WebSocketStatus WebSocketGetStatus(WebSocket* socket) {
@@ -156,7 +186,7 @@ void WebSocketPopMessage(WebSocket* socket)
     PlatformPopMessage(ws->handle);
 }
 
-void WebSocketClose(WebSocket* socket, u16 code, const char* reason)
+void Close(WebSocket* socket, u16 code, const char* reason)
 {
     if (!socket)
         return;
@@ -165,19 +195,15 @@ void WebSocketClose(WebSocket* socket, u16 code, const char* reason)
     PlatformClose(ws->handle, code, reason);
 }
 
-void WebSocketRelease(WebSocket* socket)
-{
-    if (!socket)
-        return;
+void Free(WebSocket* socket) {
+    if (!socket) return;
 
-    WebSocketImpl* ws = (WebSocketImpl*)socket;
+    WebSocketImpl* impl = reinterpret_cast<WebSocketImpl *>(socket);
+    PlatformFree(impl->handle);
 
-    PlatformFree(ws->handle);
-
-    ws->on_message = nullptr;
-    ws->on_close = nullptr;
-    ws->on_connect = nullptr;
-    ws->active = false;
+    impl->proc = nullptr;
+    impl->user_data = nullptr;
+    impl->active = false;
 }
 
 void InitWebSocket()
@@ -216,41 +242,58 @@ void UpdateWebSocket()
             if (current == WebSocketStatus::Connected)
             {
                 ws.connect_callback_fired = true;
-                if (ws.on_connect)
-                    ws.on_connect((WebSocket*)&ws, true);
+                ws.proc(reinterpret_cast<WebSocket *>(&ws), WEBSOCKET_EVENT_CONNECTED, nullptr, 0, ws.user_data);
             }
             else if (current == WebSocketStatus::Error)
             {
                 ws.connect_callback_fired = true;
-                if (ws.on_connect)
-                    ws.on_connect((WebSocket*)&ws, false);
+                ws.proc(reinterpret_cast<WebSocket *>(&ws), WEBSOCKET_EVENT_CLOSED, nullptr, 0, ws.user_data);
             }
         }
 
         // Dispatch messages
-        if (ws.on_message) {
-            while (PlatformHasMessages(ws.handle)) {
-                WebSocketMessageType ptype;
-                const u8* data;
-                u32 size;
+        while (PlatformHasMessages(ws.handle)) {
+            WebSocketMessageType ptype;
+            const u8* data;
+            u32 size;
 
-                if (PlatformGetMessage(ws.handle, &ptype, &data, &size)) {
-                    ws.on_message((WebSocket*)&ws, ptype, data, size);
-                    PlatformPopMessage(ws.handle);
-                } else {
-                    break;
+            if (PlatformGetMessage(ws.handle, &ptype, &data, &size)) {
+                // Check if message is gzip-compressed and decompress if needed
+                u32 decompressed_size = 0;
+                u8* decompressed_data = DecompressGzip(data, size, &decompressed_size);
+
+                const u8* final_data = decompressed_data ? decompressed_data : data;
+                u32 final_size = decompressed_data ? decompressed_size : size;
+
+                WebSocketEventMessage event_data = {};
+                event_data.data = final_data;
+                event_data.size = final_size;
+                ws.proc(
+                    reinterpret_cast<WebSocket *>(&ws),
+                    WEBSOCKET_EVENT_MESSAGE,
+                    &event_data,
+                    sizeof(WebSocketEventMessage),
+                    ws.user_data);
+
+                // Free decompressed buffer if we allocated one
+                if (decompressed_data) {
+                    Free(decompressed_data);
                 }
+
+                PlatformPopMessage(ws.handle);
+            } else {
+                break;
             }
         }
 
         // Check for close
         if (ws.last_status == WebSocketStatus::Connected &&
             (current == WebSocketStatus::Closed || current == WebSocketStatus::Error)) {
-            if (ws.on_close) {
-                // TODO: Get actual close code/reason from platform
-                u16 code = (current == WebSocketStatus::Error) ? 1006 : 1000;
-                ws.on_close((WebSocket*)&ws, code, nullptr);
-            }
+            // if (ws.on_close) {
+            //     // TODO: Get actual close code/reason from platform
+            //     u16 code = (current == WebSocketStatus::Error) ? 1006 : 1000;
+            //     ws.on_close((WebSocket*)&ws, code, nullptr);
+            // }
         }
 
         ws.last_status = current;

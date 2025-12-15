@@ -8,8 +8,10 @@
 #define NOMINMAX
 #include <windows.h>
 #include <winhttp.h>
+#include <shlwapi.h>
 
 #pragma comment(lib, "winhttp.lib")
+#pragma comment(lib, "shlwapi.lib")
 
 constexpr int MAX_HTTP_REQUESTS = 16;
 
@@ -20,6 +22,8 @@ struct WindowsHttpRequest
     u8* response_data;
     u32 response_size;
     u32 response_capacity;
+    u8* request_body;       // Copy of request body for async send
+    u32 request_body_size;
     u32 generation;
     HttpStatus status;
     int status_code;
@@ -83,8 +87,14 @@ static void CleanupRequest(WindowsHttpRequest* request)
         Free(request->response_data);
         request->response_data = nullptr;
     }
+    if (request->request_body)
+    {
+        Free(request->request_body);
+        request->request_body = nullptr;
+    }
     request->response_size = 0;
     request->response_capacity = 0;
+    request->request_body_size = 0;
     request->status = HttpStatus::None;
     request->status_code = 0;
 }
@@ -95,7 +105,7 @@ void PlatformInitHttp()
 
     g_http.session = WinHttpOpen(
         L"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+        WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
         WINHTTP_NO_PROXY_NAME,
         WINHTTP_NO_PROXY_BYPASS,
         WINHTTP_FLAG_ASYNC);
@@ -113,6 +123,10 @@ void PlatformInitHttp()
     // Enable TLS 1.2/1.3
     DWORD protocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 | WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
     WinHttpSetOption(g_http.session, WINHTTP_OPTION_SECURE_PROTOCOLS, &protocols, sizeof(protocols));
+
+    // Enable automatic gzip/deflate decompression (Windows 8.1+)
+    DWORD decompression = WINHTTP_DECOMPRESSION_FLAG_ALL;
+    WinHttpSetOption(g_http.session, WINHTTP_OPTION_DECOMPRESSION, &decompression, sizeof(decompression));
 
     // Set timeouts (connect, send, receive, resolve) in milliseconds
     WinHttpSetTimeouts(g_http.session, 10000, 10000, 30000, 10000);
@@ -361,8 +375,7 @@ PlatformHttpHandle PlatformGetURL(const char* url)
     return MakeHttpHandle(request_index, request->generation);
 }
 
-PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type)
-{
+PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type, const char* headers, const char* method) {
     if (!g_http.session)
         return MakeHttpHandle(0, 0xFFFFFFFF);
 
@@ -394,16 +407,17 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
     url_components.dwSchemeLength = (DWORD)-1;
     url_components.dwHostNameLength = (DWORD)-1;
     url_components.dwUrlPathLength = (DWORD)-1;
+    url_components.dwExtraInfoLength = (DWORD)-1;  // Query string
 
     int url_len = (int)strlen(url);
-    int wide_len = MultiByteToWideChar(CP_UTF8, 0, url, url_len, nullptr, 0);
-    wchar_t* wide_url = (wchar_t*)Alloc(ALLOCATOR_SCRATCH, (wide_len + 1) * sizeof(wchar_t));
-    MultiByteToWideChar(CP_UTF8, 0, url, url_len, wide_url, wide_len);
-    wide_url[wide_len] = 0;
+    int w_url_len = MultiByteToWideChar(CP_UTF8, 0, url, url_len, nullptr, 0);
+    wchar_t* w_url = (wchar_t*)Alloc(ALLOCATOR_SCRATCH, (w_url_len + 1) * sizeof(wchar_t));
+    MultiByteToWideChar(CP_UTF8, 0, url, url_len, w_url, w_url_len);
+    w_url[w_url_len] = 0;
 
-    if (!WinHttpCrackUrl(wide_url, wide_len, 0, &url_components))
+    if (!WinHttpCrackUrl(w_url, w_url_len, 0, &url_components))
     {
-        Free(wide_url);
+        Free(w_url);
         return MakeHttpHandle(0, 0xFFFFFFFF);
     }
 
@@ -416,23 +430,39 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
         url_components.nPort,
         0);
 
-    if (!request->connection)
-    {
-        Free(wide_url);
+    if (!request->connection) {
+        Free(w_url);
         return MakeHttpHandle(0, 0xFFFFFFFF);
     }
+
+    // Build full path with query string
+    wchar_t* w_full_path = (wchar_t*)Alloc(ALLOCATOR_SCRATCH, (url_components.dwUrlPathLength + url_components.dwExtraInfoLength + 1) * sizeof(wchar_t));
+    wcsncpy_s(w_full_path, url_components.dwUrlPathLength + 1, url_components.lpszUrlPath, url_components.dwUrlPathLength);
+    if (url_components.dwExtraInfoLength > 0 && url_components.lpszExtraInfo)
+    {
+        wcsncat_s(w_full_path, url_components.dwUrlPathLength + url_components.dwExtraInfoLength + 1,
+                  url_components.lpszExtraInfo, url_components.dwExtraInfoLength);
+    }
+
+    int method_len = Length(method);
+    int w_method_len = MultiByteToWideChar(CP_UTF8, 0, method, method_len, nullptr, 0);
+    wchar_t* w_method = static_cast<wchar_t*>(Alloc(ALLOCATOR_SCRATCH, (w_url_len + 1) * sizeof(wchar_t)));
+    MultiByteToWideChar(CP_UTF8, 0, method, method_len, w_method, w_method_len);
+    w_method[w_method_len] = 0;
 
     DWORD flags = (url_components.nScheme == INTERNET_SCHEME_HTTPS) ? WINHTTP_FLAG_SECURE : 0;
     request->request = WinHttpOpenRequest(
         request->connection,
-        L"POST",
-        url_components.lpszUrlPath,
+        w_method,
+        w_full_path,
         nullptr,
         WINHTTP_NO_REFERER,
         WINHTTP_DEFAULT_ACCEPT_TYPES,
         flags);
 
-    Free(wide_url);
+    Free(w_url);
+    Free(w_method);
+    Free(w_full_path);
 
     if (!request->request)
     {
@@ -447,15 +477,60 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
                            SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
     WinHttpSetOption(request->request, WINHTTP_OPTION_SECURITY_FLAGS, &security_flags, sizeof(security_flags));
 
-    // Build Content-Type header
-    wchar_t headers[512] = {};
+    // Add Content-Type header
+    wchar_t w_content_type[256] = {};
     if (content_type)
-    {
-        swprintf_s(headers, L"Content-Type: %hs\r\n", content_type);
-    }
+        swprintf_s(w_content_type, L"Content-Type: %hs", content_type);
     else
+        wcscpy_s(w_content_type, L"Content-Type: application/octet-stream");
+
+    if (!WinHttpAddRequestHeaders(request->request, w_content_type, (DWORD)-1, WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE))
     {
-        wcscpy_s(headers, L"Content-Type: application/octet-stream\r\n");
+        LogError("WinHttpAddRequestHeaders (Content-Type) failed: %lu", GetLastError());
+    }
+
+    // Disable keep-alive
+    //WinHttpAddRequestHeaders(request->request, L"Connection: close", (DWORD)-1, WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
+
+    // Accept any content type
+    WinHttpAddRequestHeaders(request->request, L"Accept: */*", (DWORD)-1, WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
+
+    // Add custom headers if provided
+    if (headers && headers[0])
+    {
+        // Parse and add headers one at a time
+        char* headers_copy = (char*)Alloc(ALLOCATOR_SCRATCH, Length(headers) + 1);
+        strcpy(headers_copy, headers);
+
+        char* line = headers_copy;
+        while (*line)
+        {
+            // Find end of line
+            char* eol = line;
+            while (*eol && *eol != '\r' && *eol != '\n') eol++;
+            char saved = *eol;
+            *eol = '\0';
+
+            if (strlen(line) > 0)
+            {
+                // Convert to wide string
+                int w_len = MultiByteToWideChar(CP_UTF8, 0, line, -1, nullptr, 0);
+                wchar_t* w_header = (wchar_t*)Alloc(ALLOCATOR_SCRATCH, w_len * sizeof(wchar_t));
+                MultiByteToWideChar(CP_UTF8, 0, line, -1, w_header, w_len);
+
+                if (!WinHttpAddRequestHeaders(request->request, w_header, (DWORD)-1, WINHTTP_ADDREQ_FLAG_ADD))
+                {
+                    LogError("WinHttpAddRequestHeaders failed for [%ls]: %lu", w_header, GetLastError());
+                }
+                Free(w_header);
+            }
+
+            // Move to next line
+            *eol = saved;
+            line = eol;
+            while (*line == '\r' || *line == '\n') line++;
+        }
+        Free(headers_copy);
     }
 
     WinHttpSetStatusCallback(
@@ -464,16 +539,24 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
         WINHTTP_CALLBACK_FLAG_ALL_COMPLETIONS,
         0);
 
+    // Copy body data - must stay valid until async send completes
+    if (body && body_size > 0)
+    {
+        request->request_body = (u8*)Alloc(ALLOCATOR_DEFAULT, body_size);
+        memcpy(request->request_body, body, body_size);
+        request->request_body_size = body_size;
+    }
+
     request->status = HttpStatus::Pending;
     request->generation = ++g_http.next_request_id;
 
     if (!WinHttpSendRequest(
         request->request,
-        headers,
-        (DWORD)-1,
-        (LPVOID)body,
-        body_size,
-        body_size,
+        WINHTTP_NO_ADDITIONAL_HEADERS,
+        0,
+        (LPVOID)request->request_body,
+        request->request_body_size,
+        request->request_body_size,
         (DWORD_PTR)request))
     {
         request->status = HttpStatus::Error;
@@ -513,6 +596,61 @@ const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size)
     return request->response_data;
 }
 
+char* PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, Allocator* allocator)
+{
+    WindowsHttpRequest* request = GetRequest(handle);
+    if (!request || !request->request)
+        return nullptr;
+
+    // Convert header name to wide string
+    int name_len = (int)strlen(name);
+    int w_name_len = MultiByteToWideChar(CP_UTF8, 0, name, name_len, nullptr, 0);
+    wchar_t* w_name = (wchar_t*)Alloc(ALLOCATOR_SCRATCH, (w_name_len + 1) * sizeof(wchar_t));
+    MultiByteToWideChar(CP_UTF8, 0, name, name_len, w_name, w_name_len);
+    w_name[w_name_len] = 0;
+
+    // Query header size first
+    DWORD size = 0;
+    WinHttpQueryHeaders(
+        request->request,
+        WINHTTP_QUERY_CUSTOM,
+        w_name,
+        WINHTTP_NO_OUTPUT_BUFFER,
+        &size,
+        WINHTTP_NO_HEADER_INDEX);
+
+    if (GetLastError() != ERROR_INSUFFICIENT_BUFFER || size == 0)
+    {
+        Free(w_name);
+        return nullptr;
+    }
+
+    // Allocate and query the header value
+    wchar_t* w_value = (wchar_t*)Alloc(ALLOCATOR_SCRATCH, size);
+    if (!WinHttpQueryHeaders(
+        request->request,
+        WINHTTP_QUERY_CUSTOM,
+        w_name,
+        w_value,
+        &size,
+        WINHTTP_NO_HEADER_INDEX))
+    {
+        Free(w_name);
+        Free(w_value);
+        return nullptr;
+    }
+
+    Free(w_name);
+
+    // Convert to UTF-8
+    int utf8_len = WideCharToMultiByte(CP_UTF8, 0, w_value, -1, nullptr, 0, nullptr, nullptr);
+    char* result = (char*)Alloc(allocator ? allocator : ALLOCATOR_DEFAULT, utf8_len);
+    WideCharToMultiByte(CP_UTF8, 0, w_value, -1, result, utf8_len, nullptr, nullptr);
+
+    Free(w_value);
+    return result;
+}
+
 void PlatformCancel(const PlatformHttpHandle& handle)
 {
     WindowsHttpRequest* request = GetRequest(handle);
@@ -530,4 +668,41 @@ void PlatformFree(const PlatformHttpHandle& handle)
 
     CleanupRequest(request);
     request->generation++; // Invalidate any existing handles
+}
+
+void PlatformEncodeUrl(char* out, u32 out_size, const char* input, u32 input_length)
+{
+    if (!out || out_size == 0)
+        return;
+
+    out[0] = '\0';
+
+    if (!input || input_length == 0)
+        return;
+
+    // Convert input to wide string
+    int w_len = MultiByteToWideChar(CP_UTF8, 0, input, input_length, nullptr, 0);
+    wchar_t* w_input = (wchar_t*)Alloc(ALLOCATOR_SCRATCH, (w_len + 1) * sizeof(wchar_t));
+    MultiByteToWideChar(CP_UTF8, 0, input, input_length, w_input, w_len);
+    w_input[w_len] = 0;
+
+    // Encode using WinHTTP
+    DWORD encoded_len = out_size;
+    wchar_t* w_output = (wchar_t*)Alloc(ALLOCATOR_SCRATCH, out_size * sizeof(wchar_t));
+
+    // Use UrlEscapeW with URL_ESCAPE_SEGMENT_ONLY to encode query string parts
+    // This encodes special characters but preserves path structure
+    if (SUCCEEDED(UrlEscapeW(w_input, w_output, &encoded_len, URL_ESCAPE_SEGMENT_ONLY | URL_ESCAPE_PERCENT)))
+    {
+        // Convert back to UTF-8
+        WideCharToMultiByte(CP_UTF8, 0, w_output, -1, out, out_size, nullptr, nullptr);
+    }
+    else
+    {
+        // Fallback: just copy the input if encoding fails
+        WideCharToMultiByte(CP_UTF8, 0, w_input, -1, out, out_size, nullptr, nullptr);
+    }
+
+    Free(w_input);
+    Free(w_output);
 }

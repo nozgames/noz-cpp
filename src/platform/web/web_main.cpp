@@ -306,10 +306,6 @@ void PlatformShutdown() {
     ShutdownWebGL();
 }
 
-bool PlatformIsResizing() {
-    return false; // Web doesn't have the same resize behavior as desktop
-}
-
 bool PlatformUpdate() {
     // Reset per-frame state
     g_web.mouse_scroll = {0, 0};
