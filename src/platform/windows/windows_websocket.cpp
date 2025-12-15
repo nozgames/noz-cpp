@@ -561,7 +561,7 @@ bool PlatformHasMessages(const PlatformWebSocketHandle& handle)
     return has_message;
 }
 
-bool PlatformGetMessage(const PlatformWebSocketHandle& handle, WebSocketMessageType* out_type, const u8** out_data, u32* out_size) {
+bool PlatformGetMessage(const PlatformWebSocketHandle& handle, WebSocketMessageType* out_type, u8** out_data, u32* out_size) {
     WindowsWebSocket* ws = GetSocket(handle);
     if (!ws)
         return false;

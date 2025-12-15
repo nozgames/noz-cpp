@@ -13,6 +13,9 @@ struct BinImpl : Bin {
 Asset* LoadBin(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
     (void)name_table;
     (void)header;
+    (void)name;
+
+    LogInfo("Loading Bin");
 
     assert(stream);
     assert(name);
@@ -24,6 +27,8 @@ Asset* LoadBin(Allocator* allocator, Stream* stream, AssetHeader* header, const 
     impl->data = reinterpret_cast<u8 *>(impl + 1);
     impl->length = data_size;
     ReadBytes(stream, impl->data, data_size);
+
+    LogInfo("Loaded Bin %d", data_size);
 
     return impl;
 }
