@@ -4,7 +4,10 @@
 
 #include "pch.h"
 #include "platform.h"
+
+#if defined(NOZ_WEBSOCKET)
 #include <zlib.h>
+#endif
 
 constexpr int MAX_WEBSOCKETS = 32;
 
@@ -19,8 +22,8 @@ struct WebSocketImpl {
 
 static WebSocketImpl g_websockets[MAX_WEBSOCKETS] = {};
 
-// Helper to decompress gzip data
-static u8* DecompressGzip(const u8* compressed_data, u32 compressed_size, u32* out_decompressed_size) {
+static u8* DecompressGzip(u8 *compressed_data, u32 compressed_size, u32 *out_decompressed_size) {
+#if defined(NOZ_WEBSOCKET)
     // Check for gzip magic number
     if (compressed_size < 2 || compressed_data[0] != 0x1f || compressed_data[1] != 0x8b) {
         // Not gzip, return null
@@ -69,8 +72,11 @@ static u8* DecompressGzip(const u8* compressed_data, u32 compressed_size, u32* o
 
     *out_decompressed_size = stream.total_out;
     inflateEnd(&stream);
-
     return decompressed;
+#else
+    *out_decompressed_size = compressed_size;
+    return compressed_data;
+#endif
 }
 
 static WebSocketImpl* AllocWebSocket() {
@@ -145,8 +151,7 @@ bool WebSocketHasMessage(WebSocket* socket)
     return PlatformHasMessages(ws->handle);
 }
 
-bool WebSocketPeekMessage(WebSocket* socket, WebSocketMessageType* out_type, const u8** out_data, u32* out_size)
-{
+bool WebSocketPeekMessage(WebSocket* socket, WebSocketMessageType* out_type, u8** out_data, u32* out_size) {
     if (!socket)
         return false;
 
@@ -163,7 +168,7 @@ bool WebSocketPeekMessage(WebSocket* socket, WebSocketMessageType* out_type, con
 
 const char* WebSocketPeekMessageText(WebSocket* socket)
 {
-    const u8* data = nullptr;
+    u8* data = nullptr;
     u32 size = 0;
     WebSocketMessageType type;
 
@@ -254,7 +259,7 @@ void UpdateWebSocket()
         // Dispatch messages
         while (PlatformHasMessages(ws.handle)) {
             WebSocketMessageType ptype;
-            const u8* data;
+            u8* data;
             u32 size;
 
             if (PlatformGetMessage(ws.handle, &ptype, &data, &size)) {

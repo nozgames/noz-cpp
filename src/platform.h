@@ -109,7 +109,7 @@ extern void PlatformClose(const PlatformWebSocketHandle& handle, u16 code, const
 extern void PlatformFree(const PlatformWebSocketHandle& handle);
 extern WebSocketStatus PlatformGetStatus(const PlatformWebSocketHandle& handle);
 extern bool PlatformHasMessages(const PlatformWebSocketHandle& handle);
-extern bool PlatformGetMessage(const PlatformWebSocketHandle& handle, WebSocketMessageType* out_type, const u8** out_data, u32* out_size);
+extern bool PlatformGetMessage(const PlatformWebSocketHandle& handle, WebSocketMessageType* out_type, u8** out_data, u32* out_size);
 extern void PlatformPopMessage(const PlatformWebSocketHandle& handle);
 
 // @input

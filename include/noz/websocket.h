@@ -59,7 +59,7 @@ void WebSocketSendBinary(WebSocket* ws, const void* data, u32 size);
 
 // Receive data (polling API - alternative to callbacks)
 bool WebSocketHasMessage(WebSocket* ws);
-bool WebSocketPeekMessage(WebSocket* ws, WebSocketMessageType* out_type, const u8** out_data, u32* out_size);
+bool WebSocketPeekMessage(WebSocket* ws, WebSocketMessageType* out_type, u8** out_data, u32* out_size);
 const char* WebSocketPeekMessageText(WebSocket* ws);  // Convenience for text messages
 void WebSocketPopMessage(WebSocket* ws);
 

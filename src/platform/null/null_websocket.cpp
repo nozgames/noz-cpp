@@ -51,7 +51,7 @@ bool PlatformHasMessages(const PlatformWebSocketHandle& handle) {
     return false;
 }
 
-bool PlatformGetMessage(const PlatformWebSocketHandle& handle, WebSocketMessageType* out_type, const u8** out_data, u32* out_size) {
+bool PlatformGetMessage(const PlatformWebSocketHandle& handle, WebSocketMessageType* out_type, u8** out_data, u32* out_size) {
     (void)handle;
     (void)out_type;
     (void)out_data;
