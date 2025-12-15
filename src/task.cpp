@@ -6,14 +6,17 @@
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
+#include <noz/task.h>
 
 namespace noz {
+
     struct TaskImpl {
         std::atomic<TaskState> state{TASK_STATE_FREE};
         TaskRunFunc run_func;
         TaskCompleteFunc complete_func;
         void* user_data;
         u64 start_frame;
+        u32 generation;
     };
 
     struct TaskWorker {
@@ -33,11 +36,27 @@ namespace noz {
         std::atomic<bool> running{false};
         std::atomic<bool> tasks_completed{false};
         u64 current_frame;
+        u32 next_generation;
     };
 
     static TaskSystem g_tasks = {};
 
-    Task* CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func, void* user_data) {
+    static TaskImpl* GetTask(TaskHandle handle) {
+        if (handle.generation == 0 || handle.id >= (u32)g_tasks.max_tasks)
+            return nullptr;
+
+        TaskImpl& task = g_tasks.tasks[handle.id];
+        if (task.generation != handle.generation)
+            return nullptr;
+
+        return &task;
+    }
+
+    inline TaskHandle GetHandle(TaskImpl* task) {
+        return { static_cast<u32>(task - g_tasks.tasks), task->generation };
+    }
+
+    TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func, void* user_data) {
         std::lock_guard lock(g_tasks.mutex);
 
         for (i32 i = 0; i < g_tasks.max_tasks; i++) {
@@ -46,39 +65,54 @@ namespace noz {
             if (!task.state.compare_exchange_strong(expected, TASK_STATE_PENDING))
                 continue;
 
+            task.generation = ++g_tasks.next_generation;
             task.run_func = run_func;
             task.complete_func = complete_func;
             task.user_data = user_data;
             task.start_frame = g_tasks.current_frame;
-            return reinterpret_cast<Task*>(&task);
+
+            return { static_cast<u32>(i), task.generation };
         }
 
-        return nullptr;
+        return TASK_HANDLE_INVALID;
     }
 
-    bool IsTaskComplete(Task* task) {
-        if (!task)
+    bool IsTaskValid(TaskHandle handle) {
+        if (handle.generation == 0)
+            return false;
+
+        std::lock_guard lock(g_tasks.mutex);
+        return GetTask(handle) != nullptr;
+    }
+
+    bool IsTaskComplete(TaskHandle handle) {
+        if (handle.generation == 0)
             return true;
 
-        TaskImpl* impl = reinterpret_cast<TaskImpl*>(task);
-        TaskState state = impl->state.load();
-        return state == TASK_STATE_FREE || state == TASK_STATE_COMPLETE || state == TASK_STATE_CANCELED;
+        std::lock_guard lock(g_tasks.mutex);
+        TaskImpl* task = GetTask(handle);
+        if (!task)
+            return true;  // Invalid handle = treat as complete
+
+        TaskState state = task->state.load();
+        return state == TASK_STATE_COMPLETE || state == TASK_STATE_CANCELED;
     }
 
-    void CancelTask(Task* task) {
+    void CancelTask(TaskHandle handle) {
+        if (handle.generation == 0)
+            return;
+
+        std::lock_guard lock(g_tasks.mutex);
+        TaskImpl* task = GetTask(handle);
         if (!task)
             return;
 
-        TaskImpl* impl = reinterpret_cast<TaskImpl*>(task);
         TaskState expected = TASK_STATE_PENDING;
-        if (impl->state.compare_exchange_strong(expected, TASK_STATE_CANCELED)) {
-            // Successfully canceled before it started running
+        if (task->state.compare_exchange_strong(expected, TASK_STATE_CANCELED))
             return;
-        }
 
-        // If already running, mark for cancellation (won't call complete_func)
         expected = TASK_STATE_RUNNING;
-        impl->state.compare_exchange_strong(expected, TASK_STATE_CANCELED);
+        task->state.compare_exchange_strong(expected, TASK_STATE_CANCELED);
     }
 
     static TaskImpl* FindOldestPendingTask() {
@@ -101,9 +135,8 @@ namespace noz {
     static TaskWorker* FindIdleWorker() {
         for (i32 i = 0; i < g_tasks.worker_count; i++) {
             TaskWorker& worker = g_tasks.workers[i];
-            if (worker.current_task.load() == nullptr) {
+            if (worker.current_task.load() == nullptr)
                 return &worker;
-            }
         }
         return nullptr;
     }
@@ -113,24 +146,26 @@ namespace noz {
 
         // Process completed tasks on main thread
         if (g_tasks.tasks_completed.exchange(false)) {
+            LogInfo("task: processing completed tasks on main thread");
+
             for (i32 i = 0; i < g_tasks.max_tasks; i++) {
                 TaskImpl& task = g_tasks.tasks[i];
                 TaskState state = task.state.load();
 
                 if (state == TASK_STATE_COMPLETE) {
-                    if (task.complete_func) {
-                        task.complete_func(task.user_data);
-                    }
+                    if (task.complete_func)
+                        task.complete_func(GetHandle(&task), task.user_data);
+                    task.generation = 0;  // Invalidate handle before freeing
                     task.state.store(TASK_STATE_FREE);
                 } else if (state == TASK_STATE_CANCELED) {
-                    // Free canceled tasks without calling complete
+                    task.generation = 0;  // Invalidate handle before freeing
                     task.state.store(TASK_STATE_FREE);
                 }
             }
         }
 
         // Assign pending tasks to idle workers
-        std::lock_guard<std::mutex> lock(g_tasks.mutex);
+        std::lock_guard lock(g_tasks.mutex);
 
         while (true) {
             TaskWorker* worker = FindIdleWorker();
@@ -157,7 +192,6 @@ namespace noz {
         while (worker->running) {
             TaskImpl* task = nullptr;
 
-            // Wait for work
             {
                 std::unique_lock lock(worker->cv_mutex);
                 worker->cv.wait(lock, [worker] {
@@ -171,33 +205,34 @@ namespace noz {
             }
 
             if (task) {
-                // Check if canceled before running
                 TaskState expected = TASK_STATE_RUNNING;
-                if (task->state.load() == expected && task->run_func) {
-                    task->run_func(task->user_data);
-                }
+                if (task->state.load() == expected && task->run_func)
+                    task->run_func(GetHandle(task), task->user_data);
 
-                // Only mark complete if not canceled
                 expected = TASK_STATE_RUNNING;
-                if (task->state.compare_exchange_strong(expected, TASK_STATE_COMPLETE)) {
+                if (task->state.compare_exchange_strong(expected, TASK_STATE_COMPLETE))
                     g_tasks.tasks_completed.store(true);
-                }
             }
 
             worker->current_task.store(nullptr);
         }
     }
 
-    void InitTasks(i32 worker_count, i32 max_tasks) {
+    void InitTasks(const ApplicationTraits& traits) {
+        i32 max_tasks = traits.max_tasks;
+        i32 worker_count = traits.max_task_worker_count;
+
         g_tasks.max_tasks = max_tasks;
         g_tasks.tasks = new TaskImpl[max_tasks];
         g_tasks.worker_count = worker_count;
         g_tasks.workers = new TaskWorker[worker_count];
         g_tasks.running = true;
         g_tasks.current_frame = 0;
+        g_tasks.next_generation = 0;
 
         for (i32 i = 0; i < max_tasks; i++) {
             g_tasks.tasks[i].state = TASK_STATE_FREE;
+            g_tasks.tasks[i].generation = 0;
         }
 
         for (i32 i = 0; i < worker_count; i++) {
@@ -219,9 +254,8 @@ namespace noz {
         }
 
         for (i32 i = 0; i < g_tasks.worker_count; i++) {
-            if (g_tasks.workers[i].thread.joinable()) {
+            if (g_tasks.workers[i].thread.joinable())
                 g_tasks.workers[i].thread.join();
-            }
         }
 
         delete[] g_tasks.workers;

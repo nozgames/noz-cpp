@@ -36,6 +36,7 @@ struct ApplicationTraits {
     u32 max_prefs;
     u32 max_event_stack;
     u32 max_tasks;
+    u32 max_task_worker_count;
     u16 editor_port;
     float ui_depth;
     RendererTraits renderer;
@@ -121,25 +122,4 @@ extern int GetArgCount();
 extern const char* GetArg(int index);
 extern const char* GetArgValue(const char* name);  // Returns value for --name <value> or nullptr
 extern bool HasArg(const char* name);              // Returns true if --name exists
-
-
-// @task
-namespace noz {
-    enum TaskState {
-        TASK_STATE_FREE,
-        TASK_STATE_PENDING,
-        TASK_STATE_RUNNING,
-        TASK_STATE_COMPLETE,
-        TASK_STATE_CANCELED
-    };
-
-    struct Task {};
-
-    typedef void (*TaskRunFunc)(Task* task, void* user_data);
-    typedef void (*TaskCompleteFunc)(Task* task, void* user_data);
-
-    extern Task* CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func, void* user_data);
-    extern bool IsTaskComplete(Task* task);
-    extern void CancelTask(Task* task);
-}
 

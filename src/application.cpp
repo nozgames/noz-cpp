@@ -23,7 +23,6 @@ extern void InitRenderer(const RendererTraits* traits);
 extern void InitAllocator(ApplicationTraits* traits);
 extern void InitAudio();
 extern void InitPrefs(const ApplicationTraits& traits);
-extern void InitTasks(const ApplicationTraits& traits);
 extern void UpdateTime();
 extern void ShutdownRenderer();
 extern void ShutdownEvent();
@@ -42,6 +41,12 @@ extern void UpdateHttp();
 extern void InitWebSocket();
 extern void ShutdownWebSocket();
 extern void UpdateWebSocket();
+
+namespace noz {
+    extern void InitTasks(const ApplicationTraits& traits);
+    extern void UpdateTasks();
+    extern void ShutdownTasks();
+}
 
 // @traits
 static const char* g_default_asset_paths[] = { "assets", nullptr };
@@ -64,6 +69,7 @@ static ApplicationTraits g_default_traits =
     .max_prefs = 256,
     .max_event_stack = 32,
     .max_tasks = 1024,
+    .max_task_worker_count = 4,
     .editor_port = 8080,
     .ui_depth = F32_MAX,
     .renderer = {
@@ -170,7 +176,7 @@ void InitApplication(ApplicationTraits* traits) {
     InitPrefs(g_app.traits);
     InitEvent(traits);
     InitTime();
-    InitTasks(g_app.traits);
+    noz::InitTasks(g_app.traits);
     InitJobs();
     InitTween();
     InitAudio();
@@ -293,6 +299,7 @@ void ShutdownApplication() {
     ShutdownHttp();
     ShutdownTween();
     ShutdownJobs();
+    noz::ShutdownTasks();
     ShutdownTime();
     ShutdownAudio();
     ShutdownInput();
@@ -345,6 +352,7 @@ bool UpdateApplication() {
     UpdateInput();
     UpdateHttp();
     UpdateWebSocket();
+    noz::UpdateTasks();
 
 #if 0
 #ifdef NOZ_EDITOR
