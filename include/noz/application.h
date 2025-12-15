@@ -125,6 +125,21 @@ extern bool HasArg(const char* name);              // Returns true if --name exi
 
 // @task
 namespace noz {
+    enum TaskState {
+        TASK_STATE_FREE,
+        TASK_STATE_PENDING,
+        TASK_STATE_RUNNING,
+        TASK_STATE_COMPLETE,
+        TASK_STATE_CANCELED
+    };
+
     struct Task {};
+
+    typedef void (*TaskRunFunc)(Task* task, void* user_data);
+    typedef void (*TaskCompleteFunc)(Task* task, void* user_data);
+
+    extern Task* CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func, void* user_data);
+    extern bool IsTaskComplete(Task* task);
+    extern void CancelTask(Task* task);
 }
 
