@@ -31,6 +31,7 @@ set(SOURCE_FILES
     src/input/input.cpp
     src/input/input_set.cpp
     src/log.cpp
+    src/bin.cpp
     src/tween.cpp
     src/job.cpp
     src/memory/allocator.cpp

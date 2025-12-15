@@ -18,6 +18,7 @@ enum AssetType {
     ASSET_TYPE_SHADER,
     ASSET_TYPE_ANIMATED_MESH,
     ASSET_TYPE_EVENT,
+    ASSET_TYPE_BIN,
     ASSET_TYPE_COUNT,
 };
 
@@ -98,11 +99,15 @@ Asset* LoadAnimatedMesh(Allocator* allocator, Stream* stream, AssetHeader* heade
 #define NOZ_LOAD_ANIMATEDMESH(allocator, path, member) \
     member = static_cast<AnimatedMesh*>(LoadAsset(allocator, path, ASSET_TYPE_ANIMATED_MESH, LoadAnimatedMesh));
 
+#define NOZ_LOAD_BIN(allocator, path, member) \
+    member = static_cast<Bin*>(LoadAsset(allocator, path, ASSET_TYPE_BIN, LoadBin));
+
 #define NOZ_RELOAD_FONT(asset_name, asset)
 #define NOZ_RELOAD_SOUND(asset_name, asset)
 #define NOZ_RELOAD_SKELETON(asset_name, asset)
 #define NOZ_RELOAD_ANIMATION(asset_name, asset)
 #define NOZ_RELOAD_ANIMATEDMESH(asset_name, asset)
+#define NOZ_RELOAD_BIN(asset_name, asset)
 
 #ifdef NOZ_EDITOR
 void ReloadAsset(const Name* name, AssetType asset_type, Asset* asset, void (*reload)(Asset*, Stream*, const AssetHeader& header, const Name** name_table));

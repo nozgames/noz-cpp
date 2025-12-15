@@ -52,6 +52,7 @@ const char* ToString(AssetType asset_type) {
         case ASSET_TYPE_SHADER: return "Shader";
         case ASSET_TYPE_ANIMATED_MESH: return "AnimatedMesh";
         case ASSET_TYPE_EVENT: return "Event";
+        case ASSET_TYPE_BIN: return "Bin";
         default: return nullptr;
     }
 }
