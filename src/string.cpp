@@ -49,34 +49,43 @@ int Length(const char* str) {
     return len;
 }
 
-void Format(char* dst, u32 dst_size, const char* fmt, ...) {
+static int FormatInternal(char* dst, u32 dst_size, const char* fmt, va_list args) {
     assert(dst);
     assert(fmt);
 
     if (dst_size == 0)
-        return;
+        return 0;
 
-    va_list args;
-    va_start(args, fmt);
     int result = std::vsnprintf(dst, dst_size, fmt, args);
-    va_end(args);
 
-    if (result < 0 || (u32)result >= dst_size)
+    if (result < 0 || static_cast<u32>(result) >= dst_size) {
         dst[dst_size-1] = 0;
+        result = 0;
+    }
+
+    return result;
 }
 
-void Format(char* dst, u32 dst_size, const char* fmt, va_list args)
-{
-    assert(dst);
+int Format (String64& str, const char* fmt, ...) {
     assert(fmt);
+    va_list args;
+    va_start(args, fmt);
+    str.length = FormatInternal(str.value, sizeof(str.value), fmt, args);
+    va_end(args);
+    return str.length;
+}
 
-    if (dst_size == 0)
-        return;
+int Format(char* dst, u32 dst_size, const char* fmt, ...) {
+    assert(fmt);
+    va_list args;
+    va_start(args, fmt);
+    int result = FormatInternal(dst, dst_size, fmt, args);
+    va_end(args);
+    return result;
+}
 
-    int result = std::vsnprintf(dst, dst_size, fmt, args);
-
-    if (result < 0 || (u32)result >= dst_size)
-        dst[dst_size-1] = 0;
+int Format(char* dst, u32 dst_size, const char* fmt, va_list args) {
+    return FormatInternal(dst, dst_size, fmt, args);
 }
 
 bool Equals(const char* s1, const char* s2, u32 length, bool ignore_case)

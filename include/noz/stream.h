@@ -5,13 +5,15 @@
 #pragma once
 
 #include <filesystem>
+#include "string.h"
 
 struct Stream {};
 
 // @alloc
-Stream* CreateStream(Allocator* allocator, u32 capacity);
-Stream* LoadStream(Allocator* allocator, const u8* data, u32 size);
-Stream* LoadStream(Allocator* allocator, const std::filesystem::path& path);
+extern Stream* CreateStream(Allocator* allocator, u32 capacity);
+extern Stream* CreateStream(Allocator* allocator, const u8* data, u32 size);
+extern Stream* LoadStream(Allocator* allocator, const u8* data, u32 size);
+extern Stream* LoadStream(Allocator* allocator, const std::filesystem::path& path);
 
 // @file
 bool SaveStream(Stream* stream, const std::filesystem::path& path);
@@ -44,16 +46,27 @@ i64 ReadI64(Stream* stream);
 float ReadFloat(Stream* stream);
 double ReadDouble(Stream* stream);
 bool ReadBool(Stream* stream);
-int ReadString(Stream* stream, char* buffer, int buffer_size);
 const Name* ReadName(Stream* stream);
 Color ReadColor(Stream* stream);
 Vec3 ReadVec3(Stream* stream);
 Vec2 ReadVec2(Stream* stream);
 extern int ReadBytes(Stream* stream, void* dest, u32 count);
 extern void AlignStream(Stream* stream, int alignment);
-extern int ReadNullTerminatedString(Stream* stream, char* buffer, int buffer_size);
-inline int ReadNullTerminatedString(Stream* stream, Text* text) {
-    return ReadNullTerminatedString(stream, text->value, sizeof(text->value));
+
+extern int ReadString(Stream* stream, char* buffer, int buffer_size);
+inline int ReadString(Stream* stream, String64& dst) {
+    return ReadString(stream, dst.value, sizeof(dst.value));
+}
+inline int ReadString(Stream* stream, String1024& dst) {
+    return ReadString(stream, dst.value, sizeof(dst.value));
+}
+
+extern int ReadNullString(Stream* stream, char* buffer, int buffer_size);
+inline int ReadNullString(Stream* stream, Text& text) {
+    return ReadNullString(stream, text.value, sizeof(text.value));
+}
+inline int ReadNullString(Stream* stream, String64& text) {
+    return ReadNullString(stream, text.value, 64);
 }
 
 template <typename TStruct> TStruct ReadStruct(Stream* stream)

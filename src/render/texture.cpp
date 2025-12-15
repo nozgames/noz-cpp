@@ -45,6 +45,8 @@ static void CreateTexture(
     assert(width > 0);
     assert(height > 0);
 
+    impl->size = { static_cast<i32>(width), static_cast<i32>(height) };
+    impl->format = format;
     impl->platform_texture = PlatformCreateTexture(
         data,
         width,

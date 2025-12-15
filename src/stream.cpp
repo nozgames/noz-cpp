@@ -8,104 +8,82 @@
 
 #define DEFAULT_INITIAL_CAPACITY 256
 
-struct StreamImpl : Stream
-{
+struct StreamImpl : Stream {
     u8* data;
     u32 size;
     u32 capacity;
     u32 position;
+    bool free_data;
 };
 
 static void EnsureCapacity(StreamImpl* impl, u32 required_size);
 
-void StreamDestructor(void* s)
-{
-    StreamImpl* impl = (StreamImpl*)s;
-    Free(impl->data);
+void StreamDestructor(void* s) {
+    StreamImpl* impl = static_cast<StreamImpl *>(s);
+    if (impl->free_data)
+        Free(impl->data);
 }
 
-Stream* CreateStream(Allocator* allocator, u32 capacity)
-{
-    StreamImpl* impl = (StreamImpl*)Alloc(allocator, sizeof(StreamImpl), StreamDestructor);
-    if (!impl)
-        return nullptr;
+Stream* CreateStream(Allocator* allocator, u32 capacity) {
+    StreamImpl* impl = static_cast<StreamImpl *>(Alloc(allocator, sizeof(StreamImpl), StreamDestructor));
 
     if (capacity == 0)
         capacity = DEFAULT_INITIAL_CAPACITY;
 
-    impl->data = (u8*)Alloc(ALLOCATOR_DEFAULT, capacity);
-    if (!impl->data) 
-    {
-        Free(impl);
-        return nullptr;
-    }
-    
+    impl->data = static_cast<u8 *>(Alloc(allocator, capacity));
     impl->size = 0;
     impl->capacity = capacity;
     impl->position = 0;
+    impl->free_data = true;
     
+    return impl;
+}
+
+Stream* CreateStream(Allocator* allocator, u8* data, u32 size) {
+    assert(data);
+    assert(size > 0);
+
+    StreamImpl* impl = static_cast<StreamImpl *>(Alloc(allocator, sizeof(StreamImpl), StreamDestructor));
+    impl->capacity = size;
+    impl->data = data;
+    impl->size = size;
+    impl->position = 0;
     return impl;
 }
 
 Stream* LoadStream(Allocator* allocator, const u8* data, u32 size) {
     StreamImpl* impl = static_cast<StreamImpl*>(CreateStream(allocator, size));
-    if (!impl)
-        return nullptr;
-        
     EnsureCapacity(impl, size);
     memcpy(impl->data, data, size);
     impl->size = size;
     impl->position = 0;
-    
+    impl->free_data = true;
     return impl;
 }
 
-Stream* LoadStream(Allocator* allocator, const std::filesystem::path& path)
-{
+Stream* LoadStream(Allocator* allocator, const std::filesystem::path& path) {
     FILE* file = fopen(path.string().c_str(), "rb");
-    if (!file)
-        return nullptr;
+    if (!file) return nullptr;
     
-    // Get file size
     fseek(file, 0, SEEK_END);
-    u32 file_size = (u32)ftell(file);
+    u32 file_size = static_cast<u32>(ftell(file));
     fseek(file, 0, SEEK_SET);
     
-    if (file_size == 0) 
-    {
+    if (file_size == 0) {
         fclose(file);
         return nullptr;
     }
     
-    // Create stream and read file
-    StreamImpl* impl = (StreamImpl*)CreateStream(allocator, file_size + 1);
-    if (!impl)
-    {
-        fclose(file);
-        return nullptr;
-    }
-    
+    StreamImpl* impl = static_cast<StreamImpl *>(CreateStream(allocator, file_size + 1));
+    impl->free_data = true;
     EnsureCapacity(impl, file_size);
-    u32 bytes_read = (u32)fread(impl->data, 1, file_size, file);
+    impl->size = static_cast<u32>(fread(impl->data, 1, file_size, file));
     fclose(file);
-    
-    impl->size = bytes_read;
-    impl->position = 0;
-    
+
     return impl;
 }
 
-// todo: destructor
-#if 0
-void stream_destroy(Stream* stream) 
-{
-	StreamImpl* impl = static_cast<StreamImpl*>(stream);
-    Destroy((Object*)stream);
-}
-#endif
-
-bool SaveStream(Stream* stream, const std::filesystem::path& path)
-{
+bool SaveStream(Stream* stream, const std::filesystem::path& path) {
     if (!stream)
         return false;
 
@@ -157,6 +135,7 @@ void SetPosition(Stream* stream, u32 position)
 {
     StreamImpl* impl = static_cast<StreamImpl*>(stream);
     impl->position = position;
+    assert(impl->position <= impl->size);
 }
 
 u32 SeekBegin(Stream* stream, u32 offset)
@@ -210,16 +189,17 @@ int ReadString(Stream* stream, char* buffer, int buffer_size)
     return truncated_len;
 }
 
-uint8_t ReadU8(Stream* stream)
-{
+uint8_t ReadU8(Stream* stream) {
     if (!stream) return 0;
     
     StreamImpl* impl = static_cast<StreamImpl*>(stream);
     
-    if (impl->position + sizeof(uint8_t) > impl->size) return 0;
+    if (impl->position + sizeof(uint8_t) > impl->size)
+        return 0;
     
     uint8_t value = impl->data[impl->position];
     impl->position += sizeof(uint8_t);
+    assert(impl->position <= impl->size);
     return value;
 }
 
@@ -341,16 +321,18 @@ int ReadBytes(Stream* stream, void* dest, u32 size) {
         {
             memcpy(dest, impl->data + impl->position, available);
             impl->position += available;
+            assert(impl->position <= impl->size);
         }
         // Zero remaining bytes
-        if (size > available) {
-            memset((uint8_t*)dest + available, 0, size - available);
-        }
+        if (size > available)
+            memset(static_cast<uint8_t *>(dest) + available, 0, size - available);
+
         return static_cast<int>(available);
     }
     
     memcpy(dest, impl->data + impl->position, size);
     impl->position += size;
+    assert(impl->position <= impl->size);
 
     return static_cast<int>(size);
 }
@@ -504,7 +486,7 @@ static void EnsureCapacity(StreamImpl* impl, u32 required_size)
     impl->capacity = new_capacity;
 }
 
-int ReadNullTerminatedString(Stream* stream, char* buffer, int buffer_size) {
+int ReadNullString(Stream* stream, char* buffer, int buffer_size) {
     int count = 0;
     while (count < buffer_size - 1) {
         char c = static_cast<char>(ReadU8(stream));
