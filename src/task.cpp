@@ -14,7 +14,7 @@ namespace noz {
         std::atomic<TaskState> state{TASK_STATE_FREE};
         TaskRunFunc run_func;
         TaskCompleteFunc complete_func;
-        void* user_data;
+        void* result;
         u64 start_frame;
         u32 generation;
     };
@@ -56,7 +56,7 @@ namespace noz {
         return { static_cast<u32>(task - g_tasks.tasks), task->generation };
     }
 
-    TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func, void* user_data) {
+    TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func) {
         std::lock_guard lock(g_tasks.mutex);
 
         for (i32 i = 0; i < g_tasks.max_tasks; i++) {
@@ -66,9 +66,8 @@ namespace noz {
                 continue;
 
             task.generation = ++g_tasks.next_generation;
-            task.run_func = run_func;
-            task.complete_func = complete_func;
-            task.user_data = user_data;
+            task.run_func = std::move(run_func);
+            task.complete_func = std::move(complete_func);
             task.start_frame = g_tasks.current_frame;
 
             return { static_cast<u32>(i), task.generation };
@@ -96,6 +95,21 @@ namespace noz {
 
         TaskState state = task->state.load();
         return state == TASK_STATE_COMPLETE || state == TASK_STATE_CANCELED;
+    }
+
+    bool IsTaskCanceled(TaskHandle handle) {
+        if (handle.generation == 0)
+            return true;
+
+        if (handle.id >= (u32)g_tasks.max_tasks)
+            return true;
+
+        // No lock - this is called frequently from worker thread
+        TaskImpl& task = g_tasks.tasks[handle.id];
+        if (task.generation != handle.generation)
+            return true;
+
+        return task.state.load() == TASK_STATE_CANCELED;
     }
 
     void CancelTask(TaskHandle handle) {
@@ -154,10 +168,16 @@ namespace noz {
 
                 if (state == TASK_STATE_COMPLETE) {
                     if (task.complete_func)
-                        task.complete_func(GetHandle(&task), task.user_data);
+                        task.complete_func(GetHandle(&task), task.result);
+                    task.run_func = nullptr;
+                    task.complete_func = nullptr;
+                    task.result = nullptr;
                     task.generation = 0;  // Invalidate handle before freeing
                     task.state.store(TASK_STATE_FREE);
                 } else if (state == TASK_STATE_CANCELED) {
+                    task.run_func = nullptr;
+                    task.complete_func = nullptr;
+                    task.result = nullptr;
                     task.generation = 0;  // Invalidate handle before freeing
                     task.state.store(TASK_STATE_FREE);
                 }
@@ -207,7 +227,7 @@ namespace noz {
             if (task) {
                 TaskState expected = TASK_STATE_RUNNING;
                 if (task->state.load() == expected && task->run_func)
-                    task->run_func(GetHandle(task), task->user_data);
+                    task->result = task->run_func(GetHandle(task));
 
                 expected = TASK_STATE_RUNNING;
                 if (task->state.compare_exchange_strong(expected, TASK_STATE_COMPLETE))

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <functional>
+
 namespace noz {
 
     struct TaskHandle {
@@ -25,12 +27,15 @@ namespace noz {
         TASK_STATE_CANCELED
     };
 
-    using TaskRunFunc = void (*)(TaskHandle task, void* user_data);
-    using TaskCompleteFunc = void (*)(TaskHandle task, void* user_data);
+    constexpr void* TASK_NO_RESULT = (void*)"";  // Return this when you don't need a result
 
-    extern TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func=nullptr, void* user_data=nullptr);
+    using TaskRunFunc = std::function<void*(TaskHandle task)>;
+    using TaskCompleteFunc = std::function<void(TaskHandle task, void* result)>;
+
+    extern TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func = nullptr);
     extern bool IsTaskComplete(TaskHandle handle);
     extern bool IsTaskValid(TaskHandle handle);
+    extern bool IsTaskCanceled(TaskHandle handle);  // Call from run_func to check if should abort
     extern void CancelTask(TaskHandle handle);
 
 } // namespace noz
