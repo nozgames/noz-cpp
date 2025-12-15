@@ -504,3 +504,14 @@ void AlignStream(Stream* stream, int alignment) {
     if (mod != 0)
         impl->position += alignment - mod;
 }
+
+void Copy(Stream* dst, Stream* src) {
+    if (!dst || !src) return;
+
+    StreamImpl* dst_impl = static_cast<StreamImpl*>(dst);
+    StreamImpl* src_impl = static_cast<StreamImpl*>(src);
+
+    EnsureCapacity(dst_impl, dst_impl->position + src_impl->size);
+    ReadBytes(src, dst_impl->data + dst_impl->position, src_impl->size);
+    dst_impl->position += src_impl->size;
+}

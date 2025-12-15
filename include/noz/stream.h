@@ -11,7 +11,7 @@ struct Stream {};
 
 // @alloc
 extern Stream* CreateStream(Allocator* allocator, u32 capacity);
-extern Stream* CreateStream(Allocator* allocator, const u8* data, u32 size);
+extern Stream* CreateStream(Allocator* allocator, u8* data, u32 size);
 extern Stream* LoadStream(Allocator* allocator, const u8* data, u32 size);
 extern Stream* LoadStream(Allocator* allocator, const std::filesystem::path& path);
 
@@ -77,6 +77,7 @@ template <typename TStruct> TStruct ReadStruct(Stream* stream)
 }
 
 // @write
+extern void Copy(Stream* dst, Stream* src);
 void WriteU8(Stream* stream, u8 value);
 void WriteU16(Stream* stream, u16 value);
 void WriteU32(Stream* stream, u32 value);

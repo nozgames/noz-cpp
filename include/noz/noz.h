@@ -45,3 +45,4 @@
 #include "tween.h"
 #include "debug.h"
 #include "rect.h"
+#include "bin.h"

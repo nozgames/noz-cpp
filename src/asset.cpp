@@ -34,9 +34,12 @@ bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** name_tab
 }
 
 bool ValidateAssetHeader(AssetHeader* header, AssetType expected_asset_type) {
-    if (!header) return false;
-    if (header->signature != ASSET_SIGNATURE) return false;
-    if (header->type != expected_asset_type) return false;
+    if (!header)
+        return false;
+    if (header->signature != ASSET_SIGNATURE)
+        return false;
+    if (header->type != expected_asset_type)
+        return false;
     return true;
 }
 
@@ -52,6 +55,7 @@ const char* ToString(AssetType asset_type) {
         case ASSET_TYPE_SHADER: return "Shader";
         case ASSET_TYPE_ANIMATED_MESH: return "AnimatedMesh";
         case ASSET_TYPE_EVENT: return "Event";
+        case ASSET_TYPE_BIN: return "Bin";
         default: return nullptr;
     }
 }
