@@ -130,6 +130,7 @@ static Task PostUrlInternal(
     Set(req->headers, headers);
     req->body = static_cast<u8*>(Alloc(ALLOCATOR_DEFAULT, body_size));
     memcpy(req->body, body, body_size);
+    req->body_size = body_size;
     return req->task;
 }
 
@@ -275,7 +276,18 @@ void noz::InitHttp(const ApplicationTraits& traits) {
 
     for (int request_index = 0; request_index < g_http.max_requests; request_index++) {
         HttpRequestImpl* request = g_http.requests + request_index;
+        Clear(request->url);
+        Clear(request->content_type);
+        Clear(request->headers);
+        request->task = nullptr;
+        request->method = HTTP_REQUEST_METHOD_NONE;
         request->state = HTTP_REQUEST_STATE_NONE;
+        request->callback = nullptr;
+        request->handle = {};
+        request->status_code = 0;
+        request->body = nullptr;
+        request->body_size = 0;
+        request->response = nullptr;
     }
 
     PlatformInitHttp(traits);

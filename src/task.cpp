@@ -10,17 +10,15 @@
 
 namespace noz {
 
-    constexpr i32 MAX_TASK_DEPENDENCIES = 256;
-
     struct TaskImpl {
         std::atomic<TaskState> state{TASK_STATE_FREE};
         TaskRunFunc run_func;
         TaskCompleteFunc complete_func;
         TaskDestroyFunc destroy_func;
         void* result;
-        Task dependencies[MAX_TASK_DEPENDENCIES];
         Task parent;
-        i32 dep_count;
+        i32 first_dep;      // Index of first dependency (-1 if none)
+        i32 next_dep;       // Next dependency in parent's chain (-1 if last)
         u64 start_frame;
         u32 generation;
         bool is_virtual;
@@ -49,7 +47,7 @@ namespace noz {
     static TaskSystem g_tasks = {};
 
     static TaskImpl* GetTask(Task handle) {
-        if (handle.generation == 0 || handle.id >= (u32)g_tasks.max_tasks)
+        if (handle.generation == 0 || handle.id >= static_cast<u32>(g_tasks.max_tasks))
             return nullptr;
 
         TaskImpl& task = g_tasks.tasks[handle.id];
@@ -77,14 +75,25 @@ namespace noz {
             task.run_func = std::move(run_func);
             task.complete_func = std::move(complete_func);
             task.destroy_func = std::move(destroy_func);
-            task.dep_count = dep_count;
-            for (i32 j = 0; j < dep_count; j++) {
-                task.dependencies[j] = deps[j];
-            }
             task.parent = nullptr;
             task.result = nullptr;
             task.start_frame = g_tasks.current_frame;
             task.is_virtual = false;
+
+            // Set up dependency linked list
+            if (dep_count > 0) {
+                task.first_dep = static_cast<i32>(deps[0].id);
+                for (i32 j = 0; j < dep_count - 1; j++) {
+                    TaskImpl& dep = g_tasks.tasks[deps[j].id];
+                    assert(dep.next_dep == -1 && "Task is already a dependency of another task");
+                    dep.next_dep = static_cast<i32>(deps[j + 1].id);
+                }
+                // Last dependency has no next
+                g_tasks.tasks[deps[dep_count - 1].id].next_dep = -1;
+            } else {
+                task.first_dep = -1;
+            }
+            task.next_dep = -1;
 
             return { static_cast<u32>(i), task.generation };
         }
@@ -143,7 +152,8 @@ namespace noz {
             task.run_func = nullptr;
             task.complete_func = nullptr;
             task.destroy_func = std::move(destroy_func);
-            task.dep_count = 0;
+            task.first_dep = -1;
+            task.next_dep = -1;
             task.parent = nullptr;
             task.result = nullptr;
             task.start_frame = g_tasks.current_frame;
@@ -206,18 +216,33 @@ namespace noz {
         if (!task)
             return 0;
 
-        return task->dep_count;
+        int count = 0;
+        i32 dep_idx = task->first_dep;
+        while (dep_idx >= 0) {
+            count++;
+            dep_idx = g_tasks.tasks[dep_idx].next_dep;
+        }
+        return count;
     }
 
     Task GetDependencyAt(Task handle, int index) {
-        if (handle.generation == 0)
+        if (handle.generation == 0 || index < 0)
             return nullptr;
 
         TaskImpl* task = GetTask(handle);
-        if (!task || index < 0 || index >= task->dep_count)
+        if (!task)
             return nullptr;
 
-        return task->dependencies[index];
+        i32 dep_idx = task->first_dep;
+        for (int i = 0; i < index && dep_idx >= 0; i++) {
+            dep_idx = g_tasks.tasks[dep_idx].next_dep;
+        }
+
+        if (dep_idx < 0)
+            return nullptr;
+
+        TaskImpl& dep = g_tasks.tasks[dep_idx];
+        return { static_cast<u32>(dep_idx), dep.generation };
     }
 
     Task GetParent(Task handle) {
@@ -301,24 +326,13 @@ namespace noz {
         task->state.compare_exchange_strong(expected, TASK_STATE_CANCELED);
     }
 
-    static bool IsSingleDependencyReady(Task dep_handle) {
-        if (dep_handle.generation == 0)
-            return true;
-
-        if (dep_handle.id >= (u32)g_tasks.max_tasks)
-            return true;
-
-        TaskImpl& dep = g_tasks.tasks[dep_handle.id];
-        if (dep.generation != dep_handle.generation)
-            return true;  // Dependency was freed
-
-        return dep.state.load() == TASK_STATE_COMPLETE;
-    }
-
     static bool AreAllDependenciesReady(TaskImpl& task) {
-        for (i32 i = 0; i < task.dep_count; i++) {
-            if (!IsSingleDependencyReady(task.dependencies[i]))
+        i32 dep_idx = task.first_dep;
+        while (dep_idx >= 0) {
+            TaskImpl& dep = g_tasks.tasks[dep_idx];
+            if (dep.state.load() != TASK_STATE_COMPLETE)
                 return false;
+            dep_idx = dep.next_dep;
         }
         return true;
     }
@@ -353,13 +367,17 @@ namespace noz {
     }
 
     static bool HasPendingDependents(Task handle) {
+        i32 target_idx = static_cast<i32>(handle.id);
         for (i32 i = 0; i < g_tasks.max_tasks; i++) {
             TaskImpl& task = g_tasks.tasks[i];
             if (task.state.load() != TASK_STATE_PENDING)
                 continue;
-            for (i32 j = 0; j < task.dep_count; j++) {
-                if (task.dependencies[j] == handle)
+
+            i32 dep_idx = task.first_dep;
+            while (dep_idx >= 0) {
+                if (dep_idx == target_idx)
                     return true;
+                dep_idx = g_tasks.tasks[dep_idx].next_dep;
             }
         }
         return false;
@@ -485,6 +503,8 @@ namespace noz {
             g_tasks.tasks[i].state = TASK_STATE_FREE;
             g_tasks.tasks[i].generation = 0;
             g_tasks.tasks[i].destroy_func = nullptr;
+            g_tasks.tasks[i].first_dep = -1;
+            g_tasks.tasks[i].next_dep = -1;
         }
 
         for (i32 i = 0; i < worker_count; i++) {
