@@ -103,35 +103,25 @@ static WindowsWebSocket* GetSocket(const PlatformWebSocketHandle& handle)
 static DWORD WINAPI WebSocketConnectThread(LPVOID param)
 {
     WindowsWebSocket* ws = (WindowsWebSocket*)param;
-    LogInfo("[WS] WebSocketConnectThread: started");
 
     // Send the upgrade request (blocking)
     if (!WinHttpSendRequest(ws->request, WINHTTP_NO_ADDITIONAL_HEADERS, 0, nullptr, 0, 0, 0)) {
-        LogError("[WS] WebSocketConnectThread: WinHttpSendRequest failed: %lu", GetLastError());
         ws->status = WebSocketStatus::Error;
         return 1;
     }
-
-    LogInfo("[WS] WebSocketConnectThread: WinHttpSendRequest done");
 
     // Receive response (blocking)
     if (!WinHttpReceiveResponse(ws->request, nullptr)) {
-        LogError("[WS] WebSocketConnectThread: WinHttpReceiveResponse failed: %lu", GetLastError());
         ws->status = WebSocketStatus::Error;
         return 1;
     }
-
-    LogInfo("[WS] WebSocketConnectThread: WinHttpReceiveResponse done");
 
     // Complete the WebSocket upgrade
     ws->websocket = WinHttpWebSocketCompleteUpgrade(ws->request, 0);
     if (!ws->websocket) {
-        LogError("[WS] WebSocketConnectThread: WinHttpWebSocketCompleteUpgrade failed: %lu", GetLastError());
         ws->status = WebSocketStatus::Error;
         return 1;
     }
-
-    LogInfo("[WS] WebSocketConnectThread: upgrade complete");
 
     // Close the request handle - we don't need it anymore
     WinHttpCloseHandle(ws->request);
@@ -141,13 +131,11 @@ static DWORD WINAPI WebSocketConnectThread(LPVOID param)
     ws->connect_state = WebSocketConnectState::Connected;
     ws->status = WebSocketStatus::Connected;
 
-    LogInfo("[WS] WebSocketConnectThread: done");
     return 0;
 }
 
 static void QueueMessage(WindowsWebSocket* ws, WebSocketMessageType type, const u8* data, u32 size)
 {
-    LogInfo("[WS] QueueMessage: type=%d size=%u", (int)type, size);
     EnterCriticalSection(&ws->cs);
 
     if (ws->message_count < MAX_MESSAGES_PER_SOCKET)
@@ -161,11 +149,6 @@ static void QueueMessage(WindowsWebSocket* ws, WebSocketMessageType type, const 
 
         ws->message_write_index = (ws->message_write_index + 1) % MAX_MESSAGES_PER_SOCKET;
         ws->message_count++;
-        LogInfo("[WS] QueueMessage: queued, count=%d", ws->message_count);
-    }
-    else
-    {
-        LogWarning("[WS] QueueMessage: queue full, dropping message");
     }
 
     LeaveCriticalSection(&ws->cs);
@@ -202,7 +185,6 @@ static void AppendToReceiveBuffer(WindowsWebSocket* ws, const u8* data, u32 size
 
 static DWORD WINAPI WebSocketReceiveThread(LPVOID param)
 {
-    LogInfo("[WS] WebSocketReceiveThread: started");
     WindowsWebSocket* ws = (WindowsWebSocket*)param;
     u8 buffer[RECEIVE_BUFFER_SIZE];
 
@@ -211,7 +193,6 @@ static DWORD WINAPI WebSocketReceiveThread(LPVOID param)
         DWORD bytes_read = 0;
         WINHTTP_WEB_SOCKET_BUFFER_TYPE buffer_type = WINHTTP_WEB_SOCKET_BINARY_FRAGMENT_BUFFER_TYPE;
 
-        LogInfo("[WS] WebSocketReceiveThread: calling WinHttpWebSocketReceive");
         DWORD error = WinHttpWebSocketReceive(
             ws->websocket,
             buffer,
@@ -219,11 +200,8 @@ static DWORD WINAPI WebSocketReceiveThread(LPVOID param)
             &bytes_read,
             &buffer_type);
 
-        LogInfo("[WS] WebSocketReceiveThread: WinHttpWebSocketReceive returned %lu, bytes_read=%lu, buffer_type=%d", error, bytes_read, buffer_type);
-
         if (error != ERROR_SUCCESS)
         {
-            LogError("[WS] WebSocketReceiveThread: error %lu", error);
             if (!ws->should_close)
             {
                 EnterCriticalSection(&ws->cs);
@@ -233,13 +211,11 @@ static DWORD WINAPI WebSocketReceiveThread(LPVOID param)
             break;
         }
 
-        LogInfo("[WS] WebSocketReceiveThread: processing buffer_type=%d", buffer_type);
         switch (buffer_type)
         {
             case WINHTTP_WEB_SOCKET_UTF8_MESSAGE_BUFFER_TYPE:
             case WINHTTP_WEB_SOCKET_BINARY_MESSAGE_BUFFER_TYPE:
             {
-                LogInfo("[WS] WebSocketReceiveThread: complete message, receive_size=%u", ws->receive_size);
                 // Complete message (or final fragment)
                 if (ws->receive_size > 0)
                 {
@@ -269,7 +245,6 @@ static DWORD WINAPI WebSocketReceiveThread(LPVOID param)
             case WINHTTP_WEB_SOCKET_UTF8_FRAGMENT_BUFFER_TYPE:
             case WINHTTP_WEB_SOCKET_BINARY_FRAGMENT_BUFFER_TYPE:
             {
-                LogInfo("[WS] WebSocketReceiveThread: fragment, appending %lu bytes", bytes_read);
                 // Fragment - accumulate
                 if (ws->receive_size == 0)
                 {
@@ -281,7 +256,6 @@ static DWORD WINAPI WebSocketReceiveThread(LPVOID param)
 
             case WINHTTP_WEB_SOCKET_CLOSE_BUFFER_TYPE:
             {
-                LogInfo("[WS] WebSocketReceiveThread: received CLOSE");
                 EnterCriticalSection(&ws->cs);
                 ws->status = WebSocketStatus::Closed;
 
@@ -298,17 +272,14 @@ static DWORD WINAPI WebSocketReceiveThread(LPVOID param)
                 ws->close_reason[reason_length] = '\0';
 
                 LeaveCriticalSection(&ws->cs);
-                LogInfo("[WS] WebSocketReceiveThread: exiting after CLOSE");
                 return 0;
             }
 
             default:
-                LogWarning("[WS] WebSocketReceiveThread: unknown buffer_type=%d", buffer_type);
                 break;
         }
     }
 
-    LogInfo("[WS] WebSocketReceiveThread: exiting loop");
     return 0;
 }
 
@@ -395,20 +366,15 @@ void PlatformUpdateWebSocket()
             ws.connect_state == WebSocketConnectState::Connected &&
             ws.thread == nullptr) {
 
-            LogInfo("[WS] PlatformUpdateWebSocket: socket %d connected, starting receive thread", i);
             ws.thread = CreateThread(nullptr, 0, WebSocketReceiveThread, &ws, 0, nullptr);
             if (!ws.thread) {
-                LogError("[WS] PlatformUpdateWebSocket: CreateThread failed: %lu", GetLastError());
                 ws.status = WebSocketStatus::Error;
-            } else {
-                LogInfo("[WS] PlatformUpdateWebSocket: receive thread started");
             }
         }
     }
 }
 
 PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
-    LogInfo("[WS] PlatformConnectWebSocket: url=%s", url);
     WindowsWebSocket* ws = nullptr;
     u32 socket_index = 0;
     for (int i = 0; i < MAX_WEBSOCKETS; i++) {
@@ -425,11 +391,8 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
     }
 
     if (!ws) {
-        LogWarning("[WS] PlatformConnectWebSocket: No free WebSocket slots");
         return MakeWebSocketHandle(0, 0xFFFFFFFF);
     }
-
-    LogInfo("[WS] PlatformConnectWebSocket: using slot %u", socket_index);
 
     // Initialize
     memset(ws, 0, sizeof(WindowsWebSocket));
@@ -467,7 +430,6 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
     wide_url[wide_len] = 0;
 
     if (!WinHttpCrackUrl(wide_url, 0, 0, &url_components)) {
-        LogError("[WS] PlatformConnectWebSocket: WinHttpCrackUrl failed");
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
@@ -480,8 +442,6 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
     bool secure = (url_components.nScheme == INTERNET_SCHEME_HTTPS) ||
                   (wcsncmp(wide_url, L"wss://", 6) == 0);
 
-    LogInfo("[WS] PlatformConnectWebSocket: parsed URL, secure=%d", secure ? 1 : 0);
-
     // Create synchronous session
     ws->session = WinHttpOpen(
         L"NoZ/1.0",
@@ -491,19 +451,14 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
         0);  // No WINHTTP_FLAG_ASYNC - synchronous mode
 
     if (!ws->session) {
-        LogError("[WS] PlatformConnectWebSocket: WinHttpOpen failed: %lu", GetLastError());
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
-
-    LogInfo("[WS] PlatformConnectWebSocket: session created");
 
     // Connect
     INTERNET_PORT port = url_components.nPort;
     if (port == 0)
         port = secure ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT;
-
-    LogInfo("[WS] PlatformConnectWebSocket: connecting to port %d", port);
 
     ws->connection = WinHttpConnect(
         ws->session,
@@ -511,12 +466,9 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
         port,
         0);
     if (!ws->connection) {
-        LogError("[WS] PlatformConnectWebSocket: WinHttpConnect failed: %lu", GetLastError());
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
-
-    LogInfo("[WS] PlatformConnectWebSocket: connected");
 
     // Build path with query string
     wchar_t path[2048] = L"/";
@@ -539,15 +491,11 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
         flags);
 
     if (!ws->request) {
-        LogError("[WS] PlatformConnectWebSocket: WinHttpOpenRequest failed: %lu", GetLastError());
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
 
-    LogInfo("[WS] PlatformConnectWebSocket: request created");
-
     if (!WinHttpSetOption(ws->request, WINHTTP_OPTION_UPGRADE_TO_WEB_SOCKET, nullptr, 0)) {
-        LogError("[WS] PlatformConnectWebSocket: WinHttpSetOption failed: %lu", GetLastError());
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
@@ -555,11 +503,8 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
     // Start connect thread to do the blocking send/receive/upgrade
     ws->connect_state = WebSocketConnectState::Connecting;
 
-    LogInfo("[WS] PlatformConnectWebSocket: starting connect thread");
-
     HANDLE connect_thread = CreateThread(nullptr, 0, WebSocketConnectThread, ws, 0, nullptr);
     if (!connect_thread) {
-        LogError("[WS] PlatformConnectWebSocket: CreateThread failed: %lu", GetLastError());
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
@@ -567,7 +512,6 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
     // We don't need to keep the connect thread handle - it will set status when done
     CloseHandle(connect_thread);
 
-    LogInfo("[WS] PlatformConnectWebSocket: done, returning handle");
     return MakeWebSocketHandle(socket_index, ws->generation);
 }
 

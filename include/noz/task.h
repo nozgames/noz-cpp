@@ -6,7 +6,6 @@
 
 #include <functional>
 #include <initializer_list>
-#include <span>
 
 namespace noz {
 
@@ -31,7 +30,7 @@ namespace noz {
 
     constexpr void* TASK_NO_RESULT = (void*)"";  // Return this when you don't need a result
 
-    using TaskRunFunc = std::function<void*(TaskHandle task, std::span<void*> dep_results)>;
+    using TaskRunFunc = std::function<void*(TaskHandle task)>;
     using TaskCompleteFunc = std::function<void(TaskHandle task, void* result)>;
     using TaskDestroyFunc = std::function<void(void* result)>;
 
@@ -62,6 +61,9 @@ namespace noz {
     extern TaskHandle CreateVirtualTask(TaskDestroyFunc destroy_func = nullptr);
     extern void CompleteTask(TaskHandle handle, void* result);
     extern void* GetTaskResult(TaskHandle handle);
+    extern void* ReleaseTaskResult(TaskHandle handle);  // Takes ownership, caller responsible for cleanup
+    extern int GetDependencyCount(TaskHandle handle);
+    extern TaskHandle GetDependencyAt(TaskHandle handle, int index);
     extern bool IsTaskComplete(TaskHandle handle);
     extern bool IsTaskValid(TaskHandle handle);
     extern bool IsTaskCanceled(TaskHandle handle);

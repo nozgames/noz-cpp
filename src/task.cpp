@@ -19,12 +19,10 @@ namespace noz {
         TaskDestroyFunc destroy_func;
         void* result;
         TaskHandle dependencies[MAX_TASK_DEPENDENCIES];
-        void* dep_results[MAX_TASK_DEPENDENCIES];
         i32 dep_count;
         u64 start_frame;
         u32 generation;
         bool is_virtual;
-        i32 dependent_task;
     };
 
     struct TaskWorker {
@@ -81,7 +79,6 @@ namespace noz {
             task.dep_count = dep_count;
             for (i32 j = 0; j < dep_count; j++) {
                 task.dependencies[j] = deps[j];
-                task.dep_results[j] = nullptr;
             }
             task.result = nullptr;
             task.start_frame = g_tasks.current_frame;
@@ -181,6 +178,43 @@ namespace noz {
             return nullptr;
 
         return task.result;
+    }
+
+    void* ReleaseTaskResult(TaskHandle handle) {
+        if (handle.generation == 0)
+            return nullptr;
+
+        std::lock_guard lock(g_tasks.mutex);
+        TaskImpl* task = GetTask(handle);
+        if (!task)
+            return nullptr;
+
+        void* result = task->result;
+        task->result = nullptr;
+        task->destroy_func = nullptr;  // Caller takes ownership, no cleanup needed
+        return result;
+    }
+
+    int GetDependencyCount(TaskHandle handle) {
+        if (handle.generation == 0)
+            return 0;
+
+        TaskImpl* task = GetTask(handle);
+        if (!task)
+            return 0;
+
+        return task->dep_count;
+    }
+
+    TaskHandle GetDependencyAt(TaskHandle handle, int index) {
+        if (handle.generation == 0)
+            return TASK_HANDLE_INVALID;
+
+        TaskImpl* task = GetTask(handle);
+        if (!task || index < 0 || index >= task->dep_count)
+            return TASK_HANDLE_INVALID;
+
+        return task->dependencies[index];
     }
 
     bool IsTaskValid(TaskHandle handle) {
@@ -361,13 +395,6 @@ namespace noz {
             if (!task)
                 break;
 
-            // Copy all dependency results before clearing dependencies
-            for (i32 i = 0; i < task->dep_count; i++) {
-                TaskImpl* dep = GetTask(task->dependencies[i]);
-                task->dep_results[i] = dep ? dep->result : nullptr;
-                task->dependencies[i] = TASK_HANDLE_INVALID;
-            }
-
             task->state.store(TASK_STATE_RUNNING);
             worker->current_task.store(task);
             worker->cv.notify_one();
@@ -399,8 +426,7 @@ namespace noz {
             if (task) {
                 TaskState expected = TASK_STATE_RUNNING;
                 if (task->state.load() == expected && task->run_func) {
-                    std::span<void*> deps(task->dep_results, task->dep_count);
-                    task->result = task->run_func(GetHandle(task), deps);
+                    task->result = task->run_func(GetHandle(task));
                 }
 
                 expected = TASK_STATE_RUNNING;

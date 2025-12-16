@@ -92,23 +92,18 @@ static WebSocketImpl* AllocWebSocket() {
 }
 
 WebSocket* CreateWebSocket(Allocator* allocator, const char* url, WebSocketProc proc, void* user_data) {
-    LogInfo("[WS] CreateWebSocket: url=%s", url);
     (void)allocator;
     WebSocketImpl* ws = AllocWebSocket();
     if (!ws) {
-        LogWarning("[WS] CreateWebSocket: AllocWebSocket failed");
         return nullptr;
     }
 
-    LogInfo("[WS] CreateWebSocket: calling PlatformConnectWebSocket");
     ws->handle = PlatformConnectWebSocket(url);
-    LogInfo("[WS] CreateWebSocket: got handle id=%u gen=%u", (u32)(ws->handle.value & 0xFFFFFFFF), (u32)(ws->handle.value >> 32));
     ws->last_status = WebSocketStatus::Connecting;
     ws->connect_callback_fired = false;
     ws->proc = proc;
     ws->user_data = user_data;
 
-    LogInfo("[WS] CreateWebSocket: done");
     return reinterpret_cast<WebSocket *>(ws);
 }
 
@@ -237,9 +232,7 @@ void ShutdownWebSocket()
 
 void UpdateWebSocket()
 {
-    LogInfo("[WS] UpdateWebSocket: enter");
     PlatformUpdateWebSocket();
-    LogInfo("[WS] UpdateWebSocket: PlatformUpdateWebSocket done");
 
     for (int i = 0; i < MAX_WEBSOCKETS; i++)
     {
@@ -248,33 +241,26 @@ void UpdateWebSocket()
             continue;
 
         WebSocketStatus current = PlatformGetStatus(ws.handle);
-        LogInfo("[WS] UpdateWebSocket: socket %d, current status=%d, last_status=%d", i, (int)current, (int)ws.last_status);
 
         // Check for connection success/failure
         if (!ws.connect_callback_fired)
         {
             if (current == WebSocketStatus::Connected)
             {
-                LogInfo("[WS] UpdateWebSocket: firing CONNECTED callback for socket %d", i);
                 ws.connect_callback_fired = true;
                 ws.proc(reinterpret_cast<WebSocket *>(&ws), WEBSOCKET_EVENT_CONNECTED, nullptr, 0, ws.user_data);
-                LogInfo("[WS] UpdateWebSocket: CONNECTED callback returned");
             }
             else if (current == WebSocketStatus::Error)
             {
-                LogInfo("[WS] UpdateWebSocket: firing ERROR callback for socket %d", i);
                 ws.connect_callback_fired = true;
                 ws.proc(reinterpret_cast<WebSocket *>(&ws), WEBSOCKET_EVENT_CLOSED, nullptr, 0, ws.user_data);
-                LogInfo("[WS] UpdateWebSocket: ERROR callback returned");
             }
         }
 
         // Check for disconnect
         if (current == WebSocketStatus::Error || current == WebSocketStatus::Closed) {
             if (ws.last_status == WebSocketStatus::Connected) {
-                LogInfo("[WS] UpdateWebSocket: socket %d disconnected (status=%d), firing CLOSED callback", i, (int)current);
                 ws.proc(reinterpret_cast<WebSocket *>(&ws), WEBSOCKET_EVENT_CLOSED, nullptr, 0, ws.user_data);
-                LogInfo("[WS] UpdateWebSocket: CLOSED callback returned");
             }
         }
         ws.last_status = current;
@@ -282,7 +268,6 @@ void UpdateWebSocket()
         // Dispatch messages
         if (current == WebSocketStatus::Connected) {
             while (PlatformHasMessages(ws.handle)) {
-                LogInfo("[WS] UpdateWebSocket: processing message");
                 WebSocketMessageType ptype;
                 u8* data;
                 u32 size;
@@ -318,5 +303,4 @@ void UpdateWebSocket()
         }
 
     }
-    LogInfo("[WS] UpdateWebSocket: exit");
 }

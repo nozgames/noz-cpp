@@ -228,9 +228,10 @@ void noz::UpdateHttp() {
 
         // @complete
         } else if (request->state == HTTP_REQUEST_STATE_COMPLETE) {
-            // if (!IsTaskValid(request->task)) {
-            //     request->
-            // }
+            if (!IsTaskValid(request->task)) {
+                request->state = HTTP_REQUEST_STATE_NONE;
+                g_http.request_count--;
+            }
         }
     }
 
@@ -248,7 +249,6 @@ void noz::UpdateHttp() {
 }
 
 void noz::InitHttp(const ApplicationTraits& traits) {
-    LogInfo("[HTTP] InitHttp: max_concurrent=%d max_requests=%d", traits.http.max_concurrent_requests, traits.http.max_requests);
     g_http = {};
     g_http.max_concurrent_requests = traits.http.max_concurrent_requests;
     g_http.max_requests = traits.http.max_requests;
@@ -260,7 +260,6 @@ void noz::InitHttp(const ApplicationTraits& traits) {
     }
 
     PlatformInitHttp(traits);
-    LogInfo("[HTTP] InitHttp: done");
 }
 
 void noz::ShutdownHttp() {
