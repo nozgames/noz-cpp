@@ -159,15 +159,23 @@ extern float PlatformGetSoundVolume();
 extern float PlatformGetMusicVolume();
 
 // @http
-extern void PlatformInitHttp();
+enum PlatformHttpStatus : u8 {
+    PLATFORM_HTTP_STATUS_NONE,
+    PLATFORM_HTTP_STATUS_PENDING,
+    PLATFORM_HTTP_STATUS_COMPLETE,
+    PLATFORM_HTTP_STATUS_ERROR
+};
+
+
+extern void PlatformInitHttp(const ApplicationTraits& traits);
 extern void PlatformShutdownHttp();
 extern void PlatformUpdateHttp();
 extern PlatformHttpHandle PlatformGetURL(const char* url);
 extern PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type, const char* headers, const char* method);
-extern HttpStatus PlatformGetStatus(const PlatformHttpHandle& handle);
+extern PlatformHttpStatus PlatformGetStatus(const PlatformHttpHandle& handle);
 extern int PlatformGetStatusCode(const PlatformHttpHandle& handle);      // HTTP status code (200, 404, etc.)
 extern bool PlatformIsFromCache(const PlatformHttpHandle& handle);       // True if response came from cache
-extern const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size);
+extern Stream* PlatformReleaseResponseStream(const PlatformHttpHandle& handle);
 extern char* PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, Allocator* allocator);
 extern void PlatformCancel(const PlatformHttpHandle& handle);            // Cancel pending request
 extern void PlatformFree(const PlatformHttpHandle& handle);           // Release completed request resources

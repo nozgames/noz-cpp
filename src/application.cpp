@@ -35,7 +35,6 @@ extern void ShutdownAllocator();
 extern void ShutdownAudio();
 extern void ShutdownPrefs();
 extern void ResetInputState(InputSet* input_set);
-extern void InitHttp();
 extern void ShutdownHttp();
 extern void UpdateHttp();
 extern void InitWebSocket();
@@ -44,8 +43,11 @@ extern void UpdateWebSocket();
 
 namespace noz {
     extern void InitTasks(const ApplicationTraits& traits);
+    extern void InitHttp(const ApplicationTraits& traits);
     extern void UpdateTasks();
+    extern void UpdateHttp();
     extern void ShutdownTasks();
+    extern void ShutdownHttp();
 }
 
 // @traits
@@ -70,6 +72,10 @@ static ApplicationTraits g_default_traits =
     .max_event_stack = 32,
     .max_tasks = 1024,
     .max_task_worker_count = 4,
+    .http = {
+        .max_requests = 128,
+        .max_concurrent_requests = 4,
+    },
     .editor_port = 8080,
     .ui_depth = F32_MAX,
     .renderer = {
@@ -180,7 +186,7 @@ void InitApplication(ApplicationTraits* traits) {
     InitJobs();
     InitTween();
     InitAudio();
-    InitHttp();
+    noz::InitHttp(g_app.traits);
     InitWebSocket();
 
     g_app.traits.x = GetIntPref(PREF_WINDOW_X, g_app.traits.x);
@@ -296,7 +302,7 @@ void ShutdownApplication() {
         ShutdownWindow();
 
     ShutdownWebSocket();
-    ShutdownHttp();
+    noz::ShutdownHttp();
     ShutdownTween();
     ShutdownJobs();
     noz::ShutdownTasks();
@@ -350,7 +356,7 @@ bool UpdateApplication() {
     UpdateScreenSize();
     UpdateTime();
     UpdateInput();
-    UpdateHttp();
+    noz::UpdateHttp();
     UpdateWebSocket();
     noz::UpdateTasks();
 

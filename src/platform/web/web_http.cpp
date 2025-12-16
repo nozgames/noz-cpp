@@ -17,10 +17,10 @@ struct WebHttpRequest {
     u8* response_data;
     u32 response_size;
     u32 generation;
-    HttpStatus status;
     int status_code;
     char* response_headers;
     char* body_copy;
+    PlatformHttpStatus status;
 };
 
 struct WebHttp {
@@ -28,7 +28,7 @@ struct WebHttp {
     u32 next_request_id;
 };
 
-static WebHttp g_http = {};
+static WebHttp g_web_http = {};
 
 static u32 GetRequestIndex(const PlatformHttpHandle& handle) {
     return (u32)(handle.value & 0xFFFFFFFF);
@@ -51,7 +51,7 @@ static WebHttpRequest* GetRequest(const PlatformHttpHandle& handle) {
     if (index >= MAX_HTTP_REQUESTS)
         return nullptr;
 
-    WebHttpRequest& request = g_http.requests[index];
+    WebHttpRequest& request = g_web_http.requests[index];
     if (request.generation != generation)
         return nullptr;
 
@@ -136,9 +136,9 @@ static void OnFetchError(emscripten_fetch_t* fetch) {
     emscripten_fetch_close(fetch);
 }
 
-void PlatformInitHttp() {
-    g_http = {};
-    g_http.next_request_id = 1;
+void PlatformInitHttp(const ApplicationTraits& traits) {
+    g_web_http = {};
+    g_web_http.next_request_id = 1;
 
     LogInfo("Web HTTP initialized");
 }
@@ -150,8 +150,8 @@ void PlatformUpdateHttp() {
 void PlatformShutdownHttp() {
     // Clean up any pending requests
     for (int i = 0; i < MAX_HTTP_REQUESTS; i++) {
-        if (g_http.requests[i].fetch) {
-            CleanupRequest(&g_http.requests[i]);
+        if (g_web_http.requests[i].fetch) {
+            CleanupRequest(&g_web_http.requests[i]);
         }
     }
 }
@@ -160,7 +160,7 @@ static PlatformHttpHandle StartRequest(const char* url, const char* method, cons
     // Find free slot
     int slot = -1;
     for (int i = 0; i < MAX_HTTP_REQUESTS; i++) {
-        if (g_http.requests[i].status == HttpStatus::None) {
+        if (g_web_http.requests[i].status == HttpStatus::None) {
             slot = i;
             break;
         }
@@ -171,8 +171,8 @@ static PlatformHttpHandle StartRequest(const char* url, const char* method, cons
         return PlatformHttpHandle{0};
     }
 
-    WebHttpRequest& request = g_http.requests[slot];
-    request.generation = ++g_http.next_request_id;
+    WebHttpRequest& request = g_web_http.requests[slot];
+    request.generation = ++g_web_http.next_request_id;
     request.status = HttpStatus::Pending;
     request.status_code = 0;
     request.response_data = nullptr;
@@ -266,10 +266,10 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
     return StartRequest(url, method, body, body_size, content_type ? content_type : "application/octet-stream", headers);
 }
 
-HttpStatus PlatformGetStatus(const PlatformHttpHandle& handle) {
+PlatformHttpStatus PlatformGetStatus(const PlatformHttpHandle& handle) {
     WebHttpRequest* request = GetRequest(handle);
     if (!request)
-        return HttpStatus::None;
+        return PLATFORM_HTTP_STATUS_NONE;
 
     return request->status;
 }
@@ -289,7 +289,7 @@ bool PlatformIsFromCache(const PlatformHttpHandle& handle) {
 
 const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size) {
     WebHttpRequest* request = GetRequest(handle);
-    if (!request || request->status != HttpStatus::Complete) {
+    if (!request || request->status != PLATFORM_HTTP_STATUS_COMPLETE) {
         if (out_size) *out_size = 0;
         return nullptr;
     }

@@ -20,14 +20,12 @@ void ValidateHeader(void *p)
 }
 #endif
 
-static void* AllocDefault(Allocator* a, u32 size)
-{
+static void* AllocDefault(Allocator* a, u32 size) {
     (void)a;
     return malloc(size);
 }
 
-static void* ReallocDefault(Allocator* a, void* ptr, u32 new_size)
-{
+static void* ReallocDefault(Allocator* a, void* ptr, u32 new_size) {
     (void)a;
     return realloc(ptr, new_size);
 }

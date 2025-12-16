@@ -460,21 +460,26 @@ void WriteColor(Stream* stream, Color value)
     WriteBytes(stream, &value, sizeof(Color));
 }
 
-// Internal helper functions
-static void EnsureCapacity(StreamImpl* impl, u32 required_size)
-{
-    if (required_size <= impl->capacity) return;
-    
-    u32 new_capacity = impl->capacity;
-    while (new_capacity < required_size) 
-        new_capacity *= 2;
 
-    u8* new_data = (u8*)Realloc(impl->data, new_capacity);
+static void Resize(StreamImpl* impl, u32 new_capacity) {
+    if (new_capacity < impl->capacity)
+        return;
+
+    u8* new_data = static_cast<u8*>(Realloc(impl->data, new_capacity));
     if (!new_data)
         return;
 
     impl->data = new_data;
     impl->capacity = new_capacity;
+}
+
+static void EnsureCapacity(StreamImpl* impl, u32 required_size) {
+    if (required_size <= impl->capacity) return;
+    u32 new_capacity = impl->capacity;
+    while (new_capacity < required_size) 
+        new_capacity *= 2;
+
+    Resize(impl, new_capacity);
 }
 
 int ReadNullString(Stream* stream, char* buffer, int buffer_size) {
@@ -520,4 +525,8 @@ void Copy(Stream* dst, Stream* src, int count) {
     ReadBytes(src, dst_impl->data + dst_impl->position, count);
     dst_impl->position += count;
     dst_impl->size += count;
+}
+
+void Resize(Stream* stream, u32 new_size) {
+    Resize(static_cast<StreamImpl*>(stream), new_size);
 }

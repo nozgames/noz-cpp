@@ -114,11 +114,7 @@ if(EMSCRIPTEN)
 
     # WebSocket backend selection for web
     if(NOZ_WEBSOCKET)
-        if(NOZ_WEBSOCKET_PROVIDER STREQUAL "LIBWEBSOCKETS")
-            list(APPEND SOURCE_FILES src/platform/libwebsockets/lws_websocket.cpp)
-        else()
-            list(APPEND SOURCE_FILES src/platform/web/web_websocket.cpp)
-        endif()
+        list(APPEND SOURCE_FILES src/platform/web/web_websocket.cpp)
     else()
         list(APPEND SOURCE_FILES src/platform/null/null_websocket.cpp)
     endif()

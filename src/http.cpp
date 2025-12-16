@@ -6,153 +6,141 @@
 #include "platform.h"
 #include <noz/task.h>
 
-constexpr int MAX_CONCURRENT_REQUESTS = 16;
+namespace noz {
+    enum HttpRequestState : u8 {
+        HTTP_REQUEST_STATE_NONE,
+        HTTP_REQUEST_STATE_QUEUED,
+        HTTP_REQUEST_STATE_ACTIVE,
+        HTTP_REQUEST_STATE_COMPLETE
+    };
 
-enum class HttpRequestState {
-    Idle,
-    Queued,
-    Active,
-};
+    enum HttpRequestMethod : u8 {
+        HTTP_REQUEST_METHOD_NONE,
+        HTTP_REQUEST_METHOD_GET,
+        HTTP_REQUEST_METHOD_PUT,
+        HTTP_REQUEST_METHOD_POST,
+    };
 
-struct HttpRequestImpl : HttpRequest {
-    PlatformHttpHandle handle;
-    noz::TaskHandle task;
-    HttpCallback callback;
-    char *response_string;
-    HttpRequestState state;
-    HttpStatus last_status;
-    int cached_status_code;  // Cached on completion for thread-safe access
-    u8 *cached_response;     // Cached response data for thread-safe access
-    u32 cached_response_size;
-    String1024 url;
+    struct QueuedHttpRequest {
 
-    // Stored request data for deferred execution
-    char *body;
-    u32 body_size;
-    char *content_type;
-    char *headers;
-    char *method;  // "GET", "POST", "PUT"
+    };
 
-    HttpRequestImpl *next;  // For queue linked list
-};
+    struct HttpRequestImpl : HttpRequest {
+        String1024 url;
+        String64 content_type;
+        String128 headers;
+        TaskHandle task;
+        HttpRequestMethod method;
+        HttpRequestState state;
+        HttpCallback callback;
+        PlatformHttpHandle handle;
+        int status_code;
+        u8 *body;
+        u32 body_size;
+        Stream* response;
+    };
 
-static HttpRequestImpl *g_active_head = nullptr;
-static HttpRequestImpl *g_queue_head = nullptr;
-static HttpRequestImpl *g_queue_tail = nullptr;
-static int g_active_count = 0;
+    struct HttpSystem {
+        int max_concurrent_requests;
+        int max_requests;
+        HttpRequestImpl* requests;
+        int request_count;
+    };
 
-static HttpRequestImpl *AllocRequest() {
-    HttpRequestImpl *req = (HttpRequestImpl *)Alloc(ALLOCATOR_DEFAULT, sizeof(HttpRequestImpl));
-    *req = {};
-    req->task = noz::TASK_HANDLE_INVALID;
-    return req;
+    extern void InitHttp(const ApplicationTraits& traits);
+    extern void ShutdownHttp();
+    extern void UpdateHttp();
 }
 
-static void QueuePush(HttpRequestImpl *req) {
-    req->next = nullptr;
-    if (g_queue_tail) {
-        g_queue_tail->next = req;
-        g_queue_tail = req;
-    } else {
-        g_queue_head = g_queue_tail = req;
-    }
-    req->state = HttpRequestState::Queued;
-}
+static noz::HttpSystem g_http = {};
 
-static HttpRequestImpl *QueuePop() {
-    if (!g_queue_head)
+using namespace noz;
+
+static HttpRequestImpl* GetRequest(const char* url, HttpRequestMethod method, const HttpCallback& callback) {
+    if (g_http.request_count >= g_http.max_requests)
         return nullptr;
 
-    HttpRequestImpl *req = g_queue_head;
-    g_queue_head = req->next;
-    if (!g_queue_head)
-        g_queue_tail = nullptr;
-    req->next = nullptr;
-    return req;
+    int request_index = 0;
+    for (; request_index < g_http.max_requests && g_http.requests[request_index].state != HTTP_REQUEST_STATE_NONE; request_index++) {}
+    assert(request_index < g_http.max_requests);
+
+    HttpRequestImpl* request = g_http.requests + request_index;
+    Set(request->url, url);
+    request->task = CreateVirtualTask();
+    request->method = method;
+    request->callback = callback;
+    request->state = HTTP_REQUEST_STATE_QUEUED;
+    request->body = nullptr;
+    request->response = nullptr;
+
+    g_http.request_count++;
+
+    return request;
 }
 
-static void ActiveListAdd(HttpRequestImpl *req) {
-    req->next = g_active_head;
-    g_active_head = req;
-    g_active_count++;
-    req->state = HttpRequestState::Active;
-}
-
-static void ActiveListRemove(HttpRequestImpl *req) {
-    HttpRequestImpl **pp = &g_active_head;
-    while (*pp) {
-        if (*pp == req) {
-            *pp = req->next;
-            g_active_count--;
-            req->next = nullptr;
-            return;
-        }
-        pp = &(*pp)->next;
-    }
-}
-
-static void StartRequest(HttpRequestImpl *req) {
-    if (req->method && strcmp(req->method, "GET") == 0) {
-        req->handle = PlatformGetURL(req->url);
+static void StartRequest(HttpRequestImpl* request) {
+    if (request->method == HTTP_REQUEST_METHOD_GET) {
+        request->handle = PlatformGetURL(request->url);
+    } else if (request->method == HTTP_REQUEST_METHOD_PUT) {
+        request->handle = PlatformPostURL(request->url, request->body, request->body_size, request->content_type, request->headers, "PUT");
+    } else if (request->method == HTTP_REQUEST_METHOD_POST) {
+        request->handle = PlatformPostURL(request->url, request->body, request->body_size, request->content_type, request->headers, "POST");
     } else {
-        req->handle = PlatformPostURL(req->url, req->body, req->body_size,
-                                       req->content_type, req->headers, req->method);
+        assert(false && "unknown method type");
+        return;
     }
-    req->last_status = HttpStatus::Pending;
-    ActiveListAdd(req);
 
-    // Free stored body data after sending
-    if (req->body) {
-        Free(req->body);
-        req->body = nullptr;
-    }
-    if (req->content_type) {
-        Free(req->content_type);
-        req->content_type = nullptr;
-    }
-    if (req->headers) {
-        Free(req->headers);
-        req->headers = nullptr;
-    }
-    if (req->method) {
-        Free(req->method);
-        req->method = nullptr;
-    }
+    request->state = HTTP_REQUEST_STATE_ACTIVE;
+
+    // Free the body after sending
+    Free(request->body);
+    request->body = nullptr;
 }
 
-static void TryStartQueued() {
-    while (g_active_count < MAX_CONCURRENT_REQUESTS) {
-        HttpRequestImpl *req = QueuePop();
-        if (!req)
-            break;
-        StartRequest(req);
-    }
-}
-
-static char *DupString(const char *str) {
-    if (!str) return nullptr;
-    size_t len = strlen(str) + 1;
-    char *copy = static_cast<char *>(Alloc(ALLOCATOR_DEFAULT, (int)len));
-    memcpy(copy, str, len);
-    return copy;
-}
-
-noz::TaskHandle GetUrl(const char *url, HttpCallback on_complete) {
-    HttpRequestImpl *req = AllocRequest();
-    Set(req->url, url);
-    req->method = DupString("GET");
-    req->callback = on_complete;
-    req->task = noz::CreateVirtualTask();
-
-    if (g_active_count < MAX_CONCURRENT_REQUESTS) {
-        StartRequest(req);
-    } else {
-        QueuePush(req);
-    }
-
+TaskHandle noz::GetUrl(const char *url, const HttpCallback& callback) {
+    HttpRequestImpl* req = GetRequest(url, HTTP_REQUEST_METHOD_GET, callback);
+    if (!req) return TASK_HANDLE_INVALID;
     return req->task;
 }
 
+static TaskHandle PostUrlInternal(
+    const char *url,
+    HttpRequestMethod method,
+    const u8* body,
+    u32 body_size,
+    const char *content_type,
+    const char *headers,
+    const HttpCallback &callback) {
+    HttpRequestImpl* req = GetRequest(url, method, callback);
+    if (!req) return TASK_HANDLE_INVALID;
+    Set(req->content_type, content_type);
+    Set(req->headers, headers);
+    req->body = static_cast<u8*>(Alloc(ALLOCATOR_DEFAULT, body_size));
+    memcpy(req->body, body, body_size);
+    return req->task;
+}
+
+TaskHandle noz::PostUrl(
+    const char *url,
+    const void *body,
+    u32 body_size,
+    const char *content_type,
+    const char *headers,
+    const HttpCallback &callback) {
+    return PostUrlInternal(url, HTTP_REQUEST_METHOD_POST, static_cast<const u8*>(body), body_size, content_type, headers, callback);
+}
+
+TaskHandle noz::PutUrl(
+    const char *url,
+    const void *body,
+    u32 body_size,
+    const char *content_type,
+    const char *headers,
+    const HttpCallback &callback) {
+    return PostUrlInternal(url, HTTP_REQUEST_METHOD_PUT, static_cast<const u8*>(body), body_size, content_type, headers, callback);
+}
+
+#if 0
 static noz::TaskHandle SetupPostRequest(
     HttpRequestImpl* req,
     const char* url,
@@ -175,7 +163,7 @@ static noz::TaskHandle SetupPostRequest(
         req->body_size = body_size;
     }
 
-    if (g_active_count < MAX_CONCURRENT_REQUESTS) {
+    if (g_http.active_count < g_http.max_concurrent_requests) {
         StartRequest(req);
     } else {
         QueuePush(req);
@@ -183,76 +171,37 @@ static noz::TaskHandle SetupPostRequest(
 
     return req->task;
 }
+#endif
 
-noz::TaskHandle PostUrl(
-    const char *url,
-    const void *body,
-    u32 body_size,
-    const char *content_type,
-    const char *headers,
-    const HttpCallback &on_complete) {
-    HttpRequestImpl *req = AllocRequest();
-    return SetupPostRequest(req, url, body, body_size, content_type, headers, "POST", on_complete);
-}
-
-noz::TaskHandle PutUrl(const char *url, const void *body, u32 body_size, const char *content_type,
-                       const char *headers, const HttpCallback &on_complete) {
-    HttpRequestImpl *req = AllocRequest();
-    return SetupPostRequest(req, url, body, body_size, content_type, headers, "PUT", on_complete);
-}
-
-const char* GetRequestUrl(HttpRequest* request) {
+const char* noz::GetUrl(HttpRequest* request) {
     if (!request) return nullptr;
     return static_cast<HttpRequestImpl*>(request)->url;
 }
 
-int GetStatusCode(HttpRequest *request) {
-    if (!request)
-        return 0;
-
-    HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
-    return req->cached_status_code;
+int noz::GetStatusCode(HttpRequest *request) {
+    if (!request) return 0;
+    return static_cast<HttpRequestImpl*>(request)->status_code;
 }
 
-bool IsSuccess(HttpRequest *request) {
+bool noz::IsSuccess(HttpRequest *request) {
     int code = GetStatusCode(request);
     return code >= 200 && code < 300;
 }
 
-Stream *GetResponseStream(HttpRequest *request, Allocator *allocator) {
+Stream* noz::GetResponseStream(HttpRequest *request) {
     if (!request) return nullptr;
-    HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
-    return LoadStream(allocator, req->cached_response, req->cached_response_size);
+    return static_cast<HttpRequestImpl*>(request)->response;
 }
 
-const char *GetResponseString(HttpRequest *request) {
-    if (!request)
-        return nullptr;
-
-    HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
-
-    // Return cached string if available
-    if (req->response_string)
-        return req->response_string;
-
-    if (!req->cached_response || req->cached_response_size == 0)
-        return nullptr;
-
-    // Allocate and null-terminate
-    req->response_string = static_cast<char *>(Alloc(ALLOCATOR_DEFAULT, req->cached_response_size + 1));
-    memcpy(req->response_string, req->cached_response, req->cached_response_size);
-    req->response_string[req->cached_response_size] = '\0';
-
-    return req->response_string;
+Stream* noz::ReleaseResponseStream(HttpRequest* request) {
+    if (!request) return nullptr;
+    HttpRequestImpl* req = static_cast<HttpRequestImpl*>(request);
+    Stream* response = req->response;
+    req->response = nullptr;
+    return response;
 }
 
-u32 GetResponseSize(HttpRequest *request) {
-    if (!request) return 0;
-    HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
-    return req->cached_response_size;
-}
-
-char* GetResponseHeader(HttpRequest *request, const char *name, Allocator *allocator) {
+char* noz::GetResponseHeader(HttpRequest *request, const char *name, Allocator *allocator) {
     if (!request)
         return nullptr;
 
@@ -260,72 +209,78 @@ char* GetResponseHeader(HttpRequest *request, const char *name, Allocator *alloc
     return PlatformGetResponseHeader(req->handle, name, allocator);
 }
 
-static void FreeRequestData(HttpRequestImpl *req) {
+void noz::EncodeUrl(Text& out, const Text& input) {
+    PlatformEncodeUrl(out.value, TEXT_MAX_LENGTH + 1, input.value, input.length);
+    out.length = Length(out.value);
+}
+
+void FreeRequestData(HttpRequestImpl *req) {
     PlatformFree(req->handle);
-
-    if (req->response_string) {
-        Free(req->response_string);
-        req->response_string = nullptr;
-    }
-    if (req->cached_response) {
-        Free(req->cached_response);
-        req->cached_response = nullptr;
-        req->cached_response_size = 0;
-    }
-    if (req->body) {
-        Free(req->body);
-        req->body = nullptr;
-    }
-    if (req->content_type) {
-        Free(req->content_type);
-        req->content_type = nullptr;
-    }
-    if (req->headers) {
-        Free(req->headers);
-        req->headers = nullptr;
-    }
-    if (req->method) {
-        Free(req->method);
-        req->method = nullptr;
-    }
+    Free(req->body);
+    Clear(req->content_type);
+    Clear(req->headers);
+    req->method = HTTP_REQUEST_METHOD_NONE;
+    req->body = nullptr;
 }
 
-void InitHttp() {
-    g_active_head = nullptr;
-    g_queue_head = nullptr;
-    g_queue_tail = nullptr;
-    g_active_count = 0;
+static void FinishRequest(HttpRequestImpl* request) {
+    assert(request);
+    assert(PlatformGetStatus(request->handle) != PLATFORM_HTTP_STATUS_PENDING);
 
-    PlatformInitHttp();
+    request->state = HTTP_REQUEST_STATE_COMPLETE;
+    request->status_code = PlatformGetStatusCode(request->handle);
+    request->response = PlatformReleaseResponseStream(request->handle);
+    PlatformFree(request->handle);
+    request->handle = {};
+
+    if (request->callback)
+        request->callback(request);
+
+    CompleteTask(request->task, request);
 }
 
-void ShutdownHttp() {
-    // Free all active requests
-    while (g_active_head) {
-        HttpRequestImpl *req = g_active_head;
-        g_active_head = req->next;
-        FreeRequestData(req);
-        Free(req);
-    }
+void noz::UpdateHttp() {
+    if (g_http.request_count == 0)
+        return;
 
-    // Free all queued requests
-    while (g_queue_head) {
-        HttpRequestImpl *req = g_queue_head;
-        g_queue_head = req->next;
-        FreeRequestData(req);
-        Free(req);
-    }
-
-    g_queue_tail = nullptr;
-    g_active_count = 0;
-
-    PlatformShutdownHttp();
-}
-
-void UpdateHttp() {
     PlatformUpdateHttp();
 
-    HttpRequestImpl *req = g_active_head;
+    int active_count = 0;
+
+    for (int request_index=0, request_count=g_http.request_count; request_index < g_http.max_requests && request_count; request_index++) {
+        HttpRequestImpl* request = g_http.requests + request_index;
+        // @active
+        if (request->state == HTTP_REQUEST_STATE_ACTIVE) {
+            if (PlatformGetStatus(request->handle) != PLATFORM_HTTP_STATUS_PENDING) {
+                FinishRequest(request);
+            } else {
+                active_count++;
+            }
+
+        // @complete
+        } else if (request->state == HTTP_REQUEST_STATE_COMPLETE) {
+            // if (!IsTaskValid(request->task)) {
+            //     request->
+            // }
+        }
+    }
+
+    // Start queued requests if under limit
+    if (active_count < g_http.max_concurrent_requests) {
+        for (int request_index=0, request_count=g_http.request_count;
+            request_index < g_http.max_requests && request_count && active_count < g_http.max_concurrent_requests;
+            request_index++) {
+            HttpRequestImpl* request = g_http.requests + request_index;
+            if (request->state != HTTP_REQUEST_STATE_QUEUED) continue;
+            StartRequest(request);
+            active_count++;
+        }
+    }
+
+#if 0
+    //if (g_http.queue_count > 0 &&
+
+    HttpRequestImpl *req = g_http.active_head;
     while (req) {
         HttpRequestImpl *next = req->next;
 
@@ -378,9 +333,44 @@ void UpdateHttp() {
     }
 
     TryStartQueued();
+#endif
 }
 
-void EncodeUrl(Text& out, const Text& input) {
-    PlatformEncodeUrl(out.value, TEXT_MAX_LENGTH + 1, input.value, input.length);
-    out.length = (int)strlen(out.value);
+void noz::InitHttp(const ApplicationTraits& traits) {
+    g_http = {};
+    g_http.max_concurrent_requests = traits.http.max_concurrent_requests;
+    g_http.max_requests = traits.http.max_requests;
+    g_http.requests = new HttpRequestImpl[g_http.max_requests];
+
+    for (int request_index = 0; request_index < g_http.max_requests; request_index++) {
+        HttpRequestImpl* request = g_http.requests + request_index;
+        request->state = HTTP_REQUEST_STATE_NONE;
+    }
+
+    PlatformInitHttp(traits);
 }
+
+void noz::ShutdownHttp() {
+    // while (g_http.active_head) {
+    //     HttpRequestImpl *req = g_http.active_head;
+    //     g_http.active_head = req->next;
+    //     FreeRequestData(req);
+    //     Free(req);
+    // }
+    //
+    // while (g_http.queue_head) {
+    //     HttpRequestImpl *req = g_http.queue_head;
+    //     g_http.queue_head = req->next;
+    //     FreeRequestData(req);
+    //     Free(req);
+    // }
+
+    delete[] g_http.requests;
+    g_http.requests = nullptr;
+    g_http.max_concurrent_requests = 0;
+    g_http.max_requests = 0;
+    //g_http.active_count = 0;
+
+    PlatformShutdownHttp();
+}
+

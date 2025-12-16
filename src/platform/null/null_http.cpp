@@ -4,7 +4,8 @@
 
 #include "../../platform.h"
 
-void PlatformInitHttp() {
+void PlatformInitHttp(const ApplicationTraits& traits) {
+    (void)traits;
 }
 
 void PlatformShutdownHttp() {

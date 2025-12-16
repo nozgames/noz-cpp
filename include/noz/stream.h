@@ -32,6 +32,7 @@ extern u8* GetData(Stream* stream);
 inline u8* GetDataAt(Stream* stream, u32 position) { return GetData(stream) + position; }
 extern u32 GetSize(Stream* stream);
 extern void Clear(Stream* stream);
+extern void Resize(Stream* stream, u32 capcity);
 
 // @position
 u32 GetPosition(Stream* stream);

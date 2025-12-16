@@ -22,93 +22,74 @@
 #define INTERNET_REQFLAG_FROM_CACHE 0x00000001
 #endif
 
-constexpr int MAX_HTTP_REQUESTS = 16;
-
-struct WindowsHttpRequest
-{
-    HINTERNET connection;    // For POST/PUT: connection handle (must stay open)
+struct WindowsHttpRequest {
+    HINTERNET connection;
     HINTERNET request;
-    u8* response_data;
-    u32 response_size;
-    u32 response_capacity;
+    Stream* response;
     u8* request_body;
     u32 request_body_size;
     u32 generation;
-    HttpStatus status;
+    PlatformHttpStatus status;
     int status_code;
-    std::atomic<bool> send_complete{false};  // Set from callback thread
+    std::atomic<bool> send_complete{false};
     bool headers_received;
     bool from_cache;
 };
 
-struct WindowsHttp
-{
+struct WindowsHttp {
     HINTERNET session;
     CRITICAL_SECTION cs;
-    WindowsHttpRequest requests[MAX_HTTP_REQUESTS];
+    WindowsHttpRequest* requests;
+    u32 max_requests;
     u32 next_request_id;
 };
 
-static WindowsHttp g_http = {};
+static WindowsHttp g_windows_http = {};
 
-static u32 GetRequestIndex(const PlatformHttpHandle& handle)
-{
-    return (u32)(handle.value & 0xFFFFFFFF);
+inline u32 GetRequestIndex(const PlatformHttpHandle& handle) {
+    return static_cast<u32>(handle.value & 0xFFFFFFFF);
 }
 
-static u32 GetRequestGeneration(const PlatformHttpHandle& handle)
-{
-    return (u32)(handle.value >> 32);
+inline u32 GetRequestGeneration(const PlatformHttpHandle& handle) {
+    return static_cast<u32>(handle.value >> 32);
 }
 
-static PlatformHttpHandle MakeHttpHandle(u32 index, u32 generation)
-{
+inline PlatformHttpHandle MakeHttpHandle(u32 index, u32 generation) {
     PlatformHttpHandle handle;
-    handle.value = ((u64)generation << 32) | (u64)index;
+    handle.value = (static_cast<u64>(generation) << 32) | static_cast<u64>(index);
     return handle;
 }
 
-static WindowsHttpRequest* GetRequest(const PlatformHttpHandle& handle)
-{
+static WindowsHttpRequest* GetRequest(const PlatformHttpHandle& handle) {
     u32 index = GetRequestIndex(handle);
     u32 generation = GetRequestGeneration(handle);
-
-    if (index >= MAX_HTTP_REQUESTS)
+    if (index >= g_windows_http.max_requests)
         return nullptr;
 
-    WindowsHttpRequest& request = g_http.requests[index];
+    WindowsHttpRequest& request = g_windows_http.requests[index];
     if (request.generation != generation)
         return nullptr;
 
     return &request;
 }
 
-static void CleanupRequest(WindowsHttpRequest* request)
-{
+static void CleanupRequest(WindowsHttpRequest* request) {
     if (request->request)
-    {
         InternetCloseHandle(request->request);
-        request->request = nullptr;
-    }
     if (request->connection)
-    {
         InternetCloseHandle(request->connection);
-        request->connection = nullptr;
-    }
-    if (request->response_data)
-    {
-        Free(request->response_data);
-        request->response_data = nullptr;
-    }
+
+    Free(request->response);
+
     if (request->request_body)
-    {
         Free(request->request_body);
-        request->request_body = nullptr;
-    }
-    request->response_size = 0;
-    request->response_capacity = 0;
+
+    request->connection = nullptr;
+    request->request = nullptr;
+    request->request_body = nullptr;
+    request->response = nullptr;
     request->request_body_size = 0;
-    request->status = HttpStatus::None;
+    request->status = PLATFORM_HTTP_STATUS_NONE;
     request->status_code = 0;
     request->send_complete.store(false);
     request->headers_received = false;
@@ -120,8 +101,7 @@ static void CALLBACK InternetCallback(
     DWORD_PTR dwContext,
     DWORD dwInternetStatus,
     LPVOID lpvStatusInformation,
-    DWORD dwStatusInformationLength)
-{
+    DWORD dwStatusInformationLength) {
     (void)hInternet;
     (void)dwStatusInformationLength;
 
@@ -129,12 +109,11 @@ static void CALLBACK InternetCallback(
     if (!request)
         return;
 
-    // Validate the request pointer is within our array
-    if (request < &g_http.requests[0] || request >= &g_http.requests[MAX_HTTP_REQUESTS])
+    if (request < &g_windows_http.requests[0] ||
+        request >= &g_windows_http.requests[g_windows_http.max_requests])
         return;
 
-    // Skip if request slot was already cleaned up/reused
-    if (request->status != HttpStatus::Pending)
+    if (request->status != PLATFORM_HTTP_STATUS_PENDING)
         return;
 
     switch (dwInternetStatus)
@@ -146,16 +125,16 @@ static void CALLBACK InternetCallback(
             if (result->dwError >= INTERNET_ERROR_BASE)
             {
                 LogError("HTTP async error: %lu (0x%08lX)", result->dwError, result->dwError);
-                request->status = HttpStatus::Error;
+                request->status = PLATFORM_HTTP_STATUS_ERROR;
             }
             else
             {
                 // For InternetOpenUrlW async, the handle comes in dwResult
-                EnterCriticalSection(&g_http.cs);
+                EnterCriticalSection(&g_windows_http.cs);
                 if (!request->request && result->dwResult)
                     request->request = (HINTERNET)result->dwResult;
                 request->send_complete.store(true);
-                LeaveCriticalSection(&g_http.cs);
+                LeaveCriticalSection(&g_windows_http.cs);
             }
             break;
         }
@@ -166,180 +145,192 @@ static void CALLBACK InternetCallback(
     }
 }
 
-void PlatformInitHttp()
-{
-    // Zero initialize (can't use = {} due to atomic members)
-    g_http.session = nullptr;
-    g_http.next_request_id = 0;
-    for (int i = 0; i < MAX_HTTP_REQUESTS; i++)
-    {
-        WindowsHttpRequest& req = g_http.requests[i];
-        req.connection = nullptr;
-        req.request = nullptr;
-        req.response_data = nullptr;
-        req.response_size = 0;
-        req.response_capacity = 0;
-        req.request_body = nullptr;
-        req.request_body_size = 0;
-        req.generation = 0;
-        req.status = HttpStatus::None;
-        req.status_code = 0;
-        req.send_complete.store(false);
-        req.headers_received = false;
-        req.from_cache = false;
-    }
-    InitializeCriticalSection(&g_http.cs);
+void PlatformInitHttp(const ApplicationTraits& traits) {
+    g_windows_http.session = nullptr;
+    g_windows_http.next_request_id = 0;
+    g_windows_http.requests = new WindowsHttpRequest[traits.http.max_concurrent_requests];
+    g_windows_http.max_requests = static_cast<u32>(traits.http.max_concurrent_requests);
 
-    g_http.session = InternetOpenW(
+    for (u32 request_index=0; request_index < g_windows_http.max_requests; request_index++) {
+        WindowsHttpRequest& reqeust = g_windows_http.requests[request_index];
+        reqeust.connection = nullptr;
+        reqeust.request = nullptr;
+        reqeust.response = nullptr;
+        reqeust.request_body = nullptr;
+        reqeust.request_body_size = 0;
+        reqeust.generation = 0;
+        reqeust.status = PLATFORM_HTTP_STATUS_NONE;
+        reqeust.status_code = 0;
+        reqeust.send_complete.store(false);
+        reqeust.headers_received = false;
+        reqeust.from_cache = false;
+    }
+
+    InitializeCriticalSection(&g_windows_http.cs);
+
+    g_windows_http.session = InternetOpenW(
         L"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         INTERNET_OPEN_TYPE_PRECONFIG,
         nullptr,
         nullptr,
         INTERNET_FLAG_ASYNC);
 
-    if (!g_http.session)
+    if (!g_windows_http.session)
     {
         LogError("Failed to initialize WinINet session: %lu", GetLastError());
         return;
     }
 
     // Set callback for async operations
-    InternetSetStatusCallback(g_http.session, InternetCallback);
+    InternetSetStatusCallback(g_windows_http.session, InternetCallback);
 
     // Set timeouts
     DWORD timeout = 30000;
-    InternetSetOptionW(g_http.session, INTERNET_OPTION_CONNECT_TIMEOUT, &timeout, sizeof(timeout));
-    InternetSetOptionW(g_http.session, INTERNET_OPTION_SEND_TIMEOUT, &timeout, sizeof(timeout));
-    InternetSetOptionW(g_http.session, INTERNET_OPTION_RECEIVE_TIMEOUT, &timeout, sizeof(timeout));
+    InternetSetOptionW(g_windows_http.session, INTERNET_OPTION_CONNECT_TIMEOUT, &timeout, sizeof(timeout));
+    InternetSetOptionW(g_windows_http.session, INTERNET_OPTION_SEND_TIMEOUT, &timeout, sizeof(timeout));
+    InternetSetOptionW(g_windows_http.session, INTERNET_OPTION_RECEIVE_TIMEOUT, &timeout, sizeof(timeout));
 }
 
-void PlatformUpdateHttp()
-{
-    // Poll for data on pending requests
-    for (int i = 0; i < MAX_HTTP_REQUESTS; i++)
-    {
-        WindowsHttpRequest& request = g_http.requests[i];
-        if (request.status != HttpStatus::Pending || !request.request)
+static void ProcessReuqest(WindowsHttpRequest& request) {
+    if (!request.headers_received) {
+        DWORD status_code = 0;
+        DWORD size;
+
+        // @content_length
+        DWORD content_length = 0;
+        size = sizeof(content_length);
+        if (HttpQueryInfoW(
+            request.request,
+            HTTP_QUERY_CONTENT_LENGTH | HTTP_QUERY_FLAG_NUMBER,
+            &content_length,
+            &size,
+            nullptr))
+        {
+            if (content_length > 0) {
+                if (request.response == nullptr)
+                    request.response = CreateStream(ALLOCATOR_DEFAULT, content_length);
+                else
+                    Resize(request.response, content_length);
+            }
+        }
+
+        size = sizeof(status_code);
+        if (HttpQueryInfoW(
+            request.request,
+            HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER,
+            &status_code,
+            &size,
+            nullptr))
+        {
+            request.status_code = static_cast<int>(status_code);
+            request.headers_received = true;
+
+            // Check if response came from cache using InternetQueryOption
+            DWORD req_flags = 0;
+            size = sizeof(req_flags);
+            if (InternetQueryOptionW(
+                request.request,
+                INTERNET_OPTION_REQUEST_FLAGS,
+                &req_flags,
+                &size))
+            {
+                request.from_cache = (req_flags & INTERNET_REQFLAG_FROM_CACHE) != 0;
+            }
+
+        } else {
+            DWORD err = GetLastError();
+            if (err != ERROR_IO_PENDING) {
+                // Headers not available yet or error
+                if (err != ERROR_HTTP_HEADER_NOT_FOUND)
+                    return;
+            }
+        }
+    }
+
+    DWORD bytes_available = 0;
+    if (!InternetQueryDataAvailable(request.request, &bytes_available, 0, 0)) {
+        DWORD err = GetLastError();
+        if (err == ERROR_IO_PENDING)
+            return;
+
+        request.status = PLATFORM_HTTP_STATUS_ERROR;
+        return;
+    }
+
+    if (bytes_available == 0) {
+        request.status = PLATFORM_HTTP_STATUS_COMPLETE;
+        return;
+    }
+
+    if (!request.response)
+        request.response = CreateStream(ALLOCATOR_DEFAULT, Min(8192, bytes_available));
+
+    DWORD bytes_read = 0;
+    while (bytes_available > 0) {
+        u32 to_read = Min(bytes_available, 8192);
+        u8 temp_buffer[8192];
+        if (!InternetReadFile(
+            request.request,
+            temp_buffer,
+            to_read,
+            &bytes_read))
+        {
+            DWORD err = GetLastError();
+            if (err == ERROR_IO_PENDING)
+                return;
+
+            request.status = PLATFORM_HTTP_STATUS_ERROR;
+            return;
+        }
+
+        if (bytes_read == 0) {
+            request.status = PLATFORM_HTTP_STATUS_COMPLETE;
+            return;
+        }
+
+        // Append to response stream
+        WriteBytes(request.response, temp_buffer, bytes_read);
+
+        bytes_available -= bytes_read;
+    }
+}
+
+void PlatformUpdateHttp() {
+    for (u32 request_index = 0; request_index < g_windows_http.max_requests; request_index++) {
+        WindowsHttpRequest& request = g_windows_http.requests[request_index];
+        if (request.status != PLATFORM_HTTP_STATUS_PENDING || !request.request)
             continue;
 
         // Wait for send/open to complete before reading
         if (!request.send_complete.load())
             continue;
 
-        // Check if we need to get headers first
-        if (!request.headers_received)
-        {
-            DWORD status_code = 0;
-            DWORD size = sizeof(status_code);
-            if (HttpQueryInfoW(
-                request.request,
-                HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER,
-                &status_code,
-                &size,
-                nullptr))
-            {
-                request.status_code = (int)status_code;
-                request.headers_received = true;
-
-                // Check if response came from cache using InternetQueryOption
-                DWORD req_flags = 0;
-                size = sizeof(req_flags);
-                if (InternetQueryOptionW(
-                    request.request,
-                    INTERNET_OPTION_REQUEST_FLAGS,
-                    &req_flags,
-                    &size))
-                {
-                    request.from_cache = (req_flags & INTERNET_REQFLAG_FROM_CACHE) != 0;
-                }
-            }
-            else
-            {
-                DWORD err = GetLastError();
-                if (err != ERROR_IO_PENDING)
-                {
-                    // Headers not available yet or error
-                    if (err != ERROR_HTTP_HEADER_NOT_FOUND)
-                        continue;
-                }
-            }
-        }
-
-        // Try to read available data
-        DWORD bytes_available = 0;
-        if (!InternetQueryDataAvailable(request.request, &bytes_available, 0, 0))
-        {
-            DWORD err = GetLastError();
-            if (err == ERROR_IO_PENDING)
-                continue;
-
-            // Error
-            request.status = HttpStatus::Error;
-            continue;
-        }
-
-        if (bytes_available > 0)
-        {
-            // Grow buffer if needed
-            u32 new_size = request.response_size + bytes_available;
-            if (new_size > request.response_capacity)
-            {
-                u32 new_capacity = Max(request.response_capacity * 2, new_size + 4096);
-                u8* new_data = (u8*)Alloc(ALLOCATOR_DEFAULT, new_capacity);
-                if (request.response_data)
-                {
-                    memcpy(new_data, request.response_data, request.response_size);
-                    Free(request.response_data);
-                }
-                request.response_data = new_data;
-                request.response_capacity = new_capacity;
-            }
-
-            DWORD bytes_read = 0;
-            if (InternetReadFile(
-                request.request,
-                request.response_data + request.response_size,
-                bytes_available,
-                &bytes_read))
-            {
-                request.response_size += bytes_read;
-            }
-        }
-        else
-        {
-            // No more data - request complete
-            request.status = HttpStatus::Complete;
-        }
+        ProcessReuqest(request);
     }
 }
 
-void PlatformShutdownHttp()
-{
-    for (int i = 0; i < MAX_HTTP_REQUESTS; i++)
-    {
-        CleanupRequest(&g_http.requests[i]);
+void PlatformShutdownHttp() {
+    for (u32 request_index=0; request_index < g_windows_http.max_requests; request_index++) {
+        CleanupRequest(&g_windows_http.requests[request_index]);
     }
 
-    if (g_http.session)
+    if (g_windows_http.session)
     {
-        InternetCloseHandle(g_http.session);
-        g_http.session = nullptr;
+        InternetCloseHandle(g_windows_http.session);
+        g_windows_http.session = nullptr;
     }
 
-    DeleteCriticalSection(&g_http.cs);
+    DeleteCriticalSection(&g_windows_http.cs);
 }
 
-static WindowsHttpRequest* AllocRequest(u32* out_index)
-{
-    for (int i = 0; i < MAX_HTTP_REQUESTS; i++)
-    {
-        if (g_http.requests[i].status == HttpStatus::None ||
-            g_http.requests[i].status == HttpStatus::Complete ||
-            g_http.requests[i].status == HttpStatus::Error)
-        {
-            CleanupRequest(&g_http.requests[i]);
-            *out_index = i;
-            return &g_http.requests[i];
+static WindowsHttpRequest* AllocRequest(u32* out_index) {
+    for (u32 request_index=0; request_index<g_windows_http.max_requests; request_index++) {
+        if (g_windows_http.requests[request_index].status == PLATFORM_HTTP_STATUS_NONE ||
+            g_windows_http.requests[request_index].status == PLATFORM_HTTP_STATUS_COMPLETE ||
+            g_windows_http.requests[request_index].status == PLATFORM_HTTP_STATUS_ERROR) {
+            CleanupRequest(&g_windows_http.requests[request_index]);
+            *out_index = request_index;
+            return &g_windows_http.requests[request_index];
         }
     }
     return nullptr;
@@ -347,7 +338,7 @@ static WindowsHttpRequest* AllocRequest(u32* out_index)
 
 PlatformHttpHandle PlatformGetURL(const char* url)
 {
-    if (!g_http.session)
+    if (!g_windows_http.session)
         return MakeHttpHandle(0, 0xFFFFFFFF);
 
     u32 request_index = 0;
@@ -374,7 +365,7 @@ PlatformHttpHandle PlatformGetURL(const char* url)
 
     // Open URL - WinINet handles connection pooling and caching automatically
     request->request = InternetOpenUrlW(
-        g_http.session,
+        g_windows_http.session,
         wide_url,
         nullptr,  // headers
         0,        // headers length
@@ -399,15 +390,14 @@ PlatformHttpHandle PlatformGetURL(const char* url)
         request->send_complete.store(true);
     }
 
-    request->status = HttpStatus::Pending;
-    request->generation = ++g_http.next_request_id;
+    request->status = PLATFORM_HTTP_STATUS_PENDING;
+    request->generation = ++g_windows_http.next_request_id;
 
     return MakeHttpHandle(request_index, request->generation);
 }
 
-PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type, const char* headers, const char* method)
-{
-    if (!g_http.session)
+PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type, const char* headers, const char* method) {
+    if (!g_windows_http.session)
         return MakeHttpHandle(0, 0xFFFFFFFF);
 
     u32 request_index = 0;
@@ -444,7 +434,7 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
 
     // Connect
     HINTERNET connection = InternetConnectW(
-        g_http.session,
+        g_windows_http.session,
         hostname,
         url_components.nPort,
         nullptr,
@@ -527,8 +517,8 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
         request->request_body_size = body_size;
     }
 
-    request->status = HttpStatus::Pending;
-    request->generation = ++g_http.next_request_id;
+    request->status = PLATFORM_HTTP_STATUS_PENDING;
+    request->generation = ++g_windows_http.next_request_id;
 
     // Send request
     if (!HttpSendRequestW(
@@ -542,7 +532,7 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
         if (err != ERROR_IO_PENDING)
         {
             LogError("HttpSendRequest failed: %lu (0x%08lX)", err, err);
-            request->status = HttpStatus::Error;
+            request->status = PLATFORM_HTTP_STATUS_ERROR;
         }
         // Otherwise wait for callback to set send_complete
     }
@@ -555,12 +545,9 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
     return MakeHttpHandle(request_index, request->generation);
 }
 
-HttpStatus PlatformGetStatus(const PlatformHttpHandle& handle)
-{
+PlatformHttpStatus PlatformGetStatus(const PlatformHttpHandle& handle) {
     WindowsHttpRequest* request = GetRequest(handle);
-    if (!request)
-        return HttpStatus::None;
-
+    if (!request) return PLATFORM_HTTP_STATUS_NONE;
     return request->status;
 }
 
@@ -582,17 +569,14 @@ bool PlatformIsFromCache(const PlatformHttpHandle& handle)
     return request->from_cache;
 }
 
-const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size)
-{
+Stream* PlatformReleaseResponseStream(const PlatformHttpHandle& handle) {
     WindowsHttpRequest* request = GetRequest(handle);
-    if (!request || request->status != HttpStatus::Complete)
-    {
-        if (out_size) *out_size = 0;
+    if (!request || request->status != PLATFORM_HTTP_STATUS_COMPLETE)
         return nullptr;
-    }
 
-    if (out_size) *out_size = request->response_size;
-    return request->response_data;
+    Stream* stream = request->response;
+    request->response = nullptr;
+    return stream;
 }
 
 char* PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, Allocator* allocator)

@@ -37,6 +37,10 @@ struct ApplicationTraits {
     u32 max_event_stack;
     u32 max_tasks;
     u32 max_task_worker_count;
+    struct {
+        u32 max_requests;
+        u32 max_concurrent_requests;
+    } http;
     u16 editor_port;
     float ui_depth;
     RendererTraits renderer;

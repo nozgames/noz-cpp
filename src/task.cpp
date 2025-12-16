@@ -398,8 +398,6 @@ namespace noz {
             g_tasks.workers[i].current_task = nullptr;
             g_tasks.workers[i].thread = std::thread(WorkerProc, &g_tasks.workers[i], i);
         }
-
-        LogInfo("Task system initialized with %d workers, %d max tasks", worker_count, max_tasks);
     }
 
     void ShutdownTasks() {
