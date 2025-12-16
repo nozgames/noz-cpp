@@ -79,7 +79,7 @@ static HttpRequestImpl* GetRequest(const char* url, HttpRequestMethod method, Ta
     HttpRequestImpl* request = g_http.requests + request_index;
     Set(request->url, url);
     request->task = CreateTask(FreeRequestData);
-    SetTaskParent(request->task, parent);
+    SetParent(request->task, parent);
     request->method = method;
     request->callback = callback;
     request->state = HTTP_REQUEST_STATE_QUEUED;
@@ -111,7 +111,7 @@ static void StartRequest(HttpRequestImpl* request) {
 
 Task noz::GetUrl(const char *url, Task parent, const HttpCallback& callback) {
     HttpRequestImpl* req = GetRequest(url, HTTP_REQUEST_METHOD_GET, parent, callback);
-    if (!req) return TASK_HANDLE_INVALID;
+    if (!req) return nullptr;
     return req->task;
 }
 
@@ -125,7 +125,7 @@ static Task PostUrlInternal(
     Task parent,
     const HttpCallback &callback) {
     HttpRequestImpl* req = GetRequest(url, method, parent, callback);
-    if (!req) return TASK_HANDLE_INVALID;
+    if (!req) return nullptr;
     Set(req->content_type, content_type);
     Set(req->headers, headers);
     req->body = static_cast<u8*>(Alloc(ALLOCATOR_DEFAULT, body_size));
@@ -209,7 +209,7 @@ static void FinishRequest(HttpRequestImpl* request) {
     if (request->callback)
         request->callback(request->task, request);
 
-    CompleteTask(request->task, request);
+    Complete(request->task, request);
 }
 
 void noz::UpdateHttp() {
@@ -225,13 +225,13 @@ void noz::UpdateHttp() {
 
         // Check if parent task was canceled - abort the request
         Task parent = GetParent(request->task);
-        if (parent && IsTaskCanceled(parent)) {
+        if (parent && IsCancelled(parent)) {
             if (request->state == HTTP_REQUEST_STATE_ACTIVE) {
                 PlatformCancel(request->handle);
                 PlatformFree(request->handle);
                 request->handle = {};
             }
-            CancelTask(request->task);
+            Cancel(request->task);
             request->state = HTTP_REQUEST_STATE_NONE;
             g_http.request_count--;
             continue;

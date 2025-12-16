@@ -15,7 +15,7 @@ namespace noz {
 
         constexpr Task() = default;
         constexpr Task(u32 id, u32 generation) : id(id), generation(generation) {}
-        constexpr Task(std::nullptr_t) : id(0), generation(0) {}
+        constexpr Task(std::nullptr_t) {}
 
         bool operator==(const Task& other) const { return id == other.id && generation == other.generation; }
         bool operator!=(const Task& other) const { return !(*this == other); }
@@ -24,7 +24,7 @@ namespace noz {
         explicit operator bool() const { return generation != 0; }
     };
 
-    constexpr Task TASK_HANDLE_INVALID = {};
+    constexpr Task TASK_NULL = {};
 
     enum TaskState {
         TASK_STATE_FREE,
@@ -65,16 +65,16 @@ namespace noz {
         TaskDestroyFunc destroy_func = nullptr);
 
     extern Task CreateTask(TaskDestroyFunc destroy_func = nullptr);
-    extern void CompleteTask(Task task, void* result);
-    extern void* GetTaskResult(Task task);
-    extern void* ReleaseTaskResult(Task task);  // Takes ownership, caller responsible for cleanup
+    extern void Complete(Task task, void* result);
+    extern void* GetResult(Task task);
+    extern void* ReleaseResult(Task task);  // Takes ownership, caller responsible for cleanup
     extern int GetDependencyCount(Task task);
     extern Task GetDependencyAt(Task task, int index);
     extern Task GetParent(Task task);
-    extern void SetTaskParent(Task task, Task parent);
-    extern bool IsTaskComplete(Task task);
+    extern void SetParent(Task task, Task parent);
+    extern bool IsComplete(Task task);
     extern bool IsTaskValid(Task task);
-    extern bool IsTaskCanceled(Task task);
-    extern void CancelTask(Task task);
+    extern bool IsCancelled(Task task);
+    extern void Cancel(Task task);
 
 } // namespace noz
