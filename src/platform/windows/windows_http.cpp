@@ -74,6 +74,7 @@ static WindowsHttpRequest* GetRequest(const PlatformHttpHandle& handle) {
 }
 
 static void CleanupRequest(WindowsHttpRequest* request) {
+    LogInfo("[WIN_HTTP] CleanupRequest: request=%p, handle=%p, response=%p", request, request->request, request->response);
     if (request->request)
         InternetCloseHandle(request->request);
     if (request->connection)
@@ -94,6 +95,7 @@ static void CleanupRequest(WindowsHttpRequest* request) {
     request->send_complete.store(false);
     request->headers_received = false;
     request->from_cache = false;
+    LogInfo("[WIN_HTTP] CleanupRequest: done");
 }
 
 static void CALLBACK InternetCallback(
@@ -570,12 +572,16 @@ bool PlatformIsFromCache(const PlatformHttpHandle& handle)
 }
 
 Stream* PlatformReleaseResponseStream(const PlatformHttpHandle& handle) {
+    LogInfo("[WIN_HTTP] PlatformReleaseResponseStream: handle idx=%u gen=%u", GetRequestIndex(handle), GetRequestGeneration(handle));
     WindowsHttpRequest* request = GetRequest(handle);
-    if (!request || request->status != PLATFORM_HTTP_STATUS_COMPLETE)
+    if (!request || request->status != PLATFORM_HTTP_STATUS_COMPLETE) {
+        LogInfo("[WIN_HTTP] PlatformReleaseResponseStream: request not found or not complete");
         return nullptr;
+    }
 
     Stream* stream = request->response;
     request->response = nullptr;
+    LogInfo("[WIN_HTTP] PlatformReleaseResponseStream: returning stream=%p", stream);
     return stream;
 }
 
@@ -635,12 +641,16 @@ void PlatformCancel(const PlatformHttpHandle& handle)
 
 void PlatformFree(const PlatformHttpHandle& handle)
 {
+    LogInfo("[WIN_HTTP] PlatformFree: handle idx=%u gen=%u", GetRequestIndex(handle), GetRequestGeneration(handle));
     WindowsHttpRequest* request = GetRequest(handle);
-    if (!request)
+    if (!request) {
+        LogInfo("[WIN_HTTP] PlatformFree: request not found");
         return;
+    }
 
     CleanupRequest(request);
     request->generation++;
+    LogInfo("[WIN_HTTP] PlatformFree: done, new gen=%u", request->generation);
 }
 
 void PlatformEncodeUrl(char* out, u32 out_size, const char* input, u32 input_length)

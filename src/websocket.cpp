@@ -92,17 +92,23 @@ static WebSocketImpl* AllocWebSocket() {
 }
 
 WebSocket* CreateWebSocket(Allocator* allocator, const char* url, WebSocketProc proc, void* user_data) {
+    LogInfo("[WS] CreateWebSocket: url=%s", url);
     (void)allocator;
     WebSocketImpl* ws = AllocWebSocket();
-    if (!ws)
+    if (!ws) {
+        LogWarning("[WS] CreateWebSocket: AllocWebSocket failed");
         return nullptr;
+    }
 
+    LogInfo("[WS] CreateWebSocket: calling PlatformConnectWebSocket");
     ws->handle = PlatformConnectWebSocket(url);
+    LogInfo("[WS] CreateWebSocket: got handle id=%u gen=%u", (u32)(ws->handle.value & 0xFFFFFFFF), (u32)(ws->handle.value >> 32));
     ws->last_status = WebSocketStatus::Connecting;
     ws->connect_callback_fired = false;
     ws->proc = proc;
     ws->user_data = user_data;
 
+    LogInfo("[WS] CreateWebSocket: done");
     return reinterpret_cast<WebSocket *>(ws);
 }
 
@@ -231,7 +237,9 @@ void ShutdownWebSocket()
 
 void UpdateWebSocket()
 {
+    LogInfo("[WS] UpdateWebSocket: enter");
     PlatformUpdateWebSocket();
+    LogInfo("[WS] UpdateWebSocket: PlatformUpdateWebSocket done");
 
     for (int i = 0; i < MAX_WEBSOCKETS; i++)
     {
@@ -240,67 +248,75 @@ void UpdateWebSocket()
             continue;
 
         WebSocketStatus current = PlatformGetStatus(ws.handle);
+        LogInfo("[WS] UpdateWebSocket: socket %d, current status=%d, last_status=%d", i, (int)current, (int)ws.last_status);
 
         // Check for connection success/failure
         if (!ws.connect_callback_fired)
         {
             if (current == WebSocketStatus::Connected)
             {
+                LogInfo("[WS] UpdateWebSocket: firing CONNECTED callback for socket %d", i);
                 ws.connect_callback_fired = true;
                 ws.proc(reinterpret_cast<WebSocket *>(&ws), WEBSOCKET_EVENT_CONNECTED, nullptr, 0, ws.user_data);
+                LogInfo("[WS] UpdateWebSocket: CONNECTED callback returned");
             }
             else if (current == WebSocketStatus::Error)
             {
+                LogInfo("[WS] UpdateWebSocket: firing ERROR callback for socket %d", i);
                 ws.connect_callback_fired = true;
                 ws.proc(reinterpret_cast<WebSocket *>(&ws), WEBSOCKET_EVENT_CLOSED, nullptr, 0, ws.user_data);
+                LogInfo("[WS] UpdateWebSocket: ERROR callback returned");
             }
         }
+
+        // Check for disconnect
+        if (current == WebSocketStatus::Error || current == WebSocketStatus::Closed) {
+            if (ws.last_status == WebSocketStatus::Connected) {
+                LogInfo("[WS] UpdateWebSocket: socket %d disconnected (status=%d), firing CLOSED callback", i, (int)current);
+                ws.proc(reinterpret_cast<WebSocket *>(&ws), WEBSOCKET_EVENT_CLOSED, nullptr, 0, ws.user_data);
+                LogInfo("[WS] UpdateWebSocket: CLOSED callback returned");
+            }
+        }
+        ws.last_status = current;
 
         // Dispatch messages
-        while (PlatformHasMessages(ws.handle)) {
-            WebSocketMessageType ptype;
-            u8* data;
-            u32 size;
+        if (current == WebSocketStatus::Connected) {
+            while (PlatformHasMessages(ws.handle)) {
+                LogInfo("[WS] UpdateWebSocket: processing message");
+                WebSocketMessageType ptype;
+                u8* data;
+                u32 size;
 
-            if (PlatformGetMessage(ws.handle, &ptype, &data, &size)) {
-                // Check if message is gzip-compressed and decompress if needed
-                u32 decompressed_size = 0;
-                u8* decompressed_data = DecompressGzip(data, size, &decompressed_size);
+                if (PlatformGetMessage(ws.handle, &ptype, &data, &size)) {
+                    // Check if message is gzip-compressed and decompress if needed
+                    u32 decompressed_size = 0;
+                    u8* decompressed_data = DecompressGzip(data, size, &decompressed_size);
 
-                const u8* final_data = decompressed_data ? decompressed_data : data;
-                u32 final_size = decompressed_data ? decompressed_size : size;
+                    const u8* final_data = decompressed_data ? decompressed_data : data;
+                    u32 final_size = decompressed_data ? decompressed_size : size;
 
-                WebSocketEventMessage event_data = {};
-                event_data.data = final_data;
-                event_data.size = final_size;
-                ws.proc(
-                    reinterpret_cast<WebSocket *>(&ws),
-                    WEBSOCKET_EVENT_MESSAGE,
-                    &event_data,
-                    sizeof(WebSocketEventMessage),
-                    ws.user_data);
+                    WebSocketEventMessage event_data = {};
+                    event_data.data = final_data;
+                    event_data.size = final_size;
+                    ws.proc(
+                        reinterpret_cast<WebSocket *>(&ws),
+                        WEBSOCKET_EVENT_MESSAGE,
+                        &event_data,
+                        sizeof(WebSocketEventMessage),
+                        ws.user_data);
 
-                // Free decompressed buffer if we allocated one
-                if (decompressed_data) {
-                    Free(decompressed_data);
+                    // Free decompressed buffer if we allocated one
+                    if (decompressed_data) {
+                        Free(decompressed_data);
+                    }
+
+                    PlatformPopMessage(ws.handle);
+                } else {
+                    break;
                 }
-
-                PlatformPopMessage(ws.handle);
-            } else {
-                break;
             }
         }
 
-        // Check for close
-        if (ws.last_status == WebSocketStatus::Connected &&
-            (current == WebSocketStatus::Closed || current == WebSocketStatus::Error)) {
-            // if (ws.on_close) {
-            //     // TODO: Get actual close code/reason from platform
-            //     u16 code = (current == WebSocketStatus::Error) ? 1006 : 1000;
-            //     ws.on_close((WebSocket*)&ws, code, nullptr);
-            // }
-        }
-
-        ws.last_status = current;
     }
+    LogInfo("[WS] UpdateWebSocket: exit");
 }

@@ -102,10 +102,9 @@ static void StartRequest(HttpRequestImpl* request) {
         return;
     }
 
-    request->state = HTTP_REQUEST_STATE_ACTIVE;
-
-    // Free the body after sending
     Free(request->body);
+
+    request->state = HTTP_REQUEST_STATE_ACTIVE;
     request->body = nullptr;
 }
 
@@ -151,39 +150,6 @@ TaskHandle noz::PutUrl(
     const HttpCallback &callback) {
     return PostUrlInternal(url, HTTP_REQUEST_METHOD_PUT, static_cast<const u8*>(body), body_size, content_type, headers, callback);
 }
-
-#if 0
-static noz::TaskHandle SetupPostRequest(
-    HttpRequestImpl* req,
-    const char* url,
-    const void* body,
-    u32 body_size,
-    const char* content_type,
-    const char* headers,
-    const char* method,
-    HttpCallback on_complete) {
-    Set(req->url, url);
-    req->method = DupString(method);
-    req->content_type = DupString(content_type);
-    req->headers = DupString(headers);
-    req->callback = on_complete;
-    req->task = noz::CreateVirtualTask();
-
-    if (body && body_size > 0) {
-        req->body = (char *)Alloc(ALLOCATOR_DEFAULT, body_size);
-        memcpy(req->body, body, body_size);
-        req->body_size = body_size;
-    }
-
-    if (g_http.active_count < g_http.max_concurrent_requests) {
-        StartRequest(req);
-    } else {
-        QueuePush(req);
-    }
-
-    return req->task;
-}
-#endif
 
 const char* noz::GetUrl(HttpRequest* request) {
     if (!request) return nullptr;
@@ -279,67 +245,10 @@ void noz::UpdateHttp() {
             active_count++;
         }
     }
-
-#if 0
-    //if (g_http.queue_count > 0 &&
-
-    HttpRequestImpl *req = g_http.active_head;
-    while (req) {
-        HttpRequestImpl *next = req->next;
-
-        HttpStatus current = PlatformGetStatus(req->handle);
-
-        // Only process state transition from Pending to Complete/Error
-        if (req->last_status == HttpStatus::Pending && current != HttpStatus::Pending) {
-            // Update last_status - treat None as Error
-            req->last_status = (current == HttpStatus::Complete) ? HttpStatus::Complete : HttpStatus::Error;
-
-            // Cache status code for thread-safe access
-            req->cached_status_code = PlatformGetStatusCode(req->handle);
-
-            // Log completion with cache status
-            bool from_cache = PlatformIsFromCache(req->handle);
-            LogInfo("HTTP %s: %s %d%s",
-                current == HttpStatus::Complete ? "OK" : "ERR",
-                req->url.value,
-                req->cached_status_code,
-                from_cache ? " (cached)" : "");
-
-            // Cache response data for thread-safe access
-            u32 response_size = 0;
-            const u8 *response_data = PlatformGetResponse(req->handle, &response_size);
-            if (response_data && response_size > 0) {
-                req->cached_response = static_cast<u8*>(Alloc(ALLOCATOR_DEFAULT, response_size));
-                memcpy(req->cached_response, response_data, response_size);
-                req->cached_response_size = response_size;
-            } else {
-                req->cached_response = nullptr;
-                req->cached_response_size = 0;
-            }
-
-            // Remove from active list
-            ActiveListRemove(req);
-            req->state = HttpRequestState::Idle;
-
-            // Call callback if provided
-            if (req->callback) {
-                req->callback(req);
-            }
-
-            // Complete the virtual task with HttpRequest* as result
-            if (req->task) {
-                noz::CompleteTask(req->task, req);
-            }
-        }
-
-        req = next;
-    }
-
-    TryStartQueued();
-#endif
 }
 
 void noz::InitHttp(const ApplicationTraits& traits) {
+    LogInfo("[HTTP] InitHttp: max_concurrent=%d max_requests=%d", traits.http.max_concurrent_requests, traits.http.max_requests);
     g_http = {};
     g_http.max_concurrent_requests = traits.http.max_concurrent_requests;
     g_http.max_requests = traits.http.max_requests;
@@ -351,6 +260,7 @@ void noz::InitHttp(const ApplicationTraits& traits) {
     }
 
     PlatformInitHttp(traits);
+    LogInfo("[HTTP] InitHttp: done");
 }
 
 void noz::ShutdownHttp() {

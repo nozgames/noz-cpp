@@ -310,11 +310,12 @@ namespace noz {
                 TaskState state = task.state.load();
 
                 if (state == TASK_STATE_COMPLETE) {
+                    TaskHandle handle = GetHandle(&task);
+
                     if (task.complete_func)
-                        task.complete_func(GetHandle(&task), task.result);
+                        task.complete_func(handle, task.result);
 
                     // Don't free if pending tasks still depend on us
-                    TaskHandle handle = GetHandle(&task);
                     if (HasPendingDependents(handle))
                         continue;
 
@@ -330,6 +331,7 @@ namespace noz {
                     task.state.store(TASK_STATE_FREE);
                 } else if (state == TASK_STATE_CANCELED) {
                     TaskHandle handle = GetHandle(&task);
+
                     if (HasPendingDependents(handle))
                         continue;
 
@@ -425,6 +427,7 @@ namespace noz {
         for (i32 i = 0; i < max_tasks; i++) {
             g_tasks.tasks[i].state = TASK_STATE_FREE;
             g_tasks.tasks[i].generation = 0;
+            g_tasks.tasks[i].destroy_func = nullptr;
         }
 
         for (i32 i = 0; i < worker_count; i++) {
