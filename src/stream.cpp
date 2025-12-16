@@ -14,6 +14,7 @@ struct StreamImpl : Stream {
     u32 capacity;
     u32 position;
     bool free_data;
+    StreamEndianess endianess;
 };
 
 static void EnsureCapacity(StreamImpl* impl, u32 required_size);
@@ -24,14 +25,19 @@ void StreamDestructor(void* s) {
         Free(impl->data);
 }
 
-Stream* CreateStream(Allocator* allocator, u32 capacity) {
+void SetEndianness(Stream* stream, StreamEndianess endian) {
+    StreamImpl* impl = static_cast<StreamImpl*>(stream);
+    impl->endianess = endian;
+}
+
+Stream* CreateStream(Allocator* allocator, u32 capacity, u32 initial_size) {
     StreamImpl* impl = static_cast<StreamImpl *>(Alloc(allocator, sizeof(StreamImpl), StreamDestructor));
 
     if (capacity == 0)
         capacity = DEFAULT_INITIAL_CAPACITY;
 
     impl->data = static_cast<u8 *>(Alloc(allocator, capacity));
-    impl->size = 0;
+    impl->size = initial_size;
     impl->capacity = capacity;
     impl->position = 0;
     impl->free_data = true;
@@ -109,7 +115,7 @@ bool SaveStream(Stream* stream, const std::filesystem::path& path) {
     return bytes_written == impl->size;
 }
 
-uint8_t* GetData(Stream* stream)
+u8* GetData(Stream* stream)
 {
     return static_cast<StreamImpl*>(stream)->data;
 }
@@ -189,49 +195,57 @@ int ReadString(Stream* stream, char* buffer, int buffer_size)
     return truncated_len;
 }
 
-uint8_t ReadU8(Stream* stream) {
+u8 ReadU8(Stream* stream) {
     if (!stream) return 0;
     
     StreamImpl* impl = static_cast<StreamImpl*>(stream);
     
-    if (impl->position + sizeof(uint8_t) > impl->size)
+    if (impl->position + sizeof(u8) > impl->size)
         return 0;
     
-    uint8_t value = impl->data[impl->position];
-    impl->position += sizeof(uint8_t);
+    u8 value = impl->data[impl->position];
+    impl->position += sizeof(u8);
     assert(impl->position <= impl->size);
     return value;
 }
 
-uint16_t ReadU16(Stream* stream)
-{
-    uint16_t value;
-    ReadBytes(stream, &value, sizeof(uint16_t));
-    return value;
-}
-
-u16 ReadU16BigEndian(Stream* stream) {
+u16 ReadU16(Stream* stream) {
     uint16_t value;
     ReadBytes(stream, &value, sizeof(u16));
-    value = ((value & 0x00FF) << 8) |
-            ((value & 0xFF00) >> 8);
-    return value;
-}
 
-u32 ReadU32BigEndian(Stream* stream) {
-    uint32_t value;
-    ReadBytes(stream, &value, sizeof(u32));
-    value = ((value & 0x000000FF) << 24) |
-            ((value & 0x0000FF00) << 8)  |
-            ((value & 0x00FF0000) >> 8)  |
-            ((value & 0xFF000000) >> 24);
+    if (static_cast<StreamImpl*>(stream)->endianess == STREAM_ENDIANNESS_BIG)
+        value = ((value & 0x00FF) << 8) |
+                ((value & 0xFF00) >> 8);
+
     return value;
 }
 
 u64 ReadU64BigEndian(Stream* stream) {
     uint64_t value;
     ReadBytes(stream, &value, sizeof(u64));
-    value = ((value & 0x00000000000000FFULL) << 56) |
+
+    return value;
+}
+
+u32 ReadU32(Stream* stream) {
+    u32 value;
+    ReadBytes(stream, &value, sizeof(u32));
+
+    if (static_cast<StreamImpl*>(stream)->endianess == STREAM_ENDIANNESS_BIG)
+        value = ((value & 0x000000FF) << 24) |
+            ((value & 0x0000FF00) << 8)  |
+            ((value & 0x00FF0000) >> 8)  |
+            ((value & 0xFF000000) >> 24);
+
+    return value;
+}
+
+uint64_t ReadU64(Stream* stream) {
+    uint64_t value;
+    ReadBytes(stream, &value, sizeof(uint64_t));
+
+    if (static_cast<StreamImpl*>(stream)->endianess == STREAM_ENDIANNESS_BIG)
+        value = ((value & 0x00000000000000FFULL) << 56) |
             ((value & 0x000000000000FF00ULL) << 40) |
             ((value & 0x0000000000FF0000ULL) << 24) |
             ((value & 0x00000000FF000000ULL) << 8)  |
@@ -239,73 +253,51 @@ u64 ReadU64BigEndian(Stream* stream) {
             ((value & 0x0000FF0000000000ULL) >> 24) |
             ((value & 0x00FF000000000000ULL) >> 40) |
             ((value & 0xFF00000000000000ULL) >> 56);
+
     return value;
 }
 
-uint32_t ReadU32(Stream* stream)
-{
-    uint32_t value;
-    ReadBytes(stream, &value, sizeof(uint32_t));
-    return value;
+i8 ReadI8(Stream* stream) {
+    return static_cast<i8>(ReadU8(stream));
 }
 
-uint64_t ReadU64(Stream* stream)
-{
-    uint64_t value;
-    ReadBytes(stream, &value, sizeof(uint64_t));
-    return value;
+i16 ReadI16(Stream* stream) {
+    return static_cast<i16>(ReadU16(stream));
 }
 
-int8_t ReadI8(Stream* stream)
-{
-    return (int8_t)ReadU8(stream);
+i32 ReadI32(Stream* stream) {
+    return static_cast<int32_t>(ReadU32(stream));
 }
 
-int16_t ReadI16(Stream* stream)
-{
-    return (int16_t)ReadU16(stream);
+i64 ReadI64(Stream* stream) {
+    return static_cast<int64_t>(ReadU64(stream));
 }
 
-int32_t ReadI32(Stream* stream)
-{
-    return (int32_t)ReadU32(stream);
-}
-
-int64_t ReadI64(Stream* stream)
-{
-    return (int64_t)ReadU64(stream);
-}
-
-float ReadFloat(Stream* stream)
-{
+f32 ReadFloat(Stream* stream) {
     float value;
     ReadBytes(stream, &value, sizeof(float));
     return value;
 }
 
-Vec2 ReadVec2(Stream* stream)
-{
+Vec2 ReadVec2(Stream* stream) {
     Vec2 value;
     ReadBytes(stream, &value, sizeof(Vec2));
     return value;
 }
 
-Vec3 ReadVec3(Stream* stream)
-{
+Vec3 ReadVec3(Stream* stream) {
     Vec3 value;
     ReadBytes(stream, &value, sizeof(Vec3));
     return value;
 }
 
-double ReadDouble(Stream* stream)
-{
-    double value;
-    ReadBytes(stream, &value, sizeof(double));
+f64 ReadDouble(Stream* stream) {
+    f64 value;
+    ReadBytes(stream, &value, sizeof(f64));
     return value;
 }
 
-bool ReadBool(Stream* stream)
-{
+bool ReadBool(Stream* stream) {
     return ReadU8(stream) != 0;
 }
 
@@ -325,7 +317,7 @@ int ReadBytes(Stream* stream, void* dest, u32 size) {
         }
         // Zero remaining bytes
         if (size > available)
-            memset(static_cast<uint8_t *>(dest) + available, 0, size - available);
+            memset(static_cast<u8 *>(dest) + available, 0, size - available);
 
         return static_cast<int>(available);
     }
@@ -337,9 +329,8 @@ int ReadBytes(Stream* stream, void* dest, u32 size) {
     return static_cast<int>(size);
 }
 
-void WriteU8(Stream* stream, uint8_t value)
-{
-    WriteBytes(stream, &value, sizeof(uint8_t));
+void WriteU8(Stream* stream, u8 value) {
+    WriteBytes(stream, &value, sizeof(u8));
 }
 
 void WriteU16(Stream* stream, uint16_t value)
@@ -359,7 +350,7 @@ void WriteU64(Stream* stream, uint64_t value)
 
 void WriteI8(Stream* stream, int8_t value)
 {
-    WriteU8(stream, (uint8_t)value);
+    WriteU8(stream, (u8)value);
 }
 
 void WriteI16(Stream* stream, int16_t value)
@@ -436,7 +427,7 @@ void WriteCSTR(Stream* stream, const char* format, ...)
     
     if (written > 0 && (size_t)written < sizeof(buffer))
     {
-        WriteBytes(stream, (uint8_t*)buffer, written);
+        WriteBytes(stream, (u8*)buffer, written);
     }
 }
 
@@ -515,4 +506,18 @@ void Copy(Stream* dst, Stream* src) {
     ReadBytes(src, dst_impl->data + dst_impl->position, src_impl->size);
     dst_impl->position += src_impl->size;
     dst_impl->size += src_impl->size;
+}
+
+void Copy(Stream* dst, Stream* src, int count) {
+    if (!dst || !src) return;
+
+    StreamImpl* dst_impl = static_cast<StreamImpl*>(dst);
+    StreamImpl* src_impl = static_cast<StreamImpl*>(src);
+
+    count = Min(count, static_cast<int>(src_impl->size - src_impl->position));
+
+    EnsureCapacity(dst_impl, dst_impl->position + count);
+    ReadBytes(src, dst_impl->data + dst_impl->position, count);
+    dst_impl->position += count;
+    dst_impl->size += count;
 }

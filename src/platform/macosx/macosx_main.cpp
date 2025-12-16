@@ -335,6 +335,45 @@ std::filesystem::path GetSaveGamePath()
     }
 }
 
+bool PlatformSavePersistentData(const char* name, const void* data, u32 size) {
+    std::filesystem::path path = GetSaveGamePath() / name;
+
+    FILE* file = fopen(path.string().c_str(), "wb");
+    if (!file)
+        return false;
+
+    u32 written = static_cast<u32>(fwrite(data, 1, size, file));
+    fclose(file);
+
+    return written == size;
+}
+
+u8* PlatformLoadPersistentData(Allocator* allocator, const char* name, u32* out_size) {
+    std::filesystem::path path = GetSaveGamePath() / name;
+
+    FILE* file = fopen(path.string().c_str(), "rb");
+    if (!file) {
+        *out_size = 0;
+        return nullptr;
+    }
+
+    fseek(file, 0, SEEK_END);
+    u32 file_size = static_cast<u32>(ftell(file));
+    fseek(file, 0, SEEK_SET);
+
+    if (file_size == 0) {
+        fclose(file);
+        *out_size = 0;
+        return nullptr;
+    }
+
+    u8* data = static_cast<u8*>(Alloc(allocator, file_size));
+    *out_size = static_cast<u32>(fread(data, 1, file_size, file));
+    fclose(file);
+
+    return data;
+}
+
 extern int main(int argc, char* argv[]);
 
 int main(int argc, char* argv[])

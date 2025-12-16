@@ -60,17 +60,30 @@ struct String4096 {
     operator const char*() const { return value; }
 };
 
-inline void Set(String32& str, const char* src) { Copy(str.value, 32, src); }
-inline void Set(String64& str, const char* src) { Copy(str.value, 64, src); }
-inline void Set(String128& str, const char* src) { Copy(str.value, 128, src); }
-inline void Set(String256& str, const char* src) { Copy(str.value, 256, src); }
-inline void Set(String1024& str, const char* src) { Copy(str.value, 1024, src); }
-inline void Set(String4096& str, const char* src) { Copy(str.value, 4096, src); }
-inline void Set(String32& str, const char* src, u32 length) { Copy(str.value, 32, src, length); }
-inline void Set(String64& str, const char* src, u32 length) { Copy(str.value, 64, src, length); }
-inline void Set(String128& str, const char* src, u32 length) { Copy(str.value, 128, src, length); }
-inline void Set(String256& str, const char* src, u32 length) { Copy(str.value, 256, src, length); }
-inline void Set(String1024& str, const char* src, u32 length) { Copy(str.value, 1024, src, length); }
-inline void Set(String4096& str, const char* src, u32 length) { Copy(str.value, 4096, src, length); }
+inline void Set(String32& dst, const char* src) { dst.length = Copy(dst.value, 32, src); }
+inline void Set(String64& dst, const char* src) { dst.length = Copy(dst.value, 64, src); }
+inline void Set(String128& dst, const char* src) { dst.length = Copy(dst.value, 128, src); }
+inline void Set(String256& dst, const char* src) { dst.length = Copy(dst.value, 256, src); }
+inline void Set(String1024& dst, const char* src) { dst.length = Copy(dst.value, 1024, src); }
+inline void Set(String4096& dst, const char* src) { dst.length = Copy(dst.value, 4096, src); }
+inline void Set(String32& dst, const char* src, u32 length) { dst.length = Copy(dst.value, 32, src, length); }
+inline void Set(String64& dst, const char* src, u32 length) { dst.length = Copy(dst.value, 64, src, length); }
+inline void Set(String128& dst, const char* src, u32 length) { dst.length = Copy(dst.value, 128, src, length); }
+inline void Set(String256& dst, const char* src, u32 length) { dst.length = Copy(dst.value, 256, src, length); }
+inline void Set(String1024& dst, const char* src, u32 length) { dst.length = Copy(dst.value, 1024, src, length); }
+inline void Set(String4096& dst, const char* src, u32 length) { dst.length = Copy(dst.value, 4096, src, length); }
 
-extern int Format (String64& str, const char* fmt, ...);
+inline void Clear(String32& dst) { dst.length = 0; dst.value[0] = '\0'; }
+inline void Clear(String64& dst) { dst.length = 0; dst.value[0] = '\0'; }
+inline void Clear(String128& dst) { dst.length = 0; dst.value[0] = '\0'; }
+inline void Clear(String256& dst) { dst.length = 0; dst.value[0] = '\0'; }
+inline void Clear(String1024& dst) { dst.length = 0; dst.value[0] = '\0'; }
+inline void Clear(String4096& dst) { dst.length = 0; dst.value[0] = '\0'; }
+
+
+extern int Format (String32& dst, const char* fmt, ...);
+extern int Format (String64& dst, const char* fmt, ...);
+extern int Format (String128& dst, const char* fmt, ...);
+extern int Format (String256& dst, const char* fmt, ...);
+extern int Format (String1024& dst, const char* fmt, ...);
+extern int Format (String4096& dst, const char* fmt, ...);

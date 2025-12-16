@@ -48,7 +48,6 @@ extern bool WasButtonReleased(InputCode code);
 // @native_text_input
 // Native text input overlay for web and desktop platforms
 // Shows a platform-native text input element positioned over the UI
-struct Text;
 struct NativeTextboxStyle;
 extern void PlatformShowTextbox(const noz::Rect& rect, const Text& text, const NativeTextboxStyle& style);
 extern void PlatformHideTextbox();

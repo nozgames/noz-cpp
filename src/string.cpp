@@ -66,13 +66,56 @@ static int FormatInternal(char* dst, u32 dst_size, const char* fmt, va_list args
     return result;
 }
 
-int Format (String64& str, const char* fmt, ...) {
+int Format (String32& dst, const char* fmt, ...) {
     assert(fmt);
     va_list args;
     va_start(args, fmt);
-    str.length = FormatInternal(str.value, sizeof(str.value), fmt, args);
+    dst.length = FormatInternal(dst.value, sizeof(dst.value), fmt, args);
     va_end(args);
-    return str.length;
+    return dst.length;
+}
+
+int Format (String64& dst, const char* fmt, ...) {
+    assert(fmt);
+    va_list args;
+    va_start(args, fmt);
+    dst.length = FormatInternal(dst.value, sizeof(dst.value), fmt, args);
+    va_end(args);
+    return dst.length;
+}
+
+int Format (String128& dst, const char* fmt, ...) {
+    assert(fmt);
+    va_list args;
+    va_start(args, fmt);
+    dst.length = FormatInternal(dst.value, sizeof(dst.value), fmt, args);
+    va_end(args);
+    return dst.length;
+}
+int Format (String256& dst, const char* fmt, ...) {
+    assert(fmt);
+    va_list args;
+    va_start(args, fmt);
+    dst.length = FormatInternal(dst.value, sizeof(dst.value), fmt, args);
+    va_end(args);
+    return dst.length;
+}
+int Format (String1024& dst, const char* fmt, ...) {
+    assert(fmt);
+    va_list args;
+    va_start(args, fmt);
+    dst.length = FormatInternal(dst.value, sizeof(dst.value), fmt, args);
+    va_end(args);
+    return dst.length;
+}
+
+int Format (String4096& dst, const char* fmt, ...) {
+    assert(fmt);
+    va_list args;
+    va_start(args, fmt);
+    dst.length = FormatInternal(dst.value, sizeof(dst.value), fmt, args);
+    va_end(args);
+    return dst.length;
 }
 
 int Format(char* dst, u32 dst_size, const char* fmt, ...) {

@@ -51,25 +51,6 @@ void Append(Text& dst, const char* src)
     dst.length += src_len;
 }
 
-void Format(Text& dst, const char* fmt, ...)
-{
-    assert(fmt);
-    
-    va_list args;
-    va_start(args, fmt);
-    
-    int written = vsnprintf(dst.value, TEXT_MAX_LENGTH - 1, fmt, args);
-    va_end(args);
-    
-    if (written < 0) {
-        Clear(dst);
-        return;
-    }
-
-    dst.value[written] = 0;
-    dst.length = written;
-}
-
 void Trim(Text& text)
 {
     if (text.length == 0)

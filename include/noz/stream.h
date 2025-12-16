@@ -7,21 +7,31 @@
 #include <filesystem>
 #include "string.h"
 
+enum StreamEndianess {
+    STREAM_ENDIANNESS_DEFAULT,
+    STREAM_ENDIANNESS_LITTLE = STREAM_ENDIANNESS_DEFAULT,
+    STREAM_ENDIANNESS_BIG
+};
+
 struct Stream {};
 
-// @alloc
-extern Stream* CreateStream(Allocator* allocator, u32 capacity);
+// @stream
+extern Stream* CreateStream(Allocator* allocator, u32 capacity, u32 initial_size = 0);
 extern Stream* CreateStream(Allocator* allocator, u8* data, u32 size);
 extern Stream* LoadStream(Allocator* allocator, const u8* data, u32 size);
 extern Stream* LoadStream(Allocator* allocator, const std::filesystem::path& path);
+
+// @endian
+extern void SetEndianness(Stream* stream, StreamEndianess endian);
 
 // @file
 bool SaveStream(Stream* stream, const std::filesystem::path& path);
 
 // @data
-u8* GetData(Stream* stream);
-u32 GetSize(Stream* stream);
-void Clear(Stream* stream);
+extern u8* GetData(Stream* stream);
+inline u8* GetDataAt(Stream* stream, u32 position) { return GetData(stream) + position; }
+extern u32 GetSize(Stream* stream);
+extern void Clear(Stream* stream);
 
 // @position
 u32 GetPosition(Stream* stream);
@@ -32,24 +42,21 @@ u32 SeekCurrent(Stream* stream, u32 offset);
 bool IsEOS(Stream* stream);
 
 // @read
-u8 ReadU8(Stream* stream);
-u16 ReadU16(Stream* stream);
-extern u16 ReadU16BigEndian(Stream* stream);
-u32 ReadU32(Stream* stream);
-u32 ReadU32BigEndian(Stream* stream);
-u64 ReadU64(Stream* stream);
-u64 ReadU64BigEndian(Stream* stream);
-i8 ReadI8(Stream* stream);
-i16 ReadI16(Stream* stream);
-i32 ReadI32(Stream* stream);
-i64 ReadI64(Stream* stream);
-float ReadFloat(Stream* stream);
-double ReadDouble(Stream* stream);
-bool ReadBool(Stream* stream);
-const Name* ReadName(Stream* stream);
-Color ReadColor(Stream* stream);
-Vec3 ReadVec3(Stream* stream);
-Vec2 ReadVec2(Stream* stream);
+extern u8 ReadU8(Stream* stream);
+extern u16 ReadU16(Stream* stream);
+extern u32 ReadU32(Stream* stream);
+extern u64 ReadU64(Stream* stream);
+extern i8 ReadI8(Stream* stream);
+extern i16 ReadI16(Stream* stream);
+extern i32 ReadI32(Stream* stream);
+extern i64 ReadI64(Stream* stream);
+extern float ReadFloat(Stream* stream);
+extern double ReadDouble(Stream* stream);
+extern bool ReadBool(Stream* stream);
+extern const Name* ReadName(Stream* stream);
+extern Color ReadColor(Stream* stream);
+extern Vec3 ReadVec3(Stream* stream);
+extern Vec2 ReadVec2(Stream* stream);
 extern int ReadBytes(Stream* stream, void* dest, u32 count);
 extern void AlignStream(Stream* stream, int alignment);
 
@@ -78,6 +85,7 @@ template <typename TStruct> TStruct ReadStruct(Stream* stream)
 
 // @write
 extern void Copy(Stream* dst, Stream* src);
+extern void Copy(Stream* dst, Stream* src, int count);
 void WriteU8(Stream* stream, u8 value);
 void WriteU16(Stream* stream, u16 value);
 void WriteU32(Stream* stream, u32 value);

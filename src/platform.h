@@ -37,6 +37,12 @@ extern void PlatformLog(LogType type, const char* message);
 extern std::filesystem::path PlatformGetSaveGamePath();
 extern std::filesystem::path PlatformGetBinaryPath();
 extern std::filesystem::path PatformGetCurrentPath();
+
+// @persistent_storage
+// Platform-agnostic persistent storage (filesystem on desktop, localStorage on web)
+extern bool PlatformSavePersistentData(const char* name, const void* data, u32 size);
+extern u8* PlatformLoadPersistentData(Allocator* allocator, const char* name, u32* out_size);
+
 extern u64 PlatformGetTimeCounter();
 extern u64 PlatformGetTimeFrequency();
 

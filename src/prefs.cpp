@@ -20,11 +20,25 @@ struct Prefs {
 
 static Prefs g_prefs = {};
 
-static void LoadPrefsInternal(const std::filesystem::path& path) {
-    Stream* stream = LoadStream(ALLOCATOR_SCRATCH, path);
-    if (!stream)
-        return;
+void LoadPrefs() {
+    for (int i=0; i<g_prefs.max_prefs; i++) {
+        g_prefs.values[i] = {
+            .string_value = {},
+            .int_value = 0,
+            .is_default = true
+        };
+    }
 
+    PushScratch();
+
+    u32 size = 0;
+    u8* data = PlatformLoadPersistentData(ALLOCATOR_SCRATCH, "prefs.dat", &size);
+    if (!data || size == 0) {
+        PopScratch();
+        return;
+    }
+
+    Stream* stream = LoadStream(ALLOCATOR_SCRATCH, data, size);
     Tokenizer tk;
     Init(tk, stream);
 
@@ -55,29 +69,20 @@ static void LoadPrefsInternal(const std::filesystem::path& path) {
             break;
         }
     }
-}
 
-void LoadPrefs() {
-    for (int i=0; i<g_prefs.max_prefs; i++) {
-        g_prefs.values[i] = {
-            .string_value = {},
-            .int_value = 0,
-            .is_default = true
-        };
-    }
-
-    PushScratch();
-    LoadPrefsInternal(PlatformGetSaveGamePath() / "prefs.dat");
     PopScratch();
 }
 
-static void SavePrefsInternal(const std::filesystem::path& path) {
+void SavePrefs() {
+    PushScratch();
+
     Stream* stream = CreateStream(ALLOCATOR_SCRATCH, 4096);
-    if (!stream)
+    if (!stream) {
+        PopScratch();
         return;
+    }
 
     WriteCSTR(stream, "v %d\n", PREFS_VERSION);
-
 
     for (int i=0; i<g_prefs.max_prefs; i++) {
         const Pref& pref = g_prefs.values[i];
@@ -90,12 +95,8 @@ static void SavePrefsInternal(const std::filesystem::path& path) {
         }
     }
 
-    SaveStream(stream, path);
-}
+    PlatformSavePersistentData("prefs.dat", GetData(stream), GetSize(stream));
 
-void SavePrefs() {
-    PushScratch();
-    SavePrefsInternal(PlatformGetSaveGamePath() / "prefs.dat");
     PopScratch();
 }
 

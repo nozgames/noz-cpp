@@ -153,9 +153,15 @@ noz::TaskHandle GetUrl(const char *url, HttpCallback on_complete) {
     return req->task;
 }
 
-static noz::TaskHandle SetupPostRequest(HttpRequestImpl *req, const char *url, const void *body, u32 body_size,
-                              const char *content_type, const char *headers, const char *method,
-                              HttpCallback on_complete) {
+static noz::TaskHandle SetupPostRequest(
+    HttpRequestImpl* req,
+    const char* url,
+    const void* body,
+    u32 body_size,
+    const char* content_type,
+    const char* headers,
+    const char* method,
+    HttpCallback on_complete) {
     Set(req->url, url);
     req->method = DupString(method);
     req->content_type = DupString(content_type);

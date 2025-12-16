@@ -380,6 +380,68 @@ std::filesystem::path PlatformGetSaveGamePath() {
     return std::filesystem::path("/save");
 }
 
+bool PlatformSavePersistentData(const char* name, const void* data, u32 size) {
+    // Convert binary data to base64 and store in localStorage
+    EM_ASM({
+        var name = UTF8ToString($0);
+        var dataPtr = $1;
+        var size = $2;
+
+        // Read bytes into array
+        var bytes = new Uint8Array(size);
+        for (var i = 0; i < size; i++) {
+            bytes[i] = HEAPU8[dataPtr + i];
+        }
+
+        // Convert to base64
+        var binary = '';
+        for (var i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        var base64 = btoa(binary);
+
+        // Store in localStorage with prefix
+        localStorage.setItem('save_' + name, base64);
+    }, name, data, size);
+
+    return true;
+}
+
+u8* PlatformLoadPersistentData(Allocator* allocator, const char* name, u32* out_size) {
+    // Get size first
+    int size = EM_ASM_INT({
+        var name = UTF8ToString($0);
+        var base64 = localStorage.getItem('save_' + name);
+        if (!base64) return 0;
+
+        var binary = atob(base64);
+        return binary.length;
+    }, name);
+
+    if (size == 0) {
+        *out_size = 0;
+        return nullptr;
+    }
+
+    u8* data = static_cast<u8*>(Alloc(allocator, size));
+
+    // Load the data
+    EM_ASM({
+        var name = UTF8ToString($0);
+        var dataPtr = $1;
+
+        var base64 = localStorage.getItem('save_' + name);
+        var binary = atob(base64);
+
+        for (var i = 0; i < binary.length; i++) {
+            HEAPU8[dataPtr + i] = binary.charCodeAt(i);
+        }
+    }, name, data);
+
+    *out_size = static_cast<u32>(size);
+    return data;
+}
+
 std::filesystem::path PlatformGetBinaryPath() {
     return std::filesystem::path("/");
 }

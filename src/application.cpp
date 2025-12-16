@@ -431,12 +431,15 @@ void SetPaletteTexture(Texture* texture) {
 }
 
 bool WriteSaveFile(const char* path, Stream* stream) {
-    SaveStream(stream, PlatformGetSaveGamePath() / path);
-    return true;
+    return PlatformSavePersistentData(path, GetData(stream), GetSize(stream));
 }
 
 Stream* ReadSaveFile(Allocator* allocator, const char* path) {
-    return LoadStream(allocator, PlatformGetSaveGamePath() / path);
+    u32 size = 0;
+    u8* data = PlatformLoadPersistentData(allocator, path, &size);
+    if (!data || size == 0)
+        return nullptr;
+    return LoadStream(allocator, data, size);
 }
 
 // @cmdline
