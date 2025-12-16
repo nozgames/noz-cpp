@@ -81,19 +81,21 @@ namespace noz {
             task.is_virtual = false;
 
             // Set up dependency linked list
+            task.first_dep = -1;
+            task.next_dep = -1;
             if (dep_count > 0) {
+                // Validate all dependencies first
+                for (i32 j = 0; j < dep_count; j++) {
+                    assert(deps[j].id < static_cast<u32>(g_tasks.max_tasks) && "Invalid dependency handle");
+                }
+
                 task.first_dep = static_cast<i32>(deps[0].id);
-                for (i32 j = 0; j < dep_count - 1; j++) {
+                for (i32 j = 0; j < dep_count; j++) {
                     TaskImpl& dep = g_tasks.tasks[deps[j].id];
                     assert(dep.next_dep == -1 && "Task is already a dependency of another task");
-                    dep.next_dep = static_cast<i32>(deps[j + 1].id);
+                    dep.next_dep = (j < dep_count - 1) ? static_cast<i32>(deps[j + 1].id) : -1;
                 }
-                // Last dependency has no next
-                g_tasks.tasks[deps[dep_count - 1].id].next_dep = -1;
-            } else {
-                task.first_dep = -1;
             }
-            task.next_dep = -1;
 
             return { static_cast<u32>(i), task.generation };
         }
@@ -366,11 +368,13 @@ namespace noz {
         return nullptr;
     }
 
-    static bool HasPendingDependents(Task handle) {
+    static bool HasActiveDependents(Task handle) {
         i32 target_idx = static_cast<i32>(handle.id);
         for (i32 i = 0; i < g_tasks.max_tasks; i++) {
             TaskImpl& task = g_tasks.tasks[i];
-            if (task.state.load() != TASK_STATE_PENDING)
+            TaskState state = task.state.load();
+            // Check both pending and running tasks - running tasks may still access dependencies
+            if (state != TASK_STATE_PENDING && state != TASK_STATE_RUNNING)
                 continue;
 
             i32 dep_idx = task.first_dep;
@@ -398,8 +402,8 @@ namespace noz {
                     if (task.complete_func)
                         task.complete_func(handle, task.result);
 
-                    // Don't free if pending tasks still depend on us
-                    if (HasPendingDependents(handle))
+                    // Don't free if other tasks still depend on us
+                    if (HasActiveDependents(handle))
                         continue;
 
                     // Call destructor before freeing
@@ -410,12 +414,14 @@ namespace noz {
                     task.complete_func = nullptr;
                     task.destroy_func = nullptr;
                     task.result = nullptr;
+                    task.first_dep = -1;
+                    task.next_dep = -1;
                     task.generation = 0;
                     task.state.store(TASK_STATE_FREE);
                 } else if (state == TASK_STATE_CANCELED) {
                     Task handle = GetHandle(&task);
 
-                    if (HasPendingDependents(handle))
+                    if (HasActiveDependents(handle))
                         continue;
 
                     // Call destructor before freeing
@@ -426,6 +432,8 @@ namespace noz {
                     task.complete_func = nullptr;
                     task.destroy_func = nullptr;
                     task.result = nullptr;
+                    task.first_dep = -1;
+                    task.next_dep = -1;
                     task.generation = 0;
                     task.state.store(TASK_STATE_FREE);
                 }
