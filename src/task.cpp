@@ -10,13 +10,19 @@
 
 namespace noz {
 
+    constexpr i32 MAX_TASK_DEPENDENCIES = 16;
+
     struct TaskImpl {
         std::atomic<TaskState> state{TASK_STATE_FREE};
         TaskRunFunc run_func;
         TaskCompleteFunc complete_func;
         void* result;
+        TaskHandle dependencies[MAX_TASK_DEPENDENCIES];
+        void* dep_results[MAX_TASK_DEPENDENCIES];
+        i32 dep_count;
         u64 start_frame;
         u32 generation;
+        bool is_virtual;
     };
 
     struct TaskWorker {
@@ -56,7 +62,8 @@ namespace noz {
         return { static_cast<u32>(task - g_tasks.tasks), task->generation };
     }
 
-    TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func) {
+    static TaskHandle CreateTaskInternal(TaskRunFunc run_func, TaskCompleteFunc complete_func,
+                                          const TaskHandle* deps, i32 dep_count) {
         std::lock_guard lock(g_tasks.mutex);
 
         for (i32 i = 0; i < g_tasks.max_tasks; i++) {
@@ -68,12 +75,88 @@ namespace noz {
             task.generation = ++g_tasks.next_generation;
             task.run_func = std::move(run_func);
             task.complete_func = std::move(complete_func);
+            task.dep_count = dep_count;
+            for (i32 j = 0; j < dep_count; j++) {
+                task.dependencies[j] = deps[j];
+                task.dep_results[j] = nullptr;
+            }
+            task.result = nullptr;
             task.start_frame = g_tasks.current_frame;
+            task.is_virtual = false;
 
             return { static_cast<u32>(i), task.generation };
         }
 
         return TASK_HANDLE_INVALID;
+    }
+
+    TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func) {
+        return CreateTaskInternal(std::move(run_func), std::move(complete_func), nullptr, 0);
+    }
+
+    TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func, TaskHandle depends_on) {
+        return CreateTaskInternal(std::move(run_func), std::move(complete_func), &depends_on, 1);
+    }
+
+    TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func, std::initializer_list<TaskHandle> depends_on) {
+        return CreateTaskInternal(std::move(run_func), std::move(complete_func),
+                                  depends_on.begin(), static_cast<i32>(depends_on.size()));
+    }
+
+    TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func, const TaskHandle* depends_on, int count) {
+        return CreateTaskInternal(std::move(run_func), std::move(complete_func),
+                                  depends_on, static_cast<i32>(count));
+    }
+
+    TaskHandle CreateVirtualTask() {
+        std::lock_guard lock(g_tasks.mutex);
+
+        for (i32 i = 0; i < g_tasks.max_tasks; i++) {
+            TaskImpl& task = g_tasks.tasks[i];
+            TaskState expected = TASK_STATE_FREE;
+            if (!task.state.compare_exchange_strong(expected, TASK_STATE_RUNNING))
+                continue;
+
+            task.generation = ++g_tasks.next_generation;
+            task.run_func = nullptr;
+            task.complete_func = nullptr;
+            task.dep_count = 0;
+            task.result = nullptr;
+            task.start_frame = g_tasks.current_frame;
+            task.is_virtual = true;
+
+            return { static_cast<u32>(i), task.generation };
+        }
+
+        return TASK_HANDLE_INVALID;
+    }
+
+    void CompleteTask(TaskHandle handle, void* result) {
+        if (handle.generation == 0)
+            return;
+
+        std::lock_guard lock(g_tasks.mutex);
+        TaskImpl* task = GetTask(handle);
+        if (!task || !task->is_virtual)
+            return;
+
+        task->result = result;
+        task->state.store(TASK_STATE_COMPLETE);
+        g_tasks.tasks_completed.store(true);
+    }
+
+    void* GetTaskResult(TaskHandle handle) {
+        if (handle.generation == 0)
+            return nullptr;
+
+        if (handle.id >= (u32)g_tasks.max_tasks)
+            return nullptr;
+
+        TaskImpl& task = g_tasks.tasks[handle.id];
+        if (task.generation != handle.generation)
+            return nullptr;
+
+        return task.result;
     }
 
     bool IsTaskValid(TaskHandle handle) {
@@ -129,6 +212,28 @@ namespace noz {
         task->state.compare_exchange_strong(expected, TASK_STATE_CANCELED);
     }
 
+    static bool IsSingleDependencyReady(TaskHandle dep_handle) {
+        if (dep_handle.generation == 0)
+            return true;
+
+        if (dep_handle.id >= (u32)g_tasks.max_tasks)
+            return true;
+
+        TaskImpl& dep = g_tasks.tasks[dep_handle.id];
+        if (dep.generation != dep_handle.generation)
+            return true;  // Dependency was freed
+
+        return dep.state.load() == TASK_STATE_COMPLETE;
+    }
+
+    static bool AreAllDependenciesReady(TaskImpl& task) {
+        for (i32 i = 0; i < task.dep_count; i++) {
+            if (!IsSingleDependencyReady(task.dependencies[i]))
+                return false;
+        }
+        return true;
+    }
+
     static TaskImpl* FindOldestPendingTask() {
         TaskImpl* oldest = nullptr;
         u64 oldest_frame = UINT64_MAX;
@@ -136,6 +241,9 @@ namespace noz {
         for (i32 i = 0; i < g_tasks.max_tasks; i++) {
             TaskImpl& task = g_tasks.tasks[i];
             if (task.state.load() == TASK_STATE_PENDING) {
+                if (!AreAllDependenciesReady(task))
+                    continue;
+
                 if (task.start_frame < oldest_frame) {
                     oldest_frame = task.start_frame;
                     oldest = &task;
@@ -155,13 +263,24 @@ namespace noz {
         return nullptr;
     }
 
+    static bool HasPendingDependents(TaskHandle handle) {
+        for (i32 i = 0; i < g_tasks.max_tasks; i++) {
+            TaskImpl& task = g_tasks.tasks[i];
+            if (task.state.load() != TASK_STATE_PENDING)
+                continue;
+            for (i32 j = 0; j < task.dep_count; j++) {
+                if (task.dependencies[j] == handle)
+                    return true;
+            }
+        }
+        return false;
+    }
+
     void UpdateTasks() {
         g_tasks.current_frame++;
 
         // Process completed tasks on main thread
         if (g_tasks.tasks_completed.exchange(false)) {
-            LogInfo("task: processing completed tasks on main thread");
-
             for (i32 i = 0; i < g_tasks.max_tasks; i++) {
                 TaskImpl& task = g_tasks.tasks[i];
                 TaskState state = task.state.load();
@@ -169,16 +288,26 @@ namespace noz {
                 if (state == TASK_STATE_COMPLETE) {
                     if (task.complete_func)
                         task.complete_func(GetHandle(&task), task.result);
+
+                    // Don't free if pending tasks still depend on us
+                    TaskHandle handle = GetHandle(&task);
+                    if (HasPendingDependents(handle))
+                        continue;
+
                     task.run_func = nullptr;
                     task.complete_func = nullptr;
                     task.result = nullptr;
-                    task.generation = 0;  // Invalidate handle before freeing
+                    task.generation = 0;
                     task.state.store(TASK_STATE_FREE);
                 } else if (state == TASK_STATE_CANCELED) {
+                    TaskHandle handle = GetHandle(&task);
+                    if (HasPendingDependents(handle))
+                        continue;
+
                     task.run_func = nullptr;
                     task.complete_func = nullptr;
                     task.result = nullptr;
-                    task.generation = 0;  // Invalidate handle before freeing
+                    task.generation = 0;
                     task.state.store(TASK_STATE_FREE);
                 }
             }
@@ -195,6 +324,13 @@ namespace noz {
             TaskImpl* task = FindOldestPendingTask();
             if (!task)
                 break;
+
+            // Copy all dependency results before clearing dependencies
+            for (i32 i = 0; i < task->dep_count; i++) {
+                TaskImpl* dep = GetTask(task->dependencies[i]);
+                task->dep_results[i] = dep ? dep->result : nullptr;
+                task->dependencies[i] = TASK_HANDLE_INVALID;
+            }
 
             task->state.store(TASK_STATE_RUNNING);
             worker->current_task.store(task);
@@ -226,8 +362,10 @@ namespace noz {
 
             if (task) {
                 TaskState expected = TASK_STATE_RUNNING;
-                if (task->state.load() == expected && task->run_func)
-                    task->result = task->run_func(GetHandle(task));
+                if (task->state.load() == expected && task->run_func) {
+                    std::span<void*> deps(task->dep_results, task->dep_count);
+                    task->result = task->run_func(GetHandle(task), deps);
+                }
 
                 expected = TASK_STATE_RUNNING;
                 if (task->state.compare_exchange_strong(expected, TASK_STATE_COMPLETE))

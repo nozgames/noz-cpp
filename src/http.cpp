@@ -4,6 +4,7 @@
 
 #include "pch.h"
 #include "platform.h"
+#include <noz/task.h>
 
 constexpr int MAX_CONCURRENT_REQUESTS = 16;
 
@@ -15,8 +16,8 @@ enum class HttpRequestState {
 
 struct HttpRequestImpl : HttpRequest {
     PlatformHttpHandle handle;
+    noz::TaskHandle task;
     HttpCallback callback;
-    HttpStatus last_status;
     char *response_string;
     HttpRequestState state;
     String1024 url;
@@ -39,6 +40,7 @@ static int g_active_count = 0;
 static HttpRequestImpl *AllocRequest() {
     HttpRequestImpl *req = (HttpRequestImpl *)Alloc(ALLOCATOR_DEFAULT, sizeof(HttpRequestImpl));
     *req = {};
+    req->task = noz::TASK_HANDLE_INVALID;
     return req;
 }
 
@@ -92,7 +94,6 @@ static void StartRequest(HttpRequestImpl *req) {
         req->handle = PlatformPostURL(req->url, req->body, req->body_size,
                                        req->content_type, req->headers, req->method);
     }
-    req->last_status = HttpStatus::Pending;
     ActiveListAdd(req);
 
     // Free stored body data after sending
@@ -123,11 +124,6 @@ static void TryStartQueued() {
     }
 }
 
-const char* GetUrl(HttpRequest* request) {
-    if (!request) return nullptr;
-    return static_cast<HttpRequestImpl*>(request)->url;
-}
-
 static char *DupString(const char *str) {
     if (!str) return nullptr;
     size_t len = strlen(str) + 1;
@@ -136,11 +132,12 @@ static char *DupString(const char *str) {
     return copy;
 }
 
-HttpRequest *GetUrl(const char *url, HttpCallback on_complete) {
+noz::TaskHandle GetUrl(const char *url, HttpCallback on_complete) {
     HttpRequestImpl *req = AllocRequest();
     Set(req->url, url);
-    req->callback = on_complete;
     req->method = DupString("GET");
+    req->callback = on_complete;
+    req->task = noz::CreateVirtualTask();
 
     if (g_active_count < MAX_CONCURRENT_REQUESTS) {
         StartRequest(req);
@@ -148,17 +145,18 @@ HttpRequest *GetUrl(const char *url, HttpCallback on_complete) {
         QueuePush(req);
     }
 
-    return req;
+    return req->task;
 }
 
-static void SetupPostRequest(HttpRequestImpl *req, const char *url, const void *body, u32 body_size,
+static noz::TaskHandle SetupPostRequest(HttpRequestImpl *req, const char *url, const void *body, u32 body_size,
                               const char *content_type, const char *headers, const char *method,
                               HttpCallback on_complete) {
     Set(req->url, url);
-    req->callback = on_complete;
     req->method = DupString(method);
     req->content_type = DupString(content_type);
     req->headers = DupString(headers);
+    req->callback = on_complete;
+    req->task = noz::CreateVirtualTask();
 
     if (body && body_size > 0) {
         req->body = (char *)Alloc(ALLOCATOR_DEFAULT, body_size);
@@ -171,57 +169,33 @@ static void SetupPostRequest(HttpRequestImpl *req, const char *url, const void *
     } else {
         QueuePush(req);
     }
+
+    return req->task;
 }
 
-HttpRequest *PostUrl(const char *url, const void *body, u32 body_size, const char *content_type,
-                     const char *headers, HttpCallback on_complete) {
+noz::TaskHandle PostUrl(
+    const char *url,
+    const void *body,
+    u32 body_size,
+    const char *content_type,
+    const char *headers,
+    const HttpCallback &on_complete) {
     HttpRequestImpl *req = AllocRequest();
-    SetupPostRequest(req, url, body, body_size, content_type, headers, "POST", on_complete);
-    return req;
+    return SetupPostRequest(req, url, body, body_size, content_type, headers, "POST", on_complete);
 }
 
-HttpRequest *PutUrl(const char *url, const void *body, u32 body_size, const char *content_type,
-                    const char *headers, HttpCallback on_complete) {
+noz::TaskHandle PutUrl(const char *url, const void *body, u32 body_size, const char *content_type,
+                       const char *headers, const HttpCallback &on_complete) {
     HttpRequestImpl *req = AllocRequest();
-    SetupPostRequest(req, url, body, body_size, content_type, headers, "PUT", on_complete);
-    return req;
+    return SetupPostRequest(req, url, body, body_size, content_type, headers, "PUT", on_complete);
 }
 
-
-HttpRequest *HttpPostString(const char *url, const char *body, const char *content_type, HttpCallback on_complete) {
-    return PostUrl(url, body, (u32) strlen(body), content_type, nullptr, on_complete);
+const char* GetRequestUrl(HttpRequest* request) {
+    if (!request) return nullptr;
+    return static_cast<HttpRequestImpl*>(request)->url;
 }
 
-HttpRequest *HttpPostJson(const char *url, const char *json, HttpCallback on_complete) {
-    return PostUrl(url, json, (u32) strlen(json), "application/json", nullptr, on_complete);
-}
-
-HttpStatus HttpGetStatus(HttpRequest *request) {
-    if (!request)
-        return HttpStatus::None;
-
-    HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
-
-    // Queued requests are pending but not yet started
-    if (req->state == HttpRequestState::Queued)
-        return HttpStatus::Pending;
-
-    if (req->state == HttpRequestState::Idle)
-        return HttpStatus::None;
-
-    HttpStatus pstatus = PlatformGetStatus(req->handle);
-
-    switch (pstatus) {
-        case HttpStatus::None: return HttpStatus::None;
-        case HttpStatus::Pending: return HttpStatus::Pending;
-        case HttpStatus::Complete: return HttpStatus::Complete;
-        case HttpStatus::Error: return HttpStatus::Error;
-    }
-
-    return HttpStatus::None;
-}
-
-int GetResponseStatusCode(HttpRequest *request) {
+int GetStatusCode(HttpRequest *request) {
     if (!request)
         return 0;
 
@@ -229,16 +203,8 @@ int GetResponseStatusCode(HttpRequest *request) {
     return PlatformGetStatusCode(req->handle);
 }
 
-bool HttpIsComplete(HttpRequest *request) {
-    HttpStatus status = HttpGetStatus(request);
-    return status == HttpStatus::Complete || status == HttpStatus::Error;
-}
-
-bool HttpIsSuccess(HttpRequest *request) {
-    if (HttpGetStatus(request) != HttpStatus::Complete)
-        return false;
-
-    int code = GetResponseStatusCode(request);
+bool IsSuccess(HttpRequest *request) {
+    int code = GetStatusCode(request);
     return code >= 200 && code < 300;
 }
 
@@ -250,7 +216,7 @@ Stream *GetResponseStream(HttpRequest *request, Allocator *allocator) {
     return LoadStream(allocator, res, out_size);
 }
 
-const char *HttpGetResponseString(HttpRequest *request) {
+const char *GetResponseString(HttpRequest *request) {
     if (!request)
         return nullptr;
 
@@ -273,7 +239,8 @@ const char *HttpGetResponseString(HttpRequest *request) {
     return req->response_string;
 }
 
-u32 HttpGetResponseSize(HttpRequest *request) {
+u32 GetResponseSize(HttpRequest *request) {
+    if (!request) return 0;
     HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
     u32 size = 0;
     PlatformGetResponse(req->handle, &size);
@@ -286,37 +253,6 @@ char* GetResponseHeader(HttpRequest *request, const char *name, Allocator *alloc
 
     HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
     return PlatformGetResponseHeader(req->handle, name, allocator);
-}
-
-static void QueueRemove(HttpRequestImpl *req) {
-    HttpRequestImpl **pp = &g_queue_head;
-    while (*pp) {
-        if (*pp == req) {
-            *pp = req->next;
-            if (req == g_queue_tail)
-                g_queue_tail = nullptr;
-            req->next = nullptr;
-            return;
-        }
-        pp = &(*pp)->next;
-    }
-}
-
-void HttpCancel(HttpRequest *request) {
-    if (!request)
-        return;
-
-    HttpRequestImpl *req = (HttpRequestImpl *)request;
-
-    if (req->state == HttpRequestState::Active) {
-        PlatformCancel(req->handle);
-        ActiveListRemove(req);
-    } else if (req->state == HttpRequestState::Queued) {
-        QueueRemove(req);
-    }
-
-    req->state = HttpRequestState::Idle;
-    req->last_status = HttpStatus::None;
 }
 
 static void FreeRequestData(HttpRequestImpl *req) {
@@ -342,23 +278,6 @@ static void FreeRequestData(HttpRequestImpl *req) {
         Free(req->method);
         req->method = nullptr;
     }
-}
-
-void Free(HttpRequest *request) {
-    if (!request)
-        return;
-
-    HttpRequestImpl *req = (HttpRequestImpl *)request;
-
-    if (req->state == HttpRequestState::Active) {
-        ActiveListRemove(req);
-    } else if (req->state == HttpRequestState::Queued) {
-        QueueRemove(req);
-    }
-
-    FreeRequestData(req);
-
-    TryStartQueued();
 }
 
 void InitHttp() {
@@ -400,20 +319,23 @@ void UpdateHttp() {
     while (req) {
         HttpRequestImpl *next = req->next;
 
-        HttpStatus current = HttpGetStatus((HttpRequest *)req);
+        HttpStatus current = PlatformGetStatus(req->handle);
 
-        // Check for state transition to complete/error/none
-        if (req->last_status == HttpStatus::Pending && current != HttpStatus::Pending) {
-            // Treat None as Error (platform may return None on failure)
-            req->last_status = (current == HttpStatus::Complete) ? HttpStatus::Complete : HttpStatus::Error;
-
-            // Remove from active list to free up slot for queued requests
+        // Check for completion
+        if (current == HttpStatus::Complete || current == HttpStatus::Error || current == HttpStatus::None) {
+            // Remove from active list
             ActiveListRemove(req);
             req->state = HttpRequestState::Idle;
 
-            // Fire callback
-            if (req->callback)
-                req->callback((HttpRequest *)req);
+            // Call callback if provided
+            if (req->callback) {
+                req->callback(req);
+            }
+
+            // Complete the virtual task with HttpRequest* as result
+            if (req->task) {
+                noz::CompleteTask(req->task, req);
+            }
         }
 
         req = next;
