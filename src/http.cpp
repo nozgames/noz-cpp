@@ -29,7 +29,7 @@ namespace noz {
         String1024 url;
         String64 content_type;
         String128 headers;
-        TaskHandle task;
+        Task task;
         HttpRequestMethod method;
         HttpRequestState state;
         HttpCallback callback;
@@ -68,7 +68,7 @@ static void FreeRequestData(void* result) {
     g_http.request_count--;
 }
 
-static HttpRequestImpl* GetRequest(const char* url, HttpRequestMethod method, const HttpCallback& callback) {
+static HttpRequestImpl* GetRequest(const char* url, HttpRequestMethod method, Task parent, const HttpCallback& callback) {
     if (g_http.request_count >= g_http.max_requests)
         return nullptr;
 
@@ -78,7 +78,8 @@ static HttpRequestImpl* GetRequest(const char* url, HttpRequestMethod method, co
 
     HttpRequestImpl* request = g_http.requests + request_index;
     Set(request->url, url);
-    request->task = CreateVirtualTask(FreeRequestData);
+    request->task = CreateTask(FreeRequestData);
+    SetTaskParent(request->task, parent);
     request->method = method;
     request->callback = callback;
     request->state = HTTP_REQUEST_STATE_QUEUED;
@@ -108,21 +109,22 @@ static void StartRequest(HttpRequestImpl* request) {
     request->body = nullptr;
 }
 
-TaskHandle noz::GetUrl(const char *url, const HttpCallback& callback) {
-    HttpRequestImpl* req = GetRequest(url, HTTP_REQUEST_METHOD_GET, callback);
+Task noz::GetUrl(const char *url, Task parent, const HttpCallback& callback) {
+    HttpRequestImpl* req = GetRequest(url, HTTP_REQUEST_METHOD_GET, parent, callback);
     if (!req) return TASK_HANDLE_INVALID;
     return req->task;
 }
 
-static TaskHandle PostUrlInternal(
+static Task PostUrlInternal(
     const char *url,
     HttpRequestMethod method,
     const u8* body,
     u32 body_size,
     const char *content_type,
     const char *headers,
+    Task parent,
     const HttpCallback &callback) {
-    HttpRequestImpl* req = GetRequest(url, method, callback);
+    HttpRequestImpl* req = GetRequest(url, method, parent, callback);
     if (!req) return TASK_HANDLE_INVALID;
     Set(req->content_type, content_type);
     Set(req->headers, headers);
@@ -131,24 +133,26 @@ static TaskHandle PostUrlInternal(
     return req->task;
 }
 
-TaskHandle noz::PostUrl(
+Task noz::PostUrl(
     const char *url,
     const void *body,
     u32 body_size,
     const char *content_type,
     const char *headers,
+    Task parent,
     const HttpCallback &callback) {
-    return PostUrlInternal(url, HTTP_REQUEST_METHOD_POST, static_cast<const u8*>(body), body_size, content_type, headers, callback);
+    return PostUrlInternal(url, HTTP_REQUEST_METHOD_POST, static_cast<const u8*>(body), body_size, content_type, headers, parent, callback);
 }
 
-TaskHandle noz::PutUrl(
+Task noz::PutUrl(
     const char *url,
     const void *body,
     u32 body_size,
     const char *content_type,
     const char *headers,
+    Task parent,
     const HttpCallback &callback) {
-    return PostUrlInternal(url, HTTP_REQUEST_METHOD_PUT, static_cast<const u8*>(body), body_size, content_type, headers, callback);
+    return PostUrlInternal(url, HTTP_REQUEST_METHOD_PUT, static_cast<const u8*>(body), body_size, content_type, headers, parent, callback);
 }
 
 const char* noz::GetUrl(HttpRequest* request) {
@@ -203,7 +207,7 @@ static void FinishRequest(HttpRequestImpl* request) {
     request->handle = {};
 
     if (request->callback)
-        request->callback(request);
+        request->callback(request->task, request);
 
     CompleteTask(request->task, request);
 }
@@ -218,6 +222,21 @@ void noz::UpdateHttp() {
 
     for (int request_index=0, request_count=g_http.request_count; request_index < g_http.max_requests && request_count; request_index++) {
         HttpRequestImpl* request = g_http.requests + request_index;
+
+        // Check if parent task was canceled - abort the request
+        Task parent = GetParent(request->task);
+        if (parent && IsTaskCanceled(parent)) {
+            if (request->state == HTTP_REQUEST_STATE_ACTIVE) {
+                PlatformCancel(request->handle);
+                PlatformFree(request->handle);
+                request->handle = {};
+            }
+            CancelTask(request->task);
+            request->state = HTTP_REQUEST_STATE_NONE;
+            g_http.request_count--;
+            continue;
+        }
+
         // @active
         if (request->state == HTTP_REQUEST_STATE_ACTIVE) {
             if (PlatformGetStatus(request->handle) != PLATFORM_HTTP_STATUS_PENDING) {

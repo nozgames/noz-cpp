@@ -11,11 +11,11 @@ namespace noz {
 
     struct HttpRequest {};
 
-    using HttpCallback = std::function<void(HttpRequest* request)>;
+    using HttpCallback = std::function<void(Task task, HttpRequest* request)>;
 
-    extern TaskHandle GetUrl(const char* url, const HttpCallback& callback = nullptr);
-    extern TaskHandle PostUrl(const char* url, const void* body, u32 body_size, const char* content_type = nullptr, const char* headers = nullptr, const HttpCallback &callback = nullptr);
-    extern TaskHandle PutUrl(const char* url, const void* body, u32 body_size, const char* content_type = nullptr, const char* headers = nullptr, const HttpCallback &callback = nullptr);
+    extern Task GetUrl(const char* url, Task parent = TASK_HANDLE_INVALID, const HttpCallback& callback = nullptr);
+    extern Task PostUrl(const char* url, const void* body, u32 body_size, const char* content_type = nullptr, const char* headers = nullptr, Task parent = TASK_HANDLE_INVALID, const HttpCallback &callback = nullptr);
+    extern Task PutUrl(const char* url, const void* body, u32 body_size, const char* content_type = nullptr, const char* headers = nullptr, Task parent = TASK_HANDLE_INVALID, const HttpCallback &callback = nullptr);
 
     extern int GetStatusCode(HttpRequest* request);
     extern bool IsSuccess(HttpRequest* request);

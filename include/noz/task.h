@@ -9,16 +9,22 @@
 
 namespace noz {
 
-    struct TaskHandle {
-        u32 id;
-        u32 generation;
+    struct Task {
+        u32 id = 0;
+        u32 generation = 0;
 
-        bool operator==(const TaskHandle& other) const { return id == other.id && generation == other.generation; }
-        bool operator!=(const TaskHandle& other) const { return !(*this == other); }
+        constexpr Task() = default;
+        constexpr Task(u32 id, u32 generation) : id(id), generation(generation) {}
+        constexpr Task(std::nullptr_t) : id(0), generation(0) {}
+
+        bool operator==(const Task& other) const { return id == other.id && generation == other.generation; }
+        bool operator!=(const Task& other) const { return !(*this == other); }
+        bool operator==(std::nullptr_t) const { return generation == 0; }
+        bool operator!=(std::nullptr_t) const { return generation != 0; }
         explicit operator bool() const { return generation != 0; }
     };
 
-    constexpr TaskHandle TASK_HANDLE_INVALID = { 0, 0 };
+    constexpr Task TASK_HANDLE_INVALID = {};
 
     enum TaskState {
         TASK_STATE_FREE,
@@ -30,43 +36,45 @@ namespace noz {
 
     constexpr void* TASK_NO_RESULT = (void*)"";  // Return this when you don't need a result
 
-    using TaskRunFunc = std::function<void*(TaskHandle task)>;
-    using TaskCompleteFunc = std::function<void(TaskHandle task, void* result)>;
+    using TaskRunFunc = std::function<void*(Task task)>;
+    using TaskCompleteFunc = std::function<void(Task task, void* result)>;
     using TaskDestroyFunc = std::function<void(void* result)>;
 
-    extern TaskHandle CreateTask(
+    extern Task CreateTask(
         TaskRunFunc run_func,
         TaskCompleteFunc complete_func = nullptr,
         TaskDestroyFunc destroy_func = nullptr);
 
-    extern TaskHandle CreateTask(
+    extern Task CreateTask(
         TaskRunFunc run_func,
         TaskCompleteFunc complete_func,
-        TaskHandle depends_on,
+        Task depends_on,
         TaskDestroyFunc destroy_func = nullptr);
 
-    extern TaskHandle CreateTask(
+    extern Task CreateTask(
         TaskRunFunc run_func,
         TaskCompleteFunc complete_func,
-        std::initializer_list<TaskHandle> depends_on,
+        std::initializer_list<Task> depends_on,
         TaskDestroyFunc destroy_func = nullptr);
 
-    extern TaskHandle CreateTask(
+    extern Task CreateTask(
         TaskRunFunc run_func,
         TaskCompleteFunc complete_func,
-        const TaskHandle* depends_on,
+        const Task* depends_on,
         int count,
         TaskDestroyFunc destroy_func = nullptr);
 
-    extern TaskHandle CreateVirtualTask(TaskDestroyFunc destroy_func = nullptr);
-    extern void CompleteTask(TaskHandle handle, void* result);
-    extern void* GetTaskResult(TaskHandle handle);
-    extern void* ReleaseTaskResult(TaskHandle handle);  // Takes ownership, caller responsible for cleanup
-    extern int GetDependencyCount(TaskHandle handle);
-    extern TaskHandle GetDependencyAt(TaskHandle handle, int index);
-    extern bool IsTaskComplete(TaskHandle handle);
-    extern bool IsTaskValid(TaskHandle handle);
-    extern bool IsTaskCanceled(TaskHandle handle);
-    extern void CancelTask(TaskHandle handle);
+    extern Task CreateTask(TaskDestroyFunc destroy_func = nullptr);
+    extern void CompleteTask(Task task, void* result);
+    extern void* GetTaskResult(Task task);
+    extern void* ReleaseTaskResult(Task task);  // Takes ownership, caller responsible for cleanup
+    extern int GetDependencyCount(Task task);
+    extern Task GetDependencyAt(Task task, int index);
+    extern Task GetParent(Task task);
+    extern void SetTaskParent(Task task, Task parent);
+    extern bool IsTaskComplete(Task task);
+    extern bool IsTaskValid(Task task);
+    extern bool IsTaskCanceled(Task task);
+    extern void CancelTask(Task task);
 
 } // namespace noz

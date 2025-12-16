@@ -18,7 +18,8 @@ namespace noz {
         TaskCompleteFunc complete_func;
         TaskDestroyFunc destroy_func;
         void* result;
-        TaskHandle dependencies[MAX_TASK_DEPENDENCIES];
+        Task dependencies[MAX_TASK_DEPENDENCIES];
+        Task parent;
         i32 dep_count;
         u64 start_frame;
         u32 generation;
@@ -47,7 +48,7 @@ namespace noz {
 
     static TaskSystem g_tasks = {};
 
-    static TaskImpl* GetTask(TaskHandle handle) {
+    static TaskImpl* GetTask(Task handle) {
         if (handle.generation == 0 || handle.id >= (u32)g_tasks.max_tasks)
             return nullptr;
 
@@ -58,12 +59,12 @@ namespace noz {
         return &task;
     }
 
-    inline TaskHandle GetHandle(TaskImpl* task) {
+    inline Task GetHandle(TaskImpl* task) {
         return { static_cast<u32>(task - g_tasks.tasks), task->generation };
     }
 
-    static TaskHandle CreateTaskInternal(TaskRunFunc run_func, TaskCompleteFunc complete_func,
-                                          TaskDestroyFunc destroy_func, const TaskHandle* deps, i32 dep_count) {
+    static Task CreateTaskInternal(TaskRunFunc run_func, TaskCompleteFunc complete_func,
+                                          TaskDestroyFunc destroy_func, const Task* deps, i32 dep_count) {
         std::lock_guard lock(g_tasks.mutex);
 
         for (i32 i = 0; i < g_tasks.max_tasks; i++) {
@@ -80,6 +81,7 @@ namespace noz {
             for (i32 j = 0; j < dep_count; j++) {
                 task.dependencies[j] = deps[j];
             }
+            task.parent = TASK_HANDLE_INVALID;
             task.result = nullptr;
             task.start_frame = g_tasks.current_frame;
             task.is_virtual = false;
@@ -90,34 +92,34 @@ namespace noz {
         return TASK_HANDLE_INVALID;
     }
 
-    TaskHandle CreateTask(
+    Task CreateTask(
         TaskRunFunc run_func,
         TaskCompleteFunc complete_func,
         TaskDestroyFunc destroy_func) {
         return CreateTaskInternal(std::move(run_func), std::move(complete_func), std::move(destroy_func), nullptr, 0);
     }
 
-    TaskHandle CreateTask(
+    Task CreateTask(
         TaskRunFunc run_func,
         TaskCompleteFunc complete_func,
-        TaskHandle depends_on,
+        Task depends_on,
         TaskDestroyFunc destroy_func) {
         return CreateTaskInternal(std::move(run_func), std::move(complete_func), std::move(destroy_func), &depends_on, 1);
     }
 
-    TaskHandle CreateTask(
+    Task CreateTask(
         TaskRunFunc run_func,
         TaskCompleteFunc complete_func,
-        std::initializer_list<TaskHandle> depends_on,
+        std::initializer_list<Task> depends_on,
         TaskDestroyFunc destroy_func) {
         return CreateTaskInternal(std::move(run_func), std::move(complete_func), std::move(destroy_func),
                                   depends_on.begin(), static_cast<i32>(depends_on.size()));
     }
 
-    TaskHandle CreateTask(
+    Task CreateTask(
         TaskRunFunc run_func,
         TaskCompleteFunc complete_func,
-        const TaskHandle* depends_on,
+        const Task* depends_on,
         int count,
         TaskDestroyFunc destroy_func) {
         return CreateTaskInternal(
@@ -128,7 +130,7 @@ namespace noz {
             count);
     }
 
-    TaskHandle CreateVirtualTask(TaskDestroyFunc destroy_func) {
+    Task CreateTask(TaskDestroyFunc destroy_func) {
         std::lock_guard lock(g_tasks.mutex);
 
         for (i32 task_index = 0; task_index < g_tasks.max_tasks; task_index++) {
@@ -142,6 +144,7 @@ namespace noz {
             task.complete_func = nullptr;
             task.destroy_func = std::move(destroy_func);
             task.dep_count = 0;
+            task.parent = TASK_HANDLE_INVALID;
             task.result = nullptr;
             task.start_frame = g_tasks.current_frame;
             task.is_virtual = true;
@@ -152,7 +155,7 @@ namespace noz {
         return TASK_HANDLE_INVALID;
     }
 
-    void CompleteTask(TaskHandle handle, void* result) {
+    void CompleteTask(Task handle, void* result) {
         if (handle.generation == 0)
             return;
 
@@ -166,7 +169,7 @@ namespace noz {
         g_tasks.tasks_completed.store(true);
     }
 
-    void* GetTaskResult(TaskHandle handle) {
+    void* GetTaskResult(Task handle) {
         if (handle.generation == 0)
             return nullptr;
 
@@ -180,7 +183,7 @@ namespace noz {
         return task.result;
     }
 
-    void* ReleaseTaskResult(TaskHandle handle) {
+    void* ReleaseTaskResult(Task handle) {
         if (handle.generation == 0)
             return nullptr;
 
@@ -195,7 +198,7 @@ namespace noz {
         return result;
     }
 
-    int GetDependencyCount(TaskHandle handle) {
+    int GetDependencyCount(Task handle) {
         if (handle.generation == 0)
             return 0;
 
@@ -206,7 +209,7 @@ namespace noz {
         return task->dep_count;
     }
 
-    TaskHandle GetDependencyAt(TaskHandle handle, int index) {
+    Task GetDependencyAt(Task handle, int index) {
         if (handle.generation == 0)
             return TASK_HANDLE_INVALID;
 
@@ -217,7 +220,28 @@ namespace noz {
         return task->dependencies[index];
     }
 
-    bool IsTaskValid(TaskHandle handle) {
+    Task GetParent(Task handle) {
+        if (handle.generation == 0)
+            return TASK_HANDLE_INVALID;
+
+        TaskImpl* task = GetTask(handle);
+        if (!task)
+            return TASK_HANDLE_INVALID;
+
+        return task->parent;
+    }
+
+    void SetTaskParent(Task handle, Task parent) {
+        if (handle.generation == 0)
+            return;
+
+        std::lock_guard lock(g_tasks.mutex);
+        TaskImpl* task = GetTask(handle);
+        if (task)
+            task->parent = parent;
+    }
+
+    bool IsTaskValid(Task handle) {
         if (handle.generation == 0)
             return false;
 
@@ -225,7 +249,7 @@ namespace noz {
         return GetTask(handle) != nullptr;
     }
 
-    bool IsTaskComplete(TaskHandle handle) {
+    bool IsTaskComplete(Task handle) {
         if (handle.generation == 0)
             return true;
 
@@ -238,7 +262,7 @@ namespace noz {
         return state == TASK_STATE_COMPLETE || state == TASK_STATE_CANCELED;
     }
 
-    bool IsTaskCanceled(TaskHandle handle) {
+    bool IsTaskCanceled(Task handle) {
         if (handle.generation == 0)
             return true;
 
@@ -253,7 +277,7 @@ namespace noz {
         return task.state.load() == TASK_STATE_CANCELED;
     }
 
-    void CancelTask(TaskHandle handle) {
+    void CancelTask(Task handle) {
         if (handle.generation == 0)
             return;
 
@@ -270,7 +294,7 @@ namespace noz {
         task->state.compare_exchange_strong(expected, TASK_STATE_CANCELED);
     }
 
-    static bool IsSingleDependencyReady(TaskHandle dep_handle) {
+    static bool IsSingleDependencyReady(Task dep_handle) {
         if (dep_handle.generation == 0)
             return true;
 
@@ -321,7 +345,7 @@ namespace noz {
         return nullptr;
     }
 
-    static bool HasPendingDependents(TaskHandle handle) {
+    static bool HasPendingDependents(Task handle) {
         for (i32 i = 0; i < g_tasks.max_tasks; i++) {
             TaskImpl& task = g_tasks.tasks[i];
             if (task.state.load() != TASK_STATE_PENDING)
@@ -344,7 +368,7 @@ namespace noz {
                 TaskState state = task.state.load();
 
                 if (state == TASK_STATE_COMPLETE) {
-                    TaskHandle handle = GetHandle(&task);
+                    Task handle = GetHandle(&task);
 
                     if (task.complete_func)
                         task.complete_func(handle, task.result);
@@ -364,7 +388,7 @@ namespace noz {
                     task.generation = 0;
                     task.state.store(TASK_STATE_FREE);
                 } else if (state == TASK_STATE_CANCELED) {
-                    TaskHandle handle = GetHandle(&task);
+                    Task handle = GetHandle(&task);
 
                     if (HasPendingDependents(handle))
                         continue;
