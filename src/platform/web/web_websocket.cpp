@@ -192,7 +192,7 @@ void PlatformShutdownWebSocket() {
     }
 }
 
-void PlatfrormUpdateWebSocket() {
+void PlatformUpdateWebSocket() {
     // No-op for web - callbacks handle updates
 }
 

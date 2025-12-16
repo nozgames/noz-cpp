@@ -16,6 +16,7 @@ namespace noz {
         std::atomic<TaskState> state{TASK_STATE_FREE};
         TaskRunFunc run_func;
         TaskCompleteFunc complete_func;
+        TaskDestroyFunc destroy_func;
         void* result;
         TaskHandle dependencies[MAX_TASK_DEPENDENCIES];
         void* dep_results[MAX_TASK_DEPENDENCIES];
@@ -23,6 +24,7 @@ namespace noz {
         u64 start_frame;
         u32 generation;
         bool is_virtual;
+        i32 dependent_task;
     };
 
     struct TaskWorker {
@@ -63,7 +65,7 @@ namespace noz {
     }
 
     static TaskHandle CreateTaskInternal(TaskRunFunc run_func, TaskCompleteFunc complete_func,
-                                          const TaskHandle* deps, i32 dep_count) {
+                                          TaskDestroyFunc destroy_func, const TaskHandle* deps, i32 dep_count) {
         std::lock_guard lock(g_tasks.mutex);
 
         for (i32 i = 0; i < g_tasks.max_tasks; i++) {
@@ -75,6 +77,7 @@ namespace noz {
             task.generation = ++g_tasks.next_generation;
             task.run_func = std::move(run_func);
             task.complete_func = std::move(complete_func);
+            task.destroy_func = std::move(destroy_func);
             task.dep_count = dep_count;
             for (i32 j = 0; j < dep_count; j++) {
                 task.dependencies[j] = deps[j];
@@ -90,29 +93,49 @@ namespace noz {
         return TASK_HANDLE_INVALID;
     }
 
-    TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func) {
-        return CreateTaskInternal(std::move(run_func), std::move(complete_func), nullptr, 0);
+    TaskHandle CreateTask(
+        TaskRunFunc run_func,
+        TaskCompleteFunc complete_func,
+        TaskDestroyFunc destroy_func) {
+        return CreateTaskInternal(std::move(run_func), std::move(complete_func), std::move(destroy_func), nullptr, 0);
     }
 
-    TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func, TaskHandle depends_on) {
-        return CreateTaskInternal(std::move(run_func), std::move(complete_func), &depends_on, 1);
+    TaskHandle CreateTask(
+        TaskRunFunc run_func,
+        TaskCompleteFunc complete_func,
+        TaskHandle depends_on,
+        TaskDestroyFunc destroy_func) {
+        return CreateTaskInternal(std::move(run_func), std::move(complete_func), std::move(destroy_func), &depends_on, 1);
     }
 
-    TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func, std::initializer_list<TaskHandle> depends_on) {
-        return CreateTaskInternal(std::move(run_func), std::move(complete_func),
+    TaskHandle CreateTask(
+        TaskRunFunc run_func,
+        TaskCompleteFunc complete_func,
+        std::initializer_list<TaskHandle> depends_on,
+        TaskDestroyFunc destroy_func) {
+        return CreateTaskInternal(std::move(run_func), std::move(complete_func), std::move(destroy_func),
                                   depends_on.begin(), static_cast<i32>(depends_on.size()));
     }
 
-    TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func, const TaskHandle* depends_on, int count) {
-        return CreateTaskInternal(std::move(run_func), std::move(complete_func),
-                                  depends_on, static_cast<i32>(count));
+    TaskHandle CreateTask(
+        TaskRunFunc run_func,
+        TaskCompleteFunc complete_func,
+        const TaskHandle* depends_on,
+        int count,
+        TaskDestroyFunc destroy_func) {
+        return CreateTaskInternal(
+            std::move(run_func),
+            std::move(complete_func),
+            std::move(destroy_func),
+            depends_on,
+            count);
     }
 
-    TaskHandle CreateVirtualTask() {
+    TaskHandle CreateVirtualTask(TaskDestroyFunc destroy_func) {
         std::lock_guard lock(g_tasks.mutex);
 
-        for (i32 i = 0; i < g_tasks.max_tasks; i++) {
-            TaskImpl& task = g_tasks.tasks[i];
+        for (i32 task_index = 0; task_index < g_tasks.max_tasks; task_index++) {
+            TaskImpl& task = g_tasks.tasks[task_index];
             TaskState expected = TASK_STATE_FREE;
             if (!task.state.compare_exchange_strong(expected, TASK_STATE_RUNNING))
                 continue;
@@ -120,12 +143,13 @@ namespace noz {
             task.generation = ++g_tasks.next_generation;
             task.run_func = nullptr;
             task.complete_func = nullptr;
+            task.destroy_func = std::move(destroy_func);
             task.dep_count = 0;
             task.result = nullptr;
             task.start_frame = g_tasks.current_frame;
             task.is_virtual = true;
 
-            return { static_cast<u32>(i), task.generation };
+            return { static_cast<u32>(task_index), task.generation };
         }
 
         return TASK_HANDLE_INVALID;
@@ -149,7 +173,7 @@ namespace noz {
         if (handle.generation == 0)
             return nullptr;
 
-        if (handle.id >= (u32)g_tasks.max_tasks)
+        if (handle.id >= static_cast<u32>(g_tasks.max_tasks))
             return nullptr;
 
         TaskImpl& task = g_tasks.tasks[handle.id];
@@ -174,7 +198,7 @@ namespace noz {
         std::lock_guard lock(g_tasks.mutex);
         TaskImpl* task = GetTask(handle);
         if (!task)
-            return true;  // Invalid handle = treat as complete
+            return true;
 
         TaskState state = task->state.load();
         return state == TASK_STATE_COMPLETE || state == TASK_STATE_CANCELED;
@@ -294,8 +318,13 @@ namespace noz {
                     if (HasPendingDependents(handle))
                         continue;
 
+                    // Call destructor before freeing
+                    if (task.destroy_func)
+                        task.destroy_func(task.result);
+
                     task.run_func = nullptr;
                     task.complete_func = nullptr;
+                    task.destroy_func = nullptr;
                     task.result = nullptr;
                     task.generation = 0;
                     task.state.store(TASK_STATE_FREE);
@@ -304,8 +333,13 @@ namespace noz {
                     if (HasPendingDependents(handle))
                         continue;
 
+                    // Call destructor before freeing
+                    if (task.destroy_func)
+                        task.destroy_func(task.result);
+
                     task.run_func = nullptr;
                     task.complete_func = nullptr;
+                    task.destroy_func = nullptr;
                     task.result = nullptr;
                     task.generation = 0;
                     task.state.store(TASK_STATE_FREE);

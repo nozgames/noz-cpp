@@ -33,23 +33,38 @@ namespace noz {
 
     using TaskRunFunc = std::function<void*(TaskHandle task, std::span<void*> dep_results)>;
     using TaskCompleteFunc = std::function<void(TaskHandle task, void* result)>;
+    using TaskDestroyFunc = std::function<void(void* result)>;
 
-    // Create task with no dependencies
-    extern TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func = nullptr);
+    extern TaskHandle CreateTask(
+        TaskRunFunc run_func,
+        TaskCompleteFunc complete_func = nullptr,
+        TaskDestroyFunc destroy_func = nullptr);
 
-    // Create task with single dependency
-    extern TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func, TaskHandle depends_on);
+    extern TaskHandle CreateTask(
+        TaskRunFunc run_func,
+        TaskCompleteFunc complete_func,
+        TaskHandle depends_on,
+        TaskDestroyFunc destroy_func = nullptr);
 
-    // Create task with multiple dependencies
-    extern TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func, std::initializer_list<TaskHandle> depends_on);
-    extern TaskHandle CreateTask(TaskRunFunc run_func, TaskCompleteFunc complete_func, const TaskHandle* depends_on, int count);
+    extern TaskHandle CreateTask(
+        TaskRunFunc run_func,
+        TaskCompleteFunc complete_func,
+        std::initializer_list<TaskHandle> depends_on,
+        TaskDestroyFunc destroy_func = nullptr);
 
-    extern TaskHandle CreateVirtualTask();  // No worker - complete manually with CompleteTask()
-    extern void CompleteTask(TaskHandle handle, void* result);  // Complete a virtual task
-    extern void* GetTaskResult(TaskHandle handle);  // Get result from completed dependency
+    extern TaskHandle CreateTask(
+        TaskRunFunc run_func,
+        TaskCompleteFunc complete_func,
+        const TaskHandle* depends_on,
+        int count,
+        TaskDestroyFunc destroy_func = nullptr);
+
+    extern TaskHandle CreateVirtualTask(TaskDestroyFunc destroy_func = nullptr);
+    extern void CompleteTask(TaskHandle handle, void* result);
+    extern void* GetTaskResult(TaskHandle handle);
     extern bool IsTaskComplete(TaskHandle handle);
     extern bool IsTaskValid(TaskHandle handle);
-    extern bool IsTaskCanceled(TaskHandle handle);  // Call from run_func to check if should abort
+    extern bool IsTaskCanceled(TaskHandle handle);
     extern void CancelTask(TaskHandle handle);
 
 } // namespace noz

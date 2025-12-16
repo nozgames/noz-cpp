@@ -107,7 +107,7 @@ extern void PlatformBindShader(PlatformShader* shader);
 // @websocket
 extern void PlatformInitWebSocket();
 extern void PlatformShutdownWebSocket();
-extern void PlatfrormUpdateWebSocket();
+extern void PlatformUpdateWebSocket();
 extern PlatformWebSocketHandle PlatformConnectWebSocket(const char* url);
 extern void PlatformSend(const PlatformWebSocketHandle& handle, const char* text);
 extern void PlatformSendBinary(const PlatformWebSocketHandle& handle, const void* data, u32 size);

@@ -10,7 +10,7 @@ void PlatformInitWebSocket() {
 void PlatformShutdownWebSocket() {
 }
 
-void PlatfrormUpdateWebSocket() {
+void PlatformUpdateWebSocket() {
 }
 
 PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {

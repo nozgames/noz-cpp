@@ -56,6 +56,18 @@ static noz::HttpSystem g_http = {};
 
 using namespace noz;
 
+static void FreeRequestData(void* result) {
+    HttpRequestImpl* req = static_cast<HttpRequestImpl*>(result);
+    if (!req) return;
+
+    Free(req->response);
+    Free(req->body);
+    req->response = nullptr;
+    req->body = nullptr;
+    req->state = HTTP_REQUEST_STATE_NONE;
+    g_http.request_count--;
+}
+
 static HttpRequestImpl* GetRequest(const char* url, HttpRequestMethod method, const HttpCallback& callback) {
     if (g_http.request_count >= g_http.max_requests)
         return nullptr;
@@ -66,7 +78,7 @@ static HttpRequestImpl* GetRequest(const char* url, HttpRequestMethod method, co
 
     HttpRequestImpl* request = g_http.requests + request_index;
     Set(request->url, url);
-    request->task = CreateVirtualTask();
+    request->task = CreateVirtualTask(FreeRequestData);
     request->method = method;
     request->callback = callback;
     request->state = HTTP_REQUEST_STATE_QUEUED;
@@ -212,15 +224,6 @@ char* noz::GetResponseHeader(HttpRequest *request, const char *name, Allocator *
 void noz::EncodeUrl(Text& out, const Text& input) {
     PlatformEncodeUrl(out.value, TEXT_MAX_LENGTH + 1, input.value, input.length);
     out.length = Length(out.value);
-}
-
-void FreeRequestData(HttpRequestImpl *req) {
-    PlatformFree(req->handle);
-    Free(req->body);
-    Clear(req->content_type);
-    Clear(req->headers);
-    req->method = HTTP_REQUEST_METHOD_NONE;
-    req->body = nullptr;
 }
 
 static void FinishRequest(HttpRequestImpl* request) {

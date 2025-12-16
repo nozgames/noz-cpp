@@ -23,6 +23,14 @@ struct WebSocketMessage
     u32 size;
 };
 
+enum class WebSocketConnectState
+{
+    None,
+    SendingRequest,
+    ReceivingResponse,
+    Connected
+};
+
 struct WindowsWebSocket
 {
     HINTERNET session;
@@ -32,8 +40,10 @@ struct WindowsWebSocket
     HANDLE thread;
     CRITICAL_SECTION cs;
     WebSocketStatus status;
+    WebSocketConnectState connect_state;
     u32 generation;
     bool should_close;
+    bool request_complete;
     u16 close_code;
     char close_reason[128];
 
@@ -88,6 +98,43 @@ static WindowsWebSocket* GetSocket(const PlatformWebSocketHandle& handle)
         return nullptr;
 
     return &ws;
+}
+
+static void CALLBACK WebSocketCallback(
+    HINTERNET hInternet,
+    DWORD_PTR dwContext,
+    DWORD dwInternetStatus,
+    LPVOID lpvStatusInformation,
+    DWORD dwStatusInformationLength)
+{
+    (void)hInternet;
+    (void)dwStatusInformationLength;
+
+    WindowsWebSocket* ws = (WindowsWebSocket*)dwContext;
+    if (!ws)
+        return;
+
+    if (ws < &g_ws.sockets[0] || ws >= &g_ws.sockets[MAX_WEBSOCKETS])
+        return;
+
+    switch (dwInternetStatus)
+    {
+        case WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE:
+            ws->request_complete = true;
+            break;
+
+        case WINHTTP_CALLBACK_STATUS_HEADERS_AVAILABLE:
+            ws->request_complete = true;
+            break;
+
+        case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR:
+        {
+            WINHTTP_ASYNC_RESULT* result = (WINHTTP_ASYNC_RESULT*)lpvStatusInformation;
+            LogError("WebSocket async error: %lu", result->dwError);
+            ws->status = WebSocketStatus::Error;
+            break;
+        }
+    }
 }
 
 static void QueueMessage(WindowsWebSocket* ws, WebSocketMessageType type, const u8* data, u32 size)
@@ -313,10 +360,59 @@ void PlatformShutdownWebSocket()
     memset(&g_ws, 0, sizeof(g_ws));
 }
 
-void PlatfrormUpdateWebSocket()
+void PlatformUpdateWebSocket()
 {
-    // Currently handled by receive threads
-    // Could add periodic cleanup of dead connections here
+    for (int i = 0; i < MAX_WEBSOCKETS; i++) {
+        WindowsWebSocket& ws = g_ws.sockets[i];
+        if (ws.status != WebSocketStatus::Connecting)
+            continue;
+
+        if (!ws.request_complete)
+            continue;
+
+        switch (ws.connect_state)
+        {
+            case WebSocketConnectState::SendingRequest:
+            {
+                // Send complete, now receive response
+                ws.request_complete = false;
+                ws.connect_state = WebSocketConnectState::ReceivingResponse;
+
+                if (!WinHttpReceiveResponse(ws.request, nullptr)) {
+                    DWORD err = GetLastError();
+                    if (err != ERROR_IO_PENDING) {
+                        ws.status = WebSocketStatus::Error;
+                    }
+                }
+                break;
+            }
+
+            case WebSocketConnectState::ReceivingResponse:
+            {
+                // Response received, complete the upgrade
+                ws.websocket = WinHttpWebSocketCompleteUpgrade(ws.request, (DWORD_PTR)&ws);
+                if (!ws.websocket) {
+                    ws.status = WebSocketStatus::Error;
+                    break;
+                }
+
+                WinHttpCloseHandle(ws.request);
+                ws.request = nullptr;
+                ws.connect_state = WebSocketConnectState::Connected;
+                ws.status = WebSocketStatus::Connected;
+
+                // Start receive thread
+                ws.thread = CreateThread(nullptr, 0, WebSocketReceiveThread, &ws, 0, nullptr);
+                if (!ws.thread) {
+                    ws.status = WebSocketStatus::Error;
+                }
+                break;
+            }
+
+            default:
+                break;
+        }
+    }
 }
 
 PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
@@ -344,6 +440,7 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
     memset(ws, 0, sizeof(WindowsWebSocket));
     InitializeCriticalSection(&ws->cs);
     ws->status = WebSocketStatus::Connecting;
+    ws->connect_state = WebSocketConnectState::None;
     ws->generation = ++g_ws.next_id;
 
     // Parse URL
@@ -387,18 +484,25 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
     bool secure = (url_components.nScheme == INTERNET_SCHEME_HTTPS) ||
                   (wcsncmp(wide_url, L"wss://", 6) == 0);
 
-    // Create session (synchronous for WebSocket)
+    // Create async session
     ws->session = WinHttpOpen(
         L"NoZ/1.0",
         WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
         nullptr,
         nullptr,
-        0);
+        WINHTTP_FLAG_ASYNC);
 
     if (!ws->session) {
         ws->status = WebSocketStatus::Error;
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
+
+    // Set callback for async operations
+    WinHttpSetStatusCallback(
+        ws->session,
+        WebSocketCallback,
+        WINHTTP_CALLBACK_FLAG_ALL_COMPLETIONS,
+        0);
 
     // Connect
     INTERNET_PORT port = url_components.nPort;
@@ -445,34 +549,16 @@ PlatformWebSocketHandle PlatformConnectWebSocket(const char* url) {
         return MakeWebSocketHandle(socket_index, ws->generation);
     }
 
-    // const wchar_t* compression_header = L"Accept-Encoding: gzip\r\n";
-    // if (!WinHttpAddRequestHeaders(ws->request, compression_header, (DWORD)-1, WINHTTP_ADDREQ_FLAG_ADD)) {
-    // }
+    // Send request asynchronously
+    ws->request_complete = false;
+    ws->connect_state = WebSocketConnectState::SendingRequest;
 
-    if (!WinHttpSendRequest(ws->request, WINHTTP_NO_ADDITIONAL_HEADERS, 0, nullptr, 0, 0, 0)) {
-        ws->status = WebSocketStatus::Error;
-        return MakeWebSocketHandle(socket_index, ws->generation);
-    }
-
-    if (!WinHttpReceiveResponse(ws->request, nullptr)) {
-        ws->status = WebSocketStatus::Error;
-        return MakeWebSocketHandle(socket_index, ws->generation);
-    }
-
-    ws->websocket = WinHttpWebSocketCompleteUpgrade(ws->request, 0);
-    if (!ws->websocket) {
-        ws->status = WebSocketStatus::Error;
-        return MakeWebSocketHandle(socket_index, ws->generation);
-    }
-
-    WinHttpCloseHandle(ws->request);
-
-    ws->request = nullptr;
-    ws->status = WebSocketStatus::Connected;
-    ws->thread = CreateThread(nullptr, 0, WebSocketReceiveThread, ws, 0, nullptr);
-    if (!ws->thread) {
-        ws->status = WebSocketStatus::Error;
-        return MakeWebSocketHandle(socket_index, ws->generation);
+    if (!WinHttpSendRequest(ws->request, WINHTTP_NO_ADDITIONAL_HEADERS, 0, nullptr, 0, 0, (DWORD_PTR)ws)) {
+        DWORD err = GetLastError();
+        if (err != ERROR_IO_PENDING) {
+            ws->status = WebSocketStatus::Error;
+            return MakeWebSocketHandle(socket_index, ws->generation);
+        }
     }
 
     return MakeWebSocketHandle(socket_index, ws->generation);
