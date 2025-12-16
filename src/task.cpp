@@ -10,7 +10,7 @@
 
 namespace noz {
 
-    constexpr i32 MAX_TASK_DEPENDENCIES = 16;
+    constexpr i32 MAX_TASK_DEPENDENCIES = 256;
 
     struct TaskImpl {
         std::atomic<TaskState> state{TASK_STATE_FREE};

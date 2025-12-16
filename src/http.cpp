@@ -20,6 +20,10 @@ struct HttpRequestImpl : HttpRequest {
     HttpCallback callback;
     char *response_string;
     HttpRequestState state;
+    HttpStatus last_status;
+    int cached_status_code;  // Cached on completion for thread-safe access
+    u8 *cached_response;     // Cached response data for thread-safe access
+    u32 cached_response_size;
     String1024 url;
 
     // Stored request data for deferred execution
@@ -94,6 +98,7 @@ static void StartRequest(HttpRequestImpl *req) {
         req->handle = PlatformPostURL(req->url, req->body, req->body_size,
                                        req->content_type, req->headers, req->method);
     }
+    req->last_status = HttpStatus::Pending;
     ActiveListAdd(req);
 
     // Free stored body data after sending
@@ -200,7 +205,7 @@ int GetStatusCode(HttpRequest *request) {
         return 0;
 
     HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
-    return PlatformGetStatusCode(req->handle);
+    return req->cached_status_code;
 }
 
 bool IsSuccess(HttpRequest *request) {
@@ -211,9 +216,7 @@ bool IsSuccess(HttpRequest *request) {
 Stream *GetResponseStream(HttpRequest *request, Allocator *allocator) {
     if (!request) return nullptr;
     HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
-    u32 out_size = 0;
-    const u8 *res = PlatformGetResponse(req->handle, &out_size);
-    return LoadStream(allocator, res, out_size);
+    return LoadStream(allocator, req->cached_response, req->cached_response_size);
 }
 
 const char *GetResponseString(HttpRequest *request) {
@@ -226,15 +229,13 @@ const char *GetResponseString(HttpRequest *request) {
     if (req->response_string)
         return req->response_string;
 
-    u32 size = 0;
-    const u8 *data = PlatformGetResponse(req->handle, &size);
-    if (!data || size == 0)
+    if (!req->cached_response || req->cached_response_size == 0)
         return nullptr;
 
     // Allocate and null-terminate
-    req->response_string = static_cast<char *>(Alloc(ALLOCATOR_DEFAULT, size + 1));
-    memcpy(req->response_string, data, size);
-    req->response_string[size] = '\0';
+    req->response_string = static_cast<char *>(Alloc(ALLOCATOR_DEFAULT, req->cached_response_size + 1));
+    memcpy(req->response_string, req->cached_response, req->cached_response_size);
+    req->response_string[req->cached_response_size] = '\0';
 
     return req->response_string;
 }
@@ -242,9 +243,7 @@ const char *GetResponseString(HttpRequest *request) {
 u32 GetResponseSize(HttpRequest *request) {
     if (!request) return 0;
     HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
-    u32 size = 0;
-    PlatformGetResponse(req->handle, &size);
-    return size;
+    return req->cached_response_size;
 }
 
 char* GetResponseHeader(HttpRequest *request, const char *name, Allocator *allocator) {
@@ -261,6 +260,11 @@ static void FreeRequestData(HttpRequestImpl *req) {
     if (req->response_string) {
         Free(req->response_string);
         req->response_string = nullptr;
+    }
+    if (req->cached_response) {
+        Free(req->cached_response);
+        req->cached_response = nullptr;
+        req->cached_response_size = 0;
     }
     if (req->body) {
         Free(req->body);
@@ -321,8 +325,26 @@ void UpdateHttp() {
 
         HttpStatus current = PlatformGetStatus(req->handle);
 
-        // Check for completion
-        if (current == HttpStatus::Complete || current == HttpStatus::Error || current == HttpStatus::None) {
+        // Only process state transition from Pending to Complete/Error
+        if (req->last_status == HttpStatus::Pending && current != HttpStatus::Pending) {
+            // Update last_status - treat None as Error
+            req->last_status = (current == HttpStatus::Complete) ? HttpStatus::Complete : HttpStatus::Error;
+
+            // Cache status code for thread-safe access
+            req->cached_status_code = PlatformGetStatusCode(req->handle);
+
+            // Cache response data for thread-safe access
+            u32 response_size = 0;
+            const u8 *response_data = PlatformGetResponse(req->handle, &response_size);
+            if (response_data && response_size > 0) {
+                req->cached_response = static_cast<u8*>(Alloc(ALLOCATOR_DEFAULT, response_size));
+                memcpy(req->cached_response, response_data, response_size);
+                req->cached_response_size = response_size;
+            } else {
+                req->cached_response = nullptr;
+                req->cached_response_size = 0;
+            }
+
             // Remove from active list
             ActiveListRemove(req);
             req->state = HttpRequestState::Idle;
