@@ -227,6 +227,11 @@ int PlatformGetStatusCode(const PlatformHttpHandle& handle) {
     return request->status_code;
 }
 
+bool PlatformIsFromCache(const PlatformHttpHandle& handle) {
+    (void)handle;
+    return false;  // curl doesn't use system cache
+}
+
 const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size) {
     CurlHttpRequest* request = GetRequest(handle);
     if (!request || request->status != HttpStatus::Complete) {

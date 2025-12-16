@@ -282,6 +282,11 @@ int PlatformGetStatusCode(const PlatformHttpHandle& handle) {
     return request->status_code;
 }
 
+bool PlatformIsFromCache(const PlatformHttpHandle& handle) {
+    (void)handle;
+    return false;  // Web platform doesn't expose cache info
+}
+
 const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size) {
     WebHttpRequest* request = GetRequest(handle);
     if (!request || request->status != HttpStatus::Complete) {

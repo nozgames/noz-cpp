@@ -160,6 +160,7 @@ extern PlatformHttpHandle PlatformGetURL(const char* url);
 extern PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type, const char* headers, const char* method);
 extern HttpStatus PlatformGetStatus(const PlatformHttpHandle& handle);
 extern int PlatformGetStatusCode(const PlatformHttpHandle& handle);      // HTTP status code (200, 404, etc.)
+extern bool PlatformIsFromCache(const PlatformHttpHandle& handle);       // True if response came from cache
 extern const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size);
 extern char* PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, Allocator* allocator);
 extern void PlatformCancel(const PlatformHttpHandle& handle);            // Cancel pending request

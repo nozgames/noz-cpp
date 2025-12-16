@@ -42,6 +42,11 @@ int PlatformGetStatusCode(const PlatformHttpHandle& handle) {
     return 0;
 }
 
+bool PlatformIsFromCache(const PlatformHttpHandle& handle) {
+    (void)handle;
+    return false;
+}
+
 const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size) {
     (void)handle;
     if (out_size) *out_size = 0;

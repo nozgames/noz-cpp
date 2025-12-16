@@ -333,6 +333,14 @@ void UpdateHttp() {
             // Cache status code for thread-safe access
             req->cached_status_code = PlatformGetStatusCode(req->handle);
 
+            // Log completion with cache status
+            bool from_cache = PlatformIsFromCache(req->handle);
+            LogInfo("HTTP %s: %s %d%s",
+                current == HttpStatus::Complete ? "OK" : "ERR",
+                req->url.value,
+                req->cached_status_code,
+                from_cache ? " (cached)" : "");
+
             // Cache response data for thread-safe access
             u32 response_size = 0;
             const u8 *response_data = PlatformGetResponse(req->handle, &response_size);
