@@ -25,7 +25,6 @@ extern int GetEvent(Animator& animator) {
 }
 
 static void EvalulateFrame(Animator& animator, int layer_index) {
-    Skeleton* skeleton = animator.skeleton;
     assert(animator.skeleton);
 
     AnimatorLayer& layer = GetLayer(animator, layer_index);
@@ -34,8 +33,6 @@ static void EvalulateFrame(Animator& animator, int layer_index) {
         return;
 
     AnimationImpl* anim_impl = static_cast<AnimationImpl*>(animation);
-    SkeletonImpl* skel_impl = static_cast<SkeletonImpl*>(skeleton);
-
     f32 frame_index_float = layer.time * anim_impl->frame_rate;
     i32 frame_index = static_cast<i32>(frame_index_float);
     AnimationFrame& frame = anim_impl->frames[frame_index];
@@ -80,12 +77,6 @@ static void EvalulateFrame(Animator& animator, int layer_index) {
             BoneTransform blend_frame = Mix(*bbt1, *bbt2, blend_frame_fraction);
             frame_transform = Mix(blend_frame, frame_transform, blend_t);
         }
-
-        frame_transform.position += skel_impl->bones[bone_index].transform.position;
-        frame_transform.position += animator.user_transforms[bone_index].position;
-        frame_transform.rotation += skel_impl->bones[bone_index].transform.rotation;
-        frame_transform.rotation += animator.user_transforms[bone_index].rotation;
-        frame_transform.scale *= animator.user_transforms[bone_index].scale;
 
         animator.transforms[bone_index] = frame_transform;
     }
@@ -227,13 +218,13 @@ void SetBoneMask(Animator& animator, int layer_index, u64 bone_mask) {
 void BindSkeleton(Skeleton* skeleton) {
     SkeletonImpl* skel_impl = static_cast<SkeletonImpl*>(skeleton);
     Mat3 identity = MAT3_IDENTITY;
-    BindSkeleton(&skel_impl->bones->transform.world_to_local, sizeof(Bone), &identity, 0, skel_impl->bone_count);
+    BindSkeleton(&skel_impl->bones->bind_pose, sizeof(Bone), &identity, 0, skel_impl->bone_count);
 }
 
 void BindSkeleton(Animator& animator) {
     SkeletonImpl* skel_impl = static_cast<SkeletonImpl*>(animator.skeleton);
     int bone_count = skel_impl->bone_count;
-    BindSkeleton(&skel_impl->bones->transform.world_to_local, sizeof(Bone), animator.bones, sizeof(Mat3), bone_count);
+    BindSkeleton(&skel_impl->bones->bind_pose, sizeof(Bone), animator.bones, sizeof(Mat3), bone_count);
 }
 
 void Init(Animator& animator, Skeleton* skeleton, int layer_count) {
@@ -252,13 +243,8 @@ void Init(Animator& animator, Skeleton* skeleton, int layer_count) {
         animator.bones[bone_index] = MAT3_IDENTITY;
         animator.transforms[bone_index] = {
             VEC2_ZERO,
+            VEC2_ONE,
             0.0f,
-            VEC2_ONE
-        };
-        animator.user_transforms[bone_index] = {
-            VEC2_ZERO,
-            0.0f,
-            VEC2_ONE
         };
     }
 }

@@ -16,17 +16,33 @@ constexpr AnimationFlags ANIMATION_FLAG_NONE = 0;
 constexpr AnimationFlags ANIMATION_FLAG_LOOPING = 1 << 0;
 constexpr AnimationFlags ANIMATION_FLAG_ROOT_MOTION = 1 << 1;
 
+struct BoneTransform {
+    Vec2 position;
+    Vec2 scale;
+    float rotation;
+};
+
+struct Bone {
+    const Name* name;
+    i32 index;
+    i32 parent_index;
+    BoneTransform transform;
+    Mat3 bind_pose;
+};
+
+extern Animation* CreateAnimation(
+    Allocator* allocator,
+    Skeleton* skeleton,
+    int frame_count,
+    int frame_rate,
+    BoneTransform* transforms,
+    int transform_count,
+    AnimationFlags flags,
+    const Name* name=NAME_NONE);
 extern int GetBoneCount(Animation* animation);
 extern bool IsRootMotion(Animation* animation);
 extern bool IsLooping(Animation* animation);
 extern float GetDuration(Animation* animation);
-
-// @bone_transform
-struct BoneTransform {
-    Vec2 position;
-    float rotation;
-    Vec2 scale;
-};
 
 inline BoneTransform Mix(const BoneTransform& a, const BoneTransform& b, float t) {
     BoneTransform result;
@@ -67,7 +83,6 @@ struct Animator {
     float last_root_motion;
     Mat3 bones[MAX_BONES];
     BoneTransform transforms[MAX_BONES];
-    BoneTransform user_transforms[MAX_BONES];
     int events[ANIMATION_MAX_EVENTS];
     int event_count;
 };

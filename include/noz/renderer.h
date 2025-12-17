@@ -6,8 +6,8 @@
 
 #include "rect.h"
 
-constexpr int MAX_BONES = 32;
-constexpr u32 MAX_UNIFORM_BUFFER_SIZE = sizeof(Mat4) * 32;
+constexpr int MAX_BONES = 64;
+constexpr u32 MAX_UNIFORM_BUFFER_SIZE = sizeof(Mat4) * 64;
 constexpr int ANIMATED_MESH_MAX_FRAMES = 32;
 constexpr int MESH_MAX_VERTEX_WEIGHTS = 4;
 
@@ -215,17 +215,14 @@ extern const Mat3& GetViewMatrix(Camera* camera);
 extern Bounds2 GetBounds(Camera* camera);
 extern void Shake(Camera* camera, const Vec2& intensity, float duration);
 
-struct Bone {
-    const Name* name;
-    i32 index;
-    i32 parent_index;
-    Transform transform;
-};
+struct Bone;
 
+// @skeleton
+extern Skeleton* CreateSkeleton(Allocator* allocator, Bone* bones, int bone_count, const Name* name=NAME_NONE);
 extern int GetBoneCount(Skeleton* skeleton);
 extern int GetBoneIndex(Skeleton* skeleton, const Name* name);
 extern const Mat3& GetLocalToWorld(Skeleton* skeleton, int bone_index);
-extern const Mat3& GetWorldToLocal(Skeleton* skeleton, int bone_index);
+extern const Mat3& GetBindPose(Skeleton* skeleton, int bone_index);
 extern const Transform& GetBoneTransform(Skeleton* skeleton, int bone_index);
 extern const Bone& GetBone(Skeleton* skeleton, int bone_index);
 

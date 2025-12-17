@@ -287,18 +287,21 @@ static void CleanupSocket(WindowsWebSocket* ws)
 {
     ws->should_close = true;
 
-    if (ws->thread)
-    {
-        WaitForSingleObject(ws->thread, 5000);
-        CloseHandle(ws->thread);
-        ws->thread = nullptr;
-    }
-
+    // Close websocket handle FIRST to unblock the receive thread
+    // WinHttpWebSocketReceive will return an error once the handle is closed
     if (ws->websocket)
     {
         WinHttpWebSocketClose(ws->websocket, WINHTTP_WEB_SOCKET_SUCCESS_CLOSE_STATUS, nullptr, 0);
         WinHttpCloseHandle(ws->websocket);
         ws->websocket = nullptr;
+    }
+
+    // Now wait for the thread to exit (should be quick since receive was unblocked)
+    if (ws->thread)
+    {
+        WaitForSingleObject(ws->thread, 1000);
+        CloseHandle(ws->thread);
+        ws->thread = nullptr;
     }
 
     if (ws->request)

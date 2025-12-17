@@ -115,6 +115,7 @@ Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType
 
     Asset* asset = loader(allocator, stream, &header, asset_name, name_table);
     asset->flags = header.flags;
+    asset->type = header.type;
 
     Free(name_table);
 

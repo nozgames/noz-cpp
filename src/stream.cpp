@@ -285,6 +285,12 @@ Vec2 ReadVec2(Stream* stream) {
     return value;
 }
 
+Mat3 ReadMat3(Stream* stream) {
+    Mat3 value;
+    ReadBytes(stream, &value, sizeof(Mat3));
+    return value;
+}
+
 Vec3 ReadVec3(Stream* stream) {
     Vec3 value;
     ReadBytes(stream, &value, sizeof(Vec3));

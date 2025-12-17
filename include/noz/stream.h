@@ -58,6 +58,7 @@ extern const Name* ReadName(Stream* stream);
 extern Color ReadColor(Stream* stream);
 extern Vec3 ReadVec3(Stream* stream);
 extern Vec2 ReadVec2(Stream* stream);
+extern Mat3 ReadMat3(Stream* stream);
 extern int ReadBytes(Stream* stream, void* dest, u32 count);
 extern void AlignStream(Stream* stream, int alignment);
 

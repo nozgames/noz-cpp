@@ -57,3 +57,46 @@ Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, 
 
     return impl;
 }
+
+Animation* CreateAnimation(
+    Allocator* allocator,
+    Skeleton* skeleton,
+    int frame_count,
+    int frame_rate,
+    BoneTransform* transforms,
+    int transform_count,
+    AnimationFlags flags,
+    const Name* name) {
+    assert(skeleton);
+    assert(transforms);
+    assert(transform_count == GetBoneCount(skeleton) * frame_count);
+
+    AnimationImpl* impl = static_cast<AnimationImpl*>(Alloc(allocator, sizeof(AnimationImpl)));
+    impl->name = name;
+    impl->bone_count = GetBoneCount(skeleton);
+    impl->frame_count = frame_count;
+    impl->transform_count = frame_count;
+    impl->bones = nullptr;
+    impl->frames = static_cast<AnimationFrame*>(Alloc(allocator, sizeof(AnimationFrame) * (frame_count + 1)));
+    impl->transform_stride = impl->bone_count;
+    impl->frame_rate = frame_rate;
+    impl->frame_rate_inv = 1.0f / static_cast<float>(impl->frame_rate);
+    impl->duration = frame_count * impl->frame_rate_inv;
+    impl->flags = flags;
+    impl->transforms = transforms;
+
+//    memcpy(impl->transforms, transforms, sizeof(BoneTransform) * impl->bone_count * frame_count);
+    for (int frame_index=0; frame_index<frame_count; frame_index++) {
+        AnimationFrame& f = impl->frames[frame_index];
+        f.transform0 = frame_index;
+        f.transform1 = (frame_index + 1) % frame_count;
+        f.fraction0 = 0.0f;
+        f.fraction1 = 1.0f;
+        f.event = 0;
+        f.root_motion0 = 0.0f;
+        f.root_motion1 = transforms[frame_index * impl->bone_count].position.x;
+        transforms[frame_index * impl->bone_count].position.x = 0.0;
+    }
+
+    return impl;
+}

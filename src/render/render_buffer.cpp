@@ -49,6 +49,7 @@ struct BindUserData {
     u8 data[MAX_UNIFORM_BUFFER_SIZE];
 };
 
+// todo: change to current skeleton, no need for storing them in commands
 struct BindSkeletonData {
     int bone_count;
     Mat3 bones[MAX_BONES];

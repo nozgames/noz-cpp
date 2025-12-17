@@ -76,7 +76,7 @@ static void CleanupRequest(WebHttpRequest* request) {
         request->body_copy = nullptr;
     }
     request->response_size = 0;
-    request->status = HttpStatus::None;
+    request->status = PLATFORM_HTTP_STATUS_NONE;
     request->status_code = 0;
 }
 
@@ -108,7 +108,7 @@ static void OnFetchSuccess(emscripten_fetch_t* fetch) {
         request->body_copy = nullptr;
     }
 
-    request->status = HttpStatus::Complete;
+    request->status = PLATFORM_HTTP_STATUS_COMPLETE;
     request->fetch = nullptr;
 
     emscripten_fetch_close(fetch);
@@ -122,7 +122,7 @@ static void OnFetchError(emscripten_fetch_t* fetch) {
     }
 
     request->status_code = fetch->status;
-    request->status = HttpStatus::Error;
+    request->status = PLATFORM_HTTP_STATUS_ERROR;
     request->fetch = nullptr;
 
     // Free body copy now that request is complete
@@ -160,7 +160,7 @@ static PlatformHttpHandle StartRequest(const char* url, const char* method, cons
     // Find free slot
     int slot = -1;
     for (int i = 0; i < MAX_HTTP_REQUESTS; i++) {
-        if (g_web_http.requests[i].status == HttpStatus::None) {
+        if (g_web_http.requests[i].status == PLATFORM_HTTP_STATUS_NONE) {
             slot = i;
             break;
         }
@@ -173,7 +173,7 @@ static PlatformHttpHandle StartRequest(const char* url, const char* method, cons
 
     WebHttpRequest& request = g_web_http.requests[slot];
     request.generation = ++g_web_http.next_request_id;
-    request.status = HttpStatus::Pending;
+    request.status = PLATFORM_HTTP_STATUS_PENDING;
     request.status_code = 0;
     request.response_data = nullptr;
     request.response_size = 0;
@@ -251,7 +251,7 @@ static PlatformHttpHandle StartRequest(const char* url, const char* method, cons
     }
 
     if (!request.fetch) {
-        request.status = HttpStatus::Error;
+        request.status = PLATFORM_HTTP_STATUS_ERROR;
         return PlatformHttpHandle{0};
     }
 
@@ -285,6 +285,24 @@ int PlatformGetStatusCode(const PlatformHttpHandle& handle) {
 bool PlatformIsFromCache(const PlatformHttpHandle& handle) {
     (void)handle;
     return false;  // Web platform doesn't expose cache info
+}
+
+Stream* PlatformReleaseResponseStream(const PlatformHttpHandle& handle) {
+    WebHttpRequest* request = GetRequest(handle);
+    if (!request || request->status != PLATFORM_HTTP_STATUS_COMPLETE) {
+        return nullptr;
+    }
+
+    Stream* stream = CreateStream(ALLOCATOR_DEFAULT, request->response_size);
+    WriteBytes(stream, request->response_data, request->response_size);
+    SeekBegin(stream, 0);
+
+    // Clear response data from request
+    Free(request->response_data);
+    request->response_data = nullptr;
+    request->response_size = 0;
+
+    return stream;
 }
 
 const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size) {
@@ -354,7 +372,7 @@ void PlatformCancel(const PlatformHttpHandle& handle) {
     if (request->fetch) {
         // Note: emscripten_fetch doesn't support cancellation directly
         // We just mark it as failed and let it complete
-        request->status = HttpStatus::Error;
+        request->status = PLATFORM_HTTP_STATUS_ERROR;
     }
 }
 

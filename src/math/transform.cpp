@@ -111,3 +111,8 @@ Transform Mix(const Transform& t1, const Transform& t2, f32 t) {
         .flags = TRANSFORM_FLAG_DIRTY
     };
 }
+
+void Update(Transform& transform) {
+    transform.flags = TRANSFORM_FLAG_DIRTY;
+    UpdateIfDirty(transform);
+}

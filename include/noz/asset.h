@@ -7,6 +7,7 @@
 constexpr u32 ASSET_SIGNATURE = FourCC('N', 'O', 'Z', 'A');
 
 enum AssetType {
+    ASSET_TYPE_CUSTOM = -2,
     ASSET_TYPE_UNKNOWN = -1,
     ASSET_TYPE_MESH,
     ASSET_TYPE_VFX,
@@ -36,6 +37,8 @@ struct AssetHeader {
 struct Asset {
     const Name* name;
     u32 flags;
+    AssetType type;
+    int custom_type_id;
 };
 
 typedef Asset* (*AssetLoaderFunc)(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
@@ -51,6 +54,9 @@ extern bool IsValidAssetType(AssetType asset_type);
 extern Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, Stream* stream);
 extern Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, const u8* data=nullptr, u32 data_size=0);
 inline const Name* GetName(Asset* asset) { return asset->name; }
+inline AssetType GetType(Asset* asset) { return asset->type; }
+inline bool IsCustomType(Asset* asset) { return asset->type == ASSET_TYPE_CUSTOM; }
+inline int GetCustomTypeId(Asset* asset) { return asset->custom_type_id; }
 
 // @loaders
 Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);

@@ -40,20 +40,6 @@ enum SampleRegister
     SAMPLER_REGISTER_COUNT
 };
 
-typedef enum animation_track_type
-{
-    animation_track_type_translation = 0, // position (vec3)
-    animation_track_type_rotation = 1,    // rotation (quat)
-    animation_track_type_scale = 2        // scale (vec3)
-} animation_track_type_t;
-
-typedef struct animation_track
-{
-    uint8_t bone;
-    animation_track_type_t type;
-    int data_offset;
-} animation_track_t;
-
 // @render
 void BeginUIPass();
 
