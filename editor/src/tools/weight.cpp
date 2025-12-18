@@ -64,7 +64,7 @@ static void DrawVertexWeightTool() {
         BindColor(COLOR_BLACK);
         DrawMesh(g_view.circle_mesh, TRS(v.position, 0, VEC2_ONE * CIRCLE_CONTROL_SIZE * g_view.zoom_ref_scale));
         BindColor(COLOR_VERTEX_SELECTED);
-        DrawMesh(g_view.arc_mesh[arc], TRS(v.position, 0, VEC2_ONE * CIRCLE_CONTROL_SIZE * g_view.zoom_ref_scale));
+        DrawMesh(g_view.arc_mesh[arc], TRS(v.position, 0, Vec2{-1, 1} * CIRCLE_CONTROL_SIZE * g_view.zoom_ref_scale));
     }
 
 }

@@ -264,6 +264,24 @@ static void CancelSkeletonTool() {
     RevertToSavedState();
 }
 
+static void CounterActParentTransform(SkeletonData* s, int parent_index) {
+    BoneData& parent = s->bones[parent_index];
+
+    for (int child_index = 0; child_index < s->bone_count; child_index++) {
+        BoneData& child = s->bones[child_index];
+        if (child.parent_index != parent_index || IsBoneSelected(child_index))
+            continue;
+
+        // Compute what the child's local transform should be to preserve its original world position
+        BoneData& saved_child = g_skeleton_editor.saved_bones[child_index];
+        Mat3 new_local = parent.world_to_local * saved_child.local_to_world;
+
+        // Extract position and rotation from the new local transform
+        child.transform.position = Vec2{new_local.m[6], new_local.m[7]};
+        child.transform.rotation = GetRotation(new_local);
+    }
+}
+
 static void UpdateMoveTool(const Vec2& delta) {
     SkeletonData* s = GetSkeletonData();
     for (int bone_index=0; bone_index<s->bone_count; bone_index++) {
@@ -275,6 +293,15 @@ static void UpdateMoveTool(const Vec2& delta) {
         BoneData& sb = g_skeleton_editor.saved_bones[bone_index];
 
         b.transform.position = TransformPoint(p.world_to_local, TransformPoint(sb.local_to_world) + delta);
+    }
+
+    UpdateTransforms(s);
+
+    // Counter-act the movement on unselected children
+    for (int bone_index = 0; bone_index < s->bone_count; bone_index++) {
+        if (!IsBoneSelected(bone_index))
+            continue;
+        CounterActParentTransform(s, bone_index);
     }
 
     UpdateTransforms(s);
@@ -315,6 +342,15 @@ static void UpdateRotateTool(float angle) {
             b.transform.rotation = SnapAngle(sb.transform.rotation + angle);
         else
             b.transform.rotation = sb.transform.rotation + angle;
+    }
+
+    UpdateTransforms(s);
+
+    // Counter-act the rotation on unselected children
+    for (int bone_index = 0; bone_index < s->bone_count; bone_index++) {
+        if (!IsBoneSelected(bone_index))
+            continue;
+        CounterActParentTransform(s, bone_index);
     }
 
     UpdateTransforms(s);

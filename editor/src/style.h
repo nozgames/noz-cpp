@@ -28,6 +28,8 @@ constexpr float STYLE_WORKSPACE_PADDING = 16.0f;
 // @mesh
 constexpr float STYLE_MESH_EDGE_WIDTH = 0.02f;
 constexpr float STYLE_MESH_VERTEX_SIZE = 0.12f;
+constexpr float STYLE_MESH_WEIGHT_OUTLINE_SIZE = 0.20f;
+constexpr float STYLE_MESH_WEIGHT_SIZE = 0.19f;
 
 // @skeleton
 constexpr float STYLE_SKELETON_BONE_WIDTH = 0.02f;

@@ -10,9 +10,6 @@ constexpr float COLOR_PICKER_HEIGHT = COLOR_PICKER_COLOR_SIZE + COLOR_PICKER_BOR
 constexpr float COLOR_PICKER_SELECTION_BORDER_WIDTH = 3.0f;
 constexpr Color COLOR_PICKER_SELECTION_BORDER_COLOR = COLOR_VERTEX_SELECTED;
 
-constexpr float VERTEX_WEIGHT_OUTLINE_SIZE = 0.10f;
-constexpr float VERTEX_WEIGHT_CONTROL_SIZE = 0.09f;
-
 enum MeshEditorMode {
     MESH_EDITOR_MODE_CURRENT=-1,
     MESH_EDITOR_MODE_VERTEX,
@@ -302,12 +299,15 @@ static bool TrySelectVertex() {
     if (vertex_index == -1)
         return false;
 
-    if (IsShiftDown(g_mesh_editor.input)) {
-        SelectVertex(vertex_index, !m->vertices[vertex_index].selected);
-    } else {
+    bool shift = IsShiftDown();
+    if (!shift)
         ClearSelection();
+
+    VertexData& v = m->vertices[vertex_index];
+    if (!shift || !v.selected)
         SelectVertex(vertex_index, true);
-    }
+    else
+        SelectVertex(vertex_index, false);
 
     return true;
 }
@@ -1203,46 +1203,6 @@ static void UpdateMeshEditor() {
     UpdateDefaultState();
 }
 
-#if 0
-static void DrawVertexWeights(MeshData* m) {
-    BindDepth(0.0f);
-    for (int vertex_index=0; vertex_index<m->vertex_count; vertex_index++) {
-        VertexData& v = m->vertices[vertex_index];
-        if (v.selected)
-            continue;
-
-        float weight = GetVertexWeight(m, vertex_index, g_mesh_editor.weight_bone);
-        int arc = (int)(Clamp01(weight) * 100.0f);
-        BindColor(SetAlpha(COLOR_BLACK, 0.5f));
-        DrawMesh(g_view.circle_stroke_mesh, TRS(v.position + m->position, 0, VEC2_ONE * VERTEX_WEIGHT_OUTLINE_SIZE * g_view.zoom_ref_scale));
-        if (arc > 0) {
-            BindColor(SetAlpha(COLOR_BLACK, 0.5f));
-            DrawMesh(g_view.arc_mesh[arc], TRS(v.position + m->position, 0, VEC2_ONE * VERTEX_WEIGHT_CONTROL_SIZE * g_view.zoom_ref_scale));
-        }
-        BindColor(SetAlpha(COLOR_BLACK, 0.5f));
-        DrawMesh(g_view.circle_stroke_mesh, TRS(v.position + m->position, 0, VEC2_ONE * VERTEX_WEIGHT_OUTLINE_SIZE * g_view.zoom_ref_scale));
-    }
-
-    for (int vertex_index=0; vertex_index<m->vertex_count; vertex_index++) {
-        VertexData& v = m->vertices[vertex_index];
-        if (!v.selected)
-            continue;
-
-        float weight = GetVertexWeight(m, vertex_index, g_mesh_editor.weight_bone);
-        int arc = (int)(Clamp01(weight) * 100.0f);
-
-        BindColor(SetAlpha(COLOR_BLACK, 0.5f));
-        DrawMesh(g_view.circle_mesh, TRS(v.position + m->position, 0, VEC2_ONE * VERTEX_WEIGHT_CONTROL_SIZE * g_view.zoom_ref_scale));
-        if (arc > 0) {
-            BindColor(arc == 0 ? SetAlpha(COLOR_VERTEX_SELECTED, 0.5f) : COLOR_VERTEX_SELECTED);
-            DrawMesh(g_view.arc_mesh[arc], TRS(v.position + m->position, 0, VEC2_ONE * VERTEX_WEIGHT_CONTROL_SIZE * g_view.zoom_ref_scale));
-        }
-        BindColor(COLOR_VERTEX_SELECTED);
-        DrawMesh(g_view.circle_stroke_mesh, TRS(v.position + m->position, 0, VEC2_ONE * VERTEX_WEIGHT_OUTLINE_SIZE * g_view.zoom_ref_scale));
-    }
-}
-#endif
-
 static void DrawSkeleton() {
     MeshData* m = GetMeshData();
     SkeletonData* s = m->skeleton;
@@ -1338,8 +1298,8 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
             AddEditorSquare(builder, center, vertex_size, color);
         }
     } else if (g_mesh_editor.mode == MESH_EDITOR_MODE_WEIGHT) {
-        float outline_size = VERTEX_WEIGHT_OUTLINE_SIZE * g_view.zoom_ref_scale;
-        float control_size = VERTEX_WEIGHT_CONTROL_SIZE * g_view.zoom_ref_scale;
+        float outline_size = STYLE_MESH_WEIGHT_OUTLINE_SIZE * g_view.zoom_ref_scale;
+        float control_size = STYLE_MESH_WEIGHT_SIZE * g_view.zoom_ref_scale;
         float stroke_thickness = 0.02f * g_view.zoom_ref_scale;
 
         for (int vi = 0; vi < m->vertex_count; vi++) {
@@ -1372,7 +1332,7 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
         for (int i = 0; i < m->vertex_count; i++) {
             const VertexData& v = m->vertices[i];
             Color color = v.selected ? COLOR_VERTEX_SELECTED : COLOR_VERTEX;
-            AddEditorSquare(builder, v.position + m->position, vertex_size, color);
+            AddEditorCircle(builder, v.position + m->position, vertex_size * 0.5f, color);
         }
     }
 
@@ -1549,6 +1509,22 @@ static void ToggleXRay() {
     g_mesh_editor.xray = !g_mesh_editor.xray;
 }
 
+static void CommitParentTool(const Vec2& position) {
+    AssetData* hit_asset = HitTestAssets(position);
+    if (!hit_asset || hit_asset->type != ASSET_TYPE_SKELETON)
+        return;
+
+    MeshData* m = GetMeshData();
+    RecordUndo(m);
+    m->skeleton = static_cast<SkeletonData*>(hit_asset);
+    m->skeleton_name = hit_asset->name;
+    MarkModified(m);
+}
+
+static void BeginParentTool() {
+    BeginSelectTool({.commit=CommitParentTool});
+}
+
 static void FlipHorizontal() {
     MeshData* m = GetMeshData();
     if (m->selected_vertex_count == 0)
@@ -1677,6 +1653,7 @@ void InitMeshEditor() {
         { KEY_RIGHT_BRACKET, false, false, false, BringForward },
         { KEY_RIGHT_BRACKET, false, true, false, BringToFront },
         { KEY_LEFT_BRACKET, false, true, false, SendToBack },
+        { KEY_P, false, false, false, BeginParentTool },
 
         { INPUT_CODE_NONE }
     };

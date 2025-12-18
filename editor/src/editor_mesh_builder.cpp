@@ -95,7 +95,7 @@ void AddEditorArc(MeshBuilder* builder, const Vec2& center, float radius, float 
     int arc_segments = Max(1, (int)(EDITOR_CIRCLE_SEGMENTS * fill_percent));
     float angle_end = fill_percent * noz::PI * 2.0f;
     for (int i = 0; i <= arc_segments; ++i) {
-        float angle = (float)i / (float)arc_segments * angle_end - noz::PI * 0.5f;
+        float angle = -noz::PI * 0.5f + (float)i / (float)arc_segments * angle_end;
         Vec2 offset = {cosf(angle) * radius, sinf(angle) * radius};
         MeshVertex v = {.position = center + offset, .bone_weights = color_vec};
         AddVertex(builder, v);
