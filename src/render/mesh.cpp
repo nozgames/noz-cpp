@@ -223,6 +223,59 @@ Mesh* CreateMesh(
     return mesh;
 }
 
+void UpdateMesh(Mesh* mesh, const MeshVertex* vertices, u16 vertex_count, const u16* indices, u16 index_count) {
+    assert(mesh);
+    assert(vertices);
+    assert(indices);
+
+    MeshImpl* impl = static_cast<MeshImpl*>(mesh);
+
+    // If counts match and buffers exist, use fast SubData path
+    if (vertex_count == impl->vertex_count &&
+        index_count == impl->index_count &&
+        impl->vertex_buffer && impl->index_buffer) {
+        // Update CPU-side data
+        memcpy(impl->vertices, vertices, sizeof(MeshVertex) * vertex_count);
+        memcpy(impl->indices, indices, sizeof(u16) * index_count);
+
+        // Update GPU buffers via SubData
+        PlatformUpdateVertexBuffer(impl->vertex_buffer, vertices, vertex_count);
+        PlatformUpdateIndexBuffer(impl->index_buffer, indices, index_count);
+    } else {
+        // Counts differ or no buffers - recreate
+        if (impl->vertex_buffer) {
+            PlatformFree(impl->vertex_buffer);
+            impl->vertex_buffer = nullptr;
+        }
+        if (impl->index_buffer) {
+            PlatformFree(impl->index_buffer);
+            impl->index_buffer = nullptr;
+        }
+
+        // Reallocate CPU-side arrays if counts changed
+        if (vertex_count != impl->vertex_count) {
+            Free(impl->vertices);
+            impl->vertices = (MeshVertex*)Alloc(ALLOCATOR_DEFAULT, vertex_count * sizeof(MeshVertex));
+            impl->vertex_count = vertex_count;
+        }
+        if (index_count != impl->index_count) {
+            Free(impl->indices);
+            impl->indices = (u16*)Alloc(ALLOCATOR_DEFAULT, index_count * sizeof(u16));
+            impl->index_count = index_count;
+        }
+
+        memcpy(impl->vertices, vertices, sizeof(MeshVertex) * vertex_count);
+        memcpy(impl->indices, indices, sizeof(u16) * index_count);
+
+        // Create new buffers with DYNAMIC flag for future updates
+        impl->vertex_buffer = PlatformCreateVertexBuffer(vertices, vertex_count, impl->name->value, BUFFER_FLAG_DYNAMIC);
+        impl->index_buffer = PlatformCreateIndexBuffer(indices, index_count, impl->name->value, BUFFER_FLAG_DYNAMIC);
+    }
+
+    impl->bounds = ToBounds(vertices, vertex_count);
+    NormalizeVertexWeights(impl->vertices, impl->vertex_count);
+}
+
 #ifdef NOZ_EDITOR
 
 void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table) {

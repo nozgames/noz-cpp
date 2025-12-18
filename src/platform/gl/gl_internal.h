@@ -91,6 +91,16 @@ struct GLState {
     // GPU-side Uniform Buffer Objects
     GLuint ubos[UNIFORM_BUFFER_COUNT];
 
+    // Dirty flags for uniform buffers (1 bit per buffer)
+    u32 ubo_dirty_flags;
+
+    // State caching for textures
+    GLuint bound_textures[8];
+    int current_texture_unit;
+
+    // State caching for shader flags (blend/depth state)
+    ShaderFlags current_shader_flags;
+
     // Offscreen rendering
     OffscreenTarget offscreen;
     OffscreenTarget ui_offscreen;

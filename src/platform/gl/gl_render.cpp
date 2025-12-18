@@ -103,6 +103,7 @@ void PlatformBindSkeleton(const Mat3* bone_transforms, u8 bone_count) {
         *dst++ = m.m[1]; *dst++ = m.m[4]; *dst++ = m.m[7]; *dst++ = 0.0f;
         *dst++ = m.m[2]; *dst++ = m.m[5]; *dst++ = m.m[8]; *dst++ = 0.0f;
     }
+    g_gl.ubo_dirty_flags |= (1 << UNIFORM_BUFFER_SKELETON);
 }
 
 void PlatformBindTransform(const Mat3& transform, float depth, float depth_scale) {
@@ -115,14 +116,17 @@ void PlatformBindTransform(const Mat3& transform, float depth, float depth_scale
     obj->depth_scale = depth_scale;
     obj->depth_min = g_gl.traits.min_depth;
     obj->depth_max = g_gl.traits.max_depth;
+    g_gl.ubo_dirty_flags |= (1 << UNIFORM_BUFFER_OBJECT);
 }
 
 void PlatformBindVertexUserData(const u8* data, u32 size) {
     memcpy(g_gl.uniform_data[UNIFORM_BUFFER_VERTEX_USER], data, size);
+    g_gl.ubo_dirty_flags |= (1 << UNIFORM_BUFFER_VERTEX_USER);
 }
 
 void PlatformBindFragmentUserData(const u8* data, u32 size) {
     memcpy(g_gl.uniform_data[UNIFORM_BUFFER_FRAGMENT_USER], data, size);
+    g_gl.ubo_dirty_flags |= (1 << UNIFORM_BUFFER_FRAGMENT_USER);
 }
 
 void PlatformBindCamera(const Mat3& view_matrix) {
@@ -130,6 +134,7 @@ void PlatformBindCamera(const Mat3& view_matrix) {
     *dst++ = view_matrix.m[0]; *dst++ = view_matrix.m[3]; *dst++ = view_matrix.m[6]; *dst++ = 0.0f;
     *dst++ = view_matrix.m[1]; *dst++ = view_matrix.m[4]; *dst++ = view_matrix.m[7]; *dst++ = 0.0f;
     *dst++ = view_matrix.m[2]; *dst++ = view_matrix.m[5]; *dst++ = view_matrix.m[8]; *dst++ = 0.0f;
+    g_gl.ubo_dirty_flags |= (1 << UNIFORM_BUFFER_CAMERA);
 }
 
 void PlatformBindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission) {
@@ -137,6 +142,7 @@ void PlatformBindColor(const Color& color, const Vec2& color_uv_offset, const Co
     cb->color = color;
     cb->emission = emission;
     cb->uv_offset = color_uv_offset;
+    g_gl.ubo_dirty_flags |= (1 << UNIFORM_BUFFER_COLOR);
 }
 
 void PlatformFree(PlatformBuffer* buffer) {
@@ -145,32 +151,54 @@ void PlatformFree(PlatformBuffer* buffer) {
     glDeleteBuffers(1, &buf);
 }
 
-PlatformBuffer* PlatformCreateVertexBuffer(const MeshVertex* vertices, u16 vertex_count, const char* name) {
+PlatformBuffer* PlatformCreateVertexBuffer(const MeshVertex* vertices, u16 vertex_count, const char* name, BufferFlags flags) {
     (void)name;
     assert(vertices);
     assert(vertex_count > 0);
 
+    GLenum usage = (flags & BUFFER_FLAG_DYNAMIC) ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+
     GLuint vbo;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(MeshVertex), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(MeshVertex), vertices, usage);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     return (PlatformBuffer*)(uintptr_t)vbo;
 }
 
-PlatformBuffer* PlatformCreateIndexBuffer(const u16* indices, u16 index_count, const char* name) {
+PlatformBuffer* PlatformCreateIndexBuffer(const u16* indices, u16 index_count, const char* name, BufferFlags flags) {
     (void)name;
     assert(indices);
     assert(index_count > 0);
 
+    GLenum usage = (flags & BUFFER_FLAG_DYNAMIC) ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW;
+
     GLuint ibo;
     glGenBuffers(1, &ibo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(u16), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(u16), indices, usage);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     return (PlatformBuffer*)(uintptr_t)ibo;
+}
+
+void PlatformUpdateVertexBuffer(PlatformBuffer* buffer, const MeshVertex* vertices, u16 vertex_count) {
+    assert(buffer);
+    assert(vertices);
+    GLuint vbo = (GLuint)(uintptr_t)buffer;
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, vertex_count * sizeof(MeshVertex), vertices);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void PlatformUpdateIndexBuffer(PlatformBuffer* buffer, const u16* indices, u16 index_count) {
+    assert(buffer);
+    assert(indices);
+    GLuint ibo = (GLuint)(uintptr_t)buffer;
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, index_count * sizeof(u16), indices);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void PlatformBindVertexBuffer(PlatformBuffer* buffer) {
@@ -209,13 +237,15 @@ void PlatformBindIndexBuffer(PlatformBuffer* buffer) {
 void PlatformDrawIndexed(u16 index_count) {
     assert(index_count > 0);
 
-    // Upload and bind all uniform buffers
-    // TODO: optimize by only uploading buffers that changed
+    // Upload only uniform buffers that changed since last draw
     for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++) {
+        if (!(g_gl.ubo_dirty_flags & (1 << i)))
+            continue;
         glBindBuffer(GL_UNIFORM_BUFFER, g_gl.ubos[i]);
         glBufferData(GL_UNIFORM_BUFFER, MAX_UNIFORM_BUFFER_SIZE, g_gl.uniform_data[i], GL_DYNAMIC_DRAW);
         glBindBufferBase(GL_UNIFORM_BUFFER, i, g_gl.ubos[i]);
     }
+    g_gl.ubo_dirty_flags = 0;
 
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glDrawElements(GL_TRIANGLES, index_count, GL_UNSIGNED_SHORT, nullptr);
@@ -283,11 +313,20 @@ void PlatformFree(PlatformTexture* texture) {
 }
 
 void PlatformBindTexture(PlatformTexture* texture, int slot) {
-    glActiveTexture(GL_TEXTURE0 + slot);
-    if (texture)
-        glBindTexture(GL_TEXTURE_2D, texture->gl_texture);
-    else
-        glBindTexture(GL_TEXTURE_2D, 0);
+    GLuint tex_id = texture ? texture->gl_texture : 0;
+
+    // Skip if texture already bound to this slot
+    if (g_gl.bound_textures[slot] == tex_id)
+        return;
+
+    // Only switch texture unit if needed
+    if (g_gl.current_texture_unit != slot) {
+        glActiveTexture(GL_TEXTURE0 + slot);
+        g_gl.current_texture_unit = slot;
+    }
+
+    glBindTexture(GL_TEXTURE_2D, tex_id);
+    g_gl.bound_textures[slot] = tex_id;
 }
 
 void UpdateTexture(PlatformTexture* texture, void* data, const noz::Rect& rect) {
@@ -512,40 +551,51 @@ PlatformShader* PlatformCreateShader(
 void PlatformBindShader(PlatformShader* shader) {
     if (!shader || !shader->program) return;
 
+    // Skip if shader already bound
+    if (shader->program == g_gl.current_program)
+        return;
+
     glUseProgram(shader->program);
     g_gl.current_program = shader->program;
 
-    // Apply shader flags
+    // Apply shader flags only if they changed
     ShaderFlags flags = shader->flags;
+    ShaderFlags changed = flags ^ g_gl.current_shader_flags;
 
-    // Depth testing
-    bool depth_test = (flags & SHADER_FLAGS_DEPTH) != 0;
-    if (depth_test) {
-        glEnable(GL_DEPTH_TEST);
-        glDepthMask(GL_TRUE);
-        bool depth_less = (flags & SHADER_FLAGS_DEPTH_LESS) != 0;
-        glDepthFunc(depth_less ? GL_LESS : GL_LEQUAL);
-    } else {
-        glDisable(GL_DEPTH_TEST);
-        glDepthMask(GL_FALSE);
+    // Depth testing - only update if depth-related flags changed
+    if (changed & (SHADER_FLAGS_DEPTH | SHADER_FLAGS_DEPTH_LESS)) {
+        bool depth_test = (flags & SHADER_FLAGS_DEPTH) != 0;
+        if (depth_test) {
+            glEnable(GL_DEPTH_TEST);
+            glDepthMask(GL_TRUE);
+            bool depth_less = (flags & SHADER_FLAGS_DEPTH_LESS) != 0;
+            glDepthFunc(depth_less ? GL_LESS : GL_LEQUAL);
+        } else {
+            glDisable(GL_DEPTH_TEST);
+            glDepthMask(GL_FALSE);
+        }
     }
 
-    // Blending
-    bool is_premultiplied = (flags & SHADER_FLAGS_PREMULTIPLIED_ALPHA) != 0;
-    bool is_ui_composite = (flags & SHADER_FLAGS_UI_COMPOSITE) != 0;
-    bool is_blend = (flags & SHADER_FLAGS_BLEND) != 0;
+    // Blending - only update if blend-related flags changed
+    if (changed & (SHADER_FLAGS_PREMULTIPLIED_ALPHA | SHADER_FLAGS_UI_COMPOSITE | SHADER_FLAGS_BLEND)) {
+        bool is_premultiplied = (flags & SHADER_FLAGS_PREMULTIPLIED_ALPHA) != 0;
+        bool is_ui_composite = (flags & SHADER_FLAGS_UI_COMPOSITE) != 0;
+        bool is_blend = (flags & SHADER_FLAGS_BLEND) != 0;
 
-    if (is_premultiplied || is_ui_composite) {
-        // Premultiplied alpha: src * 1 + dst * (1 - src_alpha)
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    } else if (is_blend) {
-        // Standard alpha blending
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    } else {
-        glDisable(GL_BLEND);
+        if (is_premultiplied || is_ui_composite) {
+            // Premultiplied alpha: src * 1 + dst * (1 - src_alpha)
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+        } else if (is_blend) {
+            // Standard alpha blending
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        } else {
+            glDisable(GL_BLEND);
+        }
     }
+
+    g_gl.current_shader_flags = flags;
 
     for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++)
         if (shader->uniform_block_indices[i] != GL_INVALID_INDEX)

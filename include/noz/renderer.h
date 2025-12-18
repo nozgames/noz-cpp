@@ -92,6 +92,7 @@ extern Bounds2 GetBounds(Mesh* mesh);
 extern Vec2 GetSize(Mesh* mesh);
 extern bool OverlapPoint(Mesh* mesh, const Vec2& overlap_point);
 extern bool IsUploaded(Mesh* mesh);
+extern void UpdateMesh(Mesh* mesh, const MeshVertex* vertices, u16 vertex_count, const u16* indices, u16 index_count);
 extern Bounds2 ToBounds(const MeshVertex* vertices, int vertex_count);
 
 // @animated_mesh
@@ -107,6 +108,7 @@ extern Vec2 GetSize(AnimatedMesh* mesh);
 
 // @mesh_builder
 extern MeshBuilder* CreateMeshBuilder(Allocator* allocator, u16 max_vertices, u16 max_indices);
+extern void UpdateMeshFromBuilder(Mesh* mesh, MeshBuilder* builder);
 extern void Clear(MeshBuilder* builder);
 extern const MeshVertex* GetVertices(MeshBuilder* builder);
 extern const Vec2* GetUvs(MeshBuilder* builder);

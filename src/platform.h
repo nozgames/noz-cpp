@@ -22,6 +22,12 @@ struct PlatformSoundHandle { u64 value;};
 struct PlatformHttpHandle { u64 value; };
 struct PlatformWebSocketHandle { u64 value; };
 
+// Buffer creation flags
+enum BufferFlags : u32 {
+    BUFFER_FLAG_NONE    = 0,
+    BUFFER_FLAG_DYNAMIC = 1 << 0,  // Use GL_DYNAMIC_DRAW, optimized for frequent updates
+};
+
 struct NativeTextboxStyle {
     Color background_color;
     Color text_color;
@@ -90,8 +96,10 @@ extern void PlatformBindVertexUserData(const u8* data, u32 size);
 extern void PlatformBindFragmentUserData(const u8* data, u32 size);
 extern void PlatformBindCamera(const Mat3& view_matrix);
 extern void PlatformBindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission);
-extern PlatformBuffer* PlatformCreateVertexBuffer(const MeshVertex* vertices, u16 vertex_count, const char* name);
-extern PlatformBuffer* PlatformCreateIndexBuffer(const u16* indices, u16 index_count, const char* name);
+extern PlatformBuffer* PlatformCreateVertexBuffer(const MeshVertex* vertices, u16 vertex_count, const char* name, BufferFlags flags = BUFFER_FLAG_NONE);
+extern PlatformBuffer* PlatformCreateIndexBuffer(const u16* indices, u16 index_count, const char* name, BufferFlags flags = BUFFER_FLAG_NONE);
+extern void PlatformUpdateVertexBuffer(PlatformBuffer* buffer, const MeshVertex* vertices, u16 vertex_count);
+extern void PlatformUpdateIndexBuffer(PlatformBuffer* buffer, const u16* indices, u16 index_count);
 extern void PlatformDrawIndexed(u16 index_count);
 extern void PlatformBindTexture(PlatformTexture* texture, int slot);
 extern PlatformShader* PlatformCreateShader(

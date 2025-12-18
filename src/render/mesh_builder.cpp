@@ -262,3 +262,10 @@ Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name, b
         upload
     );
 }
+
+void UpdateMeshFromBuilder(Mesh* mesh, MeshBuilder* builder) {
+    assert(mesh);
+    assert(builder);
+    MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);
+    UpdateMesh(mesh, impl->vertices, impl->vertex_count, impl->indices, impl->index_count);
+}
