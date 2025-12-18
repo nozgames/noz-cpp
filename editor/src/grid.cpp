@@ -14,15 +14,30 @@ constexpr Color GRID_ZERO_COLOR = Color24ToColor(0x252525);
 struct Grid
 {
     Material* material;
-    Mesh* quad_mesh;
+    Mesh* mesh;
     float grid_spacing;
 };
 
 static Grid g_grid = {};
 
-static void DrawZeroGrid(Camera* camera) {
-    BindColor(GRID_ZERO_COLOR);
+static void AddLineQuad(MeshBuilder* builder, const Vec2& center, const Vec2& half_size, const Color& color) {
+    SetBaseVertex(builder);
 
+    Vec4 color_vec = {color.r, color.g, color.b, color.a};
+    MeshVertex v0 = {.position = {center.x - half_size.x, center.y - half_size.y}, .bone_weights = color_vec};
+    MeshVertex v1 = {.position = {center.x + half_size.x, center.y - half_size.y}, .bone_weights = color_vec};
+    MeshVertex v2 = {.position = {center.x + half_size.x, center.y + half_size.y}, .bone_weights = color_vec};
+    MeshVertex v3 = {.position = {center.x - half_size.x, center.y + half_size.y}, .bone_weights = color_vec};
+
+    AddVertex(builder, v0);
+    AddVertex(builder, v1);
+    AddVertex(builder, v2);
+    AddVertex(builder, v3);
+    AddTriangle(builder, 0, 1, 2);
+    AddTriangle(builder, 2, 3, 0);
+}
+
+static void BuildZeroGrid(MeshBuilder* builder, Camera* camera, const Color& color) {
     Vec2Int screen_size = GetScreenSize();
     Bounds2 bounds = GetBounds(camera);
     float left = bounds.min.x;
@@ -33,66 +48,37 @@ static void DrawZeroGrid(Camera* camera) {
     float pixels_per_world_unit = screen_size.y / world_height;
     float line_thickness = 1.0f / pixels_per_world_unit;
 
-    // Draw vertical lines
-    Vec2 line_center = { 0, (top + bottom) * 0.5f };
-    Vec2 line_scale = { line_thickness, (top - bottom) * 0.5f };
-    BindTransform(TRS(line_center, 0, line_scale));
-    DrawMesh(g_grid.quad_mesh);
-
-    // Draw horizontal lines
-    line_center = { (left + right) * 0.5f, 0 };
-    line_scale = { (right - left) * 0.5f, line_thickness };
-    BindTransform(TRS(line_center, 0, line_scale));
-    DrawMesh(g_grid.quad_mesh);
+    AddLineQuad(builder, Vec2{0, (top + bottom) * 0.5f}, Vec2{line_thickness, (top - bottom) * 0.5f}, color);
+    AddLineQuad(builder, Vec2{(left + right) * 0.5f, 0}, Vec2{(right - left) * 0.5f, line_thickness}, color);
 }
 
-static void DrawGridLines(Camera* camera, float spacing, const Color& color, float alpha) {
-    if (alpha <= 0.0f) return;
-    
-    // Get camera bounds to determine which lines to draw
+static void BuildGridLines(MeshBuilder* builder, Camera* camera, float spacing, const Color& color) {
     Bounds2 bounds = GetBounds(camera);
     float left = bounds.min.x;
     float right = bounds.max.x;
     float bottom = bounds.min.y;
     float top = bounds.max.y;
-    
-    // Calculate line thickness based on world-to-screen scale
-    // Use world units for consistent visual thickness
+
     Vec2Int screen_size = GetScreenSize();
     float world_height = top - bottom;
     float pixels_per_world_unit = screen_size.y / world_height;
-    float line_thickness = 1.0f / pixels_per_world_unit; // 1 pixel thick
-    
-    Color line_color = color;
-    line_color.a *= alpha;
-    BindColor(line_color);
-    
-    // Draw vertical lines
+    float line_thickness = 1.0f / pixels_per_world_unit;
+
     float start_x = floorf(left / spacing) * spacing;
-    for (float x = start_x; x <= right + spacing; x += spacing) {
-        Vec2 line_center = { x, (top + bottom) * 0.5f };
-        Vec2 line_scale = { line_thickness, (top - bottom) * 0.5f };
-        BindTransform(TRS(line_center, 0, line_scale));
-        DrawMesh(g_grid.quad_mesh);
-    }
-    
-    // Draw horizontal lines
+    for (float x = start_x; x <= right + spacing; x += spacing)
+        AddLineQuad(builder, Vec2{x, (top + bottom) * 0.5f}, Vec2{line_thickness, (top - bottom) * 0.5f}, color);
+
     float start_y = floorf(bottom / spacing) * spacing;
-    for (float y = start_y; y <= top + spacing; y += spacing) {
-        Vec2 line_center = { (left + right) * 0.5f, y };
-        Vec2 line_scale = { (right - left) * 0.5f, line_thickness };
-        BindTransform(TRS(line_center, 0, line_scale));
-        DrawMesh(g_grid.quad_mesh);
-    }
+    for (float y = start_y; y <= top + spacing; y += spacing)
+        AddLineQuad(builder, Vec2{(left + right) * 0.5f, y}, Vec2{(right - left) * 0.5f, line_thickness}, color);
 }
 
-static void DrawGridInternal(Camera* camera, float min_pixels, float grid_spacing, float min_alpha, float max_alpha) {
-    BindMaterial(g_grid.material);
-
+static float CalculateGridSpacing(Camera* camera, float min_pixels, float base_spacing, float* out_alpha, float min_alpha, float max_alpha) {
     // Use camera to find how big this spacing is on screen
     Vec2 world_0 = WorldToScreen(camera, Vec2{0, 0});
     Vec2 world_1 = WorldToScreen(camera, Vec2{1.0f, 0});
     f32 pixels_per_grid = Length(world_1 - world_0);
+    float grid_spacing = base_spacing;
 
     // Scale up by 10x as long as grid is smaller than threshold
     while (pixels_per_grid < min_pixels) {
@@ -106,33 +92,59 @@ static void DrawGridInternal(Camera* camera, float min_pixels, float grid_spacin
         pixels_per_grid *= 0.1f;
     }
 
-    f32 alpha = Mix(min_alpha, max_alpha, (pixels_per_grid - min_pixels) / (min_pixels * 10.0f));
-    DrawGridLines(camera, grid_spacing, GRID_PRIMARY_COLOR, alpha);
+    *out_alpha = Mix(min_alpha, max_alpha, (pixels_per_grid - min_pixels) / (min_pixels * 10.0f));
+    return grid_spacing;
 }
 
 void DrawGrid(Camera* camera) {
     BindDepth(-9.0f);
     BindMaterial(g_grid.material);
-    DrawGridInternal(camera, 72.0f, 1.0f, 1, 1);
-    DrawGridInternal(camera, 72.0f, 0.1f, 0, 1);
-    DrawZeroGrid(camera);
+
+    float alpha1, alpha2;
+    float spacing1 = CalculateGridSpacing(camera, 72.0f, 1.0f, &alpha1, 1.0f, 1.0f);
+    float spacing2 = CalculateGridSpacing(camera, 72.0f, 0.1f, &alpha2, 0.0f, 1.0f);
+
+    constexpr int MAX_GRID_LINES = 1024;
+    constexpr int VERTS_PER_LINE = 4;
+    constexpr int INDICES_PER_LINE = 6;
+
+    PushScratch();
+
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, MAX_GRID_LINES * VERTS_PER_LINE, MAX_GRID_LINES * INDICES_PER_LINE);
+
+    if (alpha1 > 0.0f) {
+        Color line_color = GRID_PRIMARY_COLOR;
+        line_color.a *= alpha1;
+        BuildGridLines(builder, camera, spacing1, line_color);
+    }
+
+    if (alpha2 > 0.0f) {
+        Color line_color = GRID_PRIMARY_COLOR;
+        line_color.a *= alpha2;
+        BuildGridLines(builder, camera, spacing2, line_color);
+    }
+
+    BuildZeroGrid(builder, camera, GRID_ZERO_COLOR);
+
+    if (GetVertexCount(builder) > 0) {
+        if (!g_grid.mesh)
+            g_grid.mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
+        else
+            UpdateMeshFromBuilder(g_grid.mesh, builder);
+
+        BindColor(COLOR_WHITE);
+        BindTransform(MAT3_IDENTITY);
+        DrawMesh(g_grid.mesh);
+    }
+
+    PopScratch();
     BindDepth(0.0f);
 }
 
 void InitGrid(Allocator* allocator) {
-    g_grid.material = CreateMaterial(allocator, SHADER_TEXTURED_MESH);
+    g_grid.material = CreateMaterial(allocator, SHADER_GRID);
     g_grid.grid_spacing = GRID_SPACING;
-
-    MeshBuilder* builder = CreateMeshBuilder(allocator, 4, 6);
-    AddVertex(builder, Vec2{-1,-1});
-    AddVertex(builder, Vec2{ 1,-1});
-    AddVertex(builder, Vec2{ 1, 1});
-    AddVertex(builder, Vec2{-1, 1});
-    AddTriangle(builder, 0, 1, 2);
-    AddTriangle(builder, 2, 3, 0);
-    g_grid.quad_mesh = CreateMesh(allocator, builder, NAME_NONE);
-
-    Free(builder);
+    g_grid.mesh = nullptr;
 }
 
 Vec2 SnapToGrid(const Vec2& position) {
@@ -149,5 +161,7 @@ float SnapAngle(float angle) {
 }
 
 void ShutdownGrid() {
+    if (g_grid.mesh)
+        Free(g_grid.mesh);
     g_grid = {};
 }

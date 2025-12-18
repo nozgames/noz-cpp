@@ -49,6 +49,7 @@ Shader* SHADER_SKINNED_MESH = nullptr;
 Shader* SHADER_POSTPROCESS_UI_COMPOSITE = nullptr;
 Shader* SHADER_POSTPROCESS_DESATURATE = nullptr;
 Shader* SHADER_MESH = nullptr;
+Shader* SHADER_GRID = nullptr;
 
 // @name
 const Name* NAME_MESH = nullptr;
@@ -87,6 +88,7 @@ const Name* PATH_SHADER_SKINNED_MESH = nullptr;
 const Name* PATH_SHADER_POSTPROCESS_UI_COMPOSITE = nullptr;
 const Name* PATH_SHADER_POSTPROCESS_DESATURATE = nullptr;
 const Name* PATH_SHADER_MESH = nullptr;
+const Name* PATH_SHADER_GRID = nullptr;
 const Name* PATH_MESH_UI_ICON_ROOT_MOTION = nullptr;
 const Name* PATH_MESH_UI_ICON_ONION = nullptr;
 const Name* PATH_MESH_UI_ICON_MIRROR = nullptr;
@@ -141,6 +143,7 @@ bool LoadAssets(Allocator* allocator)
     PATH_SHADER_POSTPROCESS_UI_COMPOSITE = GetName("postprocess_ui_composite");
     PATH_SHADER_POSTPROCESS_DESATURATE = GetName("postprocess_desaturate");
     PATH_SHADER_MESH = GetName("mesh");
+    PATH_SHADER_GRID = GetName("grid");
     PATH_MESH_UI_ICON_ROOT_MOTION = GetName("ui_icon_root_motion");
     PATH_MESH_UI_ICON_ONION = GetName("ui_icon_onion");
     PATH_MESH_UI_ICON_MIRROR = GetName("ui_icon_mirror");
@@ -223,6 +226,7 @@ bool LoadAssets(Allocator* allocator)
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_POSTPROCESS_UI_COMPOSITE, SHADER_POSTPROCESS_UI_COMPOSITE);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_POSTPROCESS_DESATURATE, SHADER_POSTPROCESS_DESATURATE);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_MESH, SHADER_MESH);
+    NOZ_LOAD_SHADER(allocator, PATH_SHADER_GRID, SHADER_GRID);
 
     static Shader* _SHADER[] = {
         SHADER_VFX,
@@ -237,6 +241,7 @@ bool LoadAssets(Allocator* allocator)
         SHADER_POSTPROCESS_UI_COMPOSITE,
         SHADER_POSTPROCESS_DESATURATE,
         SHADER_MESH,
+        SHADER_GRID,
         nullptr
     };
 
@@ -282,6 +287,7 @@ void UnloadAssets()
     Free(SHADER_POSTPROCESS_UI_COMPOSITE);
     Free(SHADER_POSTPROCESS_DESATURATE);
     Free(SHADER_MESH);
+    Free(SHADER_GRID);
 }
 
 #ifdef NOZ_EDITOR
@@ -321,6 +327,7 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     NOZ_RELOAD_SHADER(PATH_SHADER_POSTPROCESS_UI_COMPOSITE, SHADER_POSTPROCESS_UI_COMPOSITE);
     NOZ_RELOAD_SHADER(PATH_SHADER_POSTPROCESS_DESATURATE, SHADER_POSTPROCESS_DESATURATE);
     NOZ_RELOAD_SHADER(PATH_SHADER_MESH, SHADER_MESH);
+    NOZ_RELOAD_SHADER(PATH_SHADER_GRID, SHADER_GRID);
 }
 
 #endif // NOZ_EDITOR
