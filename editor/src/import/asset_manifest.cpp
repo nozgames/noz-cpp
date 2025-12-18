@@ -166,6 +166,18 @@ static bool ReadAsset(u32 item_index, void* item_ptr, void* user_data) {
     std::string var_name = std::string(type_name) + "_" + a->name->value;
     Uppercase(var_name.data(), (u32)var_name.size());
 
+    // Skip if asset with same var_name already exists from an earlier source path
+    for (auto& existing : generator.assets) {
+        if (existing.var_name == var_name) {
+            // Keep the one from the earlier source path (lower asset_path_index)
+            if (a->asset_path_index < existing.asset->asset_path_index) {
+                existing.asset = a;
+                existing.names = std::move(names);
+            }
+            return true;
+        }
+    }
+
     generator.assets.push_back({
         .asset = a,
         .var_name = var_name,

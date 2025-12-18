@@ -40,31 +40,16 @@ namespace noz {
     using TaskCompleteFunc = std::function<void(Task task, void* result)>;
     using TaskDestroyFunc = std::function<void(void* result)>;
 
-    extern Task CreateTask(
-        TaskRunFunc run_func,
-        TaskCompleteFunc complete_func = nullptr,
-        TaskDestroyFunc destroy_func = nullptr);
+    struct TaskConfig {
+        TaskRunFunc run = nullptr;
+        TaskCompleteFunc complete = nullptr;
+        TaskDestroyFunc destroy = nullptr;
+        Task parent = TASK_NULL;
+        const Task* dependencies = nullptr;
+        int dependency_count = 0;
+    };
 
-    extern Task CreateTask(
-        TaskRunFunc run_func,
-        TaskCompleteFunc complete_func,
-        Task depends_on,
-        TaskDestroyFunc destroy_func = nullptr);
-
-    extern Task CreateTask(
-        TaskRunFunc run_func,
-        TaskCompleteFunc complete_func,
-        std::initializer_list<Task> depends_on,
-        TaskDestroyFunc destroy_func = nullptr);
-
-    extern Task CreateTask(
-        TaskRunFunc run_func,
-        TaskCompleteFunc complete_func,
-        const Task* depends_on,
-        int count,
-        TaskDestroyFunc destroy_func = nullptr);
-
-    extern Task CreateTask(TaskDestroyFunc destroy_func = nullptr);
+    extern Task CreateTask(const TaskConfig& config = {});
     extern void Complete(Task task, void* result);
     extern void* GetResult(Task task);
     extern void* ReleaseResult(Task task);  // Takes ownership, caller responsible for cleanup

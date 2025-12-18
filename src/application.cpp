@@ -53,8 +53,7 @@ namespace noz {
 // @traits
 static const char* g_default_asset_paths[] = { "assets", nullptr };
 
-static ApplicationTraits g_default_traits =
-{
+static ApplicationTraits g_default_traits = {
     .name = "noz",
     .title = "noz",
     .asset_paths = g_default_asset_paths,
@@ -76,11 +75,10 @@ static ApplicationTraits g_default_traits =
         .max_requests = 128,
         .max_concurrent_requests = 4,
     },
-    .editor_port = 8080,
     .ui_depth = F32_MAX,
     .renderer = {
         .max_frame_commands = 8192 * 2,
-        .vsync = 1,
+        .vsync = true,
         .msaa = true,
         .min_depth = -10.0f,
         .max_depth = 10.0f,

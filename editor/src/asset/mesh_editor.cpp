@@ -1204,8 +1204,8 @@ static void NewFace() {
 }
 
 static void UpdateMeshEditor() {
-    ColorPicker();
-    MeshStats();
+        ColorPicker();
+        MeshStats();
     CheckShortcuts(g_mesh_editor.shortcuts, g_mesh_editor.input);
     UpdateDefaultState();
 }

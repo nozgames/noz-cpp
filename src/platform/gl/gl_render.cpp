@@ -209,9 +209,11 @@ void PlatformBindIndexBuffer(PlatformBuffer* buffer) {
 void PlatformDrawIndexed(u16 index_count) {
     assert(index_count > 0);
 
+    // Upload and bind all uniform buffers
+    // TODO: optimize by only uploading buffers that changed
     for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++) {
         glBindBuffer(GL_UNIFORM_BUFFER, g_gl.ubos[i]);
-        glBufferSubData(GL_UNIFORM_BUFFER, 0, MAX_UNIFORM_BUFFER_SIZE, g_gl.uniform_data[i]);
+        glBufferData(GL_UNIFORM_BUFFER, MAX_UNIFORM_BUFFER_SIZE, g_gl.uniform_data[i], GL_DYNAMIC_DRAW);
         glBindBufferBase(GL_UNIFORM_BUFFER, i, g_gl.ubos[i]);
     }
 
@@ -361,12 +363,6 @@ void PlatformBeginUIPass() {
     // Render to MSAA framebuffer if available, otherwise resolve framebuffer
     GLuint fb = g_gl.ui_offscreen.msaa_framebuffer ? g_gl.ui_offscreen.msaa_framebuffer : g_gl.ui_offscreen.framebuffer;
     glBindFramebuffer(GL_FRAMEBUFFER, fb);
-
-    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (status != GL_FRAMEBUFFER_COMPLETE) {
-        LogError("UI framebuffer not complete: 0x%X", status);
-    }
-
     glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClearDepthf(1.0f);

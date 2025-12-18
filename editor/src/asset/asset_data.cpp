@@ -331,6 +331,11 @@ void InitAssetData() {
             if (ext == ".meta")
                 continue;
 
+            // Skip if asset with same name already exists (from earlier source path)
+            const Name* asset_name = MakeCanonicalAssetName(asset_path);
+            if (GetAssetData(ASSET_TYPE_UNKNOWN, asset_name))
+                continue;
+
             AssetData* a = nullptr;
             for (int asset_type=0; !a && asset_type<ASSET_TYPE_COUNT; asset_type++)
                 a = CreateAssetData(asset_path);

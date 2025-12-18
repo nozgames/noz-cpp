@@ -78,8 +78,7 @@ static HttpRequestImpl* GetRequest(const char* url, HttpRequestMethod method, Ta
 
     HttpRequestImpl* request = g_http.requests + request_index;
     Set(request->url, url);
-    request->task = CreateTask(FreeRequestData);
-    SetParent(request->task, parent);
+    request->task = CreateTask({.destroy = FreeRequestData, .parent = parent});
     request->method = method;
     request->callback = callback;
     request->state = HTTP_REQUEST_STATE_QUEUED;

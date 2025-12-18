@@ -41,7 +41,6 @@ struct ApplicationTraits {
         u32 max_requests;
         u32 max_concurrent_requests;
     } http;
-    u16 editor_port;
     float ui_depth;
     RendererTraits renderer;
     bool (*load_assets)(Allocator* allocator);

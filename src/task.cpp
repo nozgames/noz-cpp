@@ -103,45 +103,7 @@ namespace noz {
         return nullptr;
     }
 
-    Task CreateTask(
-        TaskRunFunc run_func,
-        TaskCompleteFunc complete_func,
-        TaskDestroyFunc destroy_func) {
-        return CreateTaskInternal(std::move(run_func), std::move(complete_func), std::move(destroy_func), nullptr, 0);
-    }
-
-    Task CreateTask(
-        TaskRunFunc run_func,
-        TaskCompleteFunc complete_func,
-        Task depends_on,
-        TaskDestroyFunc destroy_func) {
-        return CreateTaskInternal(std::move(run_func), std::move(complete_func), std::move(destroy_func), &depends_on, 1);
-    }
-
-    Task CreateTask(
-        TaskRunFunc run_func,
-        TaskCompleteFunc complete_func,
-        std::initializer_list<Task> depends_on,
-        TaskDestroyFunc destroy_func) {
-        return CreateTaskInternal(std::move(run_func), std::move(complete_func), std::move(destroy_func),
-                                  depends_on.begin(), static_cast<i32>(depends_on.size()));
-    }
-
-    Task CreateTask(
-        TaskRunFunc run_func,
-        TaskCompleteFunc complete_func,
-        const Task* depends_on,
-        int count,
-        TaskDestroyFunc destroy_func) {
-        return CreateTaskInternal(
-            std::move(run_func),
-            std::move(complete_func),
-            std::move(destroy_func),
-            depends_on,
-            count);
-    }
-
-    Task CreateTask(TaskDestroyFunc destroy_func) {
+    static Task CreateVirtualTask(TaskDestroyFunc destroy_func) {
         std::lock_guard lock(g_tasks.mutex);
 
         for (i32 task_index = 0; task_index < g_tasks.max_tasks; task_index++) {
@@ -165,6 +127,28 @@ namespace noz {
         }
 
         return nullptr;
+    }
+
+    Task CreateTask(const TaskConfig& config) {
+        Task result;
+
+        if (config.run) {
+            // Regular task with run function
+            result = CreateTaskInternal(
+                config.run,
+                config.complete,
+                config.destroy,
+                config.dependencies,
+                config.dependency_count);
+        } else {
+            // Virtual task (manual completion)
+            result = CreateVirtualTask(config.destroy);
+        }
+
+        if (result && config.parent)
+            SetParent(result, config.parent);
+
+        return result;
     }
 
     void Complete(Task handle, void* result) {
