@@ -65,6 +65,8 @@ Animation* CreateAnimation(
     int frame_rate,
     BoneTransform* transforms,
     int transform_count,
+    AnimationEvent* events,
+    int event_count,
     AnimationFlags flags,
     const Name* name) {
     assert(skeleton);
@@ -85,7 +87,6 @@ Animation* CreateAnimation(
     impl->flags = flags;
     impl->transforms = transforms;
 
-//    memcpy(impl->transforms, transforms, sizeof(BoneTransform) * impl->bone_count * frame_count);
     for (int frame_index=0; frame_index<frame_count; frame_index++) {
         AnimationFrame& f = impl->frames[frame_index];
         f.transform0 = frame_index;
@@ -96,6 +97,15 @@ Animation* CreateAnimation(
         f.root_motion0 = 0.0f;
         f.root_motion1 = transforms[frame_index * impl->bone_count].position.x;
         transforms[frame_index * impl->bone_count].position.x = 0.0;
+
+        if (events) {
+            for (int event_index=0; event_index<event_count; event_index++) {
+                if (events[event_index].frame == frame_index) {
+                    f.event = events[event_index].id;
+                    break;
+                }
+            }
+        }
     }
 
     return impl;

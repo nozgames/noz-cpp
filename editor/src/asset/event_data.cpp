@@ -30,6 +30,13 @@ static EventData* LoadEventData(const std::filesystem::path& path) {
     return e;
 }
 
+static void ReloadEventData(AssetData* a) {
+    assert(a);
+    assert(a->type == ASSET_TYPE_EVENT);
+    EventData* e = static_cast<EventData*>(a);
+    LoadEventData(e);
+}
+
 AssetData* NewEventData(const std::filesystem::path& path) {
     constexpr const char* default_event = "\n";
 
@@ -51,6 +58,7 @@ void InitEventData(AssetData* a) {
     e->editor_only = true;
     e->vtable = {
         .load = LoadEventData,
+        .reload = ReloadEventData,
         .draw = DrawEventData,
     };
 }

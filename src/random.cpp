@@ -20,8 +20,8 @@ float RandomFloat()
 
 float RandomFloat(float min, float max)
 {
-    std::uniform_real_distribution<float> dis(min, max);
-    return dis(g_gen);
+    std::uniform_real_distribution<float> dis(0, 1);
+    return dis(g_gen) * (max-min) + min;
 }
 
 int RandomInt(int min, int max)

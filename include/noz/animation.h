@@ -30,6 +30,11 @@ struct Bone {
     Mat3 bind_pose;
 };
 
+struct AnimationEvent {
+    int frame;
+    int id;
+};
+
 extern Animation* CreateAnimation(
     Allocator* allocator,
     Skeleton* skeleton,
@@ -37,6 +42,8 @@ extern Animation* CreateAnimation(
     int frame_rate,
     BoneTransform* transforms,
     int transform_count,
+    AnimationEvent* events,
+    int event_count,
     AnimationFlags flags,
     const Name* name=NAME_NONE);
 extern int GetBoneCount(Animation* animation);
