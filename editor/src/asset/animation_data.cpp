@@ -343,8 +343,8 @@ static AnimationData* LoadAnimationData(const std::filesystem::path& path) {
 static void SerializeTransform(Stream* stream, const Transform& transform) {
     BoneTransform bone_transform = {
         .position = transform.position,
+        .scale = transform.scale,
         .rotation = transform.rotation,
-        .scale = transform.scale
     };
     WriteStruct(stream, bone_transform);
 }

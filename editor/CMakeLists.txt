@@ -7,14 +7,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-add_subdirectory(noz noz)
+add_subdirectory(../ noz)
 target_compile_definitions(noz PUBLIC NOZ_EDITOR)
 
 file(GLOB SRC_FILES
-        src/*.cpp
-        src/*.h
-        src/**/*.cpp
-        src/**/*.h
+    src/*.cpp
+    src/*.h
+    src/**/*.cpp
+    src/**/*.h
 )
 set(SOURCE_FILES ${SRC_FILES})
 
@@ -36,8 +36,7 @@ target_link_libraries(nozed PRIVATE
 )
 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX /std:c++latest")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /WX")
+    target_compile_options(nozed PRIVATE /W4 /WX)
 endif()
 
 set_target_properties(nozed PROPERTIES WIN32_EXECUTABLE TRUE)
@@ -47,6 +46,6 @@ target_include_directories(nozed PRIVATE
     src
     external
     res/windows
-    ${CMAKE_CURRENT_SOURCE_DIR}/noz/external
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external
     ${CMAKE_CURRENT_SOURCE_DIR}/external/glslang/include
 )

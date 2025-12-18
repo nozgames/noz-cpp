@@ -33,9 +33,9 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
     return handle;
 }
 
-HttpStatus PlatformGetStatus(const PlatformHttpHandle& handle) {
+PlatformHttpStatus PlatformGetStatus(const PlatformHttpHandle& handle) {
     (void)handle;
-    return HttpStatus::Error;
+    return PLATFORM_HTTP_STATUS_ERROR;
 }
 
 int PlatformGetStatusCode(const PlatformHttpHandle& handle) {
@@ -48,9 +48,8 @@ bool PlatformIsFromCache(const PlatformHttpHandle& handle) {
     return false;
 }
 
-const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size) {
+Stream* PlatformReleaseResponseStream(const PlatformHttpHandle& handle) {
     (void)handle;
-    if (out_size) *out_size = 0;
     return nullptr;
 }
 
