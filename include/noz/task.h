@@ -50,7 +50,7 @@ namespace noz {
     };
 
     extern Task CreateTask(const TaskConfig& config = {});
-    extern void Complete(Task task, void* result);
+    extern void Complete(Task task, void* result=TASK_NO_RESULT);
     extern void* GetResult(Task task);
     extern void* ReleaseResult(Task task);  // Takes ownership, caller responsible for cleanup
     extern int GetDependencyCount(Task task);
