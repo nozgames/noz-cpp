@@ -1461,6 +1461,12 @@ static void DestroyMeshData(AssetData* a) {
     m->data = nullptr;
 }
 
+static void MeshUndoRedo(AssetData* a) {
+    assert(a->type == ASSET_TYPE_MESH);
+    MeshData* m = static_cast<MeshData*>(a);
+    MarkDirty(m);
+}
+
 static void Init(MeshData* m) {
     AllocateData(m);
 
@@ -1472,7 +1478,8 @@ static void Init(MeshData* m) {
         .load_metadata = LoadMeshMetaData,
         .save_metadata = SaveMeshMetaData,
         .draw = DrawMesh,
-        .clone = CloneMeshData
+        .clone = CloneMeshData,
+        .undo_redo = MeshUndoRedo
     };
 
     InitMeshEditor(m);
