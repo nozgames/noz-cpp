@@ -371,14 +371,23 @@ void Serialize(AnimationData* n, Stream* stream, SkeletonData* s) {
     for (int i=0; i<s->bone_count; i++)
         WriteU8(stream, (u8)n->bones[i].index);
 
-    // frame transforms
+    // frame transforms (write absolute: bind pose + frame delta)
     for (int frame_index=0; frame_index<n->frame_count; frame_index++) {
         AnimationFrameData& f = n->frames[frame_index];
+
+        // Bone 0 (root) - position is zeroed for root motion handling
         Transform transform = f.transforms[0];
         transform.position = VEC2_ZERO;
+        transform.rotation += s->bones[0].transform.rotation;
         SerializeTransform(stream, transform);
-        for (int bone_index=1; bone_index<s->bone_count; bone_index++)
-            SerializeTransform(stream, f.transforms[bone_index]);
+
+        for (int bone_index=1; bone_index<s->bone_count; bone_index++) {
+            BoneTransform& bind = s->bones[bone_index].transform;
+            Transform abs_transform = f.transforms[bone_index];
+            abs_transform.position = bind.position + abs_transform.position;
+            abs_transform.rotation = bind.rotation + abs_transform.rotation;
+            SerializeTransform(stream, abs_transform);
+        }
     }
 
     float base_root_motion = n->frames[0].transforms[0].position.x;
