@@ -56,6 +56,21 @@ static int GetFirstSelectedBoneIndex() {
     return -1;
 }
 
+static void UpdateAllAnimationTransforms(SkeletonData* s) {
+    extern void UpdateTransforms(AnimationData* n, int frame_index=-1);
+
+    for (u32 i=0, c=GetAssetCount(); i<c; i++) {
+        AnimationData* a = static_cast<AnimationData*>(GetAssetData(i));
+        if (a->type != ASSET_TYPE_ANIMATION)
+            continue;
+
+        if (s != a->skeleton)
+            continue;
+
+        UpdateTransforms(a);
+    }
+}
+
 static void UpdateAllAnimations(SkeletonData* s) {
     extern void UpdateSkeleton(AnimationData* en);
 
@@ -305,11 +320,10 @@ static void UpdateMoveTool(const Vec2& delta) {
     }
 
     UpdateTransforms(s);
+    UpdateAllAnimationTransforms(s);
 }
 
 static void CommitMoveTool(const Vec2&) {
-    SkeletonData* s = GetSkeletonData();
-    UpdateTransforms(s);
     MarkModified();
 }
 
@@ -354,7 +368,11 @@ static void UpdateRotateTool(float angle) {
     }
 
     UpdateTransforms(s);
+    UpdateAllAnimationTransforms(s);
     MarkModified();
+}
+
+static void CommitRotateTool(float) {
 }
 
 static void BeginRotateTool() {
@@ -365,7 +383,7 @@ static void BeginRotateTool() {
     UpdateSelectionCenter();
     SaveState();
     RecordUndo();
-    BeginRotateTool({.origin=g_skeleton_editor.selection_center_world, .update=UpdateRotateTool, .cancel=CancelSkeletonTool});
+    BeginRotateTool({.origin=g_skeleton_editor.selection_center_world, .update=UpdateRotateTool, .commit=CommitRotateTool, .cancel=CancelSkeletonTool});
 }
 
 static void UpdateScaleTool(const Vec2& scale) {
@@ -380,6 +398,11 @@ static void UpdateScaleTool(const Vec2& scale) {
     }
 
     UpdateTransforms(s);
+    UpdateAllAnimationTransforms(s);
+}
+
+static void CommitScaleTool(const Vec2&) {
+    MarkModified();
 }
 
 static void BeginScaleTool() {
@@ -390,7 +413,7 @@ static void BeginScaleTool() {
     UpdateSelectionCenter();
     SaveState();
     RecordUndo();
-    BeginScaleTool({.origin=g_skeleton_editor.selection_center_world, .update=UpdateScaleTool, .cancel=CancelSkeletonTool});
+    BeginScaleTool({.origin=g_skeleton_editor.selection_center_world, .update=UpdateScaleTool, .commit=CommitScaleTool, .cancel=CancelSkeletonTool});
 }
 
 static void HandleRemove() {

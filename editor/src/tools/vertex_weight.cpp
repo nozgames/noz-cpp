@@ -47,9 +47,11 @@ static void UpdateVertexWeightTool() {
     float delta = (g_view.mouse_position.y - g_view.drag_position.y) / (g_view.dpi * WEIGHT_TOOL_SIZE);
     MeshData* m = g_vertex_weight.options.mesh;
     int bone_index = g_vertex_weight.options.bone_index;
-    for (int vertex_index=0; vertex_index<g_vertex_weight.options.vertex_count; vertex_index++) {
+    for (int i = 0; i < g_vertex_weight.options.vertex_count; i++) {
+        int vertex_index = g_vertex_weight.options.vertices[i];
         AddVertexWeight(m, vertex_index, bone_index, delta);
     }
+    MarkDirty(m);
 }
 
 void BeginVertexWeightTool(const VertexWeightToolOptions& options) {

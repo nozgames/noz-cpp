@@ -20,6 +20,7 @@ struct WindowsInput {
     bool gamepad_connected[XUSER_MAX_COUNT] = {0};
     Vec2 gamepad_left_stick[XUSER_MAX_COUNT] = {0};
     int active_controller;
+    bool double_click;
 
     HWND edit_hwnd = nullptr;
     WNDPROC edit_proc = nullptr;
@@ -149,6 +150,9 @@ static InputCode GetLeftStickButton(int gamepad_index) {
 }
 
 bool PlatformIsInputButtonDown(InputCode code) {
+    if (code == MOUSE_LEFT_DOUBLE_CLICK)
+        return g_windows_input.double_click;
+
     if (IsMouse(code) || IsKeyboard(code))
         return g_windows_input.key_states[code];
 
@@ -365,6 +369,18 @@ void PlatformUpdateInputState() {
 
 bool PlatformIsGamepadActive() {
     return g_windows_input.active_controller != -1;
+}
+
+void PlatformSetDoubleClick() {
+    g_windows_input.double_click = true;
+}
+
+void PlatformClearDoubleClick() {
+    g_windows_input.double_click = false;
+}
+
+bool PlatformWasDoubleClick() {
+    return g_windows_input.double_click;
 }
 
 

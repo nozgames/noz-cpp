@@ -914,6 +914,7 @@ void InitView() {
     EnableButton(g_view.input, KEY_RIGHT_SHIFT);
     EnableButton(g_view.input, KEY_RIGHT_ALT);
     EnableButton(g_view.input, MOUSE_LEFT);
+    EnableButton(g_view.input, MOUSE_LEFT_DOUBLE_CLICK);
     EnableButton(g_view.input, MOUSE_RIGHT);
     EnableButton(g_view.input, MOUSE_MIDDLE);
     EnableCommonShortcuts(g_view.input);

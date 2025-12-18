@@ -31,6 +31,7 @@ struct SkeletonData : AssetData {
     Mesh* display_mesh;
     bool display_mesh_dirty;
     int display_mesh_zoom_version;
+    Vec2 display_mesh_position;
 };
 
 extern void InitSkeletonData(AssetData* a);

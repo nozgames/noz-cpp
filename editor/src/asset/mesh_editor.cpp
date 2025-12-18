@@ -479,10 +479,81 @@ static void DissolveSelected() {
     UpdateSelection();
 }
 
+static bool TryDoubleClickSelectFaceVertices() {
+    if (g_mesh_editor.mode != MESH_EDITOR_MODE_VERTEX && g_mesh_editor.mode != MESH_EDITOR_MODE_WEIGHT)
+        return false;
+
+    MeshData* m = GetMeshData();
+    int vertex_index = HitTestVertex(m, g_view.mouse_world_position);
+    if (vertex_index == -1)
+        return false;
+
+    // Find all faces containing this vertex
+    bool shift = IsShiftDown();
+    bool all_selected = true;
+
+    for (int face_index = 0; face_index < m->face_count; face_index++) {
+        FaceData& f = m->faces[face_index];
+        bool contains_vertex = false;
+        for (int i = 0; i < f.vertex_count; i++) {
+            if (f.vertices[i] == vertex_index) {
+                contains_vertex = true;
+                break;
+            }
+        }
+        if (!contains_vertex)
+            continue;
+
+        // Check if all vertices in this face are selected (excluding clicked vertex,
+        // since single-click may have toggled it before double-click fired)
+        for (int i = 0; i < f.vertex_count; i++) {
+            if (f.vertices[i] == vertex_index)
+                continue;
+            if (!m->vertices[f.vertices[i]].selected) {
+                all_selected = false;
+                break;
+            }
+        }
+    }
+
+    // If shift and all selected, deselect. Otherwise select.
+    bool should_select = !(shift && all_selected);
+
+    if (!shift)
+        ClearSelection();
+
+    for (int face_index = 0; face_index < m->face_count; face_index++) {
+        FaceData& f = m->faces[face_index];
+        bool contains_vertex = false;
+        for (int i = 0; i < f.vertex_count; i++) {
+            if (f.vertices[i] == vertex_index) {
+                contains_vertex = true;
+                break;
+            }
+        }
+        if (!contains_vertex)
+            continue;
+
+        for (int i = 0; i < f.vertex_count; i++)
+            m->vertices[f.vertices[i]].selected = should_select;
+    }
+
+    UpdateSelection();
+    return true;
+}
+
 static void UpdateDefaultState() {
     if (!IsToolActive() && g_view.drag_started) {
         BeginBoxSelect(HandleBoxSelect);
         return;
+    }
+
+    // Double-click to select all vertices of face
+    if (WasButtonPressed(g_mesh_editor.input, MOUSE_LEFT_DOUBLE_CLICK)) {
+        if (TryDoubleClickSelectFaceVertices()) {
+            g_mesh_editor.ignore_up = true;
+            return;
+        }
     }
 
     // Select
@@ -1661,6 +1732,7 @@ void InitMeshEditor() {
     g_mesh_editor.input = CreateInputSet(ALLOCATOR_DEFAULT);
     EnableModifiers(g_mesh_editor.input);
     EnableButton(g_mesh_editor.input, MOUSE_LEFT);
+    EnableButton(g_mesh_editor.input, MOUSE_LEFT_DOUBLE_CLICK);
 
     g_mesh_editor.shortcuts = shortcuts;
     EnableButton(g_mesh_editor.input, KEY_Q);

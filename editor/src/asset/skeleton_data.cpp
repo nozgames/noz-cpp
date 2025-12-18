@@ -38,6 +38,7 @@ static void BuildSkeletonDisplayMesh(SkeletonData* s, const Vec2& position) {
     PopScratch();
     s->display_mesh_dirty = false;
     s->display_mesh_zoom_version = g_view.zoom_version;
+    s->display_mesh_position = position;
 }
 
 void DrawSkeletonData(SkeletonData* s, const Vec2& position) {
@@ -53,7 +54,8 @@ void DrawSkeletonData(SkeletonData* s, const Vec2& position) {
     }
 
     bool zoom_changed = s->display_mesh_zoom_version != g_view.zoom_version;
-    if (s->display_mesh_dirty || !s->display_mesh || zoom_changed)
+    bool position_changed = s->display_mesh_position != position;
+    if (s->display_mesh_dirty || !s->display_mesh || zoom_changed || position_changed)
         BuildSkeletonDisplayMesh(s, position);
 
     BindDepth(0.0f);
@@ -355,39 +357,77 @@ int ReparentBone(SkeletonData* s, int bone_index, int parent_index) {
     return bone_map[bone_index];
 }
 
-int GetBoneSide(SkeletonData* s, int bone_index) {
-    const Name* name = s->bones[bone_index].name;
-    const char* str = name->value;
-    size_t len = strlen(str);
-
+// Returns: -1 = left, 1 = right, 0 = center
+// Sets is_prefix to true if l_/r_ prefix, false if _l/_r suffix
+static int GetBoneSideInternal(const char* str, size_t len, bool* is_prefix) {
+    // Check prefix first (l_ or r_)
     if (len >= 2) {
-        const char* suffix = &str[len - 2];
-        if (strcmp(suffix, "_l") == 0)
+        if (strncmp(str, "l_", 2) == 0) {
+            *is_prefix = true;
             return -1;
-        if (strcmp(suffix, "_r") == 0)
+        }
+        if (strncmp(str, "r_", 2) == 0) {
+            *is_prefix = true;
             return 1;
+        }
     }
 
+    // Check suffix (_l or _r)
+    if (len >= 2) {
+        const char* suffix = &str[len - 2];
+        if (strcmp(suffix, "_l") == 0) {
+            *is_prefix = false;
+            return -1;
+        }
+        if (strcmp(suffix, "_r") == 0) {
+            *is_prefix = false;
+            return 1;
+        }
+    }
+
+    *is_prefix = false;
     return 0;
 }
 
+int GetBoneSide(SkeletonData* s, int bone_index) {
+    const char* str = s->bones[bone_index].name->value;
+    bool is_prefix;
+    return GetBoneSideInternal(str, strlen(str), &is_prefix);
+}
+
 int GetMirrorBone(SkeletonData* s, int bone_index) {
-    int side = GetBoneSide(s, bone_index);
-    for (int i=0; i<s->bone_count; i++) {
+    const char* name_a = s->bones[bone_index].name->value;
+    size_t len_a = strlen(name_a);
+    bool is_prefix_a;
+    int side = GetBoneSideInternal(name_a, len_a, &is_prefix_a);
+
+    if (side == 0)
+        return -1;
+
+    for (int i = 0; i < s->bone_count; i++) {
         if (i == bone_index)
             continue;
 
-        int other_side = GetBoneSide(s, i);
-        if (other_side == -side) {
-            const char* name_a = s->bones[bone_index].name->value;
-            const char* name_b = s->bones[i].name->value;
+        const char* name_b = s->bones[i].name->value;
+        size_t len_b = strlen(name_b);
+        bool is_prefix_b;
+        int other_side = GetBoneSideInternal(name_b, len_b, &is_prefix_b);
 
-            size_t len_a = strlen(name_a);
-            size_t len_b = strlen(name_b);
+        if (other_side != -side)
+            continue;
 
-            if (len_a != len_b)
-                continue;
+        // Both must use same convention (both prefix or both suffix)
+        if (is_prefix_a != is_prefix_b)
+            continue;
 
+        if (len_a != len_b)
+            continue;
+
+        // Compare base name (skip the 2-char prefix or suffix)
+        if (is_prefix_a) {
+            if (strcmp(name_a + 2, name_b + 2) == 0)
+                return i;
+        } else {
             if (strncmp(name_a, name_b, len_a - 2) == 0)
                 return i;
         }
@@ -498,6 +538,17 @@ static void SkeletonUndoRedo(AssetData* a) {
     assert(a->type == ASSET_TYPE_SKELETON);
     SkeletonData* s = (SkeletonData*)a;
     UpdateTransforms(s);
+
+    // Update all animations that use this skeleton
+    extern void UpdateTransforms(AnimationData* n, int frame_index=-1);
+    for (u32 i = 0, c = GetAssetCount(); i < c; i++) {
+        AnimationData* anim = static_cast<AnimationData*>(GetAssetData(i));
+        if (anim->type != ASSET_TYPE_ANIMATION)
+            continue;
+        if (anim->skeleton != s)
+            continue;
+        UpdateTransforms(anim);
+    }
 }
 
 static void AllocateSkeletonRuntimeData(AssetData* a) {

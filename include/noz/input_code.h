@@ -14,6 +14,7 @@ enum InputCode
     MOUSE_MIDDLE,
     MOUSE_BUTTON_4,
     MOUSE_BUTTON_5,
+    MOUSE_LEFT_DOUBLE_CLICK,
 
     // MOUSE AXES
     MOUSE_X,
