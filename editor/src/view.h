@@ -48,6 +48,7 @@ struct View {
     Material* shaded_material;
     Material* vertex_material;
     Material* editor_material;
+    Material* editor_mesh_material;
     Mesh* vertex_mesh;
     Mesh* arrow_mesh;
     Mesh* circle_mesh;
@@ -176,7 +177,6 @@ constexpr Color COLOR_ORIGIN = Color32ToColor(255, 159, 44, 255);
 
 constexpr Color COLOR_SELECTED = { 1,1,1,1 };
 constexpr Color COLOR_CENTER = { 1, 1, 1, 0.5f};
-constexpr Color COLOR_BONE = COLOR_BLACK;
 constexpr Color COLOR_BONE_SELECTED = COLOR_EDGE_SELECTED;
 constexpr Color COLOR_UI_BACKGROUND = Color24ToColor(0x262525);
 constexpr Color COLOR_UI_BORDER = Color24ToColor(0x2c323c);

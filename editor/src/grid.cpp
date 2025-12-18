@@ -13,7 +13,6 @@ constexpr Color GRID_ZERO_COLOR = Color24ToColor(0x252525);
 
 struct Grid
 {
-    Material* material;
     Mesh* mesh;
     float grid_spacing;
     float snap_spacing;
@@ -99,7 +98,7 @@ static float CalculateGridSpacing(Camera* camera, float min_pixels, float base_s
 
 void DrawGrid(Camera* camera) {
     BindDepth(-9.0f);
-    BindMaterial(g_grid.material);
+    BindMaterial(g_view.editor_mesh_material);
 
     float alpha1, alpha2;
     float spacing1 = CalculateGridSpacing(camera, 72.0f, 1.0f, &alpha1, 1.0f, 1.0f);
@@ -144,7 +143,7 @@ void DrawGrid(Camera* camera) {
 }
 
 void InitGrid(Allocator* allocator) {
-    g_grid.material = CreateMaterial(allocator, SHADER_EDITOR);
+    (void)allocator;
     g_grid.grid_spacing = GRID_SPACING;
     g_grid.mesh = nullptr;
 }

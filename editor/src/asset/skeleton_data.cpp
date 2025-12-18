@@ -7,17 +7,40 @@ extern void InitSkeletonEditor(SkeletonData* s);
 
 extern Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, Stream* stream);
 
-void DrawEditorSkeletonBone(SkeletonData* s, int bone_index, const Vec2& position) {
-    BoneData* b = s->bones + bone_index;
-    DrawBone(
-        b->local_to_world,
-        GetParentLocalToWorld(s, b, b->local_to_world),
-        position,
-        b->length);
+static void BuildSkeletonDisplayMesh(SkeletonData* s, const Vec2& position) {
+    PushScratch();
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4096, 8192);
+
+    float line_width =  STYLE_SKELETON_BONE_WIDTH * g_view.zoom_ref_scale;
+    float bone_raius = STYLE_SKELETON_BONE_RADIUS * g_view.zoom_ref_scale;
+    float dash_length = STYLE_SKELETON_PARENT_DASH * g_view.zoom_ref_scale;
+
+    for (int bone_index = 0; bone_index < s->bone_count; bone_index++) {
+        BoneData* b = s->bones + bone_index;
+        Vec2 p0 = TransformPoint(b->local_to_world) + position;
+        Vec2 p1 = TransformPoint(b->local_to_world, Vec2{b->length, 0}) + position;
+
+        if (b->parent_index >= 0) {
+            Mat3 parent_transform = GetParentLocalToWorld(s, b, b->local_to_world);
+            Vec2 pp = TransformPoint(parent_transform) + position;
+            AddEditorDashedLine(builder, pp, p0, line_width, dash_length, STYLE_SKELETON_BONE_COLOR);
+        }
+
+        AddEditorBone(builder, p0, p1, line_width, STYLE_SKELETON_BONE_COLOR);
+        AddEditorCircle(builder, p0, bone_raius, STYLE_SKELETON_BONE_COLOR);
+    }
+
+    if (!s->display_mesh)
+        s->display_mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
+    else
+        UpdateMeshFromBuilder(s->display_mesh, builder);
+
+    PopScratch();
+    s->display_mesh_dirty = false;
+    s->display_mesh_zoom_version = g_view.zoom_version;
 }
 
 void DrawSkeletonData(SkeletonData* s, const Vec2& position) {
-    // Draw default skin
     BindIdentitySkeleton();
     BindColor(COLOR_WHITE);
     BindDepth(0.0);
@@ -26,15 +49,17 @@ void DrawSkeletonData(SkeletonData* s, const Vec2& position) {
         MeshData* skinned_mesh = s->skins[i].mesh;
         if (!skinned_mesh)
             continue;
-
         DrawMesh(skinned_mesh, local_to_world, g_view.shaded_skinned_material);
     }
 
+    bool zoom_changed = s->display_mesh_zoom_version != g_view.zoom_version;
+    if (s->display_mesh_dirty || !s->display_mesh || zoom_changed)
+        BuildSkeletonDisplayMesh(s, position);
+
     BindDepth(0.0f);
-    BindMaterial(g_view.vertex_material);
-    BindColor(COLOR_BONE);
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++)
-        DrawEditorSkeletonBone(s, bone_index, position);
+    BindMaterial(g_view.editor_mesh_material);
+    BindTransform(MAT3_IDENTITY);
+    DrawMesh(s->display_mesh);
 }
 
 static void DrawSkeletonData(AssetData* a) {
@@ -240,6 +265,7 @@ void UpdateTransforms(SkeletonData* s) {
     }
 
     s->bounds = Expand(bounds, BOUNDS_PADDING);
+    s->display_mesh_dirty = true;
 }
 
 static void LoadSkeletonMetaData(AssetData* a, Props* meta) {
@@ -495,6 +521,10 @@ static void DestroySkeletonData(AssetData* a) {
     assert(s);
     Free(s->data);
     s->data = nullptr;
+    if (s->display_mesh) {
+        Free(s->display_mesh);
+        s->display_mesh = nullptr;
+    }
 }
 
 static void InitSkeletonData(SkeletonData* s) {

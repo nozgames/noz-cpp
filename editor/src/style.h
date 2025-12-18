@@ -23,3 +23,14 @@ constexpr Color STYLE_ERROR_COLOR = Color24ToColor(0xdf6b6d);
 constexpr Color STYLE_WORKSPACE_COLOR = Color24ToColor(0x3d3c3c);
 constexpr float STYLE_WORKSPACE_PADDING = 16.0f;
 
+
+
+// @mesh
+constexpr float STYLE_MESH_EDGE_WIDTH = 0.02f;
+constexpr float STYLE_MESH_VERTEX_SIZE = 0.12f;
+
+// @skeleton
+constexpr float STYLE_SKELETON_BONE_WIDTH = 0.02f;
+constexpr float STYLE_SKELETON_BONE_RADIUS = 0.06f;
+constexpr Color STYLE_SKELETON_BONE_COLOR = COLOR_BLACK;
+constexpr float STYLE_SKELETON_PARENT_DASH = 0.1f;

@@ -895,6 +895,7 @@ void InitView() {
     g_view.vertex_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
     g_view.editor_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_MESH);
     g_view.shaded_skinned_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_SKINNED_MESH);
+    g_view.editor_mesh_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_EDITOR);
     g_view.zoom = ZOOM_DEFAULT;
     g_view.ui_scale = 1.0f;
     g_view.dpi = 72.0f;
@@ -1021,8 +1022,10 @@ void InitView() {
 
 void ShutdownView() {
     extern void ShutdownMeshEditor();
+    extern void ShutdownSkeletonEditor();
 
     ShutdownMeshEditor();
+    ShutdownSkeletonEditor();
 
     g_view = {};
 

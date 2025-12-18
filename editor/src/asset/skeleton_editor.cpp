@@ -13,7 +13,10 @@ struct SkeletonEditor {
     Vec2 selection_center_world;
     Shortcut* shortcuts;
     InputSet* input;
-    BoneData saved_bones[MAX_BONES];};
+    BoneData saved_bones[MAX_BONES];
+    Mesh* editor_mesh;
+};
+
 
 static SkeletonEditor g_skeleton_editor = {};
 
@@ -193,21 +196,59 @@ void UpdateSkeletonEditor() {
     UpdateDefaultState();
 }
 
+static void BuildSkeletonEditorMesh(MeshBuilder* builder, SkeletonData* s, const Vec2& position) {
+    float line_width = STYLE_SKELETON_BONE_WIDTH * g_view.zoom_ref_scale;
+    float origin_size = STYLE_SKELETON_BONE_RADIUS * g_view.zoom_ref_scale;
+    float dash_length = STYLE_SKELETON_PARENT_DASH * g_view.zoom_ref_scale;
+
+    for (int bone_index = 0; bone_index < s->bone_count; bone_index++) {
+        BoneData* b = s->bones + bone_index;
+        bool selected = b->selected;
+        Color bone_color = selected ? COLOR_BONE_SELECTED : STYLE_SKELETON_BONE_COLOR;
+
+        Vec2 p0 = TransformPoint(b->local_to_world) + position;
+        Vec2 p1 = TransformPoint(b->local_to_world, Vec2{b->length, 0}) + position;
+
+        if (b->parent_index >= 0) {
+            Mat3 parent_transform = GetParentLocalToWorld(s, b, b->local_to_world);
+            Vec2 pp = TransformPoint(parent_transform) + position;
+            AddEditorDashedLine(builder, pp, p0, line_width, dash_length, bone_color);
+        }
+
+        AddEditorBone(builder, p0, p1, line_width, bone_color);
+        AddEditorCircle(builder, p0, origin_size, bone_color);
+    }
+}
+
 static void DrawSkeleton() {
     AssetData* ea = GetAssetData();
-    SkeletonData* es = GetSkeletonData();
+    SkeletonData* s = GetSkeletonData();
 
-    DrawSkeletonData(es, ea->position);
-
-    // Draw selected bones in front
-    BindMaterial(g_view.vertex_material);
-    BindColor(COLOR_BONE_SELECTED);
-    for (int bone_index=0; bone_index<es->bone_count; bone_index++) {
-        if (!IsBoneSelected(bone_index))
+    BindIdentitySkeleton();
+    BindColor(COLOR_WHITE);
+    BindDepth(0.0);
+    Mat3 local_to_world = Translate(s->position);
+    for (int i = 0; i < s->skin_count; i++) {
+        MeshData* skinned_mesh = s->skins[i].mesh;
+        if (!skinned_mesh)
             continue;
-
-        DrawEditorSkeletonBone(es, bone_index, ea->position);
+        DrawMesh(skinned_mesh, local_to_world, g_view.shaded_skinned_material);
     }
+
+    PushScratch();
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4096, 8192);
+    BuildSkeletonEditorMesh(builder, s, ea->position);
+
+    if (!g_skeleton_editor.editor_mesh)
+        g_skeleton_editor.editor_mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
+    else
+        UpdateMeshFromBuilder(g_skeleton_editor.editor_mesh, builder);
+    PopScratch();
+
+    BindDepth(0.0f);
+    BindMaterial(g_view.editor_mesh_material);
+    BindTransform(MAT3_IDENTITY);
+    DrawMesh(g_skeleton_editor.editor_mesh);
 }
 
 void DrawSkeletonData() {
@@ -532,4 +573,10 @@ void InitSkeletonEditor() {
     g_skeleton_editor.shortcuts = shortcuts;
     EnableShortcuts(g_skeleton_editor.shortcuts, g_skeleton_editor.input);
     EnableCommonShortcuts(g_skeleton_editor.input);
+}
+
+void ShutdownSkeletonEditor() {
+    if (g_skeleton_editor.editor_mesh)
+        Free(g_skeleton_editor.editor_mesh);
+    g_skeleton_editor.editor_mesh = nullptr;
 }

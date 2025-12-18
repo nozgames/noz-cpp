@@ -64,5 +64,6 @@ enum EditorEvent {
 #include "style.h"
 #include "editor.h"
 #include "nozed_assets.h"
+#include "editor_mesh_builder.h"
 
 extern Props* g_config;

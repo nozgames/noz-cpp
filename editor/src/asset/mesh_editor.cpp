@@ -41,7 +41,6 @@ struct MeshEditor {
     int weight_bone;
     bool xray;
     bool show_palette_picker;
-    Material* editor_mesh_material;
     Mesh* editor_mesh;
 };
 
@@ -56,131 +55,6 @@ inline MeshData* GetMeshData() {
     return (MeshData*)a;
 }
 
-constexpr float EDITOR_LINE_WIDTH = 0.01f;
-constexpr float EDITOR_VERTEX_SIZE = 0.1f;
-constexpr int EDITOR_CIRCLE_SEGMENTS = 16;
-
-static void AddEditorLine(MeshBuilder* builder, const Vec2& v0, const Vec2& v1, float width, const Color& color) {
-    SetBaseVertex(builder);
-
-    Vec2 mid = (v0 + v1) * 0.5f;
-    Vec2 dir = v1 - v0;
-    float length = Length(dir);
-    if (length < F32_EPSILON) return;
-
-    dir = dir / length;
-    Vec2 perp = {-dir.y, dir.x};
-
-    float half_len = length * 0.5f;
-    float half_width = width * 0.5f;
-
-    Vec2 p0 = mid - dir * half_len - perp * half_width;
-    Vec2 p1 = mid + dir * half_len - perp * half_width;
-    Vec2 p2 = mid + dir * half_len + perp * half_width;
-    Vec2 p3 = mid - dir * half_len + perp * half_width;
-
-    Vec4 color_vec = {color.r, color.g, color.b, color.a};
-    MeshVertex mv0 = {.position = p0, .bone_weights = color_vec};
-    MeshVertex mv1 = {.position = p1, .bone_weights = color_vec};
-    MeshVertex mv2 = {.position = p2, .bone_weights = color_vec};
-    MeshVertex mv3 = {.position = p3, .bone_weights = color_vec};
-
-    AddVertex(builder, mv0);
-    AddVertex(builder, mv1);
-    AddVertex(builder, mv2);
-    AddVertex(builder, mv3);
-    AddTriangle(builder, 0, 1, 2);
-    AddTriangle(builder, 0, 2, 3);
-}
-
-static void AddEditorSquare(MeshBuilder* builder, const Vec2& center, float size, const Color& color) {
-    SetBaseVertex(builder);
-
-    float half = size * 0.5f;
-    Vec4 color_vec = {color.r, color.g, color.b, color.a};
-
-    MeshVertex v0 = {.position = {center.x - half, center.y - half}, .bone_weights = color_vec};
-    MeshVertex v1 = {.position = {center.x + half, center.y - half}, .bone_weights = color_vec};
-    MeshVertex v2 = {.position = {center.x + half, center.y + half}, .bone_weights = color_vec};
-    MeshVertex v3 = {.position = {center.x - half, center.y + half}, .bone_weights = color_vec};
-
-    AddVertex(builder, v0);
-    AddVertex(builder, v1);
-    AddVertex(builder, v2);
-    AddVertex(builder, v3);
-    AddTriangle(builder, 0, 1, 2);
-    AddTriangle(builder, 0, 2, 3);
-}
-
-static void AddEditorCircle(MeshBuilder* builder, const Vec2& center, float radius, int segments, const Color& color) {
-    SetBaseVertex(builder);
-
-    Vec4 color_vec = {color.r, color.g, color.b, color.a};
-    MeshVertex center_vert = {.position = center, .bone_weights = color_vec};
-    AddVertex(builder, center_vert);
-
-    for (int i = 0; i <= segments; ++i) {
-        float angle = (float)i / (float)segments * noz::PI * 2.0f;
-        Vec2 offset = {cosf(angle) * radius, sinf(angle) * radius};
-        MeshVertex v = {.position = center + offset, .bone_weights = color_vec};
-        AddVertex(builder, v);
-    }
-
-    for (int i = 0; i < segments; ++i)
-        AddTriangle(builder, 0, (u16)(i + 1), (u16)(i + 2));
-}
-
-static void AddEditorCircleStroke(MeshBuilder* builder, const Vec2& center, float radius, float thickness, int segments, const Color& color) {
-    SetBaseVertex(builder);
-
-    Vec4 color_vec = {color.r, color.g, color.b, color.a};
-    float inner_radius = radius - thickness * 0.5f;
-    float outer_radius = radius + thickness * 0.5f;
-    float step = 2.0f * noz::PI / (float)segments;
-
-    for (int i = 0; i <= segments; ++i) {
-        float angle = i * step;
-        Vec2 offset_inner = {cosf(angle) * inner_radius, sinf(angle) * inner_radius};
-        Vec2 offset_outer = {cosf(angle) * outer_radius, sinf(angle) * outer_radius};
-        MeshVertex vi = {.position = center + offset_inner, .bone_weights = color_vec};
-        MeshVertex vo = {.position = center + offset_outer, .bone_weights = color_vec};
-        AddVertex(builder, vi);
-        AddVertex(builder, vo);
-    }
-
-    for (int i = 0; i < segments; ++i) {
-        u16 i0 = (u16)(i * 2 + 0);
-        u16 i1 = (u16)(i * 2 + 1);
-        u16 i2 = (u16)(i * 2 + 2);
-        u16 i3 = (u16)(i * 2 + 3);
-        AddTriangle(builder, i0, i1, i2);
-        AddTriangle(builder, i2, i1, i3);
-    }
-}
-
-static void AddEditorArc(MeshBuilder* builder, const Vec2& center, float radius, float fill_percent, int segments, const Color& color) {
-    if (fill_percent <= 0.0f) return;
-    fill_percent = Clamp01(fill_percent);
-
-    SetBaseVertex(builder);
-
-    Vec4 color_vec = {color.r, color.g, color.b, color.a};
-    MeshVertex center_vert = {.position = center, .bone_weights = color_vec};
-    AddVertex(builder, center_vert);
-
-    int arc_segments = Max(1, (int)(segments * fill_percent));
-    float angle_end = fill_percent * noz::PI * 2.0f;
-
-    for (int i = 0; i <= arc_segments; ++i) {
-        float angle = (float)i / (float)arc_segments * angle_end - noz::PI * 0.5f;
-        Vec2 offset = {cosf(angle) * radius, sinf(angle) * radius};
-        MeshVertex v = {.position = center + offset, .bone_weights = color_vec};
-        AddVertex(builder, v);
-    }
-
-    for (int i = 0; i < arc_segments; ++i)
-        AddTriangle(builder, 0, (u16)(i + 1), (u16)(i + 2));
-}
 
 static void UpdateVertexSelection(MeshData* m) {
     m->selected_vertex_count = 0;
@@ -1391,7 +1265,7 @@ static void DrawSkeleton() {
     }
 
     Mat3 transform = Translate(m->position);
-    BindColor(SetAlpha(COLOR_BONE, 0.5f));
+    BindColor(SetAlpha(STYLE_SKELETON_BONE_COLOR, 0.5f));
     for (int bone_index=0; bone_index<s->bone_count; bone_index++)
         if (!bone_used[bone_index] && bone_index != g_mesh_editor.weight_bone)
             DrawBone(transform * s->bones[bone_index].local_to_world, s->bones[bone_index].length);
@@ -1414,8 +1288,8 @@ static void DrawXRay() {
 }
 
 static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selected) {
-    float line_width = EDITOR_LINE_WIDTH * g_view.zoom_ref_scale;
-    float vertex_size = EDITOR_VERTEX_SIZE * g_view.zoom_ref_scale;
+    float line_width = STYLE_MESH_EDGE_WIDTH * g_view.zoom_ref_scale;
+    float vertex_size = STYLE_MESH_VERTEX_SIZE * g_view.zoom_ref_scale;
     float origin_size = 0.1f * g_view.zoom_ref_scale;
 
     for (int edge_index = 0; edge_index < m->edge_count; edge_index++) {
@@ -1474,9 +1348,9 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
             float weight = GetVertexWeight(m, vi, g_mesh_editor.weight_bone);
 
             if (!v.selected) {
-                AddEditorCircleStroke(builder, pos, outline_size, stroke_thickness, EDITOR_CIRCLE_SEGMENTS, SetAlpha(COLOR_BLACK, 0.5f));
+                AddEditorCircleStroke(builder, pos, outline_size, stroke_thickness, SetAlpha(COLOR_BLACK, 0.5f));
                 if (weight > 0.0f) {
-                    AddEditorArc(builder, pos, control_size, weight, EDITOR_CIRCLE_SEGMENTS, SetAlpha(COLOR_BLACK, 0.5f));
+                    AddEditorArc(builder, pos, control_size, weight, SetAlpha(COLOR_BLACK, 0.5f));
                 }
             }
         }
@@ -1489,9 +1363,9 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
             if (v.selected) {
                 AddEditorSquare(builder, pos, control_size, SetAlpha(COLOR_BLACK, 0.5f));
                 if (weight > 0.0f) {
-                    AddEditorArc(builder, pos, control_size, weight, EDITOR_CIRCLE_SEGMENTS, COLOR_VERTEX_SELECTED);
+                    AddEditorArc(builder, pos, control_size, weight, COLOR_VERTEX_SELECTED);
                 }
-                AddEditorCircleStroke(builder, pos, outline_size, stroke_thickness, EDITOR_CIRCLE_SEGMENTS, COLOR_VERTEX_SELECTED);
+                AddEditorCircleStroke(builder, pos, outline_size, stroke_thickness, COLOR_VERTEX_SELECTED);
             }
         }
 
@@ -1502,7 +1376,7 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
         }
     }
 
-    AddEditorCircle(builder, m->position, origin_size, EDITOR_CIRCLE_SEGMENTS, COLOR_ORIGIN);
+    AddEditorCircle(builder, m->position, origin_size, COLOR_ORIGIN);
 }
 
 static void DrawMeshEditor() {
@@ -1531,7 +1405,7 @@ static void DrawMeshEditor() {
             UpdateMeshFromBuilder(g_mesh_editor.editor_mesh, builder);
 
         BindDepth(0.0f);
-        BindMaterial(g_mesh_editor.editor_mesh_material);
+        BindMaterial(g_view.editor_mesh_material);
         BindColor(COLOR_WHITE);
         BindTransform(MAT3_IDENTITY);
         DrawMesh(g_mesh_editor.editor_mesh);
@@ -1775,7 +1649,6 @@ void ShutdownMeshEditor() {
 
 void InitMeshEditor() {
     g_mesh_editor.color_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
-    g_mesh_editor.editor_mesh_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_EDITOR);
 
     static Shortcut shortcuts[] = {
         { KEY_D, false, true, false, DuplicateSelected },

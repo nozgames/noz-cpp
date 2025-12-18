@@ -1,4 +1,6 @@
 # incoming
+- [ ] stop input when application is not focused.
+- 
 - [ ] names broken becuase world canvas broken
 - [ ] color override push in render buffer (PushColorOverride / PopColorOverride)
 - [ ] notifcation ui is not aligning to bottom right
