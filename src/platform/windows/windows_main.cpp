@@ -190,6 +190,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 PlatformHideTextbox();
             break;
 
+        case WM_LBUTTONDBLCLK:
+            extern void PlatformSetDoubleClick();
+            PlatformSetDoubleClick();
+            break;
+
 
         case WM_SETCURSOR:
             if (LOWORD(lParam) == HTCLIENT) {
@@ -250,6 +255,7 @@ void PlatformInitWindow(void (*on_close)()) {
 
     const char* CLASS_NAME = "NoZGameWindow";
     WNDCLASS wc = {};
+    wc.style = CS_DBLCLKS;
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = CLASS_NAME;
@@ -305,6 +311,10 @@ bool PlatformUpdate() {
     MSG msg = {};
 
     g_windows.mouse_scroll = {0, 0};
+
+    // Clear double-click flag from previous frame before processing new messages
+    extern void PlatformClearDoubleClick();
+    PlatformClearDoubleClick();
 
     if (!g_windows.is_resizing) {
         int count = 0;
