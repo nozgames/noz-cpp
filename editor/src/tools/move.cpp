@@ -70,7 +70,8 @@ void BeginMoveTool(const MoveToolOptions& options) {
     BeginTool({
         .type = TOOL_TYPE_MOVE,
         .vtable = vtable,
-        .input = g_view.input_tool
+        .input = g_view.input_tool,
+        .inherit_input = true
     });
 
     g_move = {};

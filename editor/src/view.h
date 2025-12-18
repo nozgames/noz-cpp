@@ -173,7 +173,6 @@ constexpr Color COLOR_VERTEX = COLOR_BLACK;
 constexpr Color COLOR_EDGE = COLOR_BLACK;
 constexpr Color COLOR_EDGE_SELECTED = Color32ToColor(253, 151, 11, 255);
 constexpr Color COLOR_ORIGIN = Color32ToColor(255, 159, 44, 255);
-constexpr Color COLOR_ORIGIN_BORDER = { 0,0,0,1 };
 
 constexpr Color COLOR_SELECTED = { 1,1,1,1 };
 constexpr Color COLOR_CENTER = { 1, 1, 1, 0.5f};

@@ -1,0 +1,7 @@
+[editor]
+position = (-6.500000,-16.500000)
+
+[shader]
+cull = none
+blend = true
+

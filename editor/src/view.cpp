@@ -607,6 +607,9 @@ static void NewAssetCommand(const Command& command) {
 
     SortAssets();
     SaveAssetData();
+
+    ClearAssetSelection();
+    SetSelected(a, true);
 }
 
 static void DuplicateAsset() {

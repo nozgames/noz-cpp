@@ -1160,6 +1160,7 @@ static void EndKnifeTool(bool commit) {
 }
 
 static void DrawKnifeTool() {
+    BindMaterial(g_view.vertex_material);
     BindColor(COLOR_VERTEX_SELECTED);
     for (int i=0; i<g_knife_tool.cut_count-1; i++) {
         DrawDashedLine(

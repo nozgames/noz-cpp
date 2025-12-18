@@ -188,18 +188,20 @@ static void SaveSkeletonData(AssetData* a, const std::filesystem::path& path) {
 }
 
 AssetData* NewEditorSkeleton(const std::filesystem::path& path) {
-    const char* default_mesh = "b \"root\" -1 p 0 0\n";
+    const char* default_skel = "b \"root\" -1 p 0 0 l 1\n";
 
     std::filesystem::path full_path = path.is_relative() ? std::filesystem::path(g_editor.project_path) / "assets" / "skeletons" / path : path;
     full_path += ".skel";
 
     Stream* stream = CreateStream(ALLOCATOR_DEFAULT, 4096);
-    WriteCSTR(stream, default_mesh);
+    WriteCSTR(stream, default_skel);
     SaveStream(stream, full_path);
     Free(stream);
 
-    //return LoadEditorSkeleton(full_path);
-    return nullptr;
+    AssetData* a = CreateAssetData(full_path);
+    if (a && a->vtable.load)
+        a->vtable.load(a);
+    return a;
 }
 
 void UpdateTransforms(SkeletonData* s) {

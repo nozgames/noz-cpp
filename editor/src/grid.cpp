@@ -16,6 +16,7 @@ struct Grid
     Material* material;
     Mesh* mesh;
     float grid_spacing;
+    float snap_spacing;
 };
 
 static Grid g_grid = {};
@@ -103,6 +104,7 @@ void DrawGrid(Camera* camera) {
     float alpha1, alpha2;
     float spacing1 = CalculateGridSpacing(camera, 72.0f, 1.0f, &alpha1, 1.0f, 1.0f);
     float spacing2 = CalculateGridSpacing(camera, 72.0f, 0.1f, &alpha2, 0.0f, 1.0f);
+    g_grid.snap_spacing = spacing2;
 
     constexpr int MAX_GRID_LINES = 1024;
     constexpr int VERTS_PER_LINE = 4;
@@ -142,13 +144,13 @@ void DrawGrid(Camera* camera) {
 }
 
 void InitGrid(Allocator* allocator) {
-    g_grid.material = CreateMaterial(allocator, SHADER_GRID);
+    g_grid.material = CreateMaterial(allocator, SHADER_EDITOR);
     g_grid.grid_spacing = GRID_SPACING;
     g_grid.mesh = nullptr;
 }
 
 Vec2 SnapToGrid(const Vec2& position) {
-    constexpr float spacing = 0.1f;
+    float spacing = g_grid.snap_spacing > 0.0f ? g_grid.snap_spacing : 0.1f;
     return Vec2{
         roundf(position.x / spacing) * spacing,
         roundf(position.y / spacing) * spacing

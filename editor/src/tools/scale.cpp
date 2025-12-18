@@ -10,6 +10,7 @@ struct ScaleTool {
     bool last_ctrl;
     Vec2 delta_scale;
     ScaleToolOptions options;
+    float start_distance;
 };
 
 static ScaleTool g_scale = {};
@@ -56,22 +57,29 @@ static void UpdateScale() {
         g_scale.delta_scale = {0.0f, 1.0f};
     }
 
-    Vec2 delta_scale = g_scale.delta_scale *
-        (Length(g_view.mouse_world_position - g_scale.options.origin) -
-         Length(g_view.drag_world_position - g_scale.options.origin));
+    float current_distance = Length(g_view.mouse_world_position - g_scale.options.origin);
+    float scale_factor = g_scale.start_distance > F32_EPSILON
+        ? current_distance / g_scale.start_distance
+        : 1.0f;
+
+    Vec2 scale = {
+        g_scale.delta_scale.x > 0.0f ? scale_factor : 1.0f,
+        g_scale.delta_scale.y > 0.0f ? scale_factor : 1.0f
+    };
 
     bool ctrl = IsCtrlDown();
-    if (g_scale.last_scale == delta_scale && ctrl == g_scale.last_ctrl)
+    if (g_scale.last_scale == scale && ctrl == g_scale.last_ctrl)
         return;
 
-    g_scale.last_scale = delta_scale;
+    g_scale.last_scale = scale;
     g_scale.last_ctrl = ctrl;
 
     if (g_scale.options.update)
-        g_scale.options.update(VEC2_ONE + delta_scale);
+        g_scale.options.update(scale);
 }
 
 static void DrawScale() {
+    BindMaterial(g_view.vertex_material);
     BindColor(SetAlpha(COLOR_CENTER, 0.75f));
     DrawVertex(g_scale.options.origin, SCALE_TOOL_CENTER_SIZE * 0.75f);
     BindColor(COLOR_CENTER);
@@ -94,6 +102,7 @@ void BeginScaleTool(const ScaleToolOptions& options) {
 
     g_scale.options = options;
     g_scale.delta_scale = VEC2_ONE;
+    g_scale.start_distance = Length(g_view.mouse_world_position - options.origin);
 
     BeginDrag();
 }

@@ -49,6 +49,7 @@ static void UpdateVertexWeightTool() {
 }
 
 static void DrawVertexWeightTool() {
+    BindMaterial(g_view.vertex_material);
     for (int i=0; i<g_weight.options.vertex_count; i++) {
         WeightToolVertex& v = g_weight.options.vertices[i];
         BindColor(COLOR_VERTEX_SELECTED);

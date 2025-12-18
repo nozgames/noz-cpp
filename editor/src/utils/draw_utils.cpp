@@ -70,8 +70,6 @@ void DrawArrow(const Vec2& v, const Vec2& dir) {
 
 void DrawOrigin(AssetData* ea) {
     BindMaterial(g_view.vertex_material);
-    BindColor(COLOR_ORIGIN_BORDER);
-    DrawVertex(ea->position, ORIGIN_BORDER_SIZE);
     BindColor(COLOR_ORIGIN);
     DrawVertex(ea->position, ORIGIN_SIZE);
 }

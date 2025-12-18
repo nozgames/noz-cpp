@@ -40,7 +40,7 @@ extern Shader* SHADER_SKINNED_MESH;
 extern Shader* SHADER_POSTPROCESS_UI_COMPOSITE;
 extern Shader* SHADER_POSTPROCESS_DESATURATE;
 extern Shader* SHADER_MESH;
-extern Shader* SHADER_GRID;
+extern Shader* SHADER_EDITOR;
 
 // @name
 extern const Name* NAME_MESH;

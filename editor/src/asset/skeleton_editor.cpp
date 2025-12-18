@@ -451,7 +451,7 @@ static void BeginRenameCommand() {
 
     BeginCommandInput({
         .commands = commands,
-        .placeholder = GetSkeletonData()->bones[bone_index].name->value
+        .initial_text = GetSkeletonData()->bones[bone_index].name->value
     });
 }
 

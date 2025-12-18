@@ -114,6 +114,7 @@ struct CommandInputOptions {
     const CommandHandler* commands;
     const char* prefix;
     const char* placeholder;
+    const char* initial_text;
     bool hide_empty;
     InputSet* input;
 };

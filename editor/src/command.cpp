@@ -100,6 +100,7 @@ void BeginCommandInput(const CommandInputOptions& options) {
     g_command_input.prefix = options.prefix;
     g_command_input.placeholder = options.placeholder;
     g_command_input.hide_empty = options.hide_empty;
+    Set(g_command_input.text, options.initial_text);
 
     if (!options.input) {
         PushInputSet(g_command_input.input);

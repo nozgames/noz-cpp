@@ -78,10 +78,11 @@ static void UpdateRotate() {
 }
 
 static void DrawRotate() {
+    BindMaterial(g_view.vertex_material);
+
     const Vec2& center = g_rotate.options.origin;
     const Vec2 dir = Normalize(g_view.drag_world_position - center);
 
-    // Draw center point
     BindColor(SetAlpha(COLOR_CENTER, 0.75f));
     DrawVertex(center, ROTATE_TOOL_CENTER_SIZE * 0.75f);
 

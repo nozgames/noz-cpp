@@ -8,10 +8,13 @@
 
 int Copy(char* dst, int dst_size, const char* src) {
     assert(dst);
-    assert(src);
-
     if (dst_size == 0)
         return 0;
+
+    if (!src) {
+        dst[0] = 0;
+        return 0;
+    }
 
     int i=0;
     for (i=0; i<dst_size-1 && src[i]; i++)
