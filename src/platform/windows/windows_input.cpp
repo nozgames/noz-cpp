@@ -314,6 +314,18 @@ float PlatformGetInputAxisValue(InputCode code) {
 }
 
 void PlatformUpdateInputState() {
+    if (!PlatformIsWindowFocused()) {
+        // Clear all input when unfocused
+        for (int i = 0; i < INPUT_CODE_COUNT; i++) {
+            g_windows_input.key_states[i] = false;
+        }
+        for (int i = 0; i < XUSER_MAX_COUNT; i++) {
+            ZeroMemory(&g_windows_input.gamepad_states[i], sizeof(XINPUT_STATE));
+            g_windows_input.gamepad_left_stick[i] = {};
+        }
+        return;
+    }
+
     bool key_state_changed = false;
     for (int i = 0; i < INPUT_CODE_COUNT; i++) {
         bool old_state = g_windows_input.key_states[i];
@@ -492,9 +504,6 @@ void PlatformShowTextbox(const noz::Rect& rect, const Text& text, const NativeTe
 }
 
 void PlatformHideTextbox() {
-    if (!g_windows_input.edit_visible)
-        return;
-
     ShowWindow(g_windows_input.edit_hwnd, SW_HIDE);
     InvalidateRect(g_windows_input.edit_hwnd, nullptr, TRUE);
     UpdateWindow(g_windows_input.edit_hwnd);
