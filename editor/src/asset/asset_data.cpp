@@ -302,7 +302,9 @@ AssetData* GetAssetData(AssetType type, const Name* name) {
 }
 
 void Clone(AssetData* dst, AssetData* src) {
+    bool editing = dst->editing;
     *(FatAssetData*)dst = *(FatAssetData*)src;
+    dst->editing = editing;
 
     if (dst->vtable.clone)
         dst->vtable.clone((AssetData*)dst);

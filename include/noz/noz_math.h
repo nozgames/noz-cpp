@@ -294,6 +294,7 @@ extern Mat3 ToMat3(const Mat4& m);
 extern Mat3 TRS(const Vec2& translation, f32 rotation, const Vec2& scale);
 extern Mat3 TRS(const Vec2& translation, const Vec2& direction, const Vec2& scale);
 extern Mat3 Translate(const Vec2& translation);
+inline Mat3 Translate(float x, float y) { return Translate(Vec2{ x, y }); }
 extern Mat3 Rotate(float rotation);
 extern Mat3 Rotate(const Vec2& direction);
 extern Mat3 Scale(float scale);

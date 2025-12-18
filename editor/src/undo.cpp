@@ -53,7 +53,7 @@ static bool UndoInternal(bool allow_redo) {
 
     while (!IsEmpty(g_undo.undo)) {
         UndoItem* item = GetBackItem(g_undo.undo);
-        if (item->group_id != -1 && item->group_id != group_id)
+        if (group_id != -1 && item->group_id != group_id)
             break;
 
         AssetData* undo_asset = item->asset;
@@ -98,7 +98,7 @@ bool Redo()
     while (!IsEmpty(g_undo.redo))
     {
         UndoItem& redo_item = *(UndoItem*)GetBack(g_undo.redo);
-        if (redo_item.group_id != -1 && redo_item.group_id != group_id)
+        if (group_id != -1 && redo_item.group_id != group_id)
             break;
 
         AssetData* redo_asset = redo_item.asset;
@@ -120,6 +120,8 @@ bool Redo()
         if (redo_item.group_id == -1)
             break;
     }
+
+    CallUndoRedo();
 
     return true;
 }

@@ -650,7 +650,6 @@ static bool Palette(int palette_index, bool* selected_colors) {
         BeginContainer({
             .width=COLOR_PICKER_COLOR_SIZE,
             .height=COLOR_PICKER_COLOR_SIZE,
-            .color=COLOR_RED,
             .border={
                 .width=(selected_colors && selected_colors[i])?2.0f:0.0f,
                 .color=COLOR_VERTEX_SELECTED

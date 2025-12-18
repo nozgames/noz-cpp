@@ -1272,7 +1272,7 @@ void BeginKnifeTool(MeshData* mesh) {
         .type = TOOL_TYPE_SELECT,
         .vtable = vtable,
         .input = g_view.input_tool,
-        .hide_selected = true
+        .hide_selected = false
     });
 
     g_knife_tool.mesh = mesh;
