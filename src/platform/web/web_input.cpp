@@ -447,6 +447,8 @@ void PlatformInitInput() {
     emscripten_set_mousedown_callback("#canvas", nullptr, EM_TRUE, OnMouseDown);
     emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_DOCUMENT, nullptr, EM_TRUE, OnMouseUp);
 
+    // Note: Touch events are handled in web_main.cpp (includes position tracking + landscape request)
+
     // Register gamepad events
     emscripten_set_gamepadconnected_callback(nullptr, EM_TRUE, OnGamepadConnected);
     emscripten_set_gamepaddisconnected_callback(nullptr, EM_TRUE, OnGamepadDisconnected);

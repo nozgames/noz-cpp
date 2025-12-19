@@ -137,6 +137,11 @@ extern Vec2 PlatformGetMouseScroll();
 extern bool PlatformIsGamepadActive();
 extern bool PlatformIsMouseOverWindow();
 
+// @mobile
+extern bool PlatformIsMobile();
+extern bool PlatformIsPortrait();
+extern void PlatformRequestLandscape();
+
 // @native_text_input
 extern void PlatformShowTextbox(const noz::Rect& rect, const Text& text, const NativeTextboxStyle& style);
 extern void PlatformHideTextbox();

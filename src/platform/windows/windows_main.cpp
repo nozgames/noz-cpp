@@ -504,4 +504,16 @@ bool PlatformIsMouseOverWindow(){
     return g_windows.mouse_on_screen;
 }
 
+bool PlatformIsMobile() {
+    return false;  // Windows is never mobile
+}
+
+bool PlatformIsPortrait() {
+    return g_windows.screen_size.y > g_windows.screen_size.x;
+}
+
+void PlatformRequestLandscape() {
+    // No-op on Windows
+}
+
 

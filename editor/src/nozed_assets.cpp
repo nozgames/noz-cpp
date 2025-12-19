@@ -37,6 +37,7 @@ Texture* TEXTURE_PALETTE = nullptr;
 Font* FONT_SEGUISB = nullptr;
 
 // @Shader
+Shader* SHADER_EDITOR = nullptr;
 Shader* SHADER_VFX = nullptr;
 Shader* SHADER_UI_VIGNETTE = nullptr;
 Shader* SHADER_UI_IMAGE_TEXTURE = nullptr;
@@ -49,7 +50,6 @@ Shader* SHADER_SKINNED_MESH = nullptr;
 Shader* SHADER_POSTPROCESS_UI_COMPOSITE = nullptr;
 Shader* SHADER_POSTPROCESS_DESATURATE = nullptr;
 Shader* SHADER_MESH = nullptr;
-Shader* SHADER_EDITOR = nullptr;
 
 // @name
 const Name* NAME_MESH = nullptr;
@@ -76,18 +76,6 @@ const Name* NAME_MIRROR = nullptr;
 
 // @path
 const Name* PATH_TEXTURE_PALETTE = nullptr;
-const Name* PATH_SHADER_VFX = nullptr;
-const Name* PATH_SHADER_UI_VIGNETTE = nullptr;
-const Name* PATH_SHADER_UI_IMAGE_TEXTURE = nullptr;
-const Name* PATH_SHADER_UI_IMAGE = nullptr;
-const Name* PATH_SHADER_UI = nullptr;
-const Name* PATH_SHADER_TEXTURED_MESH = nullptr;
-const Name* PATH_SHADER_TEXT = nullptr;
-const Name* PATH_SHADER_SOLID = nullptr;
-const Name* PATH_SHADER_SKINNED_MESH = nullptr;
-const Name* PATH_SHADER_POSTPROCESS_UI_COMPOSITE = nullptr;
-const Name* PATH_SHADER_POSTPROCESS_DESATURATE = nullptr;
-const Name* PATH_SHADER_MESH = nullptr;
 const Name* PATH_SHADER_EDITOR = nullptr;
 const Name* PATH_MESH_UI_ICON_ROOT_MOTION = nullptr;
 const Name* PATH_MESH_UI_ICON_ONION = nullptr;
@@ -102,6 +90,18 @@ const Name* PATH_MESH_ASSET_ICON_FONT = nullptr;
 const Name* PATH_MESH_ASSET_ICON_EVENT = nullptr;
 const Name* PATH_MESH_ASSET_ICON_BIN = nullptr;
 const Name* PATH_FONT_SEGUISB = nullptr;
+const Name* PATH_SHADER_VFX = nullptr;
+const Name* PATH_SHADER_UI_VIGNETTE = nullptr;
+const Name* PATH_SHADER_UI_IMAGE_TEXTURE = nullptr;
+const Name* PATH_SHADER_UI_IMAGE = nullptr;
+const Name* PATH_SHADER_UI = nullptr;
+const Name* PATH_SHADER_TEXTURED_MESH = nullptr;
+const Name* PATH_SHADER_TEXT = nullptr;
+const Name* PATH_SHADER_SOLID = nullptr;
+const Name* PATH_SHADER_SKINNED_MESH = nullptr;
+const Name* PATH_SHADER_POSTPROCESS_UI_COMPOSITE = nullptr;
+const Name* PATH_SHADER_POSTPROCESS_DESATURATE = nullptr;
+const Name* PATH_SHADER_MESH = nullptr;
 
 // @load
 bool LoadAssets(Allocator* allocator)
@@ -131,18 +131,6 @@ bool LoadAssets(Allocator* allocator)
 
     // @path
     PATH_TEXTURE_PALETTE = GetName("palette");
-    PATH_SHADER_VFX = GetName("vfx");
-    PATH_SHADER_UI_VIGNETTE = GetName("ui_vignette");
-    PATH_SHADER_UI_IMAGE_TEXTURE = GetName("ui_image_texture");
-    PATH_SHADER_UI_IMAGE = GetName("ui_image");
-    PATH_SHADER_UI = GetName("ui");
-    PATH_SHADER_TEXTURED_MESH = GetName("textured_mesh");
-    PATH_SHADER_TEXT = GetName("text");
-    PATH_SHADER_SOLID = GetName("solid");
-    PATH_SHADER_SKINNED_MESH = GetName("skinned_mesh");
-    PATH_SHADER_POSTPROCESS_UI_COMPOSITE = GetName("postprocess_ui_composite");
-    PATH_SHADER_POSTPROCESS_DESATURATE = GetName("postprocess_desaturate");
-    PATH_SHADER_MESH = GetName("mesh");
     PATH_SHADER_EDITOR = GetName("editor");
     PATH_MESH_UI_ICON_ROOT_MOTION = GetName("ui_icon_root_motion");
     PATH_MESH_UI_ICON_ONION = GetName("ui_icon_onion");
@@ -157,6 +145,18 @@ bool LoadAssets(Allocator* allocator)
     PATH_MESH_ASSET_ICON_EVENT = GetName("asset_icon_event");
     PATH_MESH_ASSET_ICON_BIN = GetName("asset_icon_bin");
     PATH_FONT_SEGUISB = GetName("seguisb");
+    PATH_SHADER_VFX = GetName("vfx");
+    PATH_SHADER_UI_VIGNETTE = GetName("ui_vignette");
+    PATH_SHADER_UI_IMAGE_TEXTURE = GetName("ui_image_texture");
+    PATH_SHADER_UI_IMAGE = GetName("ui_image");
+    PATH_SHADER_UI = GetName("ui");
+    PATH_SHADER_TEXTURED_MESH = GetName("textured_mesh");
+    PATH_SHADER_TEXT = GetName("text");
+    PATH_SHADER_SOLID = GetName("solid");
+    PATH_SHADER_SKINNED_MESH = GetName("skinned_mesh");
+    PATH_SHADER_POSTPROCESS_UI_COMPOSITE = GetName("postprocess_ui_composite");
+    PATH_SHADER_POSTPROCESS_DESATURATE = GetName("postprocess_desaturate");
+    PATH_SHADER_MESH = GetName("mesh");
 
     // @Mesh
     NOZ_LOAD_MESH(allocator, PATH_MESH_UI_ICON_ROOT_MOTION, MESH_UI_ICON_ROOT_MOTION);
@@ -214,6 +214,7 @@ bool LoadAssets(Allocator* allocator)
     FONT_COUNT = sizeof(_FONT) / sizeof(void*);
 
     // @Shader
+    NOZ_LOAD_SHADER(allocator, PATH_SHADER_EDITOR, SHADER_EDITOR);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_VFX, SHADER_VFX);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_UI_VIGNETTE, SHADER_UI_VIGNETTE);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_UI_IMAGE_TEXTURE, SHADER_UI_IMAGE_TEXTURE);
@@ -226,9 +227,9 @@ bool LoadAssets(Allocator* allocator)
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_POSTPROCESS_UI_COMPOSITE, SHADER_POSTPROCESS_UI_COMPOSITE);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_POSTPROCESS_DESATURATE, SHADER_POSTPROCESS_DESATURATE);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_MESH, SHADER_MESH);
-    NOZ_LOAD_SHADER(allocator, PATH_SHADER_EDITOR, SHADER_EDITOR);
 
     static Shader* _SHADER[] = {
+        SHADER_EDITOR,
         SHADER_VFX,
         SHADER_UI_VIGNETTE,
         SHADER_UI_IMAGE_TEXTURE,
@@ -241,7 +242,6 @@ bool LoadAssets(Allocator* allocator)
         SHADER_POSTPROCESS_UI_COMPOSITE,
         SHADER_POSTPROCESS_DESATURATE,
         SHADER_MESH,
-        SHADER_EDITOR,
         nullptr
     };
 
@@ -275,6 +275,7 @@ void UnloadAssets()
     Free(FONT_SEGUISB);
 
     // @Shader
+    Free(SHADER_EDITOR);
     Free(SHADER_VFX);
     Free(SHADER_UI_VIGNETTE);
     Free(SHADER_UI_IMAGE_TEXTURE);
@@ -287,7 +288,6 @@ void UnloadAssets()
     Free(SHADER_POSTPROCESS_UI_COMPOSITE);
     Free(SHADER_POSTPROCESS_DESATURATE);
     Free(SHADER_MESH);
-    Free(SHADER_EDITOR);
 }
 
 #ifdef NOZ_EDITOR
@@ -315,6 +315,7 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     NOZ_RELOAD_FONT(PATH_FONT_SEGUISB, FONT_SEGUISB);
 
     // @Shader
+    NOZ_RELOAD_SHADER(PATH_SHADER_EDITOR, SHADER_EDITOR);
     NOZ_RELOAD_SHADER(PATH_SHADER_VFX, SHADER_VFX);
     NOZ_RELOAD_SHADER(PATH_SHADER_UI_VIGNETTE, SHADER_UI_VIGNETTE);
     NOZ_RELOAD_SHADER(PATH_SHADER_UI_IMAGE_TEXTURE, SHADER_UI_IMAGE_TEXTURE);
@@ -327,7 +328,6 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     NOZ_RELOAD_SHADER(PATH_SHADER_POSTPROCESS_UI_COMPOSITE, SHADER_POSTPROCESS_UI_COMPOSITE);
     NOZ_RELOAD_SHADER(PATH_SHADER_POSTPROCESS_DESATURATE, SHADER_POSTPROCESS_DESATURATE);
     NOZ_RELOAD_SHADER(PATH_SHADER_MESH, SHADER_MESH);
-    NOZ_RELOAD_SHADER(PATH_SHADER_EDITOR, SHADER_EDITOR);
 }
 
 #endif // NOZ_EDITOR

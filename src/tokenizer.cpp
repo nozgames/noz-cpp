@@ -528,10 +528,20 @@ bool ReadToken(Tokenizer& tk)
     return true;
 }
 
-bool ExpectLine(Tokenizer& tk)
-{
+bool ExpectLine(Tokenizer& tk) {
     // Rewind to before the next token
-    tk.position = (u32)(tk.next_token.raw - tk.input);
+    u32 rewind_pos = (u32)(tk.next_token.raw - tk.input);
+
+    // If this is a quoted string, include the opening quote (which ReadQuotedString skips)
+    if (tk.next_token.type == TOKEN_TYPE_STRING && rewind_pos > 0) {
+        char prev = tk.input[rewind_pos - 1];
+        if (prev == '"' || prev == '\'') {
+            rewind_pos--;
+        }
+    }
+
+    tk.position = rewind_pos;
+    tk.next_token.raw = tk.input + rewind_pos;
 
     do
     {

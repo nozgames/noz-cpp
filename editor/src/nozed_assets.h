@@ -28,6 +28,7 @@ extern Texture* TEXTURE_PALETTE;
 extern Font* FONT_SEGUISB;
 
 // @Shader
+extern Shader* SHADER_EDITOR;
 extern Shader* SHADER_VFX;
 extern Shader* SHADER_UI_VIGNETTE;
 extern Shader* SHADER_UI_IMAGE_TEXTURE;
@@ -40,7 +41,6 @@ extern Shader* SHADER_SKINNED_MESH;
 extern Shader* SHADER_POSTPROCESS_UI_COMPOSITE;
 extern Shader* SHADER_POSTPROCESS_DESATURATE;
 extern Shader* SHADER_MESH;
-extern Shader* SHADER_EDITOR;
 
 // @name
 extern const Name* NAME_MESH;

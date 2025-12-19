@@ -26,9 +26,54 @@ struct WebApp {
     SystemCursor cursor;
     bool mouse_on_screen;
     const char* canvas_id;
+    bool is_mobile;
+    bool is_portrait;
+    bool fullscreen_requested;
 };
 
 static WebApp g_web = {};
+
+// Check if device is mobile based on touch support and screen size
+static bool DetectMobile() {
+    return EM_ASM_INT({
+        return ('ontouchstart' in window) ||
+               (navigator.maxTouchPoints > 0) ||
+               (window.innerWidth <= 1024 && window.innerHeight <= 1024);
+    }) != 0;
+}
+
+// Check if screen is in portrait mode (taller than wide)
+static bool IsPortrait() {
+    return EM_ASM_INT({
+        return window.innerHeight > window.innerWidth ? 1 : 0;
+    }) != 0;
+}
+
+// Request fullscreen and lock to landscape orientation
+static void RequestLandscapeFullscreen() {
+    EM_ASM({
+        var canvas = document.getElementById('canvas');
+        if (!canvas) return;
+
+        var requestFullscreen = canvas.requestFullscreen ||
+                                canvas.webkitRequestFullscreen ||
+                                canvas.mozRequestFullScreen ||
+                                canvas.msRequestFullscreen;
+
+        if (requestFullscreen) {
+            requestFullscreen.call(canvas).then(function() {
+                // Try to lock orientation to landscape
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(function(e) {
+                        console.log('Could not lock orientation:', e);
+                    });
+                }
+            }).catch(function(e) {
+                console.log('Could not enter fullscreen:', e);
+            });
+        }
+    });
+}
 
 static void EmscriptenMainLoop() {
     if (!IsApplicationRunning()) {
@@ -129,6 +174,12 @@ extern bool* GetKeyStates();
 static EM_BOOL OnTouchStart(int event_type, const EmscriptenTouchEvent* event, void* user_data) {
     (void)event_type;
     (void)user_data;
+
+    // On mobile in portrait mode, request fullscreen + landscape on first touch
+    if (g_web.is_mobile && !g_web.fullscreen_requested && IsPortrait()) {
+        g_web.fullscreen_requested = true;
+        RequestLandscapeFullscreen();
+    }
 
     if (event->numTouches > 0) {
         const EmscriptenTouchPoint& touch = event->touches[0];
@@ -266,6 +317,11 @@ void PlatformInit(const ApplicationTraits* traits) {
 void PlatformInitWindow(void (*on_close)()) {
     g_web.on_close = on_close;
 
+    // Detect if we're on a mobile device
+    g_web.is_mobile = DetectMobile();
+    g_web.is_portrait = IsPortrait();
+    g_web.fullscreen_requested = false;
+
     // Get initial canvas CSS size and device pixel ratio
     double css_width, css_height;
     emscripten_get_element_css_size(g_web.canvas_id, &css_width, &css_height);
@@ -309,6 +365,9 @@ void PlatformShutdown() {
 bool PlatformUpdate() {
     // Reset per-frame state
     g_web.mouse_scroll = {0, 0};
+
+    // Update portrait state
+    g_web.is_portrait = IsPortrait();
 
     // Check for canvas size changes (including DPI changes)
     double css_width, css_height;
@@ -394,7 +453,7 @@ bool PlatformSavePersistentData(const char* name, const void* data, u32 size) {
         }
 
         // Convert to base64
-        var binary = '';
+        var binary = "";
         for (var i = 0; i < bytes.length; i++) {
             binary += String.fromCharCode(bytes[i]);
         }
@@ -466,6 +525,21 @@ void PlatformLog(LogType type, const char* message) {
     EM_ASM({
         console.log(UTF8ToString($0));
     }, message);
+}
+
+bool PlatformIsMobile() {
+    return g_web.is_mobile;
+}
+
+bool PlatformIsPortrait() {
+    return g_web.is_portrait;
+}
+
+void PlatformRequestLandscape() {
+    if (!g_web.fullscreen_requested) {
+        g_web.fullscreen_requested = true;
+        RequestLandscapeFullscreen();
+    }
 }
 
 int main(int argc, char* argv[]) {
