@@ -787,7 +787,7 @@ static void RenameAsset() {
     AssetData* a = GetFirstSelectedAsset();
     BeginCommandInput({
         .commands = commands,
-        .placeholder = a->name->value
+        .initial_text = a->name->value
     });
 }
 

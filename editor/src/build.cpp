@@ -2,23 +2,26 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-struct BuildData {
-    FILE* file;
-    AssetType type;
-    const char* extension;
-    const char* suffix;
-};
-
 namespace fs = std::filesystem;
 
-static bool BuildAsset(u32, void* item_data, void* user_data) {
-    BuildData* data = static_cast<BuildData*>(user_data);
+struct BuildAssetEntry {
+    AssetData* asset;
+    std::string var_name;
+};
+
+struct BuildCollector {
+    std::vector<BuildAssetEntry> assets;
+    AssetType type;
+};
+
+static bool CollectBuildAsset(u32, void* item_data, void* user_data) {
+    BuildCollector* collector = static_cast<BuildCollector*>(user_data);
     AssetData* a = static_cast<AssetData*>(item_data);
 
     if (a->editor_only)
         return true;
 
-    if (a->type != data->type)
+    if (a->type != collector->type)
         return true;
 
     std::string type_upper = ToString(a->type);
@@ -27,17 +30,45 @@ static bool BuildAsset(u32, void* item_data, void* user_data) {
     std::string name_upper = a->name->value;
     Uppercase(name_upper.data(), (u32)name_upper.size());
 
+    std::string var_name = type_upper + "_" + name_upper;
+
+    // Skip if asset with same var_name already exists from an earlier source path
+    for (auto& existing : collector->assets) {
+        if (existing.var_name == var_name) {
+            // Keep the one from the earlier source path (lower asset_path_index)
+            if (a->asset_path_index < existing.asset->asset_path_index) {
+                existing.asset = a;
+            }
+            return true;
+        }
+    }
+
+    collector->assets.push_back({
+        .asset = a,
+        .var_name = var_name
+    });
+
+    return true;
+}
+
+static void WriteBuildAsset(FILE* file, AssetData* a, const char* extension, const char* suffix) {
+    std::string type_upper = ToString(a->type);
+    Uppercase(type_upper.data(), (u32)type_upper.size());
+
+    std::string name_upper = a->name->value;
+    Uppercase(name_upper.data(), (u32)name_upper.size());
+
     std::string suffix_upper;
-    if (data->suffix) {
-        suffix_upper = data->suffix;
+    if (suffix) {
+        suffix_upper = suffix;
         Uppercase(suffix_upper.data(), (u32)suffix_upper.size());
     }
 
-    fprintf(data->file, "static u8 %s_%s%s_DATA[] = {", type_upper.c_str(), name_upper.c_str(), suffix_upper.c_str());
+    fprintf(file, "static u8 %s_%s%s_DATA[] = {", type_upper.c_str(), name_upper.c_str(), suffix_upper.c_str());
 
     fs::path asset_path = GetTargetPath(a);
-    if (data->extension)
-        asset_path += data->extension;
+    if (extension)
+        asset_path += extension;
 
     FILE* asset_file = fopen(asset_path.string().c_str(), "rb");
     if (asset_file) {
@@ -46,15 +77,14 @@ static bool BuildAsset(u32, void* item_data, void* user_data) {
         bool first = true;
         while ((bytes_read = fread(buffer, 1, sizeof(buffer), asset_file)) > 0) {
             for (size_t i = 0; i < bytes_read; i++) {
-                fprintf(data->file, first ? "%u" : ",%u", static_cast<unsigned char>(buffer[i]));
+                fprintf(file, first ? "%u" : ",%u", static_cast<unsigned char>(buffer[i]));
                 first = false;
             }
         }
         fclose(asset_file);
     }
 
-    fprintf(data->file, "};\n\n");
-    return true;
+    fprintf(file, "};\n\n");
 }
 
 void Build() {
@@ -83,23 +113,27 @@ void Build() {
     for (int type = 0; type < ASSET_TYPE_COUNT; type++) {
         AssetType asset_type = static_cast<AssetType>(type);
 
+        // Collect unique assets for this type
+        BuildCollector collector = { .type = asset_type };
+        Enumerate(g_editor.asset_allocator, CollectBuildAsset, &collector);
+
         if (asset_type == ASSET_TYPE_SHADER) {
-            BuildData data = { .file = file, .type = asset_type, .extension = nullptr, .suffix = nullptr };
             fprintf(file, "#ifdef NOZ_PLATFORM_GLES\n\n");
-            data.extension = ".gles";
-            Enumerate(g_editor.asset_allocator, BuildAsset, &data);
+            for (auto& entry : collector.assets)
+                WriteBuildAsset(file, entry.asset, ".gles", nullptr);
 
             fprintf(file, "#elif NOZ_PLATFORM_GL\n\n");
-            data.extension = ".glsl";
-            Enumerate(g_editor.asset_allocator, BuildAsset, &data);
+            for (auto& entry : collector.assets)
+                WriteBuildAsset(file, entry.asset, ".glsl", nullptr);
 
             fprintf(file, "#else\n\n");
-            Enumerate(g_editor.asset_allocator, BuildAsset, &data);
+            for (auto& entry : collector.assets)
+                WriteBuildAsset(file, entry.asset, nullptr, nullptr);
             fprintf(file, "#endif\n\n");
 
         } else {
-            BuildData data = { .file = file, .type = asset_type, .extension = nullptr, .suffix = nullptr };
-            Enumerate(g_editor.asset_allocator, BuildAsset, &data);
+            for (auto& entry : collector.assets)
+                WriteBuildAsset(file, entry.asset, nullptr, nullptr);
         }
     }
 

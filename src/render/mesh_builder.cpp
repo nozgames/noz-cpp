@@ -267,5 +267,7 @@ void UpdateMeshFromBuilder(Mesh* mesh, MeshBuilder* builder) {
     assert(mesh);
     assert(builder);
     MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);
+    if (impl->vertex_count == 0 || impl->index_count == 0)
+        return;
     UpdateMesh(mesh, impl->vertices, impl->vertex_count, impl->indices, impl->index_count);
 }

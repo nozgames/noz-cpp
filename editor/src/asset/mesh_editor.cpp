@@ -221,6 +221,10 @@ static void UpdateSelection(MeshEditorMode mode=MESH_EDITOR_MODE_CURRENT) {
     UpdateSelectionCenter();
 }
 
+void RefreshMeshEditorSelection() {
+    UpdateSelection();
+}
+
 static void ClearSelection() {
     MeshData* m = GetMeshData();
 
@@ -1741,8 +1745,8 @@ void InitMeshEditor() {
     EnableShortcuts(shortcuts, g_mesh_editor.input);
     EnableCommonShortcuts(g_mesh_editor.input);
 
-    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
     PushScratch();
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
     AddVertex(builder, Vec2{0,   0.5f}, Vec2{0,0});
     AddVertex(builder, Vec2{64,  0.5f}, Vec2{1,0});
     AddVertex(builder, Vec2{64, -0.5f}, Vec2{1,0.25f});

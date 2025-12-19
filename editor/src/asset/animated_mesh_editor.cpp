@@ -13,6 +13,8 @@ constexpr Color DOPESHEET_FRAME_DOT_COLOR = FRAME_BORDER_COLOR;
 constexpr Color FRAME_COLOR = Color32ToColor(100, 100, 100, 255);
 constexpr Color DOPESHEET_SELECTED_FRAME_COLOR = COLOR_VERTEX_SELECTED;
 
+extern void RefreshMeshEditorSelection();
+
 struct AnimatedMeshEditor {
     AnimatedMeshData* data;
     Shortcut* shortcuts;
@@ -20,6 +22,9 @@ struct AnimatedMeshEditor {
     AnimatedMesh* playing;
     MeshData clipboard;
     bool has_clipboard;
+    Mesh* prev_frame_mesh;
+    Mesh* next_frame_mesh;
+    int cached_frame;
 };
 
 static AnimatedMeshEditor g_animated_mesh_editor = {};
@@ -41,33 +46,83 @@ inline MeshData* GetAnimatedMeshFrameData() {
     return &m->frames[m->current_frame];
 }
 
+static Mesh* BuildEdgeMesh(MeshData* m, Mesh* existing) {
+    PushScratch();
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, MAX_VERTICES * 4, MAX_EDGES * 6);
+
+    float line_width = 0.02f * g_view.zoom_ref_scale;
+
+    for (int i = 0; i < m->edge_count; i++) {
+        const EdgeData& e = m->edges[i];
+        Vec2 v0 = m->vertices[e.v0].position;
+        Vec2 v1 = m->vertices[e.v1].position;
+        Vec2 dir = Normalize(v1 - v0);
+        Vec2 n = Perpendicular(dir) * line_width;
+
+        u16 base = GetVertexCount(builder);
+        AddVertex(builder, v0 - n);
+        AddVertex(builder, v0 + n);
+        AddVertex(builder, v1 + n);
+        AddVertex(builder, v1 - n);
+        AddTriangle(builder, base, base + 1, base + 2);
+        AddTriangle(builder, base, base + 2, base + 3);
+    }
+
+    Mesh* result;
+    if (!existing)
+        result = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
+    else {
+        UpdateMeshFromBuilder(existing, builder);
+        result = existing;
+    }
+
+    PopScratch();
+    return result;
+}
+
 static void DrawAnimatedMeshEditor() {
     AnimatedMeshData* m = GetAnimatedMeshData();
     MeshData* f = GetAnimatedMeshFrameData();
 
     if (g_animated_mesh_editor.playing) {
-        AnimatedMesh* am = ToAnimatedMesh(m);
         BindColor(COLOR_WHITE);
         BindMaterial(g_view.shaded_material);
-        DrawMesh(am, Translate(m->position), g_animated_mesh_editor.playback_time);
+        DrawMesh(g_animated_mesh_editor.playing, Translate(m->position), g_animated_mesh_editor.playback_time);
     } else {
         f->vtable.editor_draw();
     }
 
-    int prev_frame = (m->current_frame - 1 + m->frame_count) % m->frame_count;
-    if (prev_frame != m->current_frame) {
-        MeshData* pf = GetAnimatedMeshFrameData(prev_frame);
-        BindColor(COLOR_RED);
-        BindMaterial(g_view.shaded_material);
-        DrawEdges(pf, Translate(m->position));
+    // Rebuild edge meshes if frame changed
+    if (g_animated_mesh_editor.cached_frame != m->current_frame) {
+        g_animated_mesh_editor.cached_frame = m->current_frame;
+
+        int prev_frame = (m->current_frame - 1 + m->frame_count) % m->frame_count;
+        if (prev_frame != m->current_frame) {
+            MeshData* pf = GetAnimatedMeshFrameData(prev_frame);
+            g_animated_mesh_editor.prev_frame_mesh = BuildEdgeMesh(pf, g_animated_mesh_editor.prev_frame_mesh);
+        }
+
+        int next_frame = (m->current_frame + 1) % m->frame_count;
+        if (next_frame != m->current_frame) {
+            MeshData* nf = GetAnimatedMeshFrameData(next_frame);
+            g_animated_mesh_editor.next_frame_mesh = BuildEdgeMesh(nf, g_animated_mesh_editor.next_frame_mesh);
+        }
     }
 
+    // Draw prev frame edges
+    int prev_frame = (m->current_frame - 1 + m->frame_count) % m->frame_count;
+    if (prev_frame != m->current_frame && g_animated_mesh_editor.prev_frame_mesh) {
+        BindColor(COLOR_RED);
+        BindMaterial(g_view.shaded_material);
+        DrawMesh(g_animated_mesh_editor.prev_frame_mesh, Translate(m->position));
+    }
+
+    // Draw next frame edges
     int next_frame = (m->current_frame + 1) % m->frame_count;
-    if (prev_frame != m->current_frame) {
-        MeshData* pf = GetAnimatedMeshFrameData(next_frame);
+    if (next_frame != m->current_frame && g_animated_mesh_editor.next_frame_mesh) {
         BindColor(COLOR_GREEN);
         BindMaterial(g_view.shaded_material);
-        DrawEdges(pf, Translate(m->position));
+        DrawMesh(g_animated_mesh_editor.next_frame_mesh, Translate(m->position));
     }
 }
 
@@ -138,6 +193,7 @@ static void BeginAnimatedMeshEditor(AssetData* a) {
     AnimatedMeshData* m = static_cast<AnimatedMeshData*>(a);
     m->current_frame = -1;
     g_animated_mesh_editor.data = m;
+    g_animated_mesh_editor.cached_frame = -1;
     SetFrame(0);
 }
 
@@ -148,10 +204,18 @@ static void EndAnimatedMeshEditor() {
         f->vtable.editor_end();
     }
 
+    Free(g_animated_mesh_editor.prev_frame_mesh);
+    Free(g_animated_mesh_editor.next_frame_mesh);
+    g_animated_mesh_editor.prev_frame_mesh = nullptr;
+    g_animated_mesh_editor.next_frame_mesh = nullptr;
     g_animated_mesh_editor.playing = nullptr;
 }
 
 void ShutdownAnimatedMeshEditor() {
+    Free(g_animated_mesh_editor.prev_frame_mesh);
+    Free(g_animated_mesh_editor.next_frame_mesh);
+    g_animated_mesh_editor.prev_frame_mesh = nullptr;
+    g_animated_mesh_editor.next_frame_mesh = nullptr;
     g_animated_mesh_editor.has_clipboard = false;
 }
 
@@ -218,12 +282,51 @@ static void DeleteFrame() {
 
 static void CopyFrame() {
     MeshData* f = GetAnimatedMeshFrameData();
+    MeshData* clip = &g_animated_mesh_editor.clipboard;
 
-    // Copy frame to clipboard
-    InitMeshData(&g_animated_mesh_editor.clipboard);
-    g_animated_mesh_editor.clipboard = *f;
-    g_animated_mesh_editor.clipboard.vtable.clone(&g_animated_mesh_editor.clipboard);
-    g_animated_mesh_editor.has_clipboard = true;
+    // Initialize clipboard
+    if (!clip->data)
+        InitMeshData(clip);
+
+    clip->vertex_count = 0;
+    clip->face_count = 0;
+    clip->tag_count = 0;
+
+    // Build vertex index mapping (old index -> new index in clipboard)
+    int vertex_map[MAX_VERTICES];
+    for (int i = 0; i < MAX_VERTICES; i++)
+        vertex_map[i] = -1;
+
+    // First pass: collect vertices used by selected faces
+    for (int face_index = 0; face_index < f->face_count; face_index++) {
+        FaceData& face = f->faces[face_index];
+        if (!face.selected)
+            continue;
+
+        for (int vi = 0; vi < face.vertex_count; vi++) {
+            int old_idx = face.vertices[vi];
+            if (vertex_map[old_idx] == -1) {
+                vertex_map[old_idx] = clip->vertex_count;
+                clip->vertices[clip->vertex_count++] = f->vertices[old_idx];
+            }
+        }
+    }
+
+    // Second pass: copy selected faces with remapped vertex indices
+    for (int face_index = 0; face_index < f->face_count; face_index++) {
+        FaceData& face = f->faces[face_index];
+        if (!face.selected)
+            continue;
+
+        FaceData& new_face = clip->faces[clip->face_count++];
+        new_face = face;
+        new_face.selected = false;
+
+        for (int vi = 0; vi < new_face.vertex_count; vi++)
+            new_face.vertices[vi] = vertex_map[face.vertices[vi]];
+    }
+
+    g_animated_mesh_editor.has_clipboard = clip->face_count > 0;
 }
 
 static void PasteFrame() {
@@ -232,39 +335,47 @@ static void PasteFrame() {
 
     AnimatedMeshData* m = GetAnimatedMeshData();
     MeshData* f = GetAnimatedMeshFrameData();
-
-    // End the current frame editor before replacing data
-    f->vtable.editor_end();
-
-    // Copy clipboard data to current frame
     MeshData* src = &g_animated_mesh_editor.clipboard;
 
-    // Copy vertex data
-    f->vertex_count = src->vertex_count;
-    for (int i = 0; i < src->vertex_count; i++)
-        f->vertices[i] = src->vertices[i];
+    // Check if we have room
+    if (f->vertex_count + src->vertex_count > MAX_VERTICES ||
+        f->face_count + src->face_count > MAX_FACES)
+        return;
 
-    // Copy face data
-    f->face_count = src->face_count;
-    for (int i = 0; i < src->face_count; i++)
-        f->faces[i] = src->faces[i];
+    RecordUndo(m);
 
-    // Copy anchor data
-    f->tag_count = src->tag_count;
-    for (int i = 0; i < src->tag_count; i++)
-        f->tags[i] = src->tags[i];
+    // Deselect everything first
+    for (int i = 0; i < f->vertex_count; i++)
+        f->vertices[i].selected = false;
+    for (int i = 0; i < f->face_count; i++)
+        f->faces[i].selected = false;
 
-    // Copy other properties
-    f->edge_color = src->edge_color;
-    f->depth = src->depth;
+    // Base index for new vertices
+    int vertex_base = f->vertex_count;
+
+    // Add vertices from clipboard (selected)
+    for (int i = 0; i < src->vertex_count; i++) {
+        f->vertices[f->vertex_count] = src->vertices[i];
+        f->vertices[f->vertex_count].selected = true;
+        f->vertex_count++;
+    }
+
+    // Add faces from clipboard with offset vertex indices
+    for (int i = 0; i < src->face_count; i++) {
+        FaceData& new_face = f->faces[f->face_count++];
+        new_face = src->faces[i];
+        new_face.selected = true;
+
+        for (int vi = 0; vi < new_face.vertex_count; vi++)
+            new_face.vertices[vi] += vertex_base;
+    }
 
     // Rebuild edges and mark dirty
     UpdateEdges(f);
     MarkDirty(f);
 
-    // Restart the frame editor
-    f->position = m->position;
-    f->vtable.editor_begin(f);
+    // Refresh mesh editor selection center
+    RefreshMeshEditorSelection();
 
     MarkModified(m);
 }
