@@ -18,7 +18,8 @@ layout(location = 2) in vec2 v_uv;
 layout(location = 0) out vec2 f_uv;
 
 void main() {
-    gl_Position = vec4((camera.view_projection * vec3(v_position, 1.0)).xy, 0.0, 1.0);
+    vec3 transformed = object.transform * vec3(v_position, 1.0);
+    gl_Position = vec4((camera.view_projection * transformed).xy, 0.0, 1.0);
     f_uv = v_uv;
 }
 

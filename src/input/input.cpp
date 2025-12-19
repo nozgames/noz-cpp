@@ -72,7 +72,16 @@ void SetInputSet(InputSet* input_set) {
 }
 
 Vec2 GetMousePosition() {
-    return PlatformGetMousePosition();
+    Vec2 pos = PlatformGetMousePosition();
+
+    // Transform coordinates when screen is rotated
+    if (IsScreenRotated()) {
+        // Rotate 90° clockwise: (x, y) -> (height - y, x)
+        Vec2Int native_size = PlatformGetWindowSize();
+        pos = Vec2{static_cast<f32>(native_size.y) - pos.y, pos.x};
+    }
+
+    return pos;
 }
 
 bool IsMouseOverWindow() {

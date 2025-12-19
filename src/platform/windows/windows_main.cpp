@@ -516,4 +516,10 @@ void PlatformRequestLandscape() {
     // No-op on Windows
 }
 
+void PlatformRequestFullscreen() {
+    // No-op on Windows - use alt+enter or window controls
+}
 
+bool PlatformIsFullscreen() {
+    return false;  // TODO: Implement if needed
+}

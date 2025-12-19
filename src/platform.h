@@ -6,6 +6,9 @@
 
 #include <filesystem>
 
+// Forward declarations from application.h
+extern bool IsScreenRotated();
+
 enum InputCode;
 typedef u32 ShaderFlags;
 struct ApplicationTraits;
@@ -63,6 +66,7 @@ extern bool PlatformIsWindowResizing();
 extern noz::RectInt PlatformGetWindowRect();
 extern Vec2Int PlatformGetWindowSize();
 extern void PlatformSetCursor(SystemCursor cursor);
+extern void PlatformSetRenderSize(Vec2Int logical_size, Vec2Int native_size);
 
 // @render
 extern void PlatformBeginRender();
@@ -90,6 +94,8 @@ extern void PlatformBeginCompositePass();
 extern void PlatformEndCompositePass();
 extern void PlatformBindSceneTexture();
 extern void PlatformBindUITexture();
+extern void PlatformBindSceneTextureOnly();  // Binds scene texture without setting camera
+extern void PlatformBindUITextureOnly();     // Binds UI texture without setting camera
 extern void PlatformSetViewport(const noz::Rect& viewport);
 extern void PlatformBindTransform(const Mat3& transform, float depth, float depth_scale);
 extern void PlatformBindVertexUserData(const u8* data, u32 size);
@@ -141,6 +147,8 @@ extern bool PlatformIsMouseOverWindow();
 extern bool PlatformIsMobile();
 extern bool PlatformIsPortrait();
 extern void PlatformRequestLandscape();
+extern void PlatformRequestFullscreen();
+extern bool PlatformIsFullscreen();
 
 // @native_text_input
 extern void PlatformShowTextbox(const noz::Rect& rect, const Text& text, const NativeTextboxStyle& style);

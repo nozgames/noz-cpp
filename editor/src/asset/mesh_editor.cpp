@@ -9,6 +9,9 @@ constexpr float COLOR_PICKER_WIDTH = COLOR_PICKER_COLOR_SIZE * 64 + COLOR_PICKER
 constexpr float COLOR_PICKER_HEIGHT = COLOR_PICKER_COLOR_SIZE + COLOR_PICKER_BORDER_WIDTH * 2;
 constexpr float COLOR_PICKER_SELECTION_BORDER_WIDTH = 3.0f;
 constexpr Color COLOR_PICKER_SELECTION_BORDER_COLOR = COLOR_VERTEX_SELECTED;
+constexpr int   COLOR_PICKER_ID_EXPAND = ELEMENT_ID_MIN + 0;
+constexpr int   COLOR_PICKER_ID_PALETTES = ELEMENT_ID_MIN + 1;
+constexpr int   COLOR_PICKER_ID_COLORS = COLOR_PICKER_ID_PALETTES + MAX_PALETTES;
 
 enum MeshEditorMode {
     MESH_EDITOR_MODE_CURRENT=-1,
@@ -647,7 +650,9 @@ static bool Palette(int palette_index, bool* selected_colors) {
         .width=COLOR_PICKER_WIDTH,
         .height=COLOR_PICKER_HEIGHT,
         .padding=EdgeInsetsAll(COLOR_PICKER_BORDER_WIDTH),
-        .color=STYLE_BACKGROUND_COLOR});
+        .color=STYLE_BACKGROUND_COLOR,
+        .id = static_cast<ElementId>(COLOR_PICKER_ID_PALETTES + palette_index)
+    });
 
     BeginRow();
     for (int i=0; i<COLOR_COUNT; i++) {
@@ -657,7 +662,9 @@ static bool Palette(int palette_index, bool* selected_colors) {
             .border={
                 .width=(selected_colors && selected_colors[i])?2.0f:0.0f,
                 .color=COLOR_VERTEX_SELECTED
-            } });
+            },
+            .id=static_cast<ElementId>(COLOR_PICKER_ID_COLORS + i)
+        });
         Image(g_view.edge_mesh, {
             .stretch = IMAGE_STRETCH_UNIFORM,
             .color_offset=Vec2Int{i,g_editor.palettes[palette_index].id}
@@ -684,7 +691,6 @@ static bool Palette(int palette_index, bool* selected_colors) {
             .font_size=STYLE_TEXT_FONT_SIZE,
             .color=STYLE_TEXT_COLOR,
             .align=ALIGN_CENTER_RIGHT});
-        pressed = WasPressed();
         EndContainer();
 
         pressed |= WasPressed();
@@ -708,7 +714,7 @@ static void ColorPicker(){
     bool show_palette_picker = g_mesh_editor.show_palette_picker;
     int current_palette_index = g_editor.palette_map[m->palette];
 
-    BeginCanvas();
+    BeginCanvas({.id=CANVAS_ID_PALETTES});
     BeginContainer({
         .width=COLOR_PICKER_WIDTH,
         .align=ALIGN_BOTTOM_CENTER,
@@ -723,7 +729,8 @@ static void ColorPicker(){
             .height=20,
             .align=ALIGN_TOP_CENTER,
             .padding=EdgeInsetsAll(STYLE_BUTTON_PADDING),
-            .color=STYLE_BACKGROUND_COLOR});
+            .color=STYLE_BACKGROUND_COLOR,
+            .id=COLOR_PICKER_ID_EXPAND});
         {
             if (WasPressed())
                 show_palette_picker = !g_mesh_editor.show_palette_picker;

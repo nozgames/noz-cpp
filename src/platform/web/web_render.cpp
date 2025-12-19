@@ -13,7 +13,28 @@
 static struct {
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context;
     const char* canvas_id;
+    bool context_lost;
 } g_webgl = {};
+
+// Context lost/restored callbacks
+static EM_BOOL OnContextLost(int event_type, const void* reserved, void* user_data) {
+    (void)event_type;
+    (void)reserved;
+    (void)user_data;
+    LogError("WebGL context lost!");
+    g_webgl.context_lost = true;
+    return EM_TRUE;
+}
+
+static EM_BOOL OnContextRestored(int event_type, const void* reserved, void* user_data) {
+    (void)event_type;
+    (void)reserved;
+    (void)user_data;
+    LogInfo("WebGL context restored");
+    g_webgl.context_lost = false;
+    // Note: Would need to recreate all GL resources here
+    return EM_TRUE;
+}
 
 // Note: The gles_render.cpp provides most of the rendering implementation.
 // This file provides the WebGL-specific initialization and frame management.
@@ -97,9 +118,19 @@ static void CreateOffscreenTarget(OffscreenTarget& target, int width, int height
         LogError("WebGL framebuffer incomplete: 0x%X", status);
     }
 
+    // Check for any GL errors
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR) {
+        LogError("GL error after creating offscreen target: 0x%X", err);
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
+}
+
+bool IsWebGLContextValid() {
+    return g_webgl.context > 0 && !g_webgl.context_lost;
 }
 
 void InitWebGL(const RendererTraits* traits, const char* canvas_id) {
@@ -141,10 +172,15 @@ void InitWebGL(const RendererTraits* traits, const char* canvas_id) {
 
     emscripten_webgl_make_context_current(g_webgl.context);
 
+    // Register context lost/restored handlers
+    emscripten_set_webglcontextlost_callback(canvas_id, nullptr, EM_TRUE, OnContextLost);
+    emscripten_set_webglcontextrestored_callback(canvas_id, nullptr, EM_TRUE, OnContextRestored);
+
     // Get initial canvas size
     int width, height;
     emscripten_webgl_get_drawing_buffer_size(g_webgl.context, &width, &height);
     g_gl.screen_size = {width, height};
+    g_gl.native_screen_size = {width, height};
 
     // Create default VAO (required in WebGL2)
     glGenVertexArrays(1, &g_gl.current_vao);
@@ -175,13 +211,15 @@ void InitWebGL(const RendererTraits* traits, const char* canvas_id) {
 
     // Determine MSAA sample count
     int samples = 1;
-    if (traits->msaa) {
+    if (traits->msaa_samples > 1) {
         GLint max_samples = 0;
         glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
-        if (max_samples >= 4) {
-            samples = 4;
-        } else if (max_samples >= 2) {
+        samples = traits->msaa_samples;
+        if (samples > max_samples) {
             samples = max_samples;
+        }
+        if (samples < 2) {
+            samples = 1;
         }
     }
 
@@ -196,12 +234,58 @@ void ResizeWebGL(const Vec2Int& size) {
     if (size.x <= 0 || size.y <= 0)
         return;
 
-    g_gl.screen_size = size;
-    glViewport(0, 0, size.x, size.y);
+    // Only update native size here - actual render target resize is handled by
+    // PlatformSetRenderSize which knows about logical vs native size
+    if (g_gl.native_screen_size != size) {
+        LogInfo("ResizeWebGL native: %dx%d", size.x, size.y);
+        g_gl.native_screen_size = size;
+    }
+}
 
-    int samples = g_gl.offscreen.samples;
-    CreateOffscreenTarget(g_gl.offscreen, size.x, size.y, samples);
-    CreateOffscreenTarget(g_gl.ui_offscreen, size.x, size.y, samples);
+void PlatformSetRenderSize(Vec2Int logical_size, Vec2Int native_size) {
+    if (logical_size.x <= 0 || logical_size.y <= 0)
+        return;
+
+    // Skip if context is lost
+    if (g_webgl.context_lost) {
+        LogError("PlatformSetRenderSize: context lost, skipping");
+        return;
+    }
+
+    bool native_changed = g_gl.native_screen_size != native_size;
+    bool logical_changed = g_gl.screen_size != logical_size;
+
+    g_gl.native_screen_size = native_size;
+
+    // Recreate targets if logical size changed
+    if (logical_changed) {
+        LogInfo("Render targets: %dx%d -> %dx%d (native: %dx%d)",
+                g_gl.screen_size.x, g_gl.screen_size.y,
+                logical_size.x, logical_size.y,
+                native_size.x, native_size.y);
+
+        // Ensure context is current before modifying GL state
+        emscripten_webgl_make_context_current(g_webgl.context);
+
+        // Check actual drawing buffer size
+        int draw_w, draw_h;
+        emscripten_webgl_get_drawing_buffer_size(g_webgl.context, &draw_w, &draw_h);
+        LogInfo("Drawing buffer size: %dx%d", draw_w, draw_h);
+
+        // Finish any pending GL operations before destroying/recreating resources
+        glFinish();
+
+        g_gl.screen_size = logical_size;
+        int samples = g_gl.offscreen.samples;
+        CreateOffscreenTarget(g_gl.offscreen, logical_size.x, logical_size.y, samples);
+        CreateOffscreenTarget(g_gl.ui_offscreen, logical_size.x, logical_size.y, samples);
+
+        LogInfo("Render targets created successfully");
+    } else if (native_changed) {
+        LogInfo("Native size changed: %dx%d (logical: %dx%d unchanged)",
+                native_size.x, native_size.y,
+                logical_size.x, logical_size.y);
+    }
 }
 
 static void DestroyOffscreenTarget(OffscreenTarget& target) {

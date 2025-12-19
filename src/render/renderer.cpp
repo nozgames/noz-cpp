@@ -93,17 +93,17 @@ void UIPass() {
 
     // Composite: draw scene, then blend UI on top
     PlatformBeginCompositePass();
-    Mat3 identity = MAT3_IDENTITY;
-    PlatformBindCamera(identity);
-    PlatformBindTransform(identity, 0.0f, 1.0f);
+
+    PlatformBindCamera(MAT3_IDENTITY);
+    PlatformBindTransform(MAT3_IDENTITY, 0.0f, 1.0f);
     PlatformBindColor(COLOR_WHITE, VEC2_ZERO, COLOR_TRANSPARENT);
 
-    // Draw scene
+    // Draw scene texture (rotation is handled in PlatformBindSceneTexture if needed)
     BindMaterialInternal(g_renderer.ui_composite_material);
     PlatformBindSceneTexture();
     RenderMesh(GetFullscreenQuad());
 
-    // Blend UI on top
+    // Blend UI texture on top
     PlatformBindUITexture();
     RenderMesh(GetFullscreenQuad());
 
@@ -118,12 +118,13 @@ void BeginRender(Color clear_color) {
 
 void CompositePass() {
     PlatformBeginCompositePass();
-    Mat3 identity = MAT3_IDENTITY;
-    PlatformBindCamera(identity);
-    PlatformBindTransform(identity, 0.0f, 1.0f);
+
+    PlatformBindCamera(MAT3_IDENTITY);
+    PlatformBindTransform(MAT3_IDENTITY, 0.0f, 1.0f);
     PlatformBindColor(COLOR_WHITE, VEC2_ZERO, COLOR_TRANSPARENT);
     if (g_renderer.ui_composite_material)
         BindMaterialInternal(g_renderer.ui_composite_material);
+    // Rotation is handled in PlatformBindSceneTexture if needed
     PlatformBindSceneTexture();
     RenderMesh(GetFullscreenQuad());
     PlatformEndCompositePass();
@@ -165,4 +166,3 @@ static Mesh* GetFullscreenQuad() {
     }
     return g_renderer.fullscreen_quad;
 }
-

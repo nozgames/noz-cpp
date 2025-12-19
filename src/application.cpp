@@ -90,8 +90,10 @@ struct Application
 {
     bool has_focus;
     bool vsync;
-    Vec2Int screen_size;
+    Vec2Int screen_size;            // Logical screen size (rotated if needed)
+    Vec2Int native_screen_size;     // Actual platform screen size
     float screen_aspect_ratio;
+    bool screen_rotated;            // True if we're rotating to match preferred orientation
     const char* title;
     ApplicationTraits traits;
     Allocator* asset_allocator;
@@ -134,12 +136,50 @@ void ExitOutOfMemory(const char* message) {
 
 static void UpdateScreenSize()
 {
-    Vec2Int size = PlatformGetWindowSize();
-    if (size == VEC2INT_ZERO || size == g_app.screen_size)
+    Vec2Int native_size = PlatformGetWindowSize();
+    if (native_size == VEC2INT_ZERO)
         return;
 
-    g_app.screen_size = size;
+    g_app.native_screen_size = native_size;
+
+    // Check if we need to rotate based on orientation preference (mobile only)
+    bool is_native_portrait = native_size.y > native_size.x;
+    bool needs_rotation = false;
+
+    // Only apply rotation on mobile devices
+    bool is_mobile = PlatformIsMobile();
+    if (is_mobile) {
+        if (g_app.traits.orientation == ORIENTATION_LANDSCAPE && is_native_portrait) {
+            needs_rotation = true;
+        } else if (g_app.traits.orientation == ORIENTATION_PORTRAIT && !is_native_portrait) {
+            needs_rotation = true;
+        }
+    }
+
+    // Log rotation state changes
+    static bool last_rotation = false;
+    static Vec2Int last_size = {};
+    if (needs_rotation != last_rotation || native_size != last_size) {
+        LogInfo("Screen: native=%dx%d, mobile=%d, portrait=%d, orientation=%d, needs_rotation=%d",
+                native_size.x, native_size.y, is_mobile, is_native_portrait,
+                g_app.traits.orientation, needs_rotation);
+        last_rotation = needs_rotation;
+        last_size = native_size;
+    }
+
+    g_app.screen_rotated = needs_rotation;
+
+    // Apply rotation to logical screen size
+    if (needs_rotation) {
+        g_app.screen_size = Vec2Int{native_size.y, native_size.x};
+    } else {
+        g_app.screen_size = native_size;
+    }
+
     g_app.screen_aspect_ratio = (float)g_app.screen_size.x / (float)g_app.screen_size.y;
+
+    // Notify render layer of logical and native sizes
+    PlatformSetRenderSize(g_app.screen_size, native_size);
 }
 
 #if 0
@@ -388,6 +428,22 @@ Vec2 GetScreenCenter() {
 
 float GetScreenAspectRatio() {
     return g_app.screen_aspect_ratio;
+}
+
+bool IsScreenRotated() {
+    return g_app.screen_rotated;
+}
+
+bool IsMobile() {
+    return PlatformIsMobile();
+}
+
+bool IsFullscreen() {
+    return PlatformIsFullscreen();
+}
+
+void RequestFullscreen() {
+    PlatformRequestFullscreen();
 }
 
 void SetSystemCursor(SystemCursor cursor) {

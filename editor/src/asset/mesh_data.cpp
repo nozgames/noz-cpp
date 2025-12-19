@@ -619,6 +619,39 @@ int SplitEdge(MeshData* m, int edge_index, float edge_pos, bool update) {
     VertexData& new_vertex = m->vertices[new_vertex_index];
     new_vertex.edge_size = (v0.edge_size + v1.edge_size) * 0.5f;
     new_vertex.position = (v0.position * (1.0f - edge_pos) + v1.position * edge_pos);
+    new_vertex.gradient = (v0.gradient * (1.0f - edge_pos) + v1.gradient * edge_pos);
+
+    // Interpolate bone weights from edge endpoints
+    for (int i = 0; i < MESH_MAX_VERTEX_WEIGHTS; i++) {
+        new_vertex.weights[i].bone_index = -1;
+        new_vertex.weights[i].weight = 0.0f;
+    }
+
+    // Collect all unique bones from both vertices and interpolate their weights
+    for (int i = 0; i < MESH_MAX_VERTEX_WEIGHTS; i++) {
+        if (v0.weights[i].weight > F32_EPSILON) {
+            int bone = v0.weights[i].bone_index;
+            float w0 = v0.weights[i].weight;
+            float w1 = GetVertexWeight(m, e.v1, bone);
+            float interpolated = w0 * (1.0f - edge_pos) + w1 * edge_pos;
+            if (interpolated > F32_EPSILON)
+                SetVertexWeight(m, new_vertex_index, bone, interpolated);
+        }
+        if (v1.weights[i].weight > F32_EPSILON) {
+            int bone = v1.weights[i].bone_index;
+            // Only process if we haven't already handled this bone from v0
+            bool already_set = false;
+            for (int j = 0; j < MESH_MAX_VERTEX_WEIGHTS && !already_set; j++)
+                already_set = (new_vertex.weights[j].bone_index == bone && new_vertex.weights[j].weight > F32_EPSILON);
+            if (!already_set) {
+                float w0 = GetVertexWeight(m, e.v0, bone);
+                float w1 = v1.weights[i].weight;
+                float interpolated = w0 * (1.0f - edge_pos) + w1 * edge_pos;
+                if (interpolated > F32_EPSILON)
+                    SetVertexWeight(m, new_vertex_index, bone, interpolated);
+            }
+        }
+    }
 
     int face_count = m->face_count;
     for (int face_index = 0; face_index < face_count; face_index++) {

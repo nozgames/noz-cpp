@@ -26,7 +26,7 @@ struct Animator;
 struct RendererTraits {
     int max_frame_commands;
     i32 vsync;
-    bool msaa;
+    int msaa_samples;  // 0=off, 2=2x, 4=4x MSAA
     float min_depth;
     float max_depth;
 };

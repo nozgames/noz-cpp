@@ -372,6 +372,7 @@ void InitRenderDriver(const RendererTraits* traits, HWND hwnd) {
     RECT rect;
     GetClientRect(hwnd, &rect);
     g_gl.screen_size = { rect.right - rect.left, rect.bottom - rect.top };
+    g_gl.native_screen_size = g_gl.screen_size;
 
     // Set initial viewport
     glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
@@ -403,12 +404,28 @@ void ResizeRenderDriver(const Vec2Int& size) {
         return;
 
     g_gl.screen_size = size;
+    g_gl.native_screen_size = size;
     glViewport(0, 0, size.x, size.y);
 
     // Recreate offscreen targets at new size (preserve MSAA sample count)
     int samples = g_gl.offscreen.samples;
     CreateOffscreenTarget(g_gl.offscreen, size.x, size.y, samples);
     CreateOffscreenTarget(g_gl.ui_offscreen, size.x, size.y, samples);
+}
+
+void PlatformSetRenderSize(Vec2Int logical_size, Vec2Int native_size) {
+    if (logical_size.x <= 0 || logical_size.y <= 0)
+        return;
+
+    g_gl.native_screen_size = native_size;
+
+    // Only recreate targets if logical size changed
+    if (g_gl.screen_size != logical_size) {
+        g_gl.screen_size = logical_size;
+        int samples = g_gl.offscreen.samples;
+        CreateOffscreenTarget(g_gl.offscreen, logical_size.x, logical_size.y, samples);
+        CreateOffscreenTarget(g_gl.ui_offscreen, logical_size.x, logical_size.y, samples);
+    }
 }
 
 void ShutdownRenderDriver() {

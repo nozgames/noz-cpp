@@ -19,6 +19,12 @@ enum SystemCursor {
     SYSTEM_CURSOR_WAIT,
 };
 
+enum Orientation {
+    ORIENTATION_ANY,        // No preference, use native orientation
+    ORIENTATION_LANDSCAPE,  // Prefer landscape, rotate if portrait
+    ORIENTATION_PORTRAIT,   // Prefer portrait, rotate if landscape
+};
+
 struct ApplicationTraits {
     const char* name;
     const char* title;
@@ -27,6 +33,7 @@ struct ApplicationTraits {
     int y;
     int width;
     int height;
+    Orientation orientation;        // Preferred screen orientation
     u32 asset_memory_size;
     u32 scratch_memory_size;
     u32 max_names;
@@ -79,6 +86,10 @@ void ExitOutOfMemory(const char* message=nullptr);
 Vec2Int GetScreenSize();
 Vec2 GetScreenCenter();
 float GetScreenAspectRatio();
+bool IsScreenRotated();  // True if screen is being rotated to match preferred orientation
+bool IsMobile();         // True if running on a mobile device
+bool IsFullscreen();     // True if currently in fullscreen mode
+void RequestFullscreen(); // Request fullscreen mode (must be called from user gesture on web)
 
 const ApplicationTraits* GetApplicationTraits();
 

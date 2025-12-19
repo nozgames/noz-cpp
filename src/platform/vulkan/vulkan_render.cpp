@@ -775,6 +775,14 @@ void PlatformBindUITexture() {
     );
 }
 
+void PlatformBindSceneTextureOnly() {
+    PlatformBindSceneTexture();
+}
+
+void PlatformBindUITextureOnly() {
+    PlatformBindUITexture();
+}
+
 #if 0
 static void EndRenderPass() {
     vkCmdEndRenderPass(g_vulkan.command_buffer);

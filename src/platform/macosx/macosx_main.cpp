@@ -393,3 +393,23 @@ noz::RectInt GetWindowRect()
 {
     return g_macos.window_rect;
 }
+
+bool PlatformIsMobile() {
+    return false;  // macOS is never mobile
+}
+
+bool PlatformIsPortrait() {
+    return g_macos.screen_size.y > g_macos.screen_size.x;
+}
+
+void PlatformRequestLandscape() {
+    // No-op on macOS
+}
+
+void PlatformRequestFullscreen() {
+    // No-op on macOS - use window controls
+}
+
+bool PlatformIsFullscreen() {
+    return false;  // TODO: Implement if needed
+}

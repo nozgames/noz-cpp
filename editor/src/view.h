@@ -8,7 +8,7 @@ constexpr int STATE_STACK_SIZE = 16;
 
 constexpr int UI_REF_WIDTH = 1920;
 constexpr int UI_REF_HEIGHT = 1080;
-constexpr int MAX_PALETTES = 16;
+constexpr int MAX_PALETTES = 64;
 
 #include <asset/asset_data.h>
 
@@ -189,3 +189,4 @@ constexpr Color COLOR_UI_BUTTON_TEXT = COLOR_UI_BACKGROUND;
 constexpr float UI_BORDER_WIDTH = 2.0f;
 
 constexpr int CANVAS_ID_COMMAND = 1;
+constexpr int CANVAS_ID_PALETTES = 2;

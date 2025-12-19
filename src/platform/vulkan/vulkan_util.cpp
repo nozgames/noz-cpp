@@ -207,3 +207,9 @@ void TransitionUITextureForWrite() {
 void TransitionSceneTextureForWrite() {
     TransitionOffscreenTarget(g_vulkan.scene_target, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 }
+
+void PlatformSetRenderSize(Vec2Int logical_size, Vec2Int native_size) {
+    // TODO: Implement for Vulkan if rotation is needed
+    (void)logical_size;
+    (void)native_size;
+}

@@ -28,51 +28,22 @@ struct WebApp {
     const char* canvas_id;
     bool is_mobile;
     bool is_portrait;
-    bool fullscreen_requested;
 };
 
 static WebApp g_web = {};
 
-// Check if device is mobile based on touch support and screen size
+// Check if device is mobile based on touch support
+// Reads pre-computed value from JavaScript (set in index.html)
 static bool DetectMobile() {
-    return EM_ASM_INT({
-        return ('ontouchstart' in window) ||
-               (navigator.maxTouchPoints > 0) ||
-               (window.innerWidth <= 1024 && window.innerHeight <= 1024);
-    }) != 0;
+    // Use emscripten_run_script_int which doesn't use ASM_CONST
+    // This reads the pre-computed value set by JavaScript in index.html
+    int result = emscripten_run_script_int("window.dinoRunIsMobile ? 1 : 0");
+    return result != 0;
 }
 
 // Check if screen is in portrait mode (taller than wide)
 static bool IsPortrait() {
-    return EM_ASM_INT({
-        return window.innerHeight > window.innerWidth ? 1 : 0;
-    }) != 0;
-}
-
-// Request fullscreen and lock to landscape orientation
-static void RequestLandscapeFullscreen() {
-    EM_ASM({
-        var canvas = document.getElementById('canvas');
-        if (!canvas) return;
-
-        var requestFullscreen = canvas.requestFullscreen ||
-                                canvas.webkitRequestFullscreen ||
-                                canvas.mozRequestFullScreen ||
-                                canvas.msRequestFullscreen;
-
-        if (requestFullscreen) {
-            requestFullscreen.call(canvas).then(function() {
-                // Try to lock orientation to landscape
-                if (screen.orientation && screen.orientation.lock) {
-                    screen.orientation.lock('landscape').catch(function(e) {
-                        console.log('Could not lock orientation:', e);
-                    });
-                }
-            }).catch(function(e) {
-                console.log('Could not enter fullscreen:', e);
-            });
-        }
-    });
+    return g_web.screen_size.y > g_web.screen_size.x;
 }
 
 static void EmscriptenMainLoop() {
@@ -174,12 +145,6 @@ extern bool* GetKeyStates();
 static EM_BOOL OnTouchStart(int event_type, const EmscriptenTouchEvent* event, void* user_data) {
     (void)event_type;
     (void)user_data;
-
-    // On mobile in portrait mode, request fullscreen + landscape on first touch
-    if (g_web.is_mobile && !g_web.fullscreen_requested && IsPortrait()) {
-        g_web.fullscreen_requested = true;
-        RequestLandscapeFullscreen();
-    }
 
     if (event->numTouches > 0) {
         const EmscriptenTouchPoint& touch = event->touches[0];
@@ -320,7 +285,6 @@ void PlatformInitWindow(void (*on_close)()) {
     // Detect if we're on a mobile device
     g_web.is_mobile = DetectMobile();
     g_web.is_portrait = IsPortrait();
-    g_web.fullscreen_requested = false;
 
     // Get initial canvas CSS size and device pixel ratio
     double css_width, css_height;
@@ -381,8 +345,19 @@ bool PlatformUpdate() {
     };
 
     if (g_web.screen_size != new_size && new_size.x > 0 && new_size.y > 0) {
+        LogInfo("Canvas resize: CSS=%.0fx%.0f, DPR=%.2f, target=%dx%d",
+                css_width, css_height, dpr, new_size.x, new_size.y);
         g_web.screen_size = new_size;
         emscripten_set_canvas_element_size(g_web.canvas_id, new_size.x, new_size.y);
+
+        // Verify the canvas was actually resized
+        int actual_w, actual_h;
+        emscripten_get_canvas_element_size(g_web.canvas_id, &actual_w, &actual_h);
+        if (actual_w != new_size.x || actual_h != new_size.y) {
+            LogError("Canvas size mismatch! Expected %dx%d, got %dx%d",
+                     new_size.x, new_size.y, actual_w, actual_h);
+        }
+
         ResizeWebGL(new_size);
     }
 
@@ -536,10 +511,25 @@ bool PlatformIsPortrait() {
 }
 
 void PlatformRequestLandscape() {
-    if (!g_web.fullscreen_requested) {
-        g_web.fullscreen_requested = true;
-        RequestLandscapeFullscreen();
-    }
+    // Note: Fullscreen can only be requested from a direct user gesture in browsers.
+    // The landscape handler is set up via SetupLandscapeFullscreen() which uses
+    // a direct JS event listener to work around this limitation.
+}
+
+void PlatformRequestFullscreen() {
+    // Use Emscripten's fullscreen API with deferred flag
+    // The EM_TRUE (deferUntilInEventHandler) should help with gesture timing
+    EmscriptenFullscreenStrategy strategy = {};
+    strategy.scaleMode = EMSCRIPTEN_FULLSCREEN_SCALE_STRETCH;
+    strategy.canvasResolutionScaleMode = EMSCRIPTEN_FULLSCREEN_CANVAS_SCALE_HIDEF;
+    strategy.filteringMode = EMSCRIPTEN_FULLSCREEN_FILTERING_DEFAULT;
+    emscripten_request_fullscreen_strategy("#canvas", EM_TRUE, &strategy);
+}
+
+bool PlatformIsFullscreen() {
+    return EM_ASM_INT({
+        return document.fullscreenElement ? 1 : 0;
+    }) != 0;
 }
 
 int main(int argc, char* argv[]) {

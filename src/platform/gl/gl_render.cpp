@@ -424,7 +424,9 @@ void PlatformEndUIPass() {
 
 void PlatformBeginCompositePass() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
+    // Use native screen size for composite output (may differ from logical size when rotated)
+    Vec2Int native_size = g_gl.native_screen_size.x > 0 ? g_gl.native_screen_size : g_gl.screen_size;
+    glViewport(0, 0, native_size.x, native_size.y);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
@@ -437,12 +439,42 @@ void PlatformBindSceneTexture() {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, g_gl.offscreen.texture);
     PlatformBindCamera(Translate(Vec2{0, 1}) * Scale(Vec2{1, -1}));
+
+    // Apply 90° CW rotation to object transform if screen is rotated
+    if (IsScreenRotated()) {
+        Mat3 rotation = Mat3{.m = {
+             0, 1, 0,
+            -1, 0, 0,
+             0, 0, 1
+        }};
+        PlatformBindTransform(rotation, 0.0f, 1.0f);
+    }
 }
 
 void PlatformBindUITexture() {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, g_gl.ui_offscreen.texture);
     PlatformBindCamera(Translate(Vec2{0, 1}) * Scale(Vec2{1, -1}));
+
+    // Apply 90° CW rotation to object transform if screen is rotated
+    if (IsScreenRotated()) {
+        Mat3 rotation = Mat3{.m = {
+             0, 1, 0,
+            -1, 0, 0,
+             0, 0, 1
+        }};
+        PlatformBindTransform(rotation, 0.0f, 1.0f);
+    }
+}
+
+void PlatformBindSceneTextureOnly() {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, g_gl.offscreen.texture);
+}
+
+void PlatformBindUITextureOnly() {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, g_gl.ui_offscreen.texture);
 }
 
 void PlatformSetViewport(const noz::Rect& viewport) {

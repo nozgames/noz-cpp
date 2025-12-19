@@ -83,7 +83,8 @@ struct GLState {
     GLuint bound_vertex_buffer;
     GLuint bound_index_buffer;
 
-    Vec2Int screen_size;
+    Vec2Int screen_size;         // Logical screen size (may be rotated)
+    Vec2Int native_screen_size;   // Native/physical screen size
 
     // Uniform buffer data (CPU-side, uploaded per-draw)
     u8 uniform_data[UNIFORM_BUFFER_COUNT][MAX_UNIFORM_BUFFER_SIZE];

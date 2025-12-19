@@ -254,8 +254,10 @@ bool CheckElementFlags(ElementFlags flags) {
 
     Element* e = g_ui.element_stack[g_ui.element_stack_count - 1];
     assert(e);
+    if (e->id == ELEMENT_ID_NONE)
+        return false;
 
-    return (g_ui.element_states[e->index].flags & flags) == flags;
+    return (g_ui.element_states[e->id].flags & flags) == flags;
 }
 
 Vec2 ScreenToUI(const Vec2& screen_pos) {
@@ -1223,7 +1225,9 @@ static void HandleInput() {
     // First pass: set flags for all elements (don't consume yet)
     for (u16 element_index=g_ui.element_count; element_index>0; element_index--) {
         Element* e = g_ui.elements[element_index-1];
-        ElementState& state = g_ui.element_states[element_index-1];
+        if (e->id == ELEMENT_ID_NONE) continue;
+
+        ElementState& state = g_ui.element_states[e->id];
         Vec2 local_mouse = TransformPoint(e->world_to_local, mouse);
         bool mouse_over = Contains(Bounds2{0,0,e->rect.width, e->rect.height}, local_mouse);
 
@@ -1281,7 +1285,8 @@ static void HandleInput() {
     // Second pass: consume button for topmost pressed element
     for (u32 i=g_ui.element_count; i>0; i--) {
         Element* e = g_ui.elements[i-1];
-        ElementState& prev_state = g_ui.element_states[i-1];
+        if (e->id == ELEMENT_ID_NONE) continue;
+        ElementState& prev_state = g_ui.element_states[e->id];
         if ((prev_state.flags & ELEMENT_FLAG_PRESSED) && e->type != ELEMENT_TYPE_CANVAS) {
             ConsumeButton(MOUSE_LEFT);
             break;  // Only consume once for the topmost element
