@@ -183,6 +183,11 @@ extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, int frame_index)
 extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, float time);
 extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, Animator& animator, int bone_index, float time);
 
+// @clipping
+extern void BeginClip();      // Start writing clip mask to stencil
+extern void EndClipWrite();   // Switch from writing to testing stencil
+extern void EndClip();        // End clipping, restore previous stencil state
+
 // @font
 struct FontGlyph {
     Vec2 uv_min;
@@ -213,8 +218,11 @@ extern const noz::Rect& GetViewport(Camera* camera);
 extern Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos);
 extern Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos);
 extern void UpdateCamera(Camera* camera);
+extern void UpdateCamera(Camera* camera, const Vec2Int& available_size);
 extern const Mat3& GetViewMatrix(Camera* camera);
-extern Bounds2 GetBounds(Camera* camera);
+extern Bounds2 GetWorldBounds(Camera* camera);
+extern Vec2 GetWorldSize(Camera* camera);
+extern Vec2Int GetScreenSize(Camera* camera);
 extern void Shake(Camera* camera, const Vec2& intensity, float duration);
 
 struct Bone;

@@ -39,7 +39,7 @@ static void AddLineQuad(MeshBuilder* builder, const Vec2& center, const Vec2& ha
 
 static void BuildZeroGrid(MeshBuilder* builder, Camera* camera, const Color& color) {
     Vec2Int screen_size = GetScreenSize();
-    Bounds2 bounds = GetBounds(camera);
+    Bounds2 bounds = GetWorldBounds(camera);
     float left = bounds.min.x;
     float right = bounds.max.x;
     float bottom = bounds.min.y;
@@ -53,7 +53,7 @@ static void BuildZeroGrid(MeshBuilder* builder, Camera* camera, const Color& col
 }
 
 static void BuildGridLines(MeshBuilder* builder, Camera* camera, float spacing, const Color& color) {
-    Bounds2 bounds = GetBounds(camera);
+    Bounds2 bounds = GetWorldBounds(camera);
     float left = bounds.min.x;
     float right = bounds.max.x;
     float bottom = bounds.min.y;

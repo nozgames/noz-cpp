@@ -32,6 +32,7 @@ static void UpdateCamera() {
     f32 half_width = world_width * 0.5f;
     f32 half_height = world_height * 0.5f;
     SetExtents(g_view.camera, -half_width, half_width, -half_height, half_height);
+    UpdateCamera(g_view.camera);
 
     g_view.zoom_ref_scale = 1.0f / g_view.zoom;
     g_view.select_size = Abs((ScreenToWorld(g_view.camera, Vec2{0, SELECT_SIZE}) - ScreenToWorld(g_view.camera, VEC2_ZERO)).y);
@@ -128,6 +129,7 @@ static void UpdateZoom() {
     Vec2 current_position = GetPosition(g_view.camera);
     Vec2 world_offset = world_under_cursor - world_under_cursor_after;
     SetPosition(g_view.camera, current_position + world_offset);
+    UpdateCamera();
 }
 
 static void UpdateMoveTool(const Vec2& delta) {
@@ -306,7 +308,7 @@ void DrawView() {
     if (g_view.grid)
         DrawGrid(g_view.camera);
 
-    Bounds2 camera_bounds = GetBounds(g_view.camera);
+    Bounds2 camera_bounds = GetWorldBounds(g_view.camera);
     for (u32 i=0, c=GetAssetCount(); i<c; i++) {
         AssetData* a = GetAssetData(i);
         assert(a);
@@ -356,7 +358,7 @@ void DrawView() {
     }
 
     if (IsButtonDown(g_view.input, MOUSE_MIDDLE)) {
-        Bounds2 bounds = GetBounds(g_view.camera);
+        Bounds2 bounds = GetWorldBounds(g_view.camera);
         DrawDashedLine(g_view.mouse_world_position, GetCenter(bounds));
         BindColor(COLOR_VERTEX_SELECTED);
         DrawVertex(g_view.mouse_world_position);
@@ -599,7 +601,7 @@ static void NewAssetCommand(const Command& command) {
     if (a == nullptr)
         return;
 
-    a->position = GetCenter(GetBounds(g_view.camera));
+    a->position = GetCenter(GetWorldBounds(g_view.camera));
     MarkMetaModified(a);
 
     if (a->vtable.post_load)

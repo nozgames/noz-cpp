@@ -5,8 +5,6 @@
 #include "editor/editor_client.h"
 #include "platform.h"
 #include <filesystem>
-#include <exception>
-
 #include <cstdarg>
 
 static constexpr int FRAME_HISTORY_SIZE = 240;
@@ -160,9 +158,6 @@ static void UpdateScreenSize()
     static bool last_rotation = false;
     static Vec2Int last_size = {};
     if (needs_rotation != last_rotation || native_size != last_size) {
-        LogInfo("Screen: native=%dx%d, mobile=%d, portrait=%d, orientation=%d, needs_rotation=%d",
-                native_size.x, native_size.y, is_mobile, is_native_portrait,
-                g_app.traits.orientation, needs_rotation);
         last_rotation = needs_rotation;
         last_size = native_size;
     }

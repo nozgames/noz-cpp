@@ -153,6 +153,11 @@ static void LoadGLESFunctions() {
     glViewport = (PFNGLVIEWPORTPROC)GetGLProcAddress("glViewport");
     glClipControl = (PFNGLCLIPCONTROLPROC)GetGLProcAddress("glClipControl");
     glGetIntegerv = (PFNGLGETINTEGERVPROC)GetGLProcAddress("glGetIntegerv");
+    glStencilFunc = (PFNGLSTENCILFUNCPROC)GetGLProcAddress("glStencilFunc");
+    glStencilOp = (PFNGLSTENCILOPPROC)GetGLProcAddress("glStencilOp");
+    glStencilMask = (PFNGLSTENCILMASKPROC)GetGLProcAddress("glStencilMask");
+    glColorMask = (PFNGLCOLORMASKPROC)GetGLProcAddress("glColorMask");
+    glClearStencil = (PFNGLCLEARSTENCILPROC)GetGLProcAddress("glClearStencil");
 
     // WGL extensions
     wglCreateContextAttribsARB_ptr = (wglCreateContextAttribsARB_t*)GetGLProcAddress("wglCreateContextAttribsARB");

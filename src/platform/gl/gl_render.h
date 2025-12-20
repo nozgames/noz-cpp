@@ -89,6 +89,12 @@ typedef ptrdiff_t GLintptr;
 #define GL_BLEND                          0x0BE2
 #define GL_SCISSOR_TEST                   0x0C11
 
+// Stencil operations
+#define GL_KEEP                           0x1E00
+#define GL_REPLACE                        0x1E01
+#define GL_INCR                           0x1E02
+#define GL_DECR                           0x1E03
+
 #define GL_TEXTURE_2D                     0x0DE1
 
 #define GL_BYTE                           0x1400
@@ -267,6 +273,11 @@ typedef void (*PFNGLVERTEXATTRIBIPOINTERPROC)(GLuint index, GLint size, GLenum t
 typedef void (*PFNGLVIEWPORTPROC)(GLint x, GLint y, GLsizei width, GLsizei height);
 typedef void (*PFNGLCLIPCONTROLPROC)(GLenum origin, GLenum depth);
 typedef void (*PFNGLGETINTEGERVPROC)(GLenum pname, GLint* data);
+typedef void (*PFNGLSTENCILFUNCPROC)(GLenum func, GLint ref, GLuint mask);
+typedef void (*PFNGLSTENCILOPPROC)(GLenum sfail, GLenum dpfail, GLenum dppass);
+typedef void (*PFNGLSTENCILMASKPROC)(GLuint mask);
+typedef void (*PFNGLCOLORMASKPROC)(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
+typedef void (*PFNGLCLEARSTENCILPROC)(GLint s);
 
 // Global function pointers
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
@@ -346,5 +357,10 @@ extern PFNGLVERTEXATTRIBIPOINTERPROC glVertexAttribIPointer;
 extern PFNGLVIEWPORTPROC glViewport;
 extern PFNGLCLIPCONTROLPROC glClipControl;
 extern PFNGLGETINTEGERVPROC glGetIntegerv;
+extern PFNGLSTENCILFUNCPROC glStencilFunc;
+extern PFNGLSTENCILOPPROC glStencilOp;
+extern PFNGLSTENCILMASKPROC glStencilMask;
+extern PFNGLCOLORMASKPROC glColorMask;
+extern PFNGLCLEARSTENCILPROC glClearStencil;
 
 #endif // NOZ_PLATFORM_WEB

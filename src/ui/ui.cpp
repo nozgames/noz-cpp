@@ -70,6 +70,7 @@ struct CachedTextMesh {
 struct ElementState {
     ElementFlags flags;
     u16 index;
+    CanvasId canvas_id;
     Text text;
 };
 
@@ -173,6 +174,7 @@ static void SetId(Element* e, ElementId id) {
     e->id = id;
     ElementState& state = g_ui.element_states[id];
     state.index = e->index;
+    state.canvas_id = g_ui.current_focus_canvas_id;
 }
 
 static Element* CreateElement(ElementType type) {
@@ -317,10 +319,10 @@ void BeginCanvas(const CanvasStyle& style) {
 
     // only one canvas can have focus
     if (style.id > 0) {
-        g_ui.current_focus_canvas_id = style.id;
-        if (g_ui.current_focus_canvas_id != g_ui.last_focus_canvas_id) {
-            memset(&g_ui.element_states, 0, sizeof(g_ui.element_states));
-        }
+        //g_ui.current_focus_canvas_id = style.id;
+        // if (g_ui.current_focus_canvas_id != g_ui.last_focus_canvas_id) {
+        //     memset(&g_ui.element_states, 0, sizeof(g_ui.element_states));
+        // }
     }
 }
 
@@ -736,7 +738,15 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
 
     // @measure_scene
     } else if (e->type == ELEMENT_TYPE_SCENE) {
-        e->measured_size = available_size;
+        SceneElement* scene = static_cast<SceneElement*>(e);
+        if (scene->style.camera) {
+            UpdateCamera(scene->style.camera, Vec2Int{
+                static_cast<i32>(available_size.x),
+                static_cast<i32>(available_size.y)});
+            e->measured_size = ToVec2(GetScreenSize(scene->style.camera));
+        } else {
+            e->measured_size = available_size;
+        }
 
     // @measure_spacer_row
     } else if (e->type == ELEMENT_TYPE_SPACER) {
@@ -860,6 +870,9 @@ static int LayoutElement(int element_index, const Vec2& size) {
             element_index = LayoutElement(element_index, content_size);
 
     } else if (e->type == ELEMENT_TYPE_SCENE) {
+        LabelElement* label = static_cast<LabelElement*>(e);
+        label->rect.width = size.x;
+        label->rect.height = size.y;
 
     // @layout_label
     } else if (e->type == ELEMENT_TYPE_LABEL) {
@@ -1108,7 +1121,34 @@ static int DrawElement(int element_index) {
     // @render_container
     } else if (IsContainerType(e->type)) {
         ContainerElement* container = static_cast<ContainerElement*>(e);
+
+        // Draw container visual (background/border) FIRST, before stencil
         DrawContainer(container, transform);
+
+        // Set up stencil clipping for children only
+        if (container->style.clip) {
+            BeginClip();
+
+            // Draw container shape for stencil (writes to stencil, not color)
+            BindTransform(transform * Scale(Vec2{container->rect.width, container->rect.height}));
+            BindMaterial(g_ui.element_material);
+            BindColor(COLOR_WHITE);  // Color doesn't matter, stencil only
+
+            // Use the border mesh if we have a radius, otherwise simple quad
+            if (container->style.border.radius > 0.0f) {
+                struct BorderVertex { float radius; };
+                struct BorderFragment { Color color; float border_ratio; float square_corners; float p0; float p1; };
+                BorderVertex v = { .radius = container->style.border.radius };
+                BorderFragment f = { .color = COLOR_TRANSPARENT, .border_ratio = 0.0f, .square_corners = 0.0f };
+                BindVertexUserData(&v, sizeof(v));
+                BindFragmentUserData(&f, sizeof(f));
+                DrawMesh(g_ui.element_with_border_mesh);
+            } else {
+                DrawMesh(g_ui.element_mesh);
+            }
+
+            EndClipWrite();
+        }
 
     // @render_canvas
     } else if (e->type == ELEMENT_TYPE_CANVAS) {
@@ -1116,32 +1156,31 @@ static int DrawElement(int element_index) {
 
     // @render_scene
     } else if (e->type == ELEMENT_TYPE_SCENE) {
-        SceneElement* scene_element = static_cast<SceneElement*>(e);
-        if (scene_element->style.camera && scene_element->draw_scene) {
-            // Calculate the screen rect for the scene element
-            // Transform the element corners from UI space to screen space
-            Vec2 ui_top_left = TransformPoint(transform, VEC2_ZERO);
-            Vec2 ui_bottom_right = TransformPoint(transform, Vec2{e->rect.width, e->rect.height});
+        SceneElement* scene = static_cast<SceneElement*>(e);
+        if (scene->style.camera && scene->draw_scene) {
+            // Element rect in screen pixels
+            Vec2 screen_pos = WorldToScreen(g_ui.camera, TransformPoint(transform, VEC2_ZERO));
+            Vec2 screen_size = WorldToScreen(g_ui.camera, TransformPoint(transform, Vec2{e->rect.width, e->rect.height})) - screen_pos;
 
-            Vec2 screen_top_left = WorldToScreen(g_ui.camera, ui_top_left);
-            Vec2 screen_bottom_right = WorldToScreen(g_ui.camera, ui_bottom_right);
+            // Camera world size
+            Vec2 world_size = GetSize(GetWorldBounds(scene->style.camera));
 
-            // Create viewport rect in screen pixels
-            noz::Rect viewport_rect = {
-                screen_top_left.x,
-                screen_top_left.y,
-                screen_bottom_right.x - screen_top_left.x,
-                screen_bottom_right.y - screen_top_left.y
-            };
+            // Uniform scale to fit
+            float scale = Min(screen_size.x / world_size.x, screen_size.y / world_size.y);
+            Vec2 viewport_size = world_size * scale;
 
-            // Set the scene camera's viewport and render
-            SetViewport(scene_element->style.camera, viewport_rect);
-            UpdateCamera(scene_element->style.camera);
-            BindCamera(scene_element->style.camera);
+            // Align within element rect
+            const AlignInfo& align = g_align_info[scene->style.align];
+            Vec2 viewport_pos = screen_pos;
+            if (align.has_x) viewport_pos.x += (screen_size.x - viewport_size.x) * align.x;
+            if (align.has_y) viewport_pos.y += (screen_size.y - viewport_size.y) * align.y;
 
-            scene_element->draw_scene(scene_element->style.user_data);
+            SetViewport(scene->style.camera, {viewport_pos.x, viewport_pos.y, viewport_size.x, viewport_size.y});
+            UpdateCamera(scene->style.camera, Vec2Int{static_cast<i32>(viewport_size.x), static_cast<i32>(viewport_size.y)});
+            BindCamera(scene->style.camera);
+            scene->draw_scene(scene->style.user_data);
 
-            // Restore the UI camera
+            // Restore UI camera
             UpdateCamera(g_ui.camera);
             BindCamera(g_ui.camera);
             BindDepth(g_ui.depth, 0);
@@ -1153,8 +1192,17 @@ static int DrawElement(int element_index) {
         // DrawMesh(g_ui.element_mesh);
     }
 
+    // Draw children
     for (u32 i = 0; i < e->child_count; i++)
         element_index = DrawElement(element_index);
+
+    // End clipping after children are drawn
+    if (IsContainerType(e->type)) {
+        ContainerElement* container = static_cast<ContainerElement*>(e);
+        if (container->style.clip) {
+            EndClip();
+        }
+    }
 
     return element_index;
 }
@@ -1314,13 +1362,23 @@ static void HandleInput() {
             }
         }
 
+        // Helper to check if element is focusable (valid index and in focus canvas)
+        auto is_focusable = [](ElementId id) {
+            const ElementState& state = g_ui.element_states[id];
+            if (state.index == 0) return false;
+            // If no canvas has focus (current_focus_canvas_id == 0), allow all elements
+            // Otherwise, only allow elements in the focus canvas
+            if (g_ui.current_focus_canvas_id == 0) return true;
+            return state.canvas_id == g_ui.current_focus_canvas_id;
+        };
+
         if (focus_id == ELEMENT_ID_NONE) {
             for (focus_id = ELEMENT_ID_MIN;
-                 g_ui.element_states[focus_id].index == 0 && focus_id < ELEMENT_ID_MAX;
+                 !is_focusable(focus_id) && focus_id < ELEMENT_ID_MAX;
                  focus_id++);
         } else if (focus_id == g_ui.focus_id) {
             for (focus_id = WrapElementId(focus_id, focus_offset);
-                 g_ui.element_states[focus_id].index == 0 && focus_id != g_ui.focus_id;
+                 !is_focusable(focus_id) && focus_id != g_ui.focus_id;
                  focus_id = WrapElementId(focus_id, focus_offset));
         }
 

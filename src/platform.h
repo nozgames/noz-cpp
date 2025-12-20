@@ -118,6 +118,11 @@ extern PlatformShader* PlatformCreateShader(
 extern void PlatformFree(PlatformShader* shader);
 extern void PlatformBindShader(PlatformShader* shader);
 
+// @clipping
+extern void PlatformBeginClip();
+extern void PlatformEndClipWrite();
+extern void PlatformEndClip();
+
 // @websocket
 extern void PlatformInitWebSocket();
 extern void PlatformShutdownWebSocket();

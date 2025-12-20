@@ -16,7 +16,10 @@ enum RenderCommandType {
     RENDER_COMMAND_TYPE_BIND_CAMERA,
     RENDER_COMMAND_TYPE_BIND_DEFAULT_TEXTURE,
     RENDER_COMMAND_TYPE_BIND_SKELETON,
-    RENDER_COMMAND_TYPE_DRAW_MESH
+    RENDER_COMMAND_TYPE_DRAW_MESH,
+    RENDER_COMMAND_TYPE_BEGIN_CLIP,
+    RENDER_COMMAND_TYPE_END_CLIP_WRITE,
+    RENDER_COMMAND_TYPE_END_CLIP
 };
 
 struct BindCameraData {
@@ -256,6 +259,22 @@ void BindColor(Color color, const Vec2Int& color_uv_offset, Color emission) {
     g_render_buffer.current_emission = ToLinear(emission);
 }
 
+// Clipping - deferred via command buffer
+void BeginClip() {
+    RenderCommand cmd = { .type = RENDER_COMMAND_TYPE_BEGIN_CLIP };
+    AddRenderCommand(&cmd);
+}
+
+void EndClipWrite() {
+    RenderCommand cmd = { .type = RENDER_COMMAND_TYPE_END_CLIP_WRITE };
+    AddRenderCommand(&cmd);
+}
+
+void EndClip() {
+    RenderCommand cmd = { .type = RENDER_COMMAND_TYPE_END_CLIP };
+    AddRenderCommand(&cmd);
+}
+
 void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index) {
     BindTransform(transform, animator, bone_index);
     DrawMesh(mesh);
@@ -364,6 +383,18 @@ void ExecuteRenderCommands() {
 
         case RENDER_COMMAND_TYPE_BIND_SKELETON:
             PlatformBindSkeleton(command->data.bind_skeleton.bones, (u8)command->data.bind_skeleton.bone_count);
+            break;
+
+        case RENDER_COMMAND_TYPE_BEGIN_CLIP:
+            PlatformBeginClip();
+            break;
+
+        case RENDER_COMMAND_TYPE_END_CLIP_WRITE:
+            PlatformEndClipWrite();
+            break;
+
+        case RENDER_COMMAND_TYPE_END_CLIP:
+            PlatformEndClip();
             break;
         }
     }

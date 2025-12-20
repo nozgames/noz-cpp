@@ -78,6 +78,7 @@ struct ExpandedStyle {
 struct SceneStyle {
     Camera* camera;
     void* user_data;
+    Align align = ALIGN_CENTER;
 };
 
 struct LabelStyle {
@@ -164,6 +165,7 @@ struct ContainerStyle {
     float spacing = 0.0f;
     ElementId id;
     NavigationStyle nav;
+    bool clip = false;  // Clip children to container bounds (uses stencil buffer)
 };
 
 // @common

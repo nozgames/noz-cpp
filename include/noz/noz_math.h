@@ -367,6 +367,7 @@ inline Vec2Double Mix(const Vec2Double& v1, const Vec2Double& v2, f64 t) { retur
 // @vec2int
 inline Vec2 ToVec2(const Vec2Int& v) { return { (f32)v.x, (f32)v.y }; }
 inline Vec2 ToVec2(const Vec3& v) { return { (f32)v.x, (f32)v.y }; }
+inline Vec2Int ToVec2Int(const Vec2& v) { return { static_cast<i32>(v.x), static_cast<i32>(v.y) }; }
 
 // @vec3
 inline Vec3 operator+(const Vec3& v1, const Vec3& v2) { return { v1.x + v2.x, v1.y + v2.y, v1.z + v2.z }; }

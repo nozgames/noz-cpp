@@ -541,7 +541,7 @@ bool PlatformIsTextboxVisible() {
 }
 
 static LRESULT CALLBACK EditSubclassProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    if (uMsg == WM_CHAR && (wParam == VK_RETURN || wParam == VK_ESCAPE)) {
+    if (uMsg == WM_CHAR && (wParam == VK_RETURN || wParam == VK_ESCAPE || wParam == VK_TAB)) {
         return 0;
     }
     return CallWindowProc(g_windows_input.edit_proc, hwnd, uMsg, wParam, lParam);

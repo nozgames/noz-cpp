@@ -86,6 +86,11 @@ PFNGLVERTEXATTRIBIPOINTERPROC glVertexAttribIPointer = nullptr;
 PFNGLVIEWPORTPROC glViewport = nullptr;
 PFNGLCLIPCONTROLPROC glClipControl = nullptr;
 PFNGLGETINTEGERVPROC glGetIntegerv = nullptr;
+PFNGLSTENCILFUNCPROC glStencilFunc = nullptr;
+PFNGLSTENCILOPPROC glStencilOp = nullptr;
+PFNGLSTENCILMASKPROC glStencilMask = nullptr;
+PFNGLCOLORMASKPROC glColorMask = nullptr;
+PFNGLCLEARSTENCILPROC glClearStencil = nullptr;
 #endif // NOZ_PLATFORM_WEB
 
 GLState g_gl = {};
@@ -480,8 +485,46 @@ void PlatformBeginScenePass(Color clear_color) {
     glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
     glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
     glClearDepthf(1.0f);
+    glClearStencil(0);
     glDepthMask(GL_TRUE);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glStencilMask(0xFF);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glStencilMask(0x00);
+}
+
+// Stencil-based clipping
+static int g_stencil_ref = 0;
+
+void PlatformBeginClip() {
+    if (g_stencil_ref == 0) {
+        glEnable(GL_STENCIL_TEST);
+    }
+    g_stencil_ref++;
+
+    // Write to stencil where we draw
+    glStencilFunc(GL_ALWAYS, g_stencil_ref, 0xFF);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    glStencilMask(0xFF);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDepthMask(GL_FALSE);
+}
+
+void PlatformEndClipWrite() {
+    // Switch to stencil test mode for children
+    glStencilFunc(GL_EQUAL, g_stencil_ref, 0xFF);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+    glStencilMask(0x00);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glDepthMask(GL_TRUE);
+}
+
+void PlatformEndClip() {
+    g_stencil_ref--;
+    if (g_stencil_ref == 0) {
+        glDisable(GL_STENCIL_TEST);
+    } else {
+        glStencilFunc(GL_EQUAL, g_stencil_ref, 0xFF);
+    }
 }
 
 void PlatformEndScenePass() {
