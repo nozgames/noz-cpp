@@ -105,7 +105,7 @@ set(SOURCE_FILES
 if(EMSCRIPTEN)
     list(APPEND SOURCE_FILES
         src/platform/web/web_main.cpp
-        src/platform/web/web_render.cpp
+        src/platform/gl/gl_web.cpp
         src/platform/web/web_input.cpp
         src/platform/web/web_audio.cpp
         src/platform/web/web_time.cpp

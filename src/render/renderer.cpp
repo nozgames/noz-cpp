@@ -85,29 +85,9 @@ void UIPass() {
     if (!g_renderer.ui_composite_material)
         return;
 
-    // Draw UI to offscreen target
-    PlatformBeginUIPass();
+    // Draw UI to same offscreen target as scene (no separate UI target)
     DrawUI();
     ExecuteRenderCommands();
-    PlatformEndUIPass();
-
-    // Composite: draw scene, then blend UI on top
-    PlatformBeginCompositePass();
-
-    PlatformBindCamera(MAT3_IDENTITY);
-    PlatformBindTransform(MAT3_IDENTITY, 0.0f, 1.0f);
-    PlatformBindColor(COLOR_WHITE, VEC2_ZERO, COLOR_TRANSPARENT);
-
-    // Draw scene texture (rotation is handled in PlatformBindSceneTexture if needed)
-    BindMaterialInternal(g_renderer.ui_composite_material);
-    PlatformBindSceneTexture();
-    RenderMesh(GetFullscreenQuad());
-
-    // Blend UI texture on top
-    PlatformBindUITexture();
-    RenderMesh(GetFullscreenQuad());
-
-    PlatformEndCompositePass();
 }
 
 void BeginRender(Color clear_color) {
@@ -131,10 +111,10 @@ void CompositePass() {
 }
 
 void EndRender() {
-    ExecuteRenderCommands();
-    PlatformEndScenePass();
-    PostProcPass();
-    UIPass();
+    ExecuteRenderCommands();  // Flush scene commands
+    UIPass();                 // Render UI to same target
+    PlatformEndScenePass();   // Resolve MSAA (scene + UI combined)
+    CompositePass();          // Present to screen
     PlatformEndRender();
 }
 

@@ -81,7 +81,7 @@ void InitGame(int argc, const char** argv) {
 #ifdef NOZ_EDITOR
     traits.hotload_asset = HotloadAsset;
 #endif
-    traits.renderer.msaa = true;
+    traits.renderer.msaa_samples = 4;  // 0=off, 2=2x, 4=4x MSAA
     InitApplication(&traits, argc, argv);
     InitWindow();
 

@@ -190,3 +190,4 @@ constexpr float UI_BORDER_WIDTH = 2.0f;
 
 constexpr int CANVAS_ID_COMMAND = 1;
 constexpr int CANVAS_ID_PALETTES = 2;
+constexpr int CANVAS_ID_CONFIRM = 3;

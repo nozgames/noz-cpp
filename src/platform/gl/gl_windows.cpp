@@ -172,100 +172,8 @@ void PlatformEndRender() {
     SwapBuffers(g_wgl.hdc);
 }
 
-static void CreateOffscreenTarget(OffscreenTarget& target, int width, int height, int samples) {
-    // Delete existing resources
-    if (target.framebuffer) {
-        glDeleteFramebuffers(1, &target.framebuffer);
-        target.framebuffer = 0;
-    }
-    if (target.texture) {
-        glDeleteTextures(1, &target.texture);
-        target.texture = 0;
-    }
-    if (target.depth_renderbuffer) {
-        glDeleteRenderbuffers(1, &target.depth_renderbuffer);
-        target.depth_renderbuffer = 0;
-    }
-    if (target.msaa_framebuffer) {
-        glDeleteFramebuffers(1, &target.msaa_framebuffer);
-        target.msaa_framebuffer = 0;
-    }
-    if (target.msaa_color_renderbuffer) {
-        glDeleteRenderbuffers(1, &target.msaa_color_renderbuffer);
-        target.msaa_color_renderbuffer = 0;
-    }
-    if (target.msaa_depth_renderbuffer) {
-        glDeleteRenderbuffers(1, &target.msaa_depth_renderbuffer);
-        target.msaa_depth_renderbuffer = 0;
-    }
-
-    target.samples = samples;
-
-    // Create resolve texture (non-MSAA, for sampling)
-    glGenTextures(1, &target.texture);
-    glBindTexture(GL_TEXTURE_2D, target.texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-    // Create resolve framebuffer (non-MSAA)
-    glGenFramebuffers(1, &target.framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, target.framebuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, target.texture, 0);
-
-    if (samples > 1) {
-        // Create MSAA color renderbuffer
-        glGenRenderbuffers(1, &target.msaa_color_renderbuffer);
-        glBindRenderbuffer(GL_RENDERBUFFER, target.msaa_color_renderbuffer);
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, width, height);
-
-        // Create MSAA depth renderbuffer
-        glGenRenderbuffers(1, &target.msaa_depth_renderbuffer);
-        glBindRenderbuffer(GL_RENDERBUFFER, target.msaa_depth_renderbuffer);
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, width, height);
-
-        // Create MSAA framebuffer (for rendering)
-        glGenFramebuffers(1, &target.msaa_framebuffer);
-        glBindFramebuffer(GL_FRAMEBUFFER, target.msaa_framebuffer);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, target.msaa_color_renderbuffer);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, target.msaa_depth_renderbuffer);
-
-        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        if (status != GL_FRAMEBUFFER_COMPLETE) {
-            LogError("MSAA framebuffer incomplete: 0x%X", status);
-        }
-    } else {
-        // Non-MSAA: just add depth to resolve framebuffer
-        glGenRenderbuffers(1, &target.depth_renderbuffer);
-        glBindRenderbuffer(GL_RENDERBUFFER, target.depth_renderbuffer);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, target.framebuffer);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, target.depth_renderbuffer);
-    }
-
-    // Verify resolve framebuffer is complete
-    glBindFramebuffer(GL_FRAMEBUFFER, target.framebuffer);
-    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (status != GL_FRAMEBUFFER_COMPLETE) {
-        const char* error = "Unknown";
-        switch (status) {
-            case 0x8CDB: error = "GL_FRAMEBUFFER_UNDEFINED"; break;
-            case 0x8CD6: error = "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"; break;
-            case 0x8CD7: error = "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"; break;
-            case 0x8CD9: error = "GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS"; break;
-            case 0x8CDD: error = "GL_FRAMEBUFFER_UNSUPPORTED"; break;
-            case 0x8D56: error = "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"; break;
-        }
-        LogError("Framebuffer incomplete: %s (0x%X)", error, status);
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-}
+// Shared function from gl_render.cpp
+extern void CreateOffscreenTarget(OffscreenTarget& target, int width, int height, int samples);
 
 void InitRenderDriver(const RendererTraits* traits, HWND hwnd) {
     g_gl = {};
@@ -388,15 +296,20 @@ void InitRenderDriver(const RendererTraits* traits, HWND hwnd) {
 
     // Determine MSAA sample count
     int samples = 1;
-    if (traits->msaa) {
+    if (traits->msaa_samples > 1) {
         GLint max_samples = 0;
         glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
-        samples = max_samples > 4 ? 4 : max_samples;  // Cap at 4x MSAA
+        samples = traits->msaa_samples;
+        if (samples > max_samples) {
+            samples = max_samples;
+        }
+        if (samples < 2) {
+            samples = 1;
+        }
     }
 
-    // Create offscreen render targets
+    // Create offscreen render target (scene + UI combined)
     CreateOffscreenTarget(g_gl.offscreen, g_gl.screen_size.x, g_gl.screen_size.y, samples);
-    CreateOffscreenTarget(g_gl.ui_offscreen, g_gl.screen_size.x, g_gl.screen_size.y, samples);
 }
 
 void ResizeRenderDriver(const Vec2Int& size) {
@@ -407,10 +320,9 @@ void ResizeRenderDriver(const Vec2Int& size) {
     g_gl.native_screen_size = size;
     glViewport(0, 0, size.x, size.y);
 
-    // Recreate offscreen targets at new size (preserve MSAA sample count)
+    // Recreate offscreen target at new size (preserve MSAA sample count)
     int samples = g_gl.offscreen.samples;
     CreateOffscreenTarget(g_gl.offscreen, size.x, size.y, samples);
-    CreateOffscreenTarget(g_gl.ui_offscreen, size.x, size.y, samples);
 }
 
 void PlatformSetRenderSize(Vec2Int logical_size, Vec2Int native_size) {
@@ -419,12 +331,11 @@ void PlatformSetRenderSize(Vec2Int logical_size, Vec2Int native_size) {
 
     g_gl.native_screen_size = native_size;
 
-    // Only recreate targets if logical size changed
+    // Only recreate target if logical size changed
     if (g_gl.screen_size != logical_size) {
         g_gl.screen_size = logical_size;
         int samples = g_gl.offscreen.samples;
         CreateOffscreenTarget(g_gl.offscreen, logical_size.x, logical_size.y, samples);
-        CreateOffscreenTarget(g_gl.ui_offscreen, logical_size.x, logical_size.y, samples);
     }
 }
 

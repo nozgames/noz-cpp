@@ -292,7 +292,7 @@ void Main() {
     traits.load_assets = LoadAssets;
     traits.unload_assets = UnloadAssets;
     traits.hotload_asset = EditorHotLoad;
-    traits.renderer.msaa = true;
+    traits.renderer.msaa_samples = 4;
     traits.scratch_memory_size = noz::MB * 128;
     traits.update = UpdateEditor;
     traits.shutdown = ShutdownEditor;

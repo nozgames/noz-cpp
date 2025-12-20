@@ -104,7 +104,6 @@ struct GLState {
 
     // Offscreen rendering
     OffscreenTarget offscreen;
-    OffscreenTarget ui_offscreen;
     bool postprocess_enabled;
 
     float depth_conversion_factor;

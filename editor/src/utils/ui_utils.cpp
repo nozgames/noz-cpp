@@ -2,6 +2,9 @@
 //  NozEd - Copyright(c) 2025 NoZ Games, LLC
 //
 
+constexpr int ID_YES = ELEMENT_ID_MIN + 0;
+constexpr int ID_NO = ELEMENT_ID_MIN + 1;
+
 #include "nozed_assets.h"
 enum ConfirmType {
     CONFIRM_TYPE_NONE,
@@ -30,7 +33,7 @@ static void HandleNo() {
 void UpdateConfirmDialog() {
     if (g_confirm.type == CONFIRM_TYPE_NONE) return;
 
-    BeginCanvas();
+    BeginCanvas({.id=CANVAS_ID_CONFIRM});
     BeginCenter();
     BeginContainer({.width=400, .height=100, .color=COLOR_UI_BACKGROUND});
     BeginColumn();
@@ -48,13 +51,13 @@ void UpdateConfirmDialog() {
         BeginCenter();
         BeginRow({.spacing=20});
 
-        BeginContainer({.width=100, .height=24});
+        BeginContainer({.width=100, .height=24, .id=ID_YES});
         if (WasPressed()) HandleYes();
         Rectangle({.color = IsHovered() ? COLOR_UI_BUTTON_HOVER : COLOR_UI_BUTTON});
         Label("YES", {.font = FONT_SEGUISB, .font_size=18, .color=COLOR_UI_BUTTON_TEXT, .align = ALIGN_CENTER});
         EndContainer();
 
-        BeginContainer({.width=100, .height=24});
+        BeginContainer({.width=100, .height=24, .id=ID_NO});
         if (WasPressed()) HandleNo();
         Rectangle({.color = IsHovered() ? COLOR_UI_BUTTON_HOVER : COLOR_UI_BUTTON});
         Label("NO", {.font = FONT_SEGUISB, .font_size=18, .color=COLOR_UI_BUTTON_TEXT, .align = ALIGN_CENTER});

@@ -92,6 +92,118 @@ GLState g_gl = {};
 
 void DrawTestQuad();
 
+// Shared offscreen target management
+void CreateOffscreenTarget(OffscreenTarget& target, int width, int height, int samples) {
+    // Delete existing resources
+    if (target.framebuffer) {
+        glDeleteFramebuffers(1, &target.framebuffer);
+        target.framebuffer = 0;
+    }
+    if (target.texture) {
+        glDeleteTextures(1, &target.texture);
+        target.texture = 0;
+    }
+    if (target.depth_renderbuffer) {
+        glDeleteRenderbuffers(1, &target.depth_renderbuffer);
+        target.depth_renderbuffer = 0;
+    }
+    if (target.msaa_framebuffer) {
+        glDeleteFramebuffers(1, &target.msaa_framebuffer);
+        target.msaa_framebuffer = 0;
+    }
+    if (target.msaa_color_renderbuffer) {
+        glDeleteRenderbuffers(1, &target.msaa_color_renderbuffer);
+        target.msaa_color_renderbuffer = 0;
+    }
+    if (target.msaa_depth_renderbuffer) {
+        glDeleteRenderbuffers(1, &target.msaa_depth_renderbuffer);
+        target.msaa_depth_renderbuffer = 0;
+    }
+
+    target.samples = samples;
+
+    // Create resolve texture (non-MSAA, for sampling)
+    glGenTextures(1, &target.texture);
+    glBindTexture(GL_TEXTURE_2D, target.texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // Create depth renderbuffer for resolve framebuffer
+    glGenRenderbuffers(1, &target.depth_renderbuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, target.depth_renderbuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+
+    // Create resolve framebuffer (non-MSAA)
+    glGenFramebuffers(1, &target.framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, target.framebuffer);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, target.texture, 0);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, target.depth_renderbuffer);
+
+    if (samples > 1) {
+        // Create MSAA color renderbuffer
+        glGenRenderbuffers(1, &target.msaa_color_renderbuffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, target.msaa_color_renderbuffer);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, width, height);
+
+        // Create MSAA depth renderbuffer
+        glGenRenderbuffers(1, &target.msaa_depth_renderbuffer);
+        glBindRenderbuffer(GL_RENDERBUFFER, target.msaa_depth_renderbuffer);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, width, height);
+
+        // Create MSAA framebuffer (for rendering)
+        glGenFramebuffers(1, &target.msaa_framebuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, target.msaa_framebuffer);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, target.msaa_color_renderbuffer);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, target.msaa_depth_renderbuffer);
+
+        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            LogError("MSAA framebuffer incomplete: 0x%X", status);
+        }
+    }
+
+    // Verify resolve framebuffer is complete
+    glBindFramebuffer(GL_FRAMEBUFFER, target.framebuffer);
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) {
+        LogError("Framebuffer incomplete: 0x%X", status);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+}
+
+void DestroyOffscreenTarget(OffscreenTarget& target) {
+    if (target.framebuffer) {
+        glDeleteFramebuffers(1, &target.framebuffer);
+        target.framebuffer = 0;
+    }
+    if (target.texture) {
+        glDeleteTextures(1, &target.texture);
+        target.texture = 0;
+    }
+    if (target.depth_renderbuffer) {
+        glDeleteRenderbuffers(1, &target.depth_renderbuffer);
+        target.depth_renderbuffer = 0;
+    }
+    if (target.msaa_framebuffer) {
+        glDeleteFramebuffers(1, &target.msaa_framebuffer);
+        target.msaa_framebuffer = 0;
+    }
+    if (target.msaa_color_renderbuffer) {
+        glDeleteRenderbuffers(1, &target.msaa_color_renderbuffer);
+        target.msaa_color_renderbuffer = 0;
+    }
+    if (target.msaa_depth_renderbuffer) {
+        glDeleteRenderbuffers(1, &target.msaa_depth_renderbuffer);
+        target.msaa_depth_renderbuffer = 0;
+    }
+}
+
 void PlatformBeginRender() {
 }
 
@@ -399,27 +511,11 @@ void PlatformEnablePostProcess(bool enabled) {
 }
 
 void PlatformBeginUIPass() {
-    // Render to MSAA framebuffer if available, otherwise resolve framebuffer
-    GLuint fb = g_gl.ui_offscreen.msaa_framebuffer ? g_gl.ui_offscreen.msaa_framebuffer : g_gl.ui_offscreen.framebuffer;
-    glBindFramebuffer(GL_FRAMEBUFFER, fb);
-    glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    glClearDepthf(1.0f);
-    glDepthMask(GL_TRUE);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // No longer used - UI renders to same target as scene
 }
 
 void PlatformEndUIPass() {
-    // Resolve MSAA if enabled
-    if (g_gl.ui_offscreen.msaa_framebuffer) {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, g_gl.ui_offscreen.msaa_framebuffer);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, g_gl.ui_offscreen.framebuffer);
-        glBlitFramebuffer(
-            0, 0, g_gl.screen_size.x, g_gl.screen_size.y,
-            0, 0, g_gl.screen_size.x, g_gl.screen_size.y,
-            GL_COLOR_BUFFER_BIT, GL_NEAREST);
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // No longer used - UI renders to same target as scene
 }
 
 void PlatformBeginCompositePass() {
@@ -452,19 +548,7 @@ void PlatformBindSceneTexture() {
 }
 
 void PlatformBindUITexture() {
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, g_gl.ui_offscreen.texture);
-    PlatformBindCamera(Translate(Vec2{0, 1}) * Scale(Vec2{1, -1}));
-
-    // Apply 90° CW rotation to object transform if screen is rotated
-    if (IsScreenRotated()) {
-        Mat3 rotation = Mat3{.m = {
-             0, 1, 0,
-            -1, 0, 0,
-             0, 0, 1
-        }};
-        PlatformBindTransform(rotation, 0.0f, 1.0f);
-    }
+    // No longer used - UI renders to same target as scene
 }
 
 void PlatformBindSceneTextureOnly() {
@@ -473,8 +557,7 @@ void PlatformBindSceneTextureOnly() {
 }
 
 void PlatformBindUITextureOnly() {
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, g_gl.ui_offscreen.texture);
+    // No longer used - UI renders to same target as scene
 }
 
 void PlatformSetViewport(const noz::Rect& viewport) {

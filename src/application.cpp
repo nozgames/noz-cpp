@@ -79,7 +79,7 @@ static ApplicationTraits g_default_traits = {
     .renderer = {
         .max_frame_commands = 8192 * 2,
         .vsync = true,
-        .msaa = true,
+        .msaa_samples = 4,
         .min_depth = -10.0f,
         .max_depth = 10.0f,
     }
