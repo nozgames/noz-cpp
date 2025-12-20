@@ -365,9 +365,10 @@ inline f64 Dot(const Vec2Double& a, const Vec2Double& b) { return a.x * b.x + a.
 inline Vec2Double Mix(const Vec2Double& v1, const Vec2Double& v2, f64 t) { return v1 + (v2 - v1) * t; }
 
 // @vec2int
-inline Vec2 ToVec2(const Vec2Int& v) { return { (f32)v.x, (f32)v.y }; }
-inline Vec2 ToVec2(const Vec3& v) { return { (f32)v.x, (f32)v.y }; }
+inline Vec2 ToVec2(const Vec2Int& v) { return { static_cast<f32>(v.x), static_cast<f32>(v.y) }; }
+inline Vec2 ToVec2(const Vec3& v) { return { static_cast<f32>(v.x), static_cast<f32>(v.y) }; }
 inline Vec2Int ToVec2Int(const Vec2& v) { return { static_cast<i32>(v.x), static_cast<i32>(v.y) }; }
+inline Vec2Int Mix(const Vec2Int& v1, const Vec2Int& v2, f32 t) { return v1 + ToVec2Int(ToVec2(v2 - v1) * t); }
 
 // @vec3
 inline Vec3 operator+(const Vec3& v1, const Vec3& v2) { return { v1.x + v2.x, v1.y + v2.y, v1.z + v2.z }; }
@@ -405,6 +406,12 @@ inline Bounds2 operator+ (const Bounds2& b, const Vec2& offset) { return { b.min
 inline Bounds2 operator- (const Bounds2& b, const Vec2& offset) { return { b.min - offset, b.max - offset }; }
 inline Bounds2 Expand(const Bounds2& b, float size) { return Bounds2{ b.min - Vec2{ size, size }, b.max + Vec2{ size, size } }; }
 inline Bounds2 Translate(const Bounds2& b, const Vec2& translation) { return Bounds2{ b.min + translation, b.max + translation }; }
+inline Bounds2 Mix(const Bounds2& b1, const Bounds2& b2, f32 t) {
+    return Bounds2{
+        Mix(b1.min, b2.min, t),
+        Mix(b1.max, b2.max, t)
+    };
+}
 
 // @angle
 extern float MixAngle(float a, float b, float t);
@@ -457,6 +464,11 @@ inline float EaseQuadratic(float t) { return t * t; }
 inline float EaseCubic(float t) { return t * t * t; }
 inline float EaseOut(float t, const std::function<float (float)>& func) { return 1.0f - func(1.0f - t); }
 inline float EaseOutQuadratic(float t) { return EaseOut(t, EaseQuadratic); }
+inline float ease_out_quadratic(float t) {
+    if (t < 0.5f) return 2.0f * t * t;
+    float f = (2.0f * t) - 1.0f;
+    return -0.5f * (f * (f - 2.0f) - 1.0f);
+}
 
 extern float PerlinNoise(const Vec2& Position);
 

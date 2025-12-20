@@ -1253,9 +1253,11 @@ static void TriangulateFace(MeshData* m, FaceData* f, MeshBuilder* builder, floa
         return;
     }
 
-    int indices[MAX_VERTICES];
+    // Track positions in the face, not vertex IDs
+    // This is critical for faces with holes where the same vertex appears multiple times
+    int positions[MAX_VERTICES];
     for (int vertex_index = 0; vertex_index < f->vertex_count; vertex_index++)
-        indices[vertex_index] = f->vertices[vertex_index];
+        positions[vertex_index] = vertex_index;
 
     int remaining_vertices = f->vertex_count;
     int current_index = 0;
@@ -1264,28 +1266,26 @@ static void TriangulateFace(MeshData* m, FaceData* f, MeshBuilder* builder, floa
         bool found_ear = false;
 
         for (int attempts = 0; attempts < remaining_vertices; attempts++) {
+            // Build vertex ID array for IsEar check
+            int indices[MAX_VERTICES];
+            for (int i = 0; i < remaining_vertices; i++)
+                indices[i] = f->vertices[positions[i]];
+
             if (IsEar(m, indices, remaining_vertices, current_index)) {
                 // Found an ear, create triangle
                 int prev = (current_index - 1 + remaining_vertices) % remaining_vertices;
                 int next = (current_index + 1) % remaining_vertices;
 
-                // Find the corresponding indices in the builder
-                u16 tri_indices[3];
-                for (u16 vertex_index = 0; vertex_index < f->vertex_count; vertex_index++) {
-                    if (f->vertices[vertex_index] == indices[prev])
-                        tri_indices[0] = base_vertex + vertex_index;
-                    if (f->vertices[vertex_index] == indices[current_index])
-                        tri_indices[1] = base_vertex + vertex_index;
-                    if (f->vertices[vertex_index] == indices[next])
-                        tri_indices[2] = base_vertex + vertex_index;
-                }
+                // Use positions directly to get builder indices
+                AddTriangle(builder,
+                    base_vertex + (u16)positions[prev],
+                    base_vertex + (u16)positions[current_index],
+                    base_vertex + (u16)positions[next]);
 
-                AddTriangle(builder, tri_indices[0], tri_indices[1], tri_indices[2]);
-
-                // Remove the ear vertex from the polygon
+                // Remove the ear position from the polygon
                 for (int i = current_index; i < remaining_vertices - 1; i++)
                 {
-                    indices[i] = indices[i + 1];
+                    positions[i] = positions[i + 1];
                 }
                 remaining_vertices--;
 
@@ -1301,33 +1301,22 @@ static void TriangulateFace(MeshData* m, FaceData* f, MeshBuilder* builder, floa
         }
 
         if (!found_ear) {
+            // Fallback: fan triangulation from first vertex
             for (int i = 1; i < remaining_vertices - 1; i++) {
-                u16 tri_indices[3];
-                for (u16 j = 0; j < f->vertex_count; j++) {
-                    if (f->vertices[j] == indices[0])
-                        tri_indices[0] = base_vertex + j;
-                    if (f->vertices[j] == indices[i])
-                        tri_indices[1] = base_vertex + j;
-                    if (f->vertices[j] == indices[i + 1])
-                        tri_indices[2] = base_vertex + j;
-                }
-                AddTriangle(builder, tri_indices[0], tri_indices[1], tri_indices[2]);
+                AddTriangle(builder,
+                    base_vertex + (u16)positions[0],
+                    base_vertex + (u16)positions[i],
+                    base_vertex + (u16)positions[i + 1]);
             }
             break;
         }
     }
 
     if (remaining_vertices == 3) {
-        u16 tri_indices[3];
-        for (u16 i = 0; i < f->vertex_count; i++) {
-            if (f->vertices[i] == indices[0])
-                tri_indices[0] = base_vertex + i;
-            if (f->vertices[i] == indices[1])
-                tri_indices[1] = base_vertex + i;
-            if (f->vertices[i] == indices[2])
-                tri_indices[2] = base_vertex + i;
-        }
-        AddTriangle(builder, tri_indices[0], tri_indices[1], tri_indices[2]);
+        AddTriangle(builder,
+            base_vertex + (u16)positions[0],
+            base_vertex + (u16)positions[1],
+            base_vertex + (u16)positions[2]);
     }
 }
 

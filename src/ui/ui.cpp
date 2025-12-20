@@ -77,6 +77,7 @@ struct ElementState {
 struct Element {
     ElementType type;
     ElementId id;
+    CanvasId canvas_id;
     u16 index;
     u16 next_sibling_index;
     u16 child_count;
@@ -164,13 +165,18 @@ struct UI {
     PoolAllocator* text_mesh_allocator;
     float depth;
     Text password_mask;
-    CanvasId last_focus_canvas_id;
+    CanvasId current_canvas_id;
     CanvasId current_focus_canvas_id;
 };
 
 static UI g_ui;
 
 static void SetId(Element* e, ElementId id) {
+    if (id == ELEMENT_ID_NONE)
+        return;
+    if (g_ui.current_canvas_id != g_ui.current_focus_canvas_id)
+        return;
+
     e->id = id;
     ElementState& state = g_ui.element_states[id];
     state.index = e->index;
@@ -182,6 +188,7 @@ static Element* CreateElement(ElementType type) {
     element->type = type;
     element->index = g_ui.element_count;
     element->next_sibling_index = element->index + 1;
+    element->canvas_id = g_ui.current_canvas_id;
     g_ui.elements[g_ui.element_count++] = element;
 
     if (g_ui.element_stack_count > 0) {
@@ -229,9 +236,8 @@ static void SetPendingFocus(ElementId focus_id) {
 
 void SetFocus(CanvasId canvas_id, ElementId element_id) {
     // Canvas id changing?  if so reset the states
-    if (canvas_id != g_ui.last_focus_canvas_id) {
+    if (canvas_id != g_ui.current_focus_canvas_id) {
         memset(&g_ui.element_states, 0, sizeof(g_ui.element_states));
-        g_ui.last_focus_canvas_id = canvas_id;
         g_ui.current_focus_canvas_id = canvas_id;
     }
 
@@ -315,15 +321,8 @@ void EndColumn() {
 void BeginCanvas(const CanvasStyle& style) {
     CanvasElement* canvas = static_cast<CanvasElement*>(CreateElement(ELEMENT_TYPE_CANVAS));
     canvas->style = style;
+    g_ui.current_canvas_id = style.id;
     PushElement(canvas);
-
-    // only one canvas can have focus
-    if (style.id > 0) {
-        //g_ui.current_focus_canvas_id = style.id;
-        // if (g_ui.current_focus_canvas_id != g_ui.last_focus_canvas_id) {
-        //     memset(&g_ui.element_states, 0, sizeof(g_ui.element_states));
-        // }
-    }
 }
 
 void EndCanvas() {
@@ -740,7 +739,7 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
     } else if (e->type == ELEMENT_TYPE_SCENE) {
         SceneElement* scene = static_cast<SceneElement*>(e);
         if (scene->style.camera) {
-            UpdateCamera(scene->style.camera, Vec2Int{
+            Update(scene->style.camera, Vec2Int{
                 static_cast<i32>(available_size.x),
                 static_cast<i32>(available_size.y)});
             e->measured_size = ToVec2(GetScreenSize(scene->style.camera));
@@ -842,6 +841,7 @@ static int LayoutElement(int element_index, const Vec2& size) {
                 content_size.y = child->measured_size.y;
                 element_index = LayoutElement(element_index, content_size);
                 child->rect.y += child_offset.y;
+                child->rect.x += child_offset.x;
                 child_offset.y += GetSize(child->rect).y + container->style.spacing;
             }
         } else if (e->type == ELEMENT_TYPE_ROW) {
@@ -849,7 +849,8 @@ static int LayoutElement(int element_index, const Vec2& size) {
                 Element* child = g_ui.elements[element_index];
                 content_size.x = child->measured_size.x;
                 element_index = LayoutElement(element_index, content_size);
-                child->rect.x = child_offset.x;
+                child->rect.x += child_offset.x;
+                child->rect.y += child_offset.y;
                 child_offset.x += GetSize(child->rect).x + container->style.spacing;
             }
         }
@@ -943,7 +944,7 @@ static u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform) 
 }
 
 static void DrawCanvas(CanvasElement* canvas, const Mat3& transform){
-    UpdateCamera(g_ui.camera);
+    Update(g_ui.camera);
     BindCamera(g_ui.camera);
 
     if (canvas->style.color.a > F32_EPSILON) {
@@ -1158,30 +1159,39 @@ static int DrawElement(int element_index) {
     } else if (e->type == ELEMENT_TYPE_SCENE) {
         SceneElement* scene = static_cast<SceneElement*>(e);
         if (scene->style.camera && scene->draw_scene) {
-            // Element rect in screen pixels
-            Vec2 screen_pos = WorldToScreen(g_ui.camera, TransformPoint(transform, VEC2_ZERO));
-            Vec2 screen_size = WorldToScreen(g_ui.camera, TransformPoint(transform, Vec2{e->rect.width, e->rect.height})) - screen_pos;
+            Vec2 scene_size = GetWorldSize(scene->style.camera);
+            float scale_x = e->rect.width / scene_size.x;
+            float scale_y = e->rect.height / scene_size.y;
+            float uniform_scale = Min(scale_x, scale_y);
 
-            // Camera world size
-            Vec2 world_size = GetSize(GetWorldBounds(scene->style.camera));
-
-            // Uniform scale to fit
-            float scale = Min(screen_size.x / world_size.x, screen_size.y / world_size.y);
-            Vec2 viewport_size = world_size * scale;
-
-            // Align within element rect
             const AlignInfo& align = g_align_info[scene->style.align];
-            Vec2 viewport_pos = screen_pos;
-            if (align.has_x) viewport_pos.x += (screen_size.x - viewport_size.x) * align.x;
-            if (align.has_y) viewport_pos.y += (screen_size.y - viewport_size.y) * align.y;
+            Vec2 scene_offset = VEC2_ZERO;
+            if (align.has_x)
+                scene_offset.x = (e->rect.width - scene_size.x * uniform_scale) * align.x;
+            if (align.has_y)
+                scene_offset.y = (e->rect.height - scene_size.y * uniform_scale) * align.y;
 
-            SetViewport(scene->style.camera, {viewport_pos.x, viewport_pos.y, viewport_size.x, viewport_size.y});
-            UpdateCamera(scene->style.camera, Vec2Int{static_cast<i32>(viewport_size.x), static_cast<i32>(viewport_size.y)});
+            Vec2 viewport_size = scene_size * uniform_scale;
+            Vec2 viewport_pos = Vec2{
+                e->rect.x + scene_offset.x,
+                e->rect.y + scene_offset.y
+            };
+
+            Vec2 viewport_tl = WorldToScreen(g_ui.camera, TransformPoint(transform, viewport_pos));
+            Vec2 viewport_br = WorldToScreen(g_ui.camera, TransformPoint(transform, viewport_pos + viewport_size));
+
+            SetViewport(scene->style.camera, {
+                viewport_tl.x,
+                viewport_tl.y,
+                viewport_br.x - viewport_tl.x,
+                viewport_br.y - viewport_tl.y
+            });
+
             BindCamera(scene->style.camera);
             scene->draw_scene(scene->style.user_data);
 
             // Restore UI camera
-            UpdateCamera(g_ui.camera);
+            Update(g_ui.camera);
             BindCamera(g_ui.camera);
             BindDepth(g_ui.depth, 0);
         }
@@ -1211,8 +1221,6 @@ void BeginUI(u32 ref_width, u32 ref_height) {
     g_ui.ref_size = { static_cast<i32>(ref_width), static_cast<i32>(ref_height) };
     g_ui.element_stack_count = 0;
     g_ui.element_count = 0;
-    g_ui.last_focus_canvas_id = g_ui.current_focus_canvas_id;
-    g_ui.current_focus_canvas_id = 0;
 
     Clear(g_ui.allocator);
 

@@ -78,4 +78,5 @@ void ShowConfirmDialog(const char* message, const std::function<void()>& callbac
     g_confirm.type = CONFIRM_TYPE_YES_NO;
     Copy(g_confirm.message, sizeof(g_confirm.message) - 1, message);
     g_confirm.callback = callback;
+    SetFocus(CANVAS_ID_CONFIRM, ID_NO);
 }

@@ -32,7 +32,7 @@ static void UpdateCamera() {
     f32 half_width = world_width * 0.5f;
     f32 half_height = world_height * 0.5f;
     SetExtents(g_view.camera, -half_width, half_width, -half_height, half_height);
-    UpdateCamera(g_view.camera);
+    Update(g_view.camera);
 
     g_view.zoom_ref_scale = 1.0f / g_view.zoom;
     g_view.select_size = Abs((ScreenToWorld(g_view.camera, Vec2{0, SELECT_SIZE}) - ScreenToWorld(g_view.camera, VEC2_ZERO)).y);

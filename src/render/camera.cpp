@@ -16,13 +16,8 @@ struct CameraImpl : Camera {
     float shake_elapsed;
     noz::Rect viewport;
     Bounds2 bounds;
+    Bounds2 (*update_func)(Camera* camera, const Vec2Int& available_size);
 };
-
-static Vec2Int GetEffectiveSize(CameraImpl* impl, const Vec2Int& screen_size) {
-    if (impl->viewport.width > 0 && impl->viewport.height > 0)
-        return Vec2Int{static_cast<i32>(impl->viewport.width), static_cast<i32>(impl->viewport.height)};
-    return screen_size;
-}
 
 static void UpdateCameraShake(CameraImpl* impl) {
     if (impl->shake_duration <= 0.0f)
@@ -53,138 +48,76 @@ void Shake(Camera* camera, const Vec2& intensity, float duration) {
     };
 }
 
-static void UpdateBounds(Camera* camera) {
-    CameraImpl* impl = static_cast<CameraImpl*>(camera);
+static void UpdateViewMatrix(CameraImpl* impl) {
+    float zoomX = 2.0f / Abs(impl->bounds.max.x - impl->bounds.min.x);
+    float zoomY = 2.0f / abs(impl->bounds.max.y - impl->bounds.min.y);
 
-    float aspectRatio = static_cast<float>(impl->screen_size.x) / static_cast<float>(impl->screen_size.y);
+    Vec2 center {
+        (impl->bounds.min.x + impl->bounds.max.x) * 0.5f,
+        (impl->bounds.min.y + impl->bounds.max.y) * 0.5f
+    };
 
-    // Get current extents
-    float left = impl->extents.x;
-    float right = impl->extents.y;
-    float bottom = impl->extents.z;
-    float top = impl->extents.w;
+    float c = cos(impl->rotation);
+    float s = sin(impl->rotation);
+    impl->view = Mat3{.m = {
+        c * zoomX, -s * zoomY, 0,
+        s * zoomX, c * zoomY, 0,
+        -(c * center.x + s * center.y) * zoomX,
+        -(-s * center.x + c * center.y) * zoomY, 1
+    }};
 
-    // Handle auto-calculation for each extent (similar to UpdateCamera logic)
-    bool auto_left = abs(left) >= F32_MAX;
-    bool auto_right = abs(right) >= F32_MAX;
-    bool auto_bottom = abs(bottom) >= F32_MAX;
-    bool auto_top = abs(top) >= F32_MAX;
-
-    // Calculate width and height
-    float width, height;
-
-    if (!auto_left && !auto_right) {
-        width = right - left;
-        if (!auto_bottom && !auto_top)
-            height = top - bottom;
-        else
-            height = width / aspectRatio;
-    } else if (!auto_bottom && !auto_top) {
-        height = top - bottom;
-        width = abs(height) * aspectRatio;
-    } else {
-        width = 2.0f;
-        height = 2.0f / aspectRatio;
-    }
-
-    // Calculate final bounds
-    if (auto_left && auto_right) {
-        left = -width * 0.5f;
-        right = width * 0.5f;
-    } else if (auto_left) {
-        left = right - width;
-    } else if (auto_right) {
-        right = left + width;
-    }
-
-    if (auto_bottom && auto_top) {
-        bottom = -height * 0.5f;
-        top = height * 0.5f;
-    } else if (auto_bottom) {
-        bottom = top - height;
-    } else if (auto_top) {
-        top = bottom + height;
-    }
-
-    Vec2 center = Vec2{(left + right) * 0.5f, (bottom + top) * 0.5f} + impl->position_offset + impl->shake_offset;
-    Vec2 a = {center.x - width * 0.5f, center.y - height * 0.5f};
-    Vec2 b = {center.x + width * 0.5f, center.y + height * 0.5f};
-    impl->bounds = { Min(a,b), Max(a,b) };
+    impl->inv_view = Inverse(impl->view);
 }
 
-void UpdateCamera(Camera* camera) {
-    UpdateCamera(camera, GetScreenSize());
+void Update(Camera* camera) {
+    Update(camera, GetScreenSize());
 }
 
-void UpdateCamera(Camera* camera, const Vec2Int& available_size) {
+void Update(Camera* camera, const Vec2Int& available_size) {
     CameraImpl* impl = static_cast<CameraImpl*>(camera);
 
     UpdateCameraShake(impl);
 
-    float left = impl->extents.x;
-    float right = impl->extents.y;
-    float bottom = impl->extents.z;
-    float top = impl->extents.w;
+    impl->screen_size = available_size;
 
-    if (impl->viewport.width > 0 && impl->viewport.height > 0)
-        impl->screen_size = Vec2Int{
-            static_cast<i32>(impl->viewport.width),
-            static_cast<i32>(impl->viewport.height)};
-    else
-        impl->screen_size = available_size;
-
-    impl->screen_size = GetEffectiveSize(impl, available_size);
-    float screen_aspect = static_cast<float>(impl->screen_size.x) / static_cast<float>(impl->screen_size.y);
-
-    bool is_auto_width = (abs(left) >= F32_MAX || abs(right) >= F32_MAX);
-    bool is_auto_height = (abs(bottom) >= F32_MAX || abs(top) >= F32_MAX);
-
-    float width, height;
-    if (is_auto_width && is_auto_height) {
-        height = 2.0f;
-        width = height * screen_aspect;
-        left = -width * 0.5f;
-        right = width * 0.5f;
-        bottom = -height * 0.5f;
-        top = height * 0.5f;
-    } else if (is_auto_width) {
-        height = top - bottom;
-        width = abs(height) * screen_aspect;
-        left = -width * 0.5f;
-        right = width * 0.5f;
-    } else if (is_auto_height) {
-        width = right - left;
-        height = width / screen_aspect;
-        bottom = -height * 0.5f;
-        top = height * 0.5f;
+    if (impl->update_func) {
+        impl->bounds = impl->update_func(camera, available_size);
     } else {
-        width = right - left;
-        height = top - bottom;
+        float left = impl->extents.x;
+        float right = impl->extents.y;
+        float bottom = impl->extents.z;
+        float top = impl->extents.w;
+
+        float screen_aspect = static_cast<float>(impl->screen_size.x) / static_cast<float>(impl->screen_size.y);
+
+        bool is_auto_width = (abs(left) >= F32_MAX || abs(right) >= F32_MAX);
+        bool is_auto_height = (abs(bottom) >= F32_MAX || abs(top) >= F32_MAX);
+
+        if (is_auto_width && is_auto_height) {
+            float height = 2.0f;
+            float width = height * screen_aspect;
+            left = -width * 0.5f;
+            right = width * 0.5f;
+            bottom = -height * 0.5f;
+            top = height * 0.5f;
+        } else if (is_auto_width) {
+            float height = top - bottom;
+            float width = abs(height) * screen_aspect;
+            left = -width * 0.5f;
+            right = width * 0.5f;
+        } else if (is_auto_height) {
+            float width = right - left;
+            float height = width / screen_aspect;
+            bottom = -height * 0.5f;
+            top = height * 0.5f;
+        }
+
+        impl->bounds = Bounds2{Vec2{left, bottom}, Vec2{right, top}};
     }
 
-    float zoomX = 2.0f / abs(width);
-    float zoomY = 2.0f / abs(height);
-    if ((top - bottom) < 0) zoomY = -zoomY;
+    impl->bounds = Translate(impl->bounds, impl->position_offset + impl->shake_offset);
 
-    Vec2 center;
-    center.x = (left + right) * 0.5f;
-    center.y = (bottom + top) * 0.5f;
-
-    Vec2 final_position = center + impl->position_offset + impl->shake_offset;
-
-    float c = cos(impl->rotation);
-    float s = sin(impl->rotation);
-
-    impl->view = Mat3{.m = {
-        c * zoomX, -s * zoomY, 0,
-        s * zoomX, c * zoomY, 0,
-        -(c * final_position.x + s * final_position.y) * zoomX,
-        -(-s * final_position.x + c * final_position.y) * zoomY, 1
-    }};
-
-    impl->inv_view = Inverse(impl->view);
-
-    UpdateBounds(camera);
+    UpdateViewMatrix(impl);
 }
 
 void SetPosition(Camera* camera, const Vec2& position) {
@@ -279,7 +212,7 @@ const Mat3& GetViewMatrix(Camera* camera) {
 }
 
 Vec2Int GetScreenSize(Camera* camera) {
-    return ToVec2Int(GetWorldSize(camera) * ToVec2(static_cast<CameraImpl*>(camera)->screen_size));
+    return static_cast<CameraImpl*>(camera)->screen_size;
 }
 
 Bounds2 GetWorldBounds(Camera* camera) {
@@ -301,3 +234,7 @@ Camera* CreateCamera(Allocator* allocator) {
     return impl;
 }
 
+void SetUpdateFunc(Camera* camera, Bounds2 (*update_func)(Camera*, const Vec2Int& available)) {
+    CameraImpl* impl = static_cast<CameraImpl*>(camera);
+    impl->update_func = update_func;
+}

@@ -1691,6 +1691,8 @@ static void BeginMeshEditor(AssetData* a) {
 
     g_mesh_editor.mode = MESH_EDITOR_MODE_VERTEX;
     g_mesh_editor.weight_bone = -1;
+
+    SetFocus(CANVAS_ID_PALETTES, COLOR_PICKER_ID_EXPAND);
 }
 
 static void EndMeshEditor() {

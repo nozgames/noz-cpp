@@ -36,6 +36,16 @@ namespace noz {
                  other.y > rect.y + rect.height || other.y + other.height < rect.y);
     }
 
+    inline Rect Mix(const Rect& v1, const Rect& v2, f32 t) {
+        return Rect{
+            v1.x + (v2.x - v1.x) * t,
+            v1.y + (v2.y - v1.y) * t,
+            v1.width + (v2.width - v1.width) * t,
+            v1.height + (v2.height - v1.height) * t
+        };
+    }
+
+
     struct RectInt {
         i32 x;
         i32 y;

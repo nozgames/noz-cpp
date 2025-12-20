@@ -820,6 +820,17 @@ static void ExecuteFaceSplit(MeshData* m, KnifePathPoint* path, KnifeAction& act
     SplitFaceAtPositions(m, action.face_index, best_pos0, best_pos1, cut_vertices, cut_count);
 }
 
+// Compute signed area of a polygon (positive = CCW, negative = CW)
+static float ComputeSignedArea(MeshData* m, int* vertices, int count) {
+    float area = 0.0f;
+    for (int i = 0; i < count; i++) {
+        Vec2 p0 = m->vertices[vertices[i]].position;
+        Vec2 p1 = m->vertices[vertices[(i + 1) % count]].position;
+        area += (p0.x * p1.y - p1.x * p0.y);
+    }
+    return area * 0.5f;
+}
+
 static void ExecuteInnerFace(MeshData* m, KnifePathPoint* path, KnifeAction& action) {
     if (action.face_index < 0)
         return;
@@ -844,6 +855,15 @@ static void ExecuteInnerFace(MeshData* m, KnifePathPoint* path, KnifeAction& act
 
     if (loop_count < 3)
         return;
+
+    // Compute winding of the outer face boundary and the cut loop
+    float boundary_area = ComputeSignedArea(m, f.vertices, f.vertex_count);
+    float loop_area = ComputeSignedArea(m, loop_vertices, loop_count);
+
+    // Determine if we need to reverse the loop for proper hole winding
+    // The hole must have OPPOSITE winding to the boundary
+    // If both have same sign, we need to reverse the loop
+    bool reverse_loop = (boundary_area > 0) == (loop_area > 0);
 
     // Find the closest boundary vertex to any point in the loop
     int closest_boundary_v = -1;
@@ -873,11 +893,9 @@ static void ExecuteInnerFace(MeshData* m, KnifePathPoint* path, KnifeAction& act
         return;
 
     // Create two faces:
-    // 1. Outer face: original boundary with slit to inner loop (goes around loop in one direction)
-    // 2. Inner face: the loop itself (goes around in opposite direction)
+    // 1. Outer face: original boundary with slit to inner loop
+    // 2. Inner face: the loop itself (should have SAME winding as boundary for correct rendering)
 
-    // First, create the inner face (the cut-out piece)
-    // The inner face winds opposite to the outer, so we go backwards around the loop
     if (m->face_count >= MAX_FACES)
         return;
 
@@ -887,16 +905,26 @@ static void ExecuteInnerFace(MeshData* m, KnifePathPoint* path, KnifeAction& act
     inner_face.selected = false;
     inner_face.vertex_count = 0;
 
-    // Inner face winds in forward order (same as original loop)
-    for (int i = 0; i < loop_count; i++) {
-        int idx = (closest_loop_idx + i) % loop_count;
-        inner_face.vertices[inner_face.vertex_count++] = loop_vertices[idx];
+    // Inner face should have SAME winding as boundary (so it renders with same normal direction)
+    // If loop already matches boundary winding, use forward order
+    // If loop has opposite winding, use reverse order
+    if (reverse_loop) {
+        // Loop has same winding as boundary, use forward (it's already correct for inner face)
+        for (int i = 0; i < loop_count; i++) {
+            int idx = (closest_loop_idx + i) % loop_count;
+            inner_face.vertices[inner_face.vertex_count++] = loop_vertices[idx];
+        }
+    } else {
+        // Loop has opposite winding to boundary, reverse it for inner face
+        for (int i = 0; i < loop_count; i++) {
+            int idx = (closest_loop_idx - i + loop_count) % loop_count;
+            inner_face.vertices[inner_face.vertex_count++] = loop_vertices[idx];
+        }
     }
     m->face_count++;
 
-    // Now rebuild the outer face with the slit:
-    // ... -> boundary_v -> loop[closest] -> loop[closest-1] -> ... -> loop[closest] -> boundary_v -> ...
-    // The inner loop goes in REVERSE to create a proper hole (winding cancels out)
+    // Now rebuild the outer face with the slit
+    // The embedded hole must have OPPOSITE winding to boundary for triangulation to work
     int new_vertices[MAX_FACE_VERTICES];
     int new_count = 0;
 
@@ -905,11 +933,19 @@ static void ExecuteInnerFace(MeshData* m, KnifePathPoint* path, KnifeAction& act
         new_vertices[new_count++] = f.vertices[i];
     }
 
-    // Add the loop starting from closest_loop_idx, going BACKWARDS around to it
-    // This creates the proper winding for a hole
-    for (int i = 0; i <= loop_count; i++) {
-        int idx = (closest_loop_idx - i + loop_count) % loop_count;
-        new_vertices[new_count++] = loop_vertices[idx];
+    // Add the loop with proper winding (opposite to boundary)
+    if (reverse_loop) {
+        // Loop has same winding as boundary, so reverse it for the hole
+        for (int i = 0; i <= loop_count; i++) {
+            int idx = (closest_loop_idx - i + loop_count) % loop_count;
+            new_vertices[new_count++] = loop_vertices[idx];
+        }
+    } else {
+        // Loop already has opposite winding, use forward order
+        for (int i = 0; i <= loop_count; i++) {
+            int idx = (closest_loop_idx + i) % loop_count;
+            new_vertices[new_count++] = loop_vertices[idx];
+        }
     }
 
     // Return to boundary vertex (the bridge back)
