@@ -11,6 +11,7 @@
 
 extern bool GetWindowFocus();
 extern HWND GetWindowHandle();
+extern bool PlatformIsMouseOverWindow();
 
 struct WindowsInput {
     Vec2 mouse_scroll;
@@ -330,11 +331,17 @@ void PlatformUpdateInputState() {
         return;
     }
 
+    bool mouse_over_window = PlatformIsMouseOverWindow();
     bool key_state_changed = false;
     for (int i = 0; i < INPUT_CODE_COUNT; i++) {
         bool old_state = g_windows_input.key_states[i];
-        g_windows_input.key_states[i] = GetAsyncKeyState(g_windows_input.virtual_keys[i]) < 0;
-        key_state_changed |= (old_state != g_windows_input.key_states[i]);
+        bool new_state = GetAsyncKeyState(g_windows_input.virtual_keys[i]) < 0;
+        // Ignore mouse button presses when mouse is not over client area (e.g. window resize)
+        if (IsMouse(static_cast<InputCode>(i)) && !mouse_over_window) {
+            new_state = false;
+        }
+        g_windows_input.key_states[i] = new_state;
+        key_state_changed |= (old_state != new_state);
     }
 
     for (int i = 0; i < XUSER_MAX_COUNT; i++) {
