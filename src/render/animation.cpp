@@ -73,8 +73,6 @@ Animation* CreateAnimation(
     assert(transforms);
     assert(transform_count == GetBoneCount(skeleton) * frame_count);
 
-    frame_count--;
-
     AnimationImpl* impl = static_cast<AnimationImpl*>(Alloc(allocator, sizeof(AnimationImpl)));
     impl->name = name;
     impl->bone_count = GetBoneCount(skeleton);
@@ -112,7 +110,11 @@ Animation* CreateAnimation(
 
     if (flags & ANIMATION_FLAG_LOOPING) {
         impl->frames[frame_count - 1].transform1 = 0;
+    } else {
+        impl->frames[frame_count - 1].transform1 = impl->frames[frame_count - 1].transform0;
     }
+
+    impl->frames[frame_count] = impl->frames[frame_count - 1];
 
     return impl;
 }

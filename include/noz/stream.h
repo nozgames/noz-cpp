@@ -72,7 +72,9 @@ inline int ReadString(Stream* stream, String1024& dst) {
 
 extern int ReadNullString(Stream* stream, char* buffer, int buffer_size);
 inline int ReadNullString(Stream* stream, Text& text) {
-    return ReadNullString(stream, text.value, sizeof(text.value));
+    int size = ReadNullString(stream, text.value, sizeof(text.value));
+    text.length = size;
+    return size;
 }
 inline int ReadNullString(Stream* stream, String64& text) {
     return ReadNullString(stream, text.value, 64);

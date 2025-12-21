@@ -126,7 +126,7 @@ void Stop(Animator& animator) {
     }
 }
 
-void Play(Animator& animator, Animation* animation, int layer_index, float speed, float normalized_time) {
+void Play(Animator& animator, Animation* animation, int layer_index, float speed, float normalized_time, bool loop) {
     assert(animator.skeleton);
     assert(GetBoneCount(animator.skeleton) == GetBoneCount(animation));
 
@@ -141,7 +141,7 @@ void Play(Animator& animator, Animation* animation, int layer_index, float speed
     layer.animation = animation;
     layer.speed = speed;
     layer.time = normalized_time * static_cast<AnimationImpl*>(animation)->duration;
-    layer.loop = IsLooping(layer.animation);
+    layer.loop = loop && IsLooping(layer.animation);
     layer.playing = true;
     layer.frame_index = -1;
 
@@ -175,6 +175,8 @@ void Update(Animator& animator, float time_scale) {
             }
         }
 
+        assert(layer.time <= anim_impl->duration);
+
         if (layer.blend_animation) {
             layer.blend_time += dt;
             if (layer.blend_time >= ANIMATOR_BLEND_TIME) {
@@ -202,6 +204,7 @@ void SetNormalizedTime(Animator& animator, int layer_index, float normalized_tim
         return;
 
     layer.time = normalized_time * static_cast<AnimationImpl*>(layer.animation)->duration;
+    layer.time = Clamp(layer.time, 0.0f, static_cast<AnimationImpl*>(layer.animation)->duration);
 
     Update(animator, 0.0f);
 

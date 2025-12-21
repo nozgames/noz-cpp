@@ -96,7 +96,7 @@ struct Animator {
 
 extern void Init(Animator& animator, Skeleton* skeleton, int layer_count=1);
 extern void SetBoneMask(Animator& animator, int layer_index, u64 bone_mask);
-extern void Play(Animator& animator, Animation* animation, int layer_index=0, float speed=1.0f, float normalized_time=0.0f);
+extern void Play(Animator& animator, Animation* animation, int layer_index=0, float speed=1.0f, float normalized_time=0.0f, bool loop=true);
 extern void Stop(Animator& animator);
 extern void Stop(Animator& animatorl, int layer_index);
 extern void Update(Animator& animator, float time_scale=1.0f);
