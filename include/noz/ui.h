@@ -169,7 +169,6 @@ struct ContainerStyle {
 };
 
 struct GridStyle {
-    float height = 0.0f;
     float spacing = 0.0f;
     int columns = 3;
     struct {

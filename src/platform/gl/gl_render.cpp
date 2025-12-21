@@ -498,12 +498,17 @@ static int g_stencil_ref = 0;
 void PlatformBeginClip() {
     if (g_stencil_ref == 0) {
         glEnable(GL_STENCIL_TEST);
+        // First level: always pass (stencil buffer is 0)
+        glStencilFunc(GL_ALWAYS, 0, 0xFF);
+    } else {
+        // Nested clip: only pass where parent's stencil matches
+        glStencilFunc(GL_EQUAL, g_stencil_ref, 0xFF);
     }
     g_stencil_ref++;
 
-    // Write to stencil where we draw
-    glStencilFunc(GL_ALWAYS, g_stencil_ref, 0xFF);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    // INCREMENT stencil on pass (not REPLACE!)
+    // This ensures nested masks only write inside parent's region
+    glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
     glStencilMask(0xFF);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDepthMask(GL_FALSE);

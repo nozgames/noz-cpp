@@ -346,18 +346,13 @@ static float GetFixedParentHeight() {
 // @grid
 void BeginGrid(const GridStyle& style) {
     GridElement* grid = static_cast<GridElement*>(CreateElement(ELEMENT_TYPE_GRID));
-    assert(style.height > 0.0f);
-
     float container_height = GetFixedParentHeight();
-
 
     grid->style = style;
     PushElement(grid);
 
     int visible_rows = CeilToInt(container_height / (style.cell.height + style.spacing));
     int virtual_count = visible_rows * style.columns;
-
-
 
     for (int i = 0; i < virtual_count && i < style.virtual_count; i++) {
         if (style.virtual_cell_func) {
