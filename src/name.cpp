@@ -1,10 +1,18 @@
-#include <noz/name.h>
+//
+//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//
 
-static Allocator* g_name_allocator = nullptr;
-static Map g_names_map = {};
-static u64* g_names_map_keys = nullptr;
-static Name* g_names_map_values = nullptr;
-static Name g_name_none = {""};
+#include <noz/name.h>
+#include <mutex>
+#include <map>
+
+struct NameSystem {
+    std::mutex mutex;
+    std::map<u64, Name>* map;
+    Name none = {""};
+};
+
+static NameSystem g_name_system;
 
 Name* NAME_NONE;
 
@@ -12,37 +20,28 @@ Name* GetName(const char* value) {
     if (!value || *value == 0)
         return NAME_NONE;
 
-    auto key = Hash(value);
-    auto name = (Name*)GetValue(g_names_map, key);
-    if (name)
-        return name;
+    std::lock_guard lock(g_name_system.mutex);
 
-    u32 name_value_len = (u32)strlen(value);
+    auto key = Hash(value);
+    auto it = g_name_system.map->find(key);
+    if (it != g_name_system.map->end())
+        return &it->second;
+
+    u32 name_value_len = static_cast<u32>(strlen(value));
     assert(name_value_len < MAX_NAME_LENGTH - 1);
 
-    char* name_value = (char*)Alloc(g_name_allocator, name_value_len + 1);
-    memcpy(name_value, value, name_value_len + 1);
-    CleanPath(name_value);
-    name = (Name*)SetValue(g_names_map, key);
-    Copy(name->value, MAX_NAME_LENGTH, name_value);
-    return name;;
+    Name& name = (*g_name_system.map)[key];
+    Copy(name.value, MAX_NAME_LENGTH, value);
+    CleanPath(name.value);
+    return &name;
 }
 
-void InitName(ApplicationTraits* traits) {
-    g_name_allocator = CreateArenaAllocator(traits->name_memory_size, "name");
-
-    g_names_map_keys = (u64*)Alloc(g_name_allocator, sizeof(u64) * traits->max_names);
-    g_names_map_values = (Name*)Alloc(g_name_allocator, sizeof(Name) * traits->max_names);
-    Init(g_names_map, g_names_map_keys, g_names_map_values, traits->max_names, sizeof(Name), 0);
-
-    NAME_NONE = &g_name_none;
+void InitName(ApplicationTraits*) {
+    g_name_system.map = new std::map<u64, Name>();
+    NAME_NONE = &g_name_system.none;
 }
 
 void ShutdownName() {
-    g_names_map_keys = nullptr;
-    g_names_map_values = nullptr;
-    Clear(g_name_allocator);
-    Destroy(g_name_allocator);
-    g_name_allocator = nullptr;
-    g_names_map = {};
+    delete g_name_system.map;
+    g_name_system.map = nullptr;
 }

@@ -118,3 +118,28 @@ Animation* CreateAnimation(
 
     return impl;
 }
+
+void AddEvent(Animation* animation, int frame, int event_id) {
+    AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
+    if (frame < 0 || frame >= impl->frame_count) return;
+    impl->frames[frame].event = event_id;
+}
+
+void AddEvents(Animation* animation, AnimationEvent* events, int event_count) {
+    AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
+    for (int i=0; i<event_count; i++) {
+        int frame = events[i].frame;
+        int event_id = events[i].id;
+        if (frame < 0 || frame >= impl->frame_count) continue;
+        impl->frames[frame].event = event_id;
+    }
+}
+
+void AddEvents(Animation* animation, int event, int* frames, int frame_count) {
+    AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
+    for (int i=0; i<frame_count; i++) {
+        int frame = frames[i];
+        if (frame < 0 || frame >= impl->frame_count) continue;
+        impl->frames[frame].event = event;
+    }
+}

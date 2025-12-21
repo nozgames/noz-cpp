@@ -58,8 +58,9 @@ namespace noz {
     extern Task GetParent(Task task);
     extern void SetParent(Task task, Task parent);
     extern bool IsComplete(Task task);
-    extern bool IsTaskValid(Task task);
+    extern bool IsValid(Task task);
     extern bool IsCancelled(Task task);
     extern void Cancel(Task task);
+    extern void AddDependency(Task task, Task dependency);
 
 } // namespace noz

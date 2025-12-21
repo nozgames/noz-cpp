@@ -46,6 +46,11 @@ extern Animation* CreateAnimation(
     int event_count,
     AnimationFlags flags,
     const Name* name=NAME_NONE);
+
+extern void AddEvent(Animation* animation, int frame, int event_id);
+extern void AddEvents(Animation* animation, AnimationEvent* events, int event_count);
+extern void AddEvents(Animation* animation, int event, int* frames, int frame_count);
+
 extern int GetBoneCount(Animation* animation);
 extern bool IsRootMotion(Animation* animation);
 extern bool IsLooping(Animation* animation);
@@ -105,6 +110,7 @@ inline bool HasEvents(Animator& animator) { return animator.event_count > 0; }
 extern int GetEvent(Animator& animator);
 inline int GetFrameIndex(Animator& animator, int layer_index=0) { return animator.layers[layer_index].frame_index; }
 extern void SetNormalizedTime(Animator& animator, int layer_index, float normalized_time);
+extern void SetFrame(Animator& animator, int layer_index, int frame_index);
 inline Skeleton* GetSkeleton(Animator& animator) {
     return animator.skeleton;
 }

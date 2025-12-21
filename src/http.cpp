@@ -247,7 +247,7 @@ void noz::UpdateHttp() {
 
         // @complete
         } else if (request->state == HTTP_REQUEST_STATE_COMPLETE) {
-            if (!IsTaskValid(request->task)) {
+            if (!IsValid(request->task)) {
                 request->state = HTTP_REQUEST_STATE_NONE;
                 g_http.request_count--;
             }

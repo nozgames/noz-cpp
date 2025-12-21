@@ -252,7 +252,7 @@ namespace noz {
             task->parent = parent;
     }
 
-    bool IsTaskValid(Task handle) {
+    bool IsValid(Task handle) {
         if (handle.generation == 0)
             return false;
 
@@ -296,7 +296,7 @@ namespace noz {
     }
 
     void Cancel(Task handle) {
-        if (handle.generation == 0)
+        if (!IsValid(handle))
             return;
 
         std::lock_guard lock(g_tasks.mutex);
@@ -530,3 +530,19 @@ namespace noz {
     }
 
 } // namespace noz
+
+
+void noz::AddDependency(Task task, Task dependency) {
+    if (!IsValid(task))
+        return;
+
+    std::lock_guard lock(g_tasks.mutex);
+    TaskImpl* task_impl = GetTask(task);
+    TaskImpl* dep_impl = GetTask(dependency);
+    if (!task_impl || !dep_impl)
+        return;
+
+    // Add to front of dependency list
+    dep_impl->next_dep = task_impl->first_dep;
+    task_impl->first_dep = static_cast<i32>(dependency.id);
+}

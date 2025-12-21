@@ -17,6 +17,7 @@ enum ElementType : u8 {
     ELEMENT_TYPE_COLUMN,
     ELEMENT_TYPE_CONTAINER,
     ELEMENT_TYPE_EXPANDED,
+    ELEMENT_TYPE_GRID,
     ELEMENT_TYPE_IMAGE,
     ELEMENT_TYPE_LABEL,
     ELEMENT_TYPE_ROW,
@@ -96,6 +97,10 @@ struct ContainerElement : Element {
     ContainerStyle style;
 };
 
+struct GridElement : Element {
+    GridStyle style;
+};
+
 struct ExpandedElement : Element {
     ExpandedStyle style;
     int axis;
@@ -170,6 +175,8 @@ struct UI {
 };
 
 static UI g_ui;
+
+static int LayoutElement(int element_index, const Vec2& size);
 
 static void SetId(Element* e, ElementId id) {
     if (id == ELEMENT_ID_NONE)
@@ -315,6 +322,52 @@ void BeginColumn(const ContainerStyle& style) {
 
 void EndColumn() {
     EndElement(ELEMENT_TYPE_COLUMN);
+}
+
+static float GetFixedParentHeight() {
+    Element* parent = GetCurrentElement();
+    while (parent) {
+        if (IsContainerType(parent->type)) {
+            ContainerElement* container = static_cast<ContainerElement*>(parent);
+            if (IsFixed(container->style.height)) {
+                return container->style.height;
+            }
+        }
+
+        if (parent->index == 0)
+            break;
+
+        parent = g_ui.elements[parent->index - 1];
+    }
+
+    return F32_AUTO;
+}
+
+// @grid
+void BeginGrid(const GridStyle& style) {
+    GridElement* grid = static_cast<GridElement*>(CreateElement(ELEMENT_TYPE_GRID));
+    assert(style.height > 0.0f);
+
+    float container_height = GetFixedParentHeight();
+
+
+    grid->style = style;
+    PushElement(grid);
+
+    int visible_rows = CeilToInt(container_height / (style.cell.height + style.spacing));
+    int virtual_count = visible_rows * style.columns;
+
+
+
+    for (int i = 0; i < virtual_count && i < style.virtual_count; i++) {
+        if (style.virtual_cell_func) {
+            style.virtual_cell_func(i, i);
+        }
+    }
+}
+
+void EndGrid() {
+    EndElement(ELEMENT_TYPE_GRID);
 }
 
 // @canvas
@@ -553,6 +606,56 @@ void EndTransformed() {
 
 static int MeasureElement(int element_index, const Vec2& available_size);
 
+static int LayoutGrid(int element_index, const Vec2& size) {
+    GridElement* e = static_cast<GridElement*>(g_ui.elements[element_index++]);
+
+    int columns = e->style.columns;
+    for (u16 i = 0; i < e->child_count; i++) {
+        int col = i % columns;
+        int row  = i / columns;
+
+        Element* child = g_ui.elements[element_index];
+        element_index = LayoutElement(element_index, size);
+        child->rect.x = col * (e->style.cell.width + e->style.spacing);
+        child->rect.y = row * (e->style.cell.height + e->style.spacing);
+    }
+
+    return element_index;
+}
+
+static int MeasureGrid(int element_index, const Vec2& available_size) {
+    GridElement* e = static_cast<GridElement*>(g_ui.elements[element_index++]);
+
+    float requested_width = e->style.columns * e->style.cell.width +
+        e->style.spacing * (static_cast<float>(e->style.columns) - 1.0f);
+
+    Vec2 availble_child_size = {e->style.cell.width, e->style.cell.height };
+
+    int columns = e->style.columns;
+    float max_column_width = available_size.x / static_cast<float>(e->style.columns);
+    max_column_width -= e->style.spacing * (static_cast<float>(columns) - 1.0f) / static_cast<float>(columns);
+
+    if (availble_child_size.x < e->style.cell.width) {
+        float scale = max_column_width / availble_child_size.x;
+        availble_child_size.x = max_column_width;
+        availble_child_size.y *= scale;
+    }
+
+//    int child_element_index = element_index;
+    for (u16 i = 0; i < e->child_count; i++) {
+        //Element* child = g_ui.elements[element_index];
+        element_index = MeasureElement(element_index, availble_child_size);
+    }
+
+    int row_count = (e->style.virtual_count + columns - 1) / columns;
+
+    e->measured_size.x = requested_width;
+    e->measured_size.y = row_count * availble_child_size.y +
+        e->style.spacing * (static_cast<float>(row_count) - 1.0f);
+
+    return element_index;
+}
+
 static int MeasureRowColumnContent(int element_index, const Vec2& available_size, int axis, int cross_axis, Vec2& max_content_size) {
     ContainerElement* e = static_cast<ContainerElement*>(g_ui.elements[element_index++]);
     int child_element_index = element_index;
@@ -779,6 +882,10 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
     } else if (e->type == ELEMENT_TYPE_TEXTBOX) {
         e->measured_size = available_size;
 
+    // @measure_grid
+    } else if (e->type == ELEMENT_TYPE_GRID) {
+        element_index = MeasureGrid(element_index - 1, available_size);
+
     } else {
         assert(false && "Unhandled element type in MeasureElements");
     }
@@ -905,6 +1012,12 @@ static int LayoutElement(int element_index, const Vec2& size) {
     } else if (e->type == ELEMENT_TYPE_TEXTBOX) {
         e->rect.width = size.x;
         e->rect.height = size.y;
+
+    // @layout_grid
+    } else if (e->type == ELEMENT_TYPE_GRID) {
+        e->rect.width = size.x;
+        e->rect.height = size.y;
+        element_index = LayoutGrid(element_index - 1, GetSize(e->rect));
 
     } else {
         assert(false && "Unhandled element type in LayoutElements");

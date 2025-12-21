@@ -198,6 +198,22 @@ float GetNormalizedTime(Animator& animator, int layer_index) {
     return layer.time / static_cast<AnimationImpl*>(layer.animation)->duration;
 }
 
+void SetFrame(Animator& animator, int layer_index, int frame_index) {
+    AnimatorLayer& layer = animator.layers[layer_index];
+    if (layer.animation == nullptr)
+        return;
+
+    AnimationImpl* anim_impl = static_cast<AnimationImpl*>(layer.animation);
+    layer.time = frame_index * anim_impl->frame_rate_inv;
+    layer.time = Clamp(layer.time, 0.0f, anim_impl->duration);
+
+    Update(animator, 0.0f);
+
+    if (layer_index == 0)
+        animator.root_motion_delta = 0.0f;
+}
+
+
 void SetNormalizedTime(Animator& animator, int layer_index, float normalized_time) {
     AnimatorLayer& layer = animator.layers[layer_index];
     if (layer.animation == nullptr)
