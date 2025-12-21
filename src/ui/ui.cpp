@@ -22,6 +22,7 @@ enum ElementType : u8 {
     ELEMENT_TYPE_LABEL,
     ELEMENT_TYPE_ROW,
     ELEMENT_TYPE_SCENE,
+    ELEMENT_TYPE_SCROLLABLE,
     ELEMENT_TYPE_SPACER,
     ELEMENT_TYPE_TRANSFORM,
     ELEMENT_TYPE_TEXTBOX,
@@ -122,6 +123,11 @@ struct ImageElement : Element {
 struct SceneElement : Element {
     SceneStyle style;
     void (*draw_scene)(void*);
+};
+
+struct ScrollableElement : Element {
+    ScrollableStyle style;
+    float offset;
 };
 
 struct SpacerElement : Element {
@@ -363,6 +369,19 @@ void BeginGrid(const GridStyle& style) {
 
 void EndGrid() {
     EndElement(ELEMENT_TYPE_GRID);
+}
+
+// @scrollable
+float BeginScrollable(float offset, const ScrollableStyle& style) {
+    ScrollableElement* scrollable = static_cast<ScrollableElement*>(CreateElement(ELEMENT_TYPE_SCROLLABLE));
+    scrollable->style = style;
+    scrollable->offset = offset;
+    PushElement(scrollable);
+    return offset;
+}
+
+void EndScrollable() {
+    EndElement(ELEMENT_TYPE_SCROLLABLE);
 }
 
 // @canvas

@@ -179,6 +179,9 @@ struct GridStyle {
     std::function <void(int cell_index, int virtual_index)> virtual_cell_func;
 };
 
+struct ScrollableStyle {
+};
+
 // @common
 extern void BeginUI(u32 ref_width, u32 ref_height);
 extern void DrawUI();
@@ -198,6 +201,7 @@ extern void BeginBorder(const BorderStyle& style);
 extern void BeginCenter();
 extern void BeginExpanded(const ExpandedStyle& style={});
 extern void BeginGrid(const GridStyle& style);
+extern float BeginScrollable(float offset, const ScrollableStyle& style={});
 extern void EndCanvas();
 extern void EndContainer();
 extern void EndColumn();
@@ -206,6 +210,7 @@ extern void EndBorder();
 extern void EndCenter();
 extern void EndExpanded();
 extern void EndGrid();
+extern void EndScrollable();
 extern void EndTransformed();
 extern void Container(const ContainerStyle& style);
 extern void Expanded(const ExpandedStyle& style={});
