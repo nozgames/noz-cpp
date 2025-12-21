@@ -74,6 +74,7 @@ struct ElementState {
     u16 index;
     CanvasId canvas_id;
     Text text;
+    float scroll_offset;
 };
 
 struct Element {
@@ -128,6 +129,7 @@ struct SceneElement : Element {
 struct ScrollableElement : Element {
     ScrollableStyle style;
     float offset;
+    float content_height;
 };
 
 struct SpacerElement : Element {
@@ -178,6 +180,8 @@ struct UI {
     Text password_mask;
     CanvasId current_canvas_id;
     CanvasId current_focus_canvas_id;
+    ElementId active_scroll_id;
+    float last_scroll_mouse_y;
 };
 
 static UI g_ui;
@@ -375,13 +379,28 @@ void EndGrid() {
 float BeginScrollable(float offset, const ScrollableStyle& style) {
     ScrollableElement* scrollable = static_cast<ScrollableElement*>(CreateElement(ELEMENT_TYPE_SCROLLABLE));
     scrollable->style = style;
-    scrollable->offset = offset;
+    scrollable->content_height = 0;
+    SetId(scrollable, style.id);
+
+    // Get persisted scroll offset from ElementState, or use provided offset
+    if (style.id != ELEMENT_ID_NONE) {
+        ElementState& state = g_ui.element_states[style.id];
+        scrollable->offset = state.scroll_offset;
+    } else {
+        scrollable->offset = offset;
+    }
+
     PushElement(scrollable);
-    return offset;
+    return scrollable->offset;
 }
 
 void EndScrollable() {
     EndElement(ELEMENT_TYPE_SCROLLABLE);
+}
+
+float GetScrollOffset(ElementId id) {
+    if (id == ELEMENT_ID_NONE) return 0.0f;
+    return g_ui.element_states[id].scroll_offset;
 }
 
 // @canvas
@@ -900,6 +919,18 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
     } else if (e->type == ELEMENT_TYPE_GRID) {
         element_index = MeasureGrid(element_index - 1, available_size);
 
+    // @measure_scrollable
+    } else if (e->type == ELEMENT_TYPE_SCROLLABLE) {
+        ScrollableElement* scrollable = static_cast<ScrollableElement*>(e);
+        float content_height = 0;
+        for (u16 i = 0; i < e->child_count; i++) {
+            Element* child = g_ui.elements[element_index];
+            element_index = MeasureElement(element_index, available_size);
+            content_height += child->measured_size.y;
+        }
+        scrollable->content_height = content_height;
+        e->measured_size = available_size;
+
     } else {
         assert(false && "Unhandled element type in MeasureElements");
     }
@@ -1033,6 +1064,19 @@ static int LayoutElement(int element_index, const Vec2& size) {
         e->rect.height = size.y;
         element_index = LayoutGrid(element_index - 1, GetSize(e->rect));
 
+    // @layout_scrollable
+    } else if (e->type == ELEMENT_TYPE_SCROLLABLE) {
+        e->rect.width = size.x;
+        e->rect.height = size.y;
+        Vec2 content_size = GetSize(e->rect);
+        float child_y = 0;
+        for (u16 i = 0; i < e->child_count; i++) {
+            Element* child = g_ui.elements[element_index];
+            element_index = LayoutElement(element_index, content_size);
+            child->rect.y = child_y;
+            child_y += GetSize(child->rect).y;
+        }
+
     } else {
         assert(false && "Unhandled element type in LayoutElements");
     }
@@ -1064,8 +1108,16 @@ static u32 CalculateTransforms(u32 element_index, const Mat3& parent_transform) 
 
     e->world_to_local = Inverse(e->local_to_world);
 
-    for (u32 i = 0; i < e->child_count; i++)
-        element_index = CalculateTransforms(element_index, e->local_to_world);
+    // For scrollable elements, apply scroll offset to children
+    if (e->type == ELEMENT_TYPE_SCROLLABLE) {
+        ScrollableElement* scrollable = static_cast<ScrollableElement*>(e);
+        Mat3 scroll_transform = e->local_to_world * Translate({0, -scrollable->offset});
+        for (u32 i = 0; i < e->child_count; i++)
+            element_index = CalculateTransforms(element_index, scroll_transform);
+    } else {
+        for (u32 i = 0; i < e->child_count; i++)
+            element_index = CalculateTransforms(element_index, e->local_to_world);
+    }
 
     return element_index;
 }
@@ -1327,6 +1379,19 @@ static int DrawElement(int element_index) {
         // BindColor(COLOR_BLUE);
         // BindMaterial(g_ui.element_material);
         // DrawMesh(g_ui.element_mesh);
+
+    // @render_scrollable
+    } else if (e->type == ELEMENT_TYPE_SCROLLABLE) {
+        // Set up stencil clipping for scrollable content
+        BeginClip();
+
+        // Draw scrollable area shape for stencil (writes to stencil, not color)
+        BindTransform(transform * Scale(Vec2{e->rect.width, e->rect.height}));
+        BindMaterial(g_ui.element_material);
+        BindColor(COLOR_WHITE);  // Color doesn't matter, stencil only
+        DrawMesh(g_ui.element_mesh);
+
+        EndClipWrite();
     }
 
     // Draw children
@@ -1339,6 +1404,10 @@ static int DrawElement(int element_index) {
         if (container->style.clip) {
             EndClip();
         }
+    }
+
+    if (e->type == ELEMENT_TYPE_SCROLLABLE) {
+        EndClip();
     }
 
     return element_index;
@@ -1443,6 +1512,47 @@ static void HandleInput() {
             state.flags = state.flags | ELEMENT_FLAG_DOWN;
         } else {
             state.flags = state.flags & ~ELEMENT_FLAG_DOWN;
+        }
+    }
+
+    // Handle scrollable element drag
+    if (!button_down) {
+        // Mouse released, stop scrolling
+        g_ui.active_scroll_id = ELEMENT_ID_NONE;
+    } else if (g_ui.active_scroll_id != ELEMENT_ID_NONE) {
+        // Continue scrolling active element
+        float delta_y = g_ui.last_scroll_mouse_y - mouse.y;
+        g_ui.last_scroll_mouse_y = mouse.y;
+
+        // Find the scrollable element and update its offset
+        for (u16 i = 0; i < g_ui.element_count; i++) {
+            Element* e = g_ui.elements[i];
+            if (e->type == ELEMENT_TYPE_SCROLLABLE && e->id == g_ui.active_scroll_id) {
+                    ScrollableElement* scrollable = static_cast<ScrollableElement*>(e);
+                ElementState& state = g_ui.element_states[e->id];
+
+                // Update scroll offset
+                float new_offset = scrollable->offset + delta_y;
+                float max_scroll = Max(0.0f, scrollable->content_height - e->rect.height);
+                new_offset = Clamp(new_offset, 0.0f, max_scroll);
+
+                scrollable->offset = new_offset;
+                state.scroll_offset = new_offset;
+                break;
+            }
+        }
+    } else if (mouse_left_pressed) {
+        // Start scrolling if pressed on a scrollable element
+        for (u16 i = g_ui.element_count; i > 0; i--) {
+            Element* e = g_ui.elements[i - 1];
+            if (e->type == ELEMENT_TYPE_SCROLLABLE && e->id != ELEMENT_ID_NONE) {
+                ElementState& state = g_ui.element_states[e->id];
+                if (state.flags & ELEMENT_FLAG_PRESSED) {
+                    g_ui.active_scroll_id = e->id;
+                    g_ui.last_scroll_mouse_y = mouse.y;
+                    break;
+                }
+            }
         }
     }
 

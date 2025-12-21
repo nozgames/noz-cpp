@@ -180,6 +180,7 @@ struct GridStyle {
 };
 
 struct ScrollableStyle {
+    ElementId id = ELEMENT_ID_NONE;
 };
 
 // @common
@@ -211,6 +212,7 @@ extern void EndCenter();
 extern void EndExpanded();
 extern void EndGrid();
 extern void EndScrollable();
+extern float GetScrollOffset(ElementId id);
 extern void EndTransformed();
 extern void Container(const ContainerStyle& style);
 extern void Expanded(const ExpandedStyle& style={});
