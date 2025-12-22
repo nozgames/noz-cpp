@@ -168,6 +168,9 @@ struct ContainerStyle {
     bool clip = false;  // Clip children to container bounds (uses stencil buffer)
 };
 
+typedef void(*VirtualCellRangeFunc)(int virtual_start, int virtual_end);
+typedef void(*VirtualCellFunc)(int cell_index, int virtual_index);
+
 struct GridStyle {
     float spacing = 0.0f;
     int columns = 3;
@@ -176,7 +179,9 @@ struct GridStyle {
         float height;
     } cell;
     int virtual_count = 0;
-    std::function <void(int cell_index, int virtual_index)> virtual_cell_func;
+    ElementId scroll_id = ELEMENT_ID_NONE;
+    VirtualCellFunc virtual_cell_func;
+    VirtualCellRangeFunc virtual_range_func;
 };
 
 struct ScrollableStyle {

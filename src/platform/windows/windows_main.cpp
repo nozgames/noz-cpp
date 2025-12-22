@@ -90,6 +90,10 @@ void PlatformSetThreadName(const char* name) {
     SetThreadDescription(GetCurrentThread(), wname.c_str());
 }
 
+u64 PlatformGetThreadId() {
+    return static_cast<u64>(GetCurrentThreadId());
+}
+
 static void UpdateWindowRect() {
     RECT rect;
     GetWindowRect(g_windows.hwnd, &rect);

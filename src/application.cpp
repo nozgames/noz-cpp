@@ -101,6 +101,7 @@ struct Application
     double average_fps;
     bool window_created;
     bool running;
+    u64 main_thread_id;
     std::string binary_path;
     std::string binary_dir;
     std::string current_dir;
@@ -193,6 +194,7 @@ void InitApplication(ApplicationTraits* traits) {
     traits = traits ? traits : &g_default_traits;
 
     g_app = {};
+    g_app.main_thread_id = PlatformGetThreadId();
     g_app.title = traits->title;
     g_app.traits = *traits;
     g_app.running = true;
@@ -435,6 +437,14 @@ bool IsMobile() {
 
 bool IsFullscreen() {
     return PlatformIsFullscreen();
+}
+
+u64 GetThreadId() {
+    return PlatformGetThreadId();
+}
+
+bool IsMainThread() {
+    return GetThreadId() == g_app.main_thread_id;
 }
 
 void RequestFullscreen() {

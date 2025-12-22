@@ -75,4 +75,11 @@ Place this file in your project directory or Visual Studio's natvis folder.
     </Expand>
   </Type>
 
+    <Type Name="noz::HttpRequest">
+        <DisplayString>HttpRequest</DisplayString>
+        <Expand>
+            <ExpandedItem>(noz::HttpRequestImpl*)this</ExpandedItem>
+        </Expand>
+    </Type>
+
 </AutoVisualizer>

@@ -57,6 +57,7 @@ extern u64 PlatformGetTimeFrequency();
 
 // @thread
 extern void PlatformSetThreadName(const char* name);
+extern u64 PlatformGetThreadId();
 
 // @window
 extern void PlatformInitWindow(void (*on_close)());

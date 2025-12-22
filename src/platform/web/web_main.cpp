@@ -9,6 +9,7 @@
 
 #include <emscripten.h>
 #include <emscripten/html5.h>
+#include <pthread.h>
 
 extern void InitWebGL(const RendererTraits* traits, const char* canvas_id);
 extern void ResizeWebGL(const Vec2Int& screen_size);
@@ -72,6 +73,10 @@ void ThreadYield() {
 void PlatformSetThreadName(const char* name) {
     (void)name;
     // No thread naming support in web
+}
+
+u64 PlatformGetThreadId() {
+    return static_cast<u64>(pthread_self());
 }
 
 // Keyboard event callback

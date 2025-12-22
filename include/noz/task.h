@@ -5,16 +5,15 @@
 #pragma once
 
 #include <functional>
-#include <initializer_list>
 
 namespace noz {
 
     struct Task {
-        u32 id = 0;
-        u32 generation = 0;
+        int id = 0;
+        int generation = 0;
 
         constexpr Task() = default;
-        constexpr Task(u32 id, u32 generation) : id(id), generation(generation) {}
+        constexpr Task(int id, int generation) : id(id), generation(generation) {}
         constexpr Task(std::nullptr_t) {}
 
         bool operator==(const Task& other) const { return id == other.id && generation == other.generation; }
@@ -31,6 +30,7 @@ namespace noz {
         TASK_STATE_PENDING,
         TASK_STATE_RUNNING,
         TASK_STATE_COMPLETE,
+        TASK_STATE_WAIT_DEPENDENT,
         TASK_STATE_CANCELED
     };
 
@@ -47,6 +47,7 @@ namespace noz {
         Task parent = TASK_NULL;
         const Task* dependencies = nullptr;
         int dependency_count = 0;
+        const char* name = nullptr;
     };
 
     extern Task CreateTask(const TaskConfig& config = {});

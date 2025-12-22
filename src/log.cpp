@@ -2,14 +2,17 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#include <mutex>
 #include <cstdio>
 #include <cstdarg>
 #include "platform.h"
 
 static LogFunc g_log_callback = nullptr;
+static std::mutex g_log_mutex;
 
 void LogImpl(LogType type, const char* format, va_list args) {
-    char buffer[2048];
+    std::lock_guard lock(g_log_mutex);
+    char buffer[4096];
     vsnprintf(buffer, sizeof(buffer), format, args);
     buffer[sizeof(buffer) - 1] = '\0';
 

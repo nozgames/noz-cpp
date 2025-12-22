@@ -9,9 +9,9 @@ const int DEFAULT_FIXED_RATE = 50;
 struct Time
 {
     int fixed_rate;
-    float delta;
-    float fixed;
-    float total;
+    f32 delta;
+    f32 fixed;
+    f64 total;
     u64 start_time;
     u64 last_frame_time;
     u64 frame_index;
@@ -25,32 +25,37 @@ void UpdateTime() {
     u64 current = PlatformGetTimeCounter();
     u64 frequency = PlatformGetTimeFrequency();
 
-    // Calculate delta time
     u64 delta_ticks = current - g_time.last_frame_time;
     g_time.last_frame_time = current;
-    g_time.delta = (float)delta_ticks / (float)frequency;
+    g_time.delta = static_cast<float>(delta_ticks) / static_cast<float>(frequency);
 
-    // Calculate total time
     u64 total_ticks = current - g_time.start_time;
-    g_time.total = (float)total_ticks / (float)frequency;
+    g_time.total = static_cast<f64>(total_ticks) / static_cast<f64>(frequency);
 }
 
-float GetFrameTime() {
+f32 GetFrameTime() {
     return g_time.delta;
 }
 
-float GetFixedTime() {
+f32 GetFixedTime() {
     return g_time.fixed;
 }
 
-float GetTotalTime()
-{
+f64 GetTime() {
     return g_time.total;
+}
+
+f64 GetRealTime() {
+    u64 current = PlatformGetTimeCounter();
+    u64 frequency = PlatformGetTimeFrequency();
+    u64 total_ticks = current - g_time.start_time;
+    return static_cast<f64>(total_ticks) / static_cast<f64>(frequency);
 }
 
 u64 GetFrameIndex() {
     return g_time.frame_index;
 }
+
 
 void SetFixedTimeRate(int rate) {
     assert(rate > 0);

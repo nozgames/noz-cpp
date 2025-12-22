@@ -101,6 +101,7 @@ struct ContainerElement : Element {
 
 struct GridElement : Element {
     GridStyle style;
+    int start_row;
 };
 
 struct ExpandedElement : Element {
@@ -153,6 +154,7 @@ union FatElement {
     ImageElement image;
     SpacerElement spacer;
     TextboxElement textbox;
+    GridElement grid;
 };
 
 struct UI {
@@ -335,19 +337,16 @@ void EndColumn() {
 }
 
 static float GetFixedParentHeight() {
-    Element* parent = GetCurrentElement();
-    while (parent) {
+    // Walk up the element stack to find a parent with fixed height
+    for (int i = g_ui.element_stack_count - 1; i >= 0; i--) {
+        Element* parent = g_ui.element_stack[i];
+
         if (IsContainerType(parent->type)) {
             ContainerElement* container = static_cast<ContainerElement*>(parent);
             if (IsFixed(container->style.height)) {
                 return container->style.height;
             }
         }
-
-        if (parent->index == 0)
-            break;
-
-        parent = g_ui.elements[parent->index - 1];
     }
 
     return F32_AUTO;
@@ -356,18 +355,38 @@ static float GetFixedParentHeight() {
 // @grid
 void BeginGrid(const GridStyle& style) {
     GridElement* grid = static_cast<GridElement*>(CreateElement(ELEMENT_TYPE_GRID));
-    float container_height = GetFixedParentHeight();
 
     grid->style = style;
+    grid->start_row = 0;
     PushElement(grid);
 
-    int visible_rows = CeilToInt(container_height / (style.cell.height + style.spacing));
-    int virtual_count = visible_rows * style.columns;
+    // If no virtual items, skip virtualization
+    if (style.virtual_count == 0)
+        return;
 
-    for (int i = 0; i < virtual_count && i < style.virtual_count; i++) {
-        if (style.virtual_cell_func) {
-            style.virtual_cell_func(i, i);
-        }
+    float container_height = GetFixedParentHeight();
+    if (IsAuto(container_height))
+        return;
+
+    float row_height = style.cell.height + style.spacing;
+    float scroll_offset = GetScrollOffset(style.scroll_id);
+
+    int start_row = Max(0, FloorToInt(scroll_offset / row_height));
+    int visible_rows = CeilToInt(container_height / row_height) + 1; // +1 for partial row
+    int end_row = start_row + visible_rows;
+
+    int start_index = start_row * style.columns;
+    int end_index = Min(end_row * style.columns, style.virtual_count);
+
+    grid->start_row = start_row;
+
+    if (style.virtual_range_func)
+        style.virtual_range_func(start_index, end_index);
+
+    for (int virtual_index = start_index; virtual_index < end_index; virtual_index++) {
+        int cell_index = virtual_index - start_index;
+        if (style.virtual_cell_func)
+            style.virtual_cell_func(cell_index, virtual_index);
     }
 }
 
@@ -643,9 +662,12 @@ static int LayoutGrid(int element_index, const Vec2& size) {
     GridElement* e = static_cast<GridElement*>(g_ui.elements[element_index++]);
 
     int columns = e->style.columns;
+    int start_index = e->start_row * columns;
+
     for (u16 i = 0; i < e->child_count; i++) {
-        int col = i % columns;
-        int row  = i / columns;
+        int virtual_index = start_index + i;
+        int col = virtual_index % columns;
+        int row = virtual_index / columns;
 
         Element* child = g_ui.elements[element_index];
         element_index = LayoutElement(element_index, size);
@@ -674,11 +696,8 @@ static int MeasureGrid(int element_index, const Vec2& available_size) {
         availble_child_size.y *= scale;
     }
 
-//    int child_element_index = element_index;
-    for (u16 i = 0; i < e->child_count; i++) {
-        //Element* child = g_ui.elements[element_index];
+    for (u16 i = 0; i < e->child_count; i++)
         element_index = MeasureElement(element_index, availble_child_size);
-    }
 
     int row_count = (e->style.virtual_count + columns - 1) / columns;
 
@@ -923,13 +942,16 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
     } else if (e->type == ELEMENT_TYPE_SCROLLABLE) {
         ScrollableElement* scrollable = static_cast<ScrollableElement*>(e);
         float content_height = 0;
+        float max_width = 0.0f;
         for (u16 i = 0; i < e->child_count; i++) {
             Element* child = g_ui.elements[element_index];
             element_index = MeasureElement(element_index, available_size);
             content_height += child->measured_size.y;
+            max_width = Max(max_width, child->measured_size.x);
         }
         scrollable->content_height = content_height;
         e->measured_size = available_size;
+        e->measured_size.x = max_width;
 
     } else {
         assert(false && "Unhandled element type in MeasureElements");
@@ -1069,12 +1091,12 @@ static int LayoutElement(int element_index, const Vec2& size) {
         e->rect.width = size.x;
         e->rect.height = size.y;
         Vec2 content_size = GetSize(e->rect);
-        float child_y = 0;
+        //float child_y = 0;
         for (u16 i = 0; i < e->child_count; i++) {
-            Element* child = g_ui.elements[element_index];
+            //Element* child = g_ui.elements[element_index];
             element_index = LayoutElement(element_index, content_size);
-            child->rect.y = child_y;
-            child_y += GetSize(child->rect).y;
+            //child->rect.y = child_y;
+            //child_y += GetSize(child->rect).y;
         }
 
     } else {

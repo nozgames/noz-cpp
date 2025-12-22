@@ -94,10 +94,11 @@ void RequestFullscreen(); // Request fullscreen mode (must be called from user g
 const ApplicationTraits* GetApplicationTraits();
 
 // @time
-extern float GetFrameTime();
-extern float GetFixedTime();
+extern f32 GetFrameTime();
+extern f32 GetFixedTime();
 extern void GetFixedTimeRate(int rate);
-extern float GetTotalTime();
+extern f64 GetTime();
+extern f64 GetRealTime();
 extern float GetCurrentFPS();
 extern u64 GetFrameIndex();
 
@@ -105,6 +106,8 @@ extern u64 GetFrameIndex();
 void ThreadYield();
 void ThreadSleep(int milliseconds);
 void SetThreadName(const char* name);
+u64 GetThreadId();
+bool IsMainThread();
 
 // @helper
 extern void ThrowError(const char* format, ...);

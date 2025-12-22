@@ -21,10 +21,6 @@ namespace noz {
         HTTP_REQUEST_METHOD_POST,
     };
 
-    struct QueuedHttpRequest {
-
-    };
-
     struct HttpRequestImpl : HttpRequest {
         String1024 url;
         String64 content_type;
@@ -56,16 +52,19 @@ static noz::HttpSystem g_http = {};
 
 using namespace noz;
 
-static void FreeRequestData(void* result) {
-    HttpRequestImpl* req = static_cast<HttpRequestImpl*>(result);
-    if (!req) return;
+static void Free(HttpRequestImpl* impl) {
+    if (!impl) return;
 
-    Free(req->response);
-    Free(req->body);
-    req->response = nullptr;
-    req->body = nullptr;
-    req->state = HTTP_REQUEST_STATE_NONE;
+    Free(impl->response);
+    Free(impl->body);
+    impl->response = nullptr;
+    impl->body = nullptr;
+    impl->state = HTTP_REQUEST_STATE_NONE;
     g_http.request_count--;
+}
+
+static void DestroyHttpRequestTask(void* result) {
+    Free(static_cast<HttpRequestImpl*>(result));
 }
 
 static HttpRequestImpl* GetRequest(const char* url, HttpRequestMethod method, Task parent, const HttpCallback& callback) {
@@ -78,7 +77,7 @@ static HttpRequestImpl* GetRequest(const char* url, HttpRequestMethod method, Ta
 
     HttpRequestImpl* request = g_http.requests + request_index;
     Set(request->url, url);
-    request->task = CreateTask({.destroy = FreeRequestData, .parent = parent});
+    request->task = CreateTask({.destroy=DestroyHttpRequestTask, .parent=parent, .name=url});
     request->method = method;
     request->callback = callback;
     request->state = HTTP_REQUEST_STATE_QUEUED;
@@ -201,8 +200,15 @@ static void FinishRequest(HttpRequestImpl* request) {
     assert(PlatformGetStatus(request->handle) != PLATFORM_HTTP_STATUS_PENDING);
 
     request->state = HTTP_REQUEST_STATE_COMPLETE;
-    request->status_code = PlatformGetStatusCode(request->handle);
-    request->response = PlatformReleaseResponseStream(request->handle);
+
+    if (PlatformGetStatus(request->handle) == PLATFORM_HTTP_STATUS_ERROR) {
+        request->status_code = 0;
+        request->response = nullptr;
+    } else {
+        request->status_code = PlatformGetStatusCode(request->handle);
+        request->response = PlatformReleaseResponseStream(request->handle);
+    }
+
     PlatformFree(request->handle);
     request->handle = {};
 
@@ -220,20 +226,19 @@ void noz::UpdateHttp() {
 
     int active_count = 0;
 
-    for (int request_index=0, request_count=g_http.request_count; request_index < g_http.max_requests && request_count; request_index++) {
+    for (int request_index=0; request_index < g_http.max_requests; request_index++) {
         HttpRequestImpl* request = g_http.requests + request_index;
+        if (request->state == HTTP_REQUEST_STATE_NONE)
+            continue;
 
-        // Check if parent task was canceled - abort the request
-        Task parent = GetParent(request->task);
-        if (parent && IsCancelled(parent)) {
+        if (IsCancelled(request->task) && (request->state == HTTP_REQUEST_STATE_QUEUED || request->state == HTTP_REQUEST_STATE_ACTIVE)) {
             if (request->state == HTTP_REQUEST_STATE_ACTIVE) {
                 PlatformCancel(request->handle);
                 PlatformFree(request->handle);
                 request->handle = {};
             }
-            Cancel(request->task);
-            request->state = HTTP_REQUEST_STATE_NONE;
-            g_http.request_count--;
+            request->state = HTTP_REQUEST_STATE_COMPLETE;
+            request->status_code = 0;
             continue;
         }
 
