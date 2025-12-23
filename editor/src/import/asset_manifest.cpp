@@ -297,7 +297,7 @@ static void GenerateSource(ManifestGenerator& generator) {
     fs::path build_path = generator.target_path.filename();
     build_path.replace_extension("");
 
-    WriteCSTR(stream, "#ifdef NDEBUG\n");
+    WriteCSTR(stream, "#if defined(NOZ_BUILTIN_ASSETS)\n");
     WriteCSTR(stream, "#include \"%s\"\n", (build_path.string() + "_build.cpp").c_str());
     WriteCSTR(stream, "#endif\n");
 

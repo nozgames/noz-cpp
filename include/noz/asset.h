@@ -4,6 +4,10 @@
 
 #pragma once
 
+#if defined(NOZ_PLATFORM_WEB) || defined(NDEBUG)
+#define NOZ_BUILTIN_ASSETS
+#endif
+
 constexpr u32 ASSET_SIGNATURE = FourCC('N', 'O', 'Z', 'A');
 
 enum AssetType {
@@ -72,7 +76,7 @@ Asset* LoadAnimatedMesh(Allocator* allocator, Stream* stream, AssetHeader* heade
 Asset* LoadBin(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 Asset* LoadSdf(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 
-#ifdef NDEBUG
+#ifdef NOZ_BUILTIN_ASSETS
 #define NOZ_ASSET_DATA(name) name ## _DATA
 #define NOZ_ASSET_DATA_SIZE(name) (u32)(sizeof(NOZ_ASSET_DATA(name)))
 #else

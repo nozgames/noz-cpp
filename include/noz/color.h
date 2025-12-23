@@ -4,8 +4,7 @@
 
 #pragma once
 
-struct Color32
-{
+struct Color32 {
     u8 r;
     u8 g;
     u8 b;
@@ -29,7 +28,7 @@ struct Color
 
 // Color32 functions
 Color32 color32_create(u8 r, u8 g, u8 b, u8 a);
-Color32 color32_from_color(Color* color);
+extern Color32 ToColor32(const Color& color);
 Color32 color32_from_color24(Color24* color, u8 alpha);
 bool color32_is_transparent(Color32* color);
 bool color32_is_opaque(Color32* color);
@@ -58,10 +57,26 @@ Color color_subtract(Color* a, Color* b);
 Color color_multiply_scalar(Color* color, float scalar);
 Color color_multiply(Color* a, Color* b);
 
-inline Color SetAlpha(const Color& color, float alpha)
-{
+inline Color SetAlpha(const Color& color, float alpha){
     return { color.r, color.g, color.b, alpha };
 }
+
+inline Color32 SetAlpha(const Color32& color, u8 alpha){
+    return { color.r, color.g, color.b, alpha };
+}
+
+inline Color32 SetAlpha(const Color32& color, float alpha){
+    return { color.r, color.g, color.b, static_cast<u8>(alpha * 255.0f) };
+}
+
+inline Color32 MultiplyAlpha(const Color32& color, float multiply){
+    return { color.r, color.g, color.b, static_cast<u8>(multiply * color.a) };
+}
+
+inline Color32 MultiplyAlpha(const Color32& color, u8 multiply){
+    return { color.r, color.g, color.b, static_cast<u8>((multiply / 255.0f) * (color.a / 255.0f) * 255.0f) };
+}
+
 
 inline Color Mix(const Color& a, const Color& b, float t)
 {
@@ -133,3 +148,5 @@ constexpr Color COLOR_PURPLE = {1.0f, 0.0f, 1.0f, 1.0f};
 constexpr Color COLOR_GREEN = {0.0f, 1.0f, 0.0f, 1.0f};
 constexpr Color COLOR_BLUE = {0.0f, 0.0f, 1.0f, 1.0f};
 constexpr Color COLOR_TRANSPARENT = {0.0f, 0.0f, 0.0f, 0.0f};
+
+constexpr Color32 COLOR32_TRANSPARENT = {0,0,0,0};

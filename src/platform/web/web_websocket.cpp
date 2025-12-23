@@ -177,8 +177,6 @@ void PlatformInitWebSocket() {
         g_ws.sockets[i].status = WebSocketStatus::Closed;
         g_ws.sockets[i].handle = 0;
     }
-
-    LogInfo("Web WebSocket initialized");
 }
 
 void PlatformShutdownWebSocket() {

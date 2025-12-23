@@ -139,8 +139,6 @@ static void OnFetchError(emscripten_fetch_t* fetch) {
 void PlatformInitHttp(const ApplicationTraits& traits) {
     g_web_http = {};
     g_web_http.next_request_id = 1;
-
-    LogInfo("Web HTTP initialized");
 }
 
 void PlatformUpdateHttp() {

@@ -13,34 +13,22 @@ static float clamp_float(float value, float min, float max)
     return value;
 }
 
-// Helper function to clamp and convert float to uint8_t
-static uint8_t float_to_uint8(float value)
-{
-    return (uint8_t)clamp_float(value * 255.0f, 0.0f, 255.0f);
+static uint8_t float_to_uint8(float value) {
+    return static_cast<uint8_t>(clamp_float(value * 255.0f, 0.0f, 255.0f));
 }
 
-// Color32 functions
-Color32 color32_create(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
-{
+Color32 color32_create(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
     Color32 color = {r, g, b, a};
     return color;
 }
 
-Color32 color32_from_color(const Color* color)
-{
-    if (!color) 
-    {
-        return color32_create(0, 0, 0, 255);
-    }
-    
-    Color32 result = 
-    {
-        float_to_uint8(color->r),
-        float_to_uint8(color->g),
-        float_to_uint8(color->b),
-        float_to_uint8(color->a)
+Color32 ToColor32(const Color& color) {
+    return Color32 {
+        float_to_uint8(color.r),
+        float_to_uint8(color.g),
+        float_to_uint8(color.b),
+        float_to_uint8(color.a)
     };
-    return result;
 }
 
 Color32 color32_from_color24(const Color24* color, uint8_t alpha)

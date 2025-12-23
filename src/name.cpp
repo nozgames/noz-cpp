@@ -27,8 +27,7 @@ Name* GetName(const char* value) {
     if (it != g_name_system.map->end())
         return &it->second;
 
-    u32 name_value_len = static_cast<u32>(strlen(value));
-    assert(name_value_len < MAX_NAME_LENGTH - 1);
+    assert(static_cast<u32>(strlen(value)) < MAX_NAME_LENGTH - 1);
 
     Name& name = (*g_name_system.map)[key];
     Copy(name.value, MAX_NAME_LENGTH, value);

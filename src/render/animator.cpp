@@ -127,6 +127,9 @@ void Stop(Animator& animator) {
 }
 
 void Play(Animator& animator, Animation* animation, int layer_index, float speed, float normalized_time, bool loop) {
+    if (!animator.skeleton)
+        return;
+
     assert(animator.skeleton);
     assert(GetBoneCount(animator.skeleton) == GetBoneCount(animation));
 
@@ -155,6 +158,8 @@ void Play(Animator& animator, Animation* animation, int layer_index, float speed
 }
 
 void Update(Animator& animator, float time_scale) {
+    if (!animator.skeleton) return;
+
     float dt = GetFrameTime() * time_scale;
 
     for (int layer_index=0; layer_index<animator.layer_count; layer_index++) {

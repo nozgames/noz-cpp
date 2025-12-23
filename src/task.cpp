@@ -2,9 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-#if 0
-#define TASK_DEBUG
-#endif
+// #define TASK_DEBUG
+// #define TASK_DEBUG_VERBOSE
 
 #include <atomic>
 #include <condition_variable>
@@ -31,6 +30,7 @@ struct TaskImpl {
 #if defined(TASK_DEBUG)
     String128 name;
     f64 debug_start_time;
+    f64 debug_queue_time;
     f64 debug_end_time;
 #endif
 };
@@ -112,7 +112,10 @@ static Task CreateTaskInternal(
         impl.dependent = -1;
 
 #if defined(TASK_DEBUG)
+        impl.debug_start_time = GetRealTime();
         Set(impl.name, name);
+#endif
+#if defined(TASK_DEBUG_VERBOSE)
         LogInfo("[TASK] QUEUED   : %3d: %s", task_index, impl.name);
 #endif
 
@@ -138,7 +141,7 @@ static Task CreateTaskInternal(
                 impl.dependency_head = dep_id;
                 impl.dependency_count++;
 
-#if defined(TASK_DEBUG)
+#if defined(TASK_DEBUG_VERBOSE)
                 if (dep_index == 0)
                     LogInfo("       DEPENDS  : %3d: %s", dep_id, dep.name);
                 else
@@ -190,7 +193,9 @@ static Task CreateVirtualTask(TaskDestroyFunc destroy_func, const char* name) {
 
 #if defined(TASK_DEBUG)
         Set(task.name, name);
-        task.debug_start_time = GetTime();
+        task.debug_queue_time = GetRealTime();
+        task.debug_start_time = task.debug_queue_time;
+        task.debug_end_time = task.debug_queue_time;
 #endif
 
         return {task_index, task.generation};
@@ -244,10 +249,17 @@ void noz::Complete(Task task, void* result) {
     g_tasks.tasks_completed.store(true);
 
 #if defined(TASK_DEBUG)
-    f64 elapsed_time = GetTime() - impl->debug_start_time;
+    impl->debug_start_time = impl->debug_end_time = GetRealTime();
+#endif
+
+#if defined(TASK_DEBUG)
     LogInfo(
-        "[TASK] COMPLETE : %3d : 0x%llx: %s (%dms)", GetTaskIndex(impl), GetThreadId(), impl->name,
-        static_cast<int>(elapsed_time * 1000.0f)
+        "[TASK] COMPLETE : %3d: %s (total_time=%dms  run_time=%dms  queue_time=%dms)",
+        GetTaskIndex(impl),
+        impl->name,
+        GetMilliseconds(GetRealTime() - impl->debug_queue_time),
+        GetMilliseconds(impl->debug_end_time - impl->debug_start_time),
+        GetMilliseconds(impl->debug_start_time - impl->debug_queue_time)
     );
 #endif
 }
@@ -282,9 +294,6 @@ void* noz::ReleaseResult(Task task) {
 }
 
 int noz::GetDependencyCount(Task task) {
-    if (task.generation == 0)
-        return 0;
-
     TaskImpl* impl = GetTask(task);
     if (!impl)
         return 0;
@@ -293,23 +302,18 @@ int noz::GetDependencyCount(Task task) {
 }
 
 Task noz::GetDependencyAt(Task task, int index) {
-    if (task.generation == 0 || index < 0)
-        return nullptr;
-
     TaskImpl* impl = GetTask(task);
     if (!impl)
         return nullptr;
 
-    i32 dep_idx = impl->dependency_head;
-    for (int i = 0; i < index && dep_idx >= 0; i++) {
-        dep_idx = g_tasks.tasks[dep_idx].dependency_next;
-    }
+    i32 dep_index = impl->dependency_head;
+    for (i32 i = impl->dependency_count - index - 1; i > 0 && dep_index >= 0; i--)
+        dep_index = g_tasks.tasks[dep_index].dependency_next;
 
-    if (dep_idx < 0)
+    if (dep_index < 0)
         return nullptr;
 
-    TaskImpl& dep = g_tasks.tasks[dep_idx];
-    return {dep_idx, dep.generation};
+    return GetHandle(&g_tasks.tasks[dep_index]);
 }
 
 Task noz::GetParent(Task task) {
@@ -441,10 +445,9 @@ static bool HasActiveDependents(TaskImpl* impl) {
 
 static void ClearDependencyChain(TaskImpl* impl) {
     i32 dep_idx = impl->dependency_head;
-    i32 task_id = GetTaskIndex(impl);
     while (dep_idx >= 0) {
         TaskImpl& dep = g_tasks.tasks[dep_idx];
-        assert(dep.dependent == task_id);
+        assert(dep.dependent == GetTaskIndex(impl));
         i32 next = dep.dependency_next;
         dep.dependency_next = -1;
         dep.dependent = -1;
@@ -482,7 +485,7 @@ static void ClearChildrenParent(TaskImpl* impl) {
     }
 }
 
-#if defined(TASK_DEBUG)
+#if defined(TASK_DEBUG_VERBOSE)
 static const char* GetStateName(TaskImpl& impl) {
     switch (impl.state) {
         case TASK_STATE_FREE: return "FREE";
@@ -501,7 +504,7 @@ static void DestroyTask(TaskImpl* impl) {
 
     // Call destructor before freeing
     if (impl->destroy_func) {
-#if defined(TASK_DEBUG)
+#if defined(TASK_DEBUG_VERBOSE)
         LogInfo("[TASK] DESTROY: %s: %3d: %s", GetStateName(*impl), GetTaskIndex(impl), impl->name);
 #endif
         try {
@@ -526,7 +529,7 @@ static void DestroyTask(TaskImpl* impl) {
 void noz::UpdateTasks() {
     g_tasks.current_frame++;
 
-#if defined(TASK_DEBUG)
+#if defined(TASK_DEBUG_VERBOSE)
     static u64 debug_print_frame = 0;
     debug_print_frame++;
     bool should_print = (debug_print_frame % 300) == 0;
@@ -540,11 +543,11 @@ void noz::UpdateTasks() {
             if (state == TASK_STATE_COMPLETE) {
                 Task handle = GetHandle(&impl);
 
-#if defined(TASK_DEBUG)
-                f64 before_complete_time = GetRealTime();
-                f64 elapsed_time = GetTime() - impl.debug_start_time;
-                LogInfo(
-                    "[TASK] DONE     : %3d: %s (%dms)", task_index, impl.name,
+#if defined(TASK_DEBUG_VERBOSE)
+                f64 elapsed_time = GetRealTime() - impl.debug_start_time;
+                LogInfo("[TASK] DONE     : %3d: %s (%dms)",
+                    task_index,
+                    impl.name,
                     static_cast<int>(elapsed_time * 1000.0f)
                 );
 #endif
@@ -556,12 +559,14 @@ void noz::UpdateTasks() {
                     }
                 }
 
-
 #if defined(TASK_DEBUG)
-                elapsed_time = GetRealTime() - before_complete_time;
                 LogInfo(
-                    "[TASK] COMPLETE : %3d : %s (%dms)", task_index, impl.name,
-                    static_cast<int>(elapsed_time * 1000.0f)
+                    "[TASK] COMPLETE : %3d: %s (total_time=%dms  run_time=%dms  queue_time=%dms)",
+                    GetTaskIndex(&impl),
+                    impl.name,
+                    GetMilliseconds(GetRealTime() - impl.debug_queue_time),
+                    GetMilliseconds(impl.debug_end_time - impl.debug_start_time),
+                    GetMilliseconds(impl.debug_start_time - impl.debug_queue_time)
                 );
 #endif
 
@@ -608,7 +613,7 @@ void noz::UpdateTasks() {
         worker->cv.notify_one();
     }
 
-#if defined(TASK_DEBUG)
+#if defined(TASK_DEBUG_VERBOSE)
     if (should_print) {
         int pending_count = 0;
         int running_count = 0;
@@ -669,24 +674,33 @@ static void WorkerProc(TaskWorker* worker, int worker_index) {
         }
 
         if (impl) {
-#if defined(TASK_DEBUG)
+#if defined(TASK_DEBUG_VERBOSE)
             LogInfo("[TASK] WORKER_WORK: %s: %3d : %s", name, GetTaskIndex(impl), impl->name);
 #endif
 
             TaskState expected = TASK_STATE_RUNNING;
             if (impl->state.load() == expected && impl->run_func) {
-#if defined(TASK_DEBUG)
-                impl->debug_start_time = GetTime();
+#if defined (TASK_DEBUG)
+                impl->debug_start_time = GetRealTime();
+#endif
+#if defined(TASK_DEBUG_VERBOSE)
                 LogInfo("[TASK] RUN_BEGIN: %3d : 0x%llx: %s", GetTaskIndex(impl), GetThreadId(), impl->name);
 #endif
                 impl->result = impl->run_func(GetHandle(impl));
 
 #if defined(TASK_DEBUG)
-                impl->debug_end_time = GetTime();
+                impl->debug_end_time = GetRealTime();
+#endif
+#if defined(TASK_DEBUG_VERBOSE)
                 LogInfo(
                     "[TASK] RUN_END  : %3d : 0x%llx: %s (%dms)", GetTaskIndex(impl), GetThreadId(), impl->name,
                     static_cast<int>((impl->debug_end_time - impl->debug_start_time) * 1000.0f)
                 );
+#endif
+            } else {
+#if defined(TASK_DEBUG)
+                impl->debug_start_time = GetRealTime();
+                impl->debug_end_time = impl->debug_start_time;
 #endif
             }
 
@@ -694,11 +708,11 @@ static void WorkerProc(TaskWorker* worker, int worker_index) {
             if (impl->state.compare_exchange_strong(expected, TASK_STATE_COMPLETE))
                 g_tasks.tasks_completed.store(true);
 
-#if defined(TASK_DEBUG)
+#if defined(TASK_DEBUG_VERBOSE)
             LogInfo("[TASK] WORKER_DONE: %s: %3d : %s", name, GetTaskIndex(impl), impl->name);
 #endif
         } else {
-#if defined(TASK_DEBUG)
+#if defined(TASK_DEBUG_VERBOSE)
             LogInfo("[TASK] WORKER_WORK: nullptr");
 #endif
         }

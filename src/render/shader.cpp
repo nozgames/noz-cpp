@@ -79,9 +79,8 @@ Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, con
     return impl;
 }
 
-void BindShaderInternal(Shader* shader)
-{
-    assert(shader);
+void BindShaderInternal(Shader* shader) {
+    if (!shader) return;
     PlatformBindShader(static_cast<ShaderImpl*>(shader)->platform);
 }
 
