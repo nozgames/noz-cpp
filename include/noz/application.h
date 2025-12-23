@@ -101,6 +101,7 @@ extern f64 GetTime();
 extern f64 GetRealTime();
 extern float GetCurrentFPS();
 extern u64 GetFrameIndex();
+inline u64 GetMilliseconds(f64 time) { return static_cast<u64>(time * 1000.0); }
 
 // @thread
 void ThreadYield();

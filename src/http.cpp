@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+//#define HTTP_DEBUG
+
 #include "pch.h"
 #include "platform.h"
 #include <noz/task.h>
@@ -34,6 +36,11 @@ namespace noz {
         u8 *body;
         u32 body_size;
         Stream* response;
+
+#if defined(HTTP_DEBUG)
+        f64 debug_start_time;
+        f64 debug_queue_time;
+#endif
     };
 
     struct HttpSystem {
@@ -53,6 +60,8 @@ static noz::HttpSystem g_http = {};
 using namespace noz;
 
 static void Free(HttpRequestImpl* impl) {
+    if (true) return;
+
     if (!impl) return;
 
     Free(impl->response);
@@ -86,10 +95,20 @@ static HttpRequestImpl* GetRequest(const char* url, HttpRequestMethod method, Ta
 
     g_http.request_count++;
 
+#if defined(HTTP_DEBUG)
+    LogInfo("[HTTP] QUEUE: %s", url);
+    request->debug_queue_time = GetRealTime();
+#endif
+
     return request;
 }
 
 static void StartRequest(HttpRequestImpl* request) {
+#if defined(HTTP_DEBUG)
+    LogInfo("[HTTP] START: %s", request->url.value);
+    request->debug_start_time = GetRealTime();
+#endif
+
     if (request->method == HTTP_REQUEST_METHOD_GET) {
         request->handle = PlatformGetURL(request->url);
     } else if (request->method == HTTP_REQUEST_METHOD_PUT) {
@@ -208,6 +227,16 @@ static void FinishRequest(HttpRequestImpl* request) {
         request->status_code = PlatformGetStatusCode(request->handle);
         request->response = PlatformReleaseResponseStream(request->handle);
     }
+
+#if defined(HTTP_DEBUG)
+    bool is_from_cache = PlatformIsFromCache(request->handle);
+    LogInfo("[HTTP] DONE: %s (%d) (request_time=%dms  queue_time=%dms  from_cache=%s)",
+        request->url.value,
+        request->status_code,
+        GetMilliseconds(GetRealTime() - request->debug_queue_time),
+        GetMilliseconds(request->debug_start_time - request->debug_queue_time),
+        is_from_cache ? "true" : "false");
+#endif
 
     PlatformFree(request->handle);
     request->handle = {};

@@ -493,20 +493,30 @@ void PlatformShowTextbox(const noz::Rect& rect, const Text& text, const NativeTe
     const char* input_type = style.password ? "password" : "text";
 
     EM_ASM({
+        var form = document.getElementById('native-text-input-form');
         var input = document.getElementById('native-text-input');
-        if (!input) {
+        if (!form) {
+            form = document.createElement('form');
+            form.id = 'native-text-input-form';
+            form.autocomplete = 'on';
+            form.style.position = 'absolute';
+            form.style.zIndex = '1000';
+            form.style.margin = '0';
+            form.style.padding = '0';
+            form.onsubmit = function(e) { e.preventDefault(); return false; };
+
             input = document.createElement('input');
             input.id = 'native-text-input';
-            input.autocomplete = 'off';
             input.spellcheck = false;
-            input.style.position = 'absolute';
-            input.style.zIndex = '1000';
+            input.style.width = '100%';
+            input.style.height = '100%';
             input.style.outline = 'none';
             input.style.border = 'none';
             input.style.fontFamily = 'sans-serif';
             input.style.padding = '0';
             input.style.boxSizing = 'border-box';
-            document.body.appendChild(input);
+            form.appendChild(input);
+            document.body.appendChild(form);
 
             input.addEventListener('input', function() {
                 Module.ccall('NativeTextInputChanged', null, ['string'], [input.value]);
@@ -554,15 +564,15 @@ void PlatformShowTextbox(const noz::Rect& rect, const Text& text, const NativeTe
         var cssFontSize = $4 / dpr;
 
         input.type = UTF8ToString($8);
-        input.style.left = cssX + 'px';
-        input.style.top = cssY + 'px';
-        input.style.width = cssWidth + 'px';
-        input.style.height = cssHeight + 'px';
+        form.style.left = cssX + 'px';
+        form.style.top = cssY + 'px';
+        form.style.width = cssWidth + 'px';
+        form.style.height = cssHeight + 'px';
         input.style.fontSize = cssFontSize + 'px';
         input.style.backgroundColor = UTF8ToString($5);
         input.style.color = UTF8ToString($6);
         input.value = UTF8ToString($7);
-        input.style.display = 'block';
+        form.style.display = 'block';
         input.focus();
         input.select();
     }, rect.x, rect.y, rect.width, rect.height, style.font_size, bg_color, text_color, text.value, input_type);
@@ -585,8 +595,9 @@ void PlatformUpdateTextboxRect(const noz::Rect& rect, int font_size) {
     g_native_text_input_font_size = font_size;
 
     EM_ASM({
+        var form = document.getElementById('native-text-input-form');
         var input = document.getElementById('native-text-input');
-        if (input) {
+        if (form && input) {
             // Get canvas position and device pixel ratio to convert canvas coords to page coords
             var canvas = document.getElementById('canvas');
             var canvasLeft = 0;
@@ -604,10 +615,10 @@ void PlatformUpdateTextboxRect(const noz::Rect& rect, int font_size) {
             var cssHeight = $3 / dpr;
             var cssFontSize = $4 / dpr;
 
-            input.style.left = cssX + 'px';
-            input.style.top = cssY + 'px';
-            input.style.width = cssWidth + 'px';
-            input.style.height = cssHeight + 'px';
+            form.style.left = cssX + 'px';
+            form.style.top = cssY + 'px';
+            form.style.width = cssWidth + 'px';
+            form.style.height = cssHeight + 'px';
             input.style.fontSize = cssFontSize + 'px';
         }
     }, rect.x, rect.y, rect.width, rect.height, font_size);
@@ -621,9 +632,12 @@ void PlatformHideTextbox() {
     g_native_text_input_rect = {0, 0, 0, 0};
 
     EM_ASM({
+        var form = document.getElementById('native-text-input-form');
         var input = document.getElementById('native-text-input');
+        if (form) {
+            form.style.display = 'none';
+        }
         if (input) {
-            input.style.display = 'none';
             input.blur();
         }
         // Return focus to canvas

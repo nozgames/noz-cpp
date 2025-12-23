@@ -206,7 +206,7 @@ target_include_directories(noz PUBLIC
 # Platform-specific include directories
 if(EMSCRIPTEN)
     target_compile_definitions(noz PUBLIC NOZ_PLATFORM_WEB NOZ_PLATFORM_GLES NOZ_JOB_THREAD_COUNT=4)
-    target_compile_options(noz PUBLIC -pthread )
+    target_compile_options(noz PUBLIC -pthread)
     if(NOZ_HTTP)
         target_compile_definitions(noz PUBLIC NOZ_HTTP)
     endif()
@@ -237,7 +237,7 @@ if(EMSCRIPTEN)
             -sFULL_ES3=1
             -sFETCH=1
             -sALLOW_MEMORY_GROWTH=1
-            -sINITIAL_MEMORY=67108864
+            -sINITIAL_MEMORY=128MB
             -pthread
             -sPTHREAD_POOL_SIZE=5
     )

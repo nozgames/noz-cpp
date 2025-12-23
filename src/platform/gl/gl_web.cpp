@@ -77,8 +77,6 @@ void InitWebGL(const RendererTraits* traits, const char* canvas_id) {
             return;
         }
         LogInfo("Using WebGL 1.0 (WebGL2 not available)");
-    } else {
-        LogInfo("Using WebGL 2.0");
     }
 
     emscripten_webgl_make_context_current(g_webgl.context);
@@ -136,20 +134,13 @@ void InitWebGL(const RendererTraits* traits, const char* canvas_id) {
 
     // Create offscreen render target (scene + UI combined)
     CreateOffscreenTarget(g_gl.offscreen, g_gl.screen_size.x, g_gl.screen_size.y, samples);
-
-    LogInfo("WebGL initialized: %dx%d, MSAA=%d", g_gl.screen_size.x, g_gl.screen_size.y, samples);
 }
 
 void ResizeWebGL(const Vec2Int& size) {
     if (size.x <= 0 || size.y <= 0)
         return;
 
-    // Only update native size here - actual render target resize is handled by
-    // PlatformSetRenderSize which knows about logical vs native size
-    if (g_gl.native_screen_size != size) {
-        LogInfo("ResizeWebGL native: %dx%d", size.x, size.y);
-        g_gl.native_screen_size = size;
-    }
+    g_gl.native_screen_size = size;
 }
 
 void PlatformSetRenderSize(Vec2Int logical_size, Vec2Int native_size) {
@@ -162,38 +153,17 @@ void PlatformSetRenderSize(Vec2Int logical_size, Vec2Int native_size) {
         return;
     }
 
-    bool native_changed = g_gl.native_screen_size != native_size;
     bool logical_changed = g_gl.screen_size != logical_size;
 
     g_gl.native_screen_size = native_size;
 
-    // Recreate targets if logical size changed
     if (logical_changed) {
-        LogInfo("Render targets: %dx%d -> %dx%d (native: %dx%d)",
-                g_gl.screen_size.x, g_gl.screen_size.y,
-                logical_size.x, logical_size.y,
-                native_size.x, native_size.y);
-
-        // Ensure context is current before modifying GL state
         emscripten_webgl_make_context_current(g_webgl.context);
-
-        // Check actual drawing buffer size
-        int draw_w, draw_h;
-        emscripten_webgl_get_drawing_buffer_size(g_webgl.context, &draw_w, &draw_h);
-        LogInfo("Drawing buffer size: %dx%d", draw_w, draw_h);
-
-        // Finish any pending GL operations before destroying/recreating resources
         glFinish();
 
         g_gl.screen_size = logical_size;
         int samples = g_gl.offscreen.samples;
         CreateOffscreenTarget(g_gl.offscreen, logical_size.x, logical_size.y, samples);
-
-        LogInfo("Render targets created successfully");
-    } else if (native_changed) {
-        LogInfo("Native size changed: %dx%d (logical: %dx%d unchanged)",
-                native_size.x, native_size.y,
-                logical_size.x, logical_size.y);
     }
 }
 

@@ -269,8 +269,6 @@ void PlatformInitAudio() {
     g_web_audio.next_handle_id = 1;
 
     js_init_audio();
-
-    LogInfo("Web Audio initialized");
 }
 
 void PlatformShutdownAudio() {
