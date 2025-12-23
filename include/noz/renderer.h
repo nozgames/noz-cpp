@@ -10,6 +10,7 @@ constexpr int MAX_BONES = 64;
 constexpr u32 MAX_UNIFORM_BUFFER_SIZE = sizeof(Mat4) * 64;
 constexpr int ANIMATED_MESH_MAX_FRAMES = 32;
 constexpr int MESH_MAX_VERTEX_WEIGHTS = 4;
+constexpr int MAX_MATERIAL_TEXTURES = 4;
 
 // @types
 struct Camera {};

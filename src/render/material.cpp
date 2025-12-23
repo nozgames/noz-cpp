@@ -19,7 +19,7 @@ struct MaterialImpl : Material {
 };
 
 Material* CreateMaterial(Allocator* allocator, Shader* shader) {
-    constexpr u32 texture_count = 1;
+    constexpr u32 texture_count = MAX_MATERIAL_TEXTURES;
     u32 textures_size = texture_count * static_cast<u32>(sizeof(Texture *));
     u32 material_size = static_cast<u32>(sizeof(MaterialImpl)) + textures_size;
 
@@ -31,7 +31,15 @@ Material* CreateMaterial(Allocator* allocator, Shader* shader) {
     impl->shader = shader;
     impl->texture_count = texture_count;
     impl->textures = reinterpret_cast<Texture**>(impl + 1);
+    impl->has_vertex_data = false;
+    impl->has_fragment_data = false;
     impl->name = shader->name;
+
+    // Initialize all texture slots to nullptr
+    for (u32 i = 0; i < texture_count; ++i) {
+        impl->textures[i] = nullptr;
+    }
+
     return impl;
 }
 
