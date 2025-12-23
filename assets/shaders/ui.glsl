@@ -86,6 +86,10 @@ void main() {
 
     // edge falloff (premultiplied alpha - multiply RGBA by the edge falloff)
     float radius_alpha = 1.0 - smoothstep(1.0 - edge, 1.0, dist);
+
+    // Discard fragments outside the rounded rect - required for stencil clipping
+    if (radius_alpha < 0.001) discard;
+
     color *= radius_alpha;
 
     // final color
