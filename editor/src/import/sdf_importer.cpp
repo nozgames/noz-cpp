@@ -21,40 +21,145 @@ struct SdfFaceInfo {
     rect_packer::BinRect packed_rect;
 };
 
-// Create an MSDF Shape from a face's vertices
-static msdf::Shape* CreateShapeFromFace(MeshData* mesh, int face_index) {
-    FaceData& face = mesh->faces[face_index];
-    if (face.vertex_count < 3)
-        return nullptr;
+// Lightweight contour that doesn't own its edges (avoids delete in destructor)
+struct SdfContour {
+    std::vector<msdf::Edge*> edges;
+    int winding() {
+        if (edges.empty()) return 0;
+        double total = 0;
+        auto prev = edges.back()->point(1.0);
+        for (auto edge : edges) {
+            auto cur = edge->point(0.0);
+            total += (cur.x - prev.x) * (cur.y + prev.y);
+            prev = edge->point(1.0);
+        }
+        total += (edges.front()->point(0.0).x - prev.x) * (edges.front()->point(0.0).y + prev.y);
+        return total > 0 ? 1 : -1;
+    }
+};
 
-    msdf::Shape* shape = new msdf::Shape();
-    msdf::Contour* contour = new msdf::Contour();
+// Lightweight shape for SDF generation
+struct SdfShape {
+    std::vector<SdfContour*> contours;
+    bool inverseYAxis = false;
+};
 
-    // Create linear edges from face vertices
-    for (int i = 0; i < face.vertex_count; i++) {
-        int v0_idx = face.vertices[i];
-        int v1_idx = face.vertices[(i + 1) % face.vertex_count];
+// Reusable SDF generation context to avoid repeated allocations
+struct SdfGenContext {
+    SdfShape shape;
+    SdfContour contour;
+    std::vector<msdf::LinearEdge> edges;
+    std::vector<uint8_t> temp_buffer;
 
-        Vec2 p0 = mesh->vertices[v0_idx].position;
-        Vec2 p1 = mesh->vertices[v1_idx].position;
-
-        // Convert to Vec2Double for MSDF
-        Vec2Double p0d = {p0.x, p0.y};
-        Vec2Double p1d = {p1.x, p1.y};
-
-        contour->edges.push_back(new msdf::LinearEdge(p0d, p1d));
+    SdfGenContext() {
+        edges.reserve(128);  // Pre-allocate for typical face
+        shape.contours.push_back(&contour);
+        shape.inverseYAxis = false;
     }
 
-    shape->contours.push_back(contour);
-    shape->inverseYAxis = false;
+    void setupForFace(MeshData* mesh, int face_index) {
+        FaceData& face = mesh->faces[face_index];
 
-    return shape;
-}
+        // Clear and rebuild edges (LinearEdge has no default constructor)
+        edges.clear();
+        contour.edges.clear();
+        edges.reserve(face.vertex_count);
+
+        // Set up edges
+        for (int i = 0; i < face.vertex_count; i++) {
+            int v0_idx = face.vertices[i];
+            int v1_idx = face.vertices[(i + 1) % face.vertex_count];
+
+            Vec2 p0 = mesh->vertices[v0_idx].position;
+            Vec2 p1 = mesh->vertices[v1_idx].position;
+
+            edges.emplace_back(Vec2Double{p0.x, p0.y}, Vec2Double{p1.x, p1.y});
+        }
+
+        // Build contour edge pointers (after all edges added to avoid reallocation)
+        for (size_t i = 0; i < edges.size(); i++) {
+            contour.edges.push_back(&edges[i]);
+        }
+    }
+};
 
 // Hardcoded SDF generation settings
 static constexpr float SDF_PIXELS_PER_UNIT = 32.0f;
 static constexpr float SDF_RANGE = 0.25f;
 static constexpr int SDF_MIN_RESOLUTION = 16;
+
+// Optimized SDF generation using lightweight structures
+static void generateSdfOptimized(
+    std::vector<uint8_t>& output,
+    int outputStride,
+    const Vec2Int& outputPosition,
+    const Vec2Int& outputSize,
+    const SdfShape& shape,
+    double range,
+    const Vec2Double& scale,
+    const Vec2Double& translate)
+{
+    int contourCount = (int)shape.contours.size();
+    int w = outputSize.x;
+    int h = outputSize.y;
+
+    std::vector<int> windings(contourCount);
+    for (int i = 0; i < contourCount; i++)
+        windings[i] = shape.contours[i]->winding();
+
+    std::vector<double> contourSD(contourCount);
+
+    for (int y = 0; y < h; ++y) {
+        int row = shape.inverseYAxis ? h - y - 1 : y;
+        for (int x = 0; x < w; ++x) {
+            double dummy = 0.0;
+            auto p = Vec2Double(x + .5, y + .5) / scale - translate;
+            auto negDist = -msdf::SignedDistance::Infinite.distance;
+            auto posDist = msdf::SignedDistance::Infinite.distance;
+            int winding = 0;
+
+            for (int i = 0; i < contourCount; i++) {
+                auto minDistance = msdf::SignedDistance::Infinite;
+                for (auto edge : shape.contours[i]->edges) {
+                    auto distance = edge->distance(p, dummy);
+                    if (distance < minDistance)
+                        minDistance = distance;
+                }
+
+                contourSD[i] = minDistance.distance;
+                if (windings[i] > 0 && minDistance.distance >= 0 && std::abs(minDistance.distance) < std::abs(posDist))
+                    posDist = minDistance.distance;
+                if (windings[i] < 0 && minDistance.distance <= 0 && std::abs(minDistance.distance) < std::abs(negDist))
+                    negDist = minDistance.distance;
+            }
+
+            double sd = msdf::SignedDistance::Infinite.distance;
+            if (posDist >= 0 && std::abs(posDist) <= std::abs(negDist)) {
+                sd = posDist;
+                winding = 1;
+                for (int i = 0; i < contourCount; ++i)
+                    if (windings[i] > 0 && contourSD[i] > sd && std::abs(contourSD[i]) < std::abs(negDist))
+                        sd = contourSD[i];
+            } else if (negDist <= 0 && std::abs(negDist) <= std::abs(posDist)) {
+                sd = negDist;
+                winding = -1;
+                for (int i = 0; i < contourCount; ++i)
+                    if (windings[i] < 0 && contourSD[i] < sd && std::abs(contourSD[i]) < std::abs(posDist))
+                        sd = contourSD[i];
+            }
+
+            for (int i = 0; i < contourCount; ++i)
+                if (windings[i] != winding && std::abs(contourSD[i]) < std::abs(sd))
+                    sd = contourSD[i];
+
+            sd /= (range * 2.0);
+            sd = Clamp(sd, -0.5, 0.5);
+            sd = sd + 0.5;
+
+            output[x + outputPosition.x + (row + outputPosition.y) * outputStride] = (uint8_t)(sd * 255.0);
+        }
+    }
+}
 
 // Calculate resolution and bounds for a face
 static SdfFaceInfo CalculateFaceInfo(MeshData* mesh, int face_index) {
@@ -101,54 +206,54 @@ static SdfFaceInfo CalculateFaceInfo(MeshData* mesh, int face_index) {
     return info;
 }
 
-// Generate SDF for a face into the output buffer
+// Generate SDF for a face directly into the atlas (single-channel R8)
 static void GenerateFaceSdf(
+    SdfGenContext& ctx,
     MeshData* mesh,
     const SdfFaceInfo& info,
     std::vector<uint8_t>& output,
     int atlas_width)
 {
-    msdf::Shape* shape = CreateShapeFromFace(mesh, info.face_index);
-    if (!shape)
+    FaceData& face = mesh->faces[info.face_index];
+    if (face.vertex_count < 3)
         return;
 
-    // Generate into a temporary single-channel buffer
+    // Set up shape from face (reuses allocations)
+    ctx.setupForFace(mesh, info.face_index);
+
     int w = info.sdf_size.x;
     int h = info.sdf_size.y;
-    std::vector<uint8_t> temp_sdf;
-    temp_sdf.resize(w * h, 128);
 
-    // Use MSDF generateSDF
+    // Ensure temp buffer is large enough (reuses memory)
+    size_t needed = w * h;
+    if (ctx.temp_buffer.size() < needed)
+        ctx.temp_buffer.resize(needed);
+
+    // Generate SDF into temp buffer using optimized function
     // Note: generateSDF divides by range*2, so pass range*0.5 to get proper [-range, +range] mapping
-    msdf::generateSDF(
-        temp_sdf,
+    generateSdfOptimized(
+        ctx.temp_buffer,
         w,
         {0, 0},
         info.sdf_size,
-        *shape,
+        ctx.shape,
         (double)SDF_RANGE * 0.5,
         {(double)info.scale.x, (double)info.scale.y},
         {(double)info.offset.x, (double)info.offset.y}
     );
 
-    // Copy to output with RGBA format (R=SDF, G=alpha, B=gradient, A=255)
+    // Copy to atlas (single channel R8 format) with inversion
     int out_x = info.packed_rect.x;
     int out_y = info.packed_rect.y;
 
     for (int y = 0; y < h; y++) {
+        uint8_t* src_row = &ctx.temp_buffer[y * w];
+        uint8_t* dst_row = &output[(out_y + y) * atlas_width + out_x];
         for (int x = 0; x < w; x++) {
             // Invert SDF so that inside = high values, outside = low values
-            uint8_t sdf_val = 255 - temp_sdf[x + y * w];
-
-            int out_idx = ((out_y + y) * atlas_width + (out_x + x)) * 4;
-            output[out_idx + 0] = sdf_val;                          // R: SDF value
-            output[out_idx + 1] = sdf_val >= 128 ? 255 : 0;         // G: Alpha (inside = 255)
-            output[out_idx + 2] = 255;                               // B: Gradient (default 1.0)
-            output[out_idx + 3] = 255;                               // A: Unused
+            dst_row[x] = 255 - src_row[x];
         }
     }
-
-    delete shape;
 }
 
 static void ImportSdf(AssetData* a, const std::filesystem::path& path, Props* config, Props* meta) {
@@ -194,14 +299,15 @@ static void ImportSdf(AssetData* a, const std::filesystem::path& path, Props* co
         }
     }
 
-    // Allocate atlas (RGBA8)
+    // Allocate atlas (R8 single-channel)
     Vec2Int atlas_size = {packer.size().w, packer.size().h};
     std::vector<uint8_t> atlas_data;
-    atlas_data.resize(atlas_size.x * atlas_size.y * 4, 0);
+    atlas_data.resize(atlas_size.x * atlas_size.y, 0);
 
-    // Generate SDF for each face
+    // Generate SDF for each face using reusable context
+    SdfGenContext ctx;
     for (int i = 0; i < mesh->face_count; i++) {
-        GenerateFaceSdf(mesh, face_infos[i], atlas_data, atlas_size.x);
+        GenerateFaceSdf(ctx, mesh, face_infos[i], atlas_data, atlas_size.x);
     }
 
     // Generate quad mesh
@@ -274,8 +380,8 @@ static void ImportSdf(AssetData* a, const std::filesystem::path& path, Props* co
     // Write mesh data
     SerializeMesh(out_mesh, stream);
 
-    // Write atlas
-    WriteU8(stream, (u8)TEXTURE_FORMAT_RGBA8);
+    // Write atlas (R8 single-channel)
+    WriteU8(stream, (u8)TEXTURE_FORMAT_R8);
     WriteU32(stream, (u32)atlas_size.x);
     WriteU32(stream, (u32)atlas_size.y);
     WriteBytes(stream, atlas_data.data(), (u32)atlas_data.size());
@@ -367,14 +473,15 @@ void GenerateSdfPreview(SdfData* sdf) {
 
             if (IsCancelled(task)) return nullptr;
 
-            // Allocate atlas (RGBA8)
+            // Allocate atlas (R8 single-channel)
             result->atlas_size = {packer.size().w, packer.size().h};
-            result->atlas_data.resize(result->atlas_size.x * result->atlas_size.y * 4, 0);
+            result->atlas_data.resize(result->atlas_size.x * result->atlas_size.y, 0);
 
-            // Generate SDF for each face
+            // Generate SDF for each face using reusable context
+            SdfGenContext ctx;
             for (int i = 0; i < mesh->face_count; i++) {
                 if (IsCancelled(task)) return nullptr;
-                GenerateFaceSdf(mesh, face_infos[i], result->atlas_data, result->atlas_size.x);
+                GenerateFaceSdf(ctx, mesh, face_infos[i], result->atlas_data, result->atlas_size.x);
             }
 
             // Generate per-face mesh data with colors
@@ -453,13 +560,13 @@ void GenerateSdfPreview(SdfData* sdf) {
                 }
             }
 
-            // Create preview atlas texture
+            // Create preview atlas texture (R8 single-channel)
             sdf->preview_atlas = CreateTexture(
                 ALLOCATOR_DEFAULT,
                 result->atlas_data.data(),
                 result->atlas_size.x,
                 result->atlas_size.y,
-                TEXTURE_FORMAT_RGBA8,
+                TEXTURE_FORMAT_R8,
                 NAME_NONE
             );
 

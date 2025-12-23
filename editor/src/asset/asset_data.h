@@ -59,6 +59,7 @@ struct AssetData {
 };
 
 inline AssetData* GetAssetDataInternal(int index, AssetType type=ASSET_TYPE_UNKNOWN) {
+    (void)type;
     assert(index >= 0 && index < (int)MAX_ASSETS);
     if (!IsValid(g_editor.asset_allocator, index))
         return nullptr;

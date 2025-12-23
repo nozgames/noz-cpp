@@ -73,6 +73,8 @@ Animation* CreateAnimation(
     assert(transforms);
     assert(transform_count == GetBoneCount(skeleton) * frame_count);
 
+    (void)transform_count;
+
     AnimationImpl* impl = static_cast<AnimationImpl*>(Alloc(allocator, sizeof(AnimationImpl)));
     impl->name = name;
     impl->bone_count = GetBoneCount(skeleton);
