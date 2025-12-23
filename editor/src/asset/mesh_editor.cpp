@@ -1420,12 +1420,8 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
     AddEditorCircle(builder, m->position, origin_size, COLOR_ORIGIN);
 }
 
-static void DrawMeshEditor() {
-    MeshData* m = GetMeshData();
-
-    BindColor(COLOR_WHITE, Vec2Int{0,m->palette});
-    DrawMesh(m, Translate(m->position));
-
+// Draw just the editor overlays (vertices, edges, handles) without the mesh fill
+void DrawMeshEditorOverlays(MeshData* m) {
     bool hide_selected = DoesToolHideSelected();
 
     if (g_mesh_editor.mode == MESH_EDITOR_MODE_WEIGHT && !hide_selected) {
@@ -1456,6 +1452,15 @@ static void DrawMeshEditor() {
     if (!hide_selected) {
         DrawXRay();
     }
+}
+
+static void DrawMeshEditor() {
+    MeshData* m = GetMeshData();
+
+    BindColor(COLOR_WHITE, Vec2Int{0,m->palette});
+    DrawMesh(m, Translate(m->position));
+
+    DrawMeshEditorOverlays(m);
 }
 
 static void SubDivide() {

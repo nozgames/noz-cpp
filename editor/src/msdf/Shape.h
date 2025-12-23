@@ -5,6 +5,8 @@
 
 */
 
+#pragma once
+
 #include "Contour.h"
 #include "../ttf/TrueTypeFont.h"
 

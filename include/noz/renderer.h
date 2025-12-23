@@ -65,6 +65,9 @@ void SetFragmentData(Material* material, const void* data, size_t size);
 // @mesh
 struct Mesh : Asset { };
 
+// @sdf
+struct Sdf : Asset { };
+
 struct MeshVertex {
     Vec2 position;
     float depth;
@@ -258,6 +261,13 @@ extern void SetUICompositeMaterial(Material* material);
 extern Material* GetUICompositeMaterial();
 
 extern Mesh* GetMesh(const Name* name);
+extern Sdf* GetSdf(const Name* name);
+extern Mesh* GetMesh(Sdf* sdf);
+extern Texture* GetAtlas(Sdf* sdf);
+extern int GetFaceCount(Sdf* sdf);
+extern u8 GetColorIndex(Sdf* sdf, int face_index);
+extern Bounds2 GetBounds(Sdf* sdf);
+extern void DrawSdf(Sdf* sdf, const Mat3& transform);
 
 extern Mesh** MESH;
 extern Font** FONT;
@@ -265,6 +275,7 @@ extern Texture** TEXTURE;
 extern Shader** SHADER;
 extern Skeleton** SKELETON;
 extern AnimatedMesh** ANIMATEDMESH;
+extern Sdf** SDF;
 
 extern int MESH_COUNT;
 extern int FONT_COUNT;
@@ -272,3 +283,4 @@ extern int TEXTURE_COUNT;
 extern int SHADER_COUNT;
 extern int ANIMATEDMESH_COUNT;
 extern int SKELETON_COUNT;
+extern int SDF_COUNT;

@@ -149,6 +149,7 @@ extern AssetImporter GetSoundImporter();
 extern AssetImporter GetSkeletonImporter();
 extern AssetImporter GetAnimationImporter();
 extern AssetImporter GetAnimatedMeshImporter();
+extern AssetImporter GetSdfImporter();
 
 // @grid
 extern Vec2 SnapToGrid(const Vec2& position);

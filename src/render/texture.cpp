@@ -47,6 +47,8 @@ static void CreateTexture(
 
     impl->size = { static_cast<i32>(width), static_cast<i32>(height) };
     impl->format = format;
+    impl->sampler_options.filter = TEXTURE_FILTER_LINEAR;
+    impl->sampler_options.clamp = TEXTURE_CLAMP_CLAMP;
     impl->platform_texture = PlatformCreateTexture(
         data,
         width,

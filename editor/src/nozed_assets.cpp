@@ -15,6 +15,7 @@ extern int MESH_COUNT;
 extern int TEXTURE_COUNT;
 extern int FONT_COUNT;
 extern int SHADER_COUNT;
+extern int SDF_COUNT;
 
 // @Mesh
 Mesh* MESH_UI_ICON_ROOT_MOTION = nullptr;
@@ -47,36 +48,42 @@ Shader* SHADER_TEXTURED_MESH = nullptr;
 Shader* SHADER_TEXT = nullptr;
 Shader* SHADER_SOLID = nullptr;
 Shader* SHADER_SKINNED_MESH = nullptr;
+Shader* SHADER_SDF = nullptr;
 Shader* SHADER_POSTPROCESS_UI_COMPOSITE = nullptr;
 Shader* SHADER_POSTPROCESS_DESATURATE = nullptr;
 Shader* SHADER_MESH = nullptr;
 
+// @Sdf
+Sdf* SDF_TEST = nullptr;
+
 // @name
+const Name* NAME_SDF = nullptr;
 const Name* NAME_MESH = nullptr;
-const Name* NAME_VFX = nullptr;
 const Name* NAME_A = nullptr;
 const Name* NAME_E = nullptr;
 const Name* NAME_M = nullptr;
 const Name* NAME_B = nullptr;
-const Name* NAME_R = nullptr;
 const Name* NAME_NEW = nullptr;
+const Name* NAME_R = nullptr;
 const Name* NAME_EDIT = nullptr;
-const Name* NAME_N = nullptr;
-const Name* NAME_S = nullptr;
+const Name* NAME_VFX = nullptr;
 const Name* NAME_BUILD = nullptr;
+const Name* NAME_MIRROR = nullptr;
+const Name* NAME_S = nullptr;
+const Name* NAME_EVENT = nullptr;
 const Name* NAME_AM = nullptr;
 const Name* NAME_RENAME = nullptr;
-const Name* NAME_SAVE = nullptr;
-const Name* NAME_SKELETON = nullptr;
 const Name* NAME_ANIMATION = nullptr;
-const Name* NAME_EVENT = nullptr;
 const Name* NAME_ANIMATEDMESH = nullptr;
 const Name* NAME_RU = nullptr;
-const Name* NAME_MIRROR = nullptr;
+const Name* NAME_SKELETON = nullptr;
+const Name* NAME_SAVE = nullptr;
+const Name* NAME_N = nullptr;
 
 // @path
 const Name* PATH_TEXTURE_PALETTE = nullptr;
 const Name* PATH_SHADER_EDITOR = nullptr;
+const Name* PATH_SDF_TEST = nullptr;
 const Name* PATH_MESH_UI_ICON_ROOT_MOTION = nullptr;
 const Name* PATH_MESH_UI_ICON_ONION = nullptr;
 const Name* PATH_MESH_UI_ICON_MIRROR = nullptr;
@@ -99,6 +106,7 @@ const Name* PATH_SHADER_TEXTURED_MESH = nullptr;
 const Name* PATH_SHADER_TEXT = nullptr;
 const Name* PATH_SHADER_SOLID = nullptr;
 const Name* PATH_SHADER_SKINNED_MESH = nullptr;
+const Name* PATH_SHADER_SDF = nullptr;
 const Name* PATH_SHADER_POSTPROCESS_UI_COMPOSITE = nullptr;
 const Name* PATH_SHADER_POSTPROCESS_DESATURATE = nullptr;
 const Name* PATH_SHADER_MESH = nullptr;
@@ -107,31 +115,33 @@ const Name* PATH_SHADER_MESH = nullptr;
 bool LoadAssets(Allocator* allocator)
 {
     // @name
+    NAME_SDF = GetName("sdf");
     NAME_MESH = GetName("mesh");
-    NAME_VFX = GetName("vfx");
     NAME_A = GetName("a");
     NAME_E = GetName("e");
     NAME_M = GetName("m");
     NAME_B = GetName("b");
-    NAME_R = GetName("r");
     NAME_NEW = GetName("new");
+    NAME_R = GetName("r");
     NAME_EDIT = GetName("edit");
-    NAME_N = GetName("n");
-    NAME_S = GetName("s");
+    NAME_VFX = GetName("vfx");
     NAME_BUILD = GetName("build");
+    NAME_MIRROR = GetName("mirror");
+    NAME_S = GetName("s");
+    NAME_EVENT = GetName("event");
     NAME_AM = GetName("am");
     NAME_RENAME = GetName("rename");
-    NAME_SAVE = GetName("save");
-    NAME_SKELETON = GetName("skeleton");
     NAME_ANIMATION = GetName("animation");
-    NAME_EVENT = GetName("event");
     NAME_ANIMATEDMESH = GetName("animatedmesh");
     NAME_RU = GetName("ru");
-    NAME_MIRROR = GetName("mirror");
+    NAME_SKELETON = GetName("skeleton");
+    NAME_SAVE = GetName("save");
+    NAME_N = GetName("n");
 
     // @path
     PATH_TEXTURE_PALETTE = GetName("palette");
     PATH_SHADER_EDITOR = GetName("editor");
+    PATH_SDF_TEST = GetName("test");
     PATH_MESH_UI_ICON_ROOT_MOTION = GetName("ui_icon_root_motion");
     PATH_MESH_UI_ICON_ONION = GetName("ui_icon_onion");
     PATH_MESH_UI_ICON_MIRROR = GetName("ui_icon_mirror");
@@ -154,6 +164,7 @@ bool LoadAssets(Allocator* allocator)
     PATH_SHADER_TEXT = GetName("text");
     PATH_SHADER_SOLID = GetName("solid");
     PATH_SHADER_SKINNED_MESH = GetName("skinned_mesh");
+    PATH_SHADER_SDF = GetName("sdf");
     PATH_SHADER_POSTPROCESS_UI_COMPOSITE = GetName("postprocess_ui_composite");
     PATH_SHADER_POSTPROCESS_DESATURATE = GetName("postprocess_desaturate");
     PATH_SHADER_MESH = GetName("mesh");
@@ -224,6 +235,7 @@ bool LoadAssets(Allocator* allocator)
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_TEXT, SHADER_TEXT);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_SOLID, SHADER_SOLID);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_SKINNED_MESH, SHADER_SKINNED_MESH);
+    NOZ_LOAD_SHADER(allocator, PATH_SHADER_SDF, SHADER_SDF);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_POSTPROCESS_UI_COMPOSITE, SHADER_POSTPROCESS_UI_COMPOSITE);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_POSTPROCESS_DESATURATE, SHADER_POSTPROCESS_DESATURATE);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_MESH, SHADER_MESH);
@@ -239,6 +251,7 @@ bool LoadAssets(Allocator* allocator)
         SHADER_TEXT,
         SHADER_SOLID,
         SHADER_SKINNED_MESH,
+        SHADER_SDF,
         SHADER_POSTPROCESS_UI_COMPOSITE,
         SHADER_POSTPROCESS_DESATURATE,
         SHADER_MESH,
@@ -247,6 +260,17 @@ bool LoadAssets(Allocator* allocator)
 
     SHADER = _SHADER;
     SHADER_COUNT = sizeof(_SHADER) / sizeof(void*);
+
+    // @Sdf
+    NOZ_LOAD_SDF(allocator, PATH_SDF_TEST, SDF_TEST);
+
+    static Sdf* _SDF[] = {
+        SDF_TEST,
+        nullptr
+    };
+
+    SDF = _SDF;
+    SDF_COUNT = sizeof(_SDF) / sizeof(void*);
 
     return true;
 }
@@ -285,9 +309,13 @@ void UnloadAssets()
     Free(SHADER_TEXT);
     Free(SHADER_SOLID);
     Free(SHADER_SKINNED_MESH);
+    Free(SHADER_SDF);
     Free(SHADER_POSTPROCESS_UI_COMPOSITE);
     Free(SHADER_POSTPROCESS_DESATURATE);
     Free(SHADER_MESH);
+
+    // @Sdf
+    Free(SDF_TEST);
 }
 
 #ifdef NOZ_EDITOR
@@ -325,9 +353,13 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     NOZ_RELOAD_SHADER(PATH_SHADER_TEXT, SHADER_TEXT);
     NOZ_RELOAD_SHADER(PATH_SHADER_SOLID, SHADER_SOLID);
     NOZ_RELOAD_SHADER(PATH_SHADER_SKINNED_MESH, SHADER_SKINNED_MESH);
+    NOZ_RELOAD_SHADER(PATH_SHADER_SDF, SHADER_SDF);
     NOZ_RELOAD_SHADER(PATH_SHADER_POSTPROCESS_UI_COMPOSITE, SHADER_POSTPROCESS_UI_COMPOSITE);
     NOZ_RELOAD_SHADER(PATH_SHADER_POSTPROCESS_DESATURATE, SHADER_POSTPROCESS_DESATURATE);
     NOZ_RELOAD_SHADER(PATH_SHADER_MESH, SHADER_MESH);
+
+    // @Sdf
+    NOZ_RELOAD_SDF(PATH_SDF_TEST, SDF_TEST);
 }
 
 #endif // NOZ_EDITOR

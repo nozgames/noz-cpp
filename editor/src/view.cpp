@@ -7,6 +7,7 @@ extern void InitTextureEditor();
 extern void InitSkeletonEditor();
 extern void InitAnimationEditor();
 extern void InitAnimatedMeshEditor();
+extern void InitSdfEditor();
 
 constexpr float SELECT_SIZE = 60.0f;
 constexpr float DRAG_MIN = 5;
@@ -597,6 +598,8 @@ static void NewAssetCommand(const Command& command) {
         a = NewAnimatedMeshData(asset_name->value);
     else if (type == NAME_EVENT || type == NAME_E)
         a = NewEventData(asset_name->value);
+    else if (type == NAME_SDF)
+        a = NewSdfData(asset_name->value);
 
     if (a == nullptr)
         return;
@@ -1011,11 +1014,13 @@ void InitView() {
     InitSkeletonEditor();
     InitAnimationEditor();
     InitAnimatedMeshEditor();
+    InitSdfEditor();
 
     TextureData* palette_texture_data = static_cast<TextureData*>(GetAssetData(
         ASSET_TYPE_TEXTURE,
         GetName(g_config->GetString("editor", "palette", "palette").c_str())));
     if (palette_texture_data) {
+        g_view.palette_texture = palette_texture_data->texture;
         SetTexture(g_view.editor_material, palette_texture_data->texture);
         SetTexture(g_view.shaded_material, palette_texture_data->texture);
         SetTexture(g_view.shaded_skinned_material, palette_texture_data->texture);

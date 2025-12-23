@@ -6,6 +6,8 @@
 
 */
 
+#pragma once
+
 namespace noz::msdf
 {
 	struct SignedDistance

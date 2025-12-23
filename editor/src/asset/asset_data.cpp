@@ -71,6 +71,8 @@ AssetData* CreateAssetData(const std::filesystem::path& path) {
         InitEventData(a);
     else if (a->type == ASSET_TYPE_BIN)
         InitBinData(a);
+    else if (a->type == ASSET_TYPE_SDF)
+        InitSdfData(a);
 
     return a;
 }

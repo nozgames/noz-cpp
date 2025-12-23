@@ -38,32 +38,37 @@ extern Shader* SHADER_TEXTURED_MESH;
 extern Shader* SHADER_TEXT;
 extern Shader* SHADER_SOLID;
 extern Shader* SHADER_SKINNED_MESH;
+extern Shader* SHADER_SDF;
 extern Shader* SHADER_POSTPROCESS_UI_COMPOSITE;
 extern Shader* SHADER_POSTPROCESS_DESATURATE;
 extern Shader* SHADER_MESH;
 
+// @Sdf
+extern Sdf* SDF_TEST;
+
 // @name
+extern const Name* NAME_SDF;
 extern const Name* NAME_MESH;
-extern const Name* NAME_VFX;
 extern const Name* NAME_A;
 extern const Name* NAME_E;
 extern const Name* NAME_M;
 extern const Name* NAME_B;
-extern const Name* NAME_R;
 extern const Name* NAME_NEW;
+extern const Name* NAME_R;
 extern const Name* NAME_EDIT;
-extern const Name* NAME_N;
-extern const Name* NAME_S;
+extern const Name* NAME_VFX;
 extern const Name* NAME_BUILD;
+extern const Name* NAME_MIRROR;
+extern const Name* NAME_S;
+extern const Name* NAME_EVENT;
 extern const Name* NAME_AM;
 extern const Name* NAME_RENAME;
-extern const Name* NAME_SAVE;
-extern const Name* NAME_SKELETON;
 extern const Name* NAME_ANIMATION;
-extern const Name* NAME_EVENT;
 extern const Name* NAME_ANIMATEDMESH;
 extern const Name* NAME_RU;
-extern const Name* NAME_MIRROR;
+extern const Name* NAME_SKELETON;
+extern const Name* NAME_SAVE;
+extern const Name* NAME_N;
 
 // @palette
 constexpr int PALETTE_DEFAULT = 0;

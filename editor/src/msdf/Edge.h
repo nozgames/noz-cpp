@@ -6,6 +6,8 @@
 
 */
 
+#pragma once
+
 #include "SignedDistance.h"
 #include <vector>
 

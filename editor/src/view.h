@@ -49,6 +49,7 @@ struct View {
     Material* vertex_material;
     Material* editor_material;
     Material* editor_mesh_material;
+    Texture* palette_texture;
     Mesh* vertex_mesh;
     Mesh* arrow_mesh;
     Mesh* circle_mesh;
@@ -173,6 +174,9 @@ constexpr Color COLOR_VERTEX_SELECTED = Color32ToColor(255, 121, 0, 255);
 constexpr Color COLOR_VERTEX = COLOR_BLACK;
 constexpr Color COLOR_EDGE = COLOR_BLACK;
 constexpr Color COLOR_EDGE_SELECTED = Color32ToColor(253, 151, 11, 255);
+constexpr Color COLOR_FACE = Color32ToColor(100, 100, 100, 255);
+constexpr Color COLOR_FACE_SELECTED = Color32ToColor(255, 121, 0, 255);
+constexpr Color COLOR_SELECT_BOX = Color32ToColor(100, 150, 255, 200);
 constexpr Color COLOR_ORIGIN = Color32ToColor(255, 159, 44, 255);
 
 constexpr Color COLOR_SELECTED = { 1,1,1,1 };

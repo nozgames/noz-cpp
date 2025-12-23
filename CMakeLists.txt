@@ -73,6 +73,7 @@ set(SOURCE_FILES
     src/physics/collision.cpp
     src/random.cpp
     src/rect.cpp
+    src/render/sdf.cpp
     src/render/camera.cpp
     src/render/material.cpp
     src/render/mesh_builder.cpp

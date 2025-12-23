@@ -8,8 +8,7 @@
 extern void BindShaderInternal(Shader* shader);
 extern void BindTextureInternal(Texture* texture, i32 slot);
 
-struct MaterialImpl : Material
-{    
+struct MaterialImpl : Material {
     Shader* shader;
     Texture** textures;
     size_t texture_count;
@@ -19,13 +18,12 @@ struct MaterialImpl : Material
     bool has_fragment_data;
 };
 
-Material* CreateMaterial(Allocator* allocator, Shader* shader)
-{
+Material* CreateMaterial(Allocator* allocator, Shader* shader) {
     constexpr u32 texture_count = 1;
-    u32 textures_size = texture_count * (u32)sizeof(Texture*);
-    u32 material_size = (u32)sizeof(MaterialImpl) + textures_size;
+    u32 textures_size = texture_count * static_cast<u32>(sizeof(Texture *));
+    u32 material_size = static_cast<u32>(sizeof(MaterialImpl)) + textures_size;
 
-    auto material = (Material*)Alloc(allocator, material_size);
+    auto material = static_cast<Material *>(Alloc(allocator, material_size));
     if (!material)
         return nullptr;
 
@@ -37,13 +35,11 @@ Material* CreateMaterial(Allocator* allocator, Shader* shader)
     return impl;
 }
 
-Shader* GetShader(Material* material)
-{
+Shader* GetShader(Material* material) {
     return static_cast<MaterialImpl*>(material)->shader;
 }
 
-Texture* GetTexture(Material* material, size_t index)
-{
+Texture* GetTexture(Material* material, size_t index) {
     assert(material);
     assert(index < static_cast<MaterialImpl*>(material)->texture_count);
     return static_cast<MaterialImpl*>(material)->textures[index];
