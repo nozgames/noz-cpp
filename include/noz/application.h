@@ -90,6 +90,7 @@ bool IsScreenRotated();  // True if screen is being rotated to match preferred o
 bool IsMobile();         // True if running on a mobile device
 bool IsFullscreen();     // True if currently in fullscreen mode
 void RequestFullscreen(); // Request fullscreen mode (must be called from user gesture on web)
+void OpenUrl(const char* url); // Open URL in browser (new tab on web, default browser on Windows)
 
 const ApplicationTraits* GetApplicationTraits();
 
@@ -140,4 +141,10 @@ extern int GetArgCount();
 extern const char* GetArg(int index);
 extern const char* GetArgValue(const char* name);  // Returns value for --name <value> or nullptr
 extern bool HasArg(const char* name);              // Returns true if --name exists
+
+// @query - URL query parameters (web) or command-line key=value pairs (desktop)
+extern void InitQueryParams();                      // Called by platform init
+extern void SetQueryParam(const char* name, const char* value);  // Set a query param (for platform use)
+extern const char* GetQueryParam(const char* name); // Returns value for name=value or nullptr
+extern bool HasQueryParam(const char* name);        // Returns true if param exists
 

@@ -453,6 +453,27 @@ std::filesystem::path PatformGetCurrentPath() {
     return std::filesystem::path(path);
 }
 
+// Parse command-line arguments in key=value format as query params
+static void ParseCommandLineQueryParams(int argc, char** argv) {
+    InitQueryParams();
+
+    for (int i = 1; i < argc; i++) {
+        char* arg = argv[i];
+        char* eq = strchr(arg, '=');
+        if (eq && eq != arg) {
+            // Found '=' - split into name and value
+            size_t name_len = eq - arg;
+            char name[256];
+            if (name_len >= sizeof(name)) name_len = sizeof(name) - 1;
+            memcpy(name, arg, name_len);
+            name[name_len] = '\0';
+
+            const char* value = eq + 1;
+            SetQueryParam(name, value);
+        }
+    }
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     (void)hInstance;
@@ -474,6 +495,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     LocalFree(argv_wide);
 
     InitCommandLine(argc, argv);
+    ParseCommandLineQueryParams(argc, argv);
 
     Main();
 
@@ -526,4 +548,8 @@ void PlatformRequestFullscreen() {
 
 bool PlatformIsFullscreen() {
     return false;  // TODO: Implement if needed
+}
+
+void PlatformOpenUrl(const char* url) {
+    ShellExecuteA(nullptr, "open", url, nullptr, nullptr, SW_SHOWNORMAL);
 }

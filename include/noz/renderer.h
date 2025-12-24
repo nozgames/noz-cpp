@@ -102,7 +102,7 @@ extern int GetFrameCount(AnimatedMesh* mesh);
 extern Mesh* GetFrame(AnimatedMesh* mesh, int frame_index);
 extern float Update(AnimatedMesh* mesh, float current_time, float speed=1.0f, bool loop=true);
 extern float Update(AnimatedMesh* mesh, float current_time, float speed, bool loop, int min_frame, int max_frame=-1);
-extern int GetFrameIndex(AnimatedMesh* mesh, float time);
+extern int GetFrameIndex(AnimatedMesh* mesh, float time, bool loop=false);
 extern Bounds2 GetBounds(AnimatedMesh* mesh);
 extern Vec2 GetSize(AnimatedMesh* mesh);
 
@@ -180,7 +180,7 @@ extern void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int 
 extern void DrawMesh(Mesh* mesh, const Mat3& transform);
 
 extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, int frame_index);
-extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, float time);
+extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, float time, bool loop=false);
 extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, Animator& animator, int bone_index, float time);
 
 // @clipping

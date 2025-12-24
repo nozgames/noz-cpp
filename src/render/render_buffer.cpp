@@ -288,8 +288,8 @@ void DrawMesh(Mesh* mesh, const Mat3& transform) {
     DrawMesh(mesh);
 }
 
-void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, float time) {
-    DrawMesh(mesh, transform, GetFrameIndex(mesh, time));
+void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, float time, bool loop) {
+    DrawMesh(mesh, transform, GetFrameIndex(mesh, time, loop));
 }
 
 void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, int frame_index) {

@@ -537,9 +537,54 @@ bool PlatformIsFullscreen() {
     }) != 0;
 }
 
+// Parse URL query parameters and set them via SetQueryParam
+static void ParseUrlQueryParams() {
+    InitQueryParams();
+
+    // Get the count of query parameters
+    int count = EM_ASM_INT({
+        var params = new URLSearchParams(window.location.search);
+        return Array.from(params.keys()).length;
+    });
+
+    if (count == 0) return;
+
+    // Buffer for receiving strings from JavaScript
+    static char name_buffer[256];
+    static char value_buffer[1024];
+
+    for (int i = 0; i < count; i++) {
+        // Get the key at index i
+        EM_ASM({
+            var params = new URLSearchParams(window.location.search);
+            var keys = Array.from(params.keys());
+            var key = keys[$0] || "";
+            var value = params.get(key) || "";
+
+            // Copy key to buffer
+            var keyLen = lengthBytesUTF8(key) + 1;
+            stringToUTF8(key, $1, keyLen);
+
+            // Copy value to buffer
+            var valueLen = lengthBytesUTF8(value) + 1;
+            stringToUTF8(value, $2, valueLen);
+        }, i, name_buffer, value_buffer);
+
+        SetQueryParam(name_buffer, value_buffer);
+    }
+}
+
+void PlatformOpenUrl(const char* url) {
+    EM_ASM({
+        window.open(UTF8ToString($0), '_blank');
+    }, url);
+}
+
 int main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;
+
+    ParseUrlQueryParams();
 
     Main();
     emscripten_set_main_loop(EmscriptenMainLoop, 0, 1);

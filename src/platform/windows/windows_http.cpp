@@ -140,10 +140,6 @@ static void CALLBACK InternetCallback(
     (void)hInternet;
     (void)dwStatusInformationLength;
 
-    // Only handle REQUEST_COMPLETE
-    if (dwInternetStatus != INTERNET_STATUS_REQUEST_COMPLETE)
-        return;
-
     u32 index = GetCallbackIndex(dwContext);
     u32 generation = GetCallbackGeneration(dwContext);
 
@@ -154,6 +150,22 @@ static void CALLBACK InternetCallback(
 
     // Check generation with relaxed ordering - just a quick check
     if (request->generation != generation)
+        return;
+
+    // Handle connection closed - signal error so we don't get stuck
+    if (dwInternetStatus == INTERNET_STATUS_HANDLE_CLOSING ||
+        dwInternetStatus == INTERNET_STATUS_CONNECTION_CLOSED) {
+        // Only signal if we're waiting for something
+        if (request->async_state != HTTP_ASYNC_IDLE && !request->async_complete.load(std::memory_order_relaxed)) {
+            request->async_error.store(ERROR_INTERNET_CONNECTION_ABORTED, std::memory_order_relaxed);
+            request->async_result.store(0, std::memory_order_relaxed);
+            request->async_complete.store(true, std::memory_order_release);
+        }
+        return;
+    }
+
+    // Only handle REQUEST_COMPLETE for normal completion
+    if (dwInternetStatus != INTERNET_STATUS_REQUEST_COMPLETE)
         return;
 
     INTERNET_ASYNC_RESULT* result = (INTERNET_ASYNC_RESULT*)lpvStatusInformation;
@@ -225,9 +237,9 @@ static void ProcessReuqest(WindowsHttpRequest& request) {
             if (!request.async_complete.load(std::memory_order_acquire))
                 return;
 
-            // Check for error
+            // Check for error (dwError is ERROR_SUCCESS on success)
             DWORD error = request.async_error.load(std::memory_order_relaxed);
-            if (error >= INTERNET_ERROR_BASE) {
+            if (error != ERROR_SUCCESS) {
                 request.status = PLATFORM_HTTP_STATUS_ERROR;
                 return;
             }
@@ -235,6 +247,12 @@ static void ProcessReuqest(WindowsHttpRequest& request) {
             // Store handle if we got it from callback
             if (!request.request) {
                 request.request = reinterpret_cast<HINTERNET>(request.async_result.load(std::memory_order_relaxed));
+            }
+
+            // Validate we have a handle
+            if (!request.request) {
+                request.status = PLATFORM_HTTP_STATUS_ERROR;
+                return;
             }
 
             // Reset for next operation
@@ -250,7 +268,7 @@ static void ProcessReuqest(WindowsHttpRequest& request) {
                 return;
 
             DWORD error = request.async_error.load(std::memory_order_relaxed);
-            if (error >= INTERNET_ERROR_BASE) {
+            if (error != ERROR_SUCCESS) {
                 request.status = PLATFORM_HTTP_STATUS_ERROR;
                 return;
             }
@@ -277,7 +295,7 @@ static void ProcessReuqest(WindowsHttpRequest& request) {
                 return;
 
             DWORD error = request.async_error.load(std::memory_order_relaxed);
-            if (error >= INTERNET_ERROR_BASE) {
+            if (error != ERROR_SUCCESS) {
                 request.status = PLATFORM_HTTP_STATUS_ERROR;
                 return;
             }
@@ -285,7 +303,7 @@ static void ProcessReuqest(WindowsHttpRequest& request) {
             request.async_complete.store(false, std::memory_order_relaxed);
             request.async_state = HTTP_ASYNC_IDLE;
 
-            // read_buffer_bytes was filled by InternetReadFile
+            // read_buffer_bytes was filled by InternetReadFile when async completed
             if (request.read_buffer_bytes == 0) {
                 // EOF
                 if (request.response)
