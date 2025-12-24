@@ -60,8 +60,6 @@ static noz::HttpSystem g_http = {};
 using namespace noz;
 
 static void Free(HttpRequestImpl* impl) {
-    if (true) return;
-
     if (!impl) return;
 
     Free(impl->response);

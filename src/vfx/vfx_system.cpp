@@ -129,7 +129,12 @@ static u16 GetIndex(VfxEmitter* e) { return (u16)GetIndex(g_vfx.emitter_pool, e)
 static u16 GetIndex(VfxParticle* p) { return (u16)GetIndex(g_vfx.particle_pool, p); }
 static VfxParticle* GetParticle(int i) { return (VfxParticle*)GetAt(g_vfx.particle_pool, i); }
 static VfxEmitter* GetEmitter(int i) { return (VfxEmitter*)GetAt(g_vfx.emitter_pool, i); }
-static VfxHandle GetHandle(VfxInstance* instance) { return { GetIndex(instance), instance->version }; }
+static VfxHandle GetHandle(VfxInstance* instance) {
+    return {
+        GetIndex(instance),
+        instance->version
+    };
+}
 static VfxInstance* GetInstance(u32 index) { return static_cast<VfxInstance*>(GetAt(g_vfx.instance_pool, index)); }
 static VfxInstance* GetInstance(const VfxHandle& handle)
 {
@@ -190,7 +195,10 @@ static VfxParticle* EmitParticle(VfxEmitter* e) {
     assert(i);
 
     float angle = Radians(GetRandom(e->def->angle));
-    Vec2 dir { Cos(angle), Sin(angle) };
+
+    Vec2 dir = GetRandom(e->def->direction);
+    if (dir.x == 0.0f && dir.y == 0.0f)
+        dir = { Cos(angle), Sin(angle) };
 
     const VfxParticleDef& def = e->def->particle_def;
     p->position = TransformVector(i->transform, GetRandom(e->def->spawn));
@@ -310,6 +318,11 @@ static VfxEmitter* CreateEmitter(VfxInstance* instance, const VfxEmitterDef& def
     e->duration = GetRandom(def.duration);
     e->accumulator = 0.0f;
     e->instance_index = GetIndex(instance);
+
+    int rate = RandomInt(def.rate.min, def.rate.max);
+    e->rate = rate > 0
+        ? 1.0f / static_cast<float>(rate)
+        : 0.0f;
 
     instance->emitter_count++;
 

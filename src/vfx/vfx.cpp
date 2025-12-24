@@ -23,6 +23,7 @@ static void LoadVfxInternal(VfxImpl* impl, Allocator* allocator, Stream* stream)
             emitter_def->duration = ReadStruct<VfxFloat>(stream);
             emitter_def->angle = ReadStruct<VfxFloat>(stream);
             emitter_def->spawn = ReadStruct<VfxVec2>(stream);
+            emitter_def->direction = ReadStruct<VfxVec2>(stream);
 
             VfxParticleDef* particle_def = &emitter_def->particle_def;
             particle_def->duration = ReadStruct<VfxFloat>(stream);

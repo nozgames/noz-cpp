@@ -67,6 +67,7 @@ struct VfxEmitterDef {
     VfxFloat duration;
     VfxFloat angle;
     VfxVec2  spawn;
+    VfxVec2  direction;
     VfxParticleDef particle_def;
     Vfx* vfx;
 };
