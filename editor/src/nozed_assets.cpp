@@ -53,26 +53,26 @@ Shader* SHADER_MESH = nullptr;
 
 // @name
 const Name* NAME_MESH = nullptr;
-const Name* NAME_N = nullptr;
-const Name* NAME_A = nullptr;
-const Name* NAME_B = nullptr;
-const Name* NAME_S = nullptr;
 const Name* NAME_VFX = nullptr;
-const Name* NAME_R = nullptr;
-const Name* NAME_M = nullptr;
-const Name* NAME_NEW = nullptr;
-const Name* NAME_EDIT = nullptr;
+const Name* NAME_S = nullptr;
 const Name* NAME_E = nullptr;
-const Name* NAME_EVENT = nullptr;
-const Name* NAME_ANIMATEDMESH = nullptr;
+const Name* NAME_M = nullptr;
+const Name* NAME_A = nullptr;
+const Name* NAME_N = nullptr;
 const Name* NAME_AM = nullptr;
 const Name* NAME_SAVE = nullptr;
 const Name* NAME_ANIMATION = nullptr;
+const Name* NAME_ANIMATEDMESH = nullptr;
+const Name* NAME_NEW = nullptr;
+const Name* NAME_BUILD = nullptr;
+const Name* NAME_RENAME = nullptr;
+const Name* NAME_EVENT = nullptr;
 const Name* NAME_RU = nullptr;
 const Name* NAME_SKELETON = nullptr;
-const Name* NAME_RENAME = nullptr;
-const Name* NAME_BUILD = nullptr;
 const Name* NAME_MIRROR = nullptr;
+const Name* NAME_EDIT = nullptr;
+const Name* NAME_B = nullptr;
+const Name* NAME_R = nullptr;
 
 // @path
 const Name* PATH_TEXTURE_PALETTE = nullptr;
@@ -108,26 +108,26 @@ bool LoadAssets(Allocator* allocator)
 {
     // @name
     NAME_MESH = GetName("mesh");
-    NAME_N = GetName("n");
-    NAME_A = GetName("a");
-    NAME_B = GetName("b");
-    NAME_S = GetName("s");
     NAME_VFX = GetName("vfx");
-    NAME_R = GetName("r");
-    NAME_M = GetName("m");
-    NAME_NEW = GetName("new");
-    NAME_EDIT = GetName("edit");
+    NAME_S = GetName("s");
     NAME_E = GetName("e");
-    NAME_EVENT = GetName("event");
-    NAME_ANIMATEDMESH = GetName("animatedmesh");
+    NAME_M = GetName("m");
+    NAME_A = GetName("a");
+    NAME_N = GetName("n");
     NAME_AM = GetName("am");
     NAME_SAVE = GetName("save");
     NAME_ANIMATION = GetName("animation");
+    NAME_ANIMATEDMESH = GetName("animatedmesh");
+    NAME_NEW = GetName("new");
+    NAME_BUILD = GetName("build");
+    NAME_RENAME = GetName("rename");
+    NAME_EVENT = GetName("event");
     NAME_RU = GetName("ru");
     NAME_SKELETON = GetName("skeleton");
-    NAME_RENAME = GetName("rename");
-    NAME_BUILD = GetName("build");
     NAME_MIRROR = GetName("mirror");
+    NAME_EDIT = GetName("edit");
+    NAME_B = GetName("b");
+    NAME_R = GetName("r");
 
     // @path
     PATH_TEXTURE_PALETTE = GetName("palette");
