@@ -82,4 +82,18 @@ Place this file in your project directory or Visual Studio's natvis folder.
         </Expand>
     </Type>
 
+    <Type Name="noz::lua::Script">
+        <DisplayString>Script</DisplayString>
+        <Expand>
+            <ExpandedItem>(noz::lua::ScriptImpl*)this</ExpandedItem>
+        </Expand>
+    </Type>
+
+    <Type Name="noz::lua::State">
+        <DisplayString>State</DisplayString>
+        <Expand>
+            <ExpandedItem>(noz::lua::StateImpl*)this</ExpandedItem>
+        </Expand>
+    </Type>
+
 </AutoVisualizer>

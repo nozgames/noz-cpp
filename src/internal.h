@@ -93,6 +93,8 @@ extern void InitTween();
 extern void ShutdownTween();
 
 
+#if defined(NOZ_LUA)
+
 // @lua
 struct lua_State;
 
@@ -114,7 +116,16 @@ namespace noz::lua {
 
     LuaAsset* Wrap(lua_State* L, Asset* asset);
 
-    struct LuaScriptImpl : Script  {
+    struct ScriptImpl : Script  {
         ByteCode byte_code;
     };
+
+    extern float GetNumberField(lua_State* L, int index, const char* field_name, float default_value);
+    extern Align GetAlignField(lua_State* L, int index, const char* field_name, Align default_value);
+    extern Color GetColorField(lua_State* L, int index, const char* field_name, const Color& default_value);
+    extern u8 GetU8Field(lua_State* L, int index, const char* field_name, u8 default_value);
+    extern i32 GetIntField(lua_State* L, int index, const char* field_name, int default_value);
+    extern Asset* GetAssetField(lua_State* L, int index, const char* field_name, Asset* default_value);
 }
+
+#endif

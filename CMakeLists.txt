@@ -112,6 +112,9 @@ if (NOZ_LUA)
         src/lua/lua_render.cpp
         src/lua/lua_mesh.cpp
         src/lua/lua_script.cpp
+        src/lua/lua_ui.cpp
+        src/lua/lua_color.cpp
+        src/lua/lua_util.cpp
     )
 else()
     set(LUA_SOURCE_FILES "")

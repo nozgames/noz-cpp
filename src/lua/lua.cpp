@@ -3,10 +3,13 @@
 //
 
 namespace noz::lua {
-    void InitLuaRender(lua_State*);
+    extern void InitLuaRender(lua_State*);
+    extern void InitLuaUI(lua_State*);
+    extern void InitLuaColor(lua_State*);
 
-    struct LuaStateImpl : State {
+    struct StateImpl : State {
         lua_State* L;
+        int update_ref = LUA_NOREF;
     };
 }
 
@@ -54,6 +57,23 @@ static int Print(lua_State* L) {
 }
 
 void noz::lua::InitLua() {
+}
+
+static int RegisterUpdate(lua_State* L) {
+    StateImpl* state_impl = static_cast<StateImpl*>(lua_getthreaddata(L));
+
+    luaL_checktype(L, 1, LUA_TFUNCTION);
+    lua_pushvalue(L, 1);
+
+    state_impl->update_ref = lua_ref(L, 1);
+
+    return 0;
+}
+
+
+State* noz::lua::CreateState(Allocator* allocator) {
+    StateImpl* state = static_cast<StateImpl*>(Alloc(allocator, sizeof(State)));
+
     auto L = luaL_newstate();
     const luaL_Reg* lib = g_lua_libs;
     for (; lib->func; lib++) {
@@ -63,57 +83,40 @@ void noz::lua::InitLua() {
     }
 
     InitLuaRender(L);
+    InitLuaColor(L);
+    InitLuaUI(L);
 
     luaL_Reg statics[] = {
         { "print", Print },
+        { "RegisterUpdate", RegisterUpdate },
         { nullptr, nullptr }
     };
 
     lua_pushvalue(L, LUA_GLOBALSINDEX);
     luaL_register(L, nullptr, statics);
+    lua_setthreaddata(L, state);
 
-    // auto bytes = CompileLua("print('Hello from Lua!')");
-    // if (luau_load(L, "test.lua", reinterpret_cast<char*>(bytes->code), bytes->size, -1)) {
-    //     size_t len;
-    //     const char* msg = lua_tolstring(L, -1, &len);
-    //     std::string error(msg, len);
-    //     LogError("Lua compile error: %s", error.c_str());
-    //     lua_pop(L, 1);
-    //     return;
-    // }
-
-    //lua_pcall(L, 0, 0, 0);
-}
-
-
-
-State* noz::lua::CreateState(Allocator* allocator) {
-    LuaStateImpl* state = static_cast<LuaStateImpl*>(Alloc(allocator, sizeof(State)));
-    state->L = luaL_newstate();
-
-    const luaL_Reg* lib = g_lua_libs;
-    for (; lib->func; lib++) {
-        lua_pushcfunction(state->L, lib->func, nullptr);
-        lua_pushstring(state->L, lib->name);
-        lua_call(state->L, 1, 0);
-    }
-
-    InitLuaRender(state->L);
-
-    luaL_Reg statics[] = {
-        { "print", Print },
-        { nullptr, nullptr }
-    };
-
-    lua_pushvalue(state->L, LUA_GLOBALSINDEX);
-    luaL_register(state->L, nullptr, statics);
+    state->L = L;
 
     return state;
 }
 
+void noz::lua::Update(State* state) {
+    StateImpl* state_impl = static_cast<StateImpl*>(state);
+    if (state_impl->update_ref == LUA_NOREF)
+        return;
+
+    lua_getref(state_impl->L, state_impl->update_ref);
+    if (lua_pcall(state_impl->L, 0, 0, 0) != 0) {
+        const char* msg = lua_tostring(state_impl->L, -1);
+        LogError("lua update: %s", msg ? msg : "unknown error");
+        lua_pop(state_impl->L, 1);
+    }
+}
+
 void noz::lua::Load(State* state, Script* script) {
-    LuaStateImpl* state_impl = static_cast<LuaStateImpl*>(state);
-    LuaScriptImpl* script_impl = static_cast<LuaScriptImpl*>(script);
+    StateImpl* state_impl = static_cast<StateImpl*>(state);
+    ScriptImpl* script_impl = static_cast<ScriptImpl*>(script);
 
     if (luau_load(state_impl->L, GetName(script)->value, reinterpret_cast<char*>(script_impl->byte_code.code), script_impl->byte_code.size, -1)) {
         size_t len;
@@ -124,5 +127,15 @@ void noz::lua::Load(State* state, Script* script) {
         return;
     }
 
-    lua_pcall(state_impl->L, 0, 0, 0);
+    if (lua_pcall(state_impl->L, 0, 0, 0) != 0) {
+        const char* msg = lua_tostring(state_impl->L, -1);
+        LogError("lua load: %s", msg ? msg : "unknown error");
+        lua_pop(state_impl->L, 1);
+    }
+}
+
+void noz::lua::SetGlobal(State* state, const char* name, Asset* asset) {
+    StateImpl* state_impl = static_cast<StateImpl*>(state);
+    Wrap(state_impl->L, asset);
+    lua_setglobal(state_impl->L, name);
 }

@@ -40,7 +40,7 @@ struct EdgeInsets {
     EdgeInsets(float v) : top(v), left(v), bottom(v), right(v) {}
 };
 
-enum CanvasType {
+enum CanvasType : u8 {
     CANVAS_TYPE_SCREEN,
     CANVAS_TYPE_WORLD
 };

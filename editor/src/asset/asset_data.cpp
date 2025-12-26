@@ -335,6 +335,11 @@ void InitAssetData() {
             if (ext == ".meta")
                 continue;
 
+            // Skip Luau definition files
+            std::string filename = asset_path.filename().string();
+            if (filename.ends_with(".d.luau") || filename.ends_with(".d.lua"))
+                continue;
+
             // Skip if asset with same name already exists (from earlier source path)
             const Name* asset_name = MakeCanonicalAssetName(asset_path);
             if (GetAssetData(ASSET_TYPE_UNKNOWN, asset_name))

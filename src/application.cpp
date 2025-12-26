@@ -177,16 +177,12 @@ static void UpdateScreenSize()
     PlatformSetRenderSize(g_app.screen_size, native_size);
 }
 
-#if 0
-#ifdef NOZ_EDITOR
 static void HandleHotload(EventId event_id, const void* event_data) {
     (void)event_id;
-    const AssetLoadedEvent* hotload_event = (const AssetLoadedEvent*)event_data;
+    const AssetLoadedEvent* hotload_event = static_cast<const AssetLoadedEvent *>(event_data);
     if (g_app.traits.hotload_asset)
         g_app.traits.hotload_asset(hotload_event->name, hotload_event->type);
 }
-#endif
-#endif
 
 // @init
 void InitApplication(ApplicationTraits* traits) {
@@ -227,6 +223,8 @@ void InitApplication(ApplicationTraits* traits) {
     g_app.traits.y = GetIntPref(PREF_WINDOW_Y, g_app.traits.y);
     g_app.traits.width = GetIntPref(PREF_WINDOW_WIDTH, g_app.traits.width);
     g_app.traits.height = GetIntPref(PREF_WINDOW_HEIGHT, g_app.traits.height);
+
+    Listen(EVENT_HOTLOAD, HandleHotload);
 }
 
 static void HandleClose() {
@@ -253,15 +251,6 @@ void InitWindow() {
 
     LoadRendererAssets(g_app.asset_allocator);
 
-#if 0
-#ifdef NOZ_EDITOR
-    if (g_app.traits.editor_port != 0) {
-        Listen(EVENT_HOTLOAD, HandleHotload);
-        InitEditorClient("127.0.0.1", g_app.traits.editor_port);
-    }
-#endif // NOZ_EDITOR
-#endif
-
     InitVfx();
     InitUI(&g_app.traits);
     InitDebug();
@@ -275,17 +264,6 @@ void ShutdownWindow() {
     SetIntPref(PREF_WINDOW_Y, window_rect.y);
     SetIntPref(PREF_WINDOW_WIDTH, window_rect.w);
     SetIntPref(PREF_WINDOW_HEIGHT, window_rect.h);
-
-#if 0
-#ifdef NOZ_EDITOR
-    // Shutdown editor client
-    if (g_app.traits.editor_port != 0)
-    {
-        Unlisten(EVENT_HOTLOAD, HandleHotload);
-        ShutdownEditorClient();
-    }
-#endif // NOZ_EDITOR
-#endif
 
     if (g_app.traits.unload_assets)
         g_app.traits.unload_assets();

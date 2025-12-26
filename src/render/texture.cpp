@@ -161,7 +161,7 @@ void BindTextureInternal(Texture* texture, i32 slot) {
     return PlatformBindTexture(static_cast<TextureImpl*>(texture)->platform_texture, slot);
 }
 
-#ifdef NOZ_EDITOR
+#if !defined(NOZ_BUILTIN_ASSETS)
 
 void ReloadTexture(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table) {
     (void)header;

@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+extern void LoadLuaData(AssetData* a);
+
 static void ImportLua(AssetData* a, const std::filesystem::path& path, Props* config, Props* meta) {
     (void)config;
     (void)meta;
@@ -9,6 +11,8 @@ static void ImportLua(AssetData* a, const std::filesystem::path& path, Props* co
     assert(a);
     assert(a->type == ASSET_TYPE_LUA);
     LuaData* l = static_cast<LuaData*>(a);
+
+    LoadLuaData(l);
 
     AssetHeader header = {};
     header.signature = ASSET_SIGNATURE;

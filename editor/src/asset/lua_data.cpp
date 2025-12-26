@@ -20,7 +20,7 @@ static void FreeLuaData(AssetData* a) {
     l->byte_code.size = 0;
 }
 
-static void LoadLuaData(AssetData* a) {
+void LoadLuaData(AssetData* a) {
     assert(a);
     assert(a->type == ASSET_TYPE_LUA);
     LuaData* l = static_cast<LuaData*>(a);
@@ -37,10 +37,22 @@ LuaData* LoadLuaData(const std::filesystem::path& path) {
     return l;
 }
 
+static void ReloadLuaData(AssetData* a) {
+    assert(a);
+    assert(a->type == ASSET_TYPE_LUA);
+    LuaData* l = static_cast<LuaData*>(a);
+
+    free(l->byte_code.code);
+    l->byte_code.code = nullptr;
+    l->byte_code.size = 0;
+    LoadLuaData(a);
+}
+
 static void Init(LuaData* l) {
     l->vtable = {
         .destructor = FreeLuaData,
         .load = LoadLuaData,
+        .reload = ReloadLuaData,
         .draw = DrawLua
     };
 }

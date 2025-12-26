@@ -3,7 +3,7 @@
 //
 
 namespace noz::lua {
-    void InitLuaRender(lua_State*);
+    extern void InitLuaRender(lua_State*);
 }
 
 using namespace noz::lua;

@@ -6,7 +6,7 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 class Props
@@ -53,10 +53,10 @@ public:
 
 private:
 
-    const std::unordered_map<std::string, std::string>& GetGroup(const char* group) const;
-    std::unordered_map<std::string, std::string>& GetOrAddGroup(const char* group);
+    const std::map<std::string, std::string>& GetGroup(const char* group) const;
+    std::map<std::string, std::string>& GetOrAddGroup(const char* group);
 
-    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> _properties;
+    std::map<std::string, std::map<std::string, std::string>> _properties;
 
     void RebuildKeyCache() const;
 };

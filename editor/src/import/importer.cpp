@@ -103,6 +103,11 @@ static void HandleFileChangeEvent(const FileChangeEvent& event) {
     if (event.type == FILE_CHANGE_TYPE_DELETED)
         return;
 
+    // Skip Luau definition files
+    std::string filename = event.path.filename().string();
+    if (filename.ends_with(".d.luau") || filename.ends_with(".d.lua"))
+        return;
+
     fs::path source_ext = event.path.extension();
     if (source_ext == ".meta") {
         fs::path target_path = event.path;

@@ -84,7 +84,7 @@ void BindShaderInternal(Shader* shader) {
     PlatformBindShader(static_cast<ShaderImpl*>(shader)->platform);
 }
 
-#ifdef NOZ_EDITOR
+#if !defined(NOZ_BUILTIN_ASSETS)
 
 void ReloadShader(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table) {
     ShaderImpl* impl = static_cast<ShaderImpl*>(asset);

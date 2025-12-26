@@ -276,7 +276,7 @@ void UpdateMesh(Mesh* mesh, const MeshVertex* vertices, u16 vertex_count, const 
     NormalizeVertexWeights(impl->vertices, impl->vertex_count);
 }
 
-#ifdef NOZ_EDITOR
+#if !defined(NOZ_BUILTIN_ASSETS)
 
 void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table) {
     (void)header;

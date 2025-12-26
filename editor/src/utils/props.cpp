@@ -247,9 +247,9 @@ Props* Props::Load(const char* content, size_t content_length)
     return props;
 }
 
-const std::unordered_map<std::string, std::string>& Props::GetGroup(const char* group) const
+const std::map<std::string, std::string>& Props::GetGroup(const char* group) const
 {
-    static std::unordered_map<std::string, std::string> empty = {};
+    static std::map<std::string, std::string> empty = {};
 
     auto it = _properties.find(group);
     if (it == _properties.end())
@@ -258,7 +258,7 @@ const std::unordered_map<std::string, std::string>& Props::GetGroup(const char* 
     return it->second;
 }
 
-std::unordered_map<std::string, std::string>& Props::GetOrAddGroup(const char* group)
+std::map<std::string, std::string>& Props::GetOrAddGroup(const char* group)
 {
     auto& props = _properties[group];
     return props;
