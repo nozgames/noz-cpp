@@ -4,7 +4,6 @@
 
 #include <editor.h>
 #include "nozed_assets.h"
-#include "server.h"
 
 namespace fs = std::filesystem;
 
@@ -13,20 +12,17 @@ Props* g_config = nullptr;
 
 static std::thread::id g_main_thread_id;
 
-struct LogQueue
-{
+struct LogQueue {
     std::mutex mutex;
     std::queue<std::string> queue;
 };
 
-static LogQueue& GetLogQueue()
-{
+static LogQueue& GetLogQueue() {
     static LogQueue instance;
     return instance;
 }
 
-static void HandleLog(LogType type, const char* message)
-{
+static void HandleLog(LogType type, const char* message) {
     // Add type prefix with color for display
     std::string formatted_message;
     switch(type) {
@@ -46,24 +42,19 @@ static void HandleLog(LogType type, const char* message)
         break;
     }
 
-    if (std::this_thread::get_id() == g_main_thread_id)
-    {
+    if (std::this_thread::get_id() == g_main_thread_id) {
         printf("%s\n", formatted_message.c_str());
-    }
-    else
-    {
+    } else {
         LogQueue& log_queue = GetLogQueue();
         std::lock_guard lock(log_queue.mutex);
         log_queue.queue.push(formatted_message);
     }
 }
 
-static void ProcessQueuedLogMessages()
-{
+static void ProcessQueuedLogMessages() {
     LogQueue& log_queue = GetLogQueue();
     std::lock_guard lock(log_queue.mutex);
-    while (!log_queue.queue.empty())
-    {
+    while (!log_queue.queue.empty()) {
         std::string message = log_queue.queue.front();
         log_queue.queue.pop();
         printf("%s\n", message.c_str());
@@ -73,12 +64,10 @@ static void ProcessQueuedLogMessages()
 static void UpdateEditor() {
     UpdateImporter();
     ProcessQueuedLogMessages();
-//    UpdateEditorServer();
     UpdateView();
 }
 
-void HandleStatsEvents(EventId event_id, const void* event_data)
-{
+void HandleStatsEvents(EventId event_id, const void* event_data) {
     (void)event_id;
     EditorEventStats* stats = (EditorEventStats*)event_data;
     g_editor.fps = stats->fps;
@@ -93,10 +82,6 @@ void HandleImported(EventId event_id, const void* event_data) {
     Send(EVENT_HOTLOAD, &event);
 
     AddNotification(NOTIFICATION_TYPE_INFO, "imported '%s'", import_event->name->value);
-
-#if 0
-    BroadcastAssetChange(import_event->name, import_event->type);
-#endif
 }
 
 static void SaveUserConfig(Props* user_config) {
@@ -187,7 +172,7 @@ static void InitConfig() {
 }
 
 static void InitImporters() {
-    g_editor.importers = (AssetImporter*)Alloc(ALLOCATOR_DEFAULT, sizeof(AssetImporter) * ASSET_TYPE_COUNT);
+    g_editor.importers = static_cast<AssetImporter *>(Alloc(ALLOCATOR_DEFAULT, sizeof(AssetImporter) * ASSET_TYPE_COUNT));
     g_editor.importers[ASSET_TYPE_ANIMATED_MESH] = GetAnimatedMeshImporter();
     g_editor.importers[ASSET_TYPE_ANIMATION] = GetAnimationImporter();
     g_editor.importers[ASSET_TYPE_FONT] = GetFontImporter();
@@ -199,11 +184,11 @@ static void InitImporters() {
     g_editor.importers[ASSET_TYPE_SKELETON] = GetSkeletonImporter();
     g_editor.importers[ASSET_TYPE_EVENT] = GetEventImporter();
     g_editor.importers[ASSET_TYPE_BIN] = GetBinImporter();
+    g_editor.importers[ASSET_TYPE_LUA] = GetLuaImporter();
 
 #ifdef _DEBUG
-    for (int i=0; i<ASSET_TYPE_COUNT; i++)
-    {
-        assert(g_editor.importers[i].type == (AssetType)i);
+    for (int i=0; i<ASSET_TYPE_COUNT; i++) {
+        assert(g_editor.importers[i].type == static_cast<AssetType>(i));
         assert(g_editor.importers[i].import_func);
         assert(g_editor.importers[i].ext);
     }

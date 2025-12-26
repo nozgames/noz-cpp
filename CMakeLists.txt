@@ -15,6 +15,7 @@ set_property(CACHE NOZ_RENDERER PROPERTY STRINGS "VULKAN" "GLES" "GL")
 option(NOZ_HTTP "Enable HTTP support" OFF)
 option(NOZ_WEBSOCKET "Enable WebSocket support" OFF)
 option(NOZ_FETCH_ZLIB "Fetch zlib (disable if already provided by parent project)" ON)
+option(NOZ_LUA "Enable lua support" OFF)
 
 # Fetch zlib for gzip decompression in WebSocket messages
 if(NOZ_WEBSOCKET AND NOZ_FETCH_ZLIB)
@@ -28,8 +29,6 @@ if(NOZ_WEBSOCKET AND NOZ_FETCH_ZLIB)
     FetchContent_MakeAvailable(zlib)
 endif()
 
-
-# Explicitly list all source files
 set(SOURCE_FILES
     src/application.cpp
     src/asset.cpp
@@ -101,7 +100,23 @@ set(SOURCE_FILES
     src/websocket.cpp
 )
 
-# Add platform-specific files
+if (NOZ_LUA)
+    set(LUAU_BUILD_CLI OFF)
+    set(LUAU_BUILD_TESTS OFF)
+    set(LUAU_BUILD_WEB OFF)
+
+    add_subdirectory(libs/luau)
+
+    set(LUA_SOURCE_FILES
+        src/lua/lua.cpp
+        src/lua/lua_render.cpp
+        src/lua/lua_mesh.cpp
+        src/lua/lua_script.cpp
+    )
+else()
+    set(LUA_SOURCE_FILES "")
+endif()
+
 if(EMSCRIPTEN)
     list(APPEND SOURCE_FILES
         src/platform/web/web_main.cpp
@@ -188,20 +203,24 @@ elseif(APPLE)
     list(APPEND SOURCE_FILES src/platform/null/null_http.cpp)
 endif()
 
-add_library(noz STATIC ${SOURCE_FILES})
-
+add_library(noz STATIC ${SOURCE_FILES} ${LUA_SOURCE_FILES})
 
 # Add WebSocket compile definition if enabled
 if(NOZ_WEBSOCKET)
     target_compile_definitions(noz PUBLIC NOZ_WEBSOCKET)
 endif()
 
+if (NOZ_LUA)
+    target_compile_definitions(noz PUBLIC NOZ_LUA)
+endif()
+
 target_precompile_headers(noz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.h)
 
 # Common include directories
 target_include_directories(noz PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/external
-        ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
 # Platform-specific include directories
 if(EMSCRIPTEN)
@@ -255,6 +274,7 @@ elseif(WIN32)
             Shcore
             xaudio2
             ole32
+            Luau.VM Luau.Compiler Luau.Config Luau.Ast
     )
 
     # Link HTTP backend libraries

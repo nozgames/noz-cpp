@@ -140,6 +140,7 @@ inline Bounds2 GetBounds(AssetData* a) { return a->bounds; }
 #include "animated_mesh_data.h"
 #include "event_data.h"
 #include "bin_data.h"
+#include "lua_data.h"
 
 union FatAssetData {
     AssetData asset;
@@ -154,4 +155,5 @@ union FatAssetData {
     SoundData sound;
     AnimatedMeshData animated_mesh;
     BinData bin;
+    LuaData lua;
 };

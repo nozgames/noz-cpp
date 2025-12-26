@@ -2,7 +2,6 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-#include "editor/editor_client.h"
 #include "platform.h"
 #include <filesystem>
 #include <cstdarg>

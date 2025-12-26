@@ -56,8 +56,19 @@ const char* ToString(AssetType asset_type) {
         case ASSET_TYPE_ANIMATED_MESH: return "AnimatedMesh";
         case ASSET_TYPE_EVENT: return "Event";
         case ASSET_TYPE_BIN: return "Bin";
+        case ASSET_TYPE_LUA: return "LuaScript";
         default: return nullptr;
     }
+}
+
+const char* ToTypeString(AssetType asset_type) {
+    if (asset_type == ASSET_TYPE_LUA) return "noz::lua::Script";
+    return ToString(asset_type);
+}
+
+const char* ToShortString(AssetType asset_type) {
+    if (asset_type == ASSET_TYPE_LUA) return "Lua";
+    return ToString(asset_type);
 }
 
 static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetType asset_type) {

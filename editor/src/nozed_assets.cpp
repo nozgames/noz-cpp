@@ -6,7 +6,7 @@
 #include <noz/noz.h>
 #include "nozed_assets.h"
 
-#ifdef NDEBUG
+#if defined(NOZ_BUILTIN_ASSETS)
 #include "nozed_assets_build.cpp"
 #endif
 
@@ -26,6 +26,7 @@ Mesh* MESH_ICON_EXPAND_DOWN = nullptr;
 Mesh* MESH_ASSET_ICON_VFX = nullptr;
 Mesh* MESH_ASSET_ICON_SOUND = nullptr;
 Mesh* MESH_ASSET_ICON_SHADER = nullptr;
+Mesh* MESH_ASSET_ICON_LUA = nullptr;
 Mesh* MESH_ASSET_ICON_FONT = nullptr;
 Mesh* MESH_ASSET_ICON_EVENT = nullptr;
 Mesh* MESH_ASSET_ICON_BIN = nullptr;
@@ -54,25 +55,25 @@ Shader* SHADER_MESH = nullptr;
 // @name
 const Name* NAME_MESH = nullptr;
 const Name* NAME_VFX = nullptr;
-const Name* NAME_A = nullptr;
-const Name* NAME_E = nullptr;
-const Name* NAME_M = nullptr;
-const Name* NAME_B = nullptr;
-const Name* NAME_R = nullptr;
-const Name* NAME_NEW = nullptr;
-const Name* NAME_EDIT = nullptr;
-const Name* NAME_N = nullptr;
-const Name* NAME_S = nullptr;
 const Name* NAME_BUILD = nullptr;
-const Name* NAME_AM = nullptr;
-const Name* NAME_RENAME = nullptr;
-const Name* NAME_SAVE = nullptr;
-const Name* NAME_SKELETON = nullptr;
 const Name* NAME_ANIMATION = nullptr;
 const Name* NAME_EVENT = nullptr;
-const Name* NAME_ANIMATEDMESH = nullptr;
-const Name* NAME_RU = nullptr;
+const Name* NAME_NEW = nullptr;
+const Name* NAME_RENAME = nullptr;
+const Name* NAME_E = nullptr;
+const Name* NAME_A = nullptr;
+const Name* NAME_N = nullptr;
 const Name* NAME_MIRROR = nullptr;
+const Name* NAME_B = nullptr;
+const Name* NAME_EDIT = nullptr;
+const Name* NAME_R = nullptr;
+const Name* NAME_M = nullptr;
+const Name* NAME_AM = nullptr;
+const Name* NAME_SAVE = nullptr;
+const Name* NAME_RU = nullptr;
+const Name* NAME_ANIMATEDMESH = nullptr;
+const Name* NAME_S = nullptr;
+const Name* NAME_SKELETON = nullptr;
 
 // @path
 const Name* PATH_TEXTURE_PALETTE = nullptr;
@@ -86,6 +87,7 @@ const Name* PATH_MESH_ICON_EXPAND_DOWN = nullptr;
 const Name* PATH_MESH_ASSET_ICON_VFX = nullptr;
 const Name* PATH_MESH_ASSET_ICON_SOUND = nullptr;
 const Name* PATH_MESH_ASSET_ICON_SHADER = nullptr;
+const Name* PATH_MESH_ASSET_ICON_LUA = nullptr;
 const Name* PATH_MESH_ASSET_ICON_FONT = nullptr;
 const Name* PATH_MESH_ASSET_ICON_EVENT = nullptr;
 const Name* PATH_MESH_ASSET_ICON_BIN = nullptr;
@@ -109,25 +111,25 @@ bool LoadAssets(Allocator* allocator)
     // @name
     NAME_MESH = GetName("mesh");
     NAME_VFX = GetName("vfx");
-    NAME_A = GetName("a");
-    NAME_E = GetName("e");
-    NAME_M = GetName("m");
-    NAME_B = GetName("b");
-    NAME_R = GetName("r");
-    NAME_NEW = GetName("new");
-    NAME_EDIT = GetName("edit");
-    NAME_N = GetName("n");
-    NAME_S = GetName("s");
     NAME_BUILD = GetName("build");
-    NAME_AM = GetName("am");
-    NAME_RENAME = GetName("rename");
-    NAME_SAVE = GetName("save");
-    NAME_SKELETON = GetName("skeleton");
     NAME_ANIMATION = GetName("animation");
     NAME_EVENT = GetName("event");
-    NAME_ANIMATEDMESH = GetName("animatedmesh");
-    NAME_RU = GetName("ru");
+    NAME_NEW = GetName("new");
+    NAME_RENAME = GetName("rename");
+    NAME_E = GetName("e");
+    NAME_A = GetName("a");
+    NAME_N = GetName("n");
     NAME_MIRROR = GetName("mirror");
+    NAME_B = GetName("b");
+    NAME_EDIT = GetName("edit");
+    NAME_R = GetName("r");
+    NAME_M = GetName("m");
+    NAME_AM = GetName("am");
+    NAME_SAVE = GetName("save");
+    NAME_RU = GetName("ru");
+    NAME_ANIMATEDMESH = GetName("animatedmesh");
+    NAME_S = GetName("s");
+    NAME_SKELETON = GetName("skeleton");
 
     // @path
     PATH_TEXTURE_PALETTE = GetName("palette");
@@ -141,6 +143,7 @@ bool LoadAssets(Allocator* allocator)
     PATH_MESH_ASSET_ICON_VFX = GetName("asset_icon_vfx");
     PATH_MESH_ASSET_ICON_SOUND = GetName("asset_icon_sound");
     PATH_MESH_ASSET_ICON_SHADER = GetName("asset_icon_shader");
+    PATH_MESH_ASSET_ICON_LUA = GetName("asset_icon_lua");
     PATH_MESH_ASSET_ICON_FONT = GetName("asset_icon_font");
     PATH_MESH_ASSET_ICON_EVENT = GetName("asset_icon_event");
     PATH_MESH_ASSET_ICON_BIN = GetName("asset_icon_bin");
@@ -168,6 +171,7 @@ bool LoadAssets(Allocator* allocator)
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_VFX, MESH_ASSET_ICON_VFX);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_SOUND, MESH_ASSET_ICON_SOUND);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_SHADER, MESH_ASSET_ICON_SHADER);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_LUA, MESH_ASSET_ICON_LUA);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_FONT, MESH_ASSET_ICON_FONT);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_EVENT, MESH_ASSET_ICON_EVENT);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_BIN, MESH_ASSET_ICON_BIN);
@@ -182,6 +186,7 @@ bool LoadAssets(Allocator* allocator)
         MESH_ASSET_ICON_VFX,
         MESH_ASSET_ICON_SOUND,
         MESH_ASSET_ICON_SHADER,
+        MESH_ASSET_ICON_LUA,
         MESH_ASSET_ICON_FONT,
         MESH_ASSET_ICON_EVENT,
         MESH_ASSET_ICON_BIN,
@@ -264,6 +269,7 @@ void UnloadAssets()
     Free(MESH_ASSET_ICON_VFX);
     Free(MESH_ASSET_ICON_SOUND);
     Free(MESH_ASSET_ICON_SHADER);
+    Free(MESH_ASSET_ICON_LUA);
     Free(MESH_ASSET_ICON_FONT);
     Free(MESH_ASSET_ICON_EVENT);
     Free(MESH_ASSET_ICON_BIN);
@@ -304,6 +310,7 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_VFX, MESH_ASSET_ICON_VFX);
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_SOUND, MESH_ASSET_ICON_SOUND);
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_SHADER, MESH_ASSET_ICON_SHADER);
+    NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_LUA, MESH_ASSET_ICON_LUA);
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_FONT, MESH_ASSET_ICON_FONT);
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_EVENT, MESH_ASSET_ICON_EVENT);
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_BIN, MESH_ASSET_ICON_BIN);

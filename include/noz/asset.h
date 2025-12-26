@@ -24,6 +24,7 @@ enum AssetType {
     ASSET_TYPE_ANIMATED_MESH,
     ASSET_TYPE_EVENT,
     ASSET_TYPE_BIN,
+    ASSET_TYPE_LUA,
     ASSET_TYPE_COUNT,
 };
 
@@ -52,6 +53,8 @@ extern bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** n
 extern bool ValidateAssetHeader(AssetHeader* header, uint32_t expected_signature);
 extern const char* GetExtensionFromAssetType(AssetType asset_type);
 extern const char* ToString(AssetType asset_type);
+extern const char* ToShortString(AssetType asset_type);
+extern const char* ToTypeString(AssetType asset_type);
 extern Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, const u8* data=nullptr, u32 data_size=0);
 extern const Name** ReadNameTable(const AssetHeader& header, Stream* stream);
 extern bool IsValidAssetType(AssetType asset_type);
@@ -73,6 +76,7 @@ Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, c
 Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 Asset* LoadAnimatedMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 Asset* LoadBin(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+Asset* LoadLuaScript(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 
 #ifdef NOZ_BUILTIN_ASSETS
 #define NOZ_ASSET_DATA(name) name ## _DATA
@@ -113,12 +117,16 @@ Asset* LoadBin(Allocator* allocator, Stream* stream, AssetHeader* header, const 
 #define NOZ_LOAD_BIN(allocator, path, member) \
     member = static_cast<Bin*>(LoadAsset(allocator, path, ASSET_TYPE_BIN, LoadBin,  NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member)));
 
+#define NOZ_LOAD_LUA(allocator, path, member) \
+    member = static_cast<noz::lua::Script*>(LoadAsset(allocator, path, ASSET_TYPE_LUA, LoadLuaScript,  NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member)));
+
 #define NOZ_RELOAD_FONT(asset_name, asset)
 #define NOZ_RELOAD_SOUND(asset_name, asset)
 #define NOZ_RELOAD_SKELETON(asset_name, asset)
 #define NOZ_RELOAD_ANIMATION(asset_name, asset)
 #define NOZ_RELOAD_ANIMATEDMESH(asset_name, asset)
 #define NOZ_RELOAD_BIN(asset_name, asset)
+#define NOZ_RELOAD_LUA(asset_name, asset)
 
 #ifdef NOZ_EDITOR
 void ReloadAsset(const Name* name, AssetType asset_type, Asset* asset, void (*reload)(Asset*, Stream*, const AssetHeader& header, const Name** name_table));

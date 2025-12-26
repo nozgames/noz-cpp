@@ -159,12 +159,12 @@ static bool ReadAsset(u32 item_index, void* item_ptr, void* user_data) {
     if (asset_type == ASSET_TYPE_UNKNOWN)
         return true;
 
-    const char* type_name = ToString(asset_type);
+    const char* type_name = ToShortString(asset_type);
     if (!type_name)
         return true;
 
     std::string var_name = std::string(type_name) + "_" + a->name->value;
-    Uppercase(var_name.data(), (u32)var_name.size());
+    Uppercase(var_name.data(), static_cast<u32>(var_name.size()));
 
     // Skip if asset with same var_name already exists from an earlier source path
     for (auto& existing : generator.assets) {
@@ -304,17 +304,16 @@ static void GenerateSource(ManifestGenerator& generator) {
 
     WriteCSTR(stream, "\n// @externs\n");
     for (AssetType asset_type : generator.types) {
-        const char* type_name = ToString(asset_type);
-        std::string type_name_upper =
-            type_name;
+        const char* type_name = ToShortString(asset_type);
+        std::string type_name_upper = type_name;
         Uppercase(type_name_upper.data(), (u32)type_name_upper.size());
         WriteCSTR(stream, "extern int %s_COUNT;\n", type_name_upper.c_str());
     }
 
     for (AssetType asset_type : generator.types) {
-        const char* type_name = ToString(asset_type);
+        const char* type_name = ToTypeString(asset_type);
         std::string type_name_upper = type_name;
-        Uppercase(type_name_upper.data(), (u32)type_name_upper.size());
+        Uppercase(type_name_upper.data(), static_cast<u32>(type_name_upper.size()));
 
         WriteCSTR(stream, "\n");
         WriteCSTR(stream, "// @%s\n", type_name);
@@ -357,7 +356,10 @@ static void GenerateSource(ManifestGenerator& generator) {
     for (AssetType asset_type : generator.types) {
         const char* type_name = ToString(asset_type);
         std::string type_name_upper = type_name;
-        Uppercase(type_name_upper.data(), (u32)type_name_upper.size());
+        std::string short_name_upper = ToShortString(asset_type);
+        std::string full_type_name = ToTypeString(asset_type);
+        Uppercase(type_name_upper.data(), static_cast<u32>(type_name_upper.size()));
+        Uppercase(short_name_upper.data(), static_cast<u32>(short_name_upper.size()));
 
         WriteCSTR(stream, "\n");
         WriteCSTR(stream, "    // @%s\n", type_name);
@@ -366,11 +368,16 @@ static void GenerateSource(ManifestGenerator& generator) {
             if (asset.type != asset_type)
                 continue;
 
-            WriteCSTR(stream, "    NOZ_LOAD_%s(allocator, PATH_%s, %s);\n", type_name_upper.c_str(), asset.var_name.c_str(), asset.var_name.c_str());
+            WriteCSTR(
+                stream,
+                "    NOZ_LOAD_%s(allocator, PATH_%s, %s);\n",
+                short_name_upper.c_str(),
+                asset.var_name.c_str(),
+                asset.var_name.c_str());
         }
 
         WriteCSTR(stream, "\n");
-        WriteCSTR(stream, "    static %s* _%s[] = {\n", type_name, type_name_upper.c_str());
+        WriteCSTR(stream, "    static %s* _%s[] = {\n", full_type_name.c_str(), short_name_upper.c_str());
 
         for (AssetEntry& asset : generator.assets) {
             if (asset.type != asset_type)
@@ -382,8 +389,8 @@ static void GenerateSource(ManifestGenerator& generator) {
         WriteCSTR(stream, "        nullptr\n");
         WriteCSTR(stream, "    };\n");
         WriteCSTR(stream, "\n");
-        WriteCSTR(stream, "    %s = _%s;\n", type_name_upper.c_str(), type_name_upper.c_str());
-        WriteCSTR(stream, "    %s_COUNT = sizeof(_%s) / sizeof(void*);\n", type_name_upper.c_str(), type_name_upper.c_str());
+        WriteCSTR(stream, "    %s = _%s;\n", short_name_upper.c_str(), short_name_upper.c_str());
+        WriteCSTR(stream, "    %s_COUNT = sizeof(_%s) / sizeof(void*);\n", short_name_upper.c_str(), short_name_upper.c_str());
     }
 
     WriteCSTR(stream, "\n");
@@ -447,17 +454,18 @@ static void GenerateHeader(ManifestGenerator& generator) {
 
     for (AssetType asset_type : generator.types) {
         const char* type_name = ToString(asset_type);
+        const char* full_type_name = ToTypeString(asset_type);
         std::string type_name_upper = type_name;
         Uppercase(type_name_upper.data(), (u32)type_name_upper.size());
 
         WriteCSTR(stream, "\n");
-        WriteCSTR(stream, "// @%s\n", type_name);
+        WriteCSTR(stream, "// @%s\n", full_type_name);
 
         for (AssetEntry& asset : generator.assets) {
             if (asset.type != asset_type)
                 continue;
 
-            WriteCSTR(stream, "extern %s* %s;\n", type_name, asset.var_name.c_str());
+            WriteCSTR(stream, "extern %s* %s;\n", full_type_name, asset.var_name.c_str());
         }
     }
 

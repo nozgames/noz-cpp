@@ -92,3 +92,29 @@ struct SkeletonImpl : Skeleton {
 extern void InitTween();
 extern void ShutdownTween();
 
+
+// @lua
+struct lua_State;
+
+namespace noz::lua {
+    struct LuaAsset;
+
+    enum LuaObjectType {
+        LUA_OBJECT_TYPE_UNKNOWN,
+        LUA_OBJECT_TYPE_MESH,
+    };
+
+    struct LuaObject {
+        LuaObjectType type;
+    };
+
+    struct LuaAsset : LuaObject {
+        Asset* asset;
+    };
+
+    LuaAsset* Wrap(lua_State* L, Asset* asset);
+
+    struct LuaScriptImpl : Script  {
+        ByteCode byte_code;
+    };
+}

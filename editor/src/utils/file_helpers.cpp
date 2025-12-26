@@ -50,11 +50,9 @@ std::string ReadAllText(Allocator* allocator, const fs::path& path)
     std::string result;
 
     Stream* stream = LoadStream(allocator, path);
-    if (stream)
-    {
+    if (stream) {
         u32 size = GetSize(stream);
-        if (size > 0)
-        {
+        if (size > 0) {
             result.resize(size + 1);
             ReadBytes(stream, result.data(), size);
             result[size] = 0;

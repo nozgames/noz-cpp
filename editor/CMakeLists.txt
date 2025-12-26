@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+set(NOZ_LUA ON CACHE BOOL "" FORCE)
+
 add_subdirectory(../ noz)
 target_compile_definitions(noz PUBLIC NOZ_EDITOR)
 
