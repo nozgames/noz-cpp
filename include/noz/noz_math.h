@@ -299,6 +299,7 @@ extern Mat3 Rotate(float rotation);
 extern Mat3 Rotate(const Vec2& direction);
 extern Mat3 Scale(float scale);
 extern Mat3 Scale(const Vec2& scale);
+inline Mat3 Scale(float scale_x, float scale_y) { return Scale(Vec2{ scale_x, scale_y }); }
 extern Mat3 Inverse(const Mat3& m);
 extern Vec2 TransformPoint(const Mat3& m, const Vec2& point);
 inline Vec2 TransformPoint(const Mat3& m) { return TransformPoint(m, VEC2_ZERO); }

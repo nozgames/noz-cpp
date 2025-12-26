@@ -32,16 +32,23 @@ void SetEndianness(Stream* stream, StreamEndianess endian) {
 
 Stream* CreateStream(Allocator* allocator, u32 capacity, u32 initial_size) {
     StreamImpl* impl = static_cast<StreamImpl *>(Alloc(allocator, sizeof(StreamImpl), StreamDestructor));
+    if (!impl)
+        return nullptr;
 
     if (capacity == 0)
         capacity = DEFAULT_INITIAL_CAPACITY;
 
     impl->data = static_cast<u8 *>(Alloc(allocator, capacity));
+    if (!impl->data) {
+        Free(impl);
+        return nullptr;
+    }
+
     impl->size = initial_size;
     impl->capacity = capacity;
     impl->position = 0;
     impl->free_data = true;
-    
+
     return impl;
 }
 
@@ -406,12 +413,10 @@ void WriteName(Stream* stream, const Name* name) {
         WriteString(stream, name->value);
 }
 
-void WriteString(Stream* stream, const char* value)
-{
+void WriteString(Stream* stream, const char* value) {
     if (!stream) return;
     
-    if (!value) 
-    {
+    if (!value) {
         WriteU32(stream, 0);
         return;
     }
@@ -421,8 +426,7 @@ void WriteString(Stream* stream, const char* value)
     WriteBytes(stream, value, length);
 }
 
-void WriteCSTR(Stream* stream, const char* format, ...)
-{
+void WriteCSTR(Stream* stream, const char* format, ...) {
     if (!stream || !format) return;
     
     char buffer[4096];
@@ -431,41 +435,50 @@ void WriteCSTR(Stream* stream, const char* format, ...)
     int written = vsnprintf(buffer, sizeof(buffer), format, args);
     va_end(args);
     
-    if (written > 0 && (size_t)written < sizeof(buffer))
-    {
-        WriteBytes(stream, (u8*)buffer, written);
-    }
+    if (written > 0 && static_cast<size_t>(written) < sizeof(buffer))
+        WriteBytes(stream, buffer, written);
 }
 
-void WriteBytes(Stream* stream, const void* data, u32 size)
-{
+void WriteBytes(Stream* stream, const void* data, u32 size) {
     if (!stream || !data || size == 0) return;
-    
+
     StreamImpl* impl = static_cast<StreamImpl*>(stream);
-    
-    EnsureCapacity(impl, impl->position + size);
-    
+
+    // Sanity checks for corruption
+    if (impl->position > impl->capacity || impl->size > impl->capacity) {
+        LogError("[STREAM] Corruption detected! pos=%u size=%u cap=%u", impl->position, impl->size, impl->capacity);
+        return;
+    }
+
+    u32 required = impl->position + size;
+    if (required < impl->position) {
+        LogError("[STREAM] Overflow! pos=%u + size=%u", impl->position, size);
+        return;
+    }
+
+    EnsureCapacity(impl, required);
+
+    if (impl->capacity < required || !impl->data) {
+        LogError("[STREAM] Alloc failed! cap=%u required=%u data=%p", impl->capacity, required, impl->data);
+        return;
+    }
+
     memcpy(impl->data + impl->position, data, size);
     impl->position += size;
-    
-    // Update size if we've written past the current end
-    if (impl->position > impl->size) 
+
+    if (impl->position > impl->size)
         impl->size = impl->position;
 }
 
-// Color operations
-Color ReadColor(Stream* stream)
-{
+Color ReadColor(Stream* stream) {
     Color color = {0.0f, 0.0f, 0.0f, 1.0f};
     ReadBytes(stream, &color, sizeof(Color));
     return color;
 }
 
-void WriteColor(Stream* stream, Color value)
-{
+void WriteColor(Stream* stream, Color value) {
     WriteBytes(stream, &value, sizeof(Color));
 }
-
 
 static void Resize(StreamImpl* impl, u32 new_capacity) {
     if (new_capacity < impl->capacity)
@@ -480,10 +493,22 @@ static void Resize(StreamImpl* impl, u32 new_capacity) {
 }
 
 static void EnsureCapacity(StreamImpl* impl, u32 required_size) {
-    if (required_size <= impl->capacity) return;
+    if (required_size <= impl->capacity)
+        return;
+
     u32 new_capacity = impl->capacity;
-    while (new_capacity < required_size) 
-        new_capacity *= 2;
+    if (new_capacity == 0)
+        new_capacity = DEFAULT_INITIAL_CAPACITY;
+
+    while (new_capacity < required_size) {
+        u32 doubled = new_capacity * 2;
+        if (doubled <= new_capacity)  // overflow
+            break;
+        new_capacity = doubled;
+    }
+
+    if (new_capacity < required_size)
+        new_capacity = required_size;
 
     Resize(impl, new_capacity);
 }

@@ -450,6 +450,10 @@ void RequestFullscreen() {
     PlatformRequestFullscreen();
 }
 
+void OpenUrl(const char* url) {
+    PlatformOpenUrl(url);
+}
+
 void SetSystemCursor(SystemCursor cursor) {
     PlatformSetCursor(cursor);
 }
@@ -551,4 +555,70 @@ bool HasArg(const char* name) {
         }
     }
     return false;
+}
+
+// @query
+static constexpr int MAX_QUERY_PARAMS = 64;
+static constexpr int MAX_QUERY_STRING_SIZE = 4096;
+
+struct QueryParam {
+    const char* name;
+    const char* value;
+};
+
+static QueryParam g_query_params[MAX_QUERY_PARAMS] = {};
+static int g_query_param_count = 0;
+static char g_query_string_buffer[MAX_QUERY_STRING_SIZE] = {};
+static int g_query_string_offset = 0;
+
+static const char* AllocQueryString(const char* str) {
+    if (!str) return nullptr;
+
+    int len = static_cast<int>(strlen(str));
+    if (g_query_string_offset + len + 1 > MAX_QUERY_STRING_SIZE)
+        return nullptr;
+
+    char* dest = g_query_string_buffer + g_query_string_offset;
+    memcpy(dest, str, len + 1);
+    g_query_string_offset += len + 1;
+    return dest;
+}
+
+void InitQueryParams() {
+    g_query_param_count = 0;
+    g_query_string_offset = 0;
+}
+
+void SetQueryParam(const char* name, const char* value) {
+    if (!name || g_query_param_count >= MAX_QUERY_PARAMS)
+        return;
+
+    // Check if param already exists, update it
+    for (int i = 0; i < g_query_param_count; i++) {
+        if (strcmp(g_query_params[i].name, name) == 0) {
+            g_query_params[i].value = AllocQueryString(value);
+            return;
+        }
+    }
+
+    // Add new param
+    g_query_params[g_query_param_count].name = AllocQueryString(name);
+    g_query_params[g_query_param_count].value = AllocQueryString(value);
+    g_query_param_count++;
+}
+
+const char* GetQueryParam(const char* name) {
+    if (!name)
+        return nullptr;
+
+    for (int i = 0; i < g_query_param_count; i++) {
+        if (strcmp(g_query_params[i].name, name) == 0) {
+            return g_query_params[i].value;
+        }
+    }
+    return nullptr;
+}
+
+bool HasQueryParam(const char* name) {
+    return GetQueryParam(name) != nullptr;
 }

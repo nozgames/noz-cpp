@@ -156,6 +156,9 @@ extern void PlatformRequestLandscape();
 extern void PlatformRequestFullscreen();
 extern bool PlatformIsFullscreen();
 
+// @url
+extern void PlatformOpenUrl(const char* url);
+
 // @native_text_input
 extern void PlatformShowTextbox(const noz::Rect& rect, const Text& text, const NativeTextboxStyle& style);
 extern void PlatformHideTextbox();

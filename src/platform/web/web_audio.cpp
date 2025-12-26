@@ -51,28 +51,82 @@ EM_JS(void, js_init_audio, (), {
         window.nozAudio.musicGain = null;
         window.nozAudio.sounds = {};
         window.nozAudio.musicSource = null;
+        window.nozAudio.pendingSounds = [];  // Sounds created before context exists
     }
 
-    if (window.nozAudio.context) return;
+    // Helper to ensure audio context exists and is running
+    window.nozAudio.ensureContext = function() {
+        if (!window.nozAudio.context) {
+            console.log('[AUDIO] ensureContext: creating new AudioContext');
+            window.nozAudio.context = new (window.AudioContext || window.webkitAudioContext)();
+            console.log('[AUDIO] ensureContext: context created, state:', window.nozAudio.context.state);
 
-    window.nozAudio.context = new (window.AudioContext || window.webkitAudioContext)();
+            window.nozAudio.masterGain = window.nozAudio.context.createGain();
+            window.nozAudio.soundGain = window.nozAudio.context.createGain();
+            window.nozAudio.musicGain = window.nozAudio.context.createGain();
 
-    window.nozAudio.masterGain = window.nozAudio.context.createGain();
-    window.nozAudio.soundGain = window.nozAudio.context.createGain();
-    window.nozAudio.musicGain = window.nozAudio.context.createGain();
+            window.nozAudio.soundGain.connect(window.nozAudio.masterGain);
+            window.nozAudio.musicGain.connect(window.nozAudio.masterGain);
+            window.nozAudio.masterGain.connect(window.nozAudio.context.destination);
 
-    window.nozAudio.soundGain.connect(window.nozAudio.masterGain);
-    window.nozAudio.musicGain.connect(window.nozAudio.masterGain);
-    window.nozAudio.masterGain.connect(window.nozAudio.context.destination);
+            // Process any sounds that were created before context existed
+            console.log('[AUDIO] ensureContext: processing', window.nozAudio.pendingSounds.length, 'pending sounds');
+            window.nozAudio.pendingSounds.forEach(function(pending) {
+                window.nozAudio.createSoundBuffer(pending.soundId, pending.pcmData, pending.sampleRate, pending.channels, pending.bitsPerSample);
+            });
+            window.nozAudio.pendingSounds = [];
+        }
 
-    // Resume audio context on user interaction
-    var resumeAudio = function() {
-        if (window.nozAudio.context && window.nozAudio.context.state === 'suspended') {
-            window.nozAudio.context.resume();
+        if (window.nozAudio.context.state === 'suspended') {
+            console.log('[AUDIO] ensureContext: resuming suspended context');
+            window.nozAudio.context.resume().then(function() {
+                console.log('[AUDIO] ensureContext: context resumed, new state:', window.nozAudio.context.state);
+            });
+        }
+
+        return window.nozAudio.context;
+    };
+
+    // Helper to create sound buffer (called after context exists)
+    window.nozAudio.createSoundBuffer = function(soundId, pcmData, sampleRate, channels, bitsPerSample) {
+        var bytesPerSample = bitsPerSample / 8;
+        var numSamples = Math.floor(pcmData.length / (bytesPerSample * channels));
+        var audioBuffer = window.nozAudio.context.createBuffer(channels, numSamples, sampleRate);
+
+        for (var ch = 0; ch < channels; ch++) {
+            var channelData = audioBuffer.getChannelData(ch);
+            for (var i = 0; i < numSamples; i++) {
+                var offset = (i * channels + ch) * bytesPerSample;
+                var sample = 0;
+
+                if (bitsPerSample === 8) {
+                    sample = (pcmData[offset] - 128) / 128.0;
+                } else if (bitsPerSample === 16) {
+                    var value = pcmData[offset] | (pcmData[offset + 1] << 8);
+                    if (value >= 32768) value -= 65536;
+                    sample = value / 32768.0;
+                }
+
+                channelData[i] = sample;
+            }
+        }
+
+        window.nozAudio.sounds[soundId] = {};
+        window.nozAudio.sounds[soundId].buffer = audioBuffer;
+        window.nozAudio.sounds[soundId].instances = {};
+    };
+
+    // Create context on first user interaction and start any pending music
+    var initOnGesture = function() {
+        window.nozAudio.ensureContext();
+        // If there's pending music, start it now that we have a user gesture
+        if (window.nozAudio.startMusic) {
+            window.nozAudio.startMusic();
         }
     };
-    document.addEventListener('click', resumeAudio, { once: true });
-    document.addEventListener('keydown', resumeAudio, { once: true });
+    document.addEventListener('click', initOnGesture);
+    document.addEventListener('keydown', initOnGesture);
+    document.addEventListener('touchstart', initOnGesture);
 });
 
 EM_JS(void, js_shutdown_audio, (), {
@@ -83,44 +137,34 @@ EM_JS(void, js_shutdown_audio, (), {
 });
 
 EM_JS(void, js_resume_audio, (), {
-    if (window.nozAudio && window.nozAudio.context && window.nozAudio.context.state === 'suspended') {
-        window.nozAudio.context.resume();
+    if (window.nozAudio) {
+        window.nozAudio.ensureContext();
     }
 });
 
 EM_JS(void, js_create_sound, (int soundId, const void* dataPtr, int dataSize, int sampleRate, int channels, int bitsPerSample), {
-    if (!window.nozAudio || !window.nozAudio.context) return;
+    if (!window.nozAudio) return;
 
+    // Copy PCM data from WASM memory
     var pcmData = new Uint8Array(dataSize);
     for (var i = 0; i < dataSize; i++) {
         pcmData[i] = HEAPU8[dataPtr + i];
     }
 
-    var bytesPerSample = bitsPerSample / 8;
-    var numSamples = Math.floor(dataSize / (bytesPerSample * channels));
-    var audioBuffer = window.nozAudio.context.createBuffer(channels, numSamples, sampleRate);
-
-    for (var ch = 0; ch < channels; ch++) {
-        var channelData = audioBuffer.getChannelData(ch);
-        for (var i = 0; i < numSamples; i++) {
-            var offset = (i * channels + ch) * bytesPerSample;
-            var sample = 0;
-
-            if (bitsPerSample === 8) {
-                sample = (pcmData[offset] - 128) / 128.0;
-            } else if (bitsPerSample === 16) {
-                var value = pcmData[offset] | (pcmData[offset + 1] << 8);
-                if (value >= 32768) value -= 65536;
-                sample = value / 32768.0;
-            }
-
-            channelData[i] = sample;
-        }
+    // If context doesn't exist yet, queue for later
+    if (!window.nozAudio.context) {
+        window.nozAudio.pendingSounds.push({
+            soundId: soundId,
+            pcmData: pcmData,
+            sampleRate: sampleRate,
+            channels: channels,
+            bitsPerSample: bitsPerSample
+        });
+        return;
     }
 
-    window.nozAudio.sounds[soundId] = {};
-    window.nozAudio.sounds[soundId].buffer = audioBuffer;
-    window.nozAudio.sounds[soundId].instances = {};
+    // Context exists, create the buffer now
+    window.nozAudio.createSoundBuffer(soundId, pcmData, sampleRate, channels, bitsPerSample);
 });
 
 EM_JS(void, js_free_sound, (int soundId), {
@@ -134,12 +178,12 @@ EM_JS(void, js_free_sound, (int soundId), {
 });
 
 EM_JS(void, js_play_sound, (int soundId, int instanceId, float volume, float pitch, int loop), {
-    if (!window.nozAudio || !window.nozAudio.context) return;
-    if (!window.nozAudio.sounds[soundId]) return;
+    if (!window.nozAudio) return;
 
-    if (window.nozAudio.context.state === 'suspended') {
-        window.nozAudio.context.resume();
-    }
+    // Ensure context exists and is running
+    window.nozAudio.ensureContext();
+
+    if (!window.nozAudio.sounds[soundId]) return;
 
     var sound = window.nozAudio.sounds[soundId];
     var source = window.nozAudio.context.createBufferSource();
@@ -217,22 +261,56 @@ EM_JS(float, js_get_sound_pitch, (int soundId, int instanceId), {
 });
 
 EM_JS(void, js_play_music, (int soundId), {
-    if (!window.nozAudio || !window.nozAudio.context) return;
-    if (!window.nozAudio.sounds[soundId]) return;
-
-    if (window.nozAudio.context.state === 'suspended') {
-        window.nozAudio.context.resume();
+    if (!window.nozAudio) {
+        console.warn('[AUDIO] js_play_music: nozAudio not initialized');
+        return;
     }
 
-    var sound = window.nozAudio.sounds[soundId];
-    var source = window.nozAudio.context.createBufferSource();
+    // Store the pending music to play
+    window.nozAudio.pendingMusicId = soundId;
 
-    source.buffer = sound.buffer;
-    source.loop = true;
-    source.connect(window.nozAudio.musicGain);
-    source.start(0);
+    // Helper function to actually start the music
+    window.nozAudio.startMusic = function() {
+        var musicId = window.nozAudio.pendingMusicId;
+        if (musicId === null || musicId === undefined) return;
 
-    window.nozAudio.musicSource = source;
+        if (!window.nozAudio.sounds[musicId]) {
+            console.warn('[AUDIO] startMusic: sound not found:', musicId);
+            return;
+        }
+
+        // Stop any existing music
+        if (window.nozAudio.musicSource) {
+            try { window.nozAudio.musicSource.stop(); } catch (e) {}
+        }
+
+        var sound = window.nozAudio.sounds[musicId];
+        var source = window.nozAudio.context.createBufferSource();
+
+        source.buffer = sound.buffer;
+        source.loop = true;
+        source.connect(window.nozAudio.musicGain);
+        source.start(0);
+
+        window.nozAudio.musicSource = source;
+        window.nozAudio.pendingMusicId = null;
+        console.log('[AUDIO] startMusic: playing soundId:', musicId);
+    };
+
+    // Ensure context exists
+    window.nozAudio.ensureContext();
+
+    // If context is running, start immediately
+    if (window.nozAudio.context.state === 'running') {
+        window.nozAudio.startMusic();
+    } else {
+        // Context is suspended, wait for it to resume
+        console.log('[AUDIO] js_play_music: context suspended, deferring music playback');
+        window.nozAudio.context.resume().then(function() {
+            console.log('[AUDIO] js_play_music: context resumed, starting music');
+            window.nozAudio.startMusic();
+        });
+    }
 });
 
 EM_JS(void, js_stop_music, (), {

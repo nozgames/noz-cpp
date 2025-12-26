@@ -79,5 +79,14 @@ SoundHandle Play(Sound* sound, float volume, float pitch, bool loop) {
 }
 
 void PlayMusicInternal(Sound* sound) {
-    PlatformPlayMusic(static_cast<SoundImpl*>(sound)->platform);
+    if (!sound) {
+        LogWarning("[AUDIO] PlayMusicInternal: sound is null");
+        return;
+    }
+    SoundImpl* impl = static_cast<SoundImpl*>(sound);
+    if (!impl->platform) {
+        LogWarning("[AUDIO] PlayMusicInternal: platform sound is null for '%s'", sound->name ? sound->name->value : "unnamed");
+        return;
+    }
+    PlatformPlayMusic(impl->platform);
 }

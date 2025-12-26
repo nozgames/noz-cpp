@@ -309,6 +309,7 @@ void Serialize(VfxData* v, Stream* stream) {
         WriteStruct(stream, emitter.def.duration);
         WriteStruct(stream, emitter.def.angle);
         WriteStruct(stream, emitter.def.spawn);
+        WriteStruct(stream, emitter.def.direction);
 
         const VfxParticleDef& particle = emitter.def.particle_def;
         WriteStruct(stream, particle.duration);
@@ -376,7 +377,8 @@ static void LoadVfxData(AssetData* a) {
         emitter.def.duration = ParseFloat(source->GetString(emitter_name.c_str(), "duration", "1.0"), VFX_FLOAT_ONE);
         emitter.def.angle = ParseFloat(source->GetString(emitter_name.c_str(), "angle", "0..360"), {0.0f, 360.0f});
         //emitter.def.radius = ParseFloat(source->GetString(emitter_name.c_str(), "radius", "0"), VFX_FLOAT_ZERO);
-        emitter.def.spawn = ParseVec2(source->GetString(emitter_name.c_str(), "spawn", "(0, 0, 0)"), VFX_VEC2_ZERO);
+        emitter.def.spawn = ParseVec2(source->GetString(emitter_name.c_str(), "spawn", "(0, 0)"), VFX_VEC2_ZERO);
+        emitter.def.direction = ParseVec2(source->GetString(emitter_name.c_str(), "direction", "(0, 0)"), VFX_VEC2_ZERO);
 
         // Particle
         emitter.def.particle_def.duration = ParseFloat(source->GetString(particle_section.c_str(), "duration", "1.0"), VFX_FLOAT_ONE);

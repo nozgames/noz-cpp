@@ -22,6 +22,13 @@
 #define INTERNET_REQFLAG_FROM_CACHE 0x00000001
 #endif
 
+enum HttpAsyncState : u8 {
+    HTTP_ASYNC_IDLE,
+    HTTP_ASYNC_CONNECTING,
+    HTTP_ASYNC_QUERY_DATA,
+    HTTP_ASYNC_READING,
+};
+
 struct WindowsHttpRequest {
     HINTERNET connection;
     HINTERNET request;
@@ -31,9 +38,18 @@ struct WindowsHttpRequest {
     u32 generation;
     PlatformHttpStatus status;
     int status_code;
-    std::atomic<bool> send_complete{false};
+    std::atomic<bool> async_complete{false};
+    std::atomic<DWORD_PTR> async_result{0};  // Can hold HINTERNET or byte count
+    std::atomic<DWORD> async_error{0};
+    HttpAsyncState async_state;
     bool headers_received;
     bool from_cache;
+    DWORD bytes_available;
+    DWORD bytes_read;
+
+    // Persistent buffer for async reads
+    u8 read_buffer[8192];
+    DWORD read_buffer_bytes;  // Bytes read into buffer (filled by InternetReadFile)
 };
 
 struct WindowsHttp {
@@ -91,9 +107,28 @@ static void CleanupRequest(WindowsHttpRequest* request) {
     request->request_body_size = 0;
     request->status = PLATFORM_HTTP_STATUS_NONE;
     request->status_code = 0;
-    request->send_complete.store(false);
+    request->async_complete.store(false);
+    request->async_result.store(0);
+    request->async_error.store(0);
+    request->async_state = HTTP_ASYNC_IDLE;
     request->headers_received = false;
     request->from_cache = false;
+    request->bytes_read = 0;
+    request->bytes_available = 0;
+    request->read_buffer_bytes = 0;
+}
+
+// Pack index and generation into callback context
+inline DWORD_PTR MakeCallbackContext(u32 index, u32 generation) {
+    return (static_cast<DWORD_PTR>(generation) << 32) | static_cast<DWORD_PTR>(index);
+}
+
+inline u32 GetCallbackIndex(DWORD_PTR context) {
+    return static_cast<u32>(context & 0xFFFFFFFF);
+}
+
+inline u32 GetCallbackGeneration(DWORD_PTR context) {
+    return static_cast<u32>(context >> 32);
 }
 
 static void CALLBACK InternetCallback(
@@ -105,44 +140,40 @@ static void CALLBACK InternetCallback(
     (void)hInternet;
     (void)dwStatusInformationLength;
 
-    WindowsHttpRequest* request = (WindowsHttpRequest*)dwContext;
-    if (!request)
+    u32 index = GetCallbackIndex(dwContext);
+    u32 generation = GetCallbackGeneration(dwContext);
+
+    if (index >= g_windows_http.max_requests)
         return;
 
-    if (request < &g_windows_http.requests[0] ||
-        request >= &g_windows_http.requests[g_windows_http.max_requests])
+    WindowsHttpRequest* request = &g_windows_http.requests[index];
+
+    // Check generation with relaxed ordering - just a quick check
+    if (request->generation != generation)
         return;
 
-    if (request->status != PLATFORM_HTTP_STATUS_PENDING)
-        return;
-
-    switch (dwInternetStatus)
-    {
-        case INTERNET_STATUS_REQUEST_COMPLETE:
-        {
-            INTERNET_ASYNC_RESULT* result = (INTERNET_ASYNC_RESULT*)lpvStatusInformation;
-            // Only treat actual WinINet errors (12000+) as failures
-            if (result->dwError >= INTERNET_ERROR_BASE)
-            {
-                LogError("HTTP async error: %lu (0x%08lX)", result->dwError, result->dwError);
-                request->status = PLATFORM_HTTP_STATUS_ERROR;
-            }
-            else
-            {
-                // For InternetOpenUrlW async, the handle comes in dwResult
-                EnterCriticalSection(&g_windows_http.cs);
-                if (!request->request && result->dwResult)
-                    request->request = (HINTERNET)result->dwResult;
-                request->send_complete.store(true);
-                LeaveCriticalSection(&g_windows_http.cs);
-            }
-            break;
+    // Handle connection closed - signal error so we don't get stuck
+    if (dwInternetStatus == INTERNET_STATUS_HANDLE_CLOSING ||
+        dwInternetStatus == INTERNET_STATUS_CONNECTION_CLOSED) {
+        // Only signal if we're waiting for something
+        if (request->async_state != HTTP_ASYNC_IDLE && !request->async_complete.load(std::memory_order_relaxed)) {
+            request->async_error.store(ERROR_INTERNET_CONNECTION_ABORTED, std::memory_order_relaxed);
+            request->async_result.store(0, std::memory_order_relaxed);
+            request->async_complete.store(true, std::memory_order_release);
         }
-
-        case INTERNET_STATUS_RESPONSE_RECEIVED:
-        case INTERNET_STATUS_HANDLE_CLOSING:
-            break;
+        return;
     }
+
+    // Only handle REQUEST_COMPLETE for normal completion
+    if (dwInternetStatus != INTERNET_STATUS_REQUEST_COMPLETE)
+        return;
+
+    INTERNET_ASYNC_RESULT* result = (INTERNET_ASYNC_RESULT*)lpvStatusInformation;
+
+    // Only write to atomics from callback - main thread reads them
+    request->async_error.store(result->dwError, std::memory_order_relaxed);
+    request->async_result.store(result->dwResult, std::memory_order_relaxed);
+    request->async_complete.store(true, std::memory_order_release);
 }
 
 void PlatformInitHttp(const ApplicationTraits& traits) {
@@ -161,9 +192,15 @@ void PlatformInitHttp(const ApplicationTraits& traits) {
         reqeust.generation = 0;
         reqeust.status = PLATFORM_HTTP_STATUS_NONE;
         reqeust.status_code = 0;
-        reqeust.send_complete.store(false);
+        reqeust.async_complete.store(false);
+        reqeust.async_result.store(0);
+        reqeust.async_error.store(0);
+        reqeust.async_state = HTTP_ASYNC_IDLE;
         reqeust.headers_received = false;
         reqeust.from_cache = false;
+        reqeust.bytes_available = 0;
+        reqeust.bytes_read = 0;
+        reqeust.read_buffer_bytes = 0;
     }
 
     InitializeCriticalSection(&g_windows_http.cs);
@@ -192,11 +229,104 @@ void PlatformInitHttp(const ApplicationTraits& traits) {
 }
 
 static void ProcessReuqest(WindowsHttpRequest& request) {
-    if (!request.headers_received) {
+    // State machine for async operations
+    switch (request.async_state) {
+        case HTTP_ASYNC_CONNECTING:
+        {
+            // Waiting for connection to complete
+            if (!request.async_complete.load(std::memory_order_acquire))
+                return;
+
+            // Check for error (dwError is ERROR_SUCCESS on success)
+            DWORD error = request.async_error.load(std::memory_order_relaxed);
+            if (error != ERROR_SUCCESS) {
+                request.status = PLATFORM_HTTP_STATUS_ERROR;
+                return;
+            }
+
+            // Store handle if we got it from callback
+            if (!request.request) {
+                request.request = reinterpret_cast<HINTERNET>(request.async_result.load(std::memory_order_relaxed));
+            }
+
+            // Validate we have a handle
+            if (!request.request) {
+                request.status = PLATFORM_HTTP_STATUS_ERROR;
+                return;
+            }
+
+            // Reset for next operation
+            request.async_complete.store(false, std::memory_order_relaxed);
+            request.async_state = HTTP_ASYNC_IDLE;
+            break;
+        }
+
+        case HTTP_ASYNC_QUERY_DATA:
+        {
+            // Waiting for InternetQueryDataAvailable to complete
+            if (!request.async_complete.load(std::memory_order_acquire))
+                return;
+
+            DWORD error = request.async_error.load(std::memory_order_relaxed);
+            if (error != ERROR_SUCCESS) {
+                request.status = PLATFORM_HTTP_STATUS_ERROR;
+                return;
+            }
+
+            // Result contains bytes available
+            request.bytes_available = static_cast<DWORD>(request.async_result.load(std::memory_order_relaxed));
+            request.async_complete.store(false, std::memory_order_relaxed);
+            request.async_state = HTTP_ASYNC_IDLE;
+
+            if (request.bytes_available == 0) {
+                // EOF
+                if (request.response)
+                    SeekBegin(request.response, 0);
+                request.status = PLATFORM_HTTP_STATUS_COMPLETE;
+                return;
+            }
+            break;
+        }
+
+        case HTTP_ASYNC_READING:
+        {
+            // Waiting for InternetReadFile to complete
+            if (!request.async_complete.load(std::memory_order_acquire))
+                return;
+
+            DWORD error = request.async_error.load(std::memory_order_relaxed);
+            if (error != ERROR_SUCCESS) {
+                request.status = PLATFORM_HTTP_STATUS_ERROR;
+                return;
+            }
+
+            request.async_complete.store(false, std::memory_order_relaxed);
+            request.async_state = HTTP_ASYNC_IDLE;
+
+            // read_buffer_bytes was filled by InternetReadFile when async completed
+            if (request.read_buffer_bytes == 0) {
+                // EOF
+                if (request.response)
+                    SeekBegin(request.response, 0);
+                request.status = PLATFORM_HTTP_STATUS_COMPLETE;
+                return;
+            }
+
+            WriteBytes(request.response, request.read_buffer, request.read_buffer_bytes);
+            request.bytes_read += request.read_buffer_bytes;
+            request.read_buffer_bytes = 0;
+            break;
+        }
+
+        case HTTP_ASYNC_IDLE:
+            break;
+    }
+
+    // Process headers if we haven't yet
+    if (!request.headers_received && request.request) {
         DWORD status_code = 0;
         DWORD size;
 
-        // @content_length
         DWORD content_length = 0;
         size = sizeof(content_length);
         if (HttpQueryInfoW(
@@ -207,8 +337,11 @@ static void ProcessReuqest(WindowsHttpRequest& request) {
             nullptr))
         {
             if (content_length > 0) {
-                if (request.response == nullptr)
-                    request.response = CreateStream(ALLOCATOR_DEFAULT, content_length);
+                request.bytes_available = content_length;
+                if (request.response == nullptr) {
+                    request.response = CreateStream(ALLOCATOR_DEFAULT, content_length + 1);
+                    GetData(request.response)[content_length] = 0;
+                }
                 else
                     Resize(request.response, content_length);
             }
@@ -225,7 +358,6 @@ static void ProcessReuqest(WindowsHttpRequest& request) {
             request.status_code = static_cast<int>(status_code);
             request.headers_received = true;
 
-            // Check if response came from cache using InternetQueryOption
             DWORD req_flags = 0;
             size = sizeof(req_flags);
             if (InternetQueryOptionW(
@@ -236,73 +368,59 @@ static void ProcessReuqest(WindowsHttpRequest& request) {
             {
                 request.from_cache = (req_flags & INTERNET_REQFLAG_FROM_CACHE) != 0;
             }
-
         } else {
             DWORD err = GetLastError();
-            if (err != ERROR_IO_PENDING) {
-                // Headers not available yet or error
-                if (err != ERROR_HTTP_HEADER_NOT_FOUND)
-                    return;
-            }
+            if (err == ERROR_IO_PENDING)
+                return;
+            if (err != ERROR_HTTP_HEADER_NOT_FOUND)
+                return;
         }
     }
 
-    DWORD bytes_available = 0;
-    if (!InternetQueryDataAvailable(request.request, &bytes_available, 0, 0)) {
-        DWORD err = GetLastError();
-        if (err == ERROR_IO_PENDING)
-            return;
+    // Create stream if needed
+    if (!request.response) {
+        u32 initial_cap = request.bytes_available > 0 ? request.bytes_available : 8192u;
+        request.response = CreateStream(ALLOCATOR_DEFAULT, initial_cap);
+    }
 
+    // Start async read - use persistent variable for byte count
+    request.read_buffer_bytes = 0;
+    if (!InternetReadFile(
+        request.request,
+        request.read_buffer,
+        sizeof(request.read_buffer),
+        &request.read_buffer_bytes))
+    {
+        DWORD err = GetLastError();
+        if (err == ERROR_IO_PENDING) {
+            request.async_state = HTTP_ASYNC_READING;
+            return;
+        }
         request.status = PLATFORM_HTTP_STATUS_ERROR;
         return;
     }
 
-    if (bytes_available == 0) {
+    // Completed synchronously
+    if (request.read_buffer_bytes == 0) {
+        if (request.response)
+            SeekBegin(request.response, 0);
         request.status = PLATFORM_HTTP_STATUS_COMPLETE;
         return;
     }
 
-    if (!request.response)
-        request.response = CreateStream(ALLOCATOR_DEFAULT, Min(8192, bytes_available));
-
-    DWORD bytes_read = 0;
-    while (bytes_available > 0) {
-        u32 to_read = Min(bytes_available, 8192);
-        u8 temp_buffer[8192];
-        if (!InternetReadFile(
-            request.request,
-            temp_buffer,
-            to_read,
-            &bytes_read))
-        {
-            DWORD err = GetLastError();
-            if (err == ERROR_IO_PENDING)
-                return;
-
-            request.status = PLATFORM_HTTP_STATUS_ERROR;
-            return;
-        }
-
-        if (bytes_read == 0) {
-            request.status = PLATFORM_HTTP_STATUS_COMPLETE;
-            return;
-        }
-
-        // Append to response stream
-        WriteBytes(request.response, temp_buffer, bytes_read);
-
-        bytes_available -= bytes_read;
-    }
+    WriteBytes(request.response, request.read_buffer, request.read_buffer_bytes);
+    request.bytes_read += request.read_buffer_bytes;
+    request.read_buffer_bytes = 0;
 }
 
 void PlatformUpdateHttp() {
     for (u32 request_index = 0; request_index < g_windows_http.max_requests; request_index++) {
         WindowsHttpRequest& request = g_windows_http.requests[request_index];
-        if (request.status != PLATFORM_HTTP_STATUS_PENDING || !request.request)
+        if (request.status != PLATFORM_HTTP_STATUS_PENDING)
             continue;
 
-        // Wait for send/open to complete before reading
-        if (!request.send_complete.load())
+        // Need either a handle or be waiting for one
+        if (!request.request && request.async_state != HTTP_ASYNC_CONNECTING)
             continue;
 
         ProcessReuqest(request);
@@ -361,6 +479,10 @@ PlatformHttpHandle PlatformGetURL(const char* url)
     if (_strnicmp(url, "https://", 8) == 0)
         flags |= INTERNET_FLAG_SECURE;
 
+    // Set generation and status BEFORE making async call so callback can validate
+    request->generation = ++g_windows_http.next_request_id;
+    request->status = PLATFORM_HTTP_STATUS_PENDING;
+
     // Open URL - WinINet handles connection pooling and caching automatically
     request->request = InternetOpenUrlW(
         g_windows_http.session,
@@ -368,7 +490,7 @@ PlatformHttpHandle PlatformGetURL(const char* url)
         nullptr,  // headers
         0,        // headers length
         flags,
-        (DWORD_PTR)request);
+        MakeCallbackContext(request_index, request->generation));
 
     Free(wide_url);
 
@@ -378,18 +500,17 @@ PlatformHttpHandle PlatformGetURL(const char* url)
         if (err != ERROR_IO_PENDING)
         {
             LogError("InternetOpenUrl failed: %lu (0x%08lX)", err, err);
+            request->status = PLATFORM_HTTP_STATUS_NONE;
             return MakeHttpHandle(0, 0xFFFFFFFF);
         }
         // Handle will come through callback
+        request->async_state = HTTP_ASYNC_CONNECTING;
     }
     else
     {
         // Got handle immediately - ready to read
-        request->send_complete.store(true);
+        request->async_state = HTTP_ASYNC_IDLE;
     }
-
-    request->status = PLATFORM_HTTP_STATUS_PENDING;
-    request->generation = ++g_windows_http.next_request_id;
 
     return MakeHttpHandle(request_index, request->generation);
 }
@@ -430,6 +551,11 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
     wchar_t hostname[256] = {};
     wcsncpy_s(hostname, url_components.lpszHostName, url_components.dwHostNameLength);
 
+    // Set generation and status BEFORE making async calls so callback can validate
+    request->generation = ++g_windows_http.next_request_id;
+    request->status = PLATFORM_HTTP_STATUS_PENDING;
+    DWORD_PTR callback_context = MakeCallbackContext(request_index, request->generation);
+
     // Connect
     HINTERNET connection = InternetConnectW(
         g_windows_http.session,
@@ -439,11 +565,12 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
         nullptr,
         INTERNET_SERVICE_HTTP,
         0,
-        (DWORD_PTR)request);
+        callback_context);
 
     if (!connection)
     {
         Free(w_url);
+        request->status = PLATFORM_HTTP_STATUS_NONE;
         return MakeHttpHandle(0, 0xFFFFFFFF);
     }
 
@@ -476,7 +603,7 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
         nullptr,
         nullptr,
         flags,
-        (DWORD_PTR)request);
+        callback_context);
 
     Free(w_url);
     Free(w_path);
@@ -485,6 +612,7 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
     if (!request->request)
     {
         InternetCloseHandle(connection);
+        request->status = PLATFORM_HTTP_STATUS_NONE;
         return MakeHttpHandle(0, 0xFFFFFFFF);
     }
 
@@ -515,9 +643,6 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
         request->request_body_size = body_size;
     }
 
-    request->status = PLATFORM_HTTP_STATUS_PENDING;
-    request->generation = ++g_windows_http.next_request_id;
-
     // Send request
     if (!HttpSendRequestW(
         request->request,
@@ -532,12 +657,16 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
             LogError("HttpSendRequest failed: %lu (0x%08lX)", err, err);
             request->status = PLATFORM_HTTP_STATUS_ERROR;
         }
-        // Otherwise wait for callback to set send_complete
+        else
+        {
+            // Wait for callback
+            request->async_state = HTTP_ASYNC_CONNECTING;
+        }
     }
     else
     {
         // Send completed immediately
-        request->send_complete.store(true);
+        request->async_state = HTTP_ASYNC_IDLE;
     }
 
     return MakeHttpHandle(request_index, request->generation);

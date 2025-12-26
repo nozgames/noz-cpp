@@ -74,8 +74,11 @@ float Update(AnimatedMesh* mesh, float current_time, float speed, bool loop) {
     return current_time;
 }
 
-int GetFrameIndex(AnimatedMesh* mesh, float time) {
+int GetFrameIndex(AnimatedMesh* mesh, float time, bool loop) {
     AnimatedMeshImpl* impl = static_cast<AnimatedMeshImpl*>(mesh);
+    if (loop)
+        return FloorToInt(time * static_cast<float>(impl->frame_rate)) % impl->frame_count;
+
     return Clamp(FloorToInt(time * static_cast<float>(impl->frame_rate)), 0, impl->frame_count - 1);
 }
 

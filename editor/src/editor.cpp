@@ -127,8 +127,10 @@ static void InitConfig() {
         fs::path project_path = project_arg;
         if (project_path.is_relative()) {
             project_path = fs::current_path() / project_path;
+            std::string temp = project_path.string();
+            project_path = fs::absolute(temp);
         }
-        config_path = fs::absolute(project_path) / "editor.cfg";
+        config_path = project_path / "editor.cfg";
     } else {
         config_path = "./editor.cfg";
     }

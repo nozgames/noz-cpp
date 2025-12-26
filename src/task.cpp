@@ -587,10 +587,17 @@ void noz::UpdateTasks() {
                 CancelChildren(handle);
 
                 DestroyTask(&impl);
-            } else if (state == TASK_STATE_WAIT_DEPENDENT) {
-                if (HasActiveDependents(&impl))
-                    continue;
+            }
+        }
+    }
 
+    // Always check WAIT_DEPENDENT tasks - they need cleanup even when no new tasks complete
+    // This fixes a bug where WAIT_DEPENDENT tasks could get stuck if their dependent was
+    // destroyed but no other tasks completed in subsequent frames
+    for (i32 task_index=0; task_index < g_tasks.max_tasks; task_index++) {
+        TaskImpl& impl = g_tasks.tasks[task_index];
+        if (impl.state.load() == TASK_STATE_WAIT_DEPENDENT) {
+            if (!HasActiveDependents(&impl)) {
                 DestroyTask(&impl);
             }
         }
@@ -617,12 +624,15 @@ void noz::UpdateTasks() {
     if (should_print) {
         int pending_count = 0;
         int running_count = 0;
+        int wait_dependent = 0;
         for (i32 i = 0; i < g_tasks.max_tasks; i++) {
             TaskImpl& task = g_tasks.tasks[i];
             if (task.state == TASK_STATE_PENDING)
                 pending_count++;
             else if (task.state == TASK_STATE_RUNNING)
                 running_count++;
+            else if (task.state == TASK_STATE_WAIT_DEPENDENT)
+                wait_dependent++;
         }
 
         LogInfo("[TASK] UPDATE   : running=%d  pending=%d", running_count, pending_count);
