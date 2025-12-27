@@ -372,12 +372,6 @@ bool UpdateApplication() {
     UpdateWebSocket();
     noz::UpdateTasks();
 
-#if 0
-#ifdef NOZ_EDITOR
-    UpdateEditorClient();
-#endif
-#endif
-
     UpdateFPS();
 
     return g_app.running;
