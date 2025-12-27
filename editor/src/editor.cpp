@@ -265,25 +265,29 @@ static void ResolveAssetPaths() {
     g_editor.asset_paths[g_editor.asset_path_count] = nullptr;
 }
 
+#if defined(NOZ_EDITOR_LIB)
+void EditorMain(const ApplicationTraits& traits) {
+    ApplicationTraits editor_traits = traits;
+#else
 void Main() {
-    g_main_thread_id = std::this_thread::get_id();
+    ApplicationTraits editor_traits = traits;
+    Init(editor_traits);
+    editor_traits.title = "NoZ Editor";
+#endif
 
     InitConfig();
     ResolveAssetPaths();
 
-    ApplicationTraits traits = {};
-    Init(traits);
-    traits.title = "NoZ Editor";
-    traits.asset_paths = g_editor.asset_paths;
-    traits.load_assets = LoadAssets;
-    traits.unload_assets = UnloadAssets;
-    traits.hotload_asset = EditorHotLoad;
-    traits.renderer.msaa_samples = 4;
-    traits.scratch_memory_size = noz::MB * 128;
-    traits.update = UpdateEditor;
-    traits.shutdown = ShutdownEditor;
+    editor_traits.asset_paths = g_editor.asset_paths;
+    editor_traits.load_assets = LoadAssets;
+    editor_traits.unload_assets = UnloadAssets;
+    editor_traits.hotload_asset = EditorHotLoad;
+    editor_traits.renderer.msaa_samples = 4;
+    editor_traits.scratch_memory_size = noz::MB * 128;
+    editor_traits.update = UpdateEditor;
+    editor_traits.shutdown = ShutdownEditor;
 
-    InitApplication(&traits);
+    InitApplication(&editor_traits);
     InitPalettes();
 
     InitEditor();
@@ -302,6 +306,5 @@ void Main() {
     InitView();
     InitCommandInput();
     InitUserConfig();
-    //InitEditorServer(g_config);
 }
 
