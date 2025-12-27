@@ -88,7 +88,7 @@ static void WriteBuildAsset(FILE* file, AssetData* a, const char* extension, con
 }
 
 void Build() {
-    const fs::path& manifest_path = GetManifestPath();
+    const fs::path& manifest_path = GetManifestCppPath();
     fs::path build_path = manifest_path;
     build_path.replace_extension("");
     build_path = build_path.string() + "_build.cpp";

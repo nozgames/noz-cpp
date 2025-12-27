@@ -10,8 +10,6 @@ constexpr int UI_REF_WIDTH = 1920;
 constexpr int UI_REF_HEIGHT = 1080;
 constexpr int MAX_PALETTES = 64;
 
-#include <asset/asset_data.h>
-
 enum NotificationType {
     NOTIFICATION_TYPE_INFO,
     NOTIFICATION_TYPE_ERROR

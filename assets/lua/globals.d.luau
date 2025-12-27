@@ -10,6 +10,18 @@ declare class Animation end
 declare class AnimatedMesh end
 declare class Shader end
 declare class Bin end
+declare class Vfx end
+
+-- Asset loaders
+declare function LoadMesh(path: string): Mesh
+declare function LoadTexture(path: string): Texture
+declare function LoadShader(path: string): Shader
+declare function LoadFont(path: string): Font
+declare function LoadSound(path: string): Sound
+declare function LoadSkeleton(path: string): Skeleton
+declare function LoadAnimation(path: string): Animation
+declare function LoadAnimatedMesh(path: string): AnimatedMesh
+declare function LoadVfx(path: string): Vfx
 
 declare class Color
     r: number
@@ -48,13 +60,27 @@ export type LabelStyle = {
     align: Align?,
 }
 
+export type ImageStretch = number
+
+export type ImageStyle = {
+    stretch: ImageStretch?,
+    align: Align?,
+    scale: number?,
+    color: Color?,
+}
+
 declare function BeginCanvas(style: CanvasStyle?): ()
 declare function EndCanvas(): ()
 declare function BeginContainer(style: ContainerStyle?): ()
 declare function EndContainer(): ()
+declare function BeginColumn(style: ContainerStyle?): ()
+declare function EndColumn(): ()
+declare function BeginRow(style: ContainerStyle?): ()
+declare function EndRow(): ()
 declare function DrawMesh(mesh: Mesh): ()
 declare function RegisterUpdate(callback: () -> ()): ()
 declare function Label(text: string, style: LabelStyle?): ()
+declare function Image(image: Texture | Mesh, style: ImageStyle?): ()
 
 declare function print(...: any): ()
 
@@ -75,3 +101,7 @@ declare ALIGN_CENTER: Align
 declare ALIGN_BOTTOM_LEFT: Align
 declare ALIGN_BOTTOM_RIGHT: Align
 declare ALIGN_BOTTOM_CENTER: Align
+
+declare IMAGE_STRETCH_NONE: ImageStretch
+declare IMAGE_STRETCH_FILL: ImageStretch
+declare IMAGE_STRETCH_UNIFORM: ImageStretch

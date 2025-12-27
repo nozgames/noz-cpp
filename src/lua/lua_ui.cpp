@@ -20,6 +20,8 @@ static const char* k_font_size = "font_size";
 static const char* k_border_width = "border_width";
 static const char* k_border_color = "border_color";
 static const char* k_border_radius = "border_radius";
+static const char* k_scale = "scale";
+static const char* k_stretch = "stretch";
 
 static int LuaBeginCanvas(lua_State* L) {
     CanvasStyle style = {};
@@ -88,7 +90,30 @@ static int LuaLabel(lua_State* L) {
 }
 
 static int LuaImage(lua_State* L) {
-    (void)L;
+    if (!lua_isuserdata(L, 1))
+        luaL_error(L, "Image: first argument must be a Texture or Mesh");
+
+    LuaAsset* lua_asset = static_cast<LuaAsset*>(lua_touserdata(L, 1));
+    if (!lua_asset || !lua_asset->asset)
+        luaL_error(L, "Image: invalid asset");
+
+    ImageStyle style = {};
+    if (lua_istable(L, 2)) {
+        style.stretch = static_cast<ImageStretch>(GetU8Field(L, 2, k_stretch, style.stretch));
+        style.align = GetAlignField(L, 2, k_align, style.align);
+        style.scale = GetNumberField(L, 2, k_scale, style.scale);
+        style.color = GetColorField(L, 2, k_color, style.color);
+    }
+
+    Asset* asset = lua_asset->asset;
+    if (asset->type == ASSET_TYPE_TEXTURE) {
+        Image(static_cast<Texture*>(asset), style);
+    } else if (asset->type == ASSET_TYPE_MESH) {
+        Image(static_cast<Mesh*>(asset), style);
+    } else {
+        luaL_error(L, "Image: unsupported asset type");
+    }
+
     return 0;
 }
 
@@ -151,4 +176,12 @@ void noz::lua::InitLuaUI(lua_State* L) {
     lua_setglobal(L, "ALIGN_BOTTOM_RIGHT");
     lua_pushinteger(L, ALIGN_BOTTOM_CENTER);
     lua_setglobal(L, "ALIGN_BOTTOM_CENTER");
+
+    // Image stretch constants
+    lua_pushinteger(L, IMAGE_STRETCH_NONE);
+    lua_setglobal(L, "IMAGE_STRETCH_NONE");
+    lua_pushinteger(L, IMAGE_STRETCH_FILL);
+    lua_setglobal(L, "IMAGE_STRETCH_FILL");
+    lua_pushinteger(L, IMAGE_STRETCH_UNIFORM);
+    lua_setglobal(L, "IMAGE_STRETCH_UNIFORM");
 }

@@ -83,7 +83,6 @@ struct Editor {
     Mesh* meshes[MAX_ASSETS];
     Texture* textures[MAX_ASSETS];
 
-    bool unity;
     std::filesystem::path save_dir;
 
     PaletteDef palettes[COLOR_PALETTE_COUNT];
@@ -138,7 +137,6 @@ extern void ShutdownImporter();
 extern void UpdateImporter();
 extern void QueueImport(const std::filesystem::path& path);
 extern void WaitForImportJobs();
-extern const std::filesystem::path& GetManifestPath();
 
 extern AssetImporter GetShaderImporter();
 extern AssetImporter GetTextureImporter();
@@ -149,6 +147,9 @@ extern AssetImporter GetSoundImporter();
 extern AssetImporter GetSkeletonImporter();
 extern AssetImporter GetAnimationImporter();
 extern AssetImporter GetAnimatedMeshImporter();
+
+extern const std::filesystem::path& GetManifestCppPath();
+extern const std::filesystem::path& GetManifestLuaPath();
 
 // @grid
 extern Vec2 SnapToGrid(const Vec2& position);

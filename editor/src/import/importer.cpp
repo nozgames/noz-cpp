@@ -20,7 +20,8 @@ struct Importer {
     std::atomic<bool> running;
     std::atomic<bool> thread_running;
     std::unique_ptr<std::thread> thread;
-    std::filesystem::path manifest_path;
+    std::filesystem::path manifest_cpp_path;
+    std::filesystem::path manifest_lua_path;
     std::mutex mutex;
     std::vector<JobHandle> jobs;
     std::vector<ImportEvent> import_events;
@@ -153,17 +154,6 @@ static void ExecuteJob(void* data) {
         return;
     }
 
-    if (g_editor.unity) {
-        fs::path unity_dir =
-            g_editor.unity_path /
-            ToString(job->asset->importer->type) /
-            (std::string(job->asset->name->value) + ".noz");
-
-        //SaveStream(target_stream, unity_dir);
-    }
-
-    // todo: Check if any other assets depend on this and if so requeue them
-
     std::lock_guard lock(g_importer.mutex);
     g_importer.import_events.push_back({
         .name =  job->asset->name,
@@ -193,7 +183,7 @@ static void CleanupOrphanedAssets() {
 static void PostImportJob(void *data) {
     (void)data;
 
-    GenerateAssetManifest(g_editor.output_path, g_importer.manifest_path, g_config);
+    GenerateAssetManifest(g_editor.output_path, g_config);
 }
 
 static bool UpdateJobs() {
@@ -275,16 +265,20 @@ void UpdateImporter() {
         Send(EDITOR_EVENT_IMPORTED, &event);
 }
 
-const std::filesystem::path& GetManifestPath() {
-    return g_importer.manifest_path;
-}
-
 void InitImporter() {
     assert(!g_importer.thread_running);
 
     g_importer.running = true;
     g_importer.thread_running = true;
-    g_importer.manifest_path = fs::canonical(fs::path(g_editor.project_path) / g_config->GetString("manifest", "output_file", "src/assets.cpp"));
+
+    if (g_config->HasKey("manifest", "generate_lua"))
+        g_importer.manifest_lua_path = fs::weakly_canonical(fs::path(g_editor.project_path)
+            / g_config->GetString("manifest", "generate_lua", "./assets/lua/global.lua"));
+
+    if (g_config->HasKey("manifest", "generate_cpp"))
+        g_importer.manifest_cpp_path = fs::weakly_canonical(fs::path(g_editor.project_path)
+            / g_config->GetString("manifest", "generate_cpp", "./src/game_assets.cpp"));
+
     g_importer.thread = std::make_unique<std::thread>([] {
         RunImporter();
         g_importer.thread_running = false;
@@ -303,4 +297,12 @@ void ShutdownImporter() {
         g_importer.thread->join();
 
     g_importer.thread.reset();
+}
+
+const std::filesystem::path& GetManifestCppPath() {
+    return g_importer.manifest_cpp_path;
+}
+
+const std::filesystem::path& GetManifestLuaPath() {
+    return g_importer.manifest_lua_path;
 }

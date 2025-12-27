@@ -89,7 +89,7 @@ struct LabelStyle {
     Material* material;
 };
 
-enum ImageStretch {
+enum ImageStretch : u8 {
     IMAGE_STRETCH_NONE,
     IMAGE_STRETCH_FILL,
     IMAGE_STRETCH_UNIFORM

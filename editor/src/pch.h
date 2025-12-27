@@ -58,9 +58,9 @@ enum EditorEvent {
     EDITOR_EVENT_IMPORTED
 };
 
-#include <utils/props.h>
-#include <../include/noz/tokenizer.h>
-#include <utils/file_helpers.h>
+#include "utils/props.h"
+#include <noz/tokenizer.h>
+#include "utils/file_helpers.h"
 #include "style.h"
 #include "editor.h"
 #include "nozed_assets.h"

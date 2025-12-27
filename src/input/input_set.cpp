@@ -139,7 +139,7 @@ void UpdateInputState(InputSet* input_set) {
 }
 
 static bool IsButtonReset(InputSet* input_set, InputCode code) {
-    return (static_cast<InputSetImpl*>(input_set)->buttons[code] & BUTTON_STATE_RESET) != 0;
+    return input_set && (static_cast<InputSetImpl*>(input_set)->buttons[code] & BUTTON_STATE_RESET) != 0;
 }
 
 bool IsButtonDown(InputSet* input_set, InputCode code) {
@@ -147,11 +147,11 @@ bool IsButtonDown(InputSet* input_set, InputCode code) {
 }
 
 bool WasButtonPressed(InputSet* input_set, InputCode code) {
-    return (static_cast<InputSetImpl*>(input_set)->buttons[code] & BUTTON_STATE_PRESSED) != 0;
+    return input_set && (static_cast<InputSetImpl*>(input_set)->buttons[code] & BUTTON_STATE_PRESSED) != 0;
 }
 
 bool WasButtonReleased(InputSet* input_set, InputCode code) {
-    return (static_cast<InputSetImpl*>(input_set)->buttons[code] & BUTTON_STATE_RELEASED) != 0;
+    return input_set && (static_cast<InputSetImpl*>(input_set)->buttons[code] & BUTTON_STATE_RELEASED) != 0;
 }
 
 void Copy(InputSet* dst, InputSet* src) {

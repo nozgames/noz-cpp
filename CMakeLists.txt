@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 4.1.2)
 
 project(noz LANGUAGES C CXX)
 set(CMAKE_C_STANDARD 99)
@@ -110,7 +110,7 @@ if (NOZ_LUA)
     set(LUA_SOURCE_FILES
         src/lua/lua.cpp
         src/lua/lua_render.cpp
-        src/lua/lua_mesh.cpp
+        src/lua/lua_asset.cpp
         src/lua/lua_script.cpp
         src/lua/lua_ui.cpp
         src/lua/lua_color.cpp

@@ -888,6 +888,28 @@ static void ToggleGrid() {
 // Shader* SHADER_UI_IMAGE = nullptr;
 // Shader* SHADER_VFX = nullptr;
 
+const Name* NAME_MESH = nullptr;
+const Name* NAME_VFX = nullptr;
+const Name* NAME_BUILD = nullptr;
+const Name* NAME_ANIMATION = nullptr;
+const Name* NAME_EVENT = nullptr;
+const Name* NAME_NEW = nullptr;
+const Name* NAME_RENAME = nullptr;
+const Name* NAME_E = nullptr;
+const Name* NAME_A = nullptr;
+const Name* NAME_N = nullptr;
+const Name* NAME_MIRROR = nullptr;
+const Name* NAME_B = nullptr;
+const Name* NAME_EDIT = nullptr;
+const Name* NAME_R = nullptr;
+const Name* NAME_M = nullptr;
+const Name* NAME_AM = nullptr;
+const Name* NAME_SAVE = nullptr;
+const Name* NAME_RU = nullptr;
+const Name* NAME_ANIMATEDMESH = nullptr;
+const Name* NAME_S = nullptr;
+const Name* NAME_SKELETON = nullptr;
+
 
 void InitView() {
     InitUndo();
@@ -1011,6 +1033,28 @@ void InitView() {
     InitSkeletonEditor();
     InitAnimationEditor();
     InitAnimatedMeshEditor();
+
+    NAME_MESH = GetName("mesh");
+    NAME_VFX = GetName("vfx");
+    NAME_BUILD = GetName("build");
+    NAME_ANIMATION = GetName("animation");
+    NAME_EVENT = GetName("event");
+    NAME_NEW = GetName("new");
+    NAME_RENAME = GetName("rename");
+    NAME_E = GetName("e");
+    NAME_A = GetName("a");
+    NAME_N = GetName("n");
+    NAME_MIRROR = GetName("mirror");
+    NAME_B = GetName("b");
+    NAME_EDIT = GetName("edit");
+    NAME_R = GetName("r");
+    NAME_M = GetName("m");
+    NAME_AM = GetName("am");
+    NAME_SAVE = GetName("save");
+    NAME_RU = GetName("ru");
+    NAME_ANIMATEDMESH = GetName("animatedmesh");
+    NAME_S = GetName("s");
+    NAME_SKELETON = GetName("skeleton");
 
     TextureData* palette_texture_data = static_cast<TextureData*>(GetAssetData(
         ASSET_TYPE_TEXTURE,

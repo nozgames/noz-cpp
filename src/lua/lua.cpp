@@ -6,6 +6,7 @@ namespace noz::lua {
     extern void InitLuaRender(lua_State*);
     extern void InitLuaUI(lua_State*);
     extern void InitLuaColor(lua_State*);
+    extern void InitLuaAsset(lua_State*);
 
     struct StateImpl : State {
         lua_State* L;
@@ -85,6 +86,7 @@ State* noz::lua::CreateState(Allocator* allocator) {
     InitLuaRender(L);
     InitLuaColor(L);
     InitLuaUI(L);
+    InitLuaAsset(L);
 
     luaL_Reg statics[] = {
         { "print", Print },

@@ -156,7 +156,7 @@ static void InitConfig() {
     // Read in the source paths
     for (auto& path : g_config->GetKeys("source")) {
         fs::path full_path = project_path / path;
-        full_path = canonical(full_path);
+        full_path = weakly_canonical(full_path);
         if (!fs::exists(full_path))
             fs::create_directories(full_path);
         SetValue(g_editor.source_paths[g_editor.source_path_count], full_path.string().c_str());
@@ -167,7 +167,6 @@ static void InitConfig() {
     g_editor.output_path = fs::absolute(project_path / fs::path(g_config->GetString("editor", "output_path", "assets"))).string();
     g_editor.unity_path = fs::absolute(project_path / fs::path(g_config->GetString("editor", "unity_path", "./assets/noz")));
     g_editor.save_dir = g_config->GetString("editor", "save_path", "assets");
-    g_editor.unity = g_config->GetBool("editor", "unity", false);
     g_editor.project_path = project_path.string();
 
     fs::create_directories(g_editor.output_path);
