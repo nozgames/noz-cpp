@@ -68,6 +68,7 @@ extern noz::RectInt PlatformGetWindowRect();
 extern Vec2Int PlatformGetWindowSize();
 extern void PlatformSetCursor(SystemCursor cursor);
 extern void PlatformSetRenderSize(Vec2Int logical_size, Vec2Int native_size);
+extern float PlatformGetSystemDPIScale();
 
 // @render
 extern void PlatformBeginRender();

@@ -86,6 +86,7 @@ void ExitOutOfMemory(const char* message=nullptr);
 Vec2Int GetScreenSize();
 Vec2 GetScreenCenter();
 float GetScreenAspectRatio();
+float GetSystemDPIScale(); // Returns system DPI scale factor (1.0 = 96 DPI on Windows)
 bool IsScreenRotated();  // True if screen is being rotated to match preferred orientation
 bool IsMobile();         // True if running on a mobile device
 bool IsFullscreen();     // True if currently in fullscreen mode

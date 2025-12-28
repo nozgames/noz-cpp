@@ -406,6 +406,10 @@ bool IsMobile() {
     return PlatformIsMobile();
 }
 
+float GetSystemDPIScale() {
+    return PlatformGetSystemDPIScale();
+}
+
 bool IsFullscreen() {
     return PlatformIsFullscreen();
 }

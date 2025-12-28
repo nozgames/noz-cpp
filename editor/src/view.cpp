@@ -8,6 +8,37 @@ extern void InitSkeletonEditor();
 extern void InitAnimationEditor();
 extern void InitAnimatedMeshEditor();
 
+extern Font* FONT_SEGUISB;
+extern const Name* NAME_MESH;
+extern const Name* NAME_M;
+extern const Name* NAME_S;
+extern const Name* NAME_SKELETON;
+extern const Name* NAME_ANIMATION;
+extern const Name* NAME_A;
+extern const Name* NAME_VFX;
+extern const Name* NAME_AM;
+extern const Name* NAME_ANIMATEDMESH;
+extern const Name* NAME_E;
+extern const Name* NAME_EVENT;
+extern const Name* NAME_SAVE;
+extern const Name* NAME_N;
+extern const Name* NAME_B;
+extern const Name* NAME_NEW;
+extern const Name* NAME_BUILD;
+extern const Name* NAME_RENAME;
+extern const Name* NAME_DELETE;
+extern const Name* NAME_DUPLICATE;
+extern const Name* NAME_EXPORT;
+extern const Name* NAME_IMPORT;
+extern const Name* NAME_EDIT;
+extern const Name* NAME_RESET;
+extern const Name* NAME_MIRROR;
+extern const Name* NAME_RU;
+extern const Name* NAME_R;
+extern Shader* SHADER_SKINNED_MESH;
+extern Shader* SHADER_EDITOR;
+extern Shader* SHADER_POSTPROCESS_UI_COMPOSITE;
+
 constexpr float SELECT_SIZE = 60.0f;
 constexpr float DRAG_MIN = 5;
 constexpr float DEFAULT_DPI = 72.0f;
@@ -18,8 +49,24 @@ constexpr float ZOOM_DEFAULT = 1.0f;
 constexpr float VERTEX_SIZE = 0.1f;
 constexpr Color VERTEX_COLOR = { 0.95f, 0.95f, 0.95f, 1.0f};
 constexpr float FRAME_VIEW_PERCENTAGE = 1.0f / 0.75f;
+constexpr float UI_SCALE_MIN = 0.5f;
+constexpr float UI_SCALE_MAX = 3.0f;
+constexpr float UI_SCALE_STEP = 0.1f;
 
 View g_view = {};
+
+float GetUIScale() {
+    return GetSystemDPIScale() * g_view.user_ui_scale;
+}
+
+Vec2Int GetUIRefSize() {
+    Vec2Int screen_size = GetScreenSize();
+    float scale = GetUIScale();
+    return {
+        static_cast<i32>(screen_size.x / scale),
+        static_cast<i32>(screen_size.y / scale)
+    };
+}
 
 inline ViewState GetState() { return g_view.state; }
 static void CheckCommonShortcuts();
@@ -413,6 +460,7 @@ void InitViewUserConfig(Props* user_config){
     g_view.zoom = user_config->GetFloat("view", "camera_zoom", ZOOM_DEFAULT);
     g_view.show_names = user_config->GetBool("view", "show_names", false);
     g_view.grid = user_config->GetBool("view", "show_grid", true);
+    g_view.user_ui_scale = user_config->GetFloat("view", "ui_scale", 1.0f);
     UpdateCamera();
 }
 
@@ -421,6 +469,7 @@ void SaveViewUserConfig(Props* user_config) {
     user_config->SetFloat("view", "camera_zoom", g_view.zoom);
     user_config->SetBool("view", "show_names", g_view.show_names);
     user_config->SetBool("view", "show_grid", g_view.grid);
+    user_config->SetFloat("view", "ui_scale", g_view.user_ui_scale);
 }
 
 static void ToggleNames() {
@@ -431,6 +480,18 @@ static void ToggleModeWireframe() {
     g_view.draw_mode = g_view.draw_mode == VIEW_DRAW_MODE_SHADED
         ? VIEW_DRAW_MODE_WIREFRAME
         : VIEW_DRAW_MODE_SHADED;
+}
+
+static void IncreaseUIScale() {
+    g_view.user_ui_scale = Clamp(g_view.user_ui_scale + UI_SCALE_STEP, UI_SCALE_MIN, UI_SCALE_MAX);
+}
+
+static void DecreaseUIScale() {
+    g_view.user_ui_scale = Clamp(g_view.user_ui_scale - UI_SCALE_STEP, UI_SCALE_MIN, UI_SCALE_MAX);
+}
+
+static void ResetUIScale() {
+    g_view.user_ui_scale = 1.0f;
 }
 
 static void BringForward() {
@@ -806,6 +867,9 @@ static Shortcut g_common_shortcuts[] = {
     { KEY_Z, false, true, false, HandleUndo },
     { KEY_Y, false, true, false, HandleRedo },
     { KEY_TAB, false, false, false, ToggleEdit },
+    { KEY_EQUALS, false, true, false, IncreaseUIScale },
+    { KEY_MINUS, false, true, false, DecreaseUIScale },
+    { KEY_0, false, true, false, ResetUIScale },
     { INPUT_CODE_NONE }
 };
 
@@ -885,6 +949,7 @@ void InitView() {
     g_view.zoom = ZOOM_DEFAULT;
     g_view.ui_scale = 1.0f;
     g_view.dpi = 72.0f;
+    g_view.user_ui_scale = 1.0f;
     g_view.light_dir = { -1, 0 };
     g_view.draw_mode = VIEW_DRAW_MODE_SHADED;
 
@@ -1022,10 +1087,13 @@ void InitView() {
         ASSET_TYPE_TEXTURE,
         GetName(g_config->GetString("editor", "palette", "palette").c_str())));
     if (palette_texture_data) {
+        LogInfo("[View] Loading palette texture from: %s (asset_path_index=%d)", palette_texture_data->path, palette_texture_data->asset_path_index);
         SetTexture(g_view.editor_material, palette_texture_data->texture);
         SetTexture(g_view.shaded_material, palette_texture_data->texture);
         SetTexture(g_view.shaded_skinned_material, palette_texture_data->texture);
         SetPaletteTexture(palette_texture_data->texture);
+    } else {
+        LogInfo("[View] ERROR: palette texture not found!");
     }
 }
 

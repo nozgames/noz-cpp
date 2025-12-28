@@ -5,9 +5,6 @@
 #pragma once
 
 constexpr int STATE_STACK_SIZE = 16;
-
-constexpr int UI_REF_WIDTH = 1920;
-constexpr int UI_REF_HEIGHT = 1080;
 constexpr int MAX_PALETTES = 64;
 
 enum NotificationType {
@@ -61,6 +58,7 @@ struct View {
     float select_size;
     float ui_scale;
     float dpi;
+    float user_ui_scale;
     InputSet* input;
     InputSet* input_tool;
     bool clear_selection_on_release;
@@ -105,6 +103,8 @@ extern void EndEdit();
 extern void BeginDrag();
 extern void EndDrag();
 extern void EnableCommonShortcuts(InputSet* input_set);
+extern Vec2Int GetUIRefSize();
+extern float GetUIScale();
 
 // @grid
 extern void InitGrid(Allocator* allocator);

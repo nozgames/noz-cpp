@@ -413,3 +413,10 @@ void PlatformRequestFullscreen() {
 bool PlatformIsFullscreen() {
     return false;  // TODO: Implement if needed
 }
+
+float PlatformGetSystemDPIScale() {
+    if (g_macos.window) {
+        return static_cast<float>([[g_macos.window screen] backingScaleFactor]);
+    }
+    return static_cast<float>([[NSScreen mainScreen] backingScaleFactor]);
+}

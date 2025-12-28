@@ -2,6 +2,12 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+extern Font* FONT_SEGUISB;
+extern Mesh* MESH_COLOR_PICKER_COLOR;
+extern Mesh* MESH_COLOR_PICKER_PALETTE;
+extern Mesh* MESH_ICON_EXPAND_UP;
+extern Mesh* MESH_ICON_EXPAND_DOWN;
+
 constexpr float COLOR_PICKER_BORDER_WIDTH = 4.0f;
 constexpr Color COLOR_PICKER_BORDER_COLOR = STYLE_BACKGROUND_COLOR;
 constexpr float COLOR_PICKER_COLOR_SIZE = 26.0f;

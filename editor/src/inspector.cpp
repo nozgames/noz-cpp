@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+extern Font* FONT_SEGUISB;
+
 constexpr float INSPECTOR_WIDTH = 250.0f;
 constexpr float INSPECTOR_PADDING = 8.0f;
 constexpr Color INSPECTOR_HEADER_COLOR = Color24ToColor(240,240,235);

@@ -2,6 +2,16 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+extern Font* FONT_SEGUISB;
+extern Mesh* MESH_ICON_EXPAND_UP;
+extern Mesh* MESH_ICON_EXPAND_DOWN;
+extern Mesh* MESH_UI_ICON_ROOT_MOTION;
+extern Mesh* MESH_UI_ICON_ONION;
+extern Mesh* MESH_UI_ICON_MIRROR;
+extern Mesh* MESH_UI_ICON_LOOP;
+extern Mesh* MESH_ASSET_ICON_EVENT;
+extern const Name* NAME_RU;
+
 enum AnimationViewState {
     ANIMATION_VIEW_STATE_DEFAULT,
     ANIMATION_VIEW_STATE_PLAY,

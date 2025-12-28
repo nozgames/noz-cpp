@@ -2,6 +2,8 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
+extern Font* FONT_SEGUISB;
+
 struct CommandInput {
     const CommandHandler* commands = nullptr;
     const char* prefix = nullptr;

@@ -342,15 +342,21 @@ void InitAssetData() {
 
             // Skip if asset with same name already exists (from earlier source path)
             const Name* asset_name = MakeCanonicalAssetName(asset_path);
-            if (GetAssetData(ASSET_TYPE_UNKNOWN, asset_name))
+            if (GetAssetData(ASSET_TYPE_UNKNOWN, asset_name)) {
+                if (strcmp(asset_name->value, "palette") == 0)
+                    LogInfo("[AssetData] SKIPPING duplicate palette: %s (source_path_index=%d)", asset_path.string().c_str(), i);
                 continue;
+            }
 
             AssetData* a = nullptr;
             for (int asset_type=0; !a && asset_type<ASSET_TYPE_COUNT; asset_type++)
                 a = CreateAssetData(asset_path);
 
-            if (a)
+            if (a) {
                 LoadAssetMetadata(a, asset_path);
+                if (strcmp(asset_name->value, "palette") == 0)
+                    LogInfo("[AssetData] REGISTERED palette: %s (source_path_index=%d)", a->path, i);
+            }
         }
     }
 

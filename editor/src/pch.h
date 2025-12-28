@@ -63,7 +63,11 @@ enum EditorEvent {
 #include "utils/file_helpers.h"
 #include "style.h"
 #include "editor.h"
+
+#if !defined(NOZ_EDITOR_LIB)
 #include "nozed_assets.h"
+#endif
+
 #include "editor_mesh_builder.h"
 
 extern Props* g_config;

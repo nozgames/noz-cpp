@@ -71,7 +71,8 @@ static void UpdateEditor() {
     UpdateImporter();
     ProcessQueuedLogMessages();
 
-    BeginUI(UI_REF_WIDTH, UI_REF_HEIGHT);
+    Vec2Int ui_ref = GetUIRefSize();
+    BeginUI(ui_ref.x, ui_ref.y);
     UpdateView();
     if (g_editor_traits.update) g_editor_traits.update();
     EndUI();

@@ -498,6 +498,10 @@ bool PlatformIsMouseOverWindow() {
     return g_web.mouse_on_screen;
 }
 
+float PlatformGetSystemDPIScale() {
+    return static_cast<float>(emscripten_get_device_pixel_ratio());
+}
+
 void PlatformLog(LogType type, const char* message) {
     (void)type;
 

@@ -3,6 +3,8 @@
 //  NozEd - Copyright(c) 2025 NoZ Games, LLC
 //
 
+extern Shader* SHADER_TEXTURED_MESH;
+
 extern void InitTextureEditor(TextureData*);
 
 void DrawTextureData(AssetData* a) {

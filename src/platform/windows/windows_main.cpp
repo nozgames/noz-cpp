@@ -530,6 +530,14 @@ bool PlatformIsMouseOverWindow(){
     return g_windows.mouse_on_screen;
 }
 
+float PlatformGetSystemDPIScale() {
+    if (!g_windows.hwnd)
+        return 1.0f;
+
+    UINT dpi = GetDpiForWindow(g_windows.hwnd);
+    return static_cast<float>(dpi) / 96.0f;
+}
+
 bool PlatformIsMobile() {
     return false;  // Windows is never mobile
 }

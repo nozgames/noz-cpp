@@ -2,6 +2,7 @@
 //  NozEd - Copyright(c) 2025 NoZ Games, LLC
 //
 
+extern Mesh* MESH_ASSET_ICON_VFX;
 
 static void Init(VfxData* evfx);
 

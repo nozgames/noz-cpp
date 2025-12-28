@@ -187,7 +187,7 @@ static void serializeFunctionSummary(const FunctionBytecodeSummary& summary, FIL
     const unsigned opLimit = summary.getOpLimit();
 
     fprintf(fp, "        {\n");
-    fprintf(fp, "            \"source\": \"%s\",\n", summary.getSource().c_str());
+    fprintf(fp, "            "source\": \"%s\",\n", summary.getSource().c_str());
     fprintf(fp, "            \"name\": \"%s\",\n", summary.getName().c_str());
     fprintf(fp, "            \"line\": %d,\n", summary.getLine());
     fprintf(fp, "            \"nestingLimit\": %u,\n", nestingLimit);
