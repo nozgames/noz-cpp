@@ -21,7 +21,7 @@ namespace noz {
     extern bool IsSuccess(HttpRequest* request);
     extern Stream* GetResponseStream(HttpRequest* request);
     extern Stream* ReleaseResponseStream(HttpRequest* request);
-    extern char* GetResponseHeader(HttpRequest* request, const char* name, Allocator* allocator);
+    extern bool GetResponseHeader(HttpRequest* request, const char* name, String1024& out);
     extern const char* GetUrl(HttpRequest* request);
 
     extern void EncodeUrl(Text& out, const Text& input);

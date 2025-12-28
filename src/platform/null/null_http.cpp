@@ -53,11 +53,11 @@ Stream* PlatformReleaseResponseStream(const PlatformHttpHandle& handle) {
     return nullptr;
 }
 
-char* PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, Allocator* allocator) {
+bool PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, String1024& out) {
     (void)handle;
     (void)name;
-    (void)allocator;
-    return nullptr;
+    Clear(out);
+    return false;
 }
 
 void PlatformCancel(const PlatformHttpHandle& handle) {

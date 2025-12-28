@@ -591,7 +591,8 @@ PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_s
     w_method[w_method_len] = 0;
 
     // Create request
-    DWORD flags = INTERNET_FLAG_KEEP_CONNECTION | INTERNET_FLAG_NO_UI | INTERNET_FLAG_NO_CACHE_WRITE;
+    // INTERNET_FLAG_NO_COOKIES prevents WinINet from intercepting Set-Cookie headers
+    DWORD flags = INTERNET_FLAG_KEEP_CONNECTION | INTERNET_FLAG_NO_UI | INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_NO_COOKIES;
     if (url_components.nScheme == INTERNET_SCHEME_HTTPS)
         flags |= INTERNET_FLAG_SECURE;
 
@@ -707,11 +708,13 @@ Stream* PlatformReleaseResponseStream(const PlatformHttpHandle& handle) {
     return stream;
 }
 
-char* PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, Allocator* allocator)
+bool PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, String1024& out)
 {
+    Clear(out);
+
     WindowsHttpRequest* request = GetRequest(handle);
     if (!request || !request->request)
-        return nullptr;
+        return false;
 
     // Convert header name to wide string
     int name_len = (int)strlen(name);
@@ -720,36 +723,38 @@ char* PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* na
     MultiByteToWideChar(CP_UTF8, 0, name, name_len, w_name, w_name_len);
     w_name[w_name_len] = 0;
 
-    // Query header size
-    DWORD size = 0;
+    // For HTTP_QUERY_CUSTOM, the buffer must contain the header name
+    // Query header size first
+    DWORD size = (w_name_len + 1) * sizeof(wchar_t);
     DWORD index = 0;
     HttpQueryInfoW(request->request, HTTP_QUERY_CUSTOM, w_name, &size, &index);
 
     if (GetLastError() != ERROR_INSUFFICIENT_BUFFER || size == 0)
     {
         Free(w_name);
-        return nullptr;
+        return false;
     }
 
-    // Get header value
-    wchar_t* w_value = (wchar_t*)Alloc(ALLOCATOR_SCRATCH, size);
-    index = 0;
-    if (!HttpQueryInfoW(request->request, HTTP_QUERY_CUSTOM, w_name, &size, &index))
-    {
-        Free(w_name);
-        Free(w_value);
-        return nullptr;
-    }
-
+    // Allocate buffer large enough for the value and copy header name into it
+    wchar_t* w_buffer = (wchar_t*)Alloc(ALLOCATOR_SCRATCH, size + (w_name_len + 1) * sizeof(wchar_t));
+    wcscpy_s(w_buffer, w_name_len + 1, w_name);
     Free(w_name);
 
-    // Convert to UTF-8
-    int utf8_len = WideCharToMultiByte(CP_UTF8, 0, w_value, -1, nullptr, 0, nullptr, nullptr);
-    char* result = (char*)Alloc(allocator ? allocator : ALLOCATOR_DEFAULT, utf8_len);
-    WideCharToMultiByte(CP_UTF8, 0, w_value, -1, result, utf8_len, nullptr, nullptr);
+    // Query again - buffer contains header name, gets replaced with value
+    index = 0;
+    DWORD buffer_size = size + (w_name_len + 1) * sizeof(wchar_t);
+    if (!HttpQueryInfoW(request->request, HTTP_QUERY_CUSTOM, w_buffer, &buffer_size, &index))
+    {
+        Free(w_buffer);
+        return false;
+    }
 
-    Free(w_value);
-    return result;
+    // Convert to UTF-8 directly into the output string
+    WideCharToMultiByte(CP_UTF8, 0, w_buffer, -1, out.value, sizeof(out.value), nullptr, nullptr);
+    out.value[sizeof(out.value) - 1] = '\0';
+
+    Free(w_buffer);
+    return true;
 }
 
 void PlatformCancel(const PlatformHttpHandle& handle)

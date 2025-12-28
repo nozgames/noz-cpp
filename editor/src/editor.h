@@ -18,6 +18,15 @@ struct AssetImporter;
 struct AssetData;
 struct MeshData;
 
+#if defined(NOZ_EDITOR_LIB)
+struct EditorTraits {
+    const char* title;
+    void (*update)();
+    void (*load_user_config)(Props* user_config);
+    void (*save_user_config)(Props* user_config);
+};
+#endif
+
 // @tool
 struct ToolVtable {
     void (*cancel)();

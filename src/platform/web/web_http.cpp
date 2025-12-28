@@ -314,10 +314,12 @@ const u8* PlatformGetResponse(const PlatformHttpHandle& handle, u32* out_size) {
     return request->response_data;
 }
 
-char* PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, Allocator* allocator) {
+bool PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, String1024& out) {
+    Clear(out);
+
     WebHttpRequest* request = GetRequest(handle);
     if (!request || !request->response_headers)
-        return nullptr;
+        return false;
 
     // Headers are in format "Header-Name: value\r\n"
     size_t name_len = strlen(name);
@@ -347,11 +349,8 @@ char* PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* na
             while (*value_end && *value_end != '\r' && *value_end != '\n')
                 value_end++;
 
-            size_t value_len = value_end - value_start;
-            char* result = static_cast<char*>(Alloc(allocator ? allocator : ALLOCATOR_DEFAULT, value_len + 1));
-            memcpy(result, value_start, value_len);
-            result[value_len] = '\0';
-            return result;
+            Set(out, value_start, (u32)(value_end - value_start));
+            return true;
         }
 
         // Skip to next line
@@ -359,7 +358,7 @@ char* PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* na
         if (*p == '\n') p++;
     }
 
-    return nullptr;
+    return false;
 }
 
 void PlatformCancel(const PlatformHttpHandle& handle) {

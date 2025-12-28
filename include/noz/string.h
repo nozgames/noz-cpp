@@ -80,6 +80,18 @@ inline void Clear(String256& dst) { dst.length = 0; dst.value[0] = '\0'; }
 inline void Clear(String1024& dst) { dst.length = 0; dst.value[0] = '\0'; }
 inline void Clear(String4096& dst) { dst.length = 0; dst.value[0] = '\0'; }
 
+inline void Append(String32& dst, const char* src) { dst.length += Copy(dst.value + dst.length, 32 - dst.length, src); }
+inline void Append(String64& dst, const char* src) { dst.length += Copy(dst.value + dst.length, 64 - dst.length, src); }
+inline void Append(String128& dst, const char* src) { dst.length += Copy(dst.value + dst.length, 128 - dst.length, src); }
+inline void Append(String256& dst, const char* src) { dst.length += Copy(dst.value + dst.length, 256 - dst.length, src); }
+inline void Append(String1024& dst, const char* src) { dst.length += Copy(dst.value + dst.length, 1024 - dst.length, src); }
+inline void Append(String4096& dst, const char* src) { dst.length += Copy(dst.value + dst.length, 4096 - dst.length, src); }
+inline void Append(String32& dst, const char* src, u32 length) { dst.length += Copy(dst.value + dst.length, 32 - dst.length, src, length); }
+inline void Append(String64& dst, const char* src, u32 length) { dst.length += Copy(dst.value + dst.length, 64 - dst.length, src, length); }
+inline void Append(String128& dst, const char* src, u32 length) { dst.length += Copy(dst.value + dst.length, 128 - dst.length, src, length); }
+inline void Append(String256& dst, const char* src, u32 length) { dst.length += Copy(dst.value + dst.length, 256 - dst.length, src, length); }
+inline void Append(String1024& dst, const char* src, u32 length) { dst.length += Copy(dst.value + dst.length, 1024 - dst.length, src, length); }
+inline void Append(String4096& dst, const char* src, u32 length) { dst.length += Copy(dst.value + dst.length, 4096 - dst.length, src, length); }
 
 extern int Format (String32& dst, const char* fmt, ...);
 extern int Format (String64& dst, const char* fmt, ...);

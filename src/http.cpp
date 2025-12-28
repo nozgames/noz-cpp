@@ -199,12 +199,12 @@ Stream* noz::ReleaseResponseStream(HttpRequest* request) {
     return response;
 }
 
-char* noz::GetResponseHeader(HttpRequest *request, const char *name, Allocator *allocator) {
+bool noz::GetResponseHeader(HttpRequest *request, const char *name, String1024& out) {
     if (!request)
-        return nullptr;
+        return false;
 
     HttpRequestImpl *req = static_cast<HttpRequestImpl *>(request);
-    return PlatformGetResponseHeader(req->handle, name, allocator);
+    return PlatformGetResponseHeader(req->handle, name, out);
 }
 
 void noz::EncodeUrl(Text& out, const Text& input) {
@@ -236,11 +236,12 @@ static void FinishRequest(HttpRequestImpl* request) {
         is_from_cache ? "true" : "false");
 #endif
 
-    PlatformFree(request->handle);
-    request->handle = {};
-
+    // Call callback BEFORE freeing handle so headers are still accessible
     if (request->callback)
         request->callback(request->task, request);
+
+    PlatformFree(request->handle);
+    request->handle = {};
 
     Complete(request->task, request);
 }

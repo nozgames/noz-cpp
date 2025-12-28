@@ -10,6 +10,10 @@ namespace fs = std::filesystem;
 Editor g_editor = {};
 Props* g_config = nullptr;
 
+#if defined(NOZ_EDITOR_LIB)
+EditorTraits g_editor_traits = {};
+#endif
+
 static std::thread::id g_main_thread_id;
 
 struct LogQueue {
@@ -61,10 +65,14 @@ static void ProcessQueuedLogMessages() {
     }
 }
 
-void UpdateEditor() {
+static void UpdateEditor() {
     UpdateImporter();
     ProcessQueuedLogMessages();
     UpdateView();
+
+#if defined(NOZ_EDITOR_LIB)
+    if (g_editor_traits.update) g_editor_traits.update();
+#endif
 }
 
 void HandleStatsEvents(EventId event_id, const void* event_data) {
@@ -86,6 +94,11 @@ void HandleImported(EventId event_id, const void* event_data) {
 
 static void SaveUserConfig(Props* user_config) {
     SaveViewUserConfig(user_config);
+
+#if defined(NOZ_EDITOR_LIB)
+    if (g_editor_traits.save_user_config) g_editor_traits.save_user_config(user_config);
+#endif
+
     SaveProps(user_config, "./.noz/user.cfg");
 }
 
@@ -106,6 +119,10 @@ static void SaveUserConfig() {
 
 static void InitUserConfig(Props* user_config) {
     InitViewUserConfig(user_config);
+
+#if defined(NOZ_EDITOR_LIB)
+    if (g_editor_traits.load_user_config) g_editor_traits.load_user_config(user_config);
+#endif
 }
 
 static void InitUserConfig() {
@@ -266,32 +283,29 @@ static void ResolveAssetPaths() {
 }
 
 #if defined(NOZ_EDITOR_LIB)
-void EditorMain(const ApplicationTraits& traits) {
-    ApplicationTraits editor_traits = traits;
+void EditorMain(const EditorTraits& editor_traits) {
+    g_editor_traits = editor_traits;
 #else
 void Main() {
-    ApplicationTraits editor_traits = traits;
-    Init(editor_traits);
-    editor_traits.title = "NoZ Editor";
 #endif
+
+    ApplicationTraits traits;
+    Init(traits);
+    traits.title = "NoZ Editor";
 
     InitConfig();
     ResolveAssetPaths();
 
-    editor_traits.asset_paths = g_editor.asset_paths;
-    editor_traits.load_assets = LoadAssets;
-    editor_traits.unload_assets = UnloadAssets;
-    editor_traits.hotload_asset = EditorHotLoad;
-    editor_traits.renderer.msaa_samples = 4;
-    editor_traits.scratch_memory_size = noz::MB * 128;
+    traits.asset_paths = g_editor.asset_paths;
+    traits.load_assets = LoadAssets;
+    traits.unload_assets = UnloadAssets;
+    traits.hotload_asset = EditorHotLoad;
+    traits.renderer.msaa_samples = 4;
+    traits.scratch_memory_size = noz::MB * 128;
+    traits.update = UpdateEditor;
+    traits.shutdown = ShutdownEditor;
 
-
-    if (!editor_traits.update)
-        editor_traits.update = UpdateEditor;
-
-    editor_traits.shutdown = ShutdownEditor;
-
-    InitApplication(&editor_traits);
+    InitApplication(&traits);
     InitPalettes();
 
     InitEditor();
