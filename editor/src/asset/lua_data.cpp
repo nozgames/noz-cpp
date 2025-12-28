@@ -2,6 +2,11 @@
 //  NozEd - Copyright(c) 2025 NoZ Games, LLC
 //
 
+#pragma warning(push)
+#pragma warning(disable: 4100) // unreferenced parameter
+#include <Luau/Parser.h>
+#pragma warning(pop)
+
 static void Init(LuaData* l);
 
 extern Mesh* MESH_ASSET_ICON_LUA;
@@ -22,6 +27,37 @@ static void FreeLuaData(AssetData* a) {
     l->byte_code.size = 0;
 }
 
+static LuaScriptType ParseScriptType(const char* contents) {
+    Luau::ParseOptions options;
+    Luau::Allocator allocator;
+    Luau::AstNameTable names(allocator);
+
+    Luau::ParseResult result = Luau::Parser::parse(contents, strlen(contents), names, allocator, options);
+
+    LuaScriptType script_type = LuaScriptType::Module;
+
+    // Look for --!Type(...) in hot comments
+    for (const Luau::HotComment& comment : result.hotcomments) {
+        // content will be something like "Type(Client)"
+        if (comment.content.compare(0, 5, "Type(") == 0) {
+            size_t end = comment.content.find(')', 5);
+            if (end != std::string::npos) {
+                std::string type_value = comment.content.substr(5, end - 5);
+                if (type_value == "Client") {
+                    script_type = LuaScriptType::Client;
+                } else if (type_value == "Server") {
+                    script_type = LuaScriptType::Server;
+                } else if (type_value == "UI") {
+                    script_type = LuaScriptType::Module;
+                }
+            }
+            break;
+        }
+    }
+
+    return script_type;
+}
+
 void LoadLuaData(AssetData* a) {
     assert(a);
     assert(a->type == ASSET_TYPE_LUA);
@@ -29,6 +65,7 @@ void LoadLuaData(AssetData* a) {
 
     std::string contents = ReadAllText(ALLOCATOR_DEFAULT, a->path);
     l->byte_code = noz::lua::CompileLua(contents.c_str());
+    l->script_type = ParseScriptType(contents.c_str());
 }
 
 LuaData* LoadLuaData(const std::filesystem::path& path) {
