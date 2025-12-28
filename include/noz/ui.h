@@ -264,6 +264,7 @@ inline EdgeInsets EdgeInsetsRight(float v) { return EdgeInsets(0,0,0,v); }
 inline EdgeInsets EdgeInsetsLeft(float v) { return EdgeInsets(0,v,0,0); }
 inline EdgeInsets EdgeInsetsLeftRight(float v) { return EdgeInsets(0,v,0,v); }
 inline EdgeInsets EdgeInsetsLeftRight(float l, float r) { return EdgeInsets(0,l,0,r); }
+inline EdgeInsets EdgeInsetsSymmetric(float vertical, float horizontal) { return EdgeInsets(vertical, horizontal, vertical, horizontal); }
 
 // @text_engine
 struct TextMesh {};

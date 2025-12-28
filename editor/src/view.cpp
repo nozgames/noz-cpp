@@ -873,36 +873,6 @@ static void ToggleGrid() {
     g_view.grid = !g_view.grid;
 }
 
-// Shader* SHADER_UI = nullptr;
-// Shader* SHADER_MESH = nullptr;
-// Shader* SHADER_TEXTURE = nullptr;
-// Shader* SHADER_TEXT = nullptr;
-// Shader* SHADER_UI_IMAGE = nullptr;
-// Shader* SHADER_VFX = nullptr;
-
-const Name* NAME_MESH = nullptr;
-const Name* NAME_VFX = nullptr;
-const Name* NAME_BUILD = nullptr;
-const Name* NAME_ANIMATION = nullptr;
-const Name* NAME_EVENT = nullptr;
-const Name* NAME_NEW = nullptr;
-const Name* NAME_RENAME = nullptr;
-const Name* NAME_E = nullptr;
-const Name* NAME_A = nullptr;
-const Name* NAME_N = nullptr;
-const Name* NAME_MIRROR = nullptr;
-const Name* NAME_B = nullptr;
-const Name* NAME_EDIT = nullptr;
-const Name* NAME_R = nullptr;
-const Name* NAME_M = nullptr;
-const Name* NAME_AM = nullptr;
-const Name* NAME_SAVE = nullptr;
-const Name* NAME_RU = nullptr;
-const Name* NAME_ANIMATEDMESH = nullptr;
-const Name* NAME_S = nullptr;
-const Name* NAME_SKELETON = nullptr;
-
-
 void InitView() {
     InitUndo();
 

@@ -301,6 +301,10 @@ void Main() {
     Init(traits);
     traits.title = "NoZ Editor";
 
+#if defined(NOZ_EDITOR_LIB)
+    if (g_editor_traits.title) traits.title = g_editor_traits.title;
+#endif
+
     InitConfig();
     ResolveAssetPaths();
 
