@@ -8,6 +8,8 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(NOZ_LUA ON CACHE BOOL "" FORCE)
+set(NOZ_HTTP ON CACHE BOOL "" FORCE)
+set(NOZ_WEBSOCKET ON CACHE BOOL "" FORCE)
 option(NOZ_EDITOR_LIB "Build nozed as a static library instead of executable" OFF)
 
 add_subdirectory(../ noz)

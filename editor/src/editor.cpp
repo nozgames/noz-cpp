@@ -61,7 +61,7 @@ static void ProcessQueuedLogMessages() {
     }
 }
 
-static void UpdateEditor() {
+void UpdateEditor() {
     UpdateImporter();
     ProcessQueuedLogMessages();
     UpdateView();
@@ -284,7 +284,11 @@ void Main() {
     editor_traits.hotload_asset = EditorHotLoad;
     editor_traits.renderer.msaa_samples = 4;
     editor_traits.scratch_memory_size = noz::MB * 128;
-    editor_traits.update = UpdateEditor;
+
+
+    if (!editor_traits.update)
+        editor_traits.update = UpdateEditor;
+
     editor_traits.shutdown = ShutdownEditor;
 
     InitApplication(&editor_traits);
