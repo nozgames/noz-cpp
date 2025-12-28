@@ -12,7 +12,7 @@ const Name* MakeCanonicalAssetName(const fs::path& path)
 const Name* MakeCanonicalAssetName(const char* name)
 {
     std::string result = name;
-    Lowercase(result.data(), (u32)result.size());
+    Lower(result.data(), (u32)result.size());
     Replace(result.data(), (u32)result.size(), '/', '_');
     Replace(result.data(), (u32)result.size(), '.', '_');
     Replace(result.data(), (u32)result.size(), ' ', '_');
@@ -30,7 +30,7 @@ static void DestroyAssetData(void* p) {
 AssetData* CreateAssetData(const std::filesystem::path& path) {
     AssetData* a = (AssetData*)Alloc(g_editor.asset_allocator, sizeof(FatAssetData), DestroyAssetData);
     Copy(a->path, sizeof(a->path), canonical(path).string().c_str());
-    Lowercase(a->path, sizeof(a->path));
+    Lower(a->path, sizeof(a->path));
     a->name = MakeCanonicalAssetName(path);
     a->bounds = Bounds2{{-0.5f, -0.5f}, {0.5f, 0.5f}};
     a->asset_path_index = -1;
@@ -449,7 +449,7 @@ void SortAssets() {
 
 fs::path GetTargetPath(AssetData* a) {
     std::string type_name_lower = ToString(a->importer->type);
-    Lowercase(type_name_lower.data(), (u32)type_name_lower.size());
+    Lower(type_name_lower.data(), (u32)type_name_lower.size());
     fs::path source_relative_path = fs::relative(a->path, g_editor.source_paths[a->asset_path_index].value);
     fs::path target_short_path = type_name_lower / GetSafeFilename(source_relative_path.filename().string().c_str());
     fs::path target_path = g_editor.output_path / target_short_path;

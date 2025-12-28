@@ -14,8 +14,8 @@ extern int Length(const char* str);
 extern int Format(char* dst, u32 dst_size, const char* fmt, ...);
 extern int Format(char* dst, u32 dst_size, const char* fmt, va_list args);
 extern char* CleanPath(char* dst);
-extern void Uppercase(char* dst, u32 dst_size);
-extern void Lowercase(char* dst, u32 dst_size);
+extern void Upper(char* dst, u32 dst_size);
+extern void Lower(char* dst, u32 dst_size);
 extern void Replace(char* dst, u32 dst_size, char find, char replace);
 
 struct String32 {
@@ -60,6 +60,10 @@ struct String4096 {
     operator const char*() const { return value; }
 };
 
+typedef String4096 Text;
+
+constexpr int TEXT_MAX_LENGTH = 4095;
+
 inline void Set(String32& dst, const char* src) { dst.length = Copy(dst.value, 32, src); }
 inline void Set(String64& dst, const char* src) { dst.length = Copy(dst.value, 64, src); }
 inline void Set(String128& dst, const char* src) { dst.length = Copy(dst.value, 128, src); }
@@ -92,6 +96,27 @@ inline void Append(String128& dst, const char* src, u32 length) { dst.length += 
 inline void Append(String256& dst, const char* src, u32 length) { dst.length += Copy(dst.value + dst.length, 256 - dst.length, src, length); }
 inline void Append(String1024& dst, const char* src, u32 length) { dst.length += Copy(dst.value + dst.length, 1024 - dst.length, src, length); }
 inline void Append(String4096& dst, const char* src, u32 length) { dst.length += Copy(dst.value + dst.length, 4096 - dst.length, src, length); }
+
+inline void Upper(String32& dst) { Upper(dst.value, 32); }
+inline void Upper(String64& dst) { Upper(dst.value, 64); }
+inline void Upper(String128& dst) { Upper(dst.value, 128); }
+inline void Upper(String256& dst) { Upper(dst.value, 256); }
+inline void Upper(String1024& dst) { Upper(dst.value, 1024); }
+inline void Upper(String4096& dst) { Upper(dst.value, 4096); }
+
+inline void Lower(String32& dst) { Lower(dst.value, 32); }
+inline void Lower(String64& dst) { Lower(dst.value, 64); }
+inline void Lower(String128& dst) { Lower(dst.value, 128); }
+inline void Lower(String256& dst) { Lower(dst.value, 256); }
+inline void Lower(String1024& dst) { Lower(dst.value, 1024); }
+inline void Lower(String4096& dst) { Lower(dst.value, 4096); }
+
+inline bool IsEmpty(const String32& s) { return s.length == 0; }
+inline bool IsEmpty(const String64& s) { return s.length == 0; }
+inline bool IsEmpty(const String128& s) { return s.length == 0; }
+inline bool IsEmpty(const String256& s) { return s.length == 0; }
+inline bool IsEmpty(const String1024& s) { return s.length == 0; }
+inline bool IsEmpty(const String4096& s) { return s.length == 0; }
 
 extern int Format (String32& dst, const char* fmt, ...);
 extern int Format (String64& dst, const char* fmt, ...);

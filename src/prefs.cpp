@@ -62,7 +62,7 @@ void LoadPrefs() {
                         .int_value = pref_int_value,
                         .is_default = false
                     };
-                    SetValue(g_prefs.values[pref_index].string_value, tk.current_token.raw, tk.current_token.length);
+                    Set(g_prefs.values[pref_index].string_value, tk.current_token.raw, tk.current_token.length);
                 }
             }
         } else {
@@ -119,7 +119,7 @@ void SetStringPref(i32 id, const char* value) {
         .is_default = false
     };
     Text& text = g_prefs.values[id].string_value;
-    SetValue(text, value);
+    Set(text, value);
 }
 
 i32 GetIntPref(int id, i32 default_value) {

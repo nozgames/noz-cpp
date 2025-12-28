@@ -402,18 +402,10 @@ static void UpdateAssetNames() {
 }
 
 void UpdateView() {
-    BeginUI(UI_REF_WIDTH, UI_REF_HEIGHT);
     UpdateViewInternal();
     UpdateCommandInput();
     UpdateAssetNames();
     UpdateConfirmDialog();
-    EndUI();
-
-    BeginRender(STYLE_WORKSPACE_COLOR);
-    DrawView();
-    DrawVfx();
-    DrawUI();
-    EndRender();
 }
 
 void InitViewUserConfig(Props* user_config){

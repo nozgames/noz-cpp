@@ -25,10 +25,10 @@ static bool CollectBuildAsset(u32, void* item_data, void* user_data) {
         return true;
 
     std::string type_upper = ToString(a->type);
-    Uppercase(type_upper.data(), (u32)type_upper.size());
+    Upper(type_upper.data(), (u32)type_upper.size());
 
     std::string name_upper = a->name->value;
-    Uppercase(name_upper.data(), (u32)name_upper.size());
+    Upper(name_upper.data(), (u32)name_upper.size());
 
     std::string var_name = type_upper + "_" + name_upper;
 
@@ -53,15 +53,15 @@ static bool CollectBuildAsset(u32, void* item_data, void* user_data) {
 
 static void WriteBuildAsset(FILE* file, AssetData* a, const char* extension, const char* suffix) {
     std::string type_upper = ToString(a->type);
-    Uppercase(type_upper.data(), (u32)type_upper.size());
+    Upper(type_upper.data(), (u32)type_upper.size());
 
     std::string name_upper = a->name->value;
-    Uppercase(name_upper.data(), (u32)name_upper.size());
+    Upper(name_upper.data(), (u32)name_upper.size());
 
     std::string suffix_upper;
     if (suffix) {
         suffix_upper = suffix;
-        Uppercase(suffix_upper.data(), (u32)suffix_upper.size());
+        Upper(suffix_upper.data(), (u32)suffix_upper.size());
     }
 
     fprintf(file, "static u8 %s_%s%s_DATA[] = {", type_upper.c_str(), name_upper.c_str(), suffix_upper.c_str());

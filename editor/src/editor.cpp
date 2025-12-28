@@ -65,14 +65,22 @@ static void ProcessQueuedLogMessages() {
     }
 }
 
+extern void DrawView();
+
 static void UpdateEditor() {
     UpdateImporter();
     ProcessQueuedLogMessages();
-    UpdateView();
 
-#if defined(NOZ_EDITOR_LIB)
+    BeginUI(UI_REF_WIDTH, UI_REF_HEIGHT);
+    UpdateView();
     if (g_editor_traits.update) g_editor_traits.update();
-#endif
+    EndUI();
+
+    BeginRender(STYLE_WORKSPACE_COLOR);
+    DrawView();
+    DrawVfx();
+    DrawUI();
+    EndRender();
 }
 
 void HandleStatsEvents(EventId event_id, const void* event_data) {
@@ -176,8 +184,8 @@ static void InitConfig() {
         full_path = weakly_canonical(full_path);
         if (!fs::exists(full_path))
             fs::create_directories(full_path);
-        SetValue(g_editor.source_paths[g_editor.source_path_count], full_path.string().c_str());
-        Lowercase(g_editor.source_paths[g_editor.source_path_count]);
+        Set(g_editor.source_paths[g_editor.source_path_count], full_path.string().c_str());
+        Lower(g_editor.source_paths[g_editor.source_path_count]);
         g_editor.source_path_count++;
     }
 

@@ -145,7 +145,7 @@ static void ExecuteJob(void* data) {
         job->asset->name->value;
 
     std::string target_dir_lower = target_dir.string();
-    Lowercase(target_dir_lower.data(), (u32)target_dir_lower.size());
+    Lower(target_dir_lower.data(), (u32)target_dir_lower.size());
 
     try {
         job->asset->importer->import_func(job->asset, target_dir_lower, g_config, meta);

@@ -60,7 +60,7 @@ static void GenerateLuaLoader(ManifestGenerator& generator);
 
 static std::string GetNameVar(const Name* name) {
     std::string result = name->value;
-    Uppercase(result.data(), (u32)result.size());
+    Upper(result.data(), (u32)result.size());
     Replace(result.data(), (u32)result.size(), '/', '_');
     Replace(result.data(), (u32)result.size(), '.', '_');
     Replace(result.data(), (u32)result.size(), ' ', '_');
@@ -87,11 +87,11 @@ static AssetType ReadAssetHeader(AssetData* ea, ManifestGenerator& generator, st
 
             if (header.type == ASSET_TYPE_SKELETON) {
                 std::string skeleton_name = GetSafeFilename(path.filename().string().c_str()).replace_extension("").string();
-                Uppercase(skeleton_name.data(), (u32)skeleton_name.size());
+                Upper(skeleton_name.data(), (u32)skeleton_name.size());
 
                 for (uint32_t i = 0; i < header.names; i++) {
                     std::string bone_name = name_table[i]->value;
-                    Uppercase(bone_name.data(), (u32)bone_name.size());
+                    Upper(bone_name.data(), (u32)bone_name.size());
                     generator.bones.push_back({
                         .skeleton_name = skeleton_name,
                         .name = bone_name,
@@ -130,7 +130,7 @@ static bool ReadAsset(u32 item_index, void* item_ptr, void* user_data) {
         return true;
 
     std::string var_name = std::string(type_name) + "_" + a->name->value;
-    Uppercase(var_name.data(), static_cast<u32>(var_name.size()));
+    Upper(var_name.data(), static_cast<u32>(var_name.size()));
 
     // Skip if asset with same var_name already exists from an earlier source path
     for (auto& existing : generator.assets) {
@@ -220,14 +220,14 @@ static void GenerateCppSource(ManifestGenerator& generator) {
     for (AssetType asset_type : generator.types) {
         const char* type_name = ToShortString(asset_type);
         std::string type_name_upper = type_name;
-        Uppercase(type_name_upper.data(), (u32)type_name_upper.size());
+        Upper(type_name_upper.data(), (u32)type_name_upper.size());
         WriteCSTR(stream, "extern int %s_COUNT;\n", type_name_upper.c_str());
     }
 
     for (AssetType asset_type : generator.types) {
         const char* type_name = ToTypeString(asset_type);
         std::string type_name_upper = type_name;
-        Uppercase(type_name_upper.data(), static_cast<u32>(type_name_upper.size()));
+        Upper(type_name_upper.data(), static_cast<u32>(type_name_upper.size()));
 
         WriteCSTR(stream, "\n");
         WriteCSTR(stream, "// @%s\n", type_name);
@@ -272,8 +272,8 @@ static void GenerateCppSource(ManifestGenerator& generator) {
         std::string type_name_upper = type_name;
         std::string short_name_upper = ToShortString(asset_type);
         std::string full_type_name = ToTypeString(asset_type);
-        Uppercase(type_name_upper.data(), static_cast<u32>(type_name_upper.size()));
-        Uppercase(short_name_upper.data(), static_cast<u32>(short_name_upper.size()));
+        Upper(type_name_upper.data(), static_cast<u32>(type_name_upper.size()));
+        Upper(short_name_upper.data(), static_cast<u32>(short_name_upper.size()));
 
         WriteCSTR(stream, "\n");
         WriteCSTR(stream, "    // @%s\n", type_name);
@@ -338,7 +338,7 @@ static void GenerateCppSource(ManifestGenerator& generator) {
         if (asset_type == ASSET_TYPE_LUA) continue;
 
         std::string type_name_upper = ToString(asset_type);
-        Uppercase(type_name_upper.data(), static_cast<u32>(type_name_upper.size()));
+        Upper(type_name_upper.data(), static_cast<u32>(type_name_upper.size()));
 
         WriteCSTR(stream, "\n    // %s\n", ToString(asset_type));
         for (AssetEntry& asset : generator.assets) {
@@ -364,10 +364,10 @@ static void GenerateCppSource(ManifestGenerator& generator) {
                 continue;
 
             std::string type_name_upper = ToString(asset.type);
-            Uppercase(type_name_upper.data(), static_cast<u32>(type_name_upper.size()));
+            Upper(type_name_upper.data(), static_cast<u32>(type_name_upper.size()));
 
             std::string short_name_upper = ToShortString(asset.type);
-            Uppercase(short_name_upper.data(), static_cast<u32>(short_name_upper.size()));
+            Upper(short_name_upper.data(), static_cast<u32>(short_name_upper.size()));
 
             WriteCSTR(stream, "    NOZ_RELOAD_%s(PATH_%s, %s);\n", short_name_upper.c_str(), asset.var_name.c_str(), asset.var_name.c_str());
         }
@@ -393,7 +393,7 @@ static void GenerateCppHeader(ManifestGenerator& generator) {
         const char* type_name = ToString(asset_type);
         const char* full_type_name = ToTypeString(asset_type);
         std::string type_name_upper = type_name;
-        Uppercase(type_name_upper.data(), (u32)type_name_upper.size());
+        Upper(type_name_upper.data(), (u32)type_name_upper.size());
 
         WriteCSTR(stream, "\n");
         WriteCSTR(stream, "// @%s\n", full_type_name);
@@ -435,7 +435,7 @@ static void GenerateCppHeader(ManifestGenerator& generator) {
         }
         EventData* e = static_cast<EventData*>(a);
         std::string var_name = a->name->value;
-        Uppercase(var_name.data(), (u32)var_name.size());
+        Upper(var_name.data(), (u32)var_name.size());
         WriteCSTR(stream, "constexpr int EVENT_%s = %d;\n", var_name.c_str(), e->id);
     }
 
@@ -443,7 +443,7 @@ static void GenerateCppHeader(ManifestGenerator& generator) {
     WriteCSTR(stream, "// @palette\n");
     for (int palette_index=0, palette_count=g_editor.palette_count; palette_index<palette_count; palette_index++) {
         std::string var_name = g_editor.palettes[palette_index].name->value;
-        Uppercase(var_name.data(), (u32)var_name.size());
+        Upper(var_name.data(), (u32)var_name.size());
         WriteCSTR(stream, "constexpr int PALETTE_%s = %d;\n", var_name.c_str(), g_editor.palettes[palette_index].id);
     }
 

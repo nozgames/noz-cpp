@@ -20,7 +20,6 @@
 #include "event.h"
 #include "name.h"
 #include "color.h"
-#include "text.h"
 #include "hash.h"
 #include "stream.h"
 #include "asset.h"

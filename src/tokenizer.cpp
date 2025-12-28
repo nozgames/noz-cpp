@@ -122,7 +122,7 @@ char* GetString(const Token& token, char* dst, u32 dst_size)
 }
 
 void GetText(const Token& token, Text& value) {
-    SetValue(value, token.raw, token.length);
+    Set(value, token.raw, token.length);
 }
 
 static bool Equals(const Token& token, const char* value, bool ignore_case=false)

@@ -513,7 +513,7 @@ static CachedTextMesh* GetOrCreateTextMesh(const char* text, const LabelStyle& s
     TextRequest r = {};
     r.font = style.font;
     r.font_size = style.font_size;
-    SetValue(r.text, text);
+    Set(r.text, text);
 
     struct EnumArgs {
         u64 hash;
@@ -594,7 +594,7 @@ bool TextBox(Text& text, const TextBoxStyle& style) {
         TextboxElement* textbox = static_cast<TextboxElement*>(CreateElement(ELEMENT_TYPE_TEXTBOX));
         textbox->id = id;
         textbox->style = style;
-        SetValue(g_ui.element_states[id].text, text);
+        Set(g_ui.element_states[id].text, text);
 
         if (g_ui.focus_id == id)
             text_changed = PlatformUpdateTextboxText(text);

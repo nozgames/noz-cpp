@@ -88,7 +88,6 @@ set(SOURCE_FILES
     src/render/animated_mesh.cpp
     src/stream.cpp
     src/time.cpp
-    src/text.cpp
     src/ui/ui.cpp
     src/ui/text_engine.cpp
     src/vfx/vfx.cpp

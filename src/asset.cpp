@@ -87,7 +87,7 @@ static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, Ass
 #endif
 
     std::string lower_asset_name_path = asset_name_path.string();
-    Lowercase(lower_asset_name_path.data(), (u32)lower_asset_name_path.size());
+    Lower(lower_asset_name_path.data(), (u32)lower_asset_name_path.size());
 
     // Search through all asset paths in order
     const char** asset_paths = GetApplicationTraits()->asset_paths;
