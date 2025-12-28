@@ -294,9 +294,10 @@ void ToggleSelected(AssetData* a) {
 }
 
 AssetData* GetAssetData(AssetType type, const Name* name) {
-    for (u32 i=0, c=GetAssetCount(); i<c; i++) {
-        AssetData* a = GetAssetData(i);
-        if ((type == ASSET_TYPE_UNKNOWN || a->type == type) && a->name == name)
+    // Iterate allocator directly (not sorted array) so this works during InitAssetData
+    for (u32 i = 0; i < MAX_ASSETS; i++) {
+        AssetData* a = GetAssetDataInternal(i);
+        if (a && (type == ASSET_TYPE_UNKNOWN || a->type == type) && a->name == name)
             return a;
     }
 
@@ -342,10 +343,20 @@ void InitAssetData() {
 
             // Skip if asset with same name already exists (from earlier source path)
             const Name* asset_name = MakeCanonicalAssetName(asset_path);
-            if (GetAssetData(ASSET_TYPE_UNKNOWN, asset_name)) {
+            AssetData* existing = GetAssetData(ASSET_TYPE_UNKNOWN, asset_name);
+            if (existing) {
                 if (strcmp(asset_name->value, "palette") == 0)
                     LogInfo("[AssetData] SKIPPING duplicate palette: %s (source_path_index=%d)", asset_path.string().c_str(), i);
                 continue;
+            }
+            if (strcmp(asset_name->value, "palette") == 0) {
+                LogInfo("[AssetData] No existing asset found for palette, asset_count=%d, name_ptr=%p, name='%s'", GetAssetCount(), (void*)asset_name, asset_name->value);
+                // Debug: scan all assets to find palette
+                for (u32 j = 0; j < GetAssetCount(); j++) {
+                    AssetData* a = GetAssetData(j);
+                    if (strcmp(a->name->value, "palette") == 0)
+                        LogInfo("[AssetData]   Found existing palette at index %d: name_ptr=%p, type=%d", j, (void*)a->name, a->type);
+                }
             }
 
             AssetData* a = nullptr;
