@@ -13,7 +13,7 @@ static std::mutex g_log_mutex;
 void LogImpl(LogType type, const char* format, va_list args) {
     std::lock_guard lock(g_log_mutex);
     char buffer[4096];
-    vsnprintf(buffer, sizeof(buffer), format, args);
+    vsnprintf(buffer, sizeof(buffer)-1, format, args);
     buffer[sizeof(buffer) - 1] = '\0';
 
     PlatformLog(type, buffer);

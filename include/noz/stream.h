@@ -64,10 +64,12 @@ extern void AlignStream(Stream* stream, int alignment);
 
 extern int ReadString(Stream* stream, char* buffer, int buffer_size);
 inline int ReadString(Stream* stream, String64& dst) {
-    return ReadString(stream, dst.value, sizeof(dst.value));
+    dst.length = ReadString(stream, dst.value, sizeof(dst.value));
+    return dst.length;
 }
 inline int ReadString(Stream* stream, String1024& dst) {
-    return ReadString(stream, dst.value, sizeof(dst.value));
+    dst.length = ReadString(stream, dst.value, sizeof(dst.value));
+    return dst.length;
 }
 
 extern int ReadNullString(Stream* stream, char* buffer, int buffer_size);
