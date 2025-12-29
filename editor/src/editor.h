@@ -24,7 +24,10 @@ struct EditorTraits {
     void (*update)();
     void (*load_user_config)(Props* user_config);
     void (*save_user_config)(Props* user_config);
+    bool skip_lua_loader;  // If true, generate .d.luau but not global.lua
 };
+
+extern EditorTraits g_editor_traits;
 #endif
 
 // @tool

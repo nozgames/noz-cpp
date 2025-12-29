@@ -192,6 +192,9 @@ bool GenerateAssetManifest(const fs::path& source_path, Props* config) {
 
     if (!GetManifestLuaPath().empty()) {
         GenerateLuauDefinitions(generator);
+#if defined(NOZ_EDITOR_LIB)
+        if (!g_editor_traits.skip_lua_loader)
+#endif
         GenerateLuaLoader(generator);
     }
 
