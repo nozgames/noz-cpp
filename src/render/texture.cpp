@@ -90,7 +90,7 @@ Texture* CreateTexture(
     assert(data);
     assert(name);
 
-    TextureImpl* impl = (TextureImpl*)Alloc(allocator, sizeof(TextureImpl));
+    TextureImpl* impl = static_cast<TextureImpl*>(Alloc(allocator, sizeof(TextureImpl)));
     if (!impl)
         return nullptr;
 

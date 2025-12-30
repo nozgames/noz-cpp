@@ -509,7 +509,10 @@ static void DestroyTask(TaskImpl* impl) {
 #endif
         try {
             impl->destroy_func(impl->result);
+        } catch (std::exception& e) {
+            LogInfo("[TASK] exception: %s", e.what());
         } catch (...) {
+            LogInfo("[TASK] exception: ???");
         }
     }
 
@@ -555,7 +558,10 @@ void noz::UpdateTasks() {
                 if (impl.complete_func) {
                     try {
                         impl.complete_func(handle, impl.result);
+                    } catch (std::exception& e) {
+                        LogInfo("[TASK] exception: %s", e.what());
                     } catch (...) {
+                        LogInfo("[TASK] exception: ???");
                     }
                 }
 
@@ -696,7 +702,13 @@ static void WorkerProc(TaskWorker* worker, int worker_index) {
 #if defined(TASK_DEBUG_VERBOSE)
                 LogInfo("[TASK] RUN_BEGIN: %3d : 0x%llx: %s", GetTaskIndex(impl), GetThreadId(), impl->name);
 #endif
-                impl->result = impl->run_func(GetHandle(impl));
+                try {
+                    impl->result = impl->run_func(GetHandle(impl));
+                } catch (std::exception& e) {
+                    LogInfo("[TASK] exception: %s", e.what());
+                } catch (...) {
+                    LogInfo("[TASK] exception: ???");
+                }
 
 #if defined(TASK_DEBUG)
                 impl->debug_end_time = GetRealTime();
