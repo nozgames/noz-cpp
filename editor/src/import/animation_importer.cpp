@@ -12,7 +12,7 @@ static void ImportAnimation(AssetData* ea, const std::filesystem::path& path, Pr
     assert(ea->type == ASSET_TYPE_ANIMATION);
     AnimationData* en = (AnimationData*)ea;
 
-    SkeletonData* es = (SkeletonData*)GetAssetData(ASSET_TYPE_SKELETON, en->skeleton_name);
+    SkeletonData* es = (SkeletonData*)GetAssetData(ASSET_TYPE_SKELETON, en->impl->skeleton_name);
     if (!es)
         ThrowError("invalid skeleton");
 

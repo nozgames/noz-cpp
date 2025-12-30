@@ -4,6 +4,7 @@
 
 #include <editor.h>
 #include "nozed_assets.h"
+#include "asset_registry.h"
 
 namespace fs = std::filesystem;
 
@@ -198,35 +199,12 @@ static void InitConfig() {
     fs::create_directories(g_editor.output_path);
 }
 
-static void InitImporters() {
-    g_editor.importers = static_cast<AssetImporter *>(Alloc(ALLOCATOR_DEFAULT, sizeof(AssetImporter) * ASSET_TYPE_COUNT));
-    g_editor.importers[ASSET_TYPE_ANIMATED_MESH] = GetAnimatedMeshImporter();
-    g_editor.importers[ASSET_TYPE_ANIMATION] = GetAnimationImporter();
-    g_editor.importers[ASSET_TYPE_FONT] = GetFontImporter();
-    g_editor.importers[ASSET_TYPE_MESH] = GetMeshImporter();
-    g_editor.importers[ASSET_TYPE_SHADER] = GetShaderImporter();
-    g_editor.importers[ASSET_TYPE_SOUND] = GetSoundImporter();
-    g_editor.importers[ASSET_TYPE_TEXTURE] = GetTextureImporter();
-    g_editor.importers[ASSET_TYPE_VFX] = GetVfxImporter();
-    g_editor.importers[ASSET_TYPE_SKELETON] = GetSkeletonImporter();
-    g_editor.importers[ASSET_TYPE_EVENT] = GetEventImporter();
-    g_editor.importers[ASSET_TYPE_BIN] = GetBinImporter();
-    g_editor.importers[ASSET_TYPE_LUA] = GetLuaImporter();
-
-#ifdef _DEBUG
-    for (int i=0; i<ASSET_TYPE_COUNT; i++) {
-        assert(g_editor.importers[i].type == static_cast<AssetType>(i));
-        assert(g_editor.importers[i].import_func);
-        assert(g_editor.importers[i].ext);
-    }
-#endif
-}
 
 void InitEditor() {
     g_main_thread_id = std::this_thread::get_id();
-    g_editor.asset_allocator = CreatePoolAllocator(sizeof(FatAssetData), MAX_ASSETS);
+    g_editor.asset_allocator = CreatePoolAllocator(sizeof(GenericAssetData), MAX_ASSETS);
 
-    InitImporters();
+    InitEditorAssets();
     InitLog(HandleLog);
     Listen(EDITOR_EVENT_STATS, HandleStatsEvents);
     Listen(EDITOR_EVENT_IMPORTED, HandleImported);

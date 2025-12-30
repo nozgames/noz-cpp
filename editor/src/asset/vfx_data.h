@@ -15,7 +15,7 @@ struct EditorVfxEmitter
     VfxEmitterDef def;
 };
 
-struct VfxData : AssetData {
+struct VfxDataImpl {
     VfxFloat duration;
     bool loop;
     EditorVfxEmitter emitters[MAX_EMITTERS_PER_VFX];
@@ -23,6 +23,10 @@ struct VfxData : AssetData {
     Vfx* vfx;
     VfxHandle handle;
     bool playing;
+};
+
+struct VfxData : AssetData {
+    VfxDataImpl* impl;
 };
 
 extern void InitVfxData(AssetData* ea);

@@ -8,6 +8,7 @@ extern void InitSkeletonEditor(SkeletonData* s);
 extern Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, Stream* stream);
 
 static void BuildSkeletonDisplayMesh(SkeletonData* s, const Vec2& position) {
+    SkeletonDataImpl* impl = s->impl;
     PushScratch();
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4096, 8192);
 
@@ -15,8 +16,8 @@ static void BuildSkeletonDisplayMesh(SkeletonData* s, const Vec2& position) {
     float bone_raius = STYLE_SKELETON_BONE_RADIUS * g_view.zoom_ref_scale;
     float dash_length = STYLE_SKELETON_PARENT_DASH * g_view.zoom_ref_scale;
 
-    for (int bone_index = 0; bone_index < s->bone_count; bone_index++) {
-        BoneData* b = s->bones + bone_index;
+    for (int bone_index = 0; bone_index < impl->bone_count; bone_index++) {
+        BoneData* b = impl->bones + bone_index;
         Vec2 p0 = TransformPoint(b->local_to_world) + position;
         Vec2 p1 = TransformPoint(b->local_to_world, Vec2{b->length, 0}) + position;
 
@@ -30,38 +31,39 @@ static void BuildSkeletonDisplayMesh(SkeletonData* s, const Vec2& position) {
         AddEditorCircle(builder, p0, bone_raius, STYLE_SKELETON_BONE_COLOR);
     }
 
-    if (!s->display_mesh)
-        s->display_mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
+    if (!impl->display_mesh)
+        impl->display_mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
     else
-        UpdateMeshFromBuilder(s->display_mesh, builder);
+        UpdateMeshFromBuilder(impl->display_mesh, builder);
 
     PopScratch();
-    s->display_mesh_dirty = false;
-    s->display_mesh_zoom_version = g_view.zoom_version;
-    s->display_mesh_position = position;
+    impl->display_mesh_dirty = false;
+    impl->display_mesh_zoom_version = g_view.zoom_version;
+    impl->display_mesh_position = position;
 }
 
 void DrawSkeletonData(SkeletonData* s, const Vec2& position) {
+    SkeletonDataImpl* impl = s->impl;
     BindIdentitySkeleton();
     BindColor(COLOR_WHITE);
     BindDepth(0.0);
     Mat3 local_to_world = Translate(s->position);
-    for (int i=0; i<s->skin_count; i++) {
-        MeshData* skinned_mesh = s->skins[i].mesh;
+    for (int i=0; i<impl->skin_count; i++) {
+        MeshData* skinned_mesh = impl->skins[i].mesh;
         if (!skinned_mesh)
             continue;
         DrawMesh(skinned_mesh, local_to_world, g_view.shaded_skinned_material);
     }
 
-    bool zoom_changed = s->display_mesh_zoom_version != g_view.zoom_version;
-    bool position_changed = s->display_mesh_position != position;
-    if (s->display_mesh_dirty || !s->display_mesh || zoom_changed || position_changed)
+    bool zoom_changed = impl->display_mesh_zoom_version != g_view.zoom_version;
+    bool position_changed = impl->display_mesh_position != position;
+    if (impl->display_mesh_dirty || !impl->display_mesh || zoom_changed || position_changed)
         BuildSkeletonDisplayMesh(s, position);
 
     BindDepth(0.0f);
     BindMaterial(g_view.editor_mesh_material);
     BindTransform(MAT3_IDENTITY);
-    DrawMesh(s->display_mesh);
+    DrawMesh(impl->display_mesh);
 }
 
 static void DrawSkeletonData(AssetData* a) {
@@ -72,9 +74,10 @@ static void DrawSkeletonData(AssetData* a) {
 }
 
 int HitTestBones(SkeletonData* s, const Mat3& transform, const Vec2& position, int* bones, int max_bones) {
+    SkeletonDataImpl* impl = s->impl;
     int hit_count = 0;
-    for (int bone_index=s->bone_count-1; bone_index>=0 && max_bones > 0; bone_index--) {
-        BoneData* b = s->bones + bone_index;
+    for (int bone_index=impl->bone_count-1; bone_index>=0 && max_bones > 0; bone_index--) {
+        BoneData* b = impl->bones + bone_index;
         Mat3 local_to_world = transform * b->local_to_world;
         if (!OverlapPoint(g_view.bone_collider, local_to_world * Scale(b->length), position))
             continue;
@@ -87,6 +90,7 @@ int HitTestBones(SkeletonData* s, const Mat3& transform, const Vec2& position, i
 }
 
 int HitTestBone(SkeletonData* s, const Mat3& transform, const Vec2& position) {
+    SkeletonDataImpl* impl = s->impl;
     int bones[MAX_BONES];
     int bone_count = HitTestBones(s, transform, position, bones, MAX_BONES);
     if (bone_count == 0)
@@ -95,7 +99,7 @@ int HitTestBone(SkeletonData* s, const Mat3& transform, const Vec2& position) {
     float best_dist = F32_MAX;
     int best_bone_index = -1;
     for (int bone_index=0; bone_index<bone_count; bone_index++) {
-        BoneData* b = s->bones + bones[bone_index];
+        BoneData* b = impl->bones + bones[bone_index];
         Mat3 local_to_world = transform * b->local_to_world;
         Vec2 b0 = TransformPoint(local_to_world);
         Vec2 b1 = TransformPoint(local_to_world, {b->length, 0});
@@ -141,7 +145,8 @@ static void ParseBoneLength(BoneData& eb, Tokenizer& tk) {
     eb.length = l;
 }
 
-static void ParseBone(SkeletonData* es, Tokenizer& tk) {
+static void ParseBone(SkeletonData* s, Tokenizer& tk) {
+    SkeletonDataImpl* impl = s->impl;
     if (!ExpectQuotedString(tk))
         ThrowError("expected bone name as quoted string");
 
@@ -151,10 +156,10 @@ static void ParseBone(SkeletonData* es, Tokenizer& tk) {
     if (!ExpectInt(tk, &parent_index))
         ThrowError("expected parent index");
 
-    BoneData& bone = es->bones[es->bone_count++];
+    BoneData& bone = impl->bones[impl->bone_count++];
     bone.name = bone_name;
     bone.parent_index = parent_index;
-    bone.index = es->bone_count - 1;
+    bone.index = impl->bone_count - 1;
     bone.transform.scale = VEC2_ONE;
     bone.length = 0.25f;
 
@@ -196,11 +201,12 @@ static void LoadSkeletonData(AssetData* a) {
 static void SaveSkeletonData(AssetData* a, const std::filesystem::path& path) {
     assert(a);
     assert(a->type == ASSET_TYPE_SKELETON);
-    SkeletonData* es = (SkeletonData*)a;
+    SkeletonData* s = (SkeletonData*)a;
+    SkeletonDataImpl* impl = s->impl;
     Stream* stream = CreateStream(ALLOCATOR_DEFAULT, 4096);
 
-    for (int i=0; i<es->bone_count; i++) {
-        const BoneData& eb = es->bones[i];
+    for (int i=0; i<impl->bone_count; i++) {
+        const BoneData& eb = impl->bones[i];
         WriteCSTR(stream, "b \"%s\" %d p %f %f r %f l %f\n",
             eb.name->value,
             eb.parent_index,
@@ -232,24 +238,25 @@ AssetData* NewEditorSkeleton(const std::filesystem::path& path) {
 }
 
 void UpdateTransforms(SkeletonData* s) {
-    if (s->bone_count <= 0)
+    SkeletonDataImpl* impl = s->impl;
+    if (impl->bone_count <= 0)
         return;
 
-    BoneData& root = s->bones[0];
+    BoneData& root = impl->bones[0];
     root.local_to_world = TRS(root.transform.position, root.transform.rotation, VEC2_ONE);
     root.world_to_local = Inverse(root.local_to_world);
 
-    for (int bone_index=1; bone_index<s->bone_count; bone_index++) {
-        BoneData& bone = s->bones[bone_index];
-        BoneData& parent = s->bones[bone.parent_index];
+    for (int bone_index=1; bone_index<impl->bone_count; bone_index++) {
+        BoneData& bone = impl->bones[bone_index];
+        BoneData& parent = impl->bones[bone.parent_index];
         bone.local_to_world = parent.local_to_world * TRS(bone.transform.position, bone.transform.rotation, VEC2_ONE);
         bone.world_to_local = Inverse(bone.local_to_world);
     }
 
-    Vec2 root_position = TransformPoint(s->bones[0].local_to_world);
+    Vec2 root_position = TransformPoint(impl->bones[0].local_to_world);
     Bounds2 bounds = Bounds2 { root_position, root_position };
-    for (int i=0; i<s->bone_count; i++) {
-        BoneData* b = s->bones + i;
+    for (int i=0; i<impl->bone_count; i++) {
+        BoneData* b = impl->bones + i;
         float bone_width = b->length * BONE_WIDTH;
         const Mat3& bone_transform = b->local_to_world;
         bounds = Union(bounds, TransformPoint(bone_transform));
@@ -258,8 +265,8 @@ void UpdateTransforms(SkeletonData* s) {
         bounds = Union(bounds, TransformPoint(bone_transform, Vec2{bone_width, -bone_width}));
     }
 
-    for (int i=0; i<s->skin_count; i++) {
-        MeshData* skinned_mesh = s->skins[i].mesh;
+    for (int i=0; i<impl->skin_count; i++) {
+        MeshData* skinned_mesh = impl->skins[i].mesh;
         if (!skinned_mesh || skinned_mesh->type != ASSET_TYPE_MESH)
             continue;
 
@@ -267,7 +274,7 @@ void UpdateTransforms(SkeletonData* s) {
     }
 
     s->bounds = Expand(bounds, BOUNDS_PADDING);
-    s->display_mesh_dirty = true;
+    impl->display_mesh_dirty = true;
 }
 
 static void LoadSkeletonMetaData(AssetData* a, Props* meta) {
@@ -275,8 +282,9 @@ static void LoadSkeletonMetaData(AssetData* a, Props* meta) {
     assert(a->type == ASSET_TYPE_SKELETON);
 
     SkeletonData* s = static_cast<SkeletonData*>(a);
+    SkeletonDataImpl* impl = s->impl;
     for (auto& key : meta->GetKeys("skin")) {
-        s->skins[s->skin_count++] = {.asset_name = GetName(key.c_str())};
+        impl->skins[impl->skin_count++] = {.asset_name = GetName(key.c_str())};
     }
 }
 
@@ -284,25 +292,27 @@ static void PostLoadSkeleton(AssetData* a) {
     assert(a);
     assert(a->type == ASSET_TYPE_SKELETON);
     SkeletonData* s = static_cast<SkeletonData*>(a);
+    SkeletonDataImpl* impl = s->impl;
 
     int loaded_skinned_mesh = 0;
-    for (int i=0; i<s->skin_count; i++) {
-        Skin& sm = s->skins[i];
+    for (int i=0; i<impl->skin_count; i++) {
+        Skin& sm = impl->skins[i];
         sm.mesh = static_cast<MeshData*>(GetAssetData(ASSET_TYPE_MESH, sm.asset_name));
         if (!sm.mesh)
             continue;
-        s->skins[loaded_skinned_mesh++] = sm;
+        impl->skins[loaded_skinned_mesh++] = sm;
         PostLoadAssetData(sm.mesh);
     }
 
-    s->skin_count = loaded_skinned_mesh;
+    impl->skin_count = loaded_skinned_mesh;
 
     UpdateTransforms(s);
 }
 
 int FindBoneIndex(SkeletonData* s, const Name* name) {
-    for (int i=0; i<s->bone_count; i++)
-        if (s->bones[i].name == name)
+    SkeletonDataImpl* impl = s->impl;
+    for (int i=0; i<impl->bone_count; i++)
+        if (impl->bones[i].name == name)
             return i;
 
     return -1;
@@ -336,22 +346,23 @@ static void ReparentBoneTransform(BoneData& b, BoneData& p) {
 }
 
 int ReparentBone(SkeletonData* s, int bone_index, int parent_index) {
-    BoneData& eb = s->bones[bone_index];
+    SkeletonDataImpl* impl = s->impl;
+    BoneData& eb = impl->bones[bone_index];
 
     eb.parent_index = parent_index;
 
-    qsort(s->bones, s->bone_count, sizeof(BoneData), CompareBoneParentIndex);
+    qsort(impl->bones, impl->bone_count, sizeof(BoneData), CompareBoneParentIndex);
 
     int bone_map[MAX_BONES];
-    for (int i=0; i<s->bone_count; i++)
-        bone_map[s->bones[i].index] = i;
+    for (int i=0; i<impl->bone_count; i++)
+        bone_map[impl->bones[i].index] = i;
 
-    for (int i=1; i<s->bone_count; i++) {
-        s->bones[i].parent_index = bone_map[s->bones[i].parent_index];
-        s->bones[i].index = i;
+    for (int i=1; i<impl->bone_count; i++) {
+        impl->bones[i].parent_index = bone_map[impl->bones[i].parent_index];
+        impl->bones[i].index = i;
     }
 
-    ReparentBoneTransform(s->bones[bone_map[bone_index]], s->bones[bone_map[parent_index]]);
+    ReparentBoneTransform(impl->bones[bone_map[bone_index]], impl->bones[bone_map[parent_index]]);
     UpdateTransforms(s);
 
     return bone_map[bone_index];
@@ -390,13 +401,15 @@ static int GetBoneSideInternal(const char* str, size_t len, bool* is_prefix) {
 }
 
 int GetBoneSide(SkeletonData* s, int bone_index) {
-    const char* str = s->bones[bone_index].name->value;
+    SkeletonDataImpl* impl = s->impl;
+    const char* str = impl->bones[bone_index].name->value;
     bool is_prefix;
     return GetBoneSideInternal(str, strlen(str), &is_prefix);
 }
 
 int GetMirrorBone(SkeletonData* s, int bone_index) {
-    const char* name_a = s->bones[bone_index].name->value;
+    SkeletonDataImpl* impl = s->impl;
+    const char* name_a = impl->bones[bone_index].name->value;
     size_t len_a = strlen(name_a);
     bool is_prefix_a;
     int side = GetBoneSideInternal(name_a, len_a, &is_prefix_a);
@@ -404,11 +417,11 @@ int GetMirrorBone(SkeletonData* s, int bone_index) {
     if (side == 0)
         return -1;
 
-    for (int i = 0; i < s->bone_count; i++) {
+    for (int i = 0; i < impl->bone_count; i++) {
         if (i == bone_index)
             continue;
 
-        const char* name_b = s->bones[i].name->value;
+        const char* name_b = impl->bones[i].name->value;
         size_t len_b = strlen(name_b);
         bool is_prefix_b;
         int other_side = GetBoneSideInternal(name_b, len_b, &is_prefix_b);
@@ -437,26 +450,27 @@ int GetMirrorBone(SkeletonData* s, int bone_index) {
 }
 
 void RemoveBone(SkeletonData* s, int bone_index) {
-    if (bone_index <= 0 || bone_index >= s->bone_count)
+    SkeletonDataImpl* impl = s->impl;
+    if (bone_index <= 0 || bone_index >= impl->bone_count)
         return;
 
-    BoneData& b = s->bones[bone_index];
+    BoneData& b = impl->bones[bone_index];
     int parent_index = b.parent_index;
 
     // Reparent children to parent
-    for (int child_index=0; child_index < s->bone_count; child_index++) {
-        BoneData& c = s->bones[child_index];
+    for (int child_index=0; child_index < impl->bone_count; child_index++) {
+        BoneData& c = impl->bones[child_index];
         if (c.parent_index == bone_index) {
             c.parent_index = parent_index;
-            ReparentBoneTransform(c, s->bones[parent_index]);
+            ReparentBoneTransform(c, impl->bones[parent_index]);
         }
     }
 
-    s->bone_count--;
+    impl->bone_count--;
 
-    for (int i=bone_index; i<s->bone_count; i++) {
-        BoneData& enb = s->bones[i];
-        enb = s->bones[i + 1];
+    for (int i=bone_index; i<impl->bone_count; i++) {
+        BoneData& enb = impl->bones[i];
+        enb = impl->bones[i + 1];
         enb.index = i;
         if (enb.parent_index == bone_index)
             enb.parent_index = parent_index;
@@ -482,22 +496,23 @@ const Name* GetUniqueBoneName(SkeletonData* s) {
 }
 
 void Serialize(SkeletonData* s, Stream* stream) {
+    SkeletonDataImpl* impl = s->impl;
     const Name* bone_names[MAX_BONES];
-    for (int i=0; i<s->bone_count; i++)
-        bone_names[i] = s->bones[i].name;
+    for (int i=0; i<impl->bone_count; i++)
+        bone_names[i] = impl->bones[i].name;
 
     AssetHeader header = {};
     header.signature = ASSET_SIGNATURE;
     header.type = ASSET_TYPE_SKELETON;
     header.version = 1;
     header.flags = 0;
-    header.names = s->bone_count;
+    header.names = impl->bone_count;
     WriteAssetHeader(stream, &header, bone_names);
 
-    WriteU8(stream, (u8)s->bone_count);
+    WriteU8(stream, (u8)impl->bone_count);
 
-    for (int i=0; i<s->bone_count; i++) {
-        BoneData& eb = s->bones[i];
+    for (int i=0; i<impl->bone_count; i++) {
+        BoneData& eb = impl->bones[i];
         WriteI8(stream, (char)eb.parent_index);
         WriteStruct(stream, eb.transform.position);
         WriteFloat(stream, eb.transform.rotation);
@@ -523,13 +538,14 @@ static void SaveSkeletonMetadata(AssetData* a, Props* meta) {
     assert(a);
     assert(a->type == ASSET_TYPE_SKELETON);
     SkeletonData* s = (SkeletonData*)a;
+    SkeletonDataImpl* impl = s->impl;
     meta->ClearGroup("skin");
 
-    for (int i=0; i<s->skin_count; i++) {
-        if (s->skins[i].mesh == nullptr)
+    for (int i=0; i<impl->skin_count; i++) {
+        if (impl->skins[i].mesh == nullptr)
             continue;
 
-        meta->AddKey("skin", s->skins[i].asset_name->value);
+        meta->AddKey("skin", impl->skins[i].asset_name->value);
     }
 }
 
@@ -545,43 +561,42 @@ static void SkeletonUndoRedo(AssetData* a) {
         AnimationData* anim = static_cast<AnimationData*>(GetAssetData(i));
         if (anim->type != ASSET_TYPE_ANIMATION)
             continue;
-        if (anim->skeleton != s)
+        if (anim->impl->skeleton != s)
             continue;
         UpdateTransforms(anim);
     }
 }
 
-static void AllocateSkeletonRuntimeData(AssetData* a) {
+static void AllocateSkeletonImpl(AssetData* a) {
     assert(a->type == ASSET_TYPE_SKELETON);
-    SkeletonData* d = static_cast<SkeletonData*>(a);
-    d->data = static_cast<RuntimeSkeletonData*>(Alloc(ALLOCATOR_DEFAULT, sizeof(RuntimeSkeletonData)));
-    d->bones = d->data->bones;
-    d->skins = d->data->skins;
+    SkeletonData* s = static_cast<SkeletonData*>(a);
+    s->impl = static_cast<SkeletonDataImpl*>(Alloc(ALLOCATOR_DEFAULT, sizeof(SkeletonDataImpl)));
+    memset(s->impl, 0, sizeof(SkeletonDataImpl));
 }
 
 static void CloneSkeletonData(AssetData* a) {
     assert(a->type == ASSET_TYPE_SKELETON);
-    SkeletonData* n = static_cast<SkeletonData*>(a);
-    RuntimeSkeletonData* old_data = n->data;
-    AllocateSkeletonRuntimeData(n);
-    memcpy(n->data, old_data, sizeof(RuntimeSkeletonData));
+    SkeletonData* s = static_cast<SkeletonData*>(a);
+    SkeletonDataImpl* old_impl = s->impl;
+    AllocateSkeletonImpl(s);
+    memcpy(s->impl, old_impl, sizeof(SkeletonDataImpl));
 }
 
 static void DestroySkeletonData(AssetData* a) {
     SkeletonData* s = static_cast<SkeletonData*>(a);
     assert(s);
-    Free(s->data);
-    s->data = nullptr;
-    if (s->display_mesh) {
-        Free(s->display_mesh);
-        s->display_mesh = nullptr;
+    if (s->impl->display_mesh) {
+        Free(s->impl->display_mesh);
+        s->impl->display_mesh = nullptr;
     }
+    Free(s->impl);
+    s->impl = nullptr;
 }
 
 static void InitSkeletonData(SkeletonData* s) {
     assert(s);
 
-    AllocateSkeletonRuntimeData(s);
+    AllocateSkeletonImpl(s);
 
     s->vtable = {
         .destructor = DestroySkeletonData,

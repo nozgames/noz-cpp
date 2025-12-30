@@ -64,14 +64,14 @@ static KnifeTool g_knife_tool = {};
 static void EnsureEdgeVertexInFace(MeshData* m, int face_index, KnifePathPoint& pt);
 
 static int FindFaceContainingPoint(MeshData* m, const Vec2& point) {
-    for (int face_index = 0; face_index < m->face_count; face_index++) {
-        FaceData& f = m->faces[face_index];
+    for (int face_index = 0; face_index < m->impl->face_count; face_index++) {
+        FaceData& f = m->impl->faces[face_index];
 
         // Build polygon from face vertices and test point containment
         bool inside = false;
         for (int i = 0, j = f.vertex_count - 1; i < f.vertex_count; j = i++) {
-            Vec2 vi = m->vertices[f.vertices[i]].position;
-            Vec2 vj = m->vertices[f.vertices[j]].position;
+            Vec2 vi = m->impl->vertices[f.vertices[i]].position;
+            Vec2 vj = m->impl->vertices[f.vertices[j]].position;
 
             if (((vi.y > point.y) != (vj.y > point.y)) &&
                 (point.x < (vj.x - vi.x) * (point.y - vi.y) / (vj.y - vi.y) + vi.x)) {
@@ -94,8 +94,8 @@ static int FindVertexInFace(const FaceData& f, int vertex_index) {
 }
 
 static int FindVertexAtPosition(MeshData* m, const Vec2& position, float tolerance = 0.001f) {
-    for (int i = 0; i < m->vertex_count; i++)
-        if (Length(m->vertices[i].position - position) < tolerance)
+    for (int i = 0; i < m->impl->vertex_count; i++)
+        if (Length(m->impl->vertices[i].position - position) < tolerance)
             return i;
 
     return -1;
@@ -106,11 +106,11 @@ static int AddKnifeVertex(MeshData* m, const Vec2& position) {
     if (existing != -1)
         return existing;
 
-    if (m->vertex_count >= MAX_VERTICES)
+    if (m->impl->vertex_count >= MAX_VERTICES)
         return -1;
 
-    int index = m->vertex_count++;
-    VertexData& v = m->vertices[index];
+    int index = m->impl->vertex_count++;
+    VertexData& v = m->impl->vertices[index];
     v.position = position;
     v.edge_normal = VEC2_ZERO;
     v.edge_size = 0.0f;
@@ -121,7 +121,7 @@ static int AddKnifeVertex(MeshData* m, const Vec2& position) {
 }
 
 static bool InsertVertexInFace(MeshData* m, int face_index, int insert_pos, int vertex_index, bool allow_duplicates = false) {
-    FaceData& f = m->faces[face_index];
+    FaceData& f = m->impl->faces[face_index];
 
     if (!allow_duplicates && FindVertexInFace(f, vertex_index) != -1)
         return false;
@@ -138,10 +138,10 @@ static bool InsertVertexInFace(MeshData* m, int face_index, int insert_pos, int 
 }
 
 static int SplitFaceAtPositions(MeshData* m, int face_index, int pos0, int pos1, const int* cut_vertices, int cut_vertex_count) {
-    if (m->face_count >= MAX_FACES)
+    if (m->impl->face_count >= MAX_FACES)
         return -1;
 
-    FaceData& old_face = m->faces[face_index];
+    FaceData& old_face = m->impl->faces[face_index];
 
     if (pos0 < 0 || pos0 >= old_face.vertex_count || pos1 < 0 || pos1 >= old_face.vertex_count)
         return -1;
@@ -153,7 +153,7 @@ static int SplitFaceAtPositions(MeshData* m, int face_index, int pos0, int pos1,
         old_vertices[i] = old_face.vertices[i];
 
     // Create new face
-    FaceData& new_face = m->faces[m->face_count];
+    FaceData& new_face = m->impl->faces[m->impl->face_count];
     new_face.color = old_face.color;
     new_face.normal = old_face.normal;
     new_face.selected = false;
@@ -178,13 +178,13 @@ static int SplitFaceAtPositions(MeshData* m, int face_index, int pos0, int pos1,
         old_face.vertices[old_face.vertex_count++] = cut_vertices[i];
     }
 
-    return m->face_count++;
+    return m->impl->face_count++;
 }
 
 static int GetFacesWithEdge(MeshData* m, int v0, int v1, int faces[2]) {
     int count = 0;
-    for (int fi = 0; fi < m->face_count && count < 2; fi++) {
-        FaceData& f = m->faces[fi];
+    for (int fi = 0; fi < m->impl->face_count && count < 2; fi++) {
+        FaceData& f = m->impl->faces[fi];
         for (int vi = 0; vi < f.vertex_count; vi++) {
             int fv0 = f.vertices[vi];
             int fv1 = f.vertices[(vi + 1) % f.vertex_count];
@@ -241,10 +241,10 @@ static int BuildKnifePath(MeshData* m, KnifePathPoint* path) {
             EdgeHit hits[64];
             int hit_count = 0;
 
-            for (int edge_i = 0; edge_i < m->edge_count; edge_i++) {
-                EdgeData& e = m->edges[edge_i];
-                Vec2 ev0 = m->vertices[e.v0].position;
-                Vec2 ev1 = m->vertices[e.v1].position;
+            for (int edge_i = 0; edge_i < m->impl->edge_count; edge_i++) {
+                EdgeData& e = m->impl->edges[edge_i];
+                Vec2 ev0 = m->impl->vertices[e.v0].position;
+                Vec2 ev1 = m->impl->vertices[e.v1].position;
 
                 Vec2 intersection;
                 if (!OverlapLine(seg_start, seg_end, ev0, ev1, &intersection))
@@ -312,7 +312,7 @@ static int BuildKnifePath(MeshData* m, KnifePathPoint* path) {
             pp.type = KNIFE_POINT_CLOSE;
             pp.face_index = cut.face_index;
             if (cut.edge_index >= 0) {
-                EdgeData& e = m->edges[cut.edge_index];
+                EdgeData& e = m->impl->edges[cut.edge_index];
                 pp.edge_v0 = e.v0;
                 pp.edge_v1 = e.v1;
             }
@@ -321,7 +321,7 @@ static int BuildKnifePath(MeshData* m, KnifePathPoint* path) {
             pp.vertex_index = cut.vertex_index;
         } else if (cut.edge_index >= 0) {
             pp.type = KNIFE_POINT_EDGE;
-            EdgeData& e = m->edges[cut.edge_index];
+            EdgeData& e = m->impl->edges[cut.edge_index];
             pp.edge_v0 = e.v0;
             pp.edge_v1 = e.v1;
         } else if (cut.face_index >= 0) {
@@ -374,8 +374,8 @@ static int FindCommonFace(MeshData* m, KnifePathPoint* path, int start_bi, int e
     int start_face_count = 0;
 
     if (start_pt.type == KNIFE_POINT_VERTEX) {
-        for (int fi = 0; fi < m->face_count && start_face_count < 8; fi++) {
-            if (FindVertexInFace(m->faces[fi], start_pt.vertex_index) != -1) {
+        for (int fi = 0; fi < m->impl->face_count && start_face_count < 8; fi++) {
+            if (FindVertexInFace(m->impl->faces[fi], start_pt.vertex_index) != -1) {
                 start_faces[start_face_count++] = fi;
             }
         }
@@ -386,7 +386,7 @@ static int FindCommonFace(MeshData* m, KnifePathPoint* path, int start_bi, int e
     // Find which start face also contains end point
     for (int k = 0; k < start_face_count; k++) {
         int fi = start_faces[k];
-        FaceData& f = m->faces[fi];
+        FaceData& f = m->impl->faces[fi];
 
         if (end_pt.type == KNIFE_POINT_VERTEX) {
             if (FindVertexInFace(f, end_pt.vertex_index) != -1) {
@@ -657,7 +657,7 @@ static void EnsureEdgeVertexInAllFaces(MeshData* m, KnifePathPoint& pt) {
 
     // Find all faces that contain this edge (or a sub-edge of it)
     // We check all faces since the original edge may have been subdivided
-    for (int face_index = 0; face_index < m->face_count; face_index++) {
+    for (int face_index = 0; face_index < m->impl->face_count; face_index++) {
         EnsureEdgeVertexInFace(m, face_index, pt);
     }
 }
@@ -666,7 +666,7 @@ void EnsureEdgeVertexInFace(MeshData* m, int face_index, KnifePathPoint& pt) {
     if (!IsEdgePoint(pt))
         return;
 
-    FaceData& f = m->faces[face_index];
+    FaceData& f = m->impl->faces[face_index];
     int vertex = pt.vertex_index;
 
     // Check if already in face
@@ -691,8 +691,8 @@ void EnsureEdgeVertexInFace(MeshData* m, int face_index, KnifePathPoint& pt) {
         bool has_v1 = (fv0 == pt.edge_v1 || fv1 == pt.edge_v1);
         if (has_v0 || has_v1) {
             // Check if the point lies on this edge segment
-            Vec2 p0 = m->vertices[fv0].position;
-            Vec2 p1 = m->vertices[fv1].position;
+            Vec2 p0 = m->impl->vertices[fv0].position;
+            Vec2 p1 = m->impl->vertices[fv1].position;
             Vec2 edge_dir = p1 - p0;
             float edge_len = Length(edge_dir);
             if (edge_len < F32_EPSILON) continue;
@@ -754,7 +754,7 @@ static void ExecuteFaceSplit(MeshData* m, KnifePathPoint* path, KnifeAction& act
     }
 
     // Find all positions of v0 and v1 in the face (they may appear multiple times in slit faces)
-    FaceData& f = m->faces[action.face_index];
+    FaceData& f = m->impl->faces[action.face_index];
     int v0_positions[8];
     int v0_pos_count = 0;
     int v1_positions[8];
@@ -822,20 +822,22 @@ static void ExecuteFaceSplit(MeshData* m, KnifePathPoint* path, KnifeAction& act
 
 // Compute signed area of a polygon (positive = CCW, negative = CW)
 static float ComputeSignedArea(MeshData* m, int* vertices, int count) {
+    MeshDataImpl* impl = m->impl;
     float area = 0.0f;
     for (int i = 0; i < count; i++) {
-        Vec2 p0 = m->vertices[vertices[i]].position;
-        Vec2 p1 = m->vertices[vertices[(i + 1) % count]].position;
+        Vec2 p0 = impl->vertices[vertices[i]].position;
+        Vec2 p1 = impl->vertices[vertices[(i + 1) % count]].position;
         area += (p0.x * p1.y - p1.x * p0.y);
     }
     return area * 0.5f;
 }
 
 static void ExecuteInnerFace(MeshData* m, KnifePathPoint* path, KnifeAction& action) {
+    MeshDataImpl* impl = m->impl;
     if (action.face_index < 0)
         return;
 
-    FaceData& f = m->faces[action.face_index];
+    FaceData& f = impl->faces[action.face_index];
 
     // Collect all vertices in the loop first
     int loop_vertices[128];
@@ -872,10 +874,10 @@ static void ExecuteInnerFace(MeshData* m, KnifePathPoint* path, KnifeAction& act
 
     for (int fi = 0; fi < f.vertex_count; fi++) {
         int vi = f.vertices[fi];
-        Vec2 boundary_pos = m->vertices[vi].position;
+        Vec2 boundary_pos = impl->vertices[vi].position;
 
         for (int li = 0; li < loop_count; li++) {
-            float d = Length(m->vertices[loop_vertices[li]].position - boundary_pos);
+            float d = Length(impl->vertices[loop_vertices[li]].position - boundary_pos);
             if (d < min_dist) {
                 min_dist = d;
                 closest_boundary_v = vi;
@@ -896,10 +898,10 @@ static void ExecuteInnerFace(MeshData* m, KnifePathPoint* path, KnifeAction& act
     // 1. Outer face: original boundary with slit to inner loop
     // 2. Inner face: the loop itself (should have SAME winding as boundary for correct rendering)
 
-    if (m->face_count >= MAX_FACES)
+    if (impl->face_count >= MAX_FACES)
         return;
 
-    FaceData& inner_face = m->faces[m->face_count];
+    FaceData& inner_face = impl->faces[impl->face_count];
     inner_face.color = f.color;
     inner_face.normal = f.normal;
     inner_face.selected = false;
@@ -921,7 +923,7 @@ static void ExecuteInnerFace(MeshData* m, KnifePathPoint* path, KnifeAction& act
             inner_face.vertices[inner_face.vertex_count++] = loop_vertices[idx];
         }
     }
-    m->face_count++;
+    impl->face_count++;
 
     // Now rebuild the outer face with the slit
     // The embedded hole must have OPPOSITE winding to boundary for triangulation to work
@@ -1002,7 +1004,8 @@ static void ExecuteInnerSlit(MeshData* m, KnifePathPoint* path, KnifeAction& act
     // 1. The inner triangle/notch (v0 -> cut_vertices -> v1)
     // 2. The outer face with the notch cut out
 
-    FaceData& f = m->faces[action.face_index];
+    MeshDataImpl* impl = m->impl;
+    FaceData& f = impl->faces[action.face_index];
 
     // Find positions of v0 and v1 in the face
     // For inner slit, they should be adjacent on the same edge, so we need to find
@@ -1052,8 +1055,9 @@ static void PrepareActionVertices(MeshData* m, KnifePathPoint* path, KnifeAction
 
 // Find the face that contains two vertices (after edge insertions)
 static int FindFaceWithVertices(MeshData* m, int v0, int v1) {
-    for (int fi = 0; fi < m->face_count; fi++) {
-        FaceData& f = m->faces[fi];
+    MeshDataImpl* impl = m->impl;
+    for (int fi = 0; fi < impl->face_count; fi++) {
+        FaceData& f = impl->faces[fi];
         bool has_v0 = false, has_v1 = false;
         for (int i = 0; i < f.vertex_count; i++) {
             if (f.vertices[i] == v0) has_v0 = true;
@@ -1123,14 +1127,15 @@ static void ExecuteKnifeActions(MeshData* m, KnifePathPoint* path, int path_coun
 
 #ifdef KNIFE_LOG
 static void LogMesh(MeshData* m, const char* label) {
+    MeshDataImpl* impl = m->impl;
     LogInfo("=== Mesh %s ===", label);
-    LogInfo("Vertices (%d):", m->vertex_count);
-    for (int i = 0; i < m->vertex_count; i++) {
-        LogInfo("  [%d] (%.3f, %.3f)", i, m->vertices[i].position.x, m->vertices[i].position.y);
+    LogInfo("Vertices (%d):", impl->vertex_count);
+    for (int i = 0; i < impl->vertex_count; i++) {
+        LogInfo("  [%d] (%.3f, %.3f)", i, impl->vertices[i].position.x, impl->vertices[i].position.y);
     }
-    LogInfo("Faces (%d):", m->face_count);
-    for (int i = 0; i < m->face_count; i++) {
-        FaceData& f = m->faces[i];
+    LogInfo("Faces (%d):", impl->face_count);
+    for (int i = 0; i < impl->face_count; i++) {
+        FaceData& f = impl->faces[i];
         char buf[256] = {};
         int len = 0;
         for (int j = 0; j < f.vertex_count; j++) {
@@ -1138,9 +1143,9 @@ static void LogMesh(MeshData* m, const char* label) {
         }
         LogInfo("  [%d] verts: %s", i, buf);
     }
-    LogInfo("Edges (%d):", m->edge_count);
-    for (int i = 0; i < m->edge_count; i++) {
-        EdgeData& e = m->edges[i];
+    LogInfo("Edges (%d):", impl->edge_count);
+    for (int i = 0; i < impl->edge_count; i++) {
+        EdgeData& e = impl->edges[i];
         char buf[64] = {};
         int len = 0;
         for (int j = 0; j < e.face_count; j++) {
@@ -1278,10 +1283,11 @@ static void UpdateKnifeTool() {
         if (g_knife_tool.cut_count <= 1)
             return;
 
-        for (int i=0; i<g_knife_tool.mesh->edge_count; i++) {
-            EdgeData& e = g_knife_tool.mesh->edges[i];
-            Vec2 v0 = g_knife_tool.mesh->vertices[e.v0].position;
-            Vec2 v1 = g_knife_tool.mesh->vertices[e.v1].position;
+        MeshDataImpl* impl = g_knife_tool.mesh->impl;
+        for (int i=0; i<impl->edge_count; i++) {
+            EdgeData& e = impl->edges[i];
+            Vec2 v0 = impl->vertices[e.v0].position;
+            Vec2 v1 = impl->vertices[e.v1].position;
             Vec2 intersection;
             if (!OverlapLine(
                 g_knife_tool.cuts[g_knife_tool.cut_count-2].position,

@@ -6,17 +6,16 @@
 
 #include "mesh_data.h"
 
-struct RuntimeAnimatedMeshData {
+struct AnimatedMeshDataImpl {
     MeshData frames[ANIMATED_MESH_MAX_FRAMES];
-};
-
-struct AnimatedMeshData : AssetData {
-    RuntimeAnimatedMeshData* data;
-    MeshData* frames;
     int frame_count;
     int current_frame;
     AnimatedMesh* playing;
     float play_time;
+};
+
+struct AnimatedMeshData : AssetData {
+    AnimatedMeshDataImpl* impl;
 };
 
 extern void InitAnimatedMeshData(AssetData* a);

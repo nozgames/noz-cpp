@@ -10,9 +10,13 @@ enum LuaScriptType : u8 {
     LUA_SCRIPT_TYPE_MODULE
 };
 
-struct LuaData : AssetData {
+struct LuaDataImpl {
     noz::lua::ByteCode byte_code;
     LuaScriptType script_type;
+};
+
+struct LuaData : AssetData {
+    LuaDataImpl* impl;
 };
 
 extern AssetImporter GetLuaImporter();

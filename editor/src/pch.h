@@ -63,6 +63,7 @@ enum EditorEvent {
 #include "utils/file_helpers.h"
 #include "style.h"
 #include "editor.h"
+#include "asset_registry.h"
 
 #if !defined(NOZ_EDITOR_LIB)
 #include "nozed_assets.h"

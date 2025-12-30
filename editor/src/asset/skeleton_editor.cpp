@@ -29,14 +29,15 @@ inline SkeletonData* GetSkeletonData() {
     return (SkeletonData*)ea;
 }
 
-static bool IsBoneSelected(int bone_index) { return GetSkeletonData()->bones[bone_index].selected; }
+static bool IsBoneSelected(int bone_index) { return GetSkeletonData()->impl->bones[bone_index].selected; }
 static bool IsAncestorSelected(int bone_index) {
     SkeletonData* es = GetSkeletonData();
-    int parent_index = es->bones[bone_index].parent_index;
+    SkeletonDataImpl* impl = es->impl;
+    int parent_index = impl->bones[bone_index].parent_index;
     while (parent_index >= 0) {
-        if (es->bones[parent_index].selected)
+        if (impl->bones[parent_index].selected)
             return true;
-        parent_index = es->bones[parent_index].parent_index;
+        parent_index = impl->bones[parent_index].parent_index;
     }
 
     return false;
@@ -46,13 +47,15 @@ static void SetBoneSelected(int bone_index, bool selected) {
     if (IsBoneSelected(bone_index) == selected)
         return;
     SkeletonData* es = GetSkeletonData();
-    es->bones[bone_index].selected = selected;
-    es->selected_bone_count += selected ? 1 : -1;
+    SkeletonDataImpl* impl = es->impl;
+    impl->bones[bone_index].selected = selected;
+    impl->selected_bone_count += selected ? 1 : -1;
 }
 
 static int GetFirstSelectedBoneIndex() {
     SkeletonData* es = GetSkeletonData();
-    for (int i=0; i<es->bone_count; i++)
+    SkeletonDataImpl* impl = es->impl;
+    for (int i=0; i<impl->bone_count; i++)
         if (IsBoneSelected(i))
             return i;
     return -1;
@@ -66,7 +69,7 @@ static void UpdateAllAnimationTransforms(SkeletonData* s) {
         if (a->type != ASSET_TYPE_ANIMATION)
             continue;
 
-        if (s != a->skeleton)
+        if (s != a->impl->skeleton)
             continue;
 
         UpdateTransforms(a);
@@ -81,7 +84,7 @@ static void UpdateAllAnimations(SkeletonData* s) {
         if (a->type != ASSET_TYPE_ANIMATION)
             continue;
 
-        if (s != a->skeleton)
+        if (s != a->impl->skeleton)
             continue;
 
         RecordUndo(a);
@@ -95,8 +98,9 @@ static void UpdateBoneNames() {
         return;
 
     SkeletonData* s = GetSkeletonData();
-    for (u16 i=0; i<s->bone_count; i++) {
-        BoneData* b = s->bones + i;
+    SkeletonDataImpl* impl = s->impl;
+    for (u16 i=0; i<impl->bone_count; i++) {
+        BoneData* b = impl->bones + i;
         const Mat3& transform = b->local_to_world;
         Vec2 p = (TransformPoint(Translate(s->position) * transform, Vec2{b->length * 0.5f, }));
         BeginCanvas({.type = CANVAS_TYPE_WORLD, .world_camera=g_view.camera, .world_position=p, .world_size={6,1}});
@@ -109,10 +113,11 @@ static void UpdateBoneNames() {
 
 static void UpdateSelectionCenter() {
     SkeletonData* s = GetSkeletonData();
+    SkeletonDataImpl* impl = s->impl;
     Vec2 center = VEC2_ZERO;
     float center_count = 0.0f;
-    for (int i=0; i<s->bone_count; i++) {
-        BoneData& eb = s->bones[i];
+    for (int i=0; i<impl->bone_count; i++) {
+        BoneData& eb = impl->bones[i];
         if (!IsBoneSelected(i))
             continue;
         center += TransformPoint(eb.local_to_world);
@@ -128,14 +133,16 @@ static void UpdateSelectionCenter() {
 
 static void SaveState() {
     SkeletonData* s = GetSkeletonData();
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++)
-        g_skeleton_editor.saved_bones[bone_index] = s->bones[bone_index];
+    SkeletonDataImpl* impl = s->impl;
+    for (int bone_index=0; bone_index<impl->bone_count; bone_index++)
+        g_skeleton_editor.saved_bones[bone_index] = impl->bones[bone_index];
 }
 
 static void RevertToSavedState() {
     SkeletonData* s = GetSkeletonData();
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++)
-        s->bones[bone_index] = g_skeleton_editor.saved_bones[bone_index];
+    SkeletonDataImpl* impl = s->impl;
+    for (int bone_index=0; bone_index<impl->bone_count; bone_index++)
+        impl->bones[bone_index] = g_skeleton_editor.saved_bones[bone_index];
 
     UpdateTransforms(s);
     UpdateSelectionCenter();
@@ -143,17 +150,19 @@ static void RevertToSavedState() {
 
 static void ClearSelection() {
     SkeletonData* es = GetSkeletonData();
-    for (int bone_index=0; bone_index<es->bone_count; bone_index++)
+    SkeletonDataImpl* impl = es->impl;
+    for (int bone_index=0; bone_index<impl->bone_count; bone_index++)
         SetBoneSelected(bone_index, false);
 }
 
 static bool TrySelect() {
     SkeletonData* es = GetSkeletonData();
+    SkeletonDataImpl* impl = es->impl;
     int bone_index = HitTestBone(es, g_view.mouse_world_position);
     if (bone_index == -1)
         return false;
 
-    BoneData* eb = &es->bones[bone_index];
+    BoneData* eb = &impl->bones[bone_index];
     if (IsShiftDown(g_skeleton_editor.input)) {
         SetBoneSelected(bone_index, !eb->selected);
     } else {
@@ -169,8 +178,9 @@ static void HandleBoxSelect(const Bounds2& bounds) {
         ClearSelection();
 
     SkeletonData* s = GetSkeletonData();
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++) {
-        BoneData* b = &s->bones[bone_index];
+    SkeletonDataImpl* impl = s->impl;
+    for (int bone_index=0; bone_index<impl->bone_count; bone_index++) {
+        BoneData* b = &impl->bones[bone_index];
         Mat3 collider_transform =
             Translate(s->position) *
             b->local_to_world *
@@ -214,12 +224,13 @@ void UpdateSkeletonEditor() {
 }
 
 static void BuildSkeletonEditorMesh(MeshBuilder* builder, SkeletonData* s, const Vec2& position) {
+    SkeletonDataImpl* impl = s->impl;
     float line_width = STYLE_SKELETON_BONE_WIDTH * g_view.zoom_ref_scale;
     float origin_size = STYLE_SKELETON_BONE_RADIUS * g_view.zoom_ref_scale;
     float dash_length = STYLE_SKELETON_PARENT_DASH * g_view.zoom_ref_scale;
 
-    for (int bone_index = 0; bone_index < s->bone_count; bone_index++) {
-        BoneData* b = s->bones + bone_index;
+    for (int bone_index = 0; bone_index < impl->bone_count; bone_index++) {
+        BoneData* b = impl->bones + bone_index;
         bool selected = b->selected;
         Color bone_color = selected ? COLOR_BONE_SELECTED : STYLE_SKELETON_BONE_COLOR;
 
@@ -240,13 +251,14 @@ static void BuildSkeletonEditorMesh(MeshBuilder* builder, SkeletonData* s, const
 static void DrawSkeleton() {
     AssetData* ea = GetAssetData();
     SkeletonData* s = GetSkeletonData();
+    SkeletonDataImpl* impl = s->impl;
 
     BindIdentitySkeleton();
     BindColor(COLOR_WHITE);
     BindDepth(0.0);
     Mat3 local_to_world = Translate(s->position);
-    for (int i = 0; i < s->skin_count; i++) {
-        MeshData* skinned_mesh = s->skins[i].mesh;
+    for (int i = 0; i < impl->skin_count; i++) {
+        MeshData* skinned_mesh = impl->skins[i].mesh;
         if (!skinned_mesh)
             continue;
         DrawMesh(skinned_mesh, local_to_world, g_view.shaded_skinned_material);
@@ -282,10 +294,11 @@ static void CancelSkeletonTool() {
 }
 
 static void CounterActParentTransform(SkeletonData* s, int parent_index) {
-    BoneData& parent = s->bones[parent_index];
+    SkeletonDataImpl* impl = s->impl;
+    BoneData& parent = impl->bones[parent_index];
 
-    for (int child_index = 0; child_index < s->bone_count; child_index++) {
-        BoneData& child = s->bones[child_index];
+    for (int child_index = 0; child_index < impl->bone_count; child_index++) {
+        BoneData& child = impl->bones[child_index];
         if (child.parent_index != parent_index || IsBoneSelected(child_index))
             continue;
 
@@ -301,12 +314,13 @@ static void CounterActParentTransform(SkeletonData* s, int parent_index) {
 
 static void UpdateMoveTool(const Vec2& delta) {
     SkeletonData* s = GetSkeletonData();
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++) {
+    SkeletonDataImpl* impl = s->impl;
+    for (int bone_index=0; bone_index<impl->bone_count; bone_index++) {
         if (!IsBoneSelected(bone_index) || IsAncestorSelected(bone_index))
             continue;
 
-        BoneData& b = s->bones[bone_index];
-        BoneData& p = bone_index >= 0 ? s->bones[b.parent_index] : s->bones[0];
+        BoneData& b = impl->bones[bone_index];
+        BoneData& p = bone_index >= 0 ? impl->bones[b.parent_index] : impl->bones[0];
         BoneData& sb = g_skeleton_editor.saved_bones[bone_index];
 
         b.transform.position = TransformPoint(p.world_to_local, TransformPoint(sb.local_to_world) + delta);
@@ -315,7 +329,7 @@ static void UpdateMoveTool(const Vec2& delta) {
     UpdateTransforms(s);
 
     // Counter-act the movement on unselected children
-    for (int bone_index = 0; bone_index < s->bone_count; bone_index++) {
+    for (int bone_index = 0; bone_index < impl->bone_count; bone_index++) {
         if (!IsBoneSelected(bone_index))
             continue;
         CounterActParentTransform(s, bone_index);
@@ -330,7 +344,7 @@ static void CommitMoveTool(const Vec2&) {
 }
 
 static void BeginMoveTool(bool record_undo) {
-    if (GetSkeletonData()->selected_bone_count <= 0)
+    if (GetSkeletonData()->impl->selected_bone_count <= 0)
         return;
 
     SaveState();
@@ -347,12 +361,13 @@ static void BeginMoveTool() {
 
 static void UpdateRotateTool(float angle) {
     SkeletonData* s = GetSkeletonData();
+    SkeletonDataImpl* impl = s->impl;
 
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++) {
+    for (int bone_index=0; bone_index<impl->bone_count; bone_index++) {
         if (!IsBoneSelected(bone_index))
             continue;
 
-        BoneData& b = s->bones[bone_index];
+        BoneData& b = impl->bones[bone_index];
         BoneData& sb = g_skeleton_editor.saved_bones[bone_index];
         if (IsCtrlDown())
             b.transform.rotation = SnapAngle(sb.transform.rotation + angle);
@@ -363,7 +378,7 @@ static void UpdateRotateTool(float angle) {
     UpdateTransforms(s);
 
     // Counter-act the rotation on unselected children
-    for (int bone_index = 0; bone_index < s->bone_count; bone_index++) {
+    for (int bone_index = 0; bone_index < impl->bone_count; bone_index++) {
         if (!IsBoneSelected(bone_index))
             continue;
         CounterActParentTransform(s, bone_index);
@@ -379,7 +394,7 @@ static void CommitRotateTool(float) {
 
 static void BeginRotateTool() {
     SkeletonData* s = GetSkeletonData();
-    if (s->selected_bone_count <= 0)
+    if (s->impl->selected_bone_count <= 0)
         return;
 
     UpdateSelectionCenter();
@@ -390,11 +405,12 @@ static void BeginRotateTool() {
 
 static void UpdateScaleTool(const Vec2& scale) {
     SkeletonData* s = GetSkeletonData();
-    for (i32 bone_index=0; bone_index<s->bone_count; bone_index++) {
+    SkeletonDataImpl* impl = s->impl;
+    for (i32 bone_index=0; bone_index<impl->bone_count; bone_index++) {
         if (!IsBoneSelected(bone_index))
             continue;
 
-        BoneData& b = s->bones[bone_index];
+        BoneData& b = impl->bones[bone_index];
         BoneData& sb = g_skeleton_editor.saved_bones[bone_index];
         b.length = Clamp(sb.length * scale.x, 0.05f, 10.0f);
     }
@@ -409,7 +425,7 @@ static void CommitScaleTool(const Vec2&) {
 
 static void BeginScaleTool() {
     SkeletonData* s = GetSkeletonData();
-    if (s->selected_bone_count <= 0)
+    if (s->impl->selected_bone_count <= 0)
         return;
 
     UpdateSelectionCenter();
@@ -420,13 +436,14 @@ static void BeginScaleTool() {
 
 static void HandleRemove() {
     SkeletonData* s = GetSkeletonData();
-    if (s->selected_bone_count <= 0)
+    SkeletonDataImpl* impl = s->impl;
+    if (impl->selected_bone_count <= 0)
         return;
 
     BeginUndoGroup();
     RecordUndo();
 
-    for (int i=s->bone_count - 1; i >=0; i--) {
+    for (int i=impl->bone_count - 1; i >=0; i--) {
         if (!IsBoneSelected(i))
             continue;
 
@@ -441,6 +458,7 @@ static void HandleRemove() {
 
 static void CommitParentTool(const Vec2& position) {
     SkeletonData* s = GetSkeletonData();
+    SkeletonDataImpl* impl = s->impl;
     int bone_index = HitTestBone(s, position);
     if (bone_index != -1) {
         BeginUndoGroup();
@@ -458,7 +476,7 @@ static void CommitParentTool(const Vec2& position) {
         return;
 
     RecordUndo();
-    s->skins[s->skin_count++] = {
+    impl->skins[impl->skin_count++] = {
         .asset_name = hit_asset->name,
         .mesh = (MeshData*)hit_asset,
     };
@@ -473,16 +491,17 @@ static void BeginParentTool() {
 
 static void CommitUnparentTool(const Vec2& position) {
     SkeletonData* s = GetSkeletonData();
-    for (int i=0; i<s->skin_count; i++) {
-        Skin& sm = s->skins[i];
+    SkeletonDataImpl* impl = s->impl;
+    for (int i=0; i<impl->skin_count; i++) {
+        Skin& sm = impl->skins[i];
         if (!sm.mesh || !OverlapPoint(sm.mesh, s->position, position))
             continue;
 
         RecordUndo(s);
-        for (int j=i; j<s->skin_count-1; j++)
-            s->skins[j] = s->skins[j+1];
+        for (int j=i; j<impl->skin_count-1; j++)
+            impl->skins[j] = impl->skins[j+1];
 
-        s->skin_count--;
+        impl->skin_count--;
 
         MarkModified();
         return;
@@ -495,31 +514,32 @@ static void BeginUnparentTool() {
 
 static void BeginExtrudeTool() {
     SkeletonData* s = GetSkeletonData();
-    if (s->selected_bone_count != 1)
+    SkeletonDataImpl* impl = s->impl;
+    if (impl->selected_bone_count != 1)
         return;
 
-    if (s->bone_count >= MAX_BONES)
+    if (impl->bone_count >= MAX_BONES)
         return;
 
     int parent_bone_index = GetFirstSelectedBoneIndex();
     assert(parent_bone_index != -1);
 
-    BoneData& parent_bone = s->bones[parent_bone_index];
+    BoneData& parent_bone = impl->bones[parent_bone_index];
 
     RecordUndo();
 
-    s->bones[s->bone_count] = {
+    impl->bones[impl->bone_count] = {
         .name = GetUniqueBoneName(s),
-        .index = s->bone_count,
+        .index = impl->bone_count,
         .parent_index = parent_bone_index,
         .transform = { .scale = VEC2_ONE },
         .length = parent_bone.length
     };
-    s->bone_count++;
+    impl->bone_count++;
 
     UpdateTransforms(s);
     ClearSelection();
-    SetBoneSelected(s->bone_count-1, true);
+    SetBoneSelected(impl->bone_count-1, true);
     BeginMoveTool(false);
 }
 
@@ -528,7 +548,8 @@ static void RenameBoneCommand(const Command& command) {
         return;
 
     SkeletonData* s = GetSkeletonData();
-    if (s->selected_bone_count != 1) {
+    SkeletonDataImpl* impl = s->impl;
+    if (impl->selected_bone_count != 1) {
         LogError("can only rename a single selected bone");
         return;
     }
@@ -536,7 +557,7 @@ static void RenameBoneCommand(const Command& command) {
     MarkModified();
     BeginUndoGroup();
     RecordUndo();
-    s->bones[GetFirstSelectedBoneIndex()].name = command.name;
+    impl->bones[GetFirstSelectedBoneIndex()].name = command.name;
     UpdateAllAnimations(s);
     EndUndoGroup();
 }
@@ -553,7 +574,7 @@ static void BeginRenameCommand() {
 
     BeginCommandInput({
         .commands = commands,
-        .initial_text = GetSkeletonData()->bones[bone_index].name->value
+        .initial_text = GetSkeletonData()->impl->bones[bone_index].name->value
     });
 }
 
@@ -568,12 +589,13 @@ static void EndSkeletonEditor() {
 
 static void ResetRotation() {
     SkeletonData* s = GetSkeletonData();
+    SkeletonDataImpl* impl = s->impl;
     RecordUndo(s);
-    for (int bone_index=1; bone_index<s->bone_count; bone_index++) {
+    for (int bone_index=1; bone_index<impl->bone_count; bone_index++) {
         if (!IsBoneSelected(bone_index))
             continue;
 
-        BoneData& b = s->bones[bone_index];
+        BoneData& b = impl->bones[bone_index];
         b.transform.rotation = 0;
     }
 
@@ -583,19 +605,20 @@ static void ResetRotation() {
 
 static void ResetTranslation() {
     SkeletonData* s = GetSkeletonData();
+    SkeletonDataImpl* impl = s->impl;
     RecordUndo(s);
 
     if (IsBoneSelected(0)) {
-        BoneData& bone = s->bones[0];
+        BoneData& bone = impl->bones[0];
         bone.transform.position = VEC2_ZERO;
     }
 
-    for (int bone_index=1; bone_index<s->bone_count; bone_index++) {
+    for (int bone_index=1; bone_index<impl->bone_count; bone_index++) {
         if (!IsBoneSelected(bone_index))
             continue;
 
-        BoneData& b = s->bones[bone_index];
-        BoneData& p = s->bones[b.parent_index];
+        BoneData& b = impl->bones[bone_index];
+        BoneData& p = impl->bones[b.parent_index];
         b.transform.position = Vec2{p.length, 0};
     }
 

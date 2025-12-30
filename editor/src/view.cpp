@@ -507,7 +507,7 @@ static void BringForward() {
 
         if (a->type == ASSET_TYPE_MESH) {
             MeshData* m = static_cast<MeshData*>(a);
-            m->depth = Clamp(m->depth+1, MIN_DEPTH, MAX_DEPTH);
+            m->impl->depth = Clamp(m->impl->depth+1, MIN_DEPTH, MAX_DEPTH);
             MarkDirty(m);
             MarkModified(a);
         }
@@ -546,7 +546,7 @@ static void SendBackward() {
 
         if (a->type == ASSET_TYPE_MESH) {
             MeshData* m = static_cast<MeshData*>(a);
-            m->depth = Clamp(m->depth-1, MIN_DEPTH, MAX_DEPTH);
+            m->impl->depth = Clamp(m->impl->depth-1, MIN_DEPTH, MAX_DEPTH);
             MarkDirty(m);
             MarkModified(a);
         }
@@ -711,19 +711,19 @@ static void FlipYCommand(const Command& command) {
 
         if (a->type == ASSET_TYPE_ANIMATED_MESH) {
             AnimatedMeshData* am = static_cast<AnimatedMeshData*>(a);
-            for (int frame_index=0; frame_index<am->frame_count; frame_index++) {
-                MeshData* m = &am->data->frames[frame_index];
+            for (int frame_index=0; frame_index<am->impl->frame_count; frame_index++) {
+                MeshData* m = &am->impl->frames[frame_index];
                 // Negate Y for all vertices
-                for (int v = 0; v < m->vertex_count; v++)
-                    m->vertices[v].position.y = -m->vertices[v].position.y;
+                for (int v = 0; v < m->impl->vertex_count; v++)
+                    m->impl->vertices[v].position.y = -m->impl->vertices[v].position.y;
 
                 // Negate Y for all tags
-                for (int t = 0; t < m->tag_count; t++)
-                    m->tags[t].position.y = -m->tags[t].position.y;
+                for (int t = 0; t < m->impl->tag_count; t++)
+                    m->impl->tags[t].position.y = -m->impl->tags[t].position.y;
 
                 // Reverse face windings
-                for (int face_index = 0; face_index < m->face_count; face_index++) {
-                    FaceData& face = m->faces[face_index];
+                for (int face_index = 0; face_index < m->impl->face_count; face_index++) {
+                    FaceData& face = m->impl->faces[face_index];
                     for (int vertex_index = 0; vertex_index < face.vertex_count / 2; vertex_index++) {
                         int temp = face.vertices[vertex_index];
                         face.vertices[vertex_index] = face.vertices[face.vertex_count - 1 - vertex_index];
@@ -768,13 +768,14 @@ static void FlipYCommand(const Command& command) {
         }
         else if (a->type == ASSET_TYPE_SKELETON) {
             SkeletonData* s = static_cast<SkeletonData*>(a);
+            SkeletonDataImpl* impl = s->impl;
 
             MarkModified(s);
 
             // Negate Y and rotation for all bones
-            for (int b = 0; b < s->bone_count; b++) {
-                s->bones[b].transform.position.y = -s->bones[b].transform.position.y;
-                s->bones[b].transform.rotation = -s->bones[b].transform.rotation;
+            for (int b = 0; b < impl->bone_count; b++) {
+                impl->bones[b].transform.position.y = -impl->bones[b].transform.position.y;
+                impl->bones[b].transform.rotation = -impl->bones[b].transform.rotation;
             }
 
             UpdateTransforms(s);
@@ -1088,10 +1089,10 @@ void InitView() {
         GetName(g_config->GetString("editor", "palette", "palette").c_str())));
     if (palette_texture_data) {
         LogInfo("[View] Loading palette texture from: %s (asset_path_index=%d)", palette_texture_data->path, palette_texture_data->asset_path_index);
-        SetTexture(g_view.editor_material, palette_texture_data->texture);
-        SetTexture(g_view.shaded_material, palette_texture_data->texture);
-        SetTexture(g_view.shaded_skinned_material, palette_texture_data->texture);
-        SetPaletteTexture(palette_texture_data->texture);
+        SetTexture(g_view.editor_material, palette_texture_data->impl->texture);
+        SetTexture(g_view.shaded_material, palette_texture_data->impl->texture);
+        SetTexture(g_view.shaded_skinned_material, palette_texture_data->impl->texture);
+        SetPaletteTexture(palette_texture_data->impl->texture);
     } else {
         LogInfo("[View] ERROR: palette texture not found!");
     }

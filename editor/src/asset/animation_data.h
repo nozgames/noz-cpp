@@ -22,28 +22,24 @@ struct AnimationFrameData {
     int hold;
 };
 
-struct RuntimeAnimationData {
+struct AnimationDataImpl {
     AnimationBoneData bones[MAX_BONES];
     AnimationFrameData frames[MAX_ANIMATION_FRAMES];
     Animator animator;
-    Skin Skins[SKIN_MAX];
-};
-
-struct AnimationData : AssetData {
+    Skin skins[SKIN_MAX];
     const Name* skeleton_name;
-    RuntimeAnimationData* data;
-    AnimationBoneData* bones;
-    AnimationFrameData* frames;
     SkeletonData* skeleton;
     Animation* animation;
-    Animator* animator;
-    Skin* skins;
     int frame_count;
     int current_frame;
     int bone_count;
     int selected_bone_count;
     int skin_count;
     AnimationFlags flags;
+};
+
+struct AnimationData : AssetData {
+    AnimationDataImpl* impl;
 };
 
 extern void InitAnimationData(AssetData* a);
@@ -63,6 +59,6 @@ extern int HitTestBone(AnimationData* n, const Mat3& transform, const Vec2& posi
 extern int GetFrameCountWithHolds(AnimationData* n);
 extern int GetFrameIndexWithHolds(AnimationData* n, int frame_index);
 extern int GetRealFrameIndex(AnimationData* n, int frame_index);
-inline bool IsRootMotion(AnimationData* n) { return (n->flags & ANIMATION_FLAG_ROOT_MOTION) != 0; }
-inline bool IsLooping(AnimationData* n) { return (n->flags & ANIMATION_FLAG_LOOPING) != 0; }
+inline bool IsRootMotion(AnimationData* n) { return (n->impl->flags & ANIMATION_FLAG_ROOT_MOTION) != 0; }
+inline bool IsLooping(AnimationData* n) { return (n->impl->flags & ANIMATION_FLAG_LOOPING) != 0; }
 extern void SetLooping(AnimationData* n, bool looping);

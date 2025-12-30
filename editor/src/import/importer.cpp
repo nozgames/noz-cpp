@@ -4,6 +4,7 @@
 
 #include <utils/file_watcher.h>
 #include "asset_manifest.h"
+#include "../asset_registry.h"
 
 static void ExecuteJob(void* data);
 extern AssetData* CreateAssetDataForImport(const std::filesystem::path& path);
@@ -31,12 +32,9 @@ struct Importer {
 static Importer g_importer = {};
 
 static const AssetImporter* FindImporter(const fs::path& ext) {
-    for (int i=0; i<ASSET_TYPE_COUNT; i++) {
-        AssetImporter* importer = &g_editor.importers[i];
-        if (ext == importer->ext)
-            return importer;
-    }
-
+    const EditorAssetTypeInfo* info = FindEditorAssetTypeByExtension(ext.string().c_str());
+    if (info)
+        return &info->importer;
     return nullptr;
 }
 
@@ -49,7 +47,6 @@ bool InitImporter(AssetData* a) {
     if (!importer)
         return false;
 
-    a->importer = importer;
     a->type = importer->type;
     return true;
 }
@@ -59,7 +56,8 @@ static void QueueImport(AssetData* a) {
     if (!fs::exists(path))
         return;
 
-    if (!a->importer)
+    const EditorAssetTypeInfo* type_info = GetEditorAssetTypeInfo(a->type);
+    if (!type_info)
         return;
 
     fs::path target_path = GetTargetPath(a);
@@ -139,16 +137,19 @@ static void ExecuteJob(void* data) {
 
     std::unique_ptr<Props> meta_guard(meta);
 
+    const EditorAssetTypeInfo* type_info = GetEditorAssetTypeInfo(job->asset->type);
+    assert(type_info);
+
     fs::path target_dir =
         fs::path(g_editor.output_path) /
-        ToString(job->asset->importer->type) /
+        ToString(job->asset->type) /
         job->asset->name->value;
 
     std::string target_dir_lower = target_dir.string();
     Lower(target_dir_lower.data(), (u32)target_dir_lower.size());
 
     try {
-        job->asset->importer->import_func(job->asset, target_dir_lower, g_config, meta);
+        type_info->importer.import_func(job->asset, target_dir_lower, g_config, meta);
     } catch (const std::exception& e) {
         AddNotification(NOTIFICATION_TYPE_ERROR, "Failed to import asset '%s': %s", job->asset->name->value, e.what());
         return;
@@ -157,7 +158,7 @@ static void ExecuteJob(void* data) {
     std::lock_guard lock(g_importer.mutex);
     g_importer.import_events.push_back({
         .name =  job->asset->name,
-        .type = job->asset->importer->type
+        .type = job->asset->type
     });
 }
 

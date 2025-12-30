@@ -15,15 +15,9 @@ struct BoneData {
     bool selected;
 };
 
-struct RuntimeSkeletonData {
+struct SkeletonDataImpl {
     BoneData bones[MAX_BONES];
     Skin skins[SKIN_MAX];
-};
-
-struct SkeletonData : AssetData {
-    RuntimeSkeletonData* data;
-    BoneData* bones;
-    Skin* skins;
     int bone_count;
     int skin_count;
     int selected_bone_count;
@@ -32,6 +26,10 @@ struct SkeletonData : AssetData {
     bool display_mesh_dirty;
     int display_mesh_zoom_version;
     Vec2 display_mesh_position;
+};
+
+struct SkeletonData : AssetData {
+    SkeletonDataImpl* impl;
 };
 
 extern void InitSkeletonData(AssetData* a);
@@ -52,9 +50,9 @@ extern void RemoveBone(SkeletonData* s, int bone_index);
 extern int GetMirrorBone(SkeletonData* s, int bone_index);
 
 inline BoneData* GetParent(SkeletonData* es, BoneData* eb) {
-    return eb->parent_index >= 0 ? &es->bones[eb->parent_index] : nullptr;
+    return eb->parent_index >= 0 ? &es->impl->bones[eb->parent_index] : nullptr;
 }
 
 inline Mat3 GetParentLocalToWorld(SkeletonData* es, BoneData* eb, const Mat3& default_local_to_world) {
-    return eb->parent_index >= 0 ? es->bones[eb->parent_index].local_to_world : default_local_to_world;
+    return eb->parent_index >= 0 ? es->impl->bones[eb->parent_index].local_to_world : default_local_to_world;
 }

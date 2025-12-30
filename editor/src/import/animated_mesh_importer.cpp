@@ -19,9 +19,9 @@ static void ImportAnimatedMesh(AssetData* a, const std::filesystem::path& path, 
     WriteAssetHeader(stream, &header);
     WriteStruct(stream, m->bounds);
     WriteU8(stream, (u8)ANIMATION_FRAME_RATE);
-    WriteU8(stream, (u8)m->frame_count);
-    for (int i=0; i<m->frame_count; i++) {
-        MeshData* frame = &m->frames[i];
+    WriteU8(stream, (u8)m->impl->frame_count);
+    for (int i=0; i<m->impl->frame_count; i++) {
+        MeshData* frame = &m->impl->frames[i];
         SerializeMesh(ToMesh(frame, false), stream);
     }
 

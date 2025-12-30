@@ -21,10 +21,11 @@ static void FreeLuaData(AssetData* a) {
     assert(a);
     assert(a->type == ASSET_TYPE_LUA);
     LuaData* l = static_cast<LuaData*>(a);
+    LuaDataImpl* impl = l->impl;
 
-    free(l->byte_code.code);
-    l->byte_code.code = nullptr;
-    l->byte_code.size = 0;
+    free(impl->byte_code.code);
+    impl->byte_code.code = nullptr;
+    impl->byte_code.size = 0;
 }
 
 static LuaScriptType ParseScriptType(const char* contents) {
@@ -62,10 +63,11 @@ void LoadLuaData(AssetData* a) {
     assert(a);
     assert(a->type == ASSET_TYPE_LUA);
     LuaData* l = static_cast<LuaData*>(a);
+    LuaDataImpl* impl = l->impl;
 
     std::string contents = ReadAllText(ALLOCATOR_DEFAULT, a->path);
-    l->byte_code = noz::lua::CompileLua(contents.c_str());
-    l->script_type = ParseScriptType(contents.c_str());
+    impl->byte_code = noz::lua::CompileLua(contents.c_str());
+    impl->script_type = ParseScriptType(contents.c_str());
 }
 
 LuaData* LoadLuaData(const std::filesystem::path& path) {
@@ -80,19 +82,34 @@ static void ReloadLuaData(AssetData* a) {
     assert(a);
     assert(a->type == ASSET_TYPE_LUA);
     LuaData* l = static_cast<LuaData*>(a);
+    LuaDataImpl* impl = l->impl;
 
-    free(l->byte_code.code);
-    l->byte_code.code = nullptr;
-    l->byte_code.size = 0;
+    free(impl->byte_code.code);
+    impl->byte_code.code = nullptr;
+    impl->byte_code.size = 0;
     LoadLuaData(a);
 }
 
+static void CloneLua(AssetData* a) {
+    assert(a);
+    assert(a->type == ASSET_TYPE_LUA);
+    LuaData* l = static_cast<LuaData*>(a);
+    LuaDataImpl* impl = l->impl;
+
+    u8* code = static_cast<u8*>(malloc(impl->byte_code.size));
+    memcpy(code, impl->byte_code.code, impl->byte_code.size);
+    impl->byte_code.code = code;
+    impl->script_type = impl->script_type;
+}
+
 static void Init(LuaData* l) {
+    l->impl = static_cast<LuaDataImpl*>(Alloc(ALLOCATOR_DEFAULT, sizeof(LuaDataImpl)));
     l->vtable = {
         .destructor = FreeLuaData,
         .load = LoadLuaData,
         .reload = ReloadLuaData,
-        .draw = DrawLua
+        .draw = DrawLua,
+        .clone = CloneLua
     };
 }
 

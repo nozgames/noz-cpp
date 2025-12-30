@@ -42,13 +42,13 @@ static AnimationData* GetAnimationData() {
     return static_cast<AnimationData*>(a);
 }
 
-static SkeletonData* GetSkeletonData() { return GetAnimationData()->skeleton; }
+static SkeletonData* GetSkeletonData() { return GetAnimationData()->impl->skeleton; }
 
-static bool IsBoneSelected(int bone_index) { return GetAnimationData()->bones[bone_index].selected; }
+static bool IsBoneSelected(int bone_index) { return GetAnimationData()->impl->bones[bone_index].selected; }
 
 static Vec2 GetRootMotionOffset() {
     AnimationData* n = GetAnimationData();
-    return g_animation_editor.root_motion ? VEC2_ZERO : Vec2{-TransformPoint(n->animator->bones[0]).x, 0.0f};
+    return g_animation_editor.root_motion ? VEC2_ZERO : Vec2{-TransformPoint(n->impl->animator.bones[0]).x, 0.0f};
 }
 
 static Mat3 GetBaseTransform() {
@@ -59,11 +59,11 @@ static Mat3 GetBaseTransform() {
 static bool IsAncestorSelected(int bone_index) {
     AnimationData* n = GetAnimationData();
     SkeletonData* s = GetSkeletonData();
-    int parent_index = s->bones[bone_index].parent_index;
+    int parent_index = s->impl->bones[bone_index].parent_index;
     while (parent_index >= 0) {
-        if (n->bones[parent_index].selected)
+        if (n->impl->bones[parent_index].selected)
             return true;
-        parent_index = s->bones[parent_index].parent_index;
+        parent_index = s->impl->bones[parent_index].parent_index;
     }
 
     return false;
@@ -74,8 +74,8 @@ static void SetBoneSelected(int bone_index, bool selected) {
         return;
 
     AnimationData* n = GetAnimationData();
-    n->bones[bone_index].selected = selected;
-    n->selected_bone_count += selected ? 1 : -1;
+    n->impl->bones[bone_index].selected = selected;
+    n->impl->selected_bone_count += selected ? 1 : -1;
 }
 
 static void UpdateSelectionCenter() {
@@ -84,10 +84,10 @@ static void UpdateSelectionCenter() {
 
     Vec2 center = VEC2_ZERO;
     float center_count = 0.0f;
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++) {
+    for (int bone_index=0; bone_index<s->impl->bone_count; bone_index++) {
         if (!IsBoneSelected(bone_index))
             continue;
-        center += TransformPoint(n->animator->bones[bone_index]);
+        center += TransformPoint(n->impl->animator.bones[bone_index]);
         center_count += 1.0f;
     }
 
@@ -100,7 +100,7 @@ static void UpdateSelectionCenter() {
 
 static void ClearSelection() {
     SkeletonData* s = GetSkeletonData();
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++)
+    for (int bone_index=0; bone_index<s->impl->bone_count; bone_index++)
         SetBoneSelected(bone_index, false);
 }
 
@@ -138,8 +138,8 @@ static bool TrySelectBone() {
 static void SaveState() {
     AnimationData* n = GetAnimationData();
     SkeletonData* s = GetSkeletonData();
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++)
-        n->bones[bone_index].saved_transform = GetFrameTransform(n, bone_index, n->current_frame);
+    for (int bone_index=0; bone_index<s->impl->bone_count; bone_index++)
+        n->impl->bones[bone_index].saved_transform = GetFrameTransform(n, bone_index, n->impl->current_frame);
 
     UpdateSelectionCenter();
 }
@@ -147,8 +147,8 @@ static void SaveState() {
 static void RevertToSavedState() {
     AnimationData* n = GetAnimationData();
     SkeletonData* s = GetSkeletonData();
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++)
-        GetFrameTransform(n, bone_index, n->current_frame) = n->bones[bone_index].saved_transform;
+    for (int bone_index=0; bone_index<s->impl->bone_count; bone_index++)
+        GetFrameTransform(n, bone_index, n->impl->current_frame) = n->impl->bones[bone_index].saved_transform;
 
     UpdateTransforms(n);
     UpdateSelectionCenter();
@@ -166,11 +166,11 @@ static void UpdateBoneNames() {
 
     Mat3 base_transform = GetBaseTransform();
 
-    for (u16 bone_index=0; bone_index<s->bone_count; bone_index++) {
-        BoneData* b = &s->bones[bone_index];
-        Mat3 local_to_world = base_transform * n->animator->bones[bone_index];
+    for (u16 bone_index=0; bone_index<s->impl->bone_count; bone_index++) {
+        BoneData* b = &s->impl->bones[bone_index];
+        Mat3 local_to_world = base_transform * n->impl->animator.bones[bone_index];
         Vec2 p = TransformPoint(local_to_world, Vec2{b->length * 0.5f, 0});
-        AnimationBoneData* nb = &n->bones[bone_index];
+        AnimationBoneData* nb = &n->impl->bones[bone_index];
         BeginCanvas({.type = CANVAS_TYPE_WORLD, .world_camera=g_view.camera, .world_position=p, .world_size={6,1}});
         BeginCenter();
         Label(b->name->value, {.font = FONT_SEGUISB, .font_size=12, .color=nb->selected ? COLOR_VERTEX_SELECTED : COLOR_WHITE} );
@@ -183,15 +183,15 @@ static void UpdatePlayState() {
     assert(g_animation_editor.playing);
 
     AnimationData* n = GetAnimationData();
-    Update(*n->animator, g_animation_editor.play_speed);
+    Update(n->impl->animator, g_animation_editor.play_speed);
 
-    if (!IsPlaying(*n->animator)) {
-        Stop(*n->animator);
-        Play(*n->animator, g_animation_editor.playing, 0, 1.0f);
+    if (!IsPlaying(n->impl->animator)) {
+        Stop(n->impl->animator);
+        Play(n->impl->animator, g_animation_editor.playing, 0, 1.0f);
     }
 
     if (g_animation_editor.root_motion)
-        g_animation_editor.root_motion_delta.x += n->animator->root_motion_delta;
+        g_animation_editor.root_motion_delta.x += n->impl->animator.root_motion_delta;
 }
 
 static void HandleBoxSelect(const Bounds2& bounds) {
@@ -201,9 +201,9 @@ static void HandleBoxSelect(const Bounds2& bounds) {
     AnimationData* n = GetAnimationData();
     SkeletonData* s = GetSkeletonData();
     Mat3 base_transform = GetBaseTransform();
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++) {
-        BoneData* b = &s->bones[bone_index];
-        Mat3 collider_transform = base_transform * n->animator->bones[bone_index] * Scale(b->length);
+    for (int bone_index=0; bone_index<s->impl->bone_count; bone_index++) {
+        BoneData* b = &s->impl->bones[bone_index];
+        Mat3 collider_transform = base_transform * n->impl->animator.bones[bone_index] * Scale(b->length);
         if (OverlapBounds(g_view.bone_collider, collider_transform, bounds))
             SetBoneSelected(bone_index, true);
     }
@@ -234,7 +234,7 @@ static void SetDefaultState() {
         return;
 
     AnimationData* n = GetAnimationData();
-    Stop(*n->animator);
+    Stop(n->impl->animator);
     UpdateTransforms(n);
 
     Free(g_animation_editor.playing);
@@ -263,26 +263,26 @@ static void ToggleRootMotion() {
 
 static void Mirror() {
     AnimationData* n = GetAnimationData();
-    SkeletonData* s = n->skeleton;
+    SkeletonData* s = n->impl->skeleton;
     RecordUndo(n);
 
     Mat3 saved_world_transforms[MAX_BONES];
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++)
-        saved_world_transforms[bone_index] = n->animator->bones[bone_index];
+    for (int bone_index=0; bone_index<s->impl->bone_count; bone_index++)
+        saved_world_transforms[bone_index] = n->impl->animator.bones[bone_index];
 
-    for (int bone_index=1; bone_index<s->bone_count; bone_index++) {
-        AnimationBoneData* b = &n->bones[bone_index];
+    for (int bone_index=1; bone_index<s->impl->bone_count; bone_index++) {
+        AnimationBoneData* b = &n->impl->bones[bone_index];
         if (!b->selected) continue;
 
         int mirror_index = GetMirrorBone(s, bone_index);
         if (mirror_index == -1) continue;
 
-        BoneData* bone = &s->bones[bone_index];
+        BoneData* bone = &s->impl->bones[bone_index];
         Vec2 desired_world_pos = TransformPoint(saved_world_transforms[mirror_index]);
         float desired_world_rot = GetRotation(saved_world_transforms[mirror_index]);
 
         Mat3 parent_world = bone->parent_index >= 0
-            ? n->animator->bones[bone->parent_index]
+            ? n->impl->animator.bones[bone->parent_index]
             : MAT3_IDENTITY;
 
         Vec2 local_pos = TransformPoint(Inverse(parent_world), desired_world_pos);
@@ -291,7 +291,7 @@ static void Mirror() {
         float parent_world_rot = GetRotation(parent_world);
         float frame_rot = desired_world_rot - parent_world_rot - bone->transform.rotation;
 
-        Transform& frame = GetFrameTransform(n, bone_index, n->current_frame);
+        Transform& frame = GetFrameTransform(n, bone_index, n->impl->current_frame);
         SetPosition(frame, frame_pos);
         SetRotation(frame, frame_rot);
 
@@ -345,7 +345,7 @@ static void DopeSheetButton(Mesh* icon, bool state, void (*on_tap)()) {
 }
 
 static void DopeSheetFrame(AnimationData* n, int frame_index, int current_frame) {
-    AnimationFrameData* f = &n->frames[frame_index];
+    AnimationFrameData* f = &n->impl->frames[frame_index];
 
     BeginContainer({
         .width=DOPESHEET_FRAME_WIDTH + DOPESHEET_FRAME_WIDTH * (f->hold),
@@ -358,7 +358,7 @@ static void DopeSheetFrame(AnimationData* n, int frame_index, int current_frame)
 
     if (IsHovered()) Rectangle({.color=DOPESHEET_TICK_HOVER_COLOR});
     if (WasPressed()) {
-        n->current_frame = frame_index;
+        n->impl->current_frame = frame_index;
         UpdateTransforms(n);
         SetDefaultState();
     }
@@ -394,10 +394,10 @@ static void DopeSheet() {
 
     // Ticks
     BeginRow();
-    bool playing = IsPlaying(*n->animator);
+    bool playing = IsPlaying(n->impl->animator);
     int current_frame = playing
-        ? GetFrameIndex(*n->animator)
-        : n->current_frame;
+        ? GetFrameIndex(n->impl->animator)
+        : n->impl->current_frame;
     int last_real_frame_index = -1;
     for (int frame_index=0; frame_index<=frame_count; frame_index++) {
         BeginContainer({
@@ -409,14 +409,14 @@ static void DopeSheet() {
 
         int real_frame_index = GetRealFrameIndex(n, frame_index);
         if (WasPressed()) {
-            n->current_frame = real_frame_index;
+            n->impl->current_frame = real_frame_index;
             UpdateTransforms(n);
             SetDefaultState();
         }
 
         if (IsHovered()) Rectangle({.color=DOPESHEET_TICK_HOVER_COLOR});
 
-        if (real_frame_index < n->frame_count && real_frame_index != last_real_frame_index && n->frames[real_frame_index].event_name != nullptr) {
+        if (real_frame_index < n->impl->frame_count && real_frame_index != last_real_frame_index && n->impl->frames[real_frame_index].event_name != nullptr) {
             BeginContainer({.align=ALIGN_CENTER});
             BeginContainer({.width=DOPESHEET_FRAME_DOT_SIZE * 2, .height=DOPESHEET_FRAME_DOT_SIZE * 2});
             Image(MESH_ASSET_ICON_EVENT, {.color = real_frame_index == current_frame ? COLOR_WHITE : DOPESHEET_EVENT_COLOR});
@@ -450,11 +450,11 @@ static void DopeSheet() {
         int frame_index = 0;
         int frame_index_with_holds = 0;
 
-        current_frame = IsPlaying(*n->animator)
-            ? GetRealFrameIndex(n, GetFrameIndex(*n->animator))
-            : n->current_frame;
-        for (frame_index = 0; frame_index<n->frame_count; frame_index++) {
-            AnimationFrameData* f = &n->frames[frame_index];
+        current_frame = IsPlaying(n->impl->animator)
+            ? GetRealFrameIndex(n, GetFrameIndex(n->impl->animator))
+            : n->impl->current_frame;
+        for (frame_index = 0; frame_index<n->impl->frame_count; frame_index++) {
+            AnimationFrameData* f = &n->impl->frames[frame_index];
             frame_index_with_holds += 1 + f->hold;
             DopeSheetFrame(n, frame_index, current_frame);
         }
@@ -486,7 +486,7 @@ static void DopeSheet() {
     {
         DopeSheetButton(MESH_UI_ICON_MIRROR, false, [] { Mirror(); });
         Expanded();
-        DopeSheetButton(MESH_UI_ICON_LOOP, IsLooping(n->flags), [] { ToggleLoop(); });
+        DopeSheetButton(MESH_UI_ICON_LOOP, IsLooping(n->impl->flags), [] { ToggleLoop(); });
         DopeSheetButton(MESH_UI_ICON_ROOT_MOTION, g_animation_editor.root_motion, [] { ToggleRootMotion(); });
         DopeSheetButton(MESH_UI_ICON_ONION, g_animation_editor.onion_skin, [] { ToggleOnionSkin(); });
     }
@@ -507,7 +507,7 @@ static void Inspector() {
 
     EventData* events[MAX_ASSETS];
 
-    AnimationFrameData& frame = n->frames[n->current_frame];
+    AnimationFrameData& frame = n->impl->frames[n->impl->current_frame];
     int current_event_index = 0;
     int event_count = 0;;
     for (int asset_index=0, asset_count=GetAssetCount(); asset_index<asset_count; asset_index++) {
@@ -564,11 +564,11 @@ static void DrawOnionSkin(int frame) {
     SkeletonData* s = GetSkeletonData();
 
     UpdateTransforms(n, frame);
-    BindSkeleton(&s->bones->world_to_local, sizeof(BoneData), n->animator->bones, sizeof(Mat3), s->bone_count);
+    BindSkeleton(&s->impl->bones->world_to_local, sizeof(BoneData), n->impl->animator.bones, sizeof(Mat3), s->impl->bone_count);
     BindTransform(GetBaseTransform());
 
-    for (int skin_index=0; skin_index<s->skin_count; skin_index++) {
-        MeshData* skinned_mesh = s->skins[skin_index].mesh;
+    for (int skin_index=0; skin_index<s->impl->skin_count; skin_index++) {
+        MeshData* skinned_mesh = s->impl->skins[skin_index].mesh;
         if (!skinned_mesh) continue;
         DrawMesh(ToOutlineMesh(skinned_mesh));
     }
@@ -576,16 +576,16 @@ static void DrawOnionSkin(int frame) {
 
 static void DrawOnionSkin() {
     AnimationData* n = GetAnimationData();
-    if (!g_animation_editor.onion_skin || n->frame_count <= 1)
+    if (!g_animation_editor.onion_skin || n->impl->frame_count <= 1)
         return;
 
     BindMaterial(g_view.shaded_skinned_material);
 
     BindColor(SetAlpha(COLOR_RED, 0.25f));
-    DrawOnionSkin((n->current_frame - 1 + n->frame_count) % n->frame_count);
+    DrawOnionSkin((n->impl->current_frame - 1 + n->impl->frame_count) % n->impl->frame_count);
 
     BindColor(SetAlpha(COLOR_GREEN, 0.25f));
-    DrawOnionSkin((n->current_frame + 1) % n->frame_count);
+    DrawOnionSkin((n->impl->current_frame + 1) % n->impl->frame_count);
 
     UpdateTransforms(n);
 }
@@ -597,9 +597,9 @@ void DrawAnimationEditor() {
     Mat3 base_transform = GetBaseTransform() * Translate(g_animation_editor.root_motion_delta);
 
     BindColor(COLOR_WHITE);
-    BindSkeleton(&s->bones[0].world_to_local, sizeof(BoneData), n->animator->bones, sizeof(Mat3), s->bone_count);
-    for (int i=0; i<s->skin_count; i++) {
-        MeshData* skinned_mesh = s->skins[i].mesh;
+    BindSkeleton(&s->impl->bones[0].world_to_local, sizeof(BoneData), n->impl->animator.bones, sizeof(Mat3), s->impl->bone_count);
+    for (int i=0; i<s->impl->skin_count; i++) {
+        MeshData* skinned_mesh = s->impl->skins[i].mesh;
         if (!skinned_mesh)
             continue;
 
@@ -614,28 +614,28 @@ void DrawAnimationEditor() {
     // unselected bones
     BindMaterial(g_view.vertex_material);
     BindColor(COLOR_EDGE);
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++) {
+    for (int bone_index=0; bone_index<s->impl->bone_count; bone_index++) {
         if (IsBoneSelected(bone_index)) continue;
-        DrawBone(base_transform * n->animator->bones[bone_index], s->bones[bone_index].length);
+        DrawBone(base_transform * n->impl->animator.bones[bone_index], s->impl->bones[bone_index].length);
     }
 
     // selected bones
     BindColor(COLOR_EDGE_SELECTED);
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++) {
+    for (int bone_index=0; bone_index<s->impl->bone_count; bone_index++) {
         if (!IsBoneSelected(bone_index)) continue;
-        DrawBone(base_transform * n->animator->bones[bone_index], s->bones[bone_index].length);
+        DrawBone(base_transform * n->impl->animator.bones[bone_index], s->impl->bones[bone_index].length);
     }
 }
 
 static void HandlePrevFrameCommand() {
     AnimationData* n = GetAnimationData();
-    n->current_frame = (n->current_frame - 1 + n->frame_count) % n->frame_count;
+    n->impl->current_frame = (n->impl->current_frame - 1 + n->impl->frame_count) % n->impl->frame_count;
     UpdateTransforms(n);
 }
 
 static void HandleNextFrameCommand() {
     AnimationData* n = GetAnimationData();
-    n->current_frame = (n->current_frame + 1) % n->frame_count;
+    n->impl->current_frame = (n->impl->current_frame + 1) % n->impl->frame_count;
     UpdateTransforms(n);
 }
 
@@ -648,17 +648,17 @@ static void UpdateMoveTool(const Vec2& delta) {
     AnimationData* n = GetAnimationData();
     SkeletonData* s = GetSkeletonData();
 
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++) {
+    for (int bone_index=0; bone_index<s->impl->bone_count; bone_index++) {
         if (!IsBoneSelected(bone_index) || IsAncestorSelected(bone_index))
             continue;
 
-        Transform& frame = GetFrameTransform(n, bone_index, n->current_frame);
-        AnimationBoneData* bone = &n->bones[bone_index];
-        int parent_index = s->bones[bone_index].parent_index;
+        Transform& frame = GetFrameTransform(n, bone_index, n->impl->current_frame);
+        AnimationBoneData* bone = &n->impl->bones[bone_index];
+        int parent_index = s->impl->bones[bone_index].parent_index;
         if (parent_index == -1) {
             SetPosition(frame, bone->saved_transform.position + Vec2{delta.x, 0});
         } else {
-            Vec2 rotated_delta = TransformVector(Inverse(n->animator->bones[parent_index]), delta);
+            Vec2 rotated_delta = TransformVector(Inverse(n->impl->animator.bones[parent_index]), delta);
             SetPosition(frame, bone->saved_transform.position + rotated_delta);
         }
     }
@@ -672,7 +672,7 @@ static void CommitMoveTool(const Vec2&) {
 }
 
 static void BeginMoveTool() {
-    if (GetAnimationData()->selected_bone_count <= 0)
+    if (GetAnimationData()->impl->selected_bone_count <= 0)
         return;
 
     SaveState();
@@ -686,11 +686,11 @@ static void UpdateRotateTool(float angle) {
 
     AnimationData* n = GetAnimationData();
     SkeletonData* s = GetSkeletonData();
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++) {
+    for (int bone_index=0; bone_index<s->impl->bone_count; bone_index++) {
         if (!IsBoneSelected(bone_index) || IsAncestorSelected(bone_index))
             continue;
 
-        SetRotation(GetFrameTransform(n, bone_index, n->current_frame), n->bones[bone_index].saved_transform.rotation + angle);
+        SetRotation(GetFrameTransform(n, bone_index, n->impl->current_frame), n->impl->bones[bone_index].saved_transform.rotation + angle);
     }
 
     UpdateTransforms(n);
@@ -702,7 +702,7 @@ static void CommitRotateTool(float) {
 }
 
 static void BeginRotateTool() {
-    if (GetAnimationData()->selected_bone_count <= 0)
+    if (GetAnimationData()->impl->selected_bone_count <= 0)
         return;
 
     SaveState();
@@ -717,11 +717,11 @@ static void ResetRotate() {
     RecordUndo();
     AnimationData* n = GetAnimationData();
     SkeletonData* s = GetSkeletonData();
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++) {
+    for (int bone_index=0; bone_index<s->impl->bone_count; bone_index++) {
         if (!IsBoneSelected(bone_index))
             continue;
 
-        SetRotation(GetFrameTransform(n, bone_index, n->current_frame), 0);
+        SetRotation(GetFrameTransform(n, bone_index, n->impl->current_frame), 0);
     }
 
     MarkModified();
@@ -742,8 +742,8 @@ static void PlayAnimation() {
     g_animation_editor.root_motion_delta = VEC2_ZERO;
 
     SkeletonData* s = GetSkeletonData();
-    Init(*n->animator, ToSkeleton(ALLOCATOR_DEFAULT, s));
-    Play(*n->animator, g_animation_editor.playing, 0, 1.0f);
+    Init(n->impl->animator, ToSkeleton(ALLOCATOR_DEFAULT, s));
+    Play(n->impl->animator, g_animation_editor.playing, 0, 1.0f);
 
     g_animation_editor.state = ANIMATION_VIEW_STATE_PLAY;
 }
@@ -756,11 +756,11 @@ static void ResetMove() {
 
     AnimationData* n = GetAnimationData();
     SkeletonData* s = GetSkeletonData();
-    for (int bone_index=0; bone_index<s->bone_count; bone_index++) {
+    for (int bone_index=0; bone_index<s->impl->bone_count; bone_index++) {
         if (!IsBoneSelected(bone_index))
             continue;
 
-        SetPosition(GetFrameTransform(n, bone_index, n->current_frame), VEC2_ZERO);
+        SetPosition(GetFrameTransform(n, bone_index, n->impl->current_frame), VEC2_ZERO);
     }
 
     UpdateTransforms(n);
@@ -772,14 +772,14 @@ static void HandleSelectAll() {
         return;
 
     SkeletonData* s = GetSkeletonData();
-    for (int i=0; i<s->bone_count; i++)
+    for (int i=0; i<s->impl->bone_count; i++)
         SetBoneSelected(i, true);
 }
 
 static void InsertFrameBefore() {
     RecordUndo();
     AnimationData* n = GetAnimationData();
-    n->current_frame = InsertFrame(n, n->current_frame);
+    n->impl->current_frame = InsertFrame(n, n->impl->current_frame);
     UpdateTransforms(n);
     MarkModified();
 }
@@ -787,7 +787,7 @@ static void InsertFrameBefore() {
 static void InsertFrameAfter() {
     RecordUndo();
     AnimationData* n = GetAnimationData();
-    n->current_frame = InsertFrame(n, n->current_frame + 1);
+    n->impl->current_frame = InsertFrame(n, n->impl->current_frame + 1);
     UpdateTransforms(n);
     MarkModified();
 }
@@ -797,19 +797,19 @@ static void InsertFrameAfterLerp() {
     AnimationData* n = GetAnimationData();
     SkeletonData* s = GetSkeletonData();
 
-    int prev_frame = n->current_frame;
-    int new_frame = InsertFrame(n, n->current_frame + 1);
-    int next_frame = (new_frame + 1) % n->frame_count;
+    int prev_frame = n->impl->current_frame;
+    int new_frame = InsertFrame(n, n->impl->current_frame + 1);
+    int next_frame = (new_frame + 1) % n->impl->frame_count;
 
     // Lerp between current and next frame (next_frame index shifted by 1 due to insert)
-    for (int bone_index = 0; bone_index < s->bone_count; bone_index++) {
+    for (int bone_index = 0; bone_index < s->impl->bone_count; bone_index++) {
         Transform& new_transform = GetFrameTransform(n, bone_index, new_frame);
         Transform& next_transform = GetFrameTransform(n, bone_index, next_frame);
         Transform& prev_transform = GetFrameTransform(n, bone_index, prev_frame);
         new_transform = Mix(prev_transform, next_transform, 0.5f);
     }
 
-    n->current_frame = new_frame;
+    n->impl->current_frame = new_frame;
     UpdateTransforms(n);
     MarkModified();
 }
@@ -817,7 +817,7 @@ static void InsertFrameAfterLerp() {
 static void DeleteFrame() {
     RecordUndo();
     AnimationData* n = GetAnimationData();
-    n->current_frame = DeleteFrame(n, n->current_frame);
+    n->impl->current_frame = DeleteFrame(n, n->impl->current_frame);
     UpdateTransforms(n);
     MarkModified();
 }
@@ -825,24 +825,24 @@ static void DeleteFrame() {
 static void AddHoldFrame() {
     AnimationData* n = GetAnimationData();
     RecordUndo();
-    n->frames[n->current_frame].hold++;
+    n->impl->frames[n->impl->current_frame].hold++;
     MarkModified();
 }
 
 static void RemoveHoldFrame() {
     AnimationData* n = GetAnimationData();
-    if (n->frames[n->current_frame].hold <= 0)
+    if (n->impl->frames[n->impl->current_frame].hold <= 0)
         return;
 
     RecordUndo();
-    n->frames[n->current_frame].hold = Max(0, n->frames[n->current_frame].hold - 1);
+    n->impl->frames[n->impl->current_frame].hold = Max(0, n->impl->frames[n->impl->current_frame].hold - 1);
     MarkModified();
 }
 
 static void CopyKeys() {
     AnimationData* n = GetAnimationData();
     for (int bone_index=0; bone_index<MAX_BONES; bone_index++)
-        g_animation_editor.clipboard.transforms[bone_index] = n->frames[n->current_frame].transforms[bone_index];
+        g_animation_editor.clipboard.transforms[bone_index] = n->impl->frames[n->impl->current_frame].transforms[bone_index];
 }
 
 static void PasteKeys() {
@@ -851,7 +851,7 @@ static void PasteKeys() {
     AnimationData* n = GetAnimationData();
     for (int bone_index=0; bone_index<MAX_BONES; bone_index++) {
         if (!IsBoneSelected(bone_index)) continue;
-        n->frames[n->current_frame].transforms[bone_index] = g_animation_editor.clipboard.transforms[bone_index];
+        n->impl->frames[n->impl->current_frame].transforms[bone_index] = g_animation_editor.clipboard.transforms[bone_index];
     }
 
     MarkModified();
@@ -872,7 +872,7 @@ static void EndAnimationEditor() {
     PopInputSet();
 
     AnimationData* n = GetAnimationData();
-    n->current_frame = 0;
+    n->impl->current_frame = 0;
     UpdateTransforms(n);
 }
 
@@ -880,13 +880,13 @@ static void RootUnitCommand(const Command& command) {
     AnimationData* n = GetAnimationData();
     RecordUndo(n);
 
-    float offset = 1.0f / (n->frame_count - 1);
+    float offset = 1.0f / (n->impl->frame_count - 1);
     if (command.arg_count > 0) {
         offset = (float)atof(command.args[0]);
     }
 
-    for (int frame_index=0; frame_index<n->frame_count; frame_index++) {
-        AnimationFrameData* frame = &n->frames[frame_index];
+    for (int frame_index=0; frame_index<n->impl->frame_count; frame_index++) {
+        AnimationFrameData* frame = &n->impl->frames[frame_index];
         SetPosition(frame->transforms[0], Vec2{offset * (frame_index + 1), 0.0f});
     }
     MarkModified(n);

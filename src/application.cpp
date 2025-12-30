@@ -208,6 +208,7 @@ void InitApplication(ApplicationTraits* traits) {
 
     InitAllocator(traits);
     InitName(traits);
+    InitAssets();
     InitRandom();
     InitPrefs(g_app.traits);
     InitEvent(traits);

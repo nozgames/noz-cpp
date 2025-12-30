@@ -55,7 +55,10 @@ struct AssetData {
     bool editor_only;
     AssetVtable vtable;
     Bounds2 bounds;
-    const AssetImporter* importer;
+};
+
+struct GenericAssetData : AssetData {
+    void* data;
 };
 
 inline AssetData* GetAssetDataInternal(int index, AssetType type=ASSET_TYPE_UNKNOWN) {
@@ -81,9 +84,7 @@ inline AssetData* GetAssetData(u32 index) {
     return a;
 }
 
-inline bool IsFile(AssetData* a) {
-    return a->importer != nullptr;
-}
+extern bool IsFile(AssetData* a);
 
 inline int GetUnsortedIndex(AssetData* a) {
     return GetIndex(g_editor.asset_allocator, a);
@@ -142,18 +143,3 @@ inline Bounds2 GetBounds(AssetData* a) { return a->bounds; }
 #include "bin_data.h"
 #include "lua_data.h"
 
-union FatAssetData {
-    AssetData asset;
-    MeshData mesh;
-    EventData event;
-    TextureData texture;
-    SkeletonData skeleton;
-    VfxData vfx;
-    AnimationData animation;
-    ShaderData shader;
-    FontData font;
-    SoundData sound;
-    AnimatedMeshData animated_mesh;
-    BinData bin;
-    LuaData lua;
-};

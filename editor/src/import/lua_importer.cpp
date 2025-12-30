@@ -11,6 +11,7 @@ static void ImportLua(AssetData* a, const std::filesystem::path& path, Props* co
     assert(a);
     assert(a->type == ASSET_TYPE_LUA);
     LuaData* l = static_cast<LuaData*>(a);
+    LuaDataImpl* impl = l->impl;
 
     LoadLuaData(l);
 
@@ -21,8 +22,8 @@ static void ImportLua(AssetData* a, const std::filesystem::path& path, Props* co
 
     Stream* stream = CreateStream(nullptr, 4096);
     WriteAssetHeader(stream, &header);
-    WriteU32(stream, l->byte_code.size);
-    WriteBytes(stream, l->byte_code.code, l->byte_code.size);
+    WriteU32(stream, impl->byte_code.size);
+    WriteBytes(stream, impl->byte_code.code, impl->byte_code.size);
     SaveStream(stream, path);
     Free(stream);
 }

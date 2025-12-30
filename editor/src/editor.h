@@ -72,7 +72,6 @@ struct Editor {
     bool auto_quit;
     int fps;
     bool stats_requested;
-    AssetImporter* importers;
     std::filesystem::file_time_type config_timestamp;
     std::string output_path;
     std::filesystem::path unity_path;

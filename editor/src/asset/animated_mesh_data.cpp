@@ -10,36 +10,39 @@ extern void SaveMeshData(MeshData* m, Stream* stream);
 static void DrawAnimatedMeshData(AssetData* a) {
     assert(a->type == ASSET_TYPE_ANIMATED_MESH);
     AnimatedMeshData* m = static_cast<AnimatedMeshData*>(a);
+    AnimatedMeshDataImpl* impl = m->impl;
 
-    if (m->playing) {
-        m->play_time = Update(m->playing, m->play_time);
+    if (impl->playing) {
+        impl->play_time = Update(impl->playing, impl->play_time);
         BindColor(COLOR_WHITE, Vec2Int(0,0));
         BindMaterial(g_view.shaded_material);
-        DrawMesh(m->playing, Translate(a->position), m->play_time);
-    } else if (m->frame_count > 0) {
-        DrawMesh(&m->frames[0], Translate(a->position));
+        DrawMesh(impl->playing, Translate(a->position), impl->play_time);
+    } else if (impl->frame_count > 0) {
+        DrawMesh(&impl->frames[0], Translate(a->position));
     }
 }
 
 static void SaveAnimatedMeshData(AssetData* a, const std::filesystem::path& path) {
     assert(a->type == ASSET_TYPE_ANIMATED_MESH);
     AnimatedMeshData* m = static_cast<AnimatedMeshData*>(a);
+    AnimatedMeshDataImpl* impl = m->impl;
 
     Stream* stream = CreateStream(ALLOCATOR_DEFAULT, 4096);
 
-    for (int i=0; i<m->frame_count; i++) {
+    for (int i=0; i<impl->frame_count; i++) {
         WriteCSTR(stream, "m\n");
-        SaveMeshData(&m->frames[i], stream);
+        SaveMeshData(&impl->frames[i], stream);
     }
     SaveStream(stream, path);
     Free(stream);
 }
 
 AnimatedMesh* ToAnimatedMesh(AnimatedMeshData* m) {
+    AnimatedMeshDataImpl* impl = m->impl;
     Mesh* frames[ANIMATED_MESH_MAX_FRAMES];
     int frame_count = 0;
-    for (int i=0; i<m->frame_count; i++) {
-        Mesh* frame = ToMesh(&m->frames[i], true, false);
+    for (int i=0; i<impl->frame_count; i++) {
+        Mesh* frame = ToMesh(&impl->frames[i], true, false);
         if (!frame)
             continue;
 
@@ -50,10 +53,11 @@ AnimatedMesh* ToAnimatedMesh(AnimatedMeshData* m) {
 }
 
 static void ParseMesh(AnimatedMeshData* m, Tokenizer& tk) {
-    if (m->frame_count >= ANIMATED_MESH_MAX_FRAMES)
+    AnimatedMeshDataImpl* impl = m->impl;
+    if (impl->frame_count >= ANIMATED_MESH_MAX_FRAMES)
         ThrowError("too many frames in animated mesh");
 
-    MeshData& frame = m->frames[m->frame_count++];
+    MeshData& frame = impl->frames[impl->frame_count++];
 
     InitMeshData(&frame);
     LoadMeshData(&frame, tk, true);
@@ -63,12 +67,12 @@ static void LoadAnimatedMeshData(AssetData* a) {
     assert(a);
     assert(a->type == ASSET_TYPE_ANIMATED_MESH);
     AnimatedMeshData* m = static_cast<AnimatedMeshData*>(a);
+    AnimatedMeshDataImpl* impl = m->impl;
 
     std::string contents = ReadAllText(ALLOCATOR_DEFAULT, a->path);
     Tokenizer tk;
     Init(tk, contents.c_str());
 
-    (void)m;
     while (!IsEOF(tk)) {
         if (ExpectIdentifier(tk, "m")) {
             ParseMesh(m, tk);
@@ -79,9 +83,9 @@ static void LoadAnimatedMeshData(AssetData* a) {
         }
     }
 
-    Bounds2 bounds = m->frames->bounds;
-    for (int i=1; i<m->frame_count; i++)
-        bounds = Union(bounds, m->frames[i].bounds);
+    Bounds2 bounds = impl->frames->bounds;
+    for (int i=1; i<impl->frame_count; i++)
+        bounds = Union(bounds, impl->frames[i].bounds);
 
     a->bounds = bounds;
 }
@@ -127,44 +131,44 @@ AssetData* NewAnimatedMeshData(const std::filesystem::path& path) {
     return LoadAnimatedMeshData(full_path);
 }
 
-static void AllocateAnimatedMeshRuntimeData(AssetData* a) {
+static void AllocateAnimatedMeshImpl(AssetData* a) {
     assert(a->type == ASSET_TYPE_ANIMATED_MESH);
-    AnimatedMeshData* n = static_cast<AnimatedMeshData*>(a);
-    n->data = static_cast<RuntimeAnimatedMeshData*>(Alloc(ALLOCATOR_DEFAULT, sizeof(RuntimeAnimatedMeshData)));
-    n->frames = n->data->frames;
+    AnimatedMeshData* m = static_cast<AnimatedMeshData*>(a);
+    m->impl = static_cast<AnimatedMeshDataImpl*>(Alloc(ALLOCATOR_DEFAULT, sizeof(AnimatedMeshDataImpl)));
+    memset(m->impl, 0, sizeof(AnimatedMeshDataImpl));
 }
 
 static void CloneAnimatedMeshData(AssetData* a) {
     assert(a->type == ASSET_TYPE_ANIMATED_MESH);
-    AnimatedMeshData* n = static_cast<AnimatedMeshData*>(a);
-    RuntimeAnimatedMeshData* old_data = n->data;
-    AllocateAnimatedMeshRuntimeData(n);
-    memcpy(n->data, old_data, sizeof(RuntimeAnimatedMeshData));
+    AnimatedMeshData* m = static_cast<AnimatedMeshData*>(a);
+    AnimatedMeshDataImpl* old_impl = m->impl;
+    AllocateAnimatedMeshImpl(m);
+    memcpy(m->impl, old_impl, sizeof(AnimatedMeshDataImpl));
 }
 
 static void DestroyAnimatedMeshData(AssetData* a) {
-    AnimatedMeshData* d = static_cast<AnimatedMeshData*>(a);
-    Free(d->data);
-    d->data = nullptr;
+    AnimatedMeshData* m = static_cast<AnimatedMeshData*>(a);
+    Free(m->impl);
+    m->impl = nullptr;
 }
 
 static void PlayAnimatedMeshData(AssetData* a) {
     AnimatedMeshData* m = static_cast<AnimatedMeshData*>(a);
+    AnimatedMeshDataImpl* impl = m->impl;
     assert(m);
 
-    if (m->playing) {
-        Free(m->playing);
-        m->playing = nullptr;
+    if (impl->playing) {
+        Free(impl->playing);
+        impl->playing = nullptr;
     } else {
-        m->playing = ToAnimatedMesh(m);
+        impl->playing = ToAnimatedMesh(m);
     }
 
-    m->play_time = 0.0f;
+    impl->play_time = 0.0f;
 }
 
 static void InitAnimatedMeshData(AnimatedMeshData* m) {
-    AllocateAnimatedMeshRuntimeData(m);
-
+    m->impl = static_cast<AnimatedMeshDataImpl*>(Alloc(ALLOCATOR_DEFAULT, sizeof(AnimatedMeshDataImpl)));
     m->vtable = {
         .destructor = DestroyAnimatedMeshData,
         .load = LoadAnimatedMeshData,

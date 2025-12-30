@@ -4,10 +4,14 @@
 
 #pragma once
 
-struct TextureData : AssetData {
+struct TextureDataImpl {
     Texture* texture;
     Material* material;
     float scale;
+};
+
+struct TextureData : AssetData {
+    TextureDataImpl* impl;
 };
 
 extern void InitTextureData(AssetData* a);

@@ -6,20 +6,44 @@ extern Mesh* MESH_ASSET_ICON_VFX;
 
 static void Init(VfxData* evfx);
 
+static void AllocVfxImpl(AssetData* a) {
+    assert(a->type == ASSET_TYPE_VFX);
+    VfxData* v = static_cast<VfxData*>(a);
+    v->impl = static_cast<VfxDataImpl*>(Alloc(ALLOCATOR_DEFAULT, sizeof(VfxDataImpl)));
+    memset(v->impl, 0, sizeof(VfxDataImpl));
+}
+
+static void CloneVfxData(AssetData* a) {
+    assert(a->type == ASSET_TYPE_VFX);
+    VfxData* v = static_cast<VfxData*>(a);
+    VfxDataImpl* old_impl = v->impl;
+    AllocVfxImpl(a);
+    memcpy(v->impl, old_impl, sizeof(VfxDataImpl));
+    v->impl->vfx = nullptr;
+    v->impl->handle = INVALID_VFX_HANDLE;
+}
+
+static void DestroyVfxData(AssetData* a) {
+    VfxData* v = static_cast<VfxData*>(a);
+    Free(v->impl);
+    v->impl = nullptr;
+}
+
 static void DrawVfxData(AssetData* a) {
     VfxData* v = static_cast<VfxData*>(a);
+    VfxDataImpl* impl = v->impl;
     assert(v);
     assert(v->type == ASSET_TYPE_VFX);
 
-    if (!v->playing || v->emitter_count == 0 ) {
+    if (!impl->playing || impl->emitter_count == 0 ) {
         BindMaterial(g_view.shaded_material);
         BindColor(COLOR_WHITE);
         DrawMesh(MESH_ASSET_ICON_VFX, Translate(a->position));
         return;
     }
 
-    if (!IsPlaying(v->handle) && v->vfx)
-        v->handle = Play(v->vfx, a->position);
+    if (!IsPlaying(impl->handle) && impl->vfx)
+        impl->handle = Play(impl->vfx, a->position);
 }
 
 static bool ParseCurveType(Tokenizer& tk, VfxCurveType* curve_type) {
@@ -266,10 +290,11 @@ static VfxColorCurve ParseColorCurve(const std::string& str, const VfxColorCurve
 }
 
 static Bounds2 CalculateBounds(VfxData* v) {
+    VfxDataImpl* impl = v->impl;
     Bounds2 bounds = {-VEC2_ONE * 0.5f, VEC2_ONE * 0.5f};
 
-    for (int i=0, c=v->emitter_count; i<c; i++) {
-        const VfxEmitterDef& e = v->emitters[i].def;
+    for (int i=0, c=impl->emitter_count; i<c; i++) {
+        const VfxEmitterDef& e = impl->emitters[i].def;
         const VfxParticleDef& p = e.particle_def;
         Bounds2 eb = { e.spawn.min, e.spawn.max };
         float ssmax = Max(p.size.start.min,p.size.start.max);
@@ -291,6 +316,8 @@ static Bounds2 CalculateBounds(VfxData* v) {
 }
 
 void Serialize(VfxData* v, Stream* stream) {
+    VfxDataImpl* impl = v->impl;
+
     AssetHeader header = {};
     header.signature = ASSET_SIGNATURE;
     header.type = ASSET_TYPE_VFX;
@@ -299,12 +326,12 @@ void Serialize(VfxData* v, Stream* stream) {
     WriteAssetHeader(stream, &header);
 
     WriteStruct<Bounds2>(stream, CalculateBounds(v));
-    WriteStruct(stream, v->duration);
-    WriteBool(stream, v->loop);
-    WriteU32(stream, v->emitter_count);
+    WriteStruct(stream, impl->duration);
+    WriteBool(stream, impl->loop);
+    WriteU32(stream, impl->emitter_count);
 
-    for (int i=0, c=v->emitter_count; i<c; i++) {
-        const EditorVfxEmitter& emitter = v->emitters[i];
+    for (int i=0, c=impl->emitter_count; i<c; i++) {
+        const EditorVfxEmitter& emitter = impl->emitters[i];
         WriteStruct(stream, emitter.def.rate);
         WriteStruct(stream, emitter.def.burst);
         WriteStruct(stream, emitter.def.duration);
@@ -343,6 +370,7 @@ static void LoadVfxData(AssetData* a) {
     assert(a);
     assert(a->type == ASSET_TYPE_VFX);
     VfxData* v = static_cast<VfxData*>(a);
+    VfxDataImpl* impl = v->impl;
 
     Stream* input_stream = LoadStream(ALLOCATOR_DEFAULT, a->path);
     if (!input_stream)
@@ -354,9 +382,9 @@ static void LoadVfxData(AssetData* a) {
         throw std::runtime_error("could not load source file");
     }
 
-    v->emitter_count = 0;
-    v->duration = ParseFloat(source->GetString("VFX", "duration", "5.0"), {5,5});
-    v->loop = source->GetBool("vfx", "loop", false);
+    impl->emitter_count = 0;
+    impl->duration = ParseFloat(source->GetString("VFX", "duration", "5.0"), {5,5});
+    impl->loop = source->GetBool("vfx", "loop", false);
 
     auto emitter_names = source->GetKeys("emitters");
     for (const auto& emitter_name : emitter_names) {
@@ -371,7 +399,7 @@ static void LoadVfxData(AssetData* a) {
             throw std::exception((std::string("missing particle ") + particle_section).c_str());
 
         // Emitter
-        EditorVfxEmitter& emitter = v->emitters[v->emitter_count++];;
+        EditorVfxEmitter& emitter = impl->emitters[impl->emitter_count++];;
         emitter.name = GetName(emitter_name.c_str());
         emitter.def.rate = ParseInt(source->GetString(emitter_name.c_str(), "rate", "0"), VFX_INT_ZERO);
         emitter.def.burst = ParseInt(source->GetString(emitter_name.c_str(), "burst", "0"), VFX_INT_ZERO);
@@ -396,8 +424,8 @@ static void LoadVfxData(AssetData* a) {
             emitter.def.particle_def.mesh_name = GetName(mesh_name.c_str());
     }
 
-    v->vfx = ToVfx(ALLOCATOR_DEFAULT, v, v->name);
-    v->bounds = GetBounds(v->vfx);
+    impl->vfx = ToVfx(ALLOCATOR_DEFAULT, v, v->name);
+    v->bounds = GetBounds(impl->vfx);
 }
 
 static VfxData* LoadVfxData(const std::filesystem::path& path) {
@@ -427,20 +455,13 @@ AssetData* NewVfxData(const std::filesystem::path& path) {
     return LoadVfxData(full_path);
 }
 
-static void EditorVfxClone(AssetData* ea) {
-    VfxData* evfx = (VfxData*)ea;
-    assert(evfx);
-    assert(evfx->type == ASSET_TYPE_VFX);
-    evfx->vfx = nullptr;
-    evfx->handle = INVALID_VFX_HANDLE;
-}
-
 static void ReloadVfxData(AssetData* a) {
     VfxData* v = static_cast<VfxData*>(a);
+    VfxDataImpl* impl = v->impl;
     assert(v);
 
-    Stop(v->handle);
-    Free(v->vfx);
+    Stop(impl->handle);
+    Free(impl->vfx);
 
     try {
         LoadVfxData(a);
@@ -448,32 +469,37 @@ static void ReloadVfxData(AssetData* a) {
         LogError("failed to reload vfx '%s': %s", a->name->value, e.what());
     }
 
-    v->vfx = ToVfx(ALLOCATOR_DEFAULT, v, v->name);
-    v->bounds = GetBounds(v->vfx);
-    v->handle = INVALID_VFX_HANDLE;;
+    impl->vfx = ToVfx(ALLOCATOR_DEFAULT, v, v->name);
+    v->bounds = GetBounds(impl->vfx);
+    impl->handle = INVALID_VFX_HANDLE;;
 }
 
 static void PlayVfxData(AssetData* a) {
     VfxData* v = static_cast<VfxData*>(a);
+    VfxDataImpl* impl = v->impl;
     assert(v);
 
-    v->playing = !v->playing;
+    impl->playing = !impl->playing;
 
-    if (!v->playing) {
-        Stop(v->handle);
-        v->handle = INVALID_VFX_HANDLE;
+    if (!impl->playing) {
+        Stop(impl->handle);
+        impl->handle = INVALID_VFX_HANDLE;
     }
 }
 
 static void Init(VfxData* evfx) {
-    evfx->vfx = nullptr;
-    evfx->handle = INVALID_VFX_HANDLE;
+    AllocVfxImpl(evfx);
+    VfxDataImpl* impl = evfx->impl;
+
+    impl->vfx = nullptr;
+    impl->handle = INVALID_VFX_HANDLE;
     evfx->vtable = {
+        .destructor = DestroyVfxData,
         .load = LoadVfxData,
         .reload = ReloadVfxData,
         .draw = DrawVfxData,
         .play = PlayVfxData,
-        .clone = EditorVfxClone
+        .clone = CloneVfxData
     };
 }
 

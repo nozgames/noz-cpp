@@ -20,6 +20,10 @@ const Name* MakeCanonicalAssetName(const char* name)
     return GetName(result.c_str());
 }
 
+bool IsFile(AssetData* a) {
+    return GetEditorAssetTypeInfo(a->type) != nullptr;
+}
+
 static void DestroyAssetData(void* p) {
     AssetData* a = static_cast<AssetData*>(p);
     if (a->vtable.destructor) {
@@ -28,7 +32,13 @@ static void DestroyAssetData(void* p) {
 }
 
 AssetData* CreateAssetData(const std::filesystem::path& path) {
-    AssetData* a = (AssetData*)Alloc(g_editor.asset_allocator, sizeof(FatAssetData), DestroyAssetData);
+    // Find the asset type info from extension
+    const EditorAssetTypeInfo* type_info = FindEditorAssetTypeByExtension(path.extension().string().c_str());
+    if (!type_info)
+        return nullptr;
+
+    // Allocate GenericAssetData (AssetData + void* data pointer)
+    AssetData* a = static_cast<AssetData*>(Alloc(g_editor.asset_allocator, sizeof(GenericAssetData), DestroyAssetData));
     Copy(a->path, sizeof(a->path), canonical(path).string().c_str());
     Lower(a->path, sizeof(a->path));
     a->name = MakeCanonicalAssetName(path);
@@ -44,35 +54,12 @@ AssetData* CreateAssetData(const std::filesystem::path& path) {
 
     assert(a->asset_path_index != -1);
 
-    if (!InitImporter(a)) {
-        Free(a);
-        return nullptr;
-    }
+    // Set type from registry
+    a->type = static_cast<AssetType>(type_info->type_id);
 
-    if (a->type == ASSET_TYPE_TEXTURE)
-        InitTextureData(a);
-    else if (a->type == ASSET_TYPE_MESH)
-        InitMeshData(a);
-    else if (a->type == ASSET_TYPE_VFX)
-        InitVfxData(a);
-    else if (a->type == ASSET_TYPE_ANIMATION)
-        InitAnimationData(a);
-    else if (a->type == ASSET_TYPE_SKELETON)
-        InitSkeletonData(a);
-    else if (a->type == ASSET_TYPE_SHADER)
-        InitShaderData(a);
-    else if (a->type == ASSET_TYPE_SOUND)
-        InitSoundData(a);
-    else if (a->type == ASSET_TYPE_FONT)
-        InitFontData(a);
-    else if (a->type == ASSET_TYPE_ANIMATED_MESH)
-        InitAnimatedMeshData(a);
-    else if (a->type == ASSET_TYPE_EVENT)
-        InitEventData(a);
-    else if (a->type == ASSET_TYPE_BIN)
-        InitBinData(a);
-    else if (a->type == ASSET_TYPE_LUA)
-        InitLuaData(a);
+    // Initialize via registry
+    if (type_info->init)
+        type_info->init(a);
 
     return a;
 }
@@ -122,13 +109,13 @@ void SetPosition(AssetData* a, const Vec2& position) {
 void DrawSelectedEdges(MeshData* m, const Vec2& position) {
     BindMaterial(g_view.vertex_material);
 
-    for (i32 edge_index=0; edge_index < m->edge_count; edge_index++) {
-        const EdgeData& ee = m->edges[edge_index];
+    for (i32 edge_index=0; edge_index < m->impl->edge_count; edge_index++) {
+        const EdgeData& ee = m->impl->edges[edge_index];
         if (!ee.selected)
             continue;
 
-        const Vec2& v0 = m->vertices[ee.v0].position;
-        const Vec2& v1 = m->vertices[ee.v1].position;
+        const Vec2& v0 = m->impl->vertices[ee.v0].position;
+        const Vec2& v1 = m->impl->vertices[ee.v1].position;
         DrawLine(v0 + position, v1 + position);
     }
 }
@@ -136,19 +123,19 @@ void DrawSelectedEdges(MeshData* m, const Vec2& position) {
 void DrawEdges(MeshData* m, const Vec2& position) {
     BindMaterial(g_view.vertex_material);
 
-    for (i32 edge_index=0; edge_index < m->edge_count; edge_index++) {
-        const EdgeData& ee = m->edges[edge_index];
-        DrawLine(m->vertices[ee.v0].position + position, m->vertices[ee.v1].position + position);
+    for (i32 edge_index=0; edge_index < m->impl->edge_count; edge_index++) {
+        const EdgeData& ee = m->impl->edges[edge_index];
+        DrawLine(m->impl->vertices[ee.v0].position + position, m->impl->vertices[ee.v1].position + position);
     }
 }
 
 void DrawEdges(MeshData* m, const Mat3& transform) {
     BindMaterial(g_view.vertex_material);
 
-    for (i32 edge_index=0; edge_index < m->edge_count; edge_index++) {
-        const EdgeData& ee = m->edges[edge_index];
-        Vec2 p1 = TransformPoint(transform, m->vertices[ee.v0].position);
-        Vec2 p2 = TransformPoint(transform, m->vertices[ee.v1].position);
+    for (i32 edge_index=0; edge_index < m->impl->edge_count; edge_index++) {
+        const EdgeData& ee = m->impl->edges[edge_index];
+        Vec2 p1 = TransformPoint(transform, m->impl->vertices[ee.v0].position);
+        Vec2 p2 = TransformPoint(transform, m->impl->vertices[ee.v1].position);
         DrawLine(p1, p2);
     }
 }
@@ -156,24 +143,23 @@ void DrawEdges(MeshData* m, const Mat3& transform) {
 void DrawSelectedFaces(MeshData* m, const Vec2& position) {
     BindMaterial(g_view.vertex_material);
 
-    for (i32 face_index=0; face_index < m->face_count; face_index++) {
-        const FaceData& f = m->faces[face_index];
+    for (i32 face_index=0; face_index < m->impl->face_count; face_index++) {
+        const FaceData& f = m->impl->faces[face_index];
         if (!f.selected)
             continue;
 
         for (int vertex_index=0; vertex_index<f.vertex_count; vertex_index++) {
             int v0 = f.vertices[vertex_index];
             int v1 = f.vertices[(vertex_index + 1) % f.vertex_count];
-            DrawLine(m->vertices[v0].position + position, m->vertices[v1].position + position);
+            DrawLine(m->impl->vertices[v0].position + position, m->impl->vertices[v1].position + position);
         }
     }
 }
 
 void DrawFaceCenters(MeshData* m, const Vec2& position) {
     BindMaterial(g_view.vertex_material);
-    for (int i=0; i<m->face_count; i++)
-    {
-        FaceData& ef = m->faces[i];
+    for (int i=0; i<m->impl->face_count; i++) {
+        FaceData& ef = m->impl->faces[i];
         BindColor(ef.selected ? COLOR_VERTEX_SELECTED : COLOR_VERTEX);
         DrawVertex(position + GetFaceCenter(m, i));
     }
@@ -306,11 +292,11 @@ AssetData* GetAssetData(AssetType type, const Name* name) {
 
 void Clone(AssetData* dst, AssetData* src) {
     bool editing = dst->editing;
-    *(FatAssetData*)dst = *(FatAssetData*)src;
+    *static_cast<GenericAssetData*>(dst) = *static_cast<GenericAssetData*>(src);
     dst->editing = editing;
 
     if (dst->vtable.clone)
-        dst->vtable.clone((AssetData*)dst);
+        dst->vtable.clone(dst);
 }
 
 AssetData* CreateAssetDataForImport(const std::filesystem::path& path) {
@@ -465,7 +451,7 @@ void SortAssets() {
 }
 
 fs::path GetTargetPath(AssetData* a) {
-    std::string type_name_lower = ToString(a->importer->type);
+    std::string type_name_lower = ToString(a->type);
     Lower(type_name_lower.data(), (u32)type_name_lower.size());
     fs::path source_relative_path = fs::relative(a->path, g_editor.source_paths[a->asset_path_index].value);
     fs::path target_short_path = type_name_lower / GetSafeFilename(source_relative_path.filename().string().c_str());
@@ -503,7 +489,7 @@ AssetData* Duplicate(AssetData* a) {
     fs::path new_path = GetUniqueAssetPath(a->path);
     fs::copy(a->path, new_path);
 
-    AssetData* d = (AssetData*)Alloc(g_editor.asset_allocator, sizeof(FatAssetData));
+    AssetData* d = static_cast<AssetData*>(Alloc(g_editor.asset_allocator, sizeof(GenericAssetData)));
     Clone(d, a);
     Copy(d->path, sizeof(d->path), new_path.string().c_str());
     d->name = MakeCanonicalAssetName(new_path);

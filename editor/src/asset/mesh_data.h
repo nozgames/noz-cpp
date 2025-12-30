@@ -58,23 +58,17 @@ struct TagData {
     VertexWeight weights[MESH_MAX_VERTEX_WEIGHTS];
 };
 
-struct MeshRuntimeData {
+struct MeshDataImpl {
+    // Large arrays
     VertexData vertices[MESH_MAX_VERTICES];
     EdgeData edges[MESH_MAX_EDGES];
     FaceData faces[MESH_MAX_FACES];
     TagData tags[MESH_MAX_TAGS];
     int face_vertices[MESH_MAX_INDICES];
-};
 
-struct MeshData : AssetData {
-    MeshRuntimeData* data;
-    VertexData* vertices;
-    EdgeData* edges;
-    FaceData* faces;
-    TagData* tags;
+    // Metadata
     SkeletonData* skeleton;
     const Name* skeleton_name;
-
     int palette;
     int vertex_count;
     int edge_count;
@@ -89,6 +83,10 @@ struct MeshData : AssetData {
     Vec2Int edge_color;
     int depth;
     int hold;
+};
+
+struct MeshData : AssetData {
+    MeshDataImpl* impl;
 };
 
 extern void InitMeshData(AssetData* a);
@@ -129,7 +127,7 @@ extern bool IsVertexOnOutsideEdge(MeshData* m, int v0);
 extern Vec2 GetFaceCenter(MeshData* m, int face_index);
 extern Vec2 GetEdgePoint(MeshData* m, int edge_index, float t);
 inline Vec2 GetVertexPoint(MeshData* m, int vertex_index) {
-    return m->vertices[vertex_index].position;
+    return m->impl->vertices[vertex_index].position;
 }
 extern void UpdateEdges(MeshData* m);
 extern void Center(MeshData* m);

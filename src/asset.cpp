@@ -5,6 +5,46 @@
 // @STL
 
 #include <filesystem>
+#include <cstring>
+
+// @asset_registry
+static AssetTypeInfo g_asset_types[MAX_ASSET_TYPES] = {};
+static int g_asset_type_count = 0;
+
+void RegisterAssetType(const AssetTypeInfo& info) {
+    assert(g_asset_type_count < MAX_ASSET_TYPES);
+
+    // Check for duplicate type_id
+    for (int i = 0; i < g_asset_type_count; i++) {
+        if (g_asset_types[i].type_id == info.type_id) {
+            assert(false && "Duplicate asset type_id registered");
+            return;
+        }
+    }
+
+    g_asset_types[g_asset_type_count++] = info;
+}
+
+const AssetTypeInfo* GetAssetTypeInfo(int type_id) {
+    for (int i = 0; i < g_asset_type_count; i++) {
+        if (g_asset_types[i].type_id == type_id)
+            return &g_asset_types[i];
+    }
+    return nullptr;
+}
+
+const AssetTypeInfo* FindAssetTypeByExtension(const char* ext) {
+    if (!ext) return nullptr;
+    for (int i = 0; i < g_asset_type_count; i++) {
+        if (g_asset_types[i].extension && strcmp(g_asset_types[i].extension, ext) == 0)
+            return &g_asset_types[i];
+    }
+    return nullptr;
+}
+
+int GetRegisteredAssetTypeCount() {
+    return g_asset_type_count;
+}
 
 bool IsValidAssetType(AssetType asset_type) {
     return ToString(asset_type) != nullptr;
@@ -44,6 +84,7 @@ bool ValidateAssetHeader(AssetHeader* header, AssetType expected_asset_type) {
 }
 
 const char* ToString(AssetType asset_type) {
+    // Built-in types (for backward compatibility and performance)
     switch (asset_type) {
         case ASSET_TYPE_TEXTURE: return "Texture";
         case ASSET_TYPE_MESH: return "Mesh";
@@ -57,8 +98,14 @@ const char* ToString(AssetType asset_type) {
         case ASSET_TYPE_EVENT: return "Event";
         case ASSET_TYPE_BIN: return "Bin";
         case ASSET_TYPE_LUA: return "Script";
-        default: return nullptr;
+        default: break;
     }
+
+    // Check registered types
+    const AssetTypeInfo* info = GetAssetTypeInfo(asset_type);
+    if (info) return info->name;
+
+    return nullptr;
 }
 
 const char* ToTypeString(AssetType asset_type) {
@@ -67,8 +114,20 @@ const char* ToTypeString(AssetType asset_type) {
 }
 
 const char* ToShortString(AssetType asset_type) {
+    // Built-in special case
     if (asset_type == ASSET_TYPE_LUA) return "Lua";
+
+    // Check registered types for short_name
+    const AssetTypeInfo* info = GetAssetTypeInfo(asset_type);
+    if (info && info->short_name) return info->short_name;
+
     return ToString(asset_type);
+}
+
+const char* GetExtensionFromAssetType(AssetType asset_type) {
+    const AssetTypeInfo* info = GetAssetTypeInfo(asset_type);
+    if (info) return info->extension;
+    return nullptr;
 }
 
 static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetType asset_type) {
@@ -185,3 +244,49 @@ void ReloadAsset(const Name* name, AssetType asset_type, Asset* asset, void (*re
 }
 
 #endif
+
+void InitAssets() {
+    // Register all built-in asset types with the registry
+    RegisterAssetType({ASSET_TYPE_MESH, "Mesh", "Mesh", ".mesh", LoadMesh,
+#if !defined(NOZ_BUILTIN_ASSETS)
+        ReloadMesh
+#else
+        nullptr
+#endif
+    });
+    RegisterAssetType({ASSET_TYPE_VFX, "Vfx", "Vfx", ".vfx", LoadVfx,
+#if !defined(NOZ_BUILTIN_ASSETS)
+        ReloadVfx
+#else
+        nullptr
+#endif
+    });
+    RegisterAssetType({ASSET_TYPE_SKELETON, "Skeleton", "Skel", ".skeleton", LoadSkeleton, nullptr});
+    RegisterAssetType({ASSET_TYPE_ANIMATION, "Animation", "Anim", ".animation", LoadAnimation, nullptr});
+    RegisterAssetType({ASSET_TYPE_SOUND, "Sound", "Sound", ".sound", LoadSound, nullptr});
+    RegisterAssetType({ASSET_TYPE_TEXTURE, "Texture", "Tex", ".texture", LoadTexture,
+#if !defined(NOZ_BUILTIN_ASSETS)
+        ReloadTexture
+#else
+        nullptr
+#endif
+    });
+    RegisterAssetType({ASSET_TYPE_FONT, "Font", "Font", ".font", LoadFont, nullptr});
+    RegisterAssetType({ASSET_TYPE_SHADER, "Shader", "Shader", ".shader", LoadShader,
+#if !defined(NOZ_BUILTIN_ASSETS)
+        ReloadShader
+#else
+        nullptr
+#endif
+    });
+    RegisterAssetType({ASSET_TYPE_ANIMATED_MESH, "AnimatedMesh", "AnimMesh", ".animatedmesh", LoadAnimatedMesh, nullptr});
+    RegisterAssetType({ASSET_TYPE_EVENT, "Event", "Event", ".event", nullptr, nullptr});
+    RegisterAssetType({ASSET_TYPE_BIN, "Bin", "Bin", ".bin", LoadBin, nullptr});
+    RegisterAssetType({ASSET_TYPE_LUA, "Script", "Lua", ".lua", LoadLuaScript,
+#if !defined(NOZ_BUILTIN_ASSETS)
+        ReloadLuaScript
+#else
+        nullptr
+#endif
+    });
+}

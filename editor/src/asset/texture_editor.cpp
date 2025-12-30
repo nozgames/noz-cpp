@@ -41,7 +41,7 @@ static void BeginTextureMove() {
 
 static void UpdateTextureScaleTool(const Vec2& scale) {
     TextureData* t = static_cast<TextureData*>(GetAssetData());
-    t->scale = g_texture_editor.saved_scale * scale.x;
+    t->impl->scale = g_texture_editor.saved_scale * scale.x;
     UpdateBounds(t);
 }
 
@@ -53,13 +53,13 @@ static void CommitTextureScaleTool(const Vec2&) {
 
 static void CancelTextureScaleTool() {
     TextureData* t = static_cast<TextureData*>(GetAssetData());
-    t->scale = g_texture_editor.saved_scale;
+    t->impl->scale = g_texture_editor.saved_scale;
     UpdateBounds(t);
 }
 
 static void BeginTextureScale() {
     TextureData* t = static_cast<TextureData*>(GetAssetData());
-    g_texture_editor.saved_scale = t->scale;
+    g_texture_editor.saved_scale = t->impl->scale;
     RecordUndo(t);
     BeginScaleTool({
         .origin = t->position,

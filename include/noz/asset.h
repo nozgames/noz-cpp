@@ -43,10 +43,29 @@ struct Asset {
     const Name* name;
     u32 flags;
     AssetType type;
-    int custom_type_id;
+    int custom_type_id;  // deprecated: use type directly for registered types
 };
 
 typedef Asset* (*AssetLoaderFunc)(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+typedef void (*AssetReloadFunc)(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
+
+// @asset_registry
+constexpr int MAX_ASSET_TYPES = 128;
+
+struct AssetTypeInfo {
+    int type_id;                     // ASSET_TYPE_MESH=0, or 1001+ for extensions
+    const char* name;                // "Mesh", "CharacterSkeleton"
+    const char* short_name;          // "Mesh", "CharSkel"
+    const char* extension;           // ".mesh", ".hrskel"
+    AssetLoaderFunc loader;          // runtime loader function
+    AssetReloadFunc reload;          // hot-reload function (optional)
+};
+
+extern void RegisterAssetType(const AssetTypeInfo& info);
+extern const AssetTypeInfo* GetAssetTypeInfo(int type_id);
+extern const AssetTypeInfo* FindAssetTypeByExtension(const char* ext);
+extern int GetRegisteredAssetTypeCount();
+extern void InitAssets();
 
 extern bool ReadAssetHeader(Stream* stream, AssetHeader* header);
 extern bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** name_table = nullptr);
