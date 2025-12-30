@@ -61,6 +61,7 @@ struct String4096 {
 };
 
 typedef String4096 Text;
+typedef String4096 Url;
 
 constexpr int TEXT_MAX_LENGTH = 4095;
 
