@@ -500,7 +500,7 @@ void ShutdownVfx()
     g_vfx = {};
 }
 
-#ifdef NOZ_EDITOR
+#if !defined(NOZ_BUILTIN_ASSETS)
 void RestartVfx(Vfx* vfx)
 {
     for (u32 i=0; i<MAX_EMITTERS; i++)

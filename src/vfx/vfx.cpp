@@ -57,7 +57,7 @@ Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const 
     return vfx;
 }
 
-#ifdef NOZ_EDITOR
+#if !defined(NOZ_BUILTIN_ASSETS)
 
 void RestartVfx(Vfx* vfx);
 
