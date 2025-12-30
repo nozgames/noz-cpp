@@ -4,10 +4,10 @@
 
 #pragma once
 
-enum class LuaScriptType : u8 {
-    Client,
-    Server,
-    Module
+enum LuaScriptType : u8 {
+    LUA_SCRIPT_TYPE_CLIENT,
+    LUA_SCRIPT_TYPE_SERVER,
+    LUA_SCRIPT_TYPE_MODULE
 };
 
 struct LuaData : AssetData {

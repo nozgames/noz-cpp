@@ -34,7 +34,7 @@ static LuaScriptType ParseScriptType(const char* contents) {
 
     Luau::ParseResult result = Luau::Parser::parse(contents, strlen(contents), names, allocator, options);
 
-    LuaScriptType script_type = LuaScriptType::Module;
+    LuaScriptType script_type = LUA_SCRIPT_TYPE_MODULE;
 
     // Look for --!Type(...) in hot comments
     for (const Luau::HotComment& comment : result.hotcomments) {
@@ -44,11 +44,11 @@ static LuaScriptType ParseScriptType(const char* contents) {
             if (end != std::string::npos) {
                 std::string type_value = comment.content.substr(5, end - 5);
                 if (type_value == "Client") {
-                    script_type = LuaScriptType::Client;
+                    script_type = LUA_SCRIPT_TYPE_CLIENT;
                 } else if (type_value == "Server") {
-                    script_type = LuaScriptType::Server;
+                    script_type = LUA_SCRIPT_TYPE_SERVER;
                 } else if (type_value == "UI") {
-                    script_type = LuaScriptType::Module;
+                    script_type = LUA_SCRIPT_TYPE_MODULE;
                 }
             }
             break;
