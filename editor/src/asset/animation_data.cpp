@@ -307,7 +307,7 @@ static void LoadAnimationData(AssetData* a) {
     AnimationDataImpl* impl = n->impl;
     impl->frame_count = 0;
 
-    std::filesystem::path path = a->path;
+    std::filesystem::path path = a->path.value;
     std::string contents = ReadAllText(ALLOCATOR_DEFAULT, path);
     Tokenizer tk;
     Init(tk, contents.c_str());

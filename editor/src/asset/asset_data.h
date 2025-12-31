@@ -42,7 +42,7 @@ struct AssetData {
     AssetType type;
     int asset_path_index;
     const Name* name;
-    char path[1024];
+    String1024 path;
     Vec2 position;
     Vec2 saved_position;
     bool selected;

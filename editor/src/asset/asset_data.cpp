@@ -21,7 +21,7 @@ const Name* MakeCanonicalAssetName(const char* name)
 }
 
 bool IsFile(AssetData* a) {
-    return GetEditorAssetTypeInfo(a->type) != nullptr;
+    return a->path.length > 0;
 }
 
 static void DestroyAssetData(void* p) {
@@ -39,8 +39,8 @@ AssetData* CreateAssetData(const std::filesystem::path& path) {
 
     // Allocate GenericAssetData (AssetData + void* data pointer)
     AssetData* a = static_cast<AssetData*>(Alloc(g_editor.asset_allocator, sizeof(GenericAssetData), DestroyAssetData));
-    Copy(a->path, sizeof(a->path), canonical(path).string().c_str());
-    Lower(a->path, sizeof(a->path));
+    Set(a->path, canonical(path).string().c_str());
+    Lower(a->path);
     a->name = MakeCanonicalAssetName(path);
     a->bounds = Bounds2{{-0.5f, -0.5f}, {0.5f, 0.5f}};
     a->asset_path_index = -1;
@@ -177,7 +177,7 @@ void SaveAssetData() {
         a->modified = false;
 
         if (a->vtable.save)
-            a->vtable.save(a, a->path);
+            a->vtable.save(a, a->path.value);
         else
             continue;
 
@@ -429,8 +429,8 @@ std::filesystem::path GetEditorAssetPath(const Name* name, const char* ext) {
 }
 
 void DeleteAsset(AssetData* a) {
-    if (fs::exists(a->path))
-        fs::remove(a->path);
+    if (fs::exists(a->path.value))
+        fs::remove(a->path.value);
 
     fs::path meta_path = fs::path(std::string(a->path) + ".meta");
     if (fs::exists(meta_path))
@@ -453,7 +453,7 @@ void SortAssets() {
 fs::path GetTargetPath(AssetData* a) {
     std::string type_name_lower = ToString(a->type);
     Lower(type_name_lower.data(), (u32)type_name_lower.size());
-    fs::path source_relative_path = fs::relative(a->path, g_editor.source_paths[a->asset_path_index].value);
+    fs::path source_relative_path = fs::relative(a->path.value, g_editor.source_paths[a->asset_path_index].value);
     fs::path target_short_path = type_name_lower / GetSafeFilename(source_relative_path.filename().string().c_str());
     fs::path target_path = g_editor.output_path / target_short_path;
     target_path.replace_extension("");
@@ -467,12 +467,12 @@ bool Rename(AssetData* a, const Name* new_name) {
     if (a->name == new_name)
         return true;
 
-    fs::path new_path = fs::path(a->path).parent_path() / (std::string(new_name->value) + fs::path(a->path).extension().string());
+    fs::path new_path = fs::path(a->path.value).parent_path() / (std::string(new_name->value) + fs::path(a->path.value).extension().string());
     if (fs::exists(new_path))
         return false;
 
-    fs::rename(a->path, new_path);
-    Copy(a->path, sizeof(a->path), new_path.string().c_str());
+    fs::rename(a->path.value, new_path);
+    Set(a->path, new_path.string().c_str());
     a->name = new_name;
 
     fs::path old_meta_path = fs::path(std::string(a->path) + ".meta");
@@ -486,12 +486,12 @@ bool Rename(AssetData* a, const Name* new_name) {
 }
 
 AssetData* Duplicate(AssetData* a) {
-    fs::path new_path = GetUniqueAssetPath(a->path);
-    fs::copy(a->path, new_path);
+    fs::path new_path = GetUniqueAssetPath(a->path.value);
+    Set(a->path, new_path.string().c_str());
 
     AssetData* d = static_cast<AssetData*>(Alloc(g_editor.asset_allocator, sizeof(GenericAssetData)));
     Clone(d, a);
-    Copy(d->path, sizeof(d->path), new_path.string().c_str());
+    Set(d->path, new_path.string().c_str());
     d->name = MakeCanonicalAssetName(new_path);
     d->selected = false;
     SortAssets();

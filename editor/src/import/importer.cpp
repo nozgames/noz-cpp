@@ -39,7 +39,7 @@ static const AssetImporter* FindImporter(const fs::path& ext) {
 }
 
 bool InitImporter(AssetData* a) {
-    fs::path path = a->path;
+    fs::path path = a->path.value;
     if (!fs::exists(path))
         return false;
 
@@ -52,7 +52,7 @@ bool InitImporter(AssetData* a) {
 }
 
 static void QueueImport(AssetData* a) {
-    fs::path path = a->path;
+    fs::path path = a->path.value;
     if (!fs::exists(path))
         return;
 

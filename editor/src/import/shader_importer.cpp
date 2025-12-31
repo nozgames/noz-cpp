@@ -303,7 +303,7 @@ static void ImportShader(AssetData* a, const std::filesystem::path& path, Props*
     // Extract each stage and write the shader
     std::string vertex_shader = ExtractStage(source, "VERTEX_SHADER");
     std::string fragment_shader = ExtractStage(source, "FRAGMENT_SHADER");
-    fs::path include_dir = fs::path(a->path).parent_path();
+    fs::path include_dir = fs::path(a->path.value).parent_path();
 
     // Parse shader flags from meta file
     ShaderFlags flags = SHADER_FLAGS_NONE;
@@ -327,7 +327,7 @@ static void ImportShader(AssetData* a, const std::filesystem::path& path, Props*
 
 
     try {
-        WriteSPIRV(path, vertex_shader, fragment_shader, include_dir, a->path, flags);
+        WriteSPIRV(path, vertex_shader, fragment_shader, include_dir, a->path.value, flags);
         WriteGLSL(path.string() + ".glsl", vertex_shader, fragment_shader, flags, ConvertToOpenGLSL);
         WriteGLSL(path.string() + ".gles", vertex_shader, fragment_shader, flags, ConvertToOpenGLES);
 

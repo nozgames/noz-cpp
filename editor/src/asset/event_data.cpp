@@ -15,7 +15,7 @@ static void LoadEventData(AssetData* a) {
     assert(a->type == ASSET_TYPE_EVENT);
     EventData* e = static_cast<EventData*>(a);
 
-    std::string contents = ReadAllText(ALLOCATOR_DEFAULT, a->path);
+    std::string contents = ReadAllText(ALLOCATOR_DEFAULT, a->path.value);
     Props* props = Props::Load(contents.c_str(), contents.size());
     e->id = props->GetInt("event", "id", 0);
 }

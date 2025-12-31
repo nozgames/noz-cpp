@@ -372,7 +372,7 @@ static void LoadVfxData(AssetData* a) {
     VfxData* v = static_cast<VfxData*>(a);
     VfxDataImpl* impl = v->impl;
 
-    Stream* input_stream = LoadStream(ALLOCATOR_DEFAULT, a->path);
+    Stream* input_stream = LoadStream(ALLOCATOR_DEFAULT, a->path.value);
     if (!input_stream)
         throw std::runtime_error("could not read file");
 

@@ -1035,9 +1035,9 @@ void SerializeMesh(Mesh* m, Stream* stream) {
 static void LoadMeshData(AssetData* a) {
     assert(a);
     assert(a->type == ASSET_TYPE_MESH);
-    MeshData* m = (MeshData*)a;
+    MeshData* m = static_cast<MeshData *>(a);
 
-    std::string contents = ReadAllText(ALLOCATOR_DEFAULT, a->path);
+    std::string contents = ReadAllText(ALLOCATOR_DEFAULT, a->path.value);
     Tokenizer tk;
     Init(tk, contents.c_str());
     LoadMeshData(m, tk);
@@ -1140,7 +1140,7 @@ AssetData* NewMeshData(const std::filesystem::path& path) {
         AssetData* selected = GetFirstSelectedAsset();
         assert(selected);
         if (selected->type == ASSET_TYPE_MESH)
-            text = ReadAllText(ALLOCATOR_DEFAULT, selected->path);
+            text = ReadAllText(ALLOCATOR_DEFAULT, selected->path.value);
     }
 
     std::filesystem::path full_path =  path.is_relative()

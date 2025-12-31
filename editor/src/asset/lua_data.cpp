@@ -65,7 +65,7 @@ void LoadLuaData(AssetData* a) {
     LuaData* l = static_cast<LuaData*>(a);
     LuaDataImpl* impl = l->impl;
 
-    std::string contents = ReadAllText(ALLOCATOR_DEFAULT, a->path);
+    std::string contents = ReadAllText(ALLOCATOR_DEFAULT, a->path.value);
     impl->byte_code = noz::lua::CompileLua(contents.c_str());
     impl->script_type = ParseScriptType(contents.c_str());
 }

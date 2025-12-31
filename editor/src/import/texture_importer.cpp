@@ -64,7 +64,7 @@ static void WriteTextureData(
 static void ImportTexture(AssetData* a, const std::filesystem::path& path, Props* config, Props* meta) {
     (void)config;
 
-    fs::path src_path = a->path;
+    fs::path src_path = a->path.value;
     
     int width;
     int height;

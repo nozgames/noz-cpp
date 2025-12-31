@@ -69,7 +69,7 @@ static void LoadAnimatedMeshData(AssetData* a) {
     AnimatedMeshData* m = static_cast<AnimatedMeshData*>(a);
     AnimatedMeshDataImpl* impl = m->impl;
 
-    std::string contents = ReadAllText(ALLOCATOR_DEFAULT, a->path);
+    std::string contents = ReadAllText(ALLOCATOR_DEFAULT, a->path.value);
     Tokenizer tk;
     Init(tk, contents.c_str());
 
@@ -116,7 +116,7 @@ AssetData* NewAnimatedMeshData(const std::filesystem::path& path) {
         AssetData* selected = GetFirstSelectedAsset();
         if (selected && selected->type == ASSET_TYPE_MESH) {
             text = "m\n";
-            text += ReadAllText(ALLOCATOR_DEFAULT, selected->path);
+            text += ReadAllText(ALLOCATOR_DEFAULT, selected->path.value);
         }
     }
 

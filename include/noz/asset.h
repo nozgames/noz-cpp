@@ -95,7 +95,10 @@ Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, c
 Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 Asset* LoadAnimatedMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 Asset* LoadBin(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+
+#if defined(NOZ_LUA)
 Asset* LoadLuaScript(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+#endif
 
 #ifdef NOZ_BUILTIN_ASSETS
 #define NOZ_ASSET_DATA(name) name ## _DATA
@@ -130,20 +133,22 @@ Asset* LoadLuaScript(Allocator* allocator, Stream* stream, AssetHeader* header, 
 #define NOZ_LOAD_ANIMATION(allocator, path, member) \
     member = (Animation*)LoadAsset(allocator, path, ASSET_TYPE_ANIMATION, LoadAnimation, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
 
-#define NOZ_LOAD_ANIMATEDMESH(allocator, path, member) \
+#define NOZ_LOAD_ANIMMESH(allocator, path, member) \
     member = static_cast<AnimatedMesh*>(LoadAsset(allocator, path, ASSET_TYPE_ANIMATED_MESH, LoadAnimatedMesh));
 
 #define NOZ_LOAD_BIN(allocator, path, member) \
     member = static_cast<Bin*>(LoadAsset(allocator, path, ASSET_TYPE_BIN, LoadBin,  NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member)));
 
+#if defined(NOZ_LUA)
 #define NOZ_LOAD_LUA(allocator, path, member) \
     member = static_cast<noz::lua::Script*>(LoadAsset(allocator, path, ASSET_TYPE_LUA, LoadLuaScript,  NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member)));
+#endif
 
 #define NOZ_RELOAD_FONT(asset_name, asset)
 #define NOZ_RELOAD_SOUND(asset_name, asset)
 #define NOZ_RELOAD_SKELETON(asset_name, asset)
 #define NOZ_RELOAD_ANIMATION(asset_name, asset)
-#define NOZ_RELOAD_ANIMATEDMESH(asset_name, asset)
+#define NOZ_RELOAD_ANIMMESH(asset_name, asset)
 #define NOZ_RELOAD_BIN(asset_name, asset)
 
 #if !defined(NOZ_BUILTIN_ASSETS)
@@ -170,9 +175,11 @@ extern void ReloadLuaScript(Asset* asset, Stream* stream, const AssetHeader& hea
     if(asset_name == incoming_name && incoming_type == ASSET_TYPE_TEXTURE) { \
         ReloadAsset(asset_name, ASSET_TYPE_TEXTURE, asset, ReloadTexture); return; }
 
+#if defined(NOZ_LUA)
 #define NOZ_RELOAD_LUA(asset_name, asset) \
     if(asset_name == incoming_name && incoming_type == ASSET_TYPE_LUA) { \
         ReloadAsset(asset_name, ASSET_TYPE_LUA, asset, ReloadLuaScript); return; }
+#endif
 
 #else
 #define NOZ_RELOAD_VFX(asset_name, asset)

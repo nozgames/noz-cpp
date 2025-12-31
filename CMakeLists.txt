@@ -268,6 +268,7 @@ if(EMSCRIPTEN)
     endif()
     # Box2D and enet would need to be compiled with emscripten separately
     message(STATUS "Emscripten build - external libraries will need emscripten-compiled versions")
+
 elseif(WIN32)
     target_link_libraries(noz
         PUBLIC
@@ -276,8 +277,12 @@ elseif(WIN32)
             Shcore
             xaudio2
             ole32
-            Luau.VM Luau.Compiler Luau.Config Luau.Ast
+
     )
+
+    if(NOZ_LUA)
+        target_link_libraries(noz PUBLIC Luau.VM Luau.Compiler Luau.Config Luau.Ast)
+    endif()
 
     # Link HTTP backend libraries
     if(NOZ_HTTP)

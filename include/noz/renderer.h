@@ -264,11 +264,11 @@ extern Font** FONT;
 extern Texture** TEXTURE;
 extern Shader** SHADER;
 extern Skeleton** SKELETON;
-extern AnimatedMesh** ANIMATEDMESH;
+extern AnimatedMesh** ANIMMESH;
 
 extern int MESH_COUNT;
 extern int FONT_COUNT;
 extern int TEXTURE_COUNT;
 extern int SHADER_COUNT;
-extern int ANIMATEDMESH_COUNT;
+extern int ANIMMESH_COUNT;
 extern int SKELETON_COUNT;

@@ -15,7 +15,7 @@ static void ImportBin(AssetData* a, const std::filesystem::path& path, Props* co
     header.version = 0;
     WriteAssetHeader(stream, &header);
 
-    Stream* input_stream = LoadStream(ALLOCATOR_DEFAULT, a->path);
+    Stream* input_stream = LoadStream(ALLOCATOR_DEFAULT, a->path.value);
     WriteU32(stream, GetSize(input_stream));
     Copy(stream, input_stream);
     Free(input_stream);

@@ -261,10 +261,10 @@ void InitAssets() {
         nullptr
 #endif
     });
-    RegisterAssetType({ASSET_TYPE_SKELETON, "Skeleton", "Skel", ".skeleton", LoadSkeleton, nullptr});
-    RegisterAssetType({ASSET_TYPE_ANIMATION, "Animation", "Anim", ".animation", LoadAnimation, nullptr});
+    RegisterAssetType({ASSET_TYPE_SKELETON, "Skeleton", "Skeleton", ".skeleton", LoadSkeleton, nullptr});
+    RegisterAssetType({ASSET_TYPE_ANIMATION, "Animation", "Animation", ".animation", LoadAnimation, nullptr});
     RegisterAssetType({ASSET_TYPE_SOUND, "Sound", "Sound", ".sound", LoadSound, nullptr});
-    RegisterAssetType({ASSET_TYPE_TEXTURE, "Texture", "Tex", ".texture", LoadTexture,
+    RegisterAssetType({ASSET_TYPE_TEXTURE, "Texture", "Texture", ".texture", LoadTexture,
 #if !defined(NOZ_BUILTIN_ASSETS)
         ReloadTexture
 #else
@@ -282,6 +282,8 @@ void InitAssets() {
     RegisterAssetType({ASSET_TYPE_ANIMATED_MESH, "AnimatedMesh", "AnimMesh", ".animatedmesh", LoadAnimatedMesh, nullptr});
     RegisterAssetType({ASSET_TYPE_EVENT, "Event", "Event", ".event", nullptr, nullptr});
     RegisterAssetType({ASSET_TYPE_BIN, "Bin", "Bin", ".bin", LoadBin, nullptr});
+
+#if defined(NOZ_LUA)
     RegisterAssetType({ASSET_TYPE_LUA, "Script", "Lua", ".lua", LoadLuaScript,
 #if !defined(NOZ_BUILTIN_ASSETS)
         ReloadLuaScript
@@ -289,4 +291,5 @@ void InitAssets() {
         nullptr
 #endif
     });
+#endif
 }

@@ -180,7 +180,7 @@ static void LoadSkeletonData(AssetData* a) {
     assert(a->type == ASSET_TYPE_SKELETON);
     SkeletonData* s = static_cast<SkeletonData*>(a);
 
-    std::filesystem::path path = a->path;
+    std::filesystem::path path = a->path.value;
     std::string contents = ReadAllText(ALLOCATOR_DEFAULT, path);
     Tokenizer tk;
     Init(tk, contents.c_str());
