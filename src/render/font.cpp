@@ -7,6 +7,7 @@
 
 Font** FONT = nullptr;
 int FONT_COUNT = 0;
+Font* FONT_DEFAULT = nullptr;
 
 struct FontImpl : Font {
     Material* material;
