@@ -1143,8 +1143,11 @@ AssetData* NewMeshData(const std::filesystem::path& path) {
             text = ReadAllText(ALLOCATOR_DEFAULT, selected->path.value);
     }
 
+    std::string type_folder = ToString(ASSET_TYPE_MESH);
+    Lower(type_folder.data(), (u32)type_folder.size());
+
     std::filesystem::path full_path =  path.is_relative()
-        ? std::filesystem::path(g_editor.project_path) / g_editor.save_dir / "meshes" / path
+        ? std::filesystem::path(g_editor.project_path) / g_editor.save_dir / type_folder / path
         : path;
     full_path += ".mesh";
 

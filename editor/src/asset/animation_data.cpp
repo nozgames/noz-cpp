@@ -636,8 +636,10 @@ static void CloneAnimationData(AssetData* a) {
     memcpy(n->impl, old_impl, sizeof(AnimationDataImpl));
     n->impl->animation = nullptr;
     n->impl->animator = {};
-    UpdateTransforms(n);
-    UpdateBounds(n);
+    if (n->impl->skeleton) {
+        UpdateTransforms(n);
+        UpdateBounds(n);
+    }
 }
 
 static void DestroyAnimationData(AssetData* a) {

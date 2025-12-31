@@ -547,6 +547,9 @@ void Label(const char* text, const LabelStyle& style) {
     LabelElement* label = static_cast<LabelElement*>(CreateElement(ELEMENT_TYPE_LABEL));
     label->style = style;
     label->cached_mesh = GetOrCreateTextMesh(text, style);
+
+    if (!label->style.font)
+        label->style.font = FONT_DEFAULT;
 }
 
 void Image(Texture* texture, const ImageStyle& style) {

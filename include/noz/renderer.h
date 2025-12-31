@@ -212,6 +212,9 @@ extern const Vec2& GetPosition(Camera* camera);
 extern void SetPosition(Camera* camera, const Vec2& position);
 extern void SetRotation(Camera* camera, float rotation);
 extern void SetSize(Camera* camera, const Vec2& size);
+inline void SetSize(Camera* camera, float width, float height) {
+    SetSize(camera, Vec2{width, height});
+}
 extern void SetExtents(Camera* camera, float left, float right, float bottom, float top);
 extern void SetViewport(Camera* camera, const noz::Rect& viewport);
 extern const noz::Rect& GetViewport(Camera* camera);

@@ -115,7 +115,7 @@ static bool ReadAsset(u32 item_index, void* item_ptr, void* user_data) {
 
     assert(item_ptr);
     AssetData* a = (AssetData*)item_ptr;
-    if (a->editor_only)
+    if (a->editor_only || !a->name)
         return true;
 
     ManifestGenerator& generator = *(ManifestGenerator*)user_data;

@@ -153,15 +153,19 @@ void SetExtents(Camera* camera, float left, float right, float bottom, float top
 
 Vec2 ScreenToWorld(Camera* camera, const Vec2& screen_pos) {
     CameraImpl* impl = static_cast<CameraImpl*>(camera);
-    Vec2 viewportSize = {
-        static_cast<f32>(impl->screen_size.x),
-        static_cast<f32>(impl->screen_size.y)
-    };
 
     Vec2 localPos = screen_pos;
+    Vec2 viewportSize;
+
     if (impl->viewport.width > 0 && impl->viewport.height > 0) {
         localPos.x -= impl->viewport.x;
         localPos.y -= impl->viewport.y;
+        viewportSize = {impl->viewport.width, impl->viewport.height};
+    } else {
+        viewportSize = {
+            static_cast<f32>(impl->screen_size.x),
+            static_cast<f32>(impl->screen_size.y)
+        };
     }
 
     Vec2 ndc;
@@ -177,18 +181,22 @@ Vec2 WorldToScreen(Camera* camera, const Vec2& world_pos) {
     ndc.x /= ndc.z;
     ndc.y /= ndc.z;
 
-    Vec2 viewportSize = {
-        static_cast<f32>(impl->screen_size.x),
-        static_cast<f32>(impl->screen_size.y)
-    };
-    Vec2 screen;
-    screen.x = (ndc.x + 1.0f) * 0.5f * viewportSize.x;
-    screen.y = (ndc.y + 1.0f) * 0.5f * viewportSize.y;
+    Vec2 viewportSize;
+    Vec2 viewportOffset = VEC2_ZERO;
 
     if (impl->viewport.width > 0 && impl->viewport.height > 0) {
-        screen.x += impl->viewport.x;
-        screen.y += impl->viewport.y;
+        viewportSize = {impl->viewport.width, impl->viewport.height};
+        viewportOffset = {impl->viewport.x, impl->viewport.y};
+    } else {
+        viewportSize = {
+            static_cast<f32>(impl->screen_size.x),
+            static_cast<f32>(impl->screen_size.y)
+        };
     }
+
+    Vec2 screen;
+    screen.x = (ndc.x + 1.0f) * 0.5f * viewportSize.x + viewportOffset.x;
+    screen.y = (ndc.y + 1.0f) * 0.5f * viewportSize.y + viewportOffset.y;
 
     return screen;
 }

@@ -12,6 +12,12 @@ extern Mesh* MESH_UI_ICON_LOOP;
 extern Mesh* MESH_ASSET_ICON_EVENT;
 extern const Name* NAME_RU;
 
+constexpr int ID_MIRROR = ELEMENT_ID_MIN + 0;
+constexpr int ID_ONION_SKIN = ELEMENT_ID_MIN + 1;
+constexpr int ID_ROOT_MOTION = ELEMENT_ID_MIN + 2;
+constexpr int ID_LOOP = ELEMENT_ID_MIN + 3;
+
+
 enum AnimationViewState {
     ANIMATION_VIEW_STATE_DEFAULT,
     ANIMATION_VIEW_STATE_PLAY,
@@ -332,13 +338,14 @@ constexpr float DOPESHEET_BUTTON_BORDER_WIDTH = 1;
 constexpr Color DOPESHEET_BUTTON_BORDER_COLOR = DOPESHEET_BORDER_COLOR;
 constexpr Color DOPESHEET_EVENT_COLOR = Color8ToColor(180);
 
-static void DopeSheetButton(Mesh* icon, bool state, void (*on_tap)()) {
+static void DopeSheetButton(ElementId id, Mesh* icon, bool state, void (*on_tap)()) {
     BeginContainer({
         .width=DOPESHEET_BUTTON_SIZE,
         .height=DOPESHEET_BUTTON_SIZE,
         .padding=EdgeInsetsAll(6),
         .color=state ? DOPESHEET_BUTTON_CHECKED_COLOR : DOPESHEET_BUTTON_COLOR,
-        .border={.width=DOPESHEET_BUTTON_BORDER_WIDTH, .color=DOPESHEET_BUTTON_BORDER_COLOR}});
+        .border={.width=DOPESHEET_BUTTON_BORDER_WIDTH, .color=DOPESHEET_BUTTON_BORDER_COLOR},
+        .id = id});
     if (WasPressed()) on_tap();
     Image(icon, {.align=ALIGN_CENTER});
     EndContainer();
@@ -380,7 +387,7 @@ static void DopeSheet() {
     AnimationData* n = GetAnimationData();
     int frame_count = Max(GetFrameCountWithHolds(n), DOPESHEET_MIN_FRAMES);
 
-    BeginCanvas();
+    BeginCanvas({.id=CANVAS_ID_ANIMATION_EDITOR});
     BeginContainer({.align=ALIGN_BOTTOM_CENTER, .margin=EdgeInsetsBottom(20)});
     BeginContainer({
         .width=frame_count * DOPESHEET_FRAME_WIDTH + DOPESHEET_PADDING * 2 + 1,
@@ -484,11 +491,11 @@ static void DopeSheet() {
     BeginContainer({.height=DOPESHEET_BUTTON_SIZE, .margin=EdgeInsetsLeft(DOPESHEET_FRAME_MARGIN_X)});
     BeginRow({.spacing=DOPESHEET_BUTTON_SPACING});
     {
-        DopeSheetButton(MESH_UI_ICON_MIRROR, false, [] { Mirror(); });
+        DopeSheetButton(ID_MIRROR, MESH_UI_ICON_MIRROR, false, [] { Mirror(); });
         Expanded();
-        DopeSheetButton(MESH_UI_ICON_LOOP, IsLooping(n->impl->flags), [] { ToggleLoop(); });
-        DopeSheetButton(MESH_UI_ICON_ROOT_MOTION, g_animation_editor.root_motion, [] { ToggleRootMotion(); });
-        DopeSheetButton(MESH_UI_ICON_ONION, g_animation_editor.onion_skin, [] { ToggleOnionSkin(); });
+        DopeSheetButton(ID_LOOP, MESH_UI_ICON_LOOP, IsLooping(n->impl->flags), [] { ToggleLoop(); });
+        DopeSheetButton(ID_ROOT_MOTION, MESH_UI_ICON_ROOT_MOTION, g_animation_editor.root_motion, [] { ToggleRootMotion(); });
+        DopeSheetButton(ID_ONION_SKIN, MESH_UI_ICON_ONION, g_animation_editor.onion_skin, [] { ToggleOnionSkin(); });
     }
     EndRow();
     EndContainer();
@@ -992,6 +999,8 @@ void InitAnimationEditor() {
     EnableModifiers(g_animation_editor.input);
     EnableShortcuts(shortcuts, g_animation_editor.input);
     EnableCommonShortcuts(g_animation_editor.input);
+
+    SetFocus(CANVAS_ID_ANIMATION_EDITOR, 0);
 }
 
 void InitAnimationEditor(AnimationData* n) {
