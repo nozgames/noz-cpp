@@ -702,7 +702,9 @@ static int MeasureGrid(int element_index, const Vec2& available_size) {
     for (u16 i = 0; i < e->child_count; i++)
         element_index = MeasureElement(element_index, availble_child_size);
 
-    int row_count = (e->style.virtual_count + columns - 1) / columns;
+    int row_count = e->style.virtual_cell_func
+        ? (e->style.virtual_count + columns - 1) / columns
+        : (e->child_count + columns - 1) / columns;
 
     e->measured_size.x = requested_width;
     e->measured_size.y = row_count * availble_child_size.y +
@@ -807,18 +809,20 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
         if (!is_auto_width)
             e->measured_size.x = container->style.width;
         else
-            e->measured_size.x = max_content_size.x +
+            e->measured_size.x = Min(available_size.x,
+                max_content_size.x +
                 container->style.padding.left +
                 container->style.padding.right +
-                container->style.border.width * 2.0f;
+                container->style.border.width * 2.0f);
 
         if (!is_auto_height)
             e->measured_size.y = container->style.height;
         else
-            e->measured_size.y = max_content_size.y +
+            e->measured_size.y = Min(available_size.y,
+                max_content_size.y +
                 container->style.padding.top +
                 container->style.padding.bottom +
-                container->style.border.width * 2.0f;
+                container->style.border.width * 2.0f);
 
     // @measure_label
     } else if (e->type == ELEMENT_TYPE_LABEL) {
@@ -842,31 +846,6 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
         } else {
             e->measured_size = VEC2_ZERO;
         }
-
-#if 0
-        const AlignInfo& align = g_align_info[i->style.align];
-        if (align.has_x)
-            e->measured_size.x = Max(e->measured_size.x, available_size.x);
-        if (align.has_y )
-            e->measured_size.y = Max(e->measured_size.y, available_size.y);
-
-        if (i->style.stretch == IMAGE_STRETCH_FILL) {
-            e->measured_size = available_size;
-        } else if (i->style.stretch == IMAGE_STRETCH_UNIFORM) {
-            float image_aspect_ratio = e->measured_size.x / e->measured_size.y;
-            float available_aspect_ratio = available_size.x / available_size.y;
-
-            if (available_aspect_ratio > image_aspect_ratio) {
-                e->measured_size.y = available_size.y;
-                e->measured_size.x = e->measured_size.y * image_aspect_ratio;
-            } else {
-                e->measured_size.x = available_size.x;
-                e->measured_size.y = e->measured_size.x / image_aspect_ratio;
-            }
-        } else {
-            e->measured_size = VEC2_ZERO;
-        }
-#endif
 
         assert(e->child_count == 0);
 
