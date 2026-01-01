@@ -128,7 +128,7 @@ struct WindowsWebSocketServer {
     u32 next_conn_id = 1;
     u32 generation = 0;
     bool in_use = false;
-    std::mutex mutex;
+    std::recursive_mutex mutex;
 };
 
 struct WindowsWebSocketServerState {
@@ -316,9 +316,16 @@ static void ProcessConnectionData(WindowsWebSocketConnection* conn, WindowsWebSo
         conn->handshake_complete = true;
         conn->recv_buffer.erase(conn->recv_buffer.begin(), conn->recv_buffer.begin() + header_end + 4);
 
-        // Notify connect
+        // Notify connect - use array index (not conn->id) to match on_message
         if (server->config.on_connect) {
-            server->config.on_connect(MakeConnectionHandle(conn->id, conn->generation));
+            u32 conn_index = 0;
+            for (u32 i = 0; i < MAX_CONNECTIONS; i++) {
+                if (&g_wss.connections[i] == conn) {
+                    conn_index = i;
+                    break;
+                }
+            }
+            server->config.on_connect(MakeConnectionHandle(conn_index, conn->generation));
         }
     }
 
@@ -472,7 +479,7 @@ void PlatformDestroyWebSocketServer(const PlatformWebSocketServerHandle& handle)
     WindowsWebSocketServer* server = GetServer(handle);
     if (!server) return;
 
-    std::lock_guard lock(server->mutex);
+    std::lock_guard<std::recursive_mutex> lock(server->mutex);
 
     // Close all connections
     for (u32 conn_index : server->connection_indices) {
@@ -495,7 +502,7 @@ void PlatformUpdateWebSocketServer(const PlatformWebSocketServerHandle& handle) 
     WindowsWebSocketServer* server = GetServer(handle);
     if (!server || !server->running) return;
 
-    std::lock_guard lock(server->mutex);
+    std::lock_guard<std::recursive_mutex> lock(server->mutex);
 
     u32 server_index = GetServerIndex(handle);
 
@@ -610,7 +617,7 @@ void PlatformWebSocketServerSendBinary(const PlatformWebSocketConnectionHandle& 
 void PlatformWebSocketServerBroadcast(const PlatformWebSocketServerHandle& handle, const char* text) {
     WindowsWebSocketServer* server = GetServer(handle);
     if (!server) return;
-    std::lock_guard lock(server->mutex);
+    std::lock_guard<std::recursive_mutex> lock(server->mutex);
 
     for (u32 conn_index : server->connection_indices) {
         WindowsWebSocketConnection& conn = g_wss.connections[conn_index];
@@ -623,7 +630,7 @@ void PlatformWebSocketServerBroadcast(const PlatformWebSocketServerHandle& handl
 void PlatformWebSocketServerBroadcastBinary(const PlatformWebSocketServerHandle& handle, const void* data, u32 size) {
     WindowsWebSocketServer* server = GetServer(handle);
     if (!server) return;
-    std::lock_guard lock(server->mutex);
+    std::lock_guard<std::recursive_mutex> lock(server->mutex);
 
     for (u32 conn_index : server->connection_indices) {
         WindowsWebSocketConnection& conn = g_wss.connections[conn_index];
@@ -643,7 +650,7 @@ void PlatformWebSocketServerClose(const PlatformWebSocketConnectionHandle& conne
 u32 PlatformWebSocketServerGetConnectionCount(const PlatformWebSocketServerHandle& handle) {
     WindowsWebSocketServer* server = GetServer(handle);
     if (!server) return 0;
-    std::lock_guard lock(server->mutex);
+    std::lock_guard<std::recursive_mutex> lock(server->mutex);
 
     u32 count = 0;
     for (u32 conn_index : server->connection_indices) {

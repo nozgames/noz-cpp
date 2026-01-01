@@ -26,12 +26,16 @@ struct CallbackAdapter {
 
 static CallbackAdapter g_adapters[MAX_SERVERS] = {};
 
-// Temporary connection wrapper for callbacks
-static WebSocketConnection g_temp_connection = {};
+// Connection wrappers - one per possible connection
+constexpr int MAX_CONNECTIONS = 64;
+static WebSocketConnection g_connections[MAX_CONNECTIONS] = {};
 
 static WebSocketConnection* WrapConnection(PlatformWebSocketConnectionHandle handle) {
-    g_temp_connection.handle = handle;
-    return &g_temp_connection;
+    // Use the connection index from the handle to get a stable pointer
+    u32 index = (u32)(handle.value & 0xFFFFFFFF);
+    if (index >= MAX_CONNECTIONS) return nullptr;
+    g_connections[index].handle = handle;
+    return &g_connections[index];
 }
 
 WebSocketServer* CreateWebSocketServer(const WebSocketServerConfig& config) {
