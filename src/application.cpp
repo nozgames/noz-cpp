@@ -34,9 +34,6 @@ extern void ShutdownPrefs();
 extern void ResetInputState(InputSet* input_set);
 extern void ShutdownHttp();
 extern void UpdateHttp();
-extern void InitWebSocket();
-extern void ShutdownWebSocket();
-extern void UpdateWebSocket();
 
 namespace noz {
     extern void InitTasks(const ApplicationTraits& traits);
@@ -218,7 +215,6 @@ void InitApplication(ApplicationTraits* traits) {
     InitTween();
     InitAudio();
     noz::InitHttp(g_app.traits);
-    InitWebSocket();
 
     g_app.traits.x = GetIntPref(PREF_WINDOW_X, g_app.traits.x);
     g_app.traits.y = GetIntPref(PREF_WINDOW_Y, g_app.traits.y);
@@ -314,7 +310,6 @@ void ShutdownApplication() {
     if (g_app.window_created)
         ShutdownWindow();
 
-    ShutdownWebSocket();
     noz::ShutdownHttp();
     ShutdownTween();
     ShutdownJobs();
@@ -370,7 +365,6 @@ bool UpdateApplication() {
     UpdateTime();
     UpdateInput();
     noz::UpdateHttp();
-    UpdateWebSocket();
     noz::UpdateTasks();
 
     UpdateFPS();

@@ -14,6 +14,7 @@ set_property(CACHE NOZ_RENDERER PROPERTY STRINGS "VULKAN" "GLES" "GL")
 
 option(NOZ_HTTP "Enable HTTP support" OFF)
 option(NOZ_WEBSOCKET "Enable WebSocket support" OFF)
+option(NOZ_WEBSOCKET_SERVER "Enable WebSocket server support" OFF)
 option(NOZ_FETCH_ZLIB "Fetch zlib (disable if already provided by parent project)" ON)
 option(NOZ_LUA "Enable lua support" OFF)
 
@@ -95,8 +96,10 @@ set(SOURCE_FILES
     src/audio/audio.cpp
     src/audio/sound.cpp
     src/prefs.cpp
-    src/http.cpp
-    src/websocket.cpp
+
+    src/network/http.cpp
+    src/network/websocket.cpp
+    src/network/websocket_server.cpp
 )
 
 if (NOZ_LUA)
@@ -136,6 +139,9 @@ if(EMSCRIPTEN)
         list(APPEND SOURCE_FILES src/platform/null/null_websocket.cpp)
     endif()
 
+    # WebSocket server is not supported on web
+    list(APPEND SOURCE_FILES src/platform/null/null_websocket_server.cpp)
+
     if(NOZ_HTTP)
         list(APPEND SOURCE_FILES src/platform/web/web_http.cpp)
     else()
@@ -154,6 +160,13 @@ elseif(WIN32)
         list(APPEND SOURCE_FILES src/platform/windows/windows_websocket.cpp)
     else()
         list(APPEND SOURCE_FILES src/platform/null/null_websocket.cpp)
+    endif()
+
+    # WebSocket server backend selection for Windows
+    if(NOZ_WEBSOCKET_SERVER)
+        list(APPEND SOURCE_FILES src/platform/windows/windows_websocket_server.cpp)
+    else()
+        list(APPEND SOURCE_FILES src/platform/null/null_websocket_server.cpp)
     endif()
 
     # HTTP backend selection for Windows
@@ -201,6 +214,9 @@ elseif(APPLE)
     # WebSocket backend selection for macOS (null stub for now)
     list(APPEND SOURCE_FILES src/platform/null/null_websocket.cpp)
 
+    # WebSocket server backend selection for macOS (null stub for now)
+    list(APPEND SOURCE_FILES src/platform/null/null_websocket_server.cpp)
+
     # HTTP backend selection for macOS (null stub for now)
     list(APPEND SOURCE_FILES src/platform/null/null_http.cpp)
 endif()
@@ -210,6 +226,11 @@ add_library(noz STATIC ${SOURCE_FILES} ${LUA_SOURCE_FILES})
 # Add WebSocket compile definition if enabled
 if(NOZ_WEBSOCKET)
     target_compile_definitions(noz PUBLIC NOZ_WEBSOCKET)
+endif()
+
+# Add WebSocket server compile definition if enabled
+if(NOZ_WEBSOCKET_SERVER)
+    target_compile_definitions(noz PUBLIC NOZ_WEBSOCKET_SERVER)
 endif()
 
 if (NOZ_LUA)
@@ -297,6 +318,10 @@ elseif(WIN32)
         endif()
         # Link zlib for gzip decompression
         target_link_libraries(noz PUBLIC zlibstatic)
+    endif()
+    # Link WebSocket server libraries
+    if(NOZ_WEBSOCKET_SERVER)
+        target_link_libraries(noz PUBLIC ws2_32)
     endif()
 elseif(APPLE)
     target_link_libraries(noz

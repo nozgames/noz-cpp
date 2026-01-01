@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <functional>
+namespace noz {
 
 struct WebSocket;
 
@@ -22,9 +22,10 @@ enum class WebSocketMessageType {
     Binary
 };
 
-using WebSocketMessageCallback = std::function<void(WebSocket*, WebSocketMessageType type, const u8* data, u32 size)>;
-using WebSocketCloseCallback = std::function<void(WebSocket*, u16 code, const char* reason)>;
-using WebSocketConnectCallback = std::function<void(WebSocket*, bool success)>;
+enum WebSocketFlags : u32 {
+    WEBSOCKET_FLAG_NONE = 0,
+    WEBSOCKET_FLAG_GZIP = 1 << 0,  // Enable automatic gzip decompression of messages
+};
 
 enum WebSocketEvent {
     WEBSOCKET_EVENT_CONNECTED,
@@ -39,35 +40,36 @@ struct WebSocketEventMessage {
     u32 size;
 };
 
+struct WebSocketConfig {
+    Url url;
+    WebSocketProc on_event = nullptr;
+    void* user_data = nullptr;
+    WebSocketFlags flags = WEBSOCKET_FLAG_GZIP;  // Gzip enabled by default
+};
+
 // Connect to a WebSocket server
 // URL format: ws://host:port/path or wss://host:port/path
-WebSocket* CreateWebSocket(Allocator* allocator, const char* url, WebSocketProc proc, void* user_data=nullptr);
+extern WebSocket* CreateWebSocket(const WebSocketConfig& config);
 
-// Set callbacks (optional - can also poll)
-void WebSocketOnConnect(WebSocket* ws, WebSocketConnectCallback callback);
-void WebSocketOnMessage(WebSocket* ws, WebSocketMessageCallback callback);
-void WebSocketOnClose(WebSocket* ws, WebSocketCloseCallback callback);
+// Call each frame to process events and dispatch callbacks
+extern void Update(WebSocket* ws);
 
 // Query state
-WebSocketStatus WebSocketGetStatus(WebSocket* ws);
-bool WebSocketIsConnected(WebSocket* ws);
-bool WebSocketIsConnecting(WebSocket* ws);
+extern WebSocketStatus GetStatus(WebSocket* ws);
+extern bool IsConnected(WebSocket* ws);
+extern bool IsConnecting(WebSocket* ws);
 
 // Send data
-void WebSocketSend(WebSocket* ws, const char* text);
-void WebSocketSendBinary(WebSocket* ws, const void* data, u32 size);
+extern void Send(WebSocket* ws, const char* text);
+extern void SendBinary(WebSocket* ws, const void* data, u32 size);
 
 // Receive data (polling API - alternative to callbacks)
-bool WebSocketHasMessage(WebSocket* ws);
-bool WebSocketPeekMessage(WebSocket* ws, WebSocketMessageType* out_type, u8** out_data, u32* out_size);
-const char* WebSocketPeekMessageText(WebSocket* ws);  // Convenience for text messages
-void WebSocketPopMessage(WebSocket* ws);
+extern bool HasMessage(WebSocket* ws);
+extern bool PeekMessage(WebSocket* ws, WebSocketMessageType* out_type, u8** out_data, u32* out_size);
+extern const char* PeekMessageText(WebSocket* ws);  // Convenience for text messages
+extern void PopMessage(WebSocket* ws);
 
 // Close connection
-void Close(WebSocket* socket, u16 code = 1000, const char* reason = nullptr);
-void Free(WebSocket* socket);
+extern void Close(WebSocket* socket, u16 code = 1000, const char* reason = nullptr);
 
-// Module init/shutdown (called by engine)
-void InitWebSocket();
-void ShutdownWebSocket();
-void UpdateWebSocket();  // Call each frame to dispatch callbacks
+}

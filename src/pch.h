@@ -4,6 +4,7 @@
 
 #include <noz/noz.h>
 #include "internal.h"
+#include "platform.h"
 
 #if defined(NOZ_LUA)
 #include <luau/Compiler/include/luacode.h>

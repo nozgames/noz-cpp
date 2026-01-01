@@ -24,6 +24,8 @@ struct PlatformSound {};
 struct PlatformSoundHandle { u64 value;};
 struct PlatformHttpHandle { u64 value; };
 struct PlatformWebSocketHandle { u64 value; };
+struct PlatformWebSocketServerHandle { u64 value; };
+struct PlatformWebSocketConnectionHandle { u64 value; };
 
 // Buffer creation flags
 enum BufferFlags : u32 {
@@ -134,10 +136,35 @@ extern void PlatformSend(const PlatformWebSocketHandle& handle, const char* text
 extern void PlatformSendBinary(const PlatformWebSocketHandle& handle, const void* data, u32 size);
 extern void PlatformClose(const PlatformWebSocketHandle& handle, u16 code, const char* reason);
 extern void PlatformFree(const PlatformWebSocketHandle& handle);
-extern WebSocketStatus PlatformGetStatus(const PlatformWebSocketHandle& handle);
+extern noz::WebSocketStatus PlatformGetStatus(const PlatformWebSocketHandle& handle);
 extern bool PlatformHasMessages(const PlatformWebSocketHandle& handle);
-extern bool PlatformGetMessage(const PlatformWebSocketHandle& handle, WebSocketMessageType* out_type, u8** out_data, u32* out_size);
+extern bool PlatformGetMessage(const PlatformWebSocketHandle& handle, noz::WebSocketMessageType* out_type, u8** out_data, u32* out_size);
 extern void PlatformPopMessage(const PlatformWebSocketHandle& handle);
+
+// @websocket_server
+using PlatformWebSocketServerMessageCallback = std::function<void(PlatformWebSocketConnectionHandle, const u8* data, u32 size, bool is_binary)>;
+using PlatformWebSocketServerConnectCallback = std::function<void(PlatformWebSocketConnectionHandle)>;
+using PlatformWebSocketServerDisconnectCallback = std::function<void(PlatformWebSocketConnectionHandle)>;
+
+struct PlatformWebSocketServerConfig {
+    u16 port = 8080;
+    u32 max_connections = 16;
+    PlatformWebSocketServerConnectCallback on_connect;
+    PlatformWebSocketServerMessageCallback on_message;
+    PlatformWebSocketServerDisconnectCallback on_disconnect;
+};
+
+extern PlatformWebSocketServerHandle PlatformCreateWebSocketServer(const PlatformWebSocketServerConfig& config);
+extern void PlatformDestroyWebSocketServer(const PlatformWebSocketServerHandle& handle);
+extern void PlatformUpdateWebSocketServer(const PlatformWebSocketServerHandle& handle);
+extern void PlatformWebSocketServerSend(const PlatformWebSocketConnectionHandle& connection, const char* text);
+extern void PlatformWebSocketServerSendBinary(const PlatformWebSocketConnectionHandle& connection, const void* data, u32 size);
+extern void PlatformWebSocketServerBroadcast(const PlatformWebSocketServerHandle& handle, const char* text);
+extern void PlatformWebSocketServerBroadcastBinary(const PlatformWebSocketServerHandle& handle, const void* data, u32 size);
+extern void PlatformWebSocketServerClose(const PlatformWebSocketConnectionHandle& connection);
+extern u32 PlatformWebSocketServerGetConnectionCount(const PlatformWebSocketServerHandle& handle);
+extern bool PlatformWebSocketServerIsRunning(const PlatformWebSocketServerHandle& handle);
+extern u32 PlatformWebSocketServerGetConnectionId(const PlatformWebSocketConnectionHandle& connection);
 
 // @input
 extern bool PlatformIsInputButtonDown(InputCode code);

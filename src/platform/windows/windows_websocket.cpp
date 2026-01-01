@@ -16,15 +16,15 @@ constexpr int MAX_MESSAGES_PER_SOCKET = 32;
 constexpr u32 MAX_MESSAGE_SIZE = 1024 * 1024;  // 1MB per message
 constexpr u32 RECEIVE_BUFFER_SIZE = 16 * 1024;
 
-struct WebSocketMessage
-{
-    WebSocketMessageType type;
+using namespace  noz;
+
+struct WebSocketMessage {
+    noz::WebSocketMessageType type;
     u8* data;
     u32 size;
 };
 
-enum class WebSocketConnectState
-{
+enum class WebSocketConnectState {
     None,
     Connecting,  // Background thread is doing the blocking connect
     Connected
@@ -38,7 +38,7 @@ struct WindowsWebSocket
     HINTERNET websocket;
     HANDLE thread;
     CRITICAL_SECTION cs;
-    WebSocketStatus status;
+    noz::WebSocketStatus status;
     WebSocketConnectState connect_state;
     u32 generation;
     bool should_close;
