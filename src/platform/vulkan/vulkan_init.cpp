@@ -535,7 +535,8 @@ static void InitPipeline() {
         g_vulkan.uniform_buffers[UNIFORM_BUFFER_VERTEX_USER].descriptor_set_layout,
         g_vulkan.uniform_buffers[UNIFORM_BUFFER_COLOR].descriptor_set_layout,
         g_vulkan.uniform_buffers[UNIFORM_BUFFER_FRAGMENT_USER].descriptor_set_layout,
-        g_vulkan.sampler_descriptor_set_layout
+        g_vulkan.sampler_descriptor_set_layout,  // Texture slot 0 (set 6)
+        g_vulkan.sampler_descriptor_set_layout   // Texture slot 1 (set 7) - for lightmap
     };
 
     VkPipelineLayoutCreateInfo layout_info = {};

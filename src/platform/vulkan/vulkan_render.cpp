@@ -534,6 +534,139 @@ PlatformTexture* PlatformCreateTexture(
     return texture;
 }
 
+void PlatformUpdateTexture(PlatformTexture* texture, void* data) {
+    if (!texture || !data) return;
+
+    // Create staging buffer
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_buffer_memory;
+    VkDeviceSize buffer_size = (u32)(texture->size.x * texture->size.y * texture->channels);
+
+    VkBufferCreateInfo buffer_info = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size = buffer_size,
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE
+    };
+
+    if (VK_SUCCESS != vkCreateBuffer(g_vulkan.device, &buffer_info, nullptr, &staging_buffer))
+        return;
+
+    VkMemoryRequirements mem_requirements;
+    vkGetBufferMemoryRequirements(g_vulkan.device, staging_buffer, &mem_requirements);
+
+    VkMemoryAllocateInfo alloc_info = {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .allocationSize = mem_requirements.size,
+        .memoryTypeIndex = FindMemoryType(
+            mem_requirements.memoryTypeBits,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+    };
+
+    if (VK_SUCCESS != vkAllocateMemory(g_vulkan.device, &alloc_info, nullptr, &staging_buffer_memory)) {
+        vkDestroyBuffer(g_vulkan.device, staging_buffer, nullptr);
+        return;
+    }
+
+    vkBindBufferMemory(g_vulkan.device, staging_buffer, staging_buffer_memory, 0);
+
+    // Copy data to staging buffer
+    void* mapped_data;
+    vkMapMemory(g_vulkan.device, staging_buffer_memory, 0, buffer_size, 0, &mapped_data);
+    memcpy(mapped_data, data, buffer_size);
+    vkUnmapMemory(g_vulkan.device, staging_buffer_memory);
+
+    // Create command buffer for transfer
+    VkCommandBufferAllocateInfo cmd_alloc_info = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .commandPool = g_vulkan.command_pool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1
+    };
+
+    VkCommandBuffer command_buffer;
+    vkAllocateCommandBuffers(g_vulkan.device, &cmd_alloc_info, &command_buffer);
+
+    VkCommandBufferBeginInfo begin_info = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+    };
+
+    vkBeginCommandBuffer(command_buffer, &begin_info);
+
+    // Transition image to transfer destination layout
+    VkImageMemoryBarrier barrier = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .srcAccessMask = VK_ACCESS_SHADER_READ_BIT,
+        .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+        .oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = texture->vk_image,
+        .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        }
+    };
+
+    vkCmdPipelineBarrier(
+        command_buffer,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    // Copy buffer to image
+    VkBufferImageCopy region = {
+        .bufferOffset = 0,
+        .bufferRowLength = 0,
+        .bufferImageHeight = 0,
+        .imageSubresource = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .mipLevel = 0,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        },
+        .imageOffset = {0, 0, 0},
+        .imageExtent = {(u32)texture->size.x, (u32)texture->size.y, 1}
+    };
+
+    vkCmdCopyBufferToImage(command_buffer, staging_buffer, texture->vk_image,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    // Transition back to shader read layout
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    vkCmdPipelineBarrier(
+        command_buffer,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    vkEndCommandBuffer(command_buffer);
+
+    // Submit and wait
+    VkSubmitInfo submit_info = {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &command_buffer
+    };
+
+    vkQueueSubmit(g_vulkan.graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(g_vulkan.graphics_queue);
+
+    // Cleanup
+    vkFreeCommandBuffers(g_vulkan.device, g_vulkan.command_pool, 1, &command_buffer);
+    vkDestroyBuffer(g_vulkan.device, staging_buffer, nullptr);
+    vkFreeMemory(g_vulkan.device, staging_buffer_memory, nullptr);
+}
+
 void PlatformFree(PlatformTexture* texture) {
     if (!texture)
         return;
@@ -551,14 +684,12 @@ void PlatformFree(PlatformTexture* texture) {
 }
 
 void PlatformBindTexture(PlatformTexture* texture, int slot) {
-    (void)slot;
-
     VkDescriptorSet texture_descriptor_set = texture->vk_descriptor_set;
     vkCmdBindDescriptorSets(
         g_vulkan.command_buffer,
         VK_PIPELINE_BIND_POINT_GRAPHICS,
         g_vulkan.pipeline_layout,
-        VK_SPACE_TEXTURE,
+        VK_SPACE_TEXTURE + slot,
         1,
         &texture_descriptor_set,
         0,

@@ -699,108 +699,97 @@ static void BuildAssets(const Command& command) {
     Build();
 }
 
-static void FlipYCommand(const Command& command) {
-    (void)command;
+static void ScaleCommand(const Command& command) {
+    if (command.arg_count < 1) {
+        AddNotification(NOTIFICATION_TYPE_ERROR, "usage: scale <value>");
+        return;
+    }
 
-    int mesh_count = 0;
-    int skeleton_count = 0;
-    int animation_count = 0;
+    float scale = (float)atof(command.args[0]);
+    if (scale <= 0.0f) {
+        AddNotification(NOTIFICATION_TYPE_ERROR, "scale must be positive");
+        return;
+    }
+
+    int asset_count = 0;
+
+    BeginUndoGroup();
 
     for (u32 i = 0, c = GetAssetCount(); i < c; i++) {
         AssetData* a = GetAssetData(i);
+        if (!a->selected)
+            continue;
 
-        if (a->type == ASSET_TYPE_ANIMATED_MESH) {
-            AnimatedMeshData* am = static_cast<AnimatedMeshData*>(a);
-            for (int frame_index=0; frame_index<am->impl->frame_count; frame_index++) {
-                MeshData* m = &am->impl->frames[frame_index];
-                // Negate Y for all vertices
-                for (int v = 0; v < m->impl->vertex_count; v++)
-                    m->impl->vertices[v].position.y = -m->impl->vertices[v].position.y;
+        RecordUndo(a);
 
-                // Negate Y for all tags
-                for (int t = 0; t < m->impl->tag_count; t++)
-                    m->impl->tags[t].position.y = -m->impl->tags[t].position.y;
-
-                // Reverse face windings
-                for (int face_index = 0; face_index < m->impl->face_count; face_index++) {
-                    FaceData& face = m->impl->faces[face_index];
-                    for (int vertex_index = 0; vertex_index < face.vertex_count / 2; vertex_index++) {
-                        int temp = face.vertices[vertex_index];
-                        face.vertices[vertex_index] = face.vertices[face.vertex_count - 1 - vertex_index];
-                        face.vertices[face.vertex_count - 1 - vertex_index] = temp;
-                    }
-                }
-
-                mesh_count++;
-
-            }
-
-            MarkModified(am);
-        }
-
-#if 0
         if (a->type == ASSET_TYPE_MESH) {
             MeshData* m = static_cast<MeshData*>(a);
+            MeshDataImpl* impl = m->impl;
 
-            MarkModified(m);
+            for (int vi = 0; vi < impl->vertex_count; vi++)
+                impl->vertices[vi].position = impl->vertices[vi].position * scale;
 
-            // Negate Y for all vertices
-            for (int v = 0; v < m->vertex_count; v++)
-                m->vertices[v].position.y = -m->vertices[v].position.y;
+            for (int ti = 0; ti < impl->tag_count; ti++)
+                impl->tags[ti].position = impl->tags[ti].position * scale;
 
-            // Negate Y for all tags
-            for (int t = 0; t < m->tag_count; t++)
-                m->tags[t].position.y = -m->tags[t].position.y;
-
-            // Reverse face windings
-            for (int f = 0; f < m->face_count; f++) {
-                FaceData& face = m->faces[f];
-                for (int j = 0; j < face.vertex_count / 2; j++) {
-                    int temp = face.vertices[j];
-                    face.vertices[j] = face.vertices[face.vertex_count - 1 - j];
-                    face.vertices[face.vertex_count - 1 - j] = temp;
-                }
-            }
-
-            UpdateEdges(m);
             MarkDirty(m);
-            mesh_count++;
-        }
-        else if (a->type == ASSET_TYPE_SKELETON) {
+            MarkModified(m);
+            asset_count++;
+
+        } else if (a->type == ASSET_TYPE_SKELETON) {
             SkeletonData* s = static_cast<SkeletonData*>(a);
             SkeletonDataImpl* impl = s->impl;
 
-            MarkModified(s);
-
-            // Negate Y and rotation for all bones
-            for (int b = 0; b < impl->bone_count; b++) {
-                impl->bones[b].transform.position.y = -impl->bones[b].transform.position.y;
-                impl->bones[b].transform.rotation = -impl->bones[b].transform.rotation;
+            for (int bi = 0; bi < impl->bone_count; bi++) {
+                impl->bones[bi].length *= scale;
+                impl->bones[bi].transform.position = impl->bones[bi].transform.position * scale;
             }
 
             UpdateTransforms(s);
-            skeleton_count++;
-        }
-        else if (a->type == ASSET_TYPE_ANIMATION) {
+            MarkModified(s);
+            asset_count++;
+
+        } else if (a->type == ASSET_TYPE_ANIMATION) {
             AnimationData* n = static_cast<AnimationData*>(a);
+            AnimationDataImpl* impl = n->impl;
 
-            MarkModified(n);
-
-            // Negate Y and rotation for all frames and bones
-            for (int f = 0; f < n->frame_count; f++) {
-                for (int b = 0; b < n->bone_count; b++) {
-                    n->frames[f].transforms[b].position.y = -n->frames[f].transforms[b].position.y;
-                    n->frames[f].transforms[b].rotation = -n->frames[f].transforms[b].rotation;
+            for (int fi = 0; fi < impl->frame_count; fi++) {
+                for (int bi = 0; bi < impl->bone_count; bi++) {
+                    Transform& t = impl->frames[fi].transforms[bi];
+                    t.position = t.position * scale;
                 }
             }
 
             UpdateTransforms(n);
-            animation_count++;
+            MarkModified(n);
+            asset_count++;
+
+        } else if (a->type == ASSET_TYPE_ANIMATED_MESH) {
+            AnimatedMeshData* am = static_cast<AnimatedMeshData*>(a);
+
+            // Scale each frame
+            for (int fi = 0; fi < am->impl->frame_count; fi++) {
+                MeshData* m = &am->impl->frames[fi];
+                MeshDataImpl* impl = m->impl;
+
+                for (int vi = 0; vi < impl->vertex_count; vi++)
+                    impl->vertices[vi].position = impl->vertices[vi].position * scale;
+
+                for (int ti = 0; ti < impl->tag_count; ti++)
+                    impl->tags[ti].position = impl->tags[ti].position * scale;
+
+                MarkDirty(m);
+            }
+
+            MarkModified(am);
+            asset_count++;
         }
-#endif
     }
 
-    AddNotification(NOTIFICATION_TYPE_INFO, "flipped %d meshes, %d skeletons, %d animations", mesh_count, skeleton_count, animation_count);
+    EndUndoGroup();
+
+    if (asset_count > 0)
+        AddNotification(NOTIFICATION_TYPE_INFO, "scaled %d asset(s) by %.2f", asset_count, scale);
 }
 
 static void BeginCommandInput() {
@@ -808,7 +797,7 @@ static void BeginCommandInput() {
         { NAME_S, NAME_SAVE, SaveAssetsCommand },
         { NAME_N, NAME_NEW, NewAssetCommand },
         { NAME_B, NAME_BUILD, BuildAssets },
-        { GetName("upmesh"), GetName("upmesh"), FlipYCommand },
+        { GetName("scale"), GetName("scale"), ScaleCommand },
         { nullptr, nullptr, nullptr }
     };
 

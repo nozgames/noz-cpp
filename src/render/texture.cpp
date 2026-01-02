@@ -103,6 +103,12 @@ Vec2Int GetSize(Texture* texture) {
     return static_cast<TextureImpl*>(texture)->size;
 }
 
+void UpdateTexture(Texture* texture, void* data) {
+    if (!texture || !data) return;
+    TextureImpl* impl = static_cast<TextureImpl*>(texture);
+    PlatformUpdateTexture(impl->platform_texture, data);
+}
+
 int GetWidth(Texture* texture)
 {
     return static_cast<TextureImpl*>(texture)->size.x;

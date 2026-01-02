@@ -20,26 +20,6 @@ constexpr ShaderFlags SHADER_FLAGS_POSTPROCESS = 1 << 3;
 constexpr ShaderFlags SHADER_FLAGS_UI_COMPOSITE = 1 << 4;
 constexpr ShaderFlags SHADER_FLAGS_PREMULTIPLIED_ALPHA = 1 << 5;
 
-enum VertexRegister
-{
-    VERTEX_REGISTER_CAMERA = 0,
-    VERTEX_REGISTER_OBJECT = 1,
-    //VERTEX_REGISTER_BONE = 2,
-    VERTEX_REGISTER_COUNT
-};
-
-enum FragmentRegsiter
-{
-    FRAGMENT_REGISTER_COLOR = 0,
-    FRAGMENT_REGISTER_COUNT
-};
-
-enum SampleRegister
-{
-    SAMPLER_REGISTER_TEX0 = 0,
-    SAMPLER_REGISTER_COUNT
-};
-
 // @render
 void BeginUIPass();
 

@@ -88,6 +88,7 @@ extern PlatformTexture* PlatformCreateTexture(
     int channels,
     const SamplerOptions& sampler_options,
     const char* name);
+extern void PlatformUpdateTexture(PlatformTexture* texture, void* data);
 extern void PlatformFree(PlatformTexture* texture);
 extern void PlatformEnablePostProcess(bool enabled);
 extern void PlatformBeginPostProcPass();

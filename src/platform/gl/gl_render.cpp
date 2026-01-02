@@ -432,16 +432,9 @@ void PlatformFree(PlatformTexture* texture) {
 void PlatformBindTexture(PlatformTexture* texture, int slot) {
     GLuint tex_id = texture ? texture->gl_texture : 0;
 
-    // Skip if texture already bound to this slot
-    if (g_gl.bound_textures[slot] == tex_id)
-        return;
-
-    // Only switch texture unit if needed
-    if (g_gl.current_texture_unit != slot) {
-        glActiveTexture(GL_TEXTURE0 + slot);
-        g_gl.current_texture_unit = slot;
-    }
-
+    // Always switch texture unit and bind (disable caching for debugging)
+    glActiveTexture(GL_TEXTURE0 + slot);
+    g_gl.current_texture_unit = slot;
     glBindTexture(GL_TEXTURE_2D, tex_id);
     g_gl.bound_textures[slot] = tex_id;
 }
@@ -465,6 +458,32 @@ void UpdateTexture(PlatformTexture* texture, void* data, const noz::Rect& rect) 
         static_cast<GLint>(rect.y),
         static_cast<GLsizei>(rect.width),
         static_cast<GLsizei>(rect.height),
+        format,
+        GL_UNSIGNED_BYTE,
+        data);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void PlatformUpdateTexture(PlatformTexture* texture, void* data) {
+    if (!texture || !data) return;
+
+    glBindTexture(GL_TEXTURE_2D, texture->gl_texture);
+
+    GLenum format;
+    switch (texture->channels) {
+        case 1: format = GL_RED; break;
+        case 3: format = GL_RGB; break;
+        case 4:
+        default: format = GL_RGBA; break;
+    }
+    glTexSubImage2D(
+        GL_TEXTURE_2D,
+        0,
+        0,
+        0,
+        static_cast<GLsizei>(texture->size.x),
+        static_cast<GLsizei>(texture->size.y),
         format,
         GL_UNSIGNED_BYTE,
         data);
@@ -706,6 +725,16 @@ PlatformShader* PlatformCreateShader(
 
         for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++)
             shader->uniform_block_indices[i] = glGetUniformBlockIndex(shader->program, uniform_names[i]);
+
+        // Set up sampler bindings explicitly (don't rely on layout(binding=X) alone)
+        glUseProgram(shader->program);
+        const char* sampler_names[] = { "mainTexture", "lightmapTexture" };
+        for (int i = 0; i < 2; i++) {
+            GLint loc = glGetUniformLocation(shader->program, sampler_names[i]);
+            if (loc != -1)
+                glUniform1i(loc, i);
+        }
+        glUseProgram(0);
     }
 
     return shader;
@@ -763,6 +792,12 @@ void PlatformBindShader(PlatformShader* shader) {
     for (int i = 0; i < UNIFORM_BUFFER_COUNT; i++)
         if (shader->uniform_block_indices[i] != GL_INVALID_INDEX)
             glUniformBlockBinding(shader->program, shader->uniform_block_indices[i], i);
+
+    // Set sampler uniforms to their texture units
+    GLint loc = glGetUniformLocation(shader->program, "mainTexture");
+    if (loc != -1) glUniform1i(loc, 0);
+    loc = glGetUniformLocation(shader->program, "lightmapTexture");
+    if (loc != -1) glUniform1i(loc, 1);
 }
 
 void PlatformFree(PlatformShader* shader) {

@@ -21,7 +21,7 @@ struct MaterialImpl : Material
 
 Material* CreateMaterial(Allocator* allocator, Shader* shader)
 {
-    constexpr u32 texture_count = 1;
+    constexpr u32 texture_count = 2;  // Support main texture + lightmap
     u32 textures_size = texture_count * (u32)sizeof(Texture*);
     u32 material_size = (u32)sizeof(MaterialImpl) + textures_size;
 
@@ -34,6 +34,14 @@ Material* CreateMaterial(Allocator* allocator, Shader* shader)
     impl->texture_count = texture_count;
     impl->textures = reinterpret_cast<Texture**>(impl + 1);
     impl->name = shader->name;
+    impl->has_vertex_data = false;
+    impl->has_fragment_data = false;
+
+    // Initialize all texture slots to nullptr
+    for (size_t i = 0; i < texture_count; i++) {
+        impl->textures[i] = nullptr;
+    }
+
     return impl;
 }
 
@@ -61,10 +69,9 @@ void BindMaterialInternal(Material* material)
     
     BindShaderInternal(impl->shader);
     
-    for (size_t i = 0, c = impl->texture_count; i < c; ++i) {
-        int slot = static_cast<int>(SAMPLER_REGISTER_TEX0) + static_cast<int>(i);
-        BindTextureInternal(impl->textures[i], slot);
-    }
+    for (size_t i = 0, c = impl->texture_count; i < c; ++i)
+        if (impl->textures[i])
+            BindTextureInternal(impl->textures[i], static_cast<int>(i));
 
     if (impl->has_vertex_data)
         PlatformBindVertexUserData(impl->vertex_data, MAX_UNIFORM_BUFFER_SIZE);

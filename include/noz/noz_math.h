@@ -261,6 +261,7 @@ inline Vec2 Min(const Vec2& m1, const Vec2& m2) { return { Min(m1.x, m2.x), Min(
 inline Vec3 Min(const Vec3& m1, const Vec3& m2) { return { Min(m1.x, m2.x), Min(m1.y, m2.y), Min(m1.z, m2.z) }; }
 
 // @max
+inline u8 Max(u8 v1, u8 v2) { return v1 > v2 ? v1 : v2; }
 inline i32 Max(i32 v1, i32 v2) { return v1 > v2 ? v1 : v2; }
 inline u32 Max(u32 v1, u32 v2) { return v1 > v2 ? v1 : v2; }
 inline u64 Max(u64 v1, u64 v2) { return v1 > v2 ? v1 : v2; }

@@ -369,8 +369,9 @@ void ExecuteRenderCommands() {
                 BindMaterialInternal(command->data.draw_mesh.material);
             if (command->data.draw_mesh.shader)
                 BindShaderInternal(command->data.draw_mesh.shader);
-            if (command->data.draw_mesh.texture)
-                BindTextureInternal(command->data.draw_mesh.texture, SAMPLER_REGISTER_TEX0);
+            // Only bind loose texture if no material (material handles its own textures)
+            if (command->data.draw_mesh.texture && !command->data.draw_mesh.material)
+                BindTextureInternal(command->data.draw_mesh.texture, 0);
 
             RenderMesh(command->data.draw_mesh.mesh);
             break;

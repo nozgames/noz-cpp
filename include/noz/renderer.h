@@ -51,6 +51,7 @@ enum TextureFormat {
 
 Texture* CreateTexture(Allocator* allocator, void* data, size_t width, size_t height, TextureFormat format, const Name* name);
 Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const Name* name);
+void UpdateTexture(Texture* texture, void* data);  // Update entire texture with new data
 int GetBytesPerPixel(TextureFormat format);
 Vec2Int GetSize(Texture* texture);
 
