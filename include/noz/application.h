@@ -98,7 +98,7 @@ const ApplicationTraits* GetApplicationTraits();
 // @time
 extern f32 GetFrameTime();
 extern f32 GetFixedTime();
-extern void GetFixedTimeRate(int rate);
+extern void SetFixedTimeRate(int rate);
 extern f64 GetTime();
 extern f64 GetRealTime();
 extern float GetCurrentFPS();
