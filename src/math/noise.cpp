@@ -81,3 +81,19 @@ float PerlinNoise(const Vec2& Position) {
     // Return value in range [0, 1]
     return (result + 1.0f) * 0.5f;
 }
+
+float FractalNoise(const Vec2& position, int octaves, float persistence, float lacunarity) {
+    float total = 0.0f;
+    float frequency = 1.0f;
+    float amplitude = 1.0f;
+    float max_value = 0.0f;
+
+    for (int i = 0; i < octaves; i++) {
+        total += PerlinNoise(position * frequency) * amplitude;
+        max_value += amplitude;
+        amplitude *= persistence;
+        frequency *= lacunarity;
+    }
+
+    return total / max_value;  // Normalize to [0, 1]
+}

@@ -370,6 +370,7 @@ inline Vec2 ToVec2(const Vec2Int& v) { return { static_cast<f32>(v.x), static_ca
 inline Vec2 ToVec2(const Vec3& v) { return { static_cast<f32>(v.x), static_cast<f32>(v.y) }; }
 inline Vec2Int ToVec2Int(const Vec2& v) { return { static_cast<i32>(v.x), static_cast<i32>(v.y) }; }
 inline Vec2Int Mix(const Vec2Int& v1, const Vec2Int& v2, f32 t) { return v1 + ToVec2Int(ToVec2(v2 - v1) * t); }
+inline Vec2Int Abs(const Vec2Int& v) { return Vec2Int{ Abs(v.x), Abs(v.y) }; }
 
 // @vec3
 inline Vec3 operator+(const Vec3& v1, const Vec3& v2) { return { v1.x + v2.x, v1.y + v2.y, v1.z + v2.z }; }
@@ -472,6 +473,7 @@ inline float ease_out_quadratic(float t) {
 }
 
 extern float PerlinNoise(const Vec2& Position);
+extern float FractalNoise(const Vec2& position, int octaves, float persistence, float lacunarity);
 
 
 // @smooth
