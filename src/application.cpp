@@ -15,7 +15,6 @@ extern void InitEvent(ApplicationTraits* traits);
 extern void InitName(ApplicationTraits* traits);
 extern void InitVfx();
 extern void InitTime();
-extern void InitJobs();
 extern void InitRenderer(const RendererTraits* traits);
 extern void InitAllocator(ApplicationTraits* traits);
 extern void InitAudio();
@@ -25,7 +24,6 @@ extern void ShutdownRenderer();
 extern void ShutdownEvent();
 extern void ShutdownUI();
 extern void ShutdownName();
-extern void ShutdownJobs();
 extern void ShutdownVfx();
 extern void ShutdownTime();
 extern void ShutdownAllocator();
@@ -64,6 +62,7 @@ static ApplicationTraits g_default_traits = {
     .max_prefs = 256,
     .max_event_stack = 32,
     .max_tasks = 1024,
+    .max_frame_tasks = 64,
     .max_task_worker_count = 4,
     .http = {
         .max_requests = 128,
@@ -211,7 +210,6 @@ void InitApplication(ApplicationTraits* traits) {
     InitEvent(traits);
     InitTime();
     noz::InitTasks(g_app.traits);
-    InitJobs();
     InitTween();
     InitAudio();
     noz::InitHttp(g_app.traits);
@@ -312,7 +310,6 @@ void ShutdownApplication() {
 
     noz::ShutdownHttp();
     ShutdownTween();
-    ShutdownJobs();
     noz::ShutdownTasks();
     ShutdownTime();
     ShutdownAudio();

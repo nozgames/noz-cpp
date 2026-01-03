@@ -26,6 +26,8 @@ struct TaskImpl {
     u64 start_frame;
     int generation;
     bool is_virtual;
+    bool is_frame_task;
+    u64 frame_id;
 
 #if defined(TASK_DEBUG)
     String128 name;
@@ -46,11 +48,13 @@ struct TaskWorker {
 struct TaskSystem {
     TaskImpl* tasks;
     i32 max_tasks;
+    i32 max_frame_tasks;
     TaskWorker* workers;
     i32 worker_count;
     std::mutex mutex;
     std::atomic<bool> running{false};
     std::atomic<bool> tasks_completed{false};
+    std::atomic<i32> pending_frame_tasks{0};
     u64 current_frame;
     u32 next_generation;
 };
@@ -61,6 +65,8 @@ void ShutdownTasks();
 
 static TaskSystem g_tasks = {};
 } // namespace noz
+
+static bool AreAllDependenciesReady(noz::TaskImpl& impl);
 
 using namespace noz;
 
@@ -95,7 +101,8 @@ static Task CreateTaskInternal(
 
     std::lock_guard lock(g_tasks.mutex);
 
-    for (i32 task_index=0; task_index < g_tasks.max_tasks; task_index++) {
+    // Skip frame task reserved slots (start from max_frame_tasks)
+    for (i32 task_index = g_tasks.max_frame_tasks; task_index < g_tasks.max_tasks; task_index++) {
         TaskImpl& impl = g_tasks.tasks[task_index];
         TaskState expected = TASK_STATE_FREE;
         if (!impl.state.compare_exchange_strong(expected, TASK_STATE_PENDING))
@@ -109,6 +116,8 @@ static Task CreateTaskInternal(
         impl.result = nullptr;
         impl.start_frame = g_tasks.current_frame;
         impl.is_virtual = false;
+        impl.is_frame_task = false;
+        impl.frame_id = 0;
         impl.dependent = -1;
 
 #if defined(TASK_DEBUG)
@@ -174,7 +183,8 @@ static Task CreateVirtualTask(TaskDestroyFunc destroy_func, const char* name) {
 
     std::lock_guard lock(g_tasks.mutex);
 
-    for (i32 task_index = 0; task_index < g_tasks.max_tasks; task_index++) {
+    // Skip frame task reserved slots (start from max_frame_tasks)
+    for (i32 task_index = g_tasks.max_frame_tasks; task_index < g_tasks.max_tasks; task_index++) {
         TaskImpl& task = g_tasks.tasks[task_index];
         TaskState expected = TASK_STATE_FREE;
         if (!task.state.compare_exchange_strong(expected, TASK_STATE_RUNNING))
@@ -190,6 +200,8 @@ static Task CreateVirtualTask(TaskDestroyFunc destroy_func, const char* name) {
         task.result = nullptr;
         task.start_frame = g_tasks.current_frame;
         task.is_virtual = true;
+        task.is_frame_task = false;
+        task.frame_id = 0;
 
 #if defined(TASK_DEBUG)
         Set(task.name, name);
@@ -233,6 +245,163 @@ Task noz::CreateTask(const TaskConfig& config) {
         SetParent(result, config.parent);
 
     return result;
+}
+
+Task noz::CreateFrameTask(const FrameTaskConfig& config) {
+#if defined(TASK_DEBUG)
+    assert(config.name && "Frame tasks require a name in debug mode");
+#endif
+
+    std::lock_guard lock(g_tasks.mutex);
+
+    // Allocate from reserved frame task slots only (indices 0 to max_frame_tasks-1)
+    for (i32 task_index = 0; task_index < g_tasks.max_frame_tasks; task_index++) {
+        TaskImpl& impl = g_tasks.tasks[task_index];
+        TaskState expected = TASK_STATE_FREE;
+        if (!impl.state.compare_exchange_strong(expected, TASK_STATE_PENDING))
+            continue;
+
+        impl.generation = ++g_tasks.next_generation;
+        impl.run_func = config.run;
+        impl.complete_func = nullptr;  // Frame tasks have no completion callback
+        impl.destroy_func = config.destroy;
+        impl.parent = nullptr;
+        impl.result = nullptr;
+        impl.start_frame = g_tasks.current_frame;
+        impl.is_virtual = false;
+        impl.is_frame_task = true;
+        impl.frame_id = g_tasks.current_frame;
+        impl.dependent = -1;
+        impl.dependency_head = -1;
+        impl.dependency_next = -1;
+        impl.dependency_count = 0;
+
+#if defined(TASK_DEBUG)
+        impl.debug_queue_time = GetRealTime();
+        Set(impl.name, config.name);
+#endif
+
+        // Handle dependencies
+        if (config.dependency_count > 0 && config.dependencies) {
+            for (i32 dep_index = 0; dep_index < config.dependency_count; dep_index++) {
+                if (config.dependencies[dep_index].generation == 0) continue;
+                int dep_id = config.dependencies[dep_index].id;
+                TaskImpl& dep = g_tasks.tasks[dep_id];
+                assert(dep.dependent == -1 && "Task is already a dependency of another task");
+                dep.dependent = task_index;
+                dep.dependency_next = impl.dependency_head;
+                impl.dependency_head = dep_id;
+                impl.dependency_count++;
+            }
+        }
+
+        g_tasks.pending_frame_tasks.fetch_add(1);
+
+        return {task_index, impl.generation};
+    }
+
+    // No free frame task slots - this is a programming error
+    LogError("[TASK] No free frame task slots! Increase max_frame_tasks (current: %d)", g_tasks.max_frame_tasks);
+    return TASK_NULL;
+}
+
+bool noz::HasPendingFrameTasks() {
+    return g_tasks.pending_frame_tasks.load() > 0;
+}
+
+void noz::WaitForFrameTasks() {
+    if (g_tasks.pending_frame_tasks.load() == 0)
+        return;
+
+#if defined(TASK_DEBUG)
+    f64 wait_start = GetRealTime();
+#endif
+
+    u64 target_frame = g_tasks.current_frame;
+
+    while (true) {
+        // Check if all frame tasks for this frame are done
+        bool all_done = true;
+        for (i32 i = 0; i < g_tasks.max_frame_tasks; i++) {
+            TaskImpl& impl = g_tasks.tasks[i];
+            if (!impl.is_frame_task || impl.frame_id != target_frame)
+                continue;
+
+            TaskState state = impl.state.load();
+            if (state == TASK_STATE_PENDING || state == TASK_STATE_RUNNING) {
+                all_done = false;
+                break;
+            }
+        }
+
+        if (all_done)
+            break;
+
+        // Try to help execute pending frame tasks on main thread
+        TaskImpl* pending = nullptr;
+        {
+            std::lock_guard lock(g_tasks.mutex);
+            for (i32 i = 0; i < g_tasks.max_frame_tasks; i++) {
+                TaskImpl& impl = g_tasks.tasks[i];
+                if (impl.is_frame_task && impl.frame_id == target_frame &&
+                    impl.state.load() == TASK_STATE_PENDING &&
+                    AreAllDependenciesReady(impl)) {
+                    TaskState expected = TASK_STATE_PENDING;
+                    if (impl.state.compare_exchange_strong(expected, TASK_STATE_RUNNING)) {
+                        pending = &impl;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (pending) {
+            // Execute on main thread
+#if defined(TASK_DEBUG)
+            pending->debug_start_time = GetRealTime();
+#endif
+            if (pending->run_func) {
+                try {
+                    pending->result = pending->run_func(GetHandle(pending));
+                } catch (std::exception& e) {
+                    LogInfo("[TASK] exception: %s", e.what());
+                } catch (...) {
+                    LogInfo("[TASK] exception: ???");
+                }
+            }
+#if defined(TASK_DEBUG)
+            pending->debug_end_time = GetRealTime();
+#endif
+            pending->state.store(TASK_STATE_COMPLETE);
+            g_tasks.pending_frame_tasks.fetch_sub(1);
+            g_tasks.tasks_completed.store(true);
+        } else {
+            ThreadYield();
+        }
+    }
+
+#if defined(TASK_DEBUG)
+    f64 wait_time = GetRealTime() - wait_start;
+    if (wait_time > 0.010) {  // Warn if > 10ms
+        LogWarning("[TASK] WaitForFrameTasks took %dms", GetMilliseconds(wait_time));
+    }
+#endif
+}
+
+bool noz::HasPendingTasks() {
+    for (i32 i = 0; i < g_tasks.max_tasks; i++) {
+        TaskState state = g_tasks.tasks[i].state.load();
+        if (state == TASK_STATE_PENDING || state == TASK_STATE_RUNNING)
+            return true;
+    }
+    return false;
+}
+
+void noz::WaitForAllTasks() {
+    while (HasPendingTasks()) {
+        UpdateTasks();
+        ThreadYield();
+    }
 }
 
 void noz::Complete(Task task, void* result) {
@@ -410,10 +579,22 @@ static bool AreAllDependenciesReady(TaskImpl& impl) {
 }
 
 static TaskImpl* FindOldestPendingTask() {
+    // Priority 1: Frame tasks from current frame (always scheduled first)
+    for (i32 i = 0; i < g_tasks.max_frame_tasks; i++) {
+        TaskImpl& impl = g_tasks.tasks[i];
+        if (impl.state.load() == TASK_STATE_PENDING &&
+            impl.is_frame_task &&
+            impl.frame_id == g_tasks.current_frame) {
+            if (AreAllDependenciesReady(impl))
+                return &impl;
+        }
+    }
+
+    // Priority 2: Regular tasks (oldest first, skip frame task reserved slots)
     TaskImpl* oldest = nullptr;
     u64 oldest_frame = UINT64_MAX;
 
-    for (i32 i = 0; i < g_tasks.max_tasks; i++) {
+    for (i32 i = g_tasks.max_frame_tasks; i < g_tasks.max_tasks; i++) {
         TaskImpl& impl = g_tasks.tasks[i];
         if (impl.state.load() == TASK_STATE_PENDING) {
             if (!AreAllDependenciesReady(impl)) continue;
@@ -530,6 +711,16 @@ static void DestroyTask(TaskImpl* impl) {
 }
 
 void noz::UpdateTasks() {
+    // Clean up previous frame's completed frame tasks before incrementing frame
+    for (i32 i = 0; i < g_tasks.max_frame_tasks; i++) {
+        TaskImpl& impl = g_tasks.tasks[i];
+        if (impl.is_frame_task &&
+            impl.frame_id < g_tasks.current_frame &&
+            impl.state.load() == TASK_STATE_COMPLETE) {
+            DestroyTask(&impl);
+        }
+    }
+
     g_tasks.current_frame++;
 
 #if defined(TASK_DEBUG_VERBOSE)
@@ -727,8 +918,13 @@ static void WorkerProc(TaskWorker* worker, int worker_index) {
             }
 
             expected = TASK_STATE_RUNNING;
-            if (impl->state.compare_exchange_strong(expected, TASK_STATE_COMPLETE))
+            if (impl->state.compare_exchange_strong(expected, TASK_STATE_COMPLETE)) {
                 g_tasks.tasks_completed.store(true);
+                // Decrement frame task counter if this was a frame task
+                if (impl->is_frame_task) {
+                    g_tasks.pending_frame_tasks.fetch_sub(1);
+                }
+            }
 
 #if defined(TASK_DEBUG_VERBOSE)
             LogInfo("[TASK] WORKER_DONE: %s: %3d : %s", name, GetTaskIndex(impl), impl->name);
@@ -745,15 +941,22 @@ static void WorkerProc(TaskWorker* worker, int worker_index) {
 
 void noz::InitTasks(const ApplicationTraits& traits) {
     i32 max_tasks = traits.max_tasks;
+    i32 max_frame_tasks = traits.max_frame_tasks > 0 ? traits.max_frame_tasks : 64;
     i32 worker_count = traits.max_task_worker_count;
 
+    // Ensure max_frame_tasks doesn't exceed max_tasks
+    if (max_frame_tasks > max_tasks)
+        max_frame_tasks = max_tasks / 4;
+
     g_tasks.max_tasks = max_tasks;
+    g_tasks.max_frame_tasks = max_frame_tasks;
     g_tasks.tasks = new TaskImpl[max_tasks];
     g_tasks.worker_count = worker_count;
     g_tasks.workers = new TaskWorker[worker_count];
     g_tasks.running = true;
     g_tasks.current_frame = 0;
     g_tasks.next_generation = 0;
+    g_tasks.pending_frame_tasks = 0;
 
     for (i32 i = 0; i < max_tasks; i++) {
         TaskImpl& impl = g_tasks.tasks[i];
@@ -764,6 +967,8 @@ void noz::InitTasks(const ApplicationTraits& traits) {
         impl.dependency_head = -1;
         impl.dependency_next = -1;
         impl.dependent = -1;
+        impl.is_frame_task = false;
+        impl.frame_id = 0;
     }
 
     for (i32 i = 0; i < worker_count; i++) {

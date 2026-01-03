@@ -451,7 +451,7 @@ AssetData* NewVfxData(const std::filesystem::path& path) {
     Free(stream);
 
     QueueImport(full_path);
-    WaitForImportJobs();
+    WaitForImportTasks();
     return LoadVfxData(full_path);
 }
 

@@ -496,7 +496,7 @@ AssetData* Duplicate(AssetData* a) {
     d->selected = false;
     SortAssets();
     QueueImport(new_path);
-    WaitForImportJobs();
+    WaitForImportTasks();
     MarkModified(d);
     MarkMetaModified(d);
     return d;

@@ -593,7 +593,7 @@ AssetData* NewAnimationData(const std::filesystem::path& path) {
     Free(stream);
 
     QueueImport(full_path);
-    WaitForImportJobs();
+    WaitForImportTasks();
     return LoadAnimationData(full_path);
 }
 

@@ -3,10 +3,11 @@
 //
 
 #include <utils/file_watcher.h>
+#include <noz/task.h>
 #include "asset_manifest.h"
 #include "../asset_registry.h"
 
-static void ExecuteJob(void* data);
+static void ExecuteImportJob(struct ImportJob* job);
 extern AssetData* CreateAssetDataForImport(const std::filesystem::path& path);
 
 namespace fs = std::filesystem;
@@ -24,9 +25,9 @@ struct Importer {
     std::filesystem::path manifest_cpp_path;
     std::filesystem::path manifest_lua_path;
     std::mutex mutex;
-    std::vector<JobHandle> jobs;
+    std::vector<noz::Task> tasks;
     std::vector<ImportEvent> import_events;
-    JobHandle post_import_job;
+    noz::Task post_import_task;
 };
 
 static Importer g_importer = {};
@@ -72,12 +73,20 @@ static void QueueImport(AssetData* a) {
     if (!meta_changed && !source_changed && !config_changed)
         return;
 
-    std::lock_guard lock(g_importer.mutex);
-    g_importer.jobs.push_back(CreateJob(ExecuteJob, new ImportJob{
+    ImportJob* job = new ImportJob{
         .asset = a,
         .source_path = fs::path(path).make_preferred(),
         .meta_path = source_meta_path.make_preferred()
-    }, g_importer.post_import_job));
+    };
+
+    std::lock_guard lock(g_importer.mutex);
+    g_importer.tasks.push_back(noz::CreateTask({
+        .run = [job](noz::Task) -> void* {
+            ExecuteImportJob(job);
+            return noz::TASK_NO_RESULT;
+        },
+        .name = "import_asset"
+    }));
 }
 
 void QueueImport(const fs::path& path) {
@@ -117,8 +126,7 @@ static void HandleFileChangeEvent(const FileChangeEvent& event) {
     }
 }
 
-static void ExecuteJob(void* data) {
-    ImportJob* job = (ImportJob*)data;
+static void ExecuteImportJob(ImportJob* job) {
     std::unique_ptr<ImportJob> job_guard(job);
 
     if (!fs::exists(job->source_path))
@@ -181,47 +189,47 @@ static void CleanupOrphanedAssets() {
 #endif
 }
 
-static void PostImportJob(void *data) {
-    (void)data;
-
-    GenerateAssetManifest(g_editor.output_path, g_config);
-}
-
-static bool UpdateJobs() {
+static bool UpdateTasks() {
     std::lock_guard lock(g_importer.mutex);
-    int old_job_count = (int)g_importer.jobs.size();
-    if (!IsDone(g_importer.post_import_job))
+    int old_task_count = (int)g_importer.tasks.size();
+    if (!noz::IsComplete(g_importer.post_import_task))
         return true;
 
-    if (old_job_count == 0)
+    if (old_task_count == 0)
         return false;
 
-    for (int i=0; i<g_importer.jobs.size(); ) {
-        if (IsDone(g_importer.jobs[i]))
-            g_importer.jobs.erase(g_importer.jobs.begin() + i);
+    for (int i=0; i<(int)g_importer.tasks.size(); ) {
+        if (noz::IsComplete(g_importer.tasks[i]))
+            g_importer.tasks.erase(g_importer.tasks.begin() + i);
         else
             i++;
     }
 
-    int new_job_count = (int)g_importer.jobs.size();
-    if (new_job_count > 0)
+    int new_task_count = (int)g_importer.tasks.size();
+    if (new_task_count > 0)
         return true;
 
-    assert(IsDone(g_importer.post_import_job));
-    g_importer.post_import_job = CreateJob(PostImportJob);
+    g_importer.post_import_task = noz::CreateTask({
+        .run = [](noz::Task) -> void* {
+            GenerateAssetManifest(g_editor.output_path, g_config);
+            return noz::TASK_NO_RESULT;
+        },
+        .name = "post_import"
+    });
     return true;
 }
 
-void WaitForImportJobs() {
-    while (g_importer.running && UpdateJobs())
-        ThreadYield();
+void WaitForImportTasks() {
+    while (g_importer.running && UpdateTasks()) {
+        noz::WaitForAllTasks();
+    }
 }
 
 static void InitialImport() {
     for (u32 i=0, c=GetAssetCount(); i<c; i++)
         QueueImport(GetAssetData(i));
 
-    WaitForImportJobs();
+    WaitForImportTasks();
     CleanupOrphanedAssets();
 }
 
@@ -247,7 +255,7 @@ static void RunImporter() {
 }
 
 void UpdateImporter() {
-    if (UpdateJobs())
+    if (UpdateTasks())
         return;
 
     std::vector<ImportEvent> events;

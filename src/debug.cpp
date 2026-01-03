@@ -30,6 +30,21 @@ void DebugLine(const Vec2& start, const Vec2& end, const Color& color, float wid
     g_debug.lines[g_debug.line_count++] = { start, end, color, width };
 }
 
+void DebugBounds(const Bounds2& bounds, const Mat3& transform, const Color& color, float width) {
+    Vec2 corners[4] = {
+        { bounds.min.x, bounds.min.y },
+        { bounds.max.x, bounds.min.y },
+        { bounds.max.x, bounds.max.y },
+        { bounds.min.x, bounds.max.y }
+    };
+
+    for (int i = 0; i < 4; i++) {
+        Vec2 start = TransformPoint(transform, corners[i]);
+        Vec2 end = TransformPoint(transform, corners[(i + 1) % 4]);
+        DebugLine(start, end, color, width);
+    }
+}
+
 void DrawDebug() {
     BindDepth(GetApplicationTraits()->renderer.max_depth - 0.01f);
     BindMaterial(g_debug.material);

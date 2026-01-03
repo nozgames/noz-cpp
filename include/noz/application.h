@@ -43,6 +43,7 @@ struct ApplicationTraits {
     u32 max_prefs;
     u32 max_event_stack;
     u32 max_tasks;
+    u32 max_frame_tasks;
     u32 max_task_worker_count;
     struct {
         u32 max_requests;
@@ -115,26 +116,9 @@ bool IsMainThread();
 // @helper
 extern void ThrowError(const char* format, ...);
 
-// @job
-struct JobHandle
-{
-    u32 id;
-    u32 version;
-
-    bool operator == (const JobHandle& o) const { return id == o.id && version == o.version; }
-    bool operator != (const JobHandle& o) const { return !(*this == o); }
-};
-
 // @save
 extern bool WriteSaveFile(const char* path, Stream* stream);
 extern Stream* ReadSaveFile(Allocator* allocator, const char* path);
-
-constexpr JobHandle INVALID_JOB_HANDLE = { 0, 0 };
-
-typedef void (*JobRunFunc)(void* user_data);
-
-extern JobHandle CreateJob(JobRunFunc func, void* user_data = nullptr, JobHandle depends_on = INVALID_JOB_HANDLE);
-extern bool IsDone(JobHandle handle);
 
 // @cmdline
 extern void InitCommandLine(int argc, char** argv);

@@ -49,7 +49,6 @@ set(SOURCE_FILES
     src/log.cpp
     src/bin.cpp
     src/tween.cpp
-    src/job.cpp
     src/task.cpp
     src/memory/allocator.cpp
     src/memory/pool_allocator.cpp

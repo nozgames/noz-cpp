@@ -50,7 +50,23 @@ namespace noz {
         const char* name = nullptr;
     };
 
+    // Frame tasks are for per-frame parallel work that completes within a single frame.
+    // Results are valid until the end of the frame (cleaned up at start of next frame).
+    struct FrameTaskConfig {
+        TaskRunFunc run = nullptr;
+        TaskDestroyFunc destroy = nullptr;
+        void* user_data = nullptr;
+        const Task* dependencies = nullptr;
+        int dependency_count = 0;
+        const char* name = nullptr;
+    };
+
     extern Task CreateTask(const TaskConfig& config = {});
+    extern Task CreateFrameTask(const FrameTaskConfig& config = {});
+    extern void WaitForFrameTasks();
+    extern bool HasPendingFrameTasks();
+    extern void WaitForAllTasks();       // Blocks until all tasks (regular and frame) are complete
+    extern bool HasPendingTasks();       // Returns true if any tasks are pending or running
     extern void Complete(Task task, void* result=TASK_NO_RESULT);
     extern void* GetResult(Task task);
     extern void* ReleaseResult(Task task);  // Takes ownership, caller responsible for cleanup
