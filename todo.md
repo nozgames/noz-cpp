@@ -1,4 +1,5 @@
 # incoming
+- [ ] corrupt null tag written to mesh file causing file to be unreadable
 - [ ] replace randomint with min-max exclusive 
 - [ ] names broken becuase world canvas broken
 - [ ] color override push in render buffer (PushColorOverride / PopColorOverride)

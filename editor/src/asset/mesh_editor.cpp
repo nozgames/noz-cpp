@@ -1587,6 +1587,7 @@ static void SubDivide() {
     MarkModified(m);
 }
 
+#if 0
 static void ToggleAnchor() {
     BeginSelectTool({.commit= [](const Vec2& position ) {
         MeshData* m = GetMeshData();
@@ -1603,6 +1604,7 @@ static void ToggleAnchor() {
         MarkModified(m);
     }});
 }
+#endif
 
 static void BeginKnifeCut() {
     MeshData* m = GetMeshData();
@@ -1840,7 +1842,7 @@ void InitMeshEditor() {
         { KEY_S, false, false, true, SubDivide },
         { KEY_W, false, false, false, BeginWeightTool },
         { KEY_A, false, false, false, SelectAll },
-        { KEY_A, false, false, true, ToggleAnchor },
+        //{ KEY_A, false, false, true, ToggleAnchor },
         { KEY_X, false, false, false, DissolveSelected },
         { KEY_V, false, false, false, InsertVertex },
         { KEY_1, false, false, false, SetVertexMode },

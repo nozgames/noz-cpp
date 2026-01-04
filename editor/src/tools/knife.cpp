@@ -24,7 +24,8 @@ struct KnifeTool {
     MeshData* mesh;
     Vec2 vertices[MAX_VERTICES];
     int vertex_count;
-    int exclusive_face;  // Face we're locked to (-1 if not yet determined)
+    int cut_faces[32];  // Faces that are part of the cut path
+    int cut_face_count;
     bool restrict_to_selected;  // Only allow cutting selected faces
 };
 
@@ -97,12 +98,6 @@ static int FindVertexInFace(const FaceData& f, int vertex_index) {
     return -1;
 }
 
-static bool IsVertexInFace(MeshData* m, int vertex_index, int face_index) {
-    if (face_index < 0 || face_index >= m->impl->face_count)
-        return false;
-    return FindVertexInFace(m->impl->faces[face_index], vertex_index) != -1;
-}
-
 static bool IsEdgeInFace(MeshData* m, int edge_index, int face_index) {
     if (face_index < 0 || face_index >= m->impl->face_count)
         return false;
@@ -119,51 +114,6 @@ static bool IsEdgeInFace(MeshData* m, int edge_index, int face_index) {
             return true;
     }
     return false;
-}
-
-// Get a face with the edge, preferring selected faces when restrict_to_selected is true
-static int GetPreferredFaceWithEdge(MeshData* m, int edge_index) {
-    if (edge_index < 0 || edge_index >= m->impl->edge_count)
-        return -1;
-
-    EdgeData& e = m->impl->edges[edge_index];
-    int first_face = -1;
-
-    for (int fi = 0; fi < m->impl->face_count; fi++) {
-        FaceData& f = m->impl->faces[fi];
-        for (int i = 0; i < f.vertex_count; i++) {
-            int v0 = f.vertices[i];
-            int v1 = f.vertices[(i + 1) % f.vertex_count];
-            if ((v0 == e.v0 && v1 == e.v1) || (v0 == e.v1 && v1 == e.v0)) {
-                if (first_face < 0)
-                    first_face = fi;
-                // If restricting to selected, prefer selected faces
-                if (g_knife_tool.restrict_to_selected && f.selected)
-                    return fi;
-                break;
-            }
-        }
-    }
-
-    return g_knife_tool.restrict_to_selected ? -1 : first_face;
-}
-
-// Get a face with the vertex, preferring selected faces when restrict_to_selected is true
-static int GetPreferredFaceWithVertex(MeshData* m, int vertex_index) {
-    int first_face = -1;
-
-    for (int fi = 0; fi < m->impl->face_count; fi++) {
-        FaceData& f = m->impl->faces[fi];
-        if (FindVertexInFace(f, vertex_index) != -1) {
-            if (first_face < 0)
-                first_face = fi;
-            // If restricting to selected, prefer selected faces
-            if (g_knife_tool.restrict_to_selected && f.selected)
-                return fi;
-        }
-    }
-
-    return g_knife_tool.restrict_to_selected ? -1 : first_face;
 }
 
 static bool IsPointInFace(MeshData* m, int face_index, const Vec2& point) {
@@ -197,6 +147,97 @@ static bool IsFaceValidForCut(MeshData* m, int face_index) {
 
     // Otherwise, face must be selected
     return m->impl->faces[face_index].selected;
+}
+
+// Check if a face is already in the cut
+static bool IsFaceInCut(int face_index) {
+    for (int i = 0; i < g_knife_tool.cut_face_count; i++) {
+        if (g_knife_tool.cut_faces[i] == face_index)
+            return true;
+    }
+    return false;
+}
+
+// Add a face to the cut (if not already there)
+static void AddFaceToCut(int face_index) {
+    if (face_index < 0 || IsFaceInCut(face_index))
+        return;
+    if (g_knife_tool.cut_face_count < 32) {
+        g_knife_tool.cut_faces[g_knife_tool.cut_face_count++] = face_index;
+    }
+}
+
+// Check if two faces share a vertex (are connected)
+static bool AreFacesConnected(MeshData* m, int face_a, int face_b) {
+    if (face_a < 0 || face_b < 0)
+        return false;
+    FaceData& fa = m->impl->faces[face_a];
+    FaceData& fb = m->impl->faces[face_b];
+
+    for (int i = 0; i < fa.vertex_count; i++) {
+        for (int j = 0; j < fb.vertex_count; j++) {
+            if (fa.vertices[i] == fb.vertices[j])
+                return true;
+        }
+    }
+    return false;
+}
+
+// Check if a face is connected to any face in the cut
+static bool IsFaceConnectedToCut(MeshData* m, int face_index) {
+    if (g_knife_tool.cut_face_count == 0)
+        return true;  // No faces in cut yet, anything is valid
+
+    for (int i = 0; i < g_knife_tool.cut_face_count; i++) {
+        if (AreFacesConnected(m, face_index, g_knife_tool.cut_faces[i]))
+            return true;
+    }
+    return false;
+}
+
+// Check if a face can be part of the cut (valid for selection AND connected)
+static bool CanAddFaceToCut(MeshData* m, int face_index) {
+    if (!IsFaceValidForCut(m, face_index))
+        return false;
+    return IsFaceInCut(face_index) || IsFaceConnectedToCut(m, face_index);
+}
+
+// Get a valid face for a vertex click (must be valid and connected to cut)
+static int GetValidFaceForVertex(MeshData* m, int vertex_index) {
+    // First check if vertex is in any cut face
+    for (int i = 0; i < g_knife_tool.cut_face_count; i++) {
+        int fi = g_knife_tool.cut_faces[i];
+        if (FindVertexInFace(m->impl->faces[fi], vertex_index) != -1)
+            return fi;
+    }
+
+    // Otherwise find a valid connected face
+    for (int fi = 0; fi < m->impl->face_count; fi++) {
+        if (FindVertexInFace(m->impl->faces[fi], vertex_index) != -1) {
+            if (CanAddFaceToCut(m, fi))
+                return fi;
+        }
+    }
+    return -1;
+}
+
+// Get a valid face for an edge click (must be valid and connected to cut)
+static int GetValidFaceForEdge(MeshData* m, int edge_index) {
+    // First check if edge is in any cut face
+    for (int i = 0; i < g_knife_tool.cut_face_count; i++) {
+        int fi = g_knife_tool.cut_faces[i];
+        if (IsEdgeInFace(m, edge_index, fi))
+            return fi;
+    }
+
+    // Otherwise find a valid connected face
+    for (int fi = 0; fi < m->impl->face_count; fi++) {
+        if (IsEdgeInFace(m, edge_index, fi)) {
+            if (CanAddFaceToCut(m, fi))
+                return fi;
+        }
+    }
+    return -1;
 }
 
 static int FindVertexAtPosition(MeshData* m, const Vec2& position, float tolerance = 0.001f) {
@@ -350,8 +391,15 @@ static int BuildKnifePath(MeshData* m, KnifePathPoint* path) {
             int hit_count = 0;
 
             for (int edge_i = 0; edge_i < m->impl->edge_count; edge_i++) {
-                // Skip edges not in the exclusive face (if we have one)
-                if (g_knife_tool.exclusive_face >= 0 && !IsEdgeInFace(m, edge_i, g_knife_tool.exclusive_face))
+                // Skip edges not in any cut face
+                bool in_cut_face = false;
+                for (int cf = 0; cf < g_knife_tool.cut_face_count; cf++) {
+                    if (IsEdgeInFace(m, edge_i, g_knife_tool.cut_faces[cf])) {
+                        in_cut_face = true;
+                        break;
+                    }
+                }
+                if (!in_cut_face)
                     continue;
 
                 EdgeData& e = m->impl->edges[edge_i];
@@ -440,10 +488,17 @@ static int BuildKnifePath(MeshData* m, KnifePathPoint* path) {
             pp.type = KNIFE_POINT_FACE;
             pp.face_index = cut.face_index;
         } else {
-            // Check if point is inside the exclusive face
-            if (g_knife_tool.exclusive_face >= 0 && IsPointInFace(m, g_knife_tool.exclusive_face, cut.position)) {
+            // Check if point is inside any cut face
+            int found_face = -1;
+            for (int cf = 0; cf < g_knife_tool.cut_face_count; cf++) {
+                if (IsPointInFace(m, g_knife_tool.cut_faces[cf], cut.position)) {
+                    found_face = g_knife_tool.cut_faces[cf];
+                    break;
+                }
+            }
+            if (found_face >= 0) {
                 pp.type = KNIFE_POINT_FACE;
-                pp.face_index = g_knife_tool.exclusive_face;
+                pp.face_index = found_face;
             } else {
                 // Point is outside any face - mark as NONE so no vertex is created
                 pp.type = KNIFE_POINT_NONE;
@@ -472,12 +527,22 @@ static int FindBoundaryPoints(KnifePathPoint* path, int path_count, int* boundar
 
 static int FindCommonFace(MeshData* m, KnifePathPoint* path, int start_bi, int end_bi) {
     (void)m;
-    (void)path;
-    (void)start_bi;
-    (void)end_bi;
 
-    // Since knife tool is now exclusive to a single face, just return the exclusive face
-    return g_knife_tool.exclusive_face;
+    // Find a face that contains both start and end points
+    KnifePathPoint& start_pt = path[start_bi];
+    KnifePathPoint& end_pt = path[end_bi];
+
+    // If either point has a face_index, prefer that
+    if (start_pt.face_index >= 0)
+        return start_pt.face_index;
+    if (end_pt.face_index >= 0)
+        return end_pt.face_index;
+
+    // Return the first cut face as fallback
+    if (g_knife_tool.cut_face_count > 0)
+        return g_knife_tool.cut_faces[0];
+
+    return -1;
 }
 
 static bool IsEdgePoint(KnifePathPoint& pt) {
@@ -530,8 +595,8 @@ static int BuildActionsNoBoundary(KnifePathPoint* path, int path_count, KnifeAct
     if (path_count == 0)
         return 0;
 
-    // Use the exclusive face since knife tool is now locked to a single face
-    int face = g_knife_tool.exclusive_face;
+    // Use the first cut face
+    int face = g_knife_tool.cut_face_count > 0 ? g_knife_tool.cut_faces[0] : -1;
     if (face < 0)
         return 0;
 
@@ -1302,18 +1367,19 @@ static void UpdateKnifeTool() {
     }
 
     if (WasButtonPressed(MOUSE_LEFT)) {
-        int vertex_index = HitTestVertex(g_knife_tool.mesh, g_view.mouse_world_position, KNIFE_HIT_TOLERANCE);
+        MeshData* m = g_knife_tool.mesh;
+        int vertex_index = HitTestVertex(m, g_view.mouse_world_position, KNIFE_HIT_TOLERANCE);
         float edge_hit = 0.0f;
         int edge_index = vertex_index == -1
-            ? HitTestEdge(g_knife_tool.mesh, g_view.mouse_world_position, &edge_hit, KNIFE_HIT_TOLERANCE)
+            ? HitTestEdge(m, g_view.mouse_world_position, &edge_hit, KNIFE_HIT_TOLERANCE)
             : -1;
         int face_index = (vertex_index == -1 && edge_index == -1)
-            ? HitTestFace(g_knife_tool.mesh, Translate(g_knife_tool.mesh->position), g_view.mouse_world_position)
+            ? HitTestFace(m, Translate(m->position), g_view.mouse_world_position)
             : -1;
 
         // Check if clicking on the start point to close the loop
         if (g_knife_tool.cut_count >= 1 &&
-            HitTestVertex(g_knife_tool.cuts[0].position + g_knife_tool.mesh->position, g_view.mouse_world_position, KNIFE_HIT_TOLERANCE)) {
+            HitTestVertex(g_knife_tool.cuts[0].position + m->position, g_view.mouse_world_position, KNIFE_HIT_TOLERANCE)) {
             // Add the closing cut point with CLOSE marker
             g_knife_tool.cuts[g_knife_tool.cut_count++] = {
                 .position = g_knife_tool.cuts[0].position,
@@ -1328,78 +1394,74 @@ static void UpdateKnifeTool() {
 
         // Check if clicking on any other existing cut point (reject duplicates)
         for (int i = 1; i < g_knife_tool.cut_count; i++) {
-            if (HitTestVertex(g_knife_tool.cuts[i].position + g_knife_tool.mesh->position, g_view.mouse_world_position, KNIFE_HIT_TOLERANCE)) {
+            if (HitTestVertex(g_knife_tool.cuts[i].position + m->position, g_view.mouse_world_position, KNIFE_HIT_TOLERANCE)) {
                 // Ignore duplicate click
                 return;
             }
         }
 
-        // If we have an exclusive face, filter hits to only that face
-        if (g_knife_tool.exclusive_face >= 0) {
-            // Filter vertex - must be in exclusive face
-            if (vertex_index >= 0 && !IsVertexInFace(g_knife_tool.mesh, vertex_index, g_knife_tool.exclusive_face)) {
-                vertex_index = -1;
-            }
-            // Filter edge - must be in exclusive face
-            if (edge_index >= 0 && !IsEdgeInFace(g_knife_tool.mesh, edge_index, g_knife_tool.exclusive_face)) {
-                edge_index = -1;
-            }
-            // Filter face - must be the exclusive face
-            if (face_index >= 0 && face_index != g_knife_tool.exclusive_face) {
-                face_index = -1;
-            }
-        }
-
-        // Determine which face this click belongs to
-        // Use preferred functions that respect selection when restrict_to_selected is true
+        // Determine which face this click would be in
         int click_face = -1;
         if (face_index >= 0) {
             click_face = face_index;
         } else if (edge_index >= 0) {
-            click_face = GetPreferredFaceWithEdge(g_knife_tool.mesh, edge_index);
+            click_face = GetValidFaceForEdge(m, edge_index);
         } else if (vertex_index >= 0) {
-            click_face = GetPreferredFaceWithVertex(g_knife_tool.mesh, vertex_index);
+            click_face = GetValidFaceForVertex(m, vertex_index);
         }
 
-        // Check if the face is valid for cutting (respects selection filter)
-        if (!IsFaceValidForCut(g_knife_tool.mesh, click_face)) {
-            // If we hit geometry on an invalid face, filter it out
-            vertex_index = -1;
-            edge_index = -1;
-            face_index = -1;
-            click_face = -1;
+        // Validate the click against the cut_faces system
+        if (click_face < 0) {
+            // No valid face found - reject click
+            return;
         }
 
-        // Set exclusive face if not yet set and we hit something valid
-        if (g_knife_tool.exclusive_face < 0 && click_face >= 0) {
-            g_knife_tool.exclusive_face = click_face;
+        // Check if face is valid for cutting (selection restriction)
+        if (!IsFaceValidForCut(m, click_face)) {
+            return;
         }
 
-        Vec2 position = g_view.mouse_world_position - g_knife_tool.mesh->position;
+        // Check connectivity - must be connected to existing cut or be first click
+        if (!CanAddFaceToCut(m, click_face)) {
+            return;
+        }
+
+        // Add this face to the cut faces list
+        AddFaceToCut(click_face);
+
+        // Get position
+        Vec2 position = g_view.mouse_world_position - m->position;
         if (vertex_index != -1)
-            position = GetVertexPoint(g_knife_tool.mesh, vertex_index);
+            position = GetVertexPoint(m, vertex_index);
         else if (edge_index != -1)
-            position = GetEdgePoint(g_knife_tool.mesh, edge_index, edge_hit);
+            position = GetEdgePoint(m, edge_index, edge_hit);
 
         g_knife_tool.cuts[g_knife_tool.cut_count++] = {
             .position = position,
             .vertex_index = vertex_index,
-            .face_index = face_index,  // Keep as -1 if outside, BuildKnifePath will check IsPointInFace
+            .face_index = click_face,
             .edge_index = edge_index,
         };
 
         if (edge_index != -1 || vertex_index != -1)
             g_knife_tool.vertices[g_knife_tool.vertex_count++] = position;
 
-        // if the new cut crosses any edges, create vertices at the intersections
-        // Only consider edges that belong to the exclusive face (if set)
+        // If the new cut crosses any edges, create vertices at the intersections
+        // Only consider edges that belong to faces in our cut
         if (g_knife_tool.cut_count <= 1)
             return;
 
-        MeshDataImpl* impl = g_knife_tool.mesh->impl;
-        for (int i=0; i<impl->edge_count; i++) {
-            // Skip edges not in the exclusive face (if we have one)
-            if (g_knife_tool.exclusive_face >= 0 && !IsEdgeInFace(g_knife_tool.mesh, i, g_knife_tool.exclusive_face))
+        MeshDataImpl* impl = m->impl;
+        for (int i = 0; i < impl->edge_count; i++) {
+            // Skip edges not in any cut face
+            bool in_cut_face = false;
+            for (int cf = 0; cf < g_knife_tool.cut_face_count; cf++) {
+                if (IsEdgeInFace(m, i, g_knife_tool.cut_faces[cf])) {
+                    in_cut_face = true;
+                    break;
+                }
+            }
+            if (!in_cut_face)
                 continue;
 
             EdgeData& e = impl->edges[i];
@@ -1437,7 +1499,7 @@ void BeginKnifeTool(MeshData* mesh, bool restrict_to_selected) {
     g_knife_tool.mesh = mesh;
     g_knife_tool.cut_count = 0;
     g_knife_tool.vertex_count = 0;
-    g_knife_tool.exclusive_face = -1;
+    g_knife_tool.cut_face_count = 0;
     g_knife_tool.restrict_to_selected = restrict_to_selected;
 
     SetSystemCursor(SYSTEM_CURSOR_SELECT);

@@ -335,25 +335,13 @@ void InitAssetData() {
                     LogInfo("[AssetData] SKIPPING duplicate palette: %s (source_path_index=%d)", asset_path.string().c_str(), i);
                 continue;
             }
-            if (strcmp(asset_name->value, "palette") == 0) {
-                LogInfo("[AssetData] No existing asset found for palette, asset_count=%d, name_ptr=%p, name='%s'", GetAssetCount(), (void*)asset_name, asset_name->value);
-                // Debug: scan all assets to find palette
-                for (u32 j = 0; j < GetAssetCount(); j++) {
-                    AssetData* a = GetAssetData(j);
-                    if (strcmp(a->name->value, "palette") == 0)
-                        LogInfo("[AssetData]   Found existing palette at index %d: name_ptr=%p, type=%d", j, (void*)a->name, a->type);
-                }
-            }
 
             AssetData* a = nullptr;
             for (int asset_type=0; !a && asset_type<ASSET_TYPE_COUNT; asset_type++)
                 a = CreateAssetData(asset_path);
 
-            if (a) {
+            if (a)
                 LoadAssetMetadata(a, asset_path);
-                if (strcmp(asset_name->value, "palette") == 0)
-                    LogInfo("[AssetData] REGISTERED palette: %s (source_path_index=%d)", a->path, i);
-            }
         }
     }
 
