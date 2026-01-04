@@ -6,7 +6,7 @@
 #include <noz/noz.h>
 #include "nozed_assets.h"
 
-#ifdef NDEBUG
+#if defined(NOZ_BUILTIN_ASSETS)
 #include "nozed_assets_build.cpp"
 #endif
 
@@ -57,28 +57,28 @@ Shader* SHADER_MESH = nullptr;
 Sdf* SDF_TEST = nullptr;
 
 // @name
-const Name* NAME_SDF = nullptr;
-const Name* NAME_MESH = nullptr;
-const Name* NAME_A = nullptr;
-const Name* NAME_E = nullptr;
-const Name* NAME_M = nullptr;
-const Name* NAME_B = nullptr;
-const Name* NAME_NEW = nullptr;
-const Name* NAME_R = nullptr;
-const Name* NAME_EDIT = nullptr;
 const Name* NAME_VFX = nullptr;
-const Name* NAME_BUILD = nullptr;
-const Name* NAME_MIRROR = nullptr;
-const Name* NAME_S = nullptr;
+const Name* NAME_MESH = nullptr;
+const Name* NAME_SDF = nullptr;
 const Name* NAME_EVENT = nullptr;
-const Name* NAME_AM = nullptr;
-const Name* NAME_RENAME = nullptr;
-const Name* NAME_ANIMATION = nullptr;
-const Name* NAME_ANIMATEDMESH = nullptr;
-const Name* NAME_RU = nullptr;
+const Name* NAME_B = nullptr;
+const Name* NAME_A = nullptr;
+const Name* NAME_M = nullptr;
 const Name* NAME_SKELETON = nullptr;
+const Name* NAME_AM = nullptr;
 const Name* NAME_SAVE = nullptr;
+const Name* NAME_ANIMATION = nullptr;
+const Name* NAME_E = nullptr;
+const Name* NAME_NEW = nullptr;
+const Name* NAME_EDIT = nullptr;
+const Name* NAME_MIRROR = nullptr;
+const Name* NAME_BUILD = nullptr;
+const Name* NAME_RU = nullptr;
+const Name* NAME_ANIMATEDMESH = nullptr;
+const Name* NAME_R = nullptr;
+const Name* NAME_RENAME = nullptr;
 const Name* NAME_N = nullptr;
+const Name* NAME_S = nullptr;
 
 // @path
 const Name* PATH_TEXTURE_PALETTE = nullptr;
@@ -115,28 +115,28 @@ const Name* PATH_SHADER_MESH = nullptr;
 bool LoadAssets(Allocator* allocator)
 {
     // @name
-    NAME_SDF = GetName("sdf");
-    NAME_MESH = GetName("mesh");
-    NAME_A = GetName("a");
-    NAME_E = GetName("e");
-    NAME_M = GetName("m");
-    NAME_B = GetName("b");
-    NAME_NEW = GetName("new");
-    NAME_R = GetName("r");
-    NAME_EDIT = GetName("edit");
     NAME_VFX = GetName("vfx");
-    NAME_BUILD = GetName("build");
-    NAME_MIRROR = GetName("mirror");
-    NAME_S = GetName("s");
+    NAME_MESH = GetName("mesh");
+    NAME_SDF = GetName("sdf");
     NAME_EVENT = GetName("event");
-    NAME_AM = GetName("am");
-    NAME_RENAME = GetName("rename");
-    NAME_ANIMATION = GetName("animation");
-    NAME_ANIMATEDMESH = GetName("animatedmesh");
-    NAME_RU = GetName("ru");
+    NAME_B = GetName("b");
+    NAME_A = GetName("a");
+    NAME_M = GetName("m");
     NAME_SKELETON = GetName("skeleton");
+    NAME_AM = GetName("am");
     NAME_SAVE = GetName("save");
+    NAME_ANIMATION = GetName("animation");
+    NAME_E = GetName("e");
+    NAME_NEW = GetName("new");
+    NAME_EDIT = GetName("edit");
+    NAME_MIRROR = GetName("mirror");
+    NAME_BUILD = GetName("build");
+    NAME_RU = GetName("ru");
+    NAME_ANIMATEDMESH = GetName("animatedmesh");
+    NAME_R = GetName("r");
+    NAME_RENAME = GetName("rename");
     NAME_N = GetName("n");
+    NAME_S = GetName("s");
 
     // @path
     PATH_TEXTURE_PALETTE = GetName("palette");
