@@ -4,7 +4,8 @@
       "Bash(find:*)",
       "WebSearch",
       "Bash(curl:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(ls -la \"D:\\\\git\\\\noz\\\\editor\\\\src\\\\import\"\" 2>/dev/null || echo \"Import directory not found \")"
     ],
     "deny": [],
     "ask": []

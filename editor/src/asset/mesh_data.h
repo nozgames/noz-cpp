@@ -70,6 +70,7 @@ struct MeshDataImpl {
     // Metadata
     SkeletonData* skeleton;
     const Name* skeleton_name;
+    const Name* atlas_name;  // If set, mesh is attached to this atlas for sprite export
     int palette;
     int vertex_count;
     int edge_count;

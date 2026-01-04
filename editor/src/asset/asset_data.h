@@ -143,4 +143,5 @@ inline Bounds2 GetBounds(AssetData* a) { return a->bounds; }
 #include "event_data.h"
 #include "bin_data.h"
 #include "lua_data.h"
+#include "atlas_data.h"
 

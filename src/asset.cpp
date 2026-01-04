@@ -84,6 +84,7 @@ bool ValidateAssetHeader(AssetHeader* header, AssetType expected_asset_type) {
 }
 
 const char* ToString(AssetType asset_type) {
+#if 0
     // Built-in types (for backward compatibility and performance)
     switch (asset_type) {
         case ASSET_TYPE_TEXTURE: return "Texture";
@@ -100,12 +101,10 @@ const char* ToString(AssetType asset_type) {
         case ASSET_TYPE_LUA: return "Script";
         default: break;
     }
+#endif
 
-    // Check registered types
     const AssetTypeInfo* info = GetAssetTypeInfo(asset_type);
-    if (info) return info->name;
-
-    return nullptr;
+    return info ? info->name : nullptr;
 }
 
 const char* ToTypeString(AssetType asset_type) {
@@ -114,13 +113,8 @@ const char* ToTypeString(AssetType asset_type) {
 }
 
 const char* ToShortString(AssetType asset_type) {
-    // Built-in special case
-    if (asset_type == ASSET_TYPE_LUA) return "Lua";
-
-    // Check registered types for short_name
     const AssetTypeInfo* info = GetAssetTypeInfo(asset_type);
     if (info && info->short_name) return info->short_name;
-
     return ToString(asset_type);
 }
 
@@ -282,6 +276,7 @@ void InitAssets() {
     RegisterAssetType({ASSET_TYPE_ANIMATED_MESH, "AnimatedMesh", "AnimMesh", ".animatedmesh", LoadAnimatedMesh, nullptr});
     RegisterAssetType({ASSET_TYPE_EVENT, "Event", "Event", ".event", nullptr, nullptr});
     RegisterAssetType({ASSET_TYPE_BIN, "Bin", "Bin", ".bin", LoadBin, nullptr});
+    RegisterAssetType({ASSET_TYPE_ATLAS, "Atlas", "Atlas", ".atlas", nullptr, nullptr});
 
 #if defined(NOZ_LUA)
     RegisterAssetType({ASSET_TYPE_LUA, "Script", "Lua", ".lua", LoadLuaScript,

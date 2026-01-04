@@ -25,6 +25,7 @@ enum AssetType {
     ASSET_TYPE_EVENT,
     ASSET_TYPE_BIN,
     ASSET_TYPE_LUA,
+    ASSET_TYPE_ATLAS,
     ASSET_TYPE_COUNT,
 };
 

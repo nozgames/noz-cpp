@@ -1736,15 +1736,34 @@ static void ToggleXRay() {
 
 static void CommitParentTool(const Vec2& position) {
     AssetData* hit_asset = HitTestAssets(position);
-    if (!hit_asset || hit_asset->type != ASSET_TYPE_SKELETON)
+    if (!hit_asset)
         return;
 
     MeshData* m = GetMeshData();
     MeshDataImpl* impl = m->impl;
-    RecordUndo(m);
-    impl->skeleton = static_cast<SkeletonData*>(hit_asset);
-    impl->skeleton_name = hit_asset->name;
-    MarkModified(m);
+
+    if (hit_asset->type == ASSET_TYPE_SKELETON) {
+        RecordUndo(m);
+        impl->skeleton = static_cast<SkeletonData*>(hit_asset);
+        impl->skeleton_name = hit_asset->name;
+        MarkModified(m);
+    } else if (hit_asset->type == ASSET_TYPE_ATLAS) {
+        RecordUndo(m);
+        impl->atlas_name = hit_asset->name;
+        MarkModified(m);
+
+        // Add mesh to atlas and render it
+        AtlasData* atlas = static_cast<AtlasData*>(hit_asset);
+        AtlasRect* rect = FindRectForMesh(atlas, m->name);
+        if (!rect) {
+            rect = AllocateRect(atlas, m->name, m->bounds);
+        }
+        if (rect) {
+            RenderMeshToAtlas(atlas, m, *rect);
+            MarkModified(atlas);
+            AddNotification(NOTIFICATION_TYPE_INFO, "'%s' added to '%s'", m->name->value, atlas->name->value);
+        }
+    }
 }
 
 static void BeginParentTool() {

@@ -657,6 +657,8 @@ static void NewAssetCommand(const Command& command) {
         a = NewAnimatedMeshData(asset_name->value);
     else if (type == NAME_EVENT || type == NAME_E)
         a = NewEventData(asset_name->value);
+    else if (type == NAME_ATLAS)
+        a = NewAtlasData(asset_name->value);
 
     if (a == nullptr)
         return;

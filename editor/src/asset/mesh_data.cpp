@@ -1157,7 +1157,13 @@ static void LoadMeshMetaData(AssetData* a, Props* meta) {
     assert(a);
     assert(a->type == ASSET_TYPE_MESH);
     MeshData* m = static_cast<MeshData*>(a);
-    meta->SetInt("mesh", "palette", m->impl->palette);
+    m->impl->palette = meta->GetInt("mesh", "palette", m->impl->palette);
+
+    // Load atlas reference
+    std::string atlas_str = meta->GetString("mesh", "atlas", "");
+    if (!atlas_str.empty()) {
+        m->impl->atlas_name = GetName(atlas_str.c_str());
+    }
 }
 
 static void SaveMeshMetaData(AssetData* a, Props* meta) {
@@ -1165,6 +1171,11 @@ static void SaveMeshMetaData(AssetData* a, Props* meta) {
     assert(a->type == ASSET_TYPE_MESH);
     MeshData* m = static_cast<MeshData*>(a);
     meta->SetInt("mesh", "palette", m->impl->palette);
+
+    // Save atlas reference
+    if (m->impl->atlas_name) {
+        meta->SetString("mesh", "atlas", m->impl->atlas_name->value);
+    }
 }
 
 static void WriteVertexWeights(Stream* stream, const VertexWeight* weights) {

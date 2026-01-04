@@ -382,6 +382,9 @@ inline Vec3 operator-(const Vec3& v) { return { -v.x, -v.y, -v.z }; }
 inline Vec3 operator+=(Vec3& v, const Vec3& v2) { v.x += v2.x; v.y += v2.y; v.z += v2.z; return v; }
 inline Vec3 operator*=(Vec3& v, f32 s) { v.x *= s; v.y *= s; v.z *= s; return v; }
 inline Vec3 operator-=(Vec3& v, const Vec3& v2) { v.x -= v2.x; v.y -= v2.y; v.z -= v2.z; return v; }
+inline bool operator==(const Vec3& v1, const Vec3& v2) { return v1.x == v2.x && v1.y == v2.y && v1.z == v2.z; }
+inline bool operator==(const Bounds2& a, const Bounds2& b) { return a.min == b.min && a.max == b.max; }
+inline bool operator==(const Bounds3& a, const Bounds3& b) { return a.min == b.min && a.max == b.max; }
 extern f32 Length(const Vec3& v);
 extern Vec3 Normalize(const Vec3& v);
 extern Vec3 Cross(const Vec3& a, const Vec3& b);

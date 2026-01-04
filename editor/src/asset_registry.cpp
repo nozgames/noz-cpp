@@ -21,6 +21,7 @@ extern void InitAnimatedMeshData(AssetData* a);
 extern void InitEventData(AssetData* a);
 extern void InitBinData(AssetData* a);
 extern void InitLuaData(AssetData* a);
+extern void InitAtlasData(AssetData* a);
 
 // Forward declarations for Get*Importer functions
 extern AssetImporter GetMeshImporter();
@@ -35,6 +36,7 @@ extern AssetImporter GetAnimatedMeshImporter();
 extern AssetImporter GetEventImporter();
 extern AssetImporter GetBinImporter();
 extern AssetImporter GetLuaImporter();
+extern AssetImporter GetAtlasImporter();
 
 // @editor_asset_registry
 static EditorAssetTypeInfo g_editor_asset_types[MAX_EDITOR_ASSET_TYPES] = {};
@@ -89,4 +91,5 @@ void InitEditorAssets() {
     RegisterEditorAssetType({ASSET_TYPE_EVENT, InitEventData, GetEventImporter()});
     RegisterEditorAssetType({ASSET_TYPE_BIN, InitBinData, GetBinImporter()});
     RegisterEditorAssetType({ASSET_TYPE_LUA, InitLuaData, GetLuaImporter()});
+    RegisterEditorAssetType({ASSET_TYPE_ATLAS, InitAtlasData, GetAtlasImporter()});
 }
