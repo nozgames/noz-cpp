@@ -576,15 +576,6 @@ static bool TryDoubleClickSelectFaceVertices() {
 }
 
 static void UpdateDefaultState() {
-    // In edge mode, drag on edge starts curve tool
-    if (g_mesh_editor.mode == MESH_EDITOR_MODE_EDGE && !IsToolActive() && g_view.drag_started) {
-        int edge = HitTestEdge(GetMeshData(), g_view.drag_world_position);
-        if (edge != -1) {
-            BeginCurveTool(GetMeshData(), edge);
-            return;
-        }
-    }
-
     if (!IsToolActive() && g_view.drag_started) {
         BeginBoxSelect(HandleBoxSelect);
         return;
@@ -936,6 +927,19 @@ static void BeginMoveTool() {
     SaveMeshState();
     RecordUndo(m);
     BeginMoveTool({.update=UpdateMoveTool, .commit=CommitMoveTool, .cancel=CancelMeshTool});
+}
+
+static void BeginCurveToolFromSelection() {
+    MeshData* m = GetMeshData();
+    if (m->impl->selected_edge_count == 0)
+        return;
+
+    int selected_edges[MAX_EDGES];
+    int count = GetSelectedEdges(m, selected_edges);
+    if (count == 0)
+        return;
+
+    BeginCurveTool(m, selected_edges, count);
 }
 
 static void UpdateRotateTool(float angle) {
@@ -1395,6 +1399,7 @@ static void DrawXRay() {
 static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selected) {
     MeshDataImpl* impl = m->impl;
     float line_width = STYLE_MESH_EDGE_WIDTH * g_view.zoom_ref_scale;
+    float selected_line_width = line_width * 2.5f;
     float vertex_size = STYLE_MESH_VERTEX_SIZE * g_view.zoom_ref_scale;
     float origin_size = 0.1f * g_view.zoom_ref_scale;
 
@@ -1445,11 +1450,11 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
                 for (int s = 1; s <= segments; s++) {
                     float t = (float)s / (float)segments;
                     Vec2 curr = EvalQuadraticBezier(v0, control, v1, t);
-                    AddEditorLine(builder, prev, curr, line_width, COLOR_EDGE_SELECTED);
+                    AddEditorLine(builder, prev, curr, selected_line_width, COLOR_EDGE_SELECTED);
                     prev = curr;
                 }
             } else {
-                AddEditorLine(builder, v0, v1, line_width, COLOR_EDGE_SELECTED);
+                AddEditorLine(builder, v0, v1, selected_line_width, COLOR_EDGE_SELECTED);
             }
         }
     } else if (g_mesh_editor.mode == MESH_EDITOR_MODE_FACE) {
@@ -1470,11 +1475,11 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
                     for (int s = 1; s <= segments; s++) {
                         float t = (float)s / (float)segments;
                         Vec2 curr = EvalQuadraticBezier(v0, control, v1, t);
-                        AddEditorLine(builder, prev, curr, line_width, COLOR_VERTEX_SELECTED);
+                        AddEditorLine(builder, prev, curr, selected_line_width, COLOR_VERTEX_SELECTED);
                         prev = curr;
                     }
                 } else {
-                    AddEditorLine(builder, v0, v1, line_width, COLOR_VERTEX_SELECTED);
+                    AddEditorLine(builder, v0, v1, selected_line_width, COLOR_VERTEX_SELECTED);
                 }
             }
         }
@@ -1854,6 +1859,7 @@ void InitMeshEditor() {
     static Shortcut shortcuts[] = {
         { KEY_D, false, true, false, DuplicateSelected },
         { KEY_G, false, false, false, BeginMoveTool },
+        { KEY_B, false, false, false, BeginCurveToolFromSelection },
         { KEY_R, false, false, false, BeginRotateTool },
         { KEY_R, false, false, true, FlipHorizontal },
         { KEY_S, false, false, false, BeginScaleTool },
