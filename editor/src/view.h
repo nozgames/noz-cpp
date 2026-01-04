@@ -91,6 +91,7 @@ extern View g_view;
 // @view
 extern void InitView();
 extern void UpdateView();
+extern void UpdateViewUI();
 extern void ShutdownView();
 extern void InitViewUserConfig(Props* user_config);
 extern void SaveViewUserConfig(Props* user_config);

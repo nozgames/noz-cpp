@@ -79,8 +79,7 @@ static ApplicationTraits g_default_traits = {
 };
 
 // @impl
-struct Application
-{
+struct Application {
     bool has_focus;
     bool vsync;
     Vec2Int screen_size;            // Logical screen size (rotated if needed)

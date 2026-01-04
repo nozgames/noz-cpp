@@ -314,40 +314,6 @@ static void UpdateMouse() {
     }
 }
 
-static void UpdateCommon() {
-    CheckCommonShortcuts();
-    UpdateCamera();
-    UpdateMouse();
-    UpdatePanState();
-
-    if (IsButtonDown(g_view.input, MOUSE_MIDDLE)) {
-        Vec2 dir = Normalize(GetScreenCenter() - g_view.mouse_position);
-        g_view.light_dir = Vec2{-dir.x, dir.y};
-    }
-}
-
-static void UpdateViewInternal() {
-    UpdateCommon();
-
-    switch (GetState()) {
-    case VIEW_STATE_EDIT:
-        assert(g_editor.editing_asset);
-        if (g_editor.editing_asset->vtable.editor_update)
-            g_editor.editing_asset->vtable.editor_update();
-
-        break;
-
-    default:
-        UpdateDefaultState();
-        break;
-    }
-
-    if (g_editor.tool.type != TOOL_TYPE_NONE && g_editor.tool.vtable.update)
-        g_editor.tool.vtable.update();
-
-    UpdateZoom();
-    UpdateNotifications();
-}
 
 void DrawView() {
     BindCamera(g_view.camera);
@@ -448,11 +414,37 @@ static void UpdateAssetNames() {
     }
 }
 
-void UpdateView() {
-    UpdateViewInternal();
-    UpdateCommandInput();
-    UpdateAssetNames();
+void UpdateViewUI() {
     UpdateConfirmDialog();
+
+    if (GetState() == VIEW_STATE_EDIT) {
+        assert(g_editor.editing_asset);
+        if (g_editor.editing_asset->vtable.editor_update)
+            g_editor.editing_asset->vtable.editor_update();
+    }
+
+    UpdateCommandInput();
+    UpdateNotifications();
+    UpdateAssetNames();
+}
+
+void UpdateView() {
+    CheckCommonShortcuts();
+    UpdateCamera();
+    UpdateMouse();
+    UpdatePanState();
+    UpdateZoom();
+
+    if (GetState() == VIEW_STATE_DEFAULT)
+        UpdateDefaultState();
+
+    if (IsButtonDown(g_view.input, MOUSE_MIDDLE)) {
+        Vec2 dir = Normalize(GetScreenCenter() - g_view.mouse_position);
+        g_view.light_dir = Vec2{-dir.x, dir.y};
+    }
+
+    if (g_editor.tool.type != TOOL_TYPE_NONE && g_editor.tool.vtable.update)
+        g_editor.tool.vtable.update();
 }
 
 void InitViewUserConfig(Props* user_config){

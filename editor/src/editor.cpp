@@ -74,11 +74,13 @@ static void UpdateEditor() {
 
     Vec2Int ui_ref = GetUIRefSize();
     BeginUI(ui_ref.x, ui_ref.y);
-    UpdateView();
+    UpdateViewUI();
 #if defined(NOZ_EDITOR_LIB)
     if (g_editor_traits.update) g_editor_traits.update();
 #endif
     EndUI();
+
+    UpdateView();
 
     BeginRender(STYLE_WORKSPACE_COLOR);
     DrawView();

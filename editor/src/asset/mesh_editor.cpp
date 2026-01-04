@@ -616,9 +616,9 @@ static void UpdateDefaultState() {
     }
 }
 
-constexpr int   STAT_FONT_SIZE = 22;
+constexpr int   STAT_FONT_SIZE = 14;
 constexpr int   STAT_COUNT = 4;
-constexpr float STAT_HEIGHT = 24.0f;
+constexpr float STAT_HEIGHT = 18.0f;
 constexpr float STAT_SPACING = 4.0f;
 constexpr float STATS_PADDING = 10.0f;
 constexpr float STATS_WIDTH = 200;
