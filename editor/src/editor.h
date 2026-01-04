@@ -59,6 +59,7 @@ struct Tool {
 struct PaletteDef {
     const Name* name;
     int id;
+    Color colors[COLOR_COUNT];
 };
 
 void BeginTool(const Tool& tool);

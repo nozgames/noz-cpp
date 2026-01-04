@@ -218,33 +218,40 @@ void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, const AtlasRect& rect) 
             plutovg_canvas_close_path(canvas);
         }
 
-        // Set face color - for now use a placeholder
-        // TODO: Get actual color from palette texture
-        // face.color is palette index, mesh_impl->palette is palette row
-        float r = ((face.color * 37 + 100) % 256) / 255.0f;
-        float g = ((face.color * 73 + 150) % 256) / 255.0f;
-        float b = ((face.color * 113 + 200) % 256) / 255.0f;
-        plutovg_canvas_set_rgba(canvas, r, g, b, 1.0f);
+        // Get face color from palette
+        int palette_index = g_editor.palette_map[mesh_impl->palette];
+        Color color = g_editor.palettes[palette_index].colors[face.color];
+        plutovg_canvas_set_rgba(canvas, color.r, color.g, color.b, color.a);
         plutovg_canvas_fill(canvas);
     }
-
-    // Convert from premultiplied ARGB to RGBA
-    plutovg_convert_argb_to_rgba(impl->pixels, impl->pixels, impl->width, impl->height, impl->width * 4);
 
     plutovg_canvas_destroy(canvas);
     plutovg_surface_destroy(surface);
 
-    // Upload to GPU texture
+    impl->dirty = true;
+}
+
+void SyncAtlasTexture(AtlasData* atlas) {
+    AtlasDataImpl* impl = atlas->impl;
+    if (!impl->pixels || !impl->dirty) return;
+
+    // Convert from premultiplied ARGB to RGBA for GPU upload
+    // We need a temporary buffer since we want to keep impl->pixels in ARGB for further PlutoVG rendering
+    u32 buffer_size = impl->width * impl->height * 4;
+    u8* rgba_pixels = static_cast<u8 *>(Alloc(ALLOCATOR_SCRATCH, buffer_size));
+    memcpy(rgba_pixels, impl->pixels, buffer_size);
+    plutovg_convert_argb_to_rgba(rgba_pixels, rgba_pixels, impl->width, impl->height, impl->width * 4);
+
     if (!impl->texture) {
-        impl->texture = CreateTexture(ALLOCATOR_DEFAULT, impl->pixels, impl->width, impl->height,
+        impl->texture = CreateTexture(ALLOCATOR_DEFAULT, rgba_pixels, impl->width, impl->height,
                                        TEXTURE_FORMAT_RGBA8, GetName("atlas_texture"));
         impl->material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_TEXTURED_MESH);
         SetTexture(impl->material, impl->texture, 0);
     } else {
-        UpdateTexture(impl->texture, impl->pixels);
+        UpdateTexture(impl->texture, rgba_pixels);
     }
 
-    impl->dirty = true;
+    impl->dirty = false;
 }
 
 void RegenerateAtlas(AtlasData* atlas) {

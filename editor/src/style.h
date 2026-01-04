@@ -12,6 +12,7 @@ enum StyleId {
 struct Style {
     // @general
     Color background_color;
+    Color selection_color;
 
     // @workspace
     Color workspace_color;
@@ -26,6 +27,9 @@ struct Style {
     Color button_color;
     Color button_text_color;
     Color button_checked_color;
+    Color button_checked_text_color;
+    Color button_disabled_color;
+    Color button_disabled_text_color;
 };
 
 extern Style* g_style;
@@ -59,10 +63,14 @@ constexpr float STYLE_SKELETON_PARENT_DASH = 0.1f;
 
 
 inline Color STYLE_BACKGROUND_COLOR() { return GetStyle().background_color; }
+inline Color STYLE_SELECTION_COLOR() { return GetStyle().selection_color; }
 
 inline Color STYLE_BUTTON_COLOR() { return GetStyle().button_color; }
 inline Color STYLE_BUTTON_TEXT_COLOR() { return GetStyle().button_text_color; }
 inline Color STYLE_BUTTON_CHECKED_COLOR() { return GetStyle().button_checked_color; }
+inline Color STYLE_BUTTON_CHECKED_TEXT_COLOR() { return GetStyle().button_checked_text_color; }
+inline Color STYLE_BUTTON_DISABLED_COLOR() { return GetStyle().button_disabled_color; }
+inline Color STYLE_BUTTON_DISABLED_TEXT_COLOR() { return GetStyle().button_disabled_text_color; }
 
 inline Color STYLE_WORKSPACE_COLOR() { return GetStyle().workspace_color; }
 constexpr float STYLE_WORKSPACE_PADDING = 16.0f;
@@ -75,6 +83,7 @@ inline int      STYLE_OVERLAY_TEXT_SIZE = 14;
 inline Color    STYLE_OVERLAY_ACCENT_TEXT_COLOR() { return GetStyle().overlay_accent_text_color; }
 inline Color    STYLE_OVERLAY_ICON_COLOR() { return GetStyle().overlay_icon_color; }
 inline Color    STYLE_OVERLAY_CONTENT_COLOR() { return GetStyle().overlay_content_color; }
+inline float    STYLE_OVERLAY_CONTENT_BORDER_RADIUS = 9.0f;
 constexpr float STYLE_OVERLAY_PADDING = 12.0f;
 constexpr float STYLE_OVERLAY_BORDER_RADIUS = 16.0f;
 
@@ -82,3 +91,8 @@ constexpr float STYLE_OVERLAY_BORDER_RADIUS = 16.0f;
 constexpr float STYLE_TOGGLE_BUTTON_HEIGHT = 32.0f;
 constexpr float STYLE_TOGGLE_BUTTON_PADDING = 6.0f;
 constexpr float STYLE_TOGGLE_BUTTON_BORDER_RADIUS = 8.0f;
+
+
+constexpr Color STYLE_COLOR_BLACK_2PCT = {0,0,0,0.02f};
+constexpr Color STYLE_COLOR_BLACK_5PCT = {0,0,0,0.05f};
+constexpr Color STYLE_COLOR_BLACK_10PCT = {0,0,0,0.1f};

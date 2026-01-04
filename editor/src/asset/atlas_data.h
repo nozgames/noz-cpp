@@ -48,6 +48,7 @@ extern void ClearAllRects(AtlasData* atlas);
 extern void RenderMeshToAtlas(AtlasData* atlas, struct MeshData* mesh, const AtlasRect& rect);
 extern void UpdateAtlas(AtlasData* atlas);
 extern void RegenerateAtlas(AtlasData* atlas);
+extern void SyncAtlasTexture(AtlasData* atlas);  // Upload pixels to GPU (editor only)
 
 // UV computation
 extern Vec2 GetAtlasUV(AtlasData* atlas, const AtlasRect& rect, const Vec2& position);

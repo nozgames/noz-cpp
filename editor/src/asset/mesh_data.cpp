@@ -267,6 +267,10 @@ Mesh* ToOutlineMesh(MeshData* m) {
     if (m->impl->outline && m->impl->outline_version == g_view.zoom_version)
         return m->impl->outline;
 
+    // Ensure bounds are calculated (ToMesh updates m->bounds)
+    if (!m->impl->mesh)
+        ToMesh(m, false);
+
     PushScratch();
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, MAX_VERTICES, MAX_INDICES);
 

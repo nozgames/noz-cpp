@@ -9,6 +9,9 @@ static void DrawAtlasData(AssetData* a) {
     AtlasData* atlas = static_cast<AtlasData*>(a);
     AtlasDataImpl* impl = atlas->impl;
 
+    // Sync pixels to GPU if dirty
+    SyncAtlasTexture(atlas);
+
     // Scale factor to display atlas in world units
     float scale = 10.0f / (float)impl->width;  // Normalize to 10 units
     Vec2 size = Vec2{(float)impl->width, (float)impl->height} * scale;

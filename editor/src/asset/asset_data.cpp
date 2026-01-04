@@ -335,25 +335,13 @@ void InitAssetData() {
                     LogInfo("[AssetData] SKIPPING duplicate palette: %s (source_path_index=%d)", asset_path.string().c_str(), i);
                 continue;
             }
-            if (strcmp(asset_name->value, "palette") == 0) {
-                LogInfo("[AssetData] No existing asset found for palette, asset_count=%d, name_ptr=%p, name='%s'", GetAssetCount(), (void*)asset_name, asset_name->value);
-                // Debug: scan all assets to find palette
-                for (u32 j = 0; j < GetAssetCount(); j++) {
-                    AssetData* a = GetAssetData(j);
-                    if (strcmp(a->name->value, "palette") == 0)
-                        LogInfo("[AssetData]   Found existing palette at index %d: name_ptr=%p, type=%d", j, (void*)a->name, a->type);
-                }
-            }
 
             AssetData* a = nullptr;
             for (int asset_type=0; !a && asset_type<ASSET_TYPE_COUNT; asset_type++)
                 a = CreateAssetData(asset_path);
 
-            if (a) {
+            if (a)
                 LoadAssetMetadata(a, asset_path);
-                if (strcmp(asset_name->value, "palette") == 0)
-                    LogInfo("[AssetData] REGISTERED palette: %s (source_path_index=%d)", a->path, i);
-            }
         }
     }
 
@@ -467,19 +455,35 @@ bool Rename(AssetData* a, const Name* new_name) {
     if (a->name == new_name)
         return true;
 
+    // Check if another asset already exists with this name
+    AssetData* existing = GetAssetData(ASSET_TYPE_UNKNOWN, new_name);
+    if (existing && existing != a)
+        return false;
+
     fs::path new_path = fs::path(a->path.value).parent_path() / (std::string(new_name->value) + fs::path(a->path.value).extension().string());
     if (fs::exists(new_path))
         return false;
 
-    fs::rename(a->path.value, new_path);
+    // Save old meta path BEFORE updating a->path
+    fs::path old_meta_path = fs::path(std::string(a->path) + ".meta");
+
+    try {
+        fs::rename(a->path.value, new_path);
+    } catch (...) {
+        return false;
+    }
+
     Set(a->path, new_path.string().c_str());
     a->name = new_name;
 
-    fs::path old_meta_path = fs::path(std::string(a->path) + ".meta");
     fs::path new_meta_path = fs::path(new_path.string() + ".meta");
     if (fs::exists(old_meta_path)) {
-        fs::rename(old_meta_path, new_meta_path);
-        return false;
+        try {
+            fs::rename(old_meta_path, new_meta_path);
+        } catch (...) {
+            // Meta file rename failed, but asset file was already renamed
+            // Continue anyway since the main rename succeeded
+        }
     }
 
     return true;
@@ -487,7 +491,6 @@ bool Rename(AssetData* a, const Name* new_name) {
 
 AssetData* Duplicate(AssetData* a) {
     fs::path new_path = GetUniqueAssetPath(a->path.value);
-    Set(a->path, new_path.string().c_str());
 
     AssetData* d = static_cast<AssetData*>(Alloc(g_editor.asset_allocator, sizeof(GenericAssetData)));
     Clone(d, a);

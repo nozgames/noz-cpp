@@ -5,8 +5,13 @@
 #include <editor.h>
 #include "nozed_assets.h"
 #include "asset_registry.h"
+#include <stb_image.h>
 
 namespace fs = std::filesystem;
+
+// Forward declarations for palette reloading
+static const Name* g_palette_texture_name;
+static void LoadPaletteColors();
 
 Editor g_editor = {};
 Props* g_config = nullptr;
@@ -102,6 +107,11 @@ void HandleImported(EventId event_id, const void* event_data) {
     ImportEvent* import_event = (ImportEvent*)event_data;
     AssetLoadedEvent event = { import_event->name, import_event->type };
     Send(EVENT_HOTLOAD, &event);
+
+    // Reload palette colors if the palette texture was reimported
+    if (import_event->type == ASSET_TYPE_TEXTURE && import_event->name == g_palette_texture_name) {
+        LoadPaletteColors();
+    }
 
     AddNotification(NOTIFICATION_TYPE_INFO, "imported '%s'", import_event->name->value);
 }
@@ -252,6 +262,68 @@ void CancelTool() {
     EndTool();
 }
 
+static void SamplePaletteColors(u8* pixels, int width, int height) {
+    constexpr int CELL_SIZE = (int)COLOR_UV_SIZE;  // 8 pixels per color cell
+
+    for (int p = 0; p < g_editor.palette_count; p++) {
+        PaletteDef& palette = g_editor.palettes[p];
+        int row = palette.id;
+
+        // Sample from center of each 8x8 cell
+        int y = row * CELL_SIZE + CELL_SIZE / 2;
+        if (y < 0 || y >= height)
+            continue;
+
+        for (int c = 0; c < COLOR_COUNT; c++) {
+            int x = c * CELL_SIZE + CELL_SIZE / 2;
+            if (x >= width)
+                break;
+
+            int pixel_index = (y * width + x) * 4;
+            palette.colors[c] = Color32ToColor(
+                pixels[pixel_index + 0],
+                pixels[pixel_index + 1],
+                pixels[pixel_index + 2],
+                pixels[pixel_index + 3]
+            );
+        }
+    }
+}
+
+static fs::path FindAssetFile(const char* name, const char* ext) {
+    const char* subdirs[] = { "", "textures", "texture", "reference", nullptr };
+
+    for (int i = 0; i < g_editor.source_path_count; i++) {
+        for (int s = 0; subdirs[s] != nullptr; s++) {
+            fs::path path = fs::path(g_editor.source_paths[i].value) / subdirs[s] / (std::string(name) + ext);
+            if (fs::exists(path))
+                return path;
+        }
+    }
+    return {};
+}
+
+static void LoadPaletteColors() {
+    if (!g_palette_texture_name)
+        return;
+
+    fs::path palette_path = FindAssetFile(g_palette_texture_name->value, ".png");
+    if (palette_path.empty()) {
+        LogError("Palette texture not found: %s.png", g_palette_texture_name->value);
+        return;
+    }
+
+    int width, height, channels;
+    u8* pixels = stbi_load(palette_path.string().c_str(), &width, &height, &channels, 4);
+    if (!pixels) {
+        LogError("Failed to load palette texture: %s", palette_path.string().c_str());
+        return;
+    }
+
+    SamplePaletteColors(pixels, width, height);
+    stbi_image_free(pixels);
+}
+
 static void InitPalettes() {
     for (auto& palette_key : g_config->GetKeys("palettes")) {
         std::string palette_value = g_config->GetString("palettes", palette_key.c_str(), nullptr);
@@ -259,11 +331,21 @@ static void InitPalettes() {
         Init(tk, palette_value.c_str());
         int palette_id = ExpectInt(tk);
         g_editor.palette_map[palette_id] = g_editor.palette_count;
-        g_editor.palettes[g_editor.palette_count++] = {
-            .name = GetName(palette_key.c_str()),
-            .id = palette_id
-        };
+
+        PaletteDef& palette = g_editor.palettes[g_editor.palette_count++];
+        palette.name = GetName(palette_key.c_str());
+        palette.id = palette_id;
+
+        // Initialize colors to magenta (visible default for debugging)
+        for (int c = 0; c < COLOR_COUNT; c++) {
+            palette.colors[c] = {1.0f, 0.0f, 1.0f, 1.0f};
+        }
     }
+
+    // Store palette texture name for reloading on reimport
+    g_palette_texture_name = GetName(g_config->GetString("editor", "palette", "palette").c_str());
+
+    LoadPaletteColors();
 }
 
 static void ResolveAssetPaths() {

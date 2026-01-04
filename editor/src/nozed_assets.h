@@ -8,69 +8,72 @@
 #include <noz/core_assets.h>
 
 // @Mesh
+extern Mesh* MESH_ASSET_ICON_ATLAS;
 extern Mesh* MESH_ASSET_ICON_BIN;
-extern Mesh* MESH_ICON_PALETTE;
 extern Mesh* MESH_ASSET_ICON_EVENT;
-extern Mesh* MESH_ICON_TILING;
-extern Mesh* MESH_ICON_ROOT_MOTION;
-extern Mesh* MESH_ICON_PUBLISH;
-extern Mesh* MESH_ICON_ONION;
-extern Mesh* MESH_ICON_MIRROR;
-extern Mesh* MESH_ICON_LOOP;
-extern Mesh* MESH_ICON_EXPAND_UP;
-extern Mesh* MESH_ICON_EXPAND_DOWN;
-extern Mesh* MESH_ICON_DROPDOWN;
-extern Mesh* MESH_ASSET_ICON_VFX;
-extern Mesh* MESH_ASSET_ICON_SOUND;
-extern Mesh* MESH_ASSET_ICON_SHADER;
-extern Mesh* MESH_ASSET_ICON_LUA;
 extern Mesh* MESH_ASSET_ICON_FONT;
+extern Mesh* MESH_ASSET_ICON_LUA;
+extern Mesh* MESH_ASSET_ICON_SHADER;
+extern Mesh* MESH_ASSET_ICON_SOUND;
+extern Mesh* MESH_ASSET_ICON_VFX;
+extern Mesh* MESH_ICON_DROPDOWN;
+extern Mesh* MESH_ICON_EDGE_MODE;
+extern Mesh* MESH_ICON_EXPAND_DOWN;
+extern Mesh* MESH_ICON_EXPAND_UP;
+extern Mesh* MESH_ICON_FACE_MODE;
+extern Mesh* MESH_ICON_LOOP;
+extern Mesh* MESH_ICON_MIRROR;
+extern Mesh* MESH_ICON_ONION;
+extern Mesh* MESH_ICON_PALETTE;
+extern Mesh* MESH_ICON_PUBLISH;
+extern Mesh* MESH_ICON_ROOT_MOTION;
+extern Mesh* MESH_ICON_TILING;
+extern Mesh* MESH_ICON_VERTEX_MODE;
 
 // @Texture
-extern Texture* TEXTURE_TEST;
 extern Texture* TEXTURE_EDITOR_PALETTE;
 
 // @Font
 extern Font* FONT_SEGUISB;
 
 // @Shader
-extern Shader* SHADER_VFX;
-extern Shader* SHADER_UI_VIGNETTE;
-extern Shader* SHADER_UI_IMAGE_TEXTURE;
-extern Shader* SHADER_UI_IMAGE;
-extern Shader* SHADER_UI;
-extern Shader* SHADER_TEXTURED_MESH;
-extern Shader* SHADER_TEXT;
-extern Shader* SHADER_SOLID;
-extern Shader* SHADER_SKINNED_MESH;
-extern Shader* SHADER_POSTPROCESS_UI_COMPOSITE;
-extern Shader* SHADER_POSTPROCESS_DESATURATE;
-extern Shader* SHADER_MESH;
 extern Shader* SHADER_EDITOR;
+extern Shader* SHADER_MESH;
+extern Shader* SHADER_POSTPROCESS_DESATURATE;
+extern Shader* SHADER_POSTPROCESS_UI_COMPOSITE;
+extern Shader* SHADER_SKINNED_MESH;
+extern Shader* SHADER_SOLID;
+extern Shader* SHADER_TEXT;
+extern Shader* SHADER_TEXTURED_MESH;
+extern Shader* SHADER_UI;
+extern Shader* SHADER_UI_IMAGE;
+extern Shader* SHADER_UI_IMAGE_TEXTURE;
+extern Shader* SHADER_UI_VIGNETTE;
+extern Shader* SHADER_VFX;
 
 // @name
-extern const Name* NAME_MESH;
-extern const Name* NAME_VFX;
+extern const Name* NAME_A;
+extern const Name* NAME_AM;
+extern const Name* NAME_ANIMATEDMESH;
 extern const Name* NAME_ANIMATION;
 extern const Name* NAME_ATLAS;
-extern const Name* NAME_M;
-extern const Name* NAME_ANIMATEDMESH;
-extern const Name* NAME_EDIT;
-extern const Name* NAME_RENAME;
-extern const Name* NAME_N;
-extern const Name* NAME_S;
-extern const Name* NAME_SAVE;
-extern const Name* NAME_AM;
+extern const Name* NAME_B;
 extern const Name* NAME_BUILD;
-extern const Name* NAME_EVENT;
 extern const Name* NAME_E;
+extern const Name* NAME_EDIT;
+extern const Name* NAME_EVENT;
+extern const Name* NAME_M;
+extern const Name* NAME_MESH;
+extern const Name* NAME_MIRROR;
+extern const Name* NAME_N;
 extern const Name* NAME_NEW;
 extern const Name* NAME_R;
-extern const Name* NAME_B;
-extern const Name* NAME_MIRROR;
-extern const Name* NAME_SKELETON;
+extern const Name* NAME_RENAME;
 extern const Name* NAME_RU;
-extern const Name* NAME_A;
+extern const Name* NAME_S;
+extern const Name* NAME_SAVE;
+extern const Name* NAME_SKELETON;
+extern const Name* NAME_VFX;
 
 // @palette
 constexpr int PALETTE_DEFAULT = 0;
