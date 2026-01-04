@@ -69,6 +69,10 @@ inline Color32 SetAlpha(const Color32& color, float alpha){
     return { color.r, color.g, color.b, static_cast<u8>(alpha * 255.0f) };
 }
 
+inline Color MultiplyAlpha(const Color& color, float multiply) {
+    return { color.r, color.g, color.b, multiply * color.a };
+}
+
 inline Color32 MultiplyAlpha(const Color32& color, float multiply){
     return { color.r, color.g, color.b, static_cast<u8>(multiply * color.a) };
 }

@@ -2,19 +2,10 @@
 //  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
 //
 
-#include <editor.h>
-#include "nozed_assets.h"
+constexpr float GRID_MAX_ALPHA = 0.6f;
 
-constexpr float GRID_SPACING = 1.0f;
-constexpr float MIN_GRID_PIXELS = 50.0f;
-constexpr float MAX_GRID_PIXELS = 500.0f;
-constexpr Color GRID_PRIMARY_COLOR = Color24ToColor(0x303030);
-constexpr Color GRID_ZERO_COLOR = Color24ToColor(0x252525);
-
-struct Grid
-{
+struct Grid {
     Mesh* mesh;
-    float grid_spacing;
     float snap_spacing;
 };
 
@@ -46,13 +37,15 @@ static void BuildZeroGrid(MeshBuilder* builder, Camera* camera, const Color& col
     float top = bounds.max.y;
     float world_height = top - bottom;
     float pixels_per_world_unit = screen_size.y / world_height;
-    float line_thickness = 1.0f / pixels_per_world_unit;
+    float line_thickness = 1.5f / pixels_per_world_unit;
 
     AddLineQuad(builder, Vec2{0, (top + bottom) * 0.5f}, Vec2{line_thickness, (top - bottom) * 0.5f}, color);
     AddLineQuad(builder, Vec2{(left + right) * 0.5f, 0}, Vec2{(right - left) * 0.5f, line_thickness}, color);
 }
 
 static void BuildGridLines(MeshBuilder* builder, Camera* camera, float spacing, const Color& color) {
+    if (color.a <= FLT_EPSILON) return;
+
     Bounds2 bounds = GetWorldBounds(camera);
     float left = bounds.min.x;
     float right = bounds.max.x;
@@ -73,7 +66,13 @@ static void BuildGridLines(MeshBuilder* builder, Camera* camera, float spacing, 
         AddLineQuad(builder, Vec2{(left + right) * 0.5f, y}, Vec2{(right - left) * 0.5f, line_thickness}, color);
 }
 
-static float CalculateGridSpacing(Camera* camera, float min_pixels, float base_spacing, float* out_alpha, float min_alpha, float max_alpha) {
+static float CalculateGridSpacing(
+    Camera* camera,
+    float min_pixels,
+    float base_spacing,
+    float* out_alpha,
+    float min_alpha,
+    float max_alpha) {
     // Use camera to find how big this spacing is on screen
     Vec2 world_0 = WorldToScreen(camera, Vec2{0, 0});
     Vec2 world_1 = WorldToScreen(camera, Vec2{1.0f, 0});
@@ -98,11 +97,11 @@ static float CalculateGridSpacing(Camera* camera, float min_pixels, float base_s
 
 void DrawGrid(Camera* camera) {
     BindDepth(-9.0f);
-    BindMaterial(g_view.editor_mesh_material);
+    BindMaterial(g_view.editor_material);
 
     float alpha1, alpha2;
-    float spacing1 = CalculateGridSpacing(camera, 72.0f, 1.0f, &alpha1, 1.0f, 1.0f);
-    float spacing2 = CalculateGridSpacing(camera, 72.0f, 0.1f, &alpha2, 0.0f, 1.0f);
+    float spacing1 = CalculateGridSpacing(camera, 72.0f, 1.0f, &alpha1, GRID_MAX_ALPHA, GRID_MAX_ALPHA);
+    float spacing2 = CalculateGridSpacing(camera, 72.0f, 0.1f, &alpha2, 0.0f, GRID_MAX_ALPHA);
     g_grid.snap_spacing = spacing2;
 
     constexpr int MAX_GRID_LINES = 1024;
@@ -112,20 +111,10 @@ void DrawGrid(Camera* camera) {
     PushScratch();
 
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, MAX_GRID_LINES * VERTS_PER_LINE, MAX_GRID_LINES * INDICES_PER_LINE);
+    BuildGridLines(builder, camera, spacing1, MultiplyAlpha(STYLE_GRID_COLOR(), alpha1));
+    BuildGridLines(builder, camera, spacing2, MultiplyAlpha(STYLE_GRID_COLOR(), alpha2));
 
-    if (alpha1 > 0.0f) {
-        Color line_color = GRID_PRIMARY_COLOR;
-        line_color.a *= alpha1;
-        BuildGridLines(builder, camera, spacing1, line_color);
-    }
-
-    if (alpha2 > 0.0f) {
-        Color line_color = GRID_PRIMARY_COLOR;
-        line_color.a *= alpha2;
-        BuildGridLines(builder, camera, spacing2, line_color);
-    }
-
-    BuildZeroGrid(builder, camera, GRID_ZERO_COLOR);
+    BuildZeroGrid(builder, camera, STYLE_GRID_COLOR());
 
     if (GetVertexCount(builder) > 0) {
         if (!g_grid.mesh)
@@ -142,9 +131,7 @@ void DrawGrid(Camera* camera) {
     BindDepth(0.0f);
 }
 
-void InitGrid(Allocator* allocator) {
-    (void)allocator;
-    g_grid.grid_spacing = GRID_SPACING;
+void InitGrid() {
     g_grid.mesh = nullptr;
 }
 

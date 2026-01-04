@@ -42,8 +42,8 @@ struct View {
     Material* shaded_skinned_material;
     Material* shaded_material;
     Material* vertex_material;
-    Material* editor_material;
     Material* editor_mesh_material;
+    Material* editor_material;
     Mesh* vertex_mesh;
     Mesh* arrow_mesh;
     Mesh* circle_mesh;
@@ -108,7 +108,7 @@ extern Vec2Int GetUIRefSize();
 extern float GetUIScale();
 
 // @grid
-extern void InitGrid(Allocator* allocator);
+extern void InitGrid();
 extern void ShutdownGrid();
 extern void DrawGrid(Camera* camera);
 
@@ -155,6 +155,11 @@ extern bool InspectorCheckbox(const char* name, bool state);
 extern void BeginInspectorGroup();
 extern void EndInspectorGroup();
 
+// @controls
+extern bool EditorToggleButton(ElementId id, Mesh* icon, bool state);
+extern void BeginOverlay(ElementId id=ELEMENT_ID_NONE, Align align=ALIGN_TOP_LEFT);
+extern void EndOverlay();
+
 // @shortcut
 struct Shortcut
 {
@@ -188,6 +193,9 @@ constexpr Color COLOR_UI_BUTTON_TEXT = COLOR_UI_BACKGROUND;
 constexpr float UI_BORDER_WIDTH = 2.0f;
 
 constexpr int CANVAS_ID_COMMAND = 1;
-constexpr int CANVAS_ID_PALETTES = 2;
-constexpr int CANVAS_ID_CONFIRM = 3;
-constexpr int CANVAS_ID_ANIMATION_EDITOR = 4;
+constexpr int CANVAS_ID_CONFIRM = 2;
+constexpr int CANVAS_ID_OVERLAY = 3;
+
+constexpr int CANVAS_ID_ANIMATION_EDITOR = 5;
+
+constexpr ElementId OVERLAY_BASE_ID = ELEMENT_ID_MIN + 0;

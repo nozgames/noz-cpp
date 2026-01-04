@@ -71,7 +71,7 @@ extern void BeginSelectTool(const SelectToolOptions& options);
 
 // @knife
 
-extern void BeginKnifeTool(MeshData* mesh);
+extern void BeginKnifeTool(MeshData* mesh, bool restrict_to_selected = false);
 
 // @vertex_weight
 

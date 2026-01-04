@@ -61,7 +61,7 @@ void DrawSkeletonData(SkeletonData* s, const Vec2& position) {
         BuildSkeletonDisplayMesh(s, position);
 
     BindDepth(0.0f);
-    BindMaterial(g_view.editor_mesh_material);
+    BindMaterial(g_view.editor_material);
     BindTransform(MAT3_IDENTITY);
     DrawMesh(impl->display_mesh);
 }

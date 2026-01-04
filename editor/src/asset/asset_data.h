@@ -35,6 +35,7 @@ struct AssetVtable {
     void (*editor_end)();
     void (*editor_update)();
     void (*editor_draw)();
+    void (*editor_overlay)();
     Bounds2 (*editor_bounds)();
 };
 

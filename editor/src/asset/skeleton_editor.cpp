@@ -275,7 +275,7 @@ static void DrawSkeleton() {
     PopScratch();
 
     BindDepth(0.0f);
-    BindMaterial(g_view.editor_mesh_material);
+    BindMaterial(g_view.editor_material);
     BindTransform(MAT3_IDENTITY);
     DrawMesh(g_skeleton_editor.editor_mesh);
 }

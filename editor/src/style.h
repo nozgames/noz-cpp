@@ -4,13 +4,35 @@
 
 #pragma once
 
+enum StyleId {
+    STYLE_ID_DARK,
+    STYLE_ID_COUNT
+};
 
-constexpr Color STYLE_BACKGROUND_COLOR = Color24ToColor(0x262525);
-constexpr Color STYLE_BACKGROUND_COLOR_LIGHT = Color24ToColor(0x2E2D2C);
+struct Style {
+    // @general
+    Color background_color;
+
+    // @workspace
+    Color workspace_color;
+    Color grid_color;
+    Color overlay_background_color;
+    Color overlay_text_color;
+    Color overlay_accent_text_color;
+    Color overlay_icon_color;
+    Color overlay_content_color;
+
+    // @button
+    Color button_color;
+    Color button_text_color;
+    Color button_checked_color;
+};
+
+extern Style* g_style;
+inline const Style& GetStyle() { return *g_style; }
 
 constexpr Color STYLE_SELECTED_COLOR = Color32ToColor(255, 121, 0, 255);
 
-constexpr Color STYLE_BUTTON_BACKGROUND = STYLE_BACKGROUND_COLOR;
 constexpr float STYLE_BUTTON_PADDING = 8.0f;
 
 constexpr Color STYLE_TEXT_COLOR = Color24ToColor(180,180,170);
@@ -19,9 +41,6 @@ constexpr int   STYLE_TEXT_FONT_SIZE = 14;
 constexpr Color STYLE_ICON_COLOR = Color24ToColor(180,180,170);
 
 constexpr Color STYLE_ERROR_COLOR = Color24ToColor(0xdf6b6d);
-
-constexpr Color STYLE_WORKSPACE_COLOR = Color24ToColor(0x3d3c3c);
-constexpr float STYLE_WORKSPACE_PADDING = 16.0f;
 
 
 
@@ -36,3 +55,30 @@ constexpr float STYLE_SKELETON_BONE_WIDTH = 0.02f;
 constexpr float STYLE_SKELETON_BONE_RADIUS = 0.06f;
 constexpr Color STYLE_SKELETON_BONE_COLOR = COLOR_BLACK;
 constexpr float STYLE_SKELETON_PARENT_DASH = 0.1f;
+
+
+
+inline Color STYLE_BACKGROUND_COLOR() { return GetStyle().background_color; }
+
+inline Color STYLE_BUTTON_COLOR() { return GetStyle().button_color; }
+inline Color STYLE_BUTTON_TEXT_COLOR() { return GetStyle().button_text_color; }
+inline Color STYLE_BUTTON_CHECKED_COLOR() { return GetStyle().button_checked_color; }
+
+inline Color STYLE_WORKSPACE_COLOR() { return GetStyle().workspace_color; }
+constexpr float STYLE_WORKSPACE_PADDING = 16.0f;
+
+inline Color STYLE_GRID_COLOR() { return GetStyle().grid_color; }
+
+inline Color    STYLE_OVERLAY_BACKGROUND_COLOR() { return GetStyle().overlay_background_color; }
+inline Color    STYLE_OVERLAY_TEXT_COLOR() { return GetStyle().overlay_text_color; }
+inline int      STYLE_OVERLAY_TEXT_SIZE = 14;
+inline Color    STYLE_OVERLAY_ACCENT_TEXT_COLOR() { return GetStyle().overlay_accent_text_color; }
+inline Color    STYLE_OVERLAY_ICON_COLOR() { return GetStyle().overlay_icon_color; }
+inline Color    STYLE_OVERLAY_CONTENT_COLOR() { return GetStyle().overlay_content_color; }
+constexpr float STYLE_OVERLAY_PADDING = 12.0f;
+constexpr float STYLE_OVERLAY_BORDER_RADIUS = 16.0f;
+
+
+constexpr float STYLE_TOGGLE_BUTTON_HEIGHT = 32.0f;
+constexpr float STYLE_TOGGLE_BUTTON_PADDING = 6.0f;
+constexpr float STYLE_TOGGLE_BUTTON_BORDER_RADIUS = 8.0f;

@@ -291,6 +291,10 @@ Vec2 ScreenToUI(const Vec2& screen_pos) {
     return screen_pos / ToVec2(GetScreenSize()) * g_ui.ortho_size;
 }
 
+Vec2 GetUISize() {
+    return g_ui.ortho_size;
+}
+
 static float GetUIScale() {
     return ToVec2(GetScreenSize()).y / g_ui.ortho_size.y;
 }

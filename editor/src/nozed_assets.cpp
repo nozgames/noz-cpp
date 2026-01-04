@@ -17,12 +17,16 @@ extern int FONT_COUNT;
 extern int SHADER_COUNT;
 
 // @Mesh
-Mesh* MESH_UI_ICON_ROOT_MOTION = nullptr;
-Mesh* MESH_UI_ICON_ONION = nullptr;
-Mesh* MESH_UI_ICON_MIRROR = nullptr;
-Mesh* MESH_UI_ICON_LOOP = nullptr;
+Mesh* MESH_ICON_PALETTE = nullptr;
+Mesh* MESH_ICON_TILING = nullptr;
+Mesh* MESH_ICON_ROOT_MOTION = nullptr;
+Mesh* MESH_ICON_PUBLISH = nullptr;
+Mesh* MESH_ICON_ONION = nullptr;
+Mesh* MESH_ICON_MIRROR = nullptr;
+Mesh* MESH_ICON_LOOP = nullptr;
 Mesh* MESH_ICON_EXPAND_UP = nullptr;
 Mesh* MESH_ICON_EXPAND_DOWN = nullptr;
+Mesh* MESH_ICON_DROPDOWN = nullptr;
 Mesh* MESH_ASSET_ICON_VFX = nullptr;
 Mesh* MESH_ASSET_ICON_SOUND = nullptr;
 Mesh* MESH_ASSET_ICON_SHADER = nullptr;
@@ -32,7 +36,7 @@ Mesh* MESH_ASSET_ICON_EVENT = nullptr;
 Mesh* MESH_ASSET_ICON_BIN = nullptr;
 
 // @Texture
-Texture* TEXTURE_PALETTE = nullptr;
+Texture* TEXTURE_EDITOR_PALETTE = nullptr;
 
 // @Font
 Font* FONT_SEGUISB = nullptr;
@@ -55,35 +59,39 @@ Shader* SHADER_MESH = nullptr;
 // @name
 const Name* NAME_MESH = nullptr;
 const Name* NAME_VFX = nullptr;
-const Name* NAME_BUILD = nullptr;
+const Name* NAME_R = nullptr;
+const Name* NAME_AM = nullptr;
+const Name* NAME_A = nullptr;
+const Name* NAME_RU = nullptr;
+const Name* NAME_ANIMATEDMESH = nullptr;
+const Name* NAME_B = nullptr;
+const Name* NAME_S = nullptr;
+const Name* NAME_MIRROR = nullptr;
+const Name* NAME_RENAME = nullptr;
+const Name* NAME_EDIT = nullptr;
 const Name* NAME_ANIMATION = nullptr;
 const Name* NAME_EVENT = nullptr;
 const Name* NAME_NEW = nullptr;
-const Name* NAME_RENAME = nullptr;
-const Name* NAME_E = nullptr;
-const Name* NAME_A = nullptr;
-const Name* NAME_N = nullptr;
-const Name* NAME_MIRROR = nullptr;
-const Name* NAME_B = nullptr;
-const Name* NAME_EDIT = nullptr;
-const Name* NAME_R = nullptr;
-const Name* NAME_M = nullptr;
-const Name* NAME_AM = nullptr;
 const Name* NAME_SAVE = nullptr;
-const Name* NAME_RU = nullptr;
-const Name* NAME_ANIMATEDMESH = nullptr;
-const Name* NAME_S = nullptr;
 const Name* NAME_SKELETON = nullptr;
+const Name* NAME_E = nullptr;
+const Name* NAME_M = nullptr;
+const Name* NAME_N = nullptr;
+const Name* NAME_BUILD = nullptr;
 
 // @path
-const Name* PATH_TEXTURE_PALETTE = nullptr;
+const Name* PATH_MESH_ICON_PALETTE = nullptr;
+const Name* PATH_TEXTURE_EDITOR_PALETTE = nullptr;
 const Name* PATH_SHADER_EDITOR = nullptr;
-const Name* PATH_MESH_UI_ICON_ROOT_MOTION = nullptr;
-const Name* PATH_MESH_UI_ICON_ONION = nullptr;
-const Name* PATH_MESH_UI_ICON_MIRROR = nullptr;
-const Name* PATH_MESH_UI_ICON_LOOP = nullptr;
+const Name* PATH_MESH_ICON_TILING = nullptr;
+const Name* PATH_MESH_ICON_ROOT_MOTION = nullptr;
+const Name* PATH_MESH_ICON_PUBLISH = nullptr;
+const Name* PATH_MESH_ICON_ONION = nullptr;
+const Name* PATH_MESH_ICON_MIRROR = nullptr;
+const Name* PATH_MESH_ICON_LOOP = nullptr;
 const Name* PATH_MESH_ICON_EXPAND_UP = nullptr;
 const Name* PATH_MESH_ICON_EXPAND_DOWN = nullptr;
+const Name* PATH_MESH_ICON_DROPDOWN = nullptr;
 const Name* PATH_MESH_ASSET_ICON_VFX = nullptr;
 const Name* PATH_MESH_ASSET_ICON_SOUND = nullptr;
 const Name* PATH_MESH_ASSET_ICON_SHADER = nullptr;
@@ -111,35 +119,39 @@ bool LoadAssets(Allocator* allocator)
     // @name
     NAME_MESH = GetName("mesh");
     NAME_VFX = GetName("vfx");
-    NAME_BUILD = GetName("build");
+    NAME_R = GetName("r");
+    NAME_AM = GetName("am");
+    NAME_A = GetName("a");
+    NAME_RU = GetName("ru");
+    NAME_ANIMATEDMESH = GetName("animatedmesh");
+    NAME_B = GetName("b");
+    NAME_S = GetName("s");
+    NAME_MIRROR = GetName("mirror");
+    NAME_RENAME = GetName("rename");
+    NAME_EDIT = GetName("edit");
     NAME_ANIMATION = GetName("animation");
     NAME_EVENT = GetName("event");
     NAME_NEW = GetName("new");
-    NAME_RENAME = GetName("rename");
-    NAME_E = GetName("e");
-    NAME_A = GetName("a");
-    NAME_N = GetName("n");
-    NAME_MIRROR = GetName("mirror");
-    NAME_B = GetName("b");
-    NAME_EDIT = GetName("edit");
-    NAME_R = GetName("r");
-    NAME_M = GetName("m");
-    NAME_AM = GetName("am");
     NAME_SAVE = GetName("save");
-    NAME_RU = GetName("ru");
-    NAME_ANIMATEDMESH = GetName("animatedmesh");
-    NAME_S = GetName("s");
     NAME_SKELETON = GetName("skeleton");
+    NAME_E = GetName("e");
+    NAME_M = GetName("m");
+    NAME_N = GetName("n");
+    NAME_BUILD = GetName("build");
 
     // @path
-    PATH_TEXTURE_PALETTE = GetName("palette");
+    PATH_MESH_ICON_PALETTE = GetName("icon_palette");
+    PATH_TEXTURE_EDITOR_PALETTE = GetName("editor_palette");
     PATH_SHADER_EDITOR = GetName("editor");
-    PATH_MESH_UI_ICON_ROOT_MOTION = GetName("ui_icon_root_motion");
-    PATH_MESH_UI_ICON_ONION = GetName("ui_icon_onion");
-    PATH_MESH_UI_ICON_MIRROR = GetName("ui_icon_mirror");
-    PATH_MESH_UI_ICON_LOOP = GetName("ui_icon_loop");
+    PATH_MESH_ICON_TILING = GetName("icon_tiling");
+    PATH_MESH_ICON_ROOT_MOTION = GetName("icon_root_motion");
+    PATH_MESH_ICON_PUBLISH = GetName("icon_publish");
+    PATH_MESH_ICON_ONION = GetName("icon_onion");
+    PATH_MESH_ICON_MIRROR = GetName("icon_mirror");
+    PATH_MESH_ICON_LOOP = GetName("icon_loop");
     PATH_MESH_ICON_EXPAND_UP = GetName("icon_expand_up");
     PATH_MESH_ICON_EXPAND_DOWN = GetName("icon_expand_down");
+    PATH_MESH_ICON_DROPDOWN = GetName("icon_dropdown");
     PATH_MESH_ASSET_ICON_VFX = GetName("asset_icon_vfx");
     PATH_MESH_ASSET_ICON_SOUND = GetName("asset_icon_sound");
     PATH_MESH_ASSET_ICON_SHADER = GetName("asset_icon_shader");
@@ -162,12 +174,16 @@ bool LoadAssets(Allocator* allocator)
     PATH_SHADER_MESH = GetName("mesh");
 
     // @Mesh
-    NOZ_LOAD_MESH(allocator, PATH_MESH_UI_ICON_ROOT_MOTION, MESH_UI_ICON_ROOT_MOTION);
-    NOZ_LOAD_MESH(allocator, PATH_MESH_UI_ICON_ONION, MESH_UI_ICON_ONION);
-    NOZ_LOAD_MESH(allocator, PATH_MESH_UI_ICON_MIRROR, MESH_UI_ICON_MIRROR);
-    NOZ_LOAD_MESH(allocator, PATH_MESH_UI_ICON_LOOP, MESH_UI_ICON_LOOP);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_PALETTE, MESH_ICON_PALETTE);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_TILING, MESH_ICON_TILING);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_ROOT_MOTION, MESH_ICON_ROOT_MOTION);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_PUBLISH, MESH_ICON_PUBLISH);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_ONION, MESH_ICON_ONION);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_MIRROR, MESH_ICON_MIRROR);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_LOOP, MESH_ICON_LOOP);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_EXPAND_UP, MESH_ICON_EXPAND_UP);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_EXPAND_DOWN, MESH_ICON_EXPAND_DOWN);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_DROPDOWN, MESH_ICON_DROPDOWN);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_VFX, MESH_ASSET_ICON_VFX);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_SOUND, MESH_ASSET_ICON_SOUND);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_SHADER, MESH_ASSET_ICON_SHADER);
@@ -177,12 +193,16 @@ bool LoadAssets(Allocator* allocator)
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_BIN, MESH_ASSET_ICON_BIN);
 
     static Mesh* _MESH[] = {
-        MESH_UI_ICON_ROOT_MOTION,
-        MESH_UI_ICON_ONION,
-        MESH_UI_ICON_MIRROR,
-        MESH_UI_ICON_LOOP,
+        MESH_ICON_PALETTE,
+        MESH_ICON_TILING,
+        MESH_ICON_ROOT_MOTION,
+        MESH_ICON_PUBLISH,
+        MESH_ICON_ONION,
+        MESH_ICON_MIRROR,
+        MESH_ICON_LOOP,
         MESH_ICON_EXPAND_UP,
         MESH_ICON_EXPAND_DOWN,
+        MESH_ICON_DROPDOWN,
         MESH_ASSET_ICON_VFX,
         MESH_ASSET_ICON_SOUND,
         MESH_ASSET_ICON_SHADER,
@@ -197,10 +217,10 @@ bool LoadAssets(Allocator* allocator)
     MESH_COUNT = sizeof(_MESH) / sizeof(void*);
 
     // @Texture
-    NOZ_LOAD_TEXTURE(allocator, PATH_TEXTURE_PALETTE, TEXTURE_PALETTE);
+    NOZ_LOAD_TEXTURE(allocator, PATH_TEXTURE_EDITOR_PALETTE, TEXTURE_EDITOR_PALETTE);
 
     static Texture* _TEXTURE[] = {
-        TEXTURE_PALETTE,
+        TEXTURE_EDITOR_PALETTE,
         nullptr
     };
 
@@ -260,12 +280,16 @@ bool LoadAssets(Allocator* allocator)
 void UnloadAssets()
 {
     // @Mesh
-    Free(MESH_UI_ICON_ROOT_MOTION);
-    Free(MESH_UI_ICON_ONION);
-    Free(MESH_UI_ICON_MIRROR);
-    Free(MESH_UI_ICON_LOOP);
+    Free(MESH_ICON_PALETTE);
+    Free(MESH_ICON_TILING);
+    Free(MESH_ICON_ROOT_MOTION);
+    Free(MESH_ICON_PUBLISH);
+    Free(MESH_ICON_ONION);
+    Free(MESH_ICON_MIRROR);
+    Free(MESH_ICON_LOOP);
     Free(MESH_ICON_EXPAND_UP);
     Free(MESH_ICON_EXPAND_DOWN);
+    Free(MESH_ICON_DROPDOWN);
     Free(MESH_ASSET_ICON_VFX);
     Free(MESH_ASSET_ICON_SOUND);
     Free(MESH_ASSET_ICON_SHADER);
@@ -275,7 +299,7 @@ void UnloadAssets()
     Free(MESH_ASSET_ICON_BIN);
 
     // @Texture
-    Free(TEXTURE_PALETTE);
+    Free(TEXTURE_EDITOR_PALETTE);
 
     // @Font
     Free(FONT_SEGUISB);
@@ -296,17 +320,68 @@ void UnloadAssets()
     Free(SHADER_MESH);
 }
 
-#ifdef NOZ_EDITOR
+#ifdef NOZ_LUA
+void BindLuaAssets(noz::lua::State* state) {
+    using namespace noz::lua;
+
+    // Mesh
+    SetGlobal(state, "MESH_ICON_PALETTE", MESH_ICON_PALETTE);
+    SetGlobal(state, "MESH_ICON_TILING", MESH_ICON_TILING);
+    SetGlobal(state, "MESH_ICON_ROOT_MOTION", MESH_ICON_ROOT_MOTION);
+    SetGlobal(state, "MESH_ICON_PUBLISH", MESH_ICON_PUBLISH);
+    SetGlobal(state, "MESH_ICON_ONION", MESH_ICON_ONION);
+    SetGlobal(state, "MESH_ICON_MIRROR", MESH_ICON_MIRROR);
+    SetGlobal(state, "MESH_ICON_LOOP", MESH_ICON_LOOP);
+    SetGlobal(state, "MESH_ICON_EXPAND_UP", MESH_ICON_EXPAND_UP);
+    SetGlobal(state, "MESH_ICON_EXPAND_DOWN", MESH_ICON_EXPAND_DOWN);
+    SetGlobal(state, "MESH_ICON_DROPDOWN", MESH_ICON_DROPDOWN);
+    SetGlobal(state, "MESH_ASSET_ICON_VFX", MESH_ASSET_ICON_VFX);
+    SetGlobal(state, "MESH_ASSET_ICON_SOUND", MESH_ASSET_ICON_SOUND);
+    SetGlobal(state, "MESH_ASSET_ICON_SHADER", MESH_ASSET_ICON_SHADER);
+    SetGlobal(state, "MESH_ASSET_ICON_LUA", MESH_ASSET_ICON_LUA);
+    SetGlobal(state, "MESH_ASSET_ICON_FONT", MESH_ASSET_ICON_FONT);
+    SetGlobal(state, "MESH_ASSET_ICON_EVENT", MESH_ASSET_ICON_EVENT);
+    SetGlobal(state, "MESH_ASSET_ICON_BIN", MESH_ASSET_ICON_BIN);
+
+    // Texture
+    SetGlobal(state, "TEXTURE_EDITOR_PALETTE", TEXTURE_EDITOR_PALETTE);
+
+    // Font
+    SetGlobal(state, "FONT_SEGUISB", FONT_SEGUISB);
+
+    // Shader
+    SetGlobal(state, "SHADER_EDITOR", SHADER_EDITOR);
+    SetGlobal(state, "SHADER_VFX", SHADER_VFX);
+    SetGlobal(state, "SHADER_UI_VIGNETTE", SHADER_UI_VIGNETTE);
+    SetGlobal(state, "SHADER_UI_IMAGE_TEXTURE", SHADER_UI_IMAGE_TEXTURE);
+    SetGlobal(state, "SHADER_UI_IMAGE", SHADER_UI_IMAGE);
+    SetGlobal(state, "SHADER_UI", SHADER_UI);
+    SetGlobal(state, "SHADER_TEXTURED_MESH", SHADER_TEXTURED_MESH);
+    SetGlobal(state, "SHADER_TEXT", SHADER_TEXT);
+    SetGlobal(state, "SHADER_SOLID", SHADER_SOLID);
+    SetGlobal(state, "SHADER_SKINNED_MESH", SHADER_SKINNED_MESH);
+    SetGlobal(state, "SHADER_POSTPROCESS_UI_COMPOSITE", SHADER_POSTPROCESS_UI_COMPOSITE);
+    SetGlobal(state, "SHADER_POSTPROCESS_DESATURATE", SHADER_POSTPROCESS_DESATURATE);
+    SetGlobal(state, "SHADER_MESH", SHADER_MESH);
+}
+
+#endif
+
+#if !defined(NOZ_BUILTIN_ASSETS)
 
 void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
 {
     // @Mesh
-    NOZ_RELOAD_MESH(PATH_MESH_UI_ICON_ROOT_MOTION, MESH_UI_ICON_ROOT_MOTION);
-    NOZ_RELOAD_MESH(PATH_MESH_UI_ICON_ONION, MESH_UI_ICON_ONION);
-    NOZ_RELOAD_MESH(PATH_MESH_UI_ICON_MIRROR, MESH_UI_ICON_MIRROR);
-    NOZ_RELOAD_MESH(PATH_MESH_UI_ICON_LOOP, MESH_UI_ICON_LOOP);
+    NOZ_RELOAD_MESH(PATH_MESH_ICON_PALETTE, MESH_ICON_PALETTE);
+    NOZ_RELOAD_MESH(PATH_MESH_ICON_TILING, MESH_ICON_TILING);
+    NOZ_RELOAD_MESH(PATH_MESH_ICON_ROOT_MOTION, MESH_ICON_ROOT_MOTION);
+    NOZ_RELOAD_MESH(PATH_MESH_ICON_PUBLISH, MESH_ICON_PUBLISH);
+    NOZ_RELOAD_MESH(PATH_MESH_ICON_ONION, MESH_ICON_ONION);
+    NOZ_RELOAD_MESH(PATH_MESH_ICON_MIRROR, MESH_ICON_MIRROR);
+    NOZ_RELOAD_MESH(PATH_MESH_ICON_LOOP, MESH_ICON_LOOP);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_EXPAND_UP, MESH_ICON_EXPAND_UP);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_EXPAND_DOWN, MESH_ICON_EXPAND_DOWN);
+    NOZ_RELOAD_MESH(PATH_MESH_ICON_DROPDOWN, MESH_ICON_DROPDOWN);
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_VFX, MESH_ASSET_ICON_VFX);
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_SOUND, MESH_ASSET_ICON_SOUND);
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_SHADER, MESH_ASSET_ICON_SHADER);
@@ -316,7 +391,7 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_BIN, MESH_ASSET_ICON_BIN);
 
     // @Texture
-    NOZ_RELOAD_TEXTURE(PATH_TEXTURE_PALETTE, TEXTURE_PALETTE);
+    NOZ_RELOAD_TEXTURE(PATH_TEXTURE_EDITOR_PALETTE, TEXTURE_EDITOR_PALETTE);
 
     // @Font
     NOZ_RELOAD_FONT(PATH_FONT_SEGUISB, FONT_SEGUISB);
@@ -337,4 +412,4 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     NOZ_RELOAD_SHADER(PATH_SHADER_MESH, SHADER_MESH);
 }
 
-#endif // NOZ_EDITOR
+#endif

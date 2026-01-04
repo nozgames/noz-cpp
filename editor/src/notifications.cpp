@@ -66,7 +66,7 @@ void UpdateNotifications() {
             .width=300,
             .height=40,
             .padding=EdgeInsetsAll(NOTIFICATION_PADDING),
-            .color=STYLE_BACKGROUND_COLOR_LIGHT});
+            .color=STYLE_BACKGROUND_COLOR()});
         Label(n->text, {
             .font=FONT_SEGUISB,
             .font_size=STYLE_TEXT_FONT_SIZE,

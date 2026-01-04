@@ -8,12 +8,16 @@
 #include <noz/core_assets.h>
 
 // @Mesh
-extern Mesh* MESH_UI_ICON_ROOT_MOTION;
-extern Mesh* MESH_UI_ICON_ONION;
-extern Mesh* MESH_UI_ICON_MIRROR;
-extern Mesh* MESH_UI_ICON_LOOP;
+extern Mesh* MESH_ICON_PALETTE;
+extern Mesh* MESH_ICON_TILING;
+extern Mesh* MESH_ICON_ROOT_MOTION;
+extern Mesh* MESH_ICON_PUBLISH;
+extern Mesh* MESH_ICON_ONION;
+extern Mesh* MESH_ICON_MIRROR;
+extern Mesh* MESH_ICON_LOOP;
 extern Mesh* MESH_ICON_EXPAND_UP;
 extern Mesh* MESH_ICON_EXPAND_DOWN;
+extern Mesh* MESH_ICON_DROPDOWN;
 extern Mesh* MESH_ASSET_ICON_VFX;
 extern Mesh* MESH_ASSET_ICON_SOUND;
 extern Mesh* MESH_ASSET_ICON_SHADER;
@@ -23,7 +27,7 @@ extern Mesh* MESH_ASSET_ICON_EVENT;
 extern Mesh* MESH_ASSET_ICON_BIN;
 
 // @Texture
-extern Texture* TEXTURE_PALETTE;
+extern Texture* TEXTURE_EDITOR_PALETTE;
 
 // @Font
 extern Font* FONT_SEGUISB;
@@ -46,25 +50,25 @@ extern Shader* SHADER_MESH;
 // @name
 extern const Name* NAME_MESH;
 extern const Name* NAME_VFX;
-extern const Name* NAME_BUILD;
+extern const Name* NAME_R;
+extern const Name* NAME_AM;
+extern const Name* NAME_A;
+extern const Name* NAME_RU;
+extern const Name* NAME_ANIMATEDMESH;
+extern const Name* NAME_B;
+extern const Name* NAME_S;
+extern const Name* NAME_MIRROR;
+extern const Name* NAME_RENAME;
+extern const Name* NAME_EDIT;
 extern const Name* NAME_ANIMATION;
 extern const Name* NAME_EVENT;
 extern const Name* NAME_NEW;
-extern const Name* NAME_RENAME;
-extern const Name* NAME_E;
-extern const Name* NAME_A;
-extern const Name* NAME_N;
-extern const Name* NAME_MIRROR;
-extern const Name* NAME_B;
-extern const Name* NAME_EDIT;
-extern const Name* NAME_R;
-extern const Name* NAME_M;
-extern const Name* NAME_AM;
 extern const Name* NAME_SAVE;
-extern const Name* NAME_RU;
-extern const Name* NAME_ANIMATEDMESH;
-extern const Name* NAME_S;
 extern const Name* NAME_SKELETON;
+extern const Name* NAME_E;
+extern const Name* NAME_M;
+extern const Name* NAME_N;
+extern const Name* NAME_BUILD;
 
 // @palette
 constexpr int PALETTE_DEFAULT = 0;
@@ -73,6 +77,10 @@ constexpr int PALETTE_DEFAULT = 0;
 extern bool LoadAssets(Allocator* allocator);
 extern void UnloadAssets();
 
-#ifdef NOZ_EDITOR
+#if !defined(NOZ_BUILTIN_ASSETS)
 extern void HotloadAsset(const Name* incoming_name, AssetType incoming_type);
+#endif
+
+#if defined(NOZ_LUA)
+extern void BindLuaAssets(noz::lua::State* state);
 #endif

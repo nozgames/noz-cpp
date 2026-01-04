@@ -7,6 +7,7 @@ extern void InitTextureEditor();
 extern void InitSkeletonEditor();
 extern void InitAnimationEditor();
 extern void InitAnimatedMeshEditor();
+extern void InitStyles();
 
 extern Font* FONT_SEGUISB;
 extern const Name* NAME_MESH;
@@ -414,6 +415,18 @@ static void UpdateAssetNames() {
     }
 }
 
+static void ViewOverlay() {
+    BeginCanvas({.id=CANVAS_ID_OVERLAY});
+
+    if (GetState() == VIEW_STATE_EDIT) {
+        assert(g_editor.editing_asset);
+        if (g_editor.editing_asset->vtable.editor_overlay)
+            g_editor.editing_asset->vtable.editor_overlay();
+    }
+
+    EndCanvas();
+}
+
 void UpdateViewUI() {
     UpdateConfirmDialog();
 
@@ -422,6 +435,8 @@ void UpdateViewUI() {
         if (g_editor.editing_asset->vtable.editor_update)
             g_editor.editing_asset->vtable.editor_update();
     }
+
+    ViewOverlay();
 
     UpdateCommandInput();
     UpdateNotifications();
@@ -921,13 +936,14 @@ static void ToggleGrid() {
 
 void InitView() {
     InitUndo();
+    InitStyles();
 
     g_view.camera = CreateCamera(ALLOCATOR_DEFAULT);
     g_view.shaded_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_MESH);
     g_view.vertex_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
-    g_view.editor_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_MESH);
+    g_view.editor_mesh_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_MESH);
     g_view.shaded_skinned_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_SKINNED_MESH);
-    g_view.editor_mesh_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_EDITOR);
+    g_view.editor_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_EDITOR);
     g_view.zoom = ZOOM_DEFAULT;
     g_view.ui_scale = 1.0f;
     g_view.dpi = 72.0f;
@@ -1015,7 +1031,7 @@ void InitView() {
 
     Free(builder);
 
-    InitGrid(ALLOCATOR_DEFAULT);
+    InitGrid();
     g_view.state = VIEW_STATE_DEFAULT;
 
     static Shortcut shortcuts[] = {
@@ -1070,7 +1086,7 @@ void InitView() {
         GetName(g_config->GetString("editor", "palette", "palette").c_str())));
     if (palette_texture_data) {
         LogInfo("[View] Loading palette texture from: %s (asset_path_index=%d)", palette_texture_data->path, palette_texture_data->asset_path_index);
-        SetTexture(g_view.editor_material, palette_texture_data->impl->texture);
+        SetTexture(g_view.editor_mesh_material, TEXTURE_EDITOR_PALETTE);
         SetTexture(g_view.shaded_material, palette_texture_data->impl->texture);
         SetTexture(g_view.shaded_skinned_material, palette_texture_data->impl->texture);
         SetPaletteTexture(palette_texture_data->impl->texture);

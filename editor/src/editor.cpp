@@ -82,7 +82,7 @@ static void UpdateEditor() {
 
     UpdateView();
 
-    BeginRender(STYLE_WORKSPACE_COLOR);
+    BeginRender(STYLE_WORKSPACE_COLOR());
     DrawView();
     DrawVfx();
     DrawUI();

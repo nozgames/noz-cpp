@@ -3,12 +3,6 @@
 //
 
 extern Font* FONT_SEGUISB;
-extern Mesh* MESH_ICON_EXPAND_UP;
-extern Mesh* MESH_ICON_EXPAND_DOWN;
-extern Mesh* MESH_UI_ICON_ROOT_MOTION;
-extern Mesh* MESH_UI_ICON_ONION;
-extern Mesh* MESH_UI_ICON_MIRROR;
-extern Mesh* MESH_UI_ICON_LOOP;
 extern Mesh* MESH_ASSET_ICON_EVENT;
 extern const Name* NAME_RU;
 
@@ -491,11 +485,11 @@ static void DopeSheet() {
     BeginContainer({.height=DOPESHEET_BUTTON_SIZE, .margin=EdgeInsetsLeft(DOPESHEET_FRAME_MARGIN_X)});
     BeginRow({.spacing=DOPESHEET_BUTTON_SPACING});
     {
-        DopeSheetButton(ID_MIRROR, MESH_UI_ICON_MIRROR, false, [] { Mirror(); });
+        DopeSheetButton(ID_MIRROR, MESH_ICON_MIRROR, false, [] { Mirror(); });
         Expanded();
-        DopeSheetButton(ID_LOOP, MESH_UI_ICON_LOOP, IsLooping(n->impl->flags), [] { ToggleLoop(); });
-        DopeSheetButton(ID_ROOT_MOTION, MESH_UI_ICON_ROOT_MOTION, g_animation_editor.root_motion, [] { ToggleRootMotion(); });
-        DopeSheetButton(ID_ONION_SKIN, MESH_UI_ICON_ONION, g_animation_editor.onion_skin, [] { ToggleOnionSkin(); });
+        DopeSheetButton(ID_LOOP, MESH_ICON_LOOP, IsLooping(n->impl->flags), [] { ToggleLoop(); });
+        DopeSheetButton(ID_ROOT_MOTION, MESH_ICON_ROOT_MOTION, g_animation_editor.root_motion, [] { ToggleRootMotion(); });
+        DopeSheetButton(ID_ONION_SKIN, MESH_ICON_ONION, g_animation_editor.onion_skin, [] { ToggleOnionSkin(); });
     }
     EndRow();
     EndContainer();

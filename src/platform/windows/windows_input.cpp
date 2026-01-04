@@ -503,17 +503,23 @@ void PlatformShowTextboxInternal(const noz::RectInt& rect, const Text& initial_v
         SendMessage(g_windows_input.edit_hwnd, EM_SETPASSWORDCHAR, 0, 0);
     }
 
-    // value
+    // Set font and rect BEFORE setting text to ensure correct text layout
+    PlatformUpdateTextboxRectInternal(rect, style.font_size);
+
+    // value - set after font so text layout is calculated correctly
     if (initial_value.length > 0) {
         SetWindowTextA(g_windows_input.edit_hwnd, initial_value.value);
+        // Reset scroll position to start, then select all
+        SendMessage(g_windows_input.edit_hwnd, EM_SETSEL, 0, 0);
+        SendMessage(g_windows_input.edit_hwnd, EM_SCROLLCARET, 0, 0);
         SendMessage(g_windows_input.edit_hwnd, EM_SETSEL, 0, -1);
     } else {
         SetWindowTextA(g_windows_input.edit_hwnd, "");
+        SendMessage(g_windows_input.edit_hwnd, EM_SETSEL, 0, 0);
+        SendMessage(g_windows_input.edit_hwnd, EM_SCROLLCARET, 0, 0);
     }
 
     SetFocus(g_windows_input.edit_hwnd);
-
-    PlatformUpdateTextboxRectInternal(rect, style.font_size);
 
     g_windows_input.edit_visible = true;
 }
@@ -578,6 +584,9 @@ void PlatformInitInput() {
         GetModuleHandle(nullptr),
         nullptr
     );
+
+    // Set margins to 0 immediately to prevent default margins from causing scroll offset
+    SendMessage(g_windows_input.edit_hwnd, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, MAKELPARAM(0, 0));
 
     g_windows_input.edit_proc = reinterpret_cast<WNDPROC>(
         SetWindowLongPtr(g_windows_input.edit_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(EditSubclassProc))
