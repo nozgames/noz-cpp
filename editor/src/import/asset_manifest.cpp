@@ -155,9 +155,26 @@ static bool ReadAsset(u32 item_index, void* item_ptr, void* user_data) {
 }
 
 static void SortAssets(ManifestGenerator& generator) {
+    // Sort assets by var_name for consistent output ordering
     std::ranges::sort(generator.assets.begin(), generator.assets.end(), [](const AssetEntry& a, const AssetEntry& b) {
-        return Compare(a.asset->name->value, b.asset->name->value);
+        return Compare(a.var_name.c_str(), b.var_name.c_str()) < 0;
     });
+
+    // Sort bones by skeleton name, then by index within skeleton
+    std::ranges::sort(generator.bones.begin(), generator.bones.end(), [](const BoneIndex& a, const BoneIndex& b) {
+        int cmp = Compare(a.skeleton_name.c_str(), b.skeleton_name.c_str());
+        if (cmp != 0) return cmp < 0;
+        return a.index < b.index;
+    });
+}
+
+// Get sorted names for deterministic output (map is ordered by pointer, not string)
+static std::vector<std::pair<const Name*, std::string>> GetSortedNames(const std::map<const Name*, std::string>& names) {
+    std::vector<std::pair<const Name*, std::string>> sorted(names.begin(), names.end());
+    std::ranges::sort(sorted, [](const auto& a, const auto& b) {
+        return Compare(a.first->value, b.first->value) < 0;
+    });
+    return sorted;
 }
 
 bool GenerateAssetManifest(const fs::path& source_path, Props* config) {
@@ -245,7 +262,8 @@ static void GenerateCppSource(ManifestGenerator& generator) {
 
     WriteCSTR(stream, "\n");
     WriteCSTR(stream, "// @name\n");
-    for (auto& kv : generator.names)
+    auto sorted_names = GetSortedNames(generator.names);
+    for (auto& kv : sorted_names)
         WriteCSTR(stream, "const Name* NAME_%s = nullptr;\n", kv.second.c_str());
 
     WriteCSTR(stream,
@@ -262,7 +280,7 @@ static void GenerateCppSource(ManifestGenerator& generator) {
         "{\n");
 
     WriteCSTR(stream, "    // @name\n");
-    for (auto& kv : generator.names)
+    for (auto& kv : sorted_names)
         WriteCSTR(stream, "    NAME_%s = GetName(\"%s\");\n", kv.second.c_str(), kv.first->value);
 
     WriteCSTR(stream, "\n");
@@ -411,7 +429,8 @@ static void GenerateCppHeader(ManifestGenerator& generator) {
 
     WriteCSTR(stream, "\n");
     WriteCSTR(stream, "// @name\n");
-    for (auto& kv : generator.names)
+    auto sorted_names = GetSortedNames(generator.names);
+    for (auto& kv : sorted_names)
         WriteCSTR(stream, "extern const Name* NAME_%s;\n", kv.second.c_str());
 
     if (!generator.bones.empty()) {
@@ -427,27 +446,41 @@ static void GenerateCppHeader(ManifestGenerator& generator) {
         }
     }
 
-    bool first_event = true;
+    // Collect and sort events by name
+    std::vector<std::pair<std::string, int>> events;
     for (int asset_index=0, asset_count=GetAssetCount(); asset_index<asset_count; asset_index++) {
         AssetData* a = GetAssetData(asset_index);
         if (a->type != ASSET_TYPE_EVENT) continue;
-        if (first_event) {
-            WriteCSTR(stream, "\n");
-            WriteCSTR(stream, "// @event\n");
-            first_event = false;
-        }
         EventData* e = static_cast<EventData*>(a);
         std::string var_name = a->name->value;
         Upper(var_name.data(), (u32)var_name.size());
-        WriteCSTR(stream, "constexpr int EVENT_%s = %d;\n", var_name.c_str(), e->id);
+        events.push_back({var_name, e->id});
+    }
+    std::ranges::sort(events, [](const auto& a, const auto& b) {
+        return Compare(a.first.c_str(), b.first.c_str()) < 0;
+    });
+    if (!events.empty()) {
+        WriteCSTR(stream, "\n");
+        WriteCSTR(stream, "// @event\n");
+        for (auto& [var_name, id] : events) {
+            WriteCSTR(stream, "constexpr int EVENT_%s = %d;\n", var_name.c_str(), id);
+        }
     }
 
-    WriteCSTR(stream, "\n");
-    WriteCSTR(stream, "// @palette\n");
+    // Collect and sort palettes by name
+    std::vector<std::pair<std::string, int>> palettes;
     for (int palette_index=0, palette_count=g_editor.palette_count; palette_index<palette_count; palette_index++) {
         std::string var_name = g_editor.palettes[palette_index].name->value;
         Upper(var_name.data(), (u32)var_name.size());
-        WriteCSTR(stream, "constexpr int PALETTE_%s = %d;\n", var_name.c_str(), g_editor.palettes[palette_index].id);
+        palettes.push_back({var_name, g_editor.palettes[palette_index].id});
+    }
+    std::ranges::sort(palettes, [](const auto& a, const auto& b) {
+        return Compare(a.first.c_str(), b.first.c_str()) < 0;
+    });
+    WriteCSTR(stream, "\n");
+    WriteCSTR(stream, "// @palette\n");
+    for (auto& [var_name, id] : palettes) {
+        WriteCSTR(stream, "constexpr int PALETTE_%s = %d;\n", var_name.c_str(), id);
     }
 
     WriteCSTR(stream, "\n");

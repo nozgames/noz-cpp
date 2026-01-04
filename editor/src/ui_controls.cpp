@@ -18,7 +18,9 @@ bool EditorToggleButton(ElementId id, Mesh* icon, bool state, bool disabled) {
         .align=ALIGN_CENTER,
         .color=disabled
             ? STYLE_BUTTON_DISABLED_TEXT_COLOR() :
-            (state ? STYLE_BUTTON_CHECKED_TEXT_COLOR() : STYLE_BUTTON_TEXT_COLOR()),});
+            (state ? STYLE_BUTTON_CHECKED_TEXT_COLOR() : STYLE_BUTTON_TEXT_COLOR()),
+        .material = g_view.editor_mesh_material,
+    });
     EndContainer();
     return was_pressed;
 }

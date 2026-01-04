@@ -789,25 +789,6 @@ static void MeshEditorToolbar() {
     BeginOverlay(MESH_EDITOR_ID_TOOLBAR, ALIGN_BOTTOM_CENTER);
     BeginColumn({.spacing=8});
 
-#if 0
-    // Expander
-    BeginContainer({
-        .height=16,
-        .align=ALIGN_TOP_CENTER,
-        .padding=EdgeInsetsAll(5),
-        .id=MESH_EDITOR_ID_EXPAND});
-    {
-        if (WasPressed())
-            show_palette_picker = !g_mesh_editor.show_palette_picker;
-
-        Image(g_mesh_editor.show_palette_picker ? MESH_ICON_EXPAND_DOWN : MESH_ICON_EXPAND_UP, {
-            .align=ALIGN_TOP_CENTER,
-            .color=STYLE_OVERLAY_ICON_COLOR(),
-        });
-    }
-    EndContainer();
-#endif
-
     // Buttons
     BeginContainer();
     BeginRow({.align=ALIGN_LEFT, .spacing=4});
@@ -817,7 +798,6 @@ static void MeshEditorToolbar() {
         g_mesh_editor.mode = MESH_EDITOR_MODE_EDGE;
     if (EditorToggleButton(MESH_EDITOR_ID_FACE_MODE, MESH_ICON_FACE_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_FACE))
         g_mesh_editor.mode = MESH_EDITOR_MODE_FACE;
-
     EndRow();
 
     BeginRow({.align=ALIGN_RIGHT, .spacing=4});
