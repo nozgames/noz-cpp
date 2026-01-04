@@ -3,8 +3,6 @@
 //
 
 extern Font* FONT_SEGUISB;
-extern Mesh* MESH_COLOR_PICKER_COLOR;
-extern Mesh* MESH_COLOR_PICKER_PALETTE;
 
 constexpr float COLOR_PICKER_BORDER_WIDTH = 4.0f;
 constexpr float COLOR_PICKER_COLOR_SIZE = 26.0f;
@@ -16,7 +14,11 @@ constexpr Color COLOR_PICKER_SELECTION_BORDER_COLOR = COLOR_VERTEX_SELECTED;
 constexpr int MESH_EDITOR_ID_TOOLBAR = OVERLAY_BASE_ID + 0;
 constexpr int MESH_EDITOR_ID_EXPAND = OVERLAY_BASE_ID + 1;
 constexpr int MESH_EDITOR_ID_TILE = OVERLAY_BASE_ID + 2;
-constexpr int MESH_EDITOR_ID_PALETTES = OVERLAY_BASE_ID + 3;
+constexpr int MESH_EDITOR_ID_VERTEX_MODE = OVERLAY_BASE_ID + 3;
+constexpr int MESH_EDITOR_ID_EDGE_MODE = OVERLAY_BASE_ID + 4;
+constexpr int MESH_EDITOR_ID_FACE_MODE = OVERLAY_BASE_ID + 5;
+
+constexpr int MESH_EDITOR_ID_PALETTES = OVERLAY_BASE_ID + 6;
 constexpr int MESH_EDITOR_ID_COLORS = MESH_EDITOR_ID_PALETTES + MAX_PALETTES;
 
 enum MeshEditorMode {
@@ -677,19 +679,33 @@ static bool Palette(int palette_index, bool* selected_colors) {
     BeginContainer({.id = static_cast<ElementId>(MESH_EDITOR_ID_PALETTES + palette_index)});
     BeginGrid({.columns=col_count, .cell={COLOR_PICKER_COLOR_SIZE, COLOR_PICKER_COLOR_SIZE}});
     for (int i=0; i<COLOR_COUNT; i++) {
+        bool selected = (selected_colors && selected_colors[i]);
+        Color color = g_editor.palettes[palette_index].colors[i];
         BeginContainer({
             .width=COLOR_PICKER_COLOR_SIZE,
             .height=COLOR_PICKER_COLOR_SIZE,
-            .border={
-                .width=(selected_colors && selected_colors[i])?2.0f:0.0f,
-                .color=COLOR_VERTEX_SELECTED
-            },
             .id=static_cast<ElementId>(MESH_EDITOR_ID_COLORS + i)
         });
-        Image(g_view.edge_mesh, {
-            .stretch = IMAGE_STRETCH_UNIFORM,
-            .color_offset=Vec2Int{i,g_editor.palettes[palette_index].id}
+            if (selected) {
+                // Draw a bordrder on the outside to indicate selection
+                Container({
+                    .width=COLOR_PICKER_COLOR_SIZE + 2,
+                    .height=COLOR_PICKER_COLOR_SIZE + 2,
+                    .align=ALIGN_CENTER,
+                    .margin=EdgeInsetsAll(-2),
+                    .border={.radius=8.0f,.width=2.5f,.color=STYLE_SELECTION_COLOR()}
+                });
+            }
+
+        Container({
+            .width=COLOR_PICKER_COLOR_SIZE - 4,
+            .height=COLOR_PICKER_COLOR_SIZE - 4,
+            .align=ALIGN_CENTER,
+            .color=color.a > 0 ? color : STYLE_COLOR_BLACK_10PCT,
+            .border={.radius=6.0f,},
+            .id=static_cast<ElementId>(MESH_EDITOR_ID_COLORS + i)
         });
+
         if (!g_mesh_editor.show_palette_picker && WasPressed()) {
             RecordUndo(GetMeshData());
             SetSelecteFaceColor(GetMeshData(), i);
@@ -738,7 +754,7 @@ static void ColorPicker(){
     bool show_palette_picker = g_mesh_editor.show_palette_picker;
     int current_palette_index = g_editor.palette_map[impl->palette];
 
-    BeginContainer({.padding=EdgeInsetsAll(4), .color=STYLE_OVERLAY_CONTENT_COLOR()});
+    BeginContainer({.padding=EdgeInsetsAll(4), .color=STYLE_OVERLAY_CONTENT_COLOR(), .border{.radius=STYLE_OVERLAY_CONTENT_BORDER_RADIUS}});
     BeginColumn();
     {
         // Show all palettes when palette picker is active
@@ -773,6 +789,7 @@ static void MeshEditorToolbar() {
     BeginOverlay(MESH_EDITOR_ID_TOOLBAR, ALIGN_BOTTOM_CENTER);
     BeginColumn({.spacing=8});
 
+#if 0
     // Expander
     BeginContainer({
         .height=16,
@@ -789,12 +806,25 @@ static void MeshEditorToolbar() {
         });
     }
     EndContainer();
+#endif
 
     // Buttons
     BeginContainer();
-    BeginRow({.align=ALIGN_RIGHT});
+    BeginRow({.align=ALIGN_LEFT, .spacing=4});
+    if (EditorToggleButton(MESH_EDITOR_ID_VERTEX_MODE, MESH_ICON_VERTEX_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_VERTEX))
+        g_mesh_editor.mode = MESH_EDITOR_MODE_VERTEX;
+    if (EditorToggleButton(MESH_EDITOR_ID_EDGE_MODE, MESH_ICON_EDGE_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_EDGE))
+        g_mesh_editor.mode = MESH_EDITOR_MODE_EDGE;
+    if (EditorToggleButton(MESH_EDITOR_ID_FACE_MODE, MESH_ICON_FACE_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_FACE))
+        g_mesh_editor.mode = MESH_EDITOR_MODE_FACE;
+
+    EndRow();
+
+    BeginRow({.align=ALIGN_RIGHT, .spacing=4});
     if (EditorToggleButton(MESH_EDITOR_ID_TILE, MESH_ICON_TILING, g_mesh_editor.show_tiling))
         g_mesh_editor.show_tiling = !g_mesh_editor.show_tiling;
+    if (EditorToggleButton(MESH_EDITOR_ID_EXPAND, MESH_ICON_PALETTE, g_mesh_editor.show_palette_picker, g_editor.palette_count < 2))
+        show_palette_picker = !g_mesh_editor.show_palette_picker;
     EndRow();
     EndContainer();
 

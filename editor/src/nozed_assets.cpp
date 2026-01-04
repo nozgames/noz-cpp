@@ -17,7 +17,11 @@ extern int FONT_COUNT;
 extern int SHADER_COUNT;
 
 // @Mesh
+Mesh* MESH_ICON_VERTEX_MODE = nullptr;
 Mesh* MESH_ICON_PALETTE = nullptr;
+Mesh* MESH_ICON_FACE_MODE = nullptr;
+Mesh* MESH_ICON_EDGE_MODE = nullptr;
+Mesh* MESH_ASSET_ICON_BIN = nullptr;
 Mesh* MESH_ICON_TILING = nullptr;
 Mesh* MESH_ICON_ROOT_MOTION = nullptr;
 Mesh* MESH_ICON_PUBLISH = nullptr;
@@ -33,7 +37,6 @@ Mesh* MESH_ASSET_ICON_SHADER = nullptr;
 Mesh* MESH_ASSET_ICON_LUA = nullptr;
 Mesh* MESH_ASSET_ICON_FONT = nullptr;
 Mesh* MESH_ASSET_ICON_EVENT = nullptr;
-Mesh* MESH_ASSET_ICON_BIN = nullptr;
 
 // @Texture
 Texture* TEXTURE_EDITOR_PALETTE = nullptr;
@@ -42,7 +45,6 @@ Texture* TEXTURE_EDITOR_PALETTE = nullptr;
 Font* FONT_SEGUISB = nullptr;
 
 // @Shader
-Shader* SHADER_EDITOR = nullptr;
 Shader* SHADER_VFX = nullptr;
 Shader* SHADER_UI_VIGNETTE = nullptr;
 Shader* SHADER_UI_IMAGE_TEXTURE = nullptr;
@@ -55,33 +57,51 @@ Shader* SHADER_SKINNED_MESH = nullptr;
 Shader* SHADER_POSTPROCESS_UI_COMPOSITE = nullptr;
 Shader* SHADER_POSTPROCESS_DESATURATE = nullptr;
 Shader* SHADER_MESH = nullptr;
+Shader* SHADER_EDITOR = nullptr;
 
 // @name
 const Name* NAME_MESH = nullptr;
 const Name* NAME_VFX = nullptr;
-const Name* NAME_R = nullptr;
-const Name* NAME_AM = nullptr;
-const Name* NAME_A = nullptr;
-const Name* NAME_RU = nullptr;
-const Name* NAME_ANIMATEDMESH = nullptr;
-const Name* NAME_B = nullptr;
-const Name* NAME_S = nullptr;
-const Name* NAME_MIRROR = nullptr;
-const Name* NAME_RENAME = nullptr;
 const Name* NAME_EDIT = nullptr;
-const Name* NAME_ANIMATION = nullptr;
-const Name* NAME_EVENT = nullptr;
-const Name* NAME_NEW = nullptr;
-const Name* NAME_SAVE = nullptr;
-const Name* NAME_SKELETON = nullptr;
-const Name* NAME_E = nullptr;
-const Name* NAME_M = nullptr;
-const Name* NAME_N = nullptr;
+const Name* NAME_AM = nullptr;
 const Name* NAME_BUILD = nullptr;
+const Name* NAME_M = nullptr;
+const Name* NAME_RU = nullptr;
+const Name* NAME_S = nullptr;
+const Name* NAME_N = nullptr;
+const Name* NAME_R = nullptr;
+const Name* NAME_ANIMATION = nullptr;
+const Name* NAME_SKELETON = nullptr;
+const Name* NAME_SAVE = nullptr;
+const Name* NAME_E = nullptr;
+const Name* NAME_MIRROR = nullptr;
+const Name* NAME_NEW = nullptr;
+const Name* NAME_A = nullptr;
+const Name* NAME_ANIMATEDMESH = nullptr;
+const Name* NAME_EVENT = nullptr;
+const Name* NAME_B = nullptr;
+const Name* NAME_RENAME = nullptr;
 
 // @path
+const Name* PATH_MESH_ICON_VERTEX_MODE = nullptr;
 const Name* PATH_MESH_ICON_PALETTE = nullptr;
+const Name* PATH_MESH_ICON_FACE_MODE = nullptr;
+const Name* PATH_MESH_ICON_EDGE_MODE = nullptr;
+const Name* PATH_FONT_SEGUISB = nullptr;
+const Name* PATH_SHADER_VFX = nullptr;
+const Name* PATH_SHADER_UI_VIGNETTE = nullptr;
+const Name* PATH_SHADER_UI_IMAGE_TEXTURE = nullptr;
+const Name* PATH_SHADER_UI_IMAGE = nullptr;
+const Name* PATH_SHADER_UI = nullptr;
+const Name* PATH_SHADER_TEXTURED_MESH = nullptr;
+const Name* PATH_SHADER_TEXT = nullptr;
+const Name* PATH_SHADER_SOLID = nullptr;
+const Name* PATH_SHADER_SKINNED_MESH = nullptr;
+const Name* PATH_SHADER_POSTPROCESS_UI_COMPOSITE = nullptr;
+const Name* PATH_SHADER_POSTPROCESS_DESATURATE = nullptr;
 const Name* PATH_TEXTURE_EDITOR_PALETTE = nullptr;
+const Name* PATH_MESH_ASSET_ICON_BIN = nullptr;
+const Name* PATH_SHADER_MESH = nullptr;
 const Name* PATH_SHADER_EDITOR = nullptr;
 const Name* PATH_MESH_ICON_TILING = nullptr;
 const Name* PATH_MESH_ICON_ROOT_MOTION = nullptr;
@@ -98,20 +118,6 @@ const Name* PATH_MESH_ASSET_ICON_SHADER = nullptr;
 const Name* PATH_MESH_ASSET_ICON_LUA = nullptr;
 const Name* PATH_MESH_ASSET_ICON_FONT = nullptr;
 const Name* PATH_MESH_ASSET_ICON_EVENT = nullptr;
-const Name* PATH_MESH_ASSET_ICON_BIN = nullptr;
-const Name* PATH_FONT_SEGUISB = nullptr;
-const Name* PATH_SHADER_VFX = nullptr;
-const Name* PATH_SHADER_UI_VIGNETTE = nullptr;
-const Name* PATH_SHADER_UI_IMAGE_TEXTURE = nullptr;
-const Name* PATH_SHADER_UI_IMAGE = nullptr;
-const Name* PATH_SHADER_UI = nullptr;
-const Name* PATH_SHADER_TEXTURED_MESH = nullptr;
-const Name* PATH_SHADER_TEXT = nullptr;
-const Name* PATH_SHADER_SOLID = nullptr;
-const Name* PATH_SHADER_SKINNED_MESH = nullptr;
-const Name* PATH_SHADER_POSTPROCESS_UI_COMPOSITE = nullptr;
-const Name* PATH_SHADER_POSTPROCESS_DESATURATE = nullptr;
-const Name* PATH_SHADER_MESH = nullptr;
 
 // @load
 bool LoadAssets(Allocator* allocator)
@@ -119,29 +125,46 @@ bool LoadAssets(Allocator* allocator)
     // @name
     NAME_MESH = GetName("mesh");
     NAME_VFX = GetName("vfx");
-    NAME_R = GetName("r");
-    NAME_AM = GetName("am");
-    NAME_A = GetName("a");
-    NAME_RU = GetName("ru");
-    NAME_ANIMATEDMESH = GetName("animatedmesh");
-    NAME_B = GetName("b");
-    NAME_S = GetName("s");
-    NAME_MIRROR = GetName("mirror");
-    NAME_RENAME = GetName("rename");
     NAME_EDIT = GetName("edit");
-    NAME_ANIMATION = GetName("animation");
-    NAME_EVENT = GetName("event");
-    NAME_NEW = GetName("new");
-    NAME_SAVE = GetName("save");
-    NAME_SKELETON = GetName("skeleton");
-    NAME_E = GetName("e");
-    NAME_M = GetName("m");
-    NAME_N = GetName("n");
+    NAME_AM = GetName("am");
     NAME_BUILD = GetName("build");
+    NAME_M = GetName("m");
+    NAME_RU = GetName("ru");
+    NAME_S = GetName("s");
+    NAME_N = GetName("n");
+    NAME_R = GetName("r");
+    NAME_ANIMATION = GetName("animation");
+    NAME_SKELETON = GetName("skeleton");
+    NAME_SAVE = GetName("save");
+    NAME_E = GetName("e");
+    NAME_MIRROR = GetName("mirror");
+    NAME_NEW = GetName("new");
+    NAME_A = GetName("a");
+    NAME_ANIMATEDMESH = GetName("animatedmesh");
+    NAME_EVENT = GetName("event");
+    NAME_B = GetName("b");
+    NAME_RENAME = GetName("rename");
 
     // @path
+    PATH_MESH_ICON_VERTEX_MODE = GetName("icon_vertex_mode");
     PATH_MESH_ICON_PALETTE = GetName("icon_palette");
+    PATH_MESH_ICON_FACE_MODE = GetName("icon_face_mode");
+    PATH_MESH_ICON_EDGE_MODE = GetName("icon_edge_mode");
+    PATH_FONT_SEGUISB = GetName("seguisb");
+    PATH_SHADER_VFX = GetName("vfx");
+    PATH_SHADER_UI_VIGNETTE = GetName("ui_vignette");
+    PATH_SHADER_UI_IMAGE_TEXTURE = GetName("ui_image_texture");
+    PATH_SHADER_UI_IMAGE = GetName("ui_image");
+    PATH_SHADER_UI = GetName("ui");
+    PATH_SHADER_TEXTURED_MESH = GetName("textured_mesh");
+    PATH_SHADER_TEXT = GetName("text");
+    PATH_SHADER_SOLID = GetName("solid");
+    PATH_SHADER_SKINNED_MESH = GetName("skinned_mesh");
+    PATH_SHADER_POSTPROCESS_UI_COMPOSITE = GetName("postprocess_ui_composite");
+    PATH_SHADER_POSTPROCESS_DESATURATE = GetName("postprocess_desaturate");
     PATH_TEXTURE_EDITOR_PALETTE = GetName("editor_palette");
+    PATH_MESH_ASSET_ICON_BIN = GetName("asset_icon_bin");
+    PATH_SHADER_MESH = GetName("mesh");
     PATH_SHADER_EDITOR = GetName("editor");
     PATH_MESH_ICON_TILING = GetName("icon_tiling");
     PATH_MESH_ICON_ROOT_MOTION = GetName("icon_root_motion");
@@ -158,23 +181,13 @@ bool LoadAssets(Allocator* allocator)
     PATH_MESH_ASSET_ICON_LUA = GetName("asset_icon_lua");
     PATH_MESH_ASSET_ICON_FONT = GetName("asset_icon_font");
     PATH_MESH_ASSET_ICON_EVENT = GetName("asset_icon_event");
-    PATH_MESH_ASSET_ICON_BIN = GetName("asset_icon_bin");
-    PATH_FONT_SEGUISB = GetName("seguisb");
-    PATH_SHADER_VFX = GetName("vfx");
-    PATH_SHADER_UI_VIGNETTE = GetName("ui_vignette");
-    PATH_SHADER_UI_IMAGE_TEXTURE = GetName("ui_image_texture");
-    PATH_SHADER_UI_IMAGE = GetName("ui_image");
-    PATH_SHADER_UI = GetName("ui");
-    PATH_SHADER_TEXTURED_MESH = GetName("textured_mesh");
-    PATH_SHADER_TEXT = GetName("text");
-    PATH_SHADER_SOLID = GetName("solid");
-    PATH_SHADER_SKINNED_MESH = GetName("skinned_mesh");
-    PATH_SHADER_POSTPROCESS_UI_COMPOSITE = GetName("postprocess_ui_composite");
-    PATH_SHADER_POSTPROCESS_DESATURATE = GetName("postprocess_desaturate");
-    PATH_SHADER_MESH = GetName("mesh");
 
     // @Mesh
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_VERTEX_MODE, MESH_ICON_VERTEX_MODE);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_PALETTE, MESH_ICON_PALETTE);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_FACE_MODE, MESH_ICON_FACE_MODE);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_EDGE_MODE, MESH_ICON_EDGE_MODE);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_BIN, MESH_ASSET_ICON_BIN);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_TILING, MESH_ICON_TILING);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_ROOT_MOTION, MESH_ICON_ROOT_MOTION);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_PUBLISH, MESH_ICON_PUBLISH);
@@ -190,10 +203,13 @@ bool LoadAssets(Allocator* allocator)
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_LUA, MESH_ASSET_ICON_LUA);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_FONT, MESH_ASSET_ICON_FONT);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_EVENT, MESH_ASSET_ICON_EVENT);
-    NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_BIN, MESH_ASSET_ICON_BIN);
 
     static Mesh* _MESH[] = {
+        MESH_ICON_VERTEX_MODE,
         MESH_ICON_PALETTE,
+        MESH_ICON_FACE_MODE,
+        MESH_ICON_EDGE_MODE,
+        MESH_ASSET_ICON_BIN,
         MESH_ICON_TILING,
         MESH_ICON_ROOT_MOTION,
         MESH_ICON_PUBLISH,
@@ -209,7 +225,6 @@ bool LoadAssets(Allocator* allocator)
         MESH_ASSET_ICON_LUA,
         MESH_ASSET_ICON_FONT,
         MESH_ASSET_ICON_EVENT,
-        MESH_ASSET_ICON_BIN,
         nullptr
     };
 
@@ -239,7 +254,6 @@ bool LoadAssets(Allocator* allocator)
     FONT_COUNT = sizeof(_FONT) / sizeof(void*);
 
     // @Shader
-    NOZ_LOAD_SHADER(allocator, PATH_SHADER_EDITOR, SHADER_EDITOR);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_VFX, SHADER_VFX);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_UI_VIGNETTE, SHADER_UI_VIGNETTE);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_UI_IMAGE_TEXTURE, SHADER_UI_IMAGE_TEXTURE);
@@ -252,9 +266,9 @@ bool LoadAssets(Allocator* allocator)
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_POSTPROCESS_UI_COMPOSITE, SHADER_POSTPROCESS_UI_COMPOSITE);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_POSTPROCESS_DESATURATE, SHADER_POSTPROCESS_DESATURATE);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_MESH, SHADER_MESH);
+    NOZ_LOAD_SHADER(allocator, PATH_SHADER_EDITOR, SHADER_EDITOR);
 
     static Shader* _SHADER[] = {
-        SHADER_EDITOR,
         SHADER_VFX,
         SHADER_UI_VIGNETTE,
         SHADER_UI_IMAGE_TEXTURE,
@@ -267,6 +281,7 @@ bool LoadAssets(Allocator* allocator)
         SHADER_POSTPROCESS_UI_COMPOSITE,
         SHADER_POSTPROCESS_DESATURATE,
         SHADER_MESH,
+        SHADER_EDITOR,
         nullptr
     };
 
@@ -280,7 +295,11 @@ bool LoadAssets(Allocator* allocator)
 void UnloadAssets()
 {
     // @Mesh
+    Free(MESH_ICON_VERTEX_MODE);
     Free(MESH_ICON_PALETTE);
+    Free(MESH_ICON_FACE_MODE);
+    Free(MESH_ICON_EDGE_MODE);
+    Free(MESH_ASSET_ICON_BIN);
     Free(MESH_ICON_TILING);
     Free(MESH_ICON_ROOT_MOTION);
     Free(MESH_ICON_PUBLISH);
@@ -296,7 +315,6 @@ void UnloadAssets()
     Free(MESH_ASSET_ICON_LUA);
     Free(MESH_ASSET_ICON_FONT);
     Free(MESH_ASSET_ICON_EVENT);
-    Free(MESH_ASSET_ICON_BIN);
 
     // @Texture
     Free(TEXTURE_EDITOR_PALETTE);
@@ -305,7 +323,6 @@ void UnloadAssets()
     Free(FONT_SEGUISB);
 
     // @Shader
-    Free(SHADER_EDITOR);
     Free(SHADER_VFX);
     Free(SHADER_UI_VIGNETTE);
     Free(SHADER_UI_IMAGE_TEXTURE);
@@ -318,6 +335,7 @@ void UnloadAssets()
     Free(SHADER_POSTPROCESS_UI_COMPOSITE);
     Free(SHADER_POSTPROCESS_DESATURATE);
     Free(SHADER_MESH);
+    Free(SHADER_EDITOR);
 }
 
 #ifdef NOZ_LUA
@@ -325,7 +343,11 @@ void BindLuaAssets(noz::lua::State* state) {
     using namespace noz::lua;
 
     // Mesh
+    SetGlobal(state, "MESH_ICON_VERTEX_MODE", MESH_ICON_VERTEX_MODE);
     SetGlobal(state, "MESH_ICON_PALETTE", MESH_ICON_PALETTE);
+    SetGlobal(state, "MESH_ICON_FACE_MODE", MESH_ICON_FACE_MODE);
+    SetGlobal(state, "MESH_ICON_EDGE_MODE", MESH_ICON_EDGE_MODE);
+    SetGlobal(state, "MESH_ASSET_ICON_BIN", MESH_ASSET_ICON_BIN);
     SetGlobal(state, "MESH_ICON_TILING", MESH_ICON_TILING);
     SetGlobal(state, "MESH_ICON_ROOT_MOTION", MESH_ICON_ROOT_MOTION);
     SetGlobal(state, "MESH_ICON_PUBLISH", MESH_ICON_PUBLISH);
@@ -341,7 +363,6 @@ void BindLuaAssets(noz::lua::State* state) {
     SetGlobal(state, "MESH_ASSET_ICON_LUA", MESH_ASSET_ICON_LUA);
     SetGlobal(state, "MESH_ASSET_ICON_FONT", MESH_ASSET_ICON_FONT);
     SetGlobal(state, "MESH_ASSET_ICON_EVENT", MESH_ASSET_ICON_EVENT);
-    SetGlobal(state, "MESH_ASSET_ICON_BIN", MESH_ASSET_ICON_BIN);
 
     // Texture
     SetGlobal(state, "TEXTURE_EDITOR_PALETTE", TEXTURE_EDITOR_PALETTE);
@@ -350,7 +371,6 @@ void BindLuaAssets(noz::lua::State* state) {
     SetGlobal(state, "FONT_SEGUISB", FONT_SEGUISB);
 
     // Shader
-    SetGlobal(state, "SHADER_EDITOR", SHADER_EDITOR);
     SetGlobal(state, "SHADER_VFX", SHADER_VFX);
     SetGlobal(state, "SHADER_UI_VIGNETTE", SHADER_UI_VIGNETTE);
     SetGlobal(state, "SHADER_UI_IMAGE_TEXTURE", SHADER_UI_IMAGE_TEXTURE);
@@ -363,6 +383,7 @@ void BindLuaAssets(noz::lua::State* state) {
     SetGlobal(state, "SHADER_POSTPROCESS_UI_COMPOSITE", SHADER_POSTPROCESS_UI_COMPOSITE);
     SetGlobal(state, "SHADER_POSTPROCESS_DESATURATE", SHADER_POSTPROCESS_DESATURATE);
     SetGlobal(state, "SHADER_MESH", SHADER_MESH);
+    SetGlobal(state, "SHADER_EDITOR", SHADER_EDITOR);
 }
 
 #endif
@@ -372,7 +393,11 @@ void BindLuaAssets(noz::lua::State* state) {
 void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
 {
     // @Mesh
+    NOZ_RELOAD_MESH(PATH_MESH_ICON_VERTEX_MODE, MESH_ICON_VERTEX_MODE);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_PALETTE, MESH_ICON_PALETTE);
+    NOZ_RELOAD_MESH(PATH_MESH_ICON_FACE_MODE, MESH_ICON_FACE_MODE);
+    NOZ_RELOAD_MESH(PATH_MESH_ICON_EDGE_MODE, MESH_ICON_EDGE_MODE);
+    NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_BIN, MESH_ASSET_ICON_BIN);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_TILING, MESH_ICON_TILING);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_ROOT_MOTION, MESH_ICON_ROOT_MOTION);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_PUBLISH, MESH_ICON_PUBLISH);
@@ -388,7 +413,6 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_LUA, MESH_ASSET_ICON_LUA);
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_FONT, MESH_ASSET_ICON_FONT);
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_EVENT, MESH_ASSET_ICON_EVENT);
-    NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_BIN, MESH_ASSET_ICON_BIN);
 
     // @Texture
     NOZ_RELOAD_TEXTURE(PATH_TEXTURE_EDITOR_PALETTE, TEXTURE_EDITOR_PALETTE);
@@ -397,7 +421,6 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     NOZ_RELOAD_FONT(PATH_FONT_SEGUISB, FONT_SEGUISB);
 
     // @Shader
-    NOZ_RELOAD_SHADER(PATH_SHADER_EDITOR, SHADER_EDITOR);
     NOZ_RELOAD_SHADER(PATH_SHADER_VFX, SHADER_VFX);
     NOZ_RELOAD_SHADER(PATH_SHADER_UI_VIGNETTE, SHADER_UI_VIGNETTE);
     NOZ_RELOAD_SHADER(PATH_SHADER_UI_IMAGE_TEXTURE, SHADER_UI_IMAGE_TEXTURE);
@@ -410,6 +433,7 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     NOZ_RELOAD_SHADER(PATH_SHADER_POSTPROCESS_UI_COMPOSITE, SHADER_POSTPROCESS_UI_COMPOSITE);
     NOZ_RELOAD_SHADER(PATH_SHADER_POSTPROCESS_DESATURATE, SHADER_POSTPROCESS_DESATURATE);
     NOZ_RELOAD_SHADER(PATH_SHADER_MESH, SHADER_MESH);
+    NOZ_RELOAD_SHADER(PATH_SHADER_EDITOR, SHADER_EDITOR);
 }
 
 #endif

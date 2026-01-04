@@ -121,29 +121,49 @@ static bool IsEdgeInFace(MeshData* m, int edge_index, int face_index) {
     return false;
 }
 
-static int GetFirstFaceWithVertex(MeshData* m, int vertex_index) {
-    for (int fi = 0; fi < m->impl->face_count; fi++) {
-        if (FindVertexInFace(m->impl->faces[fi], vertex_index) != -1)
-            return fi;
-    }
-    return -1;
-}
-
-static int GetFirstFaceWithEdge(MeshData* m, int edge_index) {
+// Get a face with the edge, preferring selected faces when restrict_to_selected is true
+static int GetPreferredFaceWithEdge(MeshData* m, int edge_index) {
     if (edge_index < 0 || edge_index >= m->impl->edge_count)
         return -1;
 
     EdgeData& e = m->impl->edges[edge_index];
+    int first_face = -1;
+
     for (int fi = 0; fi < m->impl->face_count; fi++) {
         FaceData& f = m->impl->faces[fi];
         for (int i = 0; i < f.vertex_count; i++) {
             int v0 = f.vertices[i];
             int v1 = f.vertices[(i + 1) % f.vertex_count];
-            if ((v0 == e.v0 && v1 == e.v1) || (v0 == e.v1 && v1 == e.v0))
+            if ((v0 == e.v0 && v1 == e.v1) || (v0 == e.v1 && v1 == e.v0)) {
+                if (first_face < 0)
+                    first_face = fi;
+                // If restricting to selected, prefer selected faces
+                if (g_knife_tool.restrict_to_selected && f.selected)
+                    return fi;
+                break;
+            }
+        }
+    }
+
+    return g_knife_tool.restrict_to_selected ? -1 : first_face;
+}
+
+// Get a face with the vertex, preferring selected faces when restrict_to_selected is true
+static int GetPreferredFaceWithVertex(MeshData* m, int vertex_index) {
+    int first_face = -1;
+
+    for (int fi = 0; fi < m->impl->face_count; fi++) {
+        FaceData& f = m->impl->faces[fi];
+        if (FindVertexInFace(f, vertex_index) != -1) {
+            if (first_face < 0)
+                first_face = fi;
+            // If restricting to selected, prefer selected faces
+            if (g_knife_tool.restrict_to_selected && f.selected)
                 return fi;
         }
     }
-    return -1;
+
+    return g_knife_tool.restrict_to_selected ? -1 : first_face;
 }
 
 static bool IsPointInFace(MeshData* m, int face_index, const Vec2& point) {
@@ -1331,23 +1351,22 @@ static void UpdateKnifeTool() {
         }
 
         // Determine which face this click belongs to
+        // Use preferred functions that respect selection when restrict_to_selected is true
         int click_face = -1;
         if (face_index >= 0) {
             click_face = face_index;
         } else if (edge_index >= 0) {
-            click_face = GetFirstFaceWithEdge(g_knife_tool.mesh, edge_index);
+            click_face = GetPreferredFaceWithEdge(g_knife_tool.mesh, edge_index);
         } else if (vertex_index >= 0) {
-            click_face = GetFirstFaceWithVertex(g_knife_tool.mesh, vertex_index);
+            click_face = GetPreferredFaceWithVertex(g_knife_tool.mesh, vertex_index);
         }
 
         // Check if the face is valid for cutting (respects selection filter)
         if (!IsFaceValidForCut(g_knife_tool.mesh, click_face)) {
             // If we hit geometry on an invalid face, filter it out
-            if (click_face >= 0) {
-                vertex_index = -1;
-                edge_index = -1;
-                face_index = -1;
-            }
+            vertex_index = -1;
+            edge_index = -1;
+            face_index = -1;
             click_face = -1;
         }
 

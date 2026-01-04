@@ -13,9 +13,13 @@ void InitStyles() {
 
     // @dark
     g_style->background_color = Color24ToColor(0x383838);
+    g_style->selection_color = Color24ToColor(0x3a79bb);
     g_style->button_color = Color24ToColor(0x676767);
     g_style->button_text_color = Color24ToColor(0xe3e3e3);
     g_style->button_checked_color = Color24ToColor(0x557496);
+    g_style->button_checked_text_color = Color24ToColor(0xf0f0f0);
+    g_style->button_disabled_color = Color24ToColor(0x2a2a2a);
+    g_style->button_disabled_text_color = Color24ToColor(0x636363);
     g_style->workspace_color = Color24ToColor(0x464646);
     g_style->grid_color = Color24ToColor(0x686868);
     g_style->overlay_background_color = Color24ToColor(0x0e0e0e);

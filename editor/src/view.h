@@ -156,7 +156,7 @@ extern void BeginInspectorGroup();
 extern void EndInspectorGroup();
 
 // @controls
-extern bool EditorToggleButton(ElementId id, Mesh* icon, bool state);
+extern bool EditorToggleButton(ElementId id, Mesh* icon, bool state, bool disabled=false);
 extern void BeginOverlay(ElementId id=ELEMENT_ID_NONE, Align align=ALIGN_TOP_LEFT);
 extern void EndOverlay();
 
