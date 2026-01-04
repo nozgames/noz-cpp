@@ -108,6 +108,28 @@ int GetOrAddEdge(MeshData* m, int v0, int v1, int face_index) {
     return edge_index;
 }
 
+Vec2 GetEdgeMidpoint(MeshData* m, int edge_index) {
+    EdgeData& e = m->impl->edges[edge_index];
+    Vec2 v0 = m->impl->vertices[e.v0].position;
+    Vec2 v1 = m->impl->vertices[e.v1].position;
+    return (v0 + v1) * 0.5f;
+}
+
+Vec2 GetEdgeControlPoint(MeshData* m, int edge_index) {
+    return GetEdgeMidpoint(m, edge_index) + m->impl->edges[edge_index].curve_offset;
+}
+
+bool IsEdgeCurved(MeshData* m, int edge_index) {
+    Vec2 offset = m->impl->edges[edge_index].curve_offset;
+    return LengthSqr(offset) > 0.0001f;
+}
+
+// Quadratic Bezier evaluation: B(t) = (1-t)^2*p0 + 2(1-t)t*control + t^2*p1
+Vec2 EvalQuadraticBezier(const Vec2& p0, const Vec2& control, const Vec2& p1, float t) {
+    float u = 1.0f - t;
+    return u * u * p0 + 2.0f * u * t * control + t * t * p1;
+}
+
 // Compute centroid using signed area formula (works for concave polygons and holes)
 static Vec2 ComputeFaceCentroid(MeshData* m, FaceData& f) {
     if (f.vertex_count < 3)
@@ -141,6 +163,17 @@ static Vec2 ComputeFaceCentroid(MeshData* m, FaceData& f) {
 }
 
 void UpdateEdges(MeshData* m) {
+    // Save curve data before rebuilding edges (keyed by min(v0,v1), max(v0,v1))
+    struct CurveData { int v0, v1; Vec2 offset; };
+    CurveData saved_curves[MESH_MAX_EDGES];
+    int saved_curve_count = 0;
+    for (int i = 0; i < m->impl->edge_count; i++) {
+        EdgeData& e = m->impl->edges[i];
+        if (LengthSqr(e.curve_offset) > 0.0001f) {
+            saved_curves[saved_curve_count++] = { e.v0, e.v1, e.curve_offset };
+        }
+    }
+
     m->impl->edge_count = 0;
 
     for (int vertex_index=0; vertex_index < m->impl->vertex_count; vertex_index++) {
@@ -162,6 +195,14 @@ void UpdateEdges(MeshData* m) {
         int vs = f.vertices[f.vertex_count - 1];
         int ve = f.vertices[0];
         GetOrAddEdge(m, vs, ve, face_index);
+    }
+
+    // Restore curve data to rebuilt edges
+    for (int i = 0; i < saved_curve_count; i++) {
+        int edge = GetEdge(m, saved_curves[i].v0, saved_curves[i].v1);
+        if (edge != -1) {
+            m->impl->edges[edge].curve_offset = saved_curves[i].offset;
+        }
     }
 
     for (int edge_index=0; edge_index<m->impl->edge_count; edge_index++) {
@@ -700,22 +741,55 @@ int HitTestEdge(MeshData* m, const Mat3& transform, const Vec2& hit_pos, float* 
     float best_dist = F32_MAX;
     int best_edge = -1;
     float best_where = 0.0f;
+
     for (int i = 0; i < m->impl->edge_count; i++) {
         const EdgeData& e = m->impl->edges[i];
         Vec2 v0 = TransformPoint(transform, m->impl->vertices[e.v0].position);
         Vec2 v1 = TransformPoint(transform, m->impl->vertices[e.v1].position);
-        Vec2 edge_dir = Normalize(v1 - v0);
-        Vec2 to_mouse = hit_pos - v0;
-        float edge_length = Length(v1 - v0);
-        float proj = Dot(to_mouse, edge_dir);
-        if (proj >= 0 && proj <= edge_length) {
-            Vec2 closest_point = v0 + edge_dir * proj;
-            float dist = Length(hit_pos - closest_point);
-            if (dist < size && dist < best_dist)
-            {
-                best_edge = i;
-                best_dist = dist;
-                best_where = proj / edge_length;
+
+        if (IsEdgeCurved(m, i)) {
+            // Test against subdivided curve segments
+            Vec2 control = TransformPoint(transform, GetEdgeControlPoint(m, i));
+            constexpr int segments = 8;
+            Vec2 prev = v0;
+            for (int s = 1; s <= segments; s++) {
+                float t = (float)s / (float)segments;
+                Vec2 curr = EvalQuadraticBezier(v0, control, v1, t);
+
+                // Test point against this line segment
+                Vec2 seg_dir = curr - prev;
+                float seg_length = Length(seg_dir);
+                if (seg_length > 0.0001f) {
+                    seg_dir = seg_dir / seg_length;
+                    Vec2 to_mouse = hit_pos - prev;
+                    float proj = Dot(to_mouse, seg_dir);
+                    if (proj >= 0 && proj <= seg_length) {
+                        Vec2 closest = prev + seg_dir * proj;
+                        float dist = Length(hit_pos - closest);
+                        if (dist < size && dist < best_dist) {
+                            best_edge = i;
+                            best_dist = dist;
+                            // Calculate approximate t value along full curve
+                            best_where = ((float)(s - 1) + proj / seg_length) / (float)segments;
+                        }
+                    }
+                }
+                prev = curr;
+            }
+        } else {
+            // Straight edge test
+            Vec2 edge_dir = Normalize(v1 - v0);
+            Vec2 to_mouse = hit_pos - v0;
+            float edge_length = Length(v1 - v0);
+            float proj = Dot(to_mouse, edge_dir);
+            if (proj >= 0 && proj <= edge_length) {
+                Vec2 closest_point = v0 + edge_dir * proj;
+                float dist = Length(hit_pos - closest_point);
+                if (dist < size && dist < best_dist) {
+                    best_edge = i;
+                    best_dist = dist;
+                    best_where = proj / edge_length;
+                }
             }
         }
     }
@@ -984,6 +1058,11 @@ static void ParseSkeleton(MeshData* m, Tokenizer& tk) {
 }
 
 void LoadMeshData(MeshData* m, Tokenizer& tk, bool multiple_mesh=false) {
+    // Store curve data temporarily since edges don't exist until UpdateEdges
+    struct PendingCurve { int v0, v1; Vec2 offset; };
+    PendingCurve pending_curves[MESH_MAX_EDGES];
+    int pending_curve_count = 0;
+
     while (!IsEOF(tk)) {
         if (ExpectIdentifier(tk, "v")) {
             ParseVertex(m, tk);
@@ -999,6 +1078,16 @@ void LoadMeshData(MeshData* m, Tokenizer& tk, bool multiple_mesh=false) {
             ParseFace(m, tk);
         } else if (ExpectIdentifier(tk, "e")) {
             ParseEdgeColor(m, tk);
+        } else if (ExpectIdentifier(tk, "curve")) {
+            // Parse curve data: curve v0 v1 offset_x offset_y
+            // Store for later since edges don't exist yet
+            int v0, v1;
+            float ox, oy;
+            if (ExpectInt(tk, &v0) && ExpectInt(tk, &v1) && ExpectFloat(tk, &ox) && ExpectFloat(tk, &oy)) {
+                if (pending_curve_count < MESH_MAX_EDGES) {
+                    pending_curves[pending_curve_count++] = { v0, v1, {ox, oy} };
+                }
+            }
         } else if (multiple_mesh && Peek(tk, "m")) {
             break;
         } else {
@@ -1009,6 +1098,15 @@ void LoadMeshData(MeshData* m, Tokenizer& tk, bool multiple_mesh=false) {
     }
 
     UpdateEdges(m);
+
+    // Apply pending curve data now that edges exist
+    for (int i = 0; i < pending_curve_count; i++) {
+        int edge = GetEdge(m, pending_curves[i].v0, pending_curves[i].v1);
+        if (edge != -1) {
+            m->impl->edges[edge].curve_offset = pending_curves[i].offset;
+        }
+    }
+
     MarkDirty(m);
     ToMesh(m, false);
 }
@@ -1112,6 +1210,14 @@ void SaveMeshData(MeshData* m, Stream* stream) {
             WriteCSTR(stream, " %d", f.vertices[vertex_index]);
 
         WriteCSTR(stream, " c %d n %f %f %f\n", f.color, f.color, f.normal.x, f.normal.y, f.normal.z);
+    }
+
+    // Write curve data for curved edges
+    for (int i = 0; i < m->impl->edge_count; i++) {
+        const EdgeData& e = m->impl->edges[i];
+        if (IsEdgeCurved(m, i)) {
+            WriteCSTR(stream, "curve %d %d %f %f\n", e.v0, e.v1, e.curve_offset.x, e.curve_offset.y);
+        }
     }
 }
 
@@ -1226,52 +1332,181 @@ static bool IsEar(MeshData* m, int* indices, int vertex_count, int ear_index) {
     return true;
 }
 
+// Position-based IsEar for expanded curve vertices
+static bool IsEarPositions(Vec2* positions, int* position_indices, int vertex_count, int ear_index) {
+    int prev = (ear_index - 1 + vertex_count) % vertex_count;
+    int curr = ear_index;
+    int next = (ear_index + 1) % vertex_count;
+
+    Vec2 v0 = positions[position_indices[prev]];
+    Vec2 v1 = positions[position_indices[curr]];
+    Vec2 v2 = positions[position_indices[next]];
+
+    // Check if triangle has correct winding (counter-clockwise)
+    float cross = (v1.x - v0.x) * (v2.y - v0.y) - (v2.x - v0.x) * (v1.y - v0.y);
+    if (cross <= 0)
+        return false;
+
+    // Check if any other vertex is inside this triangle
+    for (int i = 0; i < vertex_count; i++) {
+        if (i == prev || i == curr || i == next)
+            continue;
+
+        Vec2 p = positions[position_indices[i]];
+
+        // Use barycentric coordinates to check if point is inside triangle
+        Vec2 v0v1 = v1 - v0;
+        Vec2 v0v2 = v2 - v0;
+        Vec2 v0p = p - v0;
+
+        float dot00 = Dot(v0v2, v0v2);
+        float dot01 = Dot(v0v2, v0v1);
+        float dot02 = Dot(v0v2, v0p);
+        float dot11 = Dot(v0v1, v0v1);
+        float dot12 = Dot(v0v1, v0p);
+
+        float inv_denom = 1.0f / (dot00 * dot11 - dot01 * dot01);
+        float u = (dot11 * dot02 - dot01 * dot12) * inv_denom;
+        float v = (dot00 * dot12 - dot01 * dot02) * inv_denom;
+
+        if (u > 0 && v > 0 && u + v < 1)
+            return false;
+    }
+
+    return true;
+}
+
 static void TriangulateFace(MeshData* m, FaceData* f, MeshBuilder* builder, float depth) {
     if (f->vertex_count < 3)
         return;
 
     Vec2 uv_color = ToVec2(Vec2Int(f->color, m->impl->palette));
 
-    for (int vertex_index = 0; vertex_index < f->vertex_count; vertex_index++) {
-        VertexData& v = m->impl->vertices[f->vertices[vertex_index]];
-        MeshVertex mv = { .position = v.position, .depth = depth, .uv = uv_color };
-        mv.bone_weights.x = v.weights[0].weight;
-        mv.bone_weights.y = v.weights[1].weight;
-        mv.bone_weights.z = v.weights[2].weight;
-        mv.bone_weights.w = v.weights[3].weight;
-        mv.bone_indices.x = v.weights[0].bone_index;
-        mv.bone_indices.y = v.weights[1].bone_index;
-        mv.bone_indices.z = v.weights[2].bone_index;
-        mv.bone_indices.w = v.weights[3].bone_index;
-        mv.normal = v.edge_normal;
-        AddVertex(builder, mv);
+    // Check if any edges are curved - if so, we need to expand the vertex list
+    bool has_curves = false;
+    for (int i = 0; i < f->vertex_count; i++) {
+        int v0_idx = f->vertices[i];
+        int v1_idx = f->vertices[(i + 1) % f->vertex_count];
+        int edge_index = GetEdge(m, v0_idx, v1_idx);
+        if (edge_index != -1 && IsEdgeCurved(m, edge_index)) {
+            has_curves = true;
+            break;
+        }
     }
 
-    u16 base_vertex = GetVertexCount(builder) - (u16)f->vertex_count;
-    if (f->vertex_count == 3) {
+    constexpr int CURVE_SEGMENTS = 8;
+    int expanded_count = 0;
+    Vec2 expanded_positions[MAX_VERTICES * CURVE_SEGMENTS];
+    Vec4 expanded_bone_weights[MAX_VERTICES * CURVE_SEGMENTS];
+    Vec4Int expanded_bone_indices[MAX_VERTICES * CURVE_SEGMENTS];
+    Vec2 expanded_normals[MAX_VERTICES * CURVE_SEGMENTS];
+
+    if (has_curves) {
+        // Build expanded vertex list with curve samples
+        for (int i = 0; i < f->vertex_count; i++) {
+            int v0_idx = f->vertices[i];
+            int v1_idx = f->vertices[(i + 1) % f->vertex_count];
+            VertexData& v0 = m->impl->vertices[v0_idx];
+            VertexData& v1 = m->impl->vertices[v1_idx];
+
+            int edge_index = GetEdge(m, v0_idx, v1_idx);
+            if (edge_index != -1 && IsEdgeCurved(m, edge_index)) {
+                Vec2 control = GetEdgeControlPoint(m, edge_index);
+
+                // Add curve samples (excluding the endpoint which is the next vertex's start)
+                for (int s = 0; s < CURVE_SEGMENTS; s++) {
+                    float t = (float)s / (float)CURVE_SEGMENTS;
+                    expanded_positions[expanded_count] = EvalQuadraticBezier(v0.position, control, v1.position, t);
+
+                    // Interpolate bone weights
+                    expanded_bone_weights[expanded_count] = {
+                        v0.weights[0].weight * (1 - t) + v1.weights[0].weight * t,
+                        v0.weights[1].weight * (1 - t) + v1.weights[1].weight * t,
+                        v0.weights[2].weight * (1 - t) + v1.weights[2].weight * t,
+                        v0.weights[3].weight * (1 - t) + v1.weights[3].weight * t
+                    };
+                    expanded_bone_indices[expanded_count] = {
+                        v0.weights[0].bone_index, v0.weights[1].bone_index,
+                        v0.weights[2].bone_index, v0.weights[3].bone_index
+                    };
+                    expanded_normals[expanded_count] = Normalize(v0.edge_normal * (1 - t) + v1.edge_normal * t);
+                    expanded_count++;
+                }
+            } else {
+                // Straight edge - just add the start vertex
+                expanded_positions[expanded_count] = v0.position;
+                expanded_bone_weights[expanded_count] = {
+                    v0.weights[0].weight, v0.weights[1].weight,
+                    v0.weights[2].weight, v0.weights[3].weight
+                };
+                expanded_bone_indices[expanded_count] = {
+                    v0.weights[0].bone_index, v0.weights[1].bone_index,
+                    v0.weights[2].bone_index, v0.weights[3].bone_index
+                };
+                expanded_normals[expanded_count] = v0.edge_normal;
+                expanded_count++;
+            }
+        }
+
+        // Add all expanded vertices to the builder
+        for (int i = 0; i < expanded_count; i++) {
+            MeshVertex mv = { .position = expanded_positions[i], .depth = depth, .uv = uv_color };
+            mv.bone_weights = expanded_bone_weights[i];
+            mv.bone_indices = expanded_bone_indices[i];
+            mv.normal = expanded_normals[i];
+            AddVertex(builder, mv);
+        }
+    } else {
+        // No curves - use original vertex adding logic
+        for (int vertex_index = 0; vertex_index < f->vertex_count; vertex_index++) {
+            VertexData& v = m->impl->vertices[f->vertices[vertex_index]];
+            MeshVertex mv = { .position = v.position, .depth = depth, .uv = uv_color };
+            mv.bone_weights.x = v.weights[0].weight;
+            mv.bone_weights.y = v.weights[1].weight;
+            mv.bone_weights.z = v.weights[2].weight;
+            mv.bone_weights.w = v.weights[3].weight;
+            mv.bone_indices.x = v.weights[0].bone_index;
+            mv.bone_indices.y = v.weights[1].bone_index;
+            mv.bone_indices.z = v.weights[2].bone_index;
+            mv.bone_indices.w = v.weights[3].bone_index;
+            mv.normal = v.edge_normal;
+            AddVertex(builder, mv);
+        }
+        expanded_count = f->vertex_count;
+    }
+
+    u16 base_vertex = GetVertexCount(builder) - (u16)expanded_count;
+    if (expanded_count == 3) {
         AddTriangle(builder, base_vertex, base_vertex + 1, base_vertex + 2);
         return;
     }
 
-    // Track positions in the face, not vertex IDs
-    // This is critical for faces with holes where the same vertex appears multiple times
-    int positions[MAX_VERTICES];
-    for (int vertex_index = 0; vertex_index < f->vertex_count; vertex_index++)
-        positions[vertex_index] = vertex_index;
+    // Track positions in the expanded vertex list
+    int positions[MAX_VERTICES * CURVE_SEGMENTS];
+    for (int i = 0; i < expanded_count; i++)
+        positions[i] = i;
 
-    int remaining_vertices = f->vertex_count;
+    int remaining_vertices = expanded_count;
     int current_index = 0;
 
     while (remaining_vertices > 3) {
         bool found_ear = false;
 
         for (int attempts = 0; attempts < remaining_vertices; attempts++) {
-            // Build vertex ID array for IsEar check
-            int indices[MAX_VERTICES];
-            for (int i = 0; i < remaining_vertices; i++)
-                indices[i] = f->vertices[positions[i]];
+            bool is_ear = false;
 
-            if (IsEar(m, indices, remaining_vertices, current_index)) {
+            if (has_curves) {
+                // Use position-based ear test for expanded curve vertices
+                is_ear = IsEarPositions(expanded_positions, positions, remaining_vertices, current_index);
+            } else {
+                // Use vertex-based ear test for non-curved faces
+                int indices[MAX_VERTICES];
+                for (int i = 0; i < remaining_vertices; i++)
+                    indices[i] = f->vertices[positions[i]];
+                is_ear = IsEar(m, indices, remaining_vertices, current_index);
+            }
+
+            if (is_ear) {
                 // Found an ear, create triangle
                 int prev = (current_index - 1 + remaining_vertices) % remaining_vertices;
                 int next = (current_index + 1) % remaining_vertices;
@@ -1283,8 +1518,7 @@ static void TriangulateFace(MeshData* m, FaceData* f, MeshBuilder* builder, floa
                     base_vertex + (u16)positions[next]);
 
                 // Remove the ear position from the polygon
-                for (int i = current_index; i < remaining_vertices - 1; i++)
-                {
+                for (int i = current_index; i < remaining_vertices - 1; i++) {
                     positions[i] = positions[i + 1];
                 }
                 remaining_vertices--;

@@ -83,3 +83,6 @@ struct VertexWeightToolOptions {
 };
 
 extern void BeginVertexWeightTool(const VertexWeightToolOptions& options);
+
+// @curve
+extern void BeginCurveTool(MeshData* mesh, int edge_index);

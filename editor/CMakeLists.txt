@@ -10,9 +10,15 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(NOZ_LUA ON CACHE BOOL "" FORCE)
 set(NOZ_HTTP ON CACHE BOOL "" FORCE)
 set(NOZ_WEBSOCKET ON CACHE BOOL "" FORCE)
+
 option(NOZ_EDITOR_LIB "Build nozed as a static library instead of executable" OFF)
 
 add_subdirectory(../ noz)
+
+set(PLUTOVG_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(PLUTOVG_DISABLE_FONT_FACE_CACHE_LOAD ON CACHE BOOL "" FORCE)
+add_subdirectory(libs/plutovg)
+
 target_compile_definitions(noz PUBLIC NOZ_EDITOR)
 
 file(GLOB SRC_FILES
@@ -34,16 +40,17 @@ endif()
 target_compile_definitions(nozed PRIVATE _CRT_SECURE_NO_WARNINGS NOZ_LUA)
 target_link_libraries(nozed PRIVATE
     noz
-    debug ${CMAKE_CURRENT_SOURCE_DIR}/external/glslang/glslangd.lib
-    debug ${CMAKE_CURRENT_SOURCE_DIR}/external/glslang/SPIRVd.lib
-    debug ${CMAKE_CURRENT_SOURCE_DIR}/external/glslang/SPVRemapperd.lib
-    debug ${CMAKE_CURRENT_SOURCE_DIR}/external/glslang/SPIRV-Toolsd.lib
-    debug ${CMAKE_CURRENT_SOURCE_DIR}/external/glslang/SPIRV-Tools-optd.lib
-    optimized ${CMAKE_CURRENT_SOURCE_DIR}/external/glslang/glslang.lib
-    optimized ${CMAKE_CURRENT_SOURCE_DIR}/external/glslang/SPIRV.lib
-    optimized ${CMAKE_CURRENT_SOURCE_DIR}/external/glslang/SPVRemapper.lib
-    optimized ${CMAKE_CURRENT_SOURCE_DIR}/external/glslang/SPIRV-Tools.lib
-    optimized ${CMAKE_CURRENT_SOURCE_DIR}/external/glslang/SPIRV-Tools-opt.lib
+    plutovg
+    debug ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/glslangd.lib
+    debug ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/SPIRVd.lib
+    debug ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/SPVRemapperd.lib
+    debug ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/SPIRV-Toolsd.lib
+    debug ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/SPIRV-Tools-optd.lib
+    optimized ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/glslang.lib
+    optimized ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/SPIRV.lib
+    optimized ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/SPVRemapper.lib
+    optimized ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/SPIRV-Tools.lib
+    optimized ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/SPIRV-Tools-opt.lib
 )
 
 if(MSVC)
@@ -57,8 +64,8 @@ endif()
 target_precompile_headers(nozed PUBLIC src/pch.h)
 target_include_directories(nozed PRIVATE
     src
-    external
+    libs
     res/windows
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/glslang/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libs
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/include
 )

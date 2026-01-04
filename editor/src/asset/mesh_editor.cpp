@@ -576,6 +576,15 @@ static bool TryDoubleClickSelectFaceVertices() {
 }
 
 static void UpdateDefaultState() {
+    // In edge mode, drag on edge starts curve tool
+    if (g_mesh_editor.mode == MESH_EDITOR_MODE_EDGE && !IsToolActive() && g_view.drag_started) {
+        int edge = HitTestEdge(GetMeshData(), g_view.drag_world_position);
+        if (edge != -1) {
+            BeginCurveTool(GetMeshData(), edge);
+            return;
+        }
+    }
+
     if (!IsToolActive() && g_view.drag_started) {
         BeginBoxSelect(HandleBoxSelect);
         return;
@@ -1393,7 +1402,21 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
         const EdgeData& e = impl->edges[edge_index];
         Vec2 v0 = impl->vertices[e.v0].position + m->position;
         Vec2 v1 = impl->vertices[e.v1].position + m->position;
-        AddEditorLine(builder, v0, v1, line_width, COLOR_EDGE);
+
+        if (IsEdgeCurved(m, edge_index)) {
+            // Draw curved edge as line segments
+            Vec2 control = GetEdgeControlPoint(m, edge_index) + m->position;
+            constexpr int segments = 8;
+            Vec2 prev = v0;
+            for (int s = 1; s <= segments; s++) {
+                float t = (float)s / (float)segments;
+                Vec2 curr = EvalQuadraticBezier(v0, control, v1, t);
+                AddEditorLine(builder, prev, curr, line_width, COLOR_EDGE);
+                prev = curr;
+            }
+        } else {
+            AddEditorLine(builder, v0, v1, line_width, COLOR_EDGE);
+        }
     }
 
     if (hide_selected) {
@@ -1414,7 +1437,20 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
             if (!e.selected) continue;
             Vec2 v0 = impl->vertices[e.v0].position + m->position;
             Vec2 v1 = impl->vertices[e.v1].position + m->position;
-            AddEditorLine(builder, v0, v1, line_width, COLOR_EDGE_SELECTED);
+
+            if (IsEdgeCurved(m, edge_index)) {
+                Vec2 control = GetEdgeControlPoint(m, edge_index) + m->position;
+                constexpr int segments = 8;
+                Vec2 prev = v0;
+                for (int s = 1; s <= segments; s++) {
+                    float t = (float)s / (float)segments;
+                    Vec2 curr = EvalQuadraticBezier(v0, control, v1, t);
+                    AddEditorLine(builder, prev, curr, line_width, COLOR_EDGE_SELECTED);
+                    prev = curr;
+                }
+            } else {
+                AddEditorLine(builder, v0, v1, line_width, COLOR_EDGE_SELECTED);
+            }
         }
     } else if (g_mesh_editor.mode == MESH_EDITOR_MODE_FACE) {
         for (int face_index = 0; face_index < impl->face_count; face_index++) {
@@ -1425,7 +1461,21 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
                 int v1_idx = f.vertices[(vi + 1) % f.vertex_count];
                 Vec2 v0 = impl->vertices[v0_idx].position + m->position;
                 Vec2 v1 = impl->vertices[v1_idx].position + m->position;
-                AddEditorLine(builder, v0, v1, line_width, COLOR_VERTEX_SELECTED);
+
+                int edge_index = GetEdge(m, v0_idx, v1_idx);
+                if (edge_index != -1 && IsEdgeCurved(m, edge_index)) {
+                    Vec2 control = GetEdgeControlPoint(m, edge_index) + m->position;
+                    constexpr int segments = 8;
+                    Vec2 prev = v0;
+                    for (int s = 1; s <= segments; s++) {
+                        float t = (float)s / (float)segments;
+                        Vec2 curr = EvalQuadraticBezier(v0, control, v1, t);
+                        AddEditorLine(builder, prev, curr, line_width, COLOR_VERTEX_SELECTED);
+                        prev = curr;
+                    }
+                } else {
+                    AddEditorLine(builder, v0, v1, line_width, COLOR_VERTEX_SELECTED);
+                }
             }
         }
         for (int face_index = 0; face_index < impl->face_count; face_index++) {

@@ -45,6 +45,7 @@ enum ToolType {
     TOOL_TYPE_SCALE,
     TOOL_TYPE_SELECT,
     TOOL_TYPE_WEIGHT,
+    TOOL_TYPE_CURVE,
 };
 
 struct Tool {

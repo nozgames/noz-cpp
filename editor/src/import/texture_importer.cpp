@@ -3,7 +3,7 @@
 //
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "../external/stb_image.h"
+#include "../libs/stb_image.h"
 
 extern void InitTextureEditor(TextureData*);
 
