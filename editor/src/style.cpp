@@ -14,7 +14,8 @@ void InitStyles() {
     // @dark
     g_style->background_color = Color24ToColor(0x383838);
     g_style->selection_color = Color24ToColor(0x3a79bb);
-    g_style->button_color = Color24ToColor(0x676767);
+    g_style->button_color = Color24ToColor(0x585858);
+    g_style->button_hover_color = Color24ToColor(0x676767);
     g_style->button_text_color = Color24ToColor(0xe3e3e3);
     g_style->button_checked_color = Color24ToColor(0x557496);
     g_style->button_checked_text_color = Color24ToColor(0xf0f0f0);

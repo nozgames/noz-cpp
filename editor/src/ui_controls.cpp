@@ -2,25 +2,41 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-bool EditorToggleButton(ElementId id, Mesh* icon, bool state, bool disabled) {
+inline Color STYLE_EDITOR_BUTTON_COLOR(bool state, bool hovered, bool disabled) {
+    if (disabled) return STYLE_BUTTON_DISABLED_COLOR();
+    if (state) return STYLE_BUTTON_CHECKED_COLOR();
+    if (hovered) return STYLE_BUTTON_HOVER_COLOR();
+    return STYLE_BUTTON_COLOR();
+}
+
+inline Color STYLE_EDITOR_BUTTON_TEXT_COLOR(bool state, bool disabled) {
+    if (disabled) return STYLE_BUTTON_DISABLED_TEXT_COLOR();
+    if (state) return STYLE_BUTTON_CHECKED_TEXT_COLOR();
+    return STYLE_BUTTON_TEXT_COLOR();
+}
+
+bool EditorButton(ElementId id, Mesh* icon, bool state, bool disabled) {
     bool was_pressed = false;
     BeginContainer({
         .width=STYLE_TOGGLE_BUTTON_HEIGHT,
         .height=STYLE_TOGGLE_BUTTON_HEIGHT,
-        .padding=EdgeInsetsAll(STYLE_TOGGLE_BUTTON_PADDING),
-        .color=disabled
-            ? STYLE_BUTTON_DISABLED_COLOR()
-            : (state ? STYLE_BUTTON_CHECKED_COLOR() : STYLE_BUTTON_COLOR()),
-        .border={.radius=STYLE_TOGGLE_BUTTON_BORDER_RADIUS},
         .id = id});
+
+    bool hovered = IsHovered();
     was_pressed = WasPressed();
+
+    BeginContainer({
+        .padding=EdgeInsetsAll(STYLE_TOGGLE_BUTTON_PADDING),
+        .color=STYLE_EDITOR_BUTTON_COLOR(state, hovered, disabled),
+        .border={.radius=STYLE_TOGGLE_BUTTON_BORDER_RADIUS}});
+
     Image(icon, {
         .align=ALIGN_CENTER,
-        .color=disabled
-            ? STYLE_BUTTON_DISABLED_TEXT_COLOR() :
-            (state ? STYLE_BUTTON_CHECKED_TEXT_COLOR() : STYLE_BUTTON_TEXT_COLOR()),
+        .color=STYLE_EDITOR_BUTTON_TEXT_COLOR(state, disabled),
         .material = g_view.editor_mesh_material,
     });
+
+    EndContainer();
     EndContainer();
     return was_pressed;
 }

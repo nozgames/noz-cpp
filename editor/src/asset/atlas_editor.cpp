@@ -27,9 +27,9 @@ static void AtlasEditorToolbar() {
     BeginContainer();
     BeginRow({.align=ALIGN_CENTER, .spacing=6});
 
-    // Rebuild button
-    if (EditorToggleButton(ATLAS_EDITOR_ID_REBUILD, MESH_ICON_LOOP, false)) {
-        RegenerateAtlas(atlas);
+    // Rebuild button - clears and reallocates all rects
+    if (EditorButton(ATLAS_EDITOR_ID_REBUILD, MESH_ICON_LOOP, false)) {
+        RebuildAtlas(atlas);
         MarkModified(atlas);
         AddNotification(NOTIFICATION_TYPE_INFO, "Atlas '%s' rebuilt", atlas->name->value);
     }
@@ -55,7 +55,7 @@ static void AtlasEditorOverlay() {
 }
 
 static void BeginAtlasEditor(AssetData*) {
-    // Nothing special needed for now
+    SetFocus(CANVAS_ID_OVERLAY, ATLAS_EDITOR_ID_REBUILD);
 }
 
 static void EndAtlasEditor() {
@@ -66,15 +66,11 @@ static void UpdateAtlasEditor() {
     // Handle input updates if needed
 }
 
-static void DrawAtlasEditor() {
-    // Additional editor-specific drawing can go here
-}
-
 void InitAtlasEditor(AtlasData* atlas) {
     atlas->vtable.editor_bounds = GetAtlasBounds;
     atlas->vtable.editor_begin = BeginAtlasEditor;
     atlas->vtable.editor_end = EndAtlasEditor;
     atlas->vtable.editor_update = UpdateAtlasEditor;
-    atlas->vtable.editor_draw = DrawAtlasEditor;
+    // Don't set editor_draw - let the normal draw function handle it
     atlas->vtable.editor_overlay = AtlasEditorOverlay;
 }

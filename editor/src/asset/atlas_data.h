@@ -4,7 +4,7 @@
 
 #pragma once
 
-namespace noz { class rect_packer; }
+namespace noz { class RectPacker; }
 
 constexpr int ATLAS_MAX_RECTS = 256;
 constexpr int ATLAS_DEFAULT_DPI = 96;
@@ -26,7 +26,7 @@ struct AtlasDataImpl {
     bool dirty = true;
     Texture* texture = nullptr;
     Material* material = nullptr;
-    noz::rect_packer* packer = nullptr;
+    noz::RectPacker* packer = nullptr;
 };
 
 struct AtlasData : AssetData {
@@ -45,7 +45,8 @@ extern void ClearAllRects(AtlasData* atlas);
 
 // Rendering
 extern void RenderMeshToAtlas(AtlasData* atlas, struct MeshData* mesh, const AtlasRect& rect);
-extern void RegenerateAtlas(AtlasData* atlas);
+extern void RegenerateAtlas(AtlasData* atlas);   // Re-render meshes to existing rects
+extern void RebuildAtlas(AtlasData* atlas);      // Clear and reallocate all rects, mark meshes modified
 extern void SyncAtlasTexture(AtlasData* atlas);  // Upload pixels to GPU (editor only)
 
 // UV computation

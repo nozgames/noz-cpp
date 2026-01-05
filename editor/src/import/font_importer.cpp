@@ -18,7 +18,7 @@ struct ImportFontGlyph {
     Vec2Double advance;
     Vec2Double bearing;
     Vec2Int packed_size;
-    rect_packer::BinRect packed_rect;
+    RectPacker::Rect packed_rect;
     char ascii;
 };
 
@@ -124,7 +124,7 @@ static void ImportFont(AssetData* ea, const std::filesystem::path& path, Props* 
 
     // Pack the glyphs
     int minHeight = (int)NextPowerOf2((u32)(font_size + 2 + sdf_range * 2 + padding * 2));
-    rect_packer packer(minHeight, minHeight);
+    RectPacker packer(minHeight, minHeight);
 
     while (packer.empty())
     {
@@ -133,9 +133,9 @@ static void ImportFont(AssetData* ea, const std::filesystem::path& path, Props* 
             if (glyph.ttf->contours.size() == 0)
                 continue;
 
-            if (-1 == packer.Insert(glyph.packed_size, rect_packer::method::BestLongSideFit, glyph.packed_rect))
+            if (-1 == packer.Insert(glyph.packed_size, RectPacker::method::BestLongSideFit, glyph.packed_rect))
             {
-                rect_packer::BinSize size = packer.size();
+                RectPacker::Size size = packer.size();
                 if (size.w <= size.h)
                     size.w <<= 1;
                 else

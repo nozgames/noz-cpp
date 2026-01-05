@@ -6,28 +6,28 @@
 
 using namespace noz;
 
-rect_packer::rect_packer()
+RectPacker::RectPacker()
 {
 }
 
-rect_packer::rect_packer(int32_t width, int32_t height)
+RectPacker::RectPacker(int32_t width, int32_t height)
 {
     Resize(width, height);
 }
 
-void rect_packer::Resize(int32_t width, int32_t height)
+void RectPacker::Resize(int32_t width, int32_t height)
 {
     size_.w = width;
     size_.h = height;
 
     used_.clear();
     free_.clear();
-    free_.push_back(BinRect(1, 1, width - 2, height - 2));
+    free_.push_back(Rect(1, 1, width - 2, height - 2));
 }
 
-int rect_packer::Insert(const Vec2Int& size, method method, BinRect& result)
+int RectPacker::Insert(const Vec2Int& size, method method, Rect& result)
 {
-    BinRect rect;
+    Rect rect;
     int32_t score1;
     int32_t score2;
 
@@ -60,7 +60,7 @@ int rect_packer::Insert(const Vec2Int& size, method method, BinRect& result)
     return (int)used_.size() - 1;
 }
 
-void rect_packer::PlaceRect(const BinRect& rect)
+void RectPacker::PlaceRect(const Rect& rect)
 {
     size_t freeCount = free_.size();
     for (size_t i = 0; i < freeCount; ++i)
@@ -78,14 +78,14 @@ void rect_packer::PlaceRect(const BinRect& rect)
     used_.push_back(rect);
 }
 
-void rect_packer::MarkUsed(const BinRect& rect)
+void RectPacker::MarkUsed(const Rect& rect)
 {
     PlaceRect(rect);
 }
 
-rect_packer::BinRect rect_packer::ScoreRect(BinSize size, method method, int32_t& score1, int32_t& score2) const
+RectPacker::Rect RectPacker::ScoreRect(Size size, method method, int32_t& score1, int32_t& score2) const
 {
-    BinRect rect;
+    Rect rect;
     score1 = std::numeric_limits<int32_t>::max();
     score2 = std::numeric_limits<int32_t>::max();
 
@@ -120,7 +120,7 @@ rect_packer::BinRect rect_packer::ScoreRect(BinSize size, method method, int32_t
 }
 
 /// Computes the ratio of used surface area.
-float rect_packer::GetOccupancy() const
+float RectPacker::GetOccupancy() const
 {
     unsigned long area = 0;
     for (size_t i = 0; i < used_.size(); ++i)
@@ -131,10 +131,10 @@ float rect_packer::GetOccupancy() const
     return (float)area / (size_.w * size_.h);
 }
 
-rect_packer::BinRect rect_packer::FindPositionForNewNodeBottomLeft(int32_t width, int32_t height, int32_t& bestY,
+RectPacker::Rect RectPacker::FindPositionForNewNodeBottomLeft(int32_t width, int32_t height, int32_t& bestY,
                                                                    int32_t& bestX) const
 {
-    BinRect rect;
+    Rect rect;
 
     bestY = std::numeric_limits<int32_t>::max();
 
@@ -171,11 +171,11 @@ rect_packer::BinRect rect_packer::FindPositionForNewNodeBottomLeft(int32_t width
     return rect;
 }
 
-rect_packer::BinRect rect_packer::FindPositionForNewNodeBestShortSideFit(int32_t width, int32_t height,
+RectPacker::Rect RectPacker::FindPositionForNewNodeBestShortSideFit(int32_t width, int32_t height,
                                                                          int32_t& bestShortSideFit,
                                                                          int32_t& bestLongSideFit) const
 {
-    BinRect rect;
+    Rect rect;
     memset(&rect, 0, sizeof(rect));
 
     bestShortSideFit = std::numeric_limits<int32_t>::max();
@@ -223,11 +223,11 @@ rect_packer::BinRect rect_packer::FindPositionForNewNodeBestShortSideFit(int32_t
     return rect;
 }
 
-rect_packer::BinRect rect_packer::FindPositionForNewNodeBestLongSideFit(int32_t width, int32_t height,
+RectPacker::Rect RectPacker::FindPositionForNewNodeBestLongSideFit(int32_t width, int32_t height,
                                                                         int32_t& bestShortSideFit,
                                                                         int32_t& bestLongSideFit) const
 {
-    BinRect rect;
+    Rect rect;
     memset(&rect, 0, sizeof(rect));
 
     bestLongSideFit = std::numeric_limits<int32_t>::max();
@@ -276,10 +276,10 @@ rect_packer::BinRect rect_packer::FindPositionForNewNodeBestLongSideFit(int32_t 
     return rect;
 }
 
-rect_packer::BinRect rect_packer::FindPositionForNewNodeBestAreaFit(int32_t width, int32_t height, int32_t& bestAreaFit,
+RectPacker::Rect RectPacker::FindPositionForNewNodeBestAreaFit(int32_t width, int32_t height, int32_t& bestAreaFit,
                                                                     int32_t& bestShortSideFit) const
 {
-    BinRect rect;
+    Rect rect;
     memset(&rect, 0, sizeof(rect));
 
     bestAreaFit = std::numeric_limits<int32_t>::max();
@@ -334,7 +334,7 @@ int32_t CommonIntervalLength(int32_t i1start, int32_t i1end, int32_t i2start, in
     return std::min(i1end, i2end) - std::max(i1start, i2start);
 }
 
-int32_t rect_packer::ContactPointScoreNode(int32_t x, int32_t y, int32_t width, int32_t height) const
+int32_t RectPacker::ContactPointScoreNode(int32_t x, int32_t y, int32_t width, int32_t height) const
 {
     int32_t score = 0;
 
@@ -354,10 +354,10 @@ int32_t rect_packer::ContactPointScoreNode(int32_t x, int32_t y, int32_t width, 
     return score;
 }
 
-rect_packer::BinRect rect_packer::FindPositionForNewNodeContactPoint(int32_t width, int32_t height,
+RectPacker::Rect RectPacker::FindPositionForNewNodeContactPoint(int32_t width, int32_t height,
                                                                      int32_t& bestContactScore) const
 {
-    BinRect rect;
+    Rect rect;
     memset(&rect, 0, sizeof(rect));
 
     bestContactScore = -1;
@@ -393,7 +393,7 @@ rect_packer::BinRect rect_packer::FindPositionForNewNodeContactPoint(int32_t wid
     return rect;
 }
 
-bool rect_packer::SplitFreeNode(BinRect freeNode, const BinRect& usedNode)
+bool RectPacker::SplitFreeNode(Rect freeNode, const Rect& usedNode)
 {
     // Test with SAT if the rectangles even intersect.
     if (usedNode.x >= freeNode.x + freeNode.w || usedNode.x + usedNode.w <= freeNode.x ||
@@ -405,7 +405,7 @@ bool rect_packer::SplitFreeNode(BinRect freeNode, const BinRect& usedNode)
         // New node at the top side of the used node.
         if (usedNode.y > freeNode.y && usedNode.y < freeNode.y + freeNode.h)
         {
-            BinRect newNode = freeNode;
+            Rect newNode = freeNode;
             newNode.h = usedNode.y - newNode.y;
             free_.push_back(newNode);
         }
@@ -413,7 +413,7 @@ bool rect_packer::SplitFreeNode(BinRect freeNode, const BinRect& usedNode)
         // New node at the bottom side of the used node.
         if (usedNode.y + usedNode.h < freeNode.y + freeNode.h)
         {
-            BinRect newNode = freeNode;
+            Rect newNode = freeNode;
             newNode.y = usedNode.y + usedNode.h;
             newNode.h = freeNode.y + freeNode.h - (usedNode.y + usedNode.h);
             free_.push_back(newNode);
@@ -425,7 +425,7 @@ bool rect_packer::SplitFreeNode(BinRect freeNode, const BinRect& usedNode)
         // New node at the left side of the used node.
         if (usedNode.x > freeNode.x && usedNode.x < freeNode.x + freeNode.w)
         {
-            BinRect newNode = freeNode;
+            Rect newNode = freeNode;
             newNode.w = usedNode.x - newNode.x;
             free_.push_back(newNode);
         }
@@ -433,7 +433,7 @@ bool rect_packer::SplitFreeNode(BinRect freeNode, const BinRect& usedNode)
         // New node at the right side of the used node.
         if (usedNode.x + usedNode.w < freeNode.x + freeNode.w)
         {
-            BinRect newNode = freeNode;
+            Rect newNode = freeNode;
             newNode.x = usedNode.x + usedNode.w;
             newNode.w = freeNode.x + freeNode.w - (usedNode.x + usedNode.w);
             free_.push_back(newNode);
@@ -443,7 +443,7 @@ bool rect_packer::SplitFreeNode(BinRect freeNode, const BinRect& usedNode)
     return true;
 }
 
-void rect_packer::PruneFreeList()
+void RectPacker::PruneFreeList()
 {
     // Remoe redundance rectangles
     for (size_t i = 0; i < free_.size(); ++i)
@@ -465,7 +465,7 @@ void rect_packer::PruneFreeList()
     }
 }
 
-bool rect_packer::validate() const
+bool RectPacker::validate() const
 {
     for (auto& rect : used_)
     {

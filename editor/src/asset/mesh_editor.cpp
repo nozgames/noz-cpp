@@ -803,13 +803,13 @@ static void MeshEditorToolbar() {
     // Buttons
     BeginContainer();
     BeginRow({.align=ALIGN_LEFT, .spacing=4});
-    if (EditorToggleButton(MESH_EDITOR_ID_VERTEX_MODE, MESH_ICON_VERTEX_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_VERTEX))
+    if (EditorButton(MESH_EDITOR_ID_VERTEX_MODE, MESH_ICON_VERTEX_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_VERTEX))
         g_mesh_editor.mode = MESH_EDITOR_MODE_VERTEX;
-    if (EditorToggleButton(MESH_EDITOR_ID_EDGE_MODE, MESH_ICON_EDGE_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_EDGE))
+    if (EditorButton(MESH_EDITOR_ID_EDGE_MODE, MESH_ICON_EDGE_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_EDGE))
         g_mesh_editor.mode = MESH_EDITOR_MODE_EDGE;
-    if (EditorToggleButton(MESH_EDITOR_ID_FACE_MODE, MESH_ICON_FACE_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_FACE))
+    if (EditorButton(MESH_EDITOR_ID_FACE_MODE, MESH_ICON_FACE_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_FACE))
         g_mesh_editor.mode = MESH_EDITOR_MODE_FACE;
-    if (EditorToggleButton(MESH_EDITOR_ID_WEIGHT_MODE, MESH_ICON_WEIGHT_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_FACE, m->impl->skeleton == nullptr))
+    if (EditorButton(MESH_EDITOR_ID_WEIGHT_MODE, MESH_ICON_WEIGHT_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_FACE, m->impl->skeleton == nullptr))
         g_mesh_editor.mode = MESH_EDITOR_MODE_WEIGHT;
     EndRow();
 
@@ -823,9 +823,9 @@ static void MeshEditorToolbar() {
     }
 
     BeginRow({.align=ALIGN_RIGHT, .spacing=6});
-    if (EditorToggleButton(MESH_EDITOR_ID_TILE, MESH_ICON_TILING, g_mesh_editor.show_tiling))
+    if (EditorButton(MESH_EDITOR_ID_TILE, MESH_ICON_TILING, g_mesh_editor.show_tiling))
         g_mesh_editor.show_tiling = !g_mesh_editor.show_tiling;
-    if (EditorToggleButton(MESH_EDITOR_ID_EXPAND, MESH_ICON_PALETTE, g_mesh_editor.show_palette_picker, g_editor.palette_count < 2))
+    if (EditorButton(MESH_EDITOR_ID_EXPAND, MESH_ICON_PALETTE, g_mesh_editor.show_palette_picker, g_editor.palette_count < 2))
         show_palette_picker = !g_mesh_editor.show_palette_picker;
     EndRow();
     EndContainer();

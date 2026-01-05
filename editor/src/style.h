@@ -26,6 +26,7 @@ struct Style {
 
     // @button
     Color button_color;
+    Color button_hover_color;
     Color button_text_color;
     Color button_checked_color;
     Color button_checked_text_color;
@@ -70,6 +71,7 @@ inline Color STYLE_BACKGROUND_COLOR() { return GetStyle().background_color; }
 inline Color STYLE_SELECTION_COLOR() { return GetStyle().selection_color; }
 
 inline Color STYLE_BUTTON_COLOR() { return GetStyle().button_color; }
+inline Color STYLE_BUTTON_HOVER_COLOR() { return GetStyle().button_hover_color; }
 inline Color STYLE_BUTTON_TEXT_COLOR() { return GetStyle().button_text_color; }
 inline Color STYLE_BUTTON_CHECKED_COLOR() { return GetStyle().button_checked_color; }
 inline Color STYLE_BUTTON_CHECKED_TEXT_COLOR() { return GetStyle().button_checked_text_color; }

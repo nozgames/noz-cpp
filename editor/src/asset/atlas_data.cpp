@@ -100,14 +100,14 @@ static void CloneAtlasData(AssetData* a) {
     atlas->impl->pixels = nullptr;
     atlas->impl->texture = nullptr;
     atlas->impl->material = nullptr;
-    atlas->impl->packer = new rect_packer(old_width, old_height);
+    atlas->impl->packer = new RectPacker(old_width, old_height);
     atlas->impl->dirty = true;
 
     // Mark existing rects as used in new packer
     for (int i = 0; i < atlas->impl->rect_count; i++) {
         if (atlas->impl->rects[i].valid) {
             const AtlasRect& r = atlas->impl->rects[i];
-            rect_packer::BinRect bin_rect(r.x, r.y, r.width, r.height);
+            RectPacker::Rect bin_rect(r.x, r.y, r.width, r.height);
             atlas->impl->packer->MarkUsed(bin_rect);
         }
     }
@@ -152,10 +152,11 @@ AtlasRect* AllocateRect(AtlasData* atlas, MeshData* mesh) {
     if (slot < 0) return nullptr;
 
     // Use rect_packer to find position
-    rect_packer::BinRect bin_rect;
-    int result = impl->packer->Insert(req_width, req_height, rect_packer::method::BestShortSideFit, bin_rect);
-    if (result == 0) {
-        return nullptr;  // No room
+    // Note: Use BottomLeftRule for Tetris-style packing (fills from top-left, no rotation)
+    RectPacker::Rect bin_rect;
+    int result = impl->packer->Insert(req_width, req_height, RectPacker::method::BottomLeftRule, bin_rect);
+    if (result < 0) {
+        return nullptr;  // No room (Insert returns -1 on failure, >= 0 on success)
     }
 
     AtlasRect& rect = impl->rects[slot];
@@ -191,7 +192,7 @@ void ClearAllRects(AtlasData* atlas) {
     if (impl->packer) {
         delete impl->packer;
     }
-    impl->packer = new rect_packer(impl->width, impl->height);
+    impl->packer = new RectPacker(impl->width, impl->height);
 }
 
 // PlutoVG rendering
@@ -336,6 +337,59 @@ void RegenerateAtlas(AtlasData* atlas) {
     impl->dirty = true;
 }
 
+void RebuildAtlas(AtlasData* atlas) {
+    AtlasDataImpl* impl = atlas->impl;
+
+    // Collect mesh names before clearing
+    const Name* mesh_names[ATLAS_MAX_RECTS];
+    int mesh_count = 0;
+    for (int i = 0; i < impl->rect_count; i++) {
+        if (impl->rects[i].valid && impl->rects[i].mesh_name) {
+            mesh_names[mesh_count++] = impl->rects[i].mesh_name;
+        }
+    }
+
+    int original_count = mesh_count;
+
+    // Clear all rects (resets packer)
+    ClearAllRects(atlas);
+
+    // Clear pixel buffer
+    if (impl->pixels) {
+        memset(impl->pixels, 0, impl->width * impl->height * 4);
+    }
+
+    // Re-allocate and render each mesh
+    int success_count = 0;
+    for (int i = 0; i < mesh_count; i++) {
+        AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, mesh_names[i]);
+        if (!mesh_asset) {
+            LogError("RebuildAtlas: mesh '%s' not found", mesh_names[i]->value);
+            continue;
+        }
+
+        MeshData* mesh = static_cast<MeshData*>(mesh_asset);
+
+        // Allocate fresh rect
+        AtlasRect* rect = AllocateRect(atlas, mesh);
+        if (rect) {
+            RenderMeshToAtlas(atlas, mesh, *rect);
+            success_count++;
+        } else {
+            LogError("RebuildAtlas: failed to allocate rect for '%s'", mesh_names[i]->value);
+        }
+
+        // Mark mesh as modified
+        MarkModified(mesh_asset);
+    }
+
+    if (success_count < original_count) {
+        LogWarning("RebuildAtlas: only %d of %d meshes were successfully added", success_count, original_count);
+    }
+
+    impl->dirty = true;
+}
+
 // UV computation
 
 Vec2 GetAtlasUV(AtlasData* atlas, const AtlasRect& rect, const Bounds2& mesh_bounds, const Vec2& position) {
@@ -421,7 +475,7 @@ static void ParseRect(AtlasData* atlas, Tokenizer& tk) {
         rect.valid = true;
 
         // Mark this space as used in the packer
-        rect_packer::BinRect bin_rect(x, y, w, h);
+        RectPacker::Rect bin_rect(x, y, w, h);
         impl->packer->MarkUsed(bin_rect);
     }
 }
@@ -447,7 +501,7 @@ static void LoadAtlasData(AssetData* a) {
         } else if (ExpectIdentifier(tk, "r")) {
             // Ensure packer is initialized with correct dimensions before parsing rects
             if (!impl->packer) {
-                impl->packer = new rect_packer(impl->width, impl->height);
+                impl->packer = new RectPacker(impl->width, impl->height);
             }
             ParseRect(atlas, tk);
         } else {
@@ -459,10 +513,12 @@ static void LoadAtlasData(AssetData* a) {
 
     // Initialize packer if no rects were loaded
     if (!impl->packer) {
-        impl->packer = new rect_packer(impl->width, impl->height);
+        impl->packer = new RectPacker(impl->width, impl->height);
     }
 
-    Vec2 tsize = Vec2{static_cast<float>(impl->width), static_cast<float>(impl->height)} / 72.0f;
+    // Use same scale as DrawAtlasData (10 units for full width)
+    float scale = 10.0f / (float)impl->width;
+    Vec2 tsize = Vec2{static_cast<float>(impl->width), static_cast<float>(impl->height)} * scale;
     a->bounds = Bounds2{-tsize.x*0.5f, -tsize.y*0.5f, tsize.x*0.5f, tsize.y*0.5f};
 }
 
