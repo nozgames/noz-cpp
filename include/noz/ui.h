@@ -234,6 +234,7 @@ extern bool HasFocus();
 extern void SetFocus(CanvasId canvas_id, ElementId element_id);
 extern CanvasId GetFocusedCanvasId();
 extern ElementId GetFocusedElementId();
+extern noz::Rect GetElementRect(ElementId id);
 
 // @textbox
 extern bool TextBox(Text& text, const TextBoxStyle& style = {});

@@ -126,6 +126,7 @@ extern void DeleteAsset(AssetData* a);
 extern void SortAssets();
 extern bool Rename(AssetData* a, const Name* new_name);
 extern AssetData* Duplicate(AssetData* a);
+extern void NewAsset(AssetType asset_type, const Name* asset_name, const Vec2* position = nullptr);
 extern std::filesystem::path GetTargetPath(AssetData* a);
 extern std::filesystem::path GetUniqueAssetPath(const std::filesystem::path& path);
 extern int GetSelectedAssets(AssetData** out_assets, int max_assets);

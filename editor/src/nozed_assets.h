@@ -28,6 +28,7 @@ extern Mesh* MESH_ICON_ONION;
 extern Mesh* MESH_ICON_PALETTE;
 extern Mesh* MESH_ICON_PUBLISH;
 extern Mesh* MESH_ICON_ROOT_MOTION;
+extern Mesh* MESH_ICON_SUBMENU;
 extern Mesh* MESH_ICON_TILING;
 extern Mesh* MESH_ICON_VERTEX_MODE;
 extern Mesh* MESH_ICON_WEIGHT_MODE;

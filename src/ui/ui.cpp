@@ -75,6 +75,7 @@ struct ElementState {
     CanvasId canvas_id;
     Text text;
     float scroll_offset;
+    noz::Rect rect;  // Last known rect (for GetElementRect)
 };
 
 struct Element {
@@ -196,6 +197,11 @@ CanvasId GetFocusedCanvasId() {
 
 extern ElementId GetFocusedElementId() {
     return g_ui.focus_id;
+}
+
+extern noz::Rect GetElementRect(ElementId id) {
+    if (id == ELEMENT_ID_NONE) return {};
+    return g_ui.element_states[id].rect;
 }
 
 static void SetId(Element* e, ElementId id) {
@@ -1500,6 +1506,7 @@ static void HandleInput() {
         if (e->id == ELEMENT_ID_NONE) continue;
 
         ElementState& state = g_ui.element_states[e->id];
+        state.rect = e->rect;  // Store rect for GetElementRect
         Vec2 local_mouse = TransformPoint(e->world_to_local, mouse);
         bool mouse_over = Contains(Bounds2{0,0,e->rect.width, e->rect.height}, local_mouse);
 

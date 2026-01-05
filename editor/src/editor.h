@@ -208,6 +208,7 @@ struct ContextMenuConfig {
 };
 
 extern void OpenContextMenuAtMouse(const ContextMenuConfig& config);
+extern Vec2 GetContextMenuWorldPosition();
 
 // @editor
 inline AssetData* GetAssetData() { return g_editor.editing_asset; }

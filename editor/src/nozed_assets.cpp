@@ -37,6 +37,7 @@ Mesh* MESH_ICON_ONION = nullptr;
 Mesh* MESH_ICON_PALETTE = nullptr;
 Mesh* MESH_ICON_PUBLISH = nullptr;
 Mesh* MESH_ICON_ROOT_MOTION = nullptr;
+Mesh* MESH_ICON_SUBMENU = nullptr;
 Mesh* MESH_ICON_TILING = nullptr;
 Mesh* MESH_ICON_VERTEX_MODE = nullptr;
 Mesh* MESH_ICON_WEIGHT_MODE = nullptr;
@@ -108,6 +109,7 @@ const Name* PATH_MESH_ICON_ONION = nullptr;
 const Name* PATH_MESH_ICON_PALETTE = nullptr;
 const Name* PATH_MESH_ICON_PUBLISH = nullptr;
 const Name* PATH_MESH_ICON_ROOT_MOTION = nullptr;
+const Name* PATH_MESH_ICON_SUBMENU = nullptr;
 const Name* PATH_MESH_ICON_TILING = nullptr;
 const Name* PATH_MESH_ICON_VERTEX_MODE = nullptr;
 const Name* PATH_MESH_ICON_WEIGHT_MODE = nullptr;
@@ -175,6 +177,7 @@ bool LoadAssets(Allocator* allocator)
     PATH_MESH_ICON_PALETTE = GetName("icon_palette");
     PATH_MESH_ICON_PUBLISH = GetName("icon_publish");
     PATH_MESH_ICON_ROOT_MOTION = GetName("icon_root_motion");
+    PATH_MESH_ICON_SUBMENU = GetName("icon_submenu");
     PATH_MESH_ICON_TILING = GetName("icon_tiling");
     PATH_MESH_ICON_VERTEX_MODE = GetName("icon_vertex_mode");
     PATH_MESH_ICON_WEIGHT_MODE = GetName("icon_weight_mode");
@@ -214,6 +217,7 @@ bool LoadAssets(Allocator* allocator)
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_PALETTE, MESH_ICON_PALETTE);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_PUBLISH, MESH_ICON_PUBLISH);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_ROOT_MOTION, MESH_ICON_ROOT_MOTION);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_SUBMENU, MESH_ICON_SUBMENU);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_TILING, MESH_ICON_TILING);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_VERTEX_MODE, MESH_ICON_VERTEX_MODE);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_WEIGHT_MODE, MESH_ICON_WEIGHT_MODE);
@@ -239,6 +243,7 @@ bool LoadAssets(Allocator* allocator)
         MESH_ICON_PALETTE,
         MESH_ICON_PUBLISH,
         MESH_ICON_ROOT_MOTION,
+        MESH_ICON_SUBMENU,
         MESH_ICON_TILING,
         MESH_ICON_VERTEX_MODE,
         MESH_ICON_WEIGHT_MODE,
@@ -332,6 +337,7 @@ void UnloadAssets()
     Free(MESH_ICON_PALETTE);
     Free(MESH_ICON_PUBLISH);
     Free(MESH_ICON_ROOT_MOTION);
+    Free(MESH_ICON_SUBMENU);
     Free(MESH_ICON_TILING);
     Free(MESH_ICON_VERTEX_MODE);
     Free(MESH_ICON_WEIGHT_MODE);
@@ -383,6 +389,7 @@ void BindLuaAssets(noz::lua::State* state) {
     SetGlobal(state, "MESH_ICON_PALETTE", MESH_ICON_PALETTE);
     SetGlobal(state, "MESH_ICON_PUBLISH", MESH_ICON_PUBLISH);
     SetGlobal(state, "MESH_ICON_ROOT_MOTION", MESH_ICON_ROOT_MOTION);
+    SetGlobal(state, "MESH_ICON_SUBMENU", MESH_ICON_SUBMENU);
     SetGlobal(state, "MESH_ICON_TILING", MESH_ICON_TILING);
     SetGlobal(state, "MESH_ICON_VERTEX_MODE", MESH_ICON_VERTEX_MODE);
     SetGlobal(state, "MESH_ICON_WEIGHT_MODE", MESH_ICON_WEIGHT_MODE);
@@ -436,6 +443,7 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     NOZ_RELOAD_MESH(PATH_MESH_ICON_PALETTE, MESH_ICON_PALETTE);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_PUBLISH, MESH_ICON_PUBLISH);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_ROOT_MOTION, MESH_ICON_ROOT_MOTION);
+    NOZ_RELOAD_MESH(PATH_MESH_ICON_SUBMENU, MESH_ICON_SUBMENU);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_TILING, MESH_ICON_TILING);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_VERTEX_MODE, MESH_ICON_VERTEX_MODE);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_WEIGHT_MODE, MESH_ICON_WEIGHT_MODE);

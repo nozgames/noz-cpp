@@ -669,36 +669,23 @@ static void NewAssetCommand(const Command& command) {
 
     const Name* asset_name = GetName(command.args[1]);
 
-    AssetData* a = nullptr;
+    AssetType asset_type = ASSET_TYPE_UNKNOWN;
     if (type == NAME_MESH || type == NAME_M)
-        a = NewMeshData(asset_name->value);
+        asset_type = ASSET_TYPE_MESH;
     else if (type == NAME_SKELETON || type == NAME_S)
-        a = NewEditorSkeleton(asset_name->value);
+        asset_type = ASSET_TYPE_SKELETON;
     else if (type == NAME_ANIMATION || type == NAME_A)
-        a = NewAnimationData(asset_name->value);
+        asset_type = ASSET_TYPE_ANIMATION;
     else if (type == NAME_VFX)
-        a = NewVfxData(asset_name->value);
+        asset_type = ASSET_TYPE_VFX;
     else if (type == NAME_AM || type == NAME_ANIMATEDMESH)
-        a = NewAnimatedMeshData(asset_name->value);
+        asset_type = ASSET_TYPE_ANIMATED_MESH;
     else if (type == NAME_EVENT || type == NAME_E)
-        a = NewEventData(asset_name->value);
+        asset_type = ASSET_TYPE_EVENT;
     else if (type == NAME_ATLAS)
-        a = NewAtlasData(asset_name->value);
+        asset_type = ASSET_TYPE_ATLAS;
 
-    if (a == nullptr)
-        return;
-
-    a->position = GetCenter(GetWorldBounds(g_view.camera));
-    MarkMetaModified(a);
-
-    if (a->vtable.post_load)
-        a->vtable.post_load(a);
-
-    SortAssets();
-    SaveAssetData();
-
-    ClearAssetSelection();
-    SetSelected(a, true);
+    NewAsset(asset_type, asset_name);
 }
 
 static void DuplicateAsset() {
@@ -986,6 +973,14 @@ static void ToggleGrid() {
     g_view.grid = !g_view.grid;
 }
 
+static void NewMesh() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_MESH, nullptr, &pos); }
+static void NewEvent() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_EVENT, nullptr, &pos); }
+static void NewAnimatedMesh() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_ANIMATED_MESH, nullptr, &pos); }
+static void NewAtlas() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_ATLAS, nullptr, &pos); }
+static void NewSkeleton() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_SKELETON, nullptr, &pos); }
+static void NewAnimation() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_ANIMATION, nullptr, &pos); }
+static void NewVfx() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_VFX, nullptr, &pos); }
+
 static void OpenAssetContextMenu() {
     if (g_view.state == VIEW_STATE_EDIT) {
         assert(g_editor.editing_asset);
@@ -997,15 +992,23 @@ static void OpenAssetContextMenu() {
         OpenContextMenuAtMouse({
             .title="Asset",
             .items = {
+                { "New", nullptr, true },
+                { "Animated Mesh", NewAnimatedMesh, true, 1 },
+                { "Animation", NewAnimation, true, 1 },
+                { "Atlas", NewAtlas, true, 1 },
+                { "Event", NewEvent, true, 1 },
+                { "Mesh", NewMesh, true, 1 },
+                { "Skeleton", NewSkeleton, true, 1 },
+                { "Vfx", NewVfx, true, 1 },
+                { nullptr, nullptr, true },
                 { "Edit", ToggleEdit, any_selected },
                 { "Duplicate", DuplicateAsset, any_selected },
                 { "Rename", RenameAsset, any_selected },
                 { "Delete", DeleteSelectedAssets, any_selected },
             },
-            .item_count = 4
+            .item_count = 13
         });
     }
-
 }
 
 void InitView() {

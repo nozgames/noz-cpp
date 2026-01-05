@@ -489,6 +489,49 @@ bool Rename(AssetData* a, const Name* new_name) {
     return true;
 }
 
+void NewAsset(AssetType asset_type, const Name* asset_name, const Vec2* position) {
+    AssetData* a = nullptr;
+
+    if (!asset_name) {
+        Text default_name;
+        Format(default_name, "new %s", GetAssetTypeInfo(asset_type)->short_name);
+        Lower(default_name);
+        std::filesystem::path new_path = GetUniqueAssetPath(std::filesystem::path(default_name.value));
+        asset_name = GetName(new_path.stem().string().c_str());
+    }
+
+    if (asset_type == ASSET_TYPE_MESH)
+        a = NewMeshData(asset_name->value);
+    else if (asset_type == ASSET_TYPE_SKELETON)
+        a = NewEditorSkeleton(asset_name->value);
+    else if (asset_type == ASSET_TYPE_ANIMATION)
+        a = NewAnimationData(asset_name->value);
+    else if (asset_type == ASSET_TYPE_VFX)
+        a = NewVfxData(asset_name->value);
+    else if (asset_type == ASSET_TYPE_ANIMATED_MESH)
+        a = NewAnimatedMeshData(asset_name->value);
+    else if (asset_type == ASSET_TYPE_EVENT)
+        a = NewEventData(asset_name->value);
+    else if (asset_type == ASSET_TYPE_ATLAS)
+        a = NewAtlasData(asset_name->value);
+
+    if (a == nullptr)
+        return;
+
+    a->position = position ? *position : GetCenter(GetWorldBounds(g_view.camera));
+    MarkModified(a);
+    MarkMetaModified(a);
+
+    if (a->vtable.post_load)
+        a->vtable.post_load(a);
+
+    SortAssets();
+    SaveAssetData();
+
+    ClearAssetSelection();
+    SetSelected(a, true);
+}
+
 AssetData* Duplicate(AssetData* a) {
     fs::path new_path = GetUniqueAssetPath(a->path.value);
 
@@ -506,18 +549,30 @@ AssetData* Duplicate(AssetData* a) {
 }
 
 std::filesystem::path GetUniqueAssetPath(const std::filesystem::path& path) {
-    if (!fs::exists(path))
-        return path;
-
     fs::path parent_path = path.parent_path();
     fs::path file_name = path.filename();
     fs::path ext = path.extension();
     file_name.replace_extension("");
 
-    for (int i=0; ; i++) {
-        fs::path new_path = parent_path / (file_name.string() + "_" + std::to_string(i) + ext.string());
-        if (!fs::exists(new_path))
-            return new_path;
+    // Canonicalize the base name (lowercase, spaces to underscores, etc.)
+    const Name* canonical_base = MakeCanonicalAssetName(file_name.string().c_str());
+    fs::path candidate = parent_path / (std::string(canonical_base->value) + ext.string());
+
+    for (int i = 0; ; i++) {
+        if (i > 0) {
+            candidate = parent_path / (std::string(canonical_base->value) + "_" + std::to_string(i) + ext.string());
+        }
+
+        // Check if file exists on disk
+        if (!candidate.empty() && fs::exists(candidate))
+            continue;
+
+        // Check if asset with this canonical name already exists in memory
+        const Name* canonical_name = MakeCanonicalAssetName(candidate);
+        if (GetAssetData(ASSET_TYPE_UNKNOWN, canonical_name))
+            continue;
+
+        return candidate;
     }
 }
 
