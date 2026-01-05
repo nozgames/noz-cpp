@@ -348,7 +348,7 @@ NoZ follows these design principles:
 
 ## 📝 License
 
-Copyright (c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 
 ---
 

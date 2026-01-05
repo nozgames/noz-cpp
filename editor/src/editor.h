@@ -1,5 +1,5 @@
 //
-//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 #pragma once
@@ -172,6 +172,8 @@ extern float SnapAngle(float angle);
 extern Color GetButtonHoverColor(ElementFlags state, float time, void* user_data);
 extern void UpdateConfirmDialog();
 extern void ShowConfirmDialog(const char* message, const std::function<void()>& callback);
+extern bool UpdateHelp();
+extern void ToggleHelp();
 
 // @editor
 inline AssetData* GetAssetData() { return g_editor.editing_asset; }

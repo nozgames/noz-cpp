@@ -1,5 +1,5 @@
 //
-//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 #define WIN32_LEAN_AND_MEAN

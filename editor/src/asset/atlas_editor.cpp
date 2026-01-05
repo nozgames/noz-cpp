@@ -1,53 +1,14 @@
 //
-//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-static void DrawAtlasData(AssetData* a) {
-    assert(a);
-    assert(a->type == ASSET_TYPE_ATLAS);
+extern Font* FONT_SEGUISB;
 
-    AtlasData* atlas = static_cast<AtlasData*>(a);
-    AtlasDataImpl* impl = atlas->impl;
+constexpr int ATLAS_EDITOR_ID_TOOLBAR = OVERLAY_BASE_ID + 0;
+constexpr int ATLAS_EDITOR_ID_REBUILD = OVERLAY_BASE_ID + 1;
 
-    // Sync pixels to GPU if dirty
-    SyncAtlasTexture(atlas);
-
-    // Scale factor to display atlas in world units
-    float scale = 10.0f / (float)impl->width;  // Normalize to 10 units
-    Vec2 size = Vec2{(float)impl->width, (float)impl->height} * scale;
-
-    // Draw the atlas texture if available
-    if (impl->material) {
-        BindDepth(-0.1f);
-        BindColor(COLOR_WHITE);
-        BindMaterial(impl->material);
-        // Flip Y because texture coords are top-down
-        DrawMesh(g_view.quad_mesh, Translate(a->position) * Scale(Vec2{size.x, -size.y}));
-    } else {
-        // Draw a gray placeholder
-        BindDepth(0.0f);
-        BindMaterial(g_view.editor_material);
-        BindColor(Color{0.2f, 0.2f, 0.2f, 1.0f});
-        DrawMesh(g_view.quad_mesh, Translate(a->position) * Scale(size));
-    }
-
-    // Draw rect outlines for each attached mesh
-    BindDepth(0.1f);
-    BindMaterial(g_view.editor_material);
-    for (int i = 0; i < impl->rect_count; i++) {
-        if (!impl->rects[i].valid) continue;
-
-        Vec2 rect_pos = Vec2{(float)impl->rects[i].x, (float)impl->rects[i].y} * scale;
-        Vec2 rect_size = Vec2{(float)impl->rects[i].width, (float)impl->rects[i].height} * scale;
-
-        // Position relative to atlas origin (top-left)
-        Vec2 center = a->position - size * 0.5f + rect_pos + rect_size * 0.5f;
-        // Flip Y
-        center.y = a->position.y + size.y * 0.5f - rect_pos.y - rect_size.y * 0.5f;
-
-        BindColor(Color{0.4f, 0.8f, 0.4f, 0.3f});
-        DrawMesh(g_view.quad_mesh, Translate(center) * Scale(rect_size));
-    }
+static AtlasData* GetAtlasData() {
+    return static_cast<AtlasData*>(GetAssetData());
 }
 
 static Bounds2 GetAtlasBounds() {
@@ -55,7 +16,65 @@ static Bounds2 GetAtlasBounds() {
     return a->bounds;
 }
 
+static void AtlasEditorToolbar() {
+    AtlasData* atlas = GetAtlasData();
+    AtlasDataImpl* impl = atlas->impl;
+
+    BeginOverlay(ATLAS_EDITOR_ID_TOOLBAR, ALIGN_BOTTOM_CENTER);
+    BeginColumn({.spacing=8});
+
+    // Toolbar buttons row
+    BeginContainer();
+    BeginRow({.align=ALIGN_CENTER, .spacing=6});
+
+    // Rebuild button
+    if (EditorToggleButton(ATLAS_EDITOR_ID_REBUILD, MESH_ICON_LOOP, false)) {
+        RegenerateAtlas(atlas);
+        MarkModified(atlas);
+        AddNotification(NOTIFICATION_TYPE_INFO, "Atlas '%s' rebuilt", atlas->name->value);
+    }
+
+    EndRow();
+    EndContainer();
+
+    // Stats row: show attached mesh count
+    BeginContainer();
+    BeginRow({.align=ALIGN_CENTER, .spacing=4});
+    char stats[64];
+    snprintf(stats, sizeof(stats), "%d meshes", impl->rect_count);
+    Label(stats, {.font=FONT_SEGUISB, .font_size=STYLE_OVERLAY_TEXT_SIZE, .color=STYLE_OVERLAY_TEXT_COLOR(), .align=ALIGN_CENTER});
+    EndRow();
+    EndContainer();
+
+    EndColumn();
+    EndOverlay();
+}
+
+static void AtlasEditorOverlay() {
+    AtlasEditorToolbar();
+}
+
+static void BeginAtlasEditor(AssetData*) {
+    // Nothing special needed for now
+}
+
+static void EndAtlasEditor() {
+    // Nothing special needed for now
+}
+
+static void UpdateAtlasEditor() {
+    // Handle input updates if needed
+}
+
+static void DrawAtlasEditor() {
+    // Additional editor-specific drawing can go here
+}
+
 void InitAtlasEditor(AtlasData* atlas) {
-    atlas->vtable.draw = DrawAtlasData;
     atlas->vtable.editor_bounds = GetAtlasBounds;
+    atlas->vtable.editor_begin = BeginAtlasEditor;
+    atlas->vtable.editor_end = EndAtlasEditor;
+    atlas->vtable.editor_update = UpdateAtlasEditor;
+    atlas->vtable.editor_draw = DrawAtlasEditor;
+    atlas->vtable.editor_overlay = AtlasEditorOverlay;
 }

@@ -1,9 +1,6 @@
-/*
-  NoZ Game Engine
-
-  Copyright(c) 2025 NoZ Games, LLC
-
-*/
+//
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
+//
 
 #include "Contour.h"
 #include "../ttf/TrueTypeFont.h"

@@ -1,5 +1,5 @@
 //
-//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 extern Font* FONT_SEGUISB;
@@ -1779,7 +1779,7 @@ static void CommitParentTool(const Vec2& position) {
         AtlasData* atlas = static_cast<AtlasData*>(hit_asset);
         AtlasRect* rect = FindRectForMesh(atlas, m->name);
         if (!rect) {
-            rect = AllocateRect(atlas, m->name, m->bounds);
+            rect = AllocateRect(atlas, m);
         }
         if (rect) {
             RenderMeshToAtlas(atlas, m, *rect);

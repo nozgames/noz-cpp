@@ -1,5 +1,5 @@
 //
-//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 #pragma once
@@ -137,8 +137,8 @@ extern void DrawVertex(const Vec2& v);
 extern void DrawVertex(const Vec2& v, f32 size);
 extern void DrawArrow(const Vec2& v, const Vec2& dir);
 extern void DrawArrow(const Vec2& v, const Vec2& dir, f32 size);
-extern void DrawOrigin(AssetData* ea);
-extern void DrawBounds(AssetData* ea, float expand=0, const Color& color=COLOR_BLACK);
+extern void DrawOrigin(AssetData* a);
+extern void DrawBounds(AssetData* a, float expand=0, const Color& color=COLOR_BLACK);
 extern void DrawBone(const Vec2& a, const Vec2& b);
 extern void DrawBone(const Mat3& transform, const Mat3& parent_transform, const Vec2& position, float length=BONE_DEFAULT_LENGTH);
 extern void DrawBone(const Mat3& transform, float length);
@@ -195,6 +195,7 @@ constexpr float UI_BORDER_WIDTH = 2.0f;
 constexpr int CANVAS_ID_COMMAND = 1;
 constexpr int CANVAS_ID_CONFIRM = 2;
 constexpr int CANVAS_ID_OVERLAY = 3;
+constexpr int CANVAS_ID_HELP = 4;
 
 constexpr int CANVAS_ID_ANIMATION_EDITOR = 5;
 

@@ -34,6 +34,7 @@ Mesh* MESH_ICON_LOOP = nullptr;
 Mesh* MESH_ICON_MIRROR = nullptr;
 Mesh* MESH_ICON_ONION = nullptr;
 Mesh* MESH_ICON_PALETTE = nullptr;
+Mesh* MESH_ICON_PALETTE_0 = nullptr;
 Mesh* MESH_ICON_PUBLISH = nullptr;
 Mesh* MESH_ICON_ROOT_MOTION = nullptr;
 Mesh* MESH_ICON_TILING = nullptr;
@@ -103,6 +104,7 @@ const Name* PATH_MESH_ICON_LOOP = nullptr;
 const Name* PATH_MESH_ICON_MIRROR = nullptr;
 const Name* PATH_MESH_ICON_ONION = nullptr;
 const Name* PATH_MESH_ICON_PALETTE = nullptr;
+const Name* PATH_MESH_ICON_PALETTE_0 = nullptr;
 const Name* PATH_MESH_ICON_PUBLISH = nullptr;
 const Name* PATH_MESH_ICON_ROOT_MOTION = nullptr;
 const Name* PATH_MESH_ICON_TILING = nullptr;
@@ -168,6 +170,7 @@ bool LoadAssets(Allocator* allocator)
     PATH_MESH_ICON_MIRROR = GetName("icon_mirror");
     PATH_MESH_ICON_ONION = GetName("icon_onion");
     PATH_MESH_ICON_PALETTE = GetName("icon_palette");
+    PATH_MESH_ICON_PALETTE_0 = GetName("icon_palette_0");
     PATH_MESH_ICON_PUBLISH = GetName("icon_publish");
     PATH_MESH_ICON_ROOT_MOTION = GetName("icon_root_motion");
     PATH_MESH_ICON_TILING = GetName("icon_tiling");
@@ -205,6 +208,7 @@ bool LoadAssets(Allocator* allocator)
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_MIRROR, MESH_ICON_MIRROR);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_ONION, MESH_ICON_ONION);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_PALETTE, MESH_ICON_PALETTE);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_PALETTE_0, MESH_ICON_PALETTE_0);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_PUBLISH, MESH_ICON_PUBLISH);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_ROOT_MOTION, MESH_ICON_ROOT_MOTION);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_TILING, MESH_ICON_TILING);
@@ -228,6 +232,7 @@ bool LoadAssets(Allocator* allocator)
         MESH_ICON_MIRROR,
         MESH_ICON_ONION,
         MESH_ICON_PALETTE,
+        MESH_ICON_PALETTE_0,
         MESH_ICON_PUBLISH,
         MESH_ICON_ROOT_MOTION,
         MESH_ICON_TILING,
@@ -319,6 +324,7 @@ void UnloadAssets()
     Free(MESH_ICON_MIRROR);
     Free(MESH_ICON_ONION);
     Free(MESH_ICON_PALETTE);
+    Free(MESH_ICON_PALETTE_0);
     Free(MESH_ICON_PUBLISH);
     Free(MESH_ICON_ROOT_MOTION);
     Free(MESH_ICON_TILING);
@@ -368,6 +374,7 @@ void BindLuaAssets(noz::lua::State* state) {
     SetGlobal(state, "MESH_ICON_MIRROR", MESH_ICON_MIRROR);
     SetGlobal(state, "MESH_ICON_ONION", MESH_ICON_ONION);
     SetGlobal(state, "MESH_ICON_PALETTE", MESH_ICON_PALETTE);
+    SetGlobal(state, "MESH_ICON_PALETTE_0", MESH_ICON_PALETTE_0);
     SetGlobal(state, "MESH_ICON_PUBLISH", MESH_ICON_PUBLISH);
     SetGlobal(state, "MESH_ICON_ROOT_MOTION", MESH_ICON_ROOT_MOTION);
     SetGlobal(state, "MESH_ICON_TILING", MESH_ICON_TILING);
@@ -419,6 +426,7 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     NOZ_RELOAD_MESH(PATH_MESH_ICON_MIRROR, MESH_ICON_MIRROR);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_ONION, MESH_ICON_ONION);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_PALETTE, MESH_ICON_PALETTE);
+    NOZ_RELOAD_MESH(PATH_MESH_ICON_PALETTE_0, MESH_ICON_PALETTE_0);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_PUBLISH, MESH_ICON_PUBLISH);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_ROOT_MOTION, MESH_ICON_ROOT_MOTION);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_TILING, MESH_ICON_TILING);

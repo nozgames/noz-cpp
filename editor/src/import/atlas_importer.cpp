@@ -1,5 +1,5 @@
 //
-//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 namespace fs = std::filesystem;
@@ -11,7 +11,7 @@ static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* 
     AtlasDataImpl* impl = atlas->impl;
 
     // Ensure atlas is up to date
-    UpdateAtlas(atlas);
+    RegenerateAtlas(atlas);
 
     if (!impl->pixels) {
         // No pixel data - nothing to export

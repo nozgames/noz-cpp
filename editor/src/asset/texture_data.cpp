@@ -1,6 +1,6 @@
 //
 //
-//  NozEd - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 extern Shader* SHADER_TEXTURED_MESH;

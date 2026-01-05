@@ -1,5 +1,5 @@
 //
-//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 #pragma once
@@ -13,7 +13,6 @@ constexpr int ATLAS_DEFAULT_SIZE = 1024;
 struct AtlasRect {
     int x, y, width, height;
     const Name* mesh_name;   // Which mesh owns this rect
-    Bounds2 mesh_bounds;     // Cached bounds for change detection
     bool valid;              // Is this rect in use?
 };
 
@@ -39,19 +38,18 @@ extern void InitAtlasData(AssetData* a);
 extern AssetData* NewAtlasData(const std::filesystem::path& path);
 
 // Rect management
-extern AtlasRect* AllocateRect(AtlasData* atlas, const Name* mesh_name, const Bounds2& bounds);
+extern AtlasRect* AllocateRect(AtlasData* atlas, struct MeshData* mesh);
 extern AtlasRect* FindRectForMesh(AtlasData* atlas, const Name* mesh_name);
 extern void FreeRect(AtlasData* atlas, AtlasRect* rect);
 extern void ClearAllRects(AtlasData* atlas);
 
 // Rendering
 extern void RenderMeshToAtlas(AtlasData* atlas, struct MeshData* mesh, const AtlasRect& rect);
-extern void UpdateAtlas(AtlasData* atlas);
 extern void RegenerateAtlas(AtlasData* atlas);
 extern void SyncAtlasTexture(AtlasData* atlas);  // Upload pixels to GPU (editor only)
 
 // UV computation
-extern Vec2 GetAtlasUV(AtlasData* atlas, const AtlasRect& rect, const Vec2& position);
+extern Vec2 GetAtlasUV(AtlasData* atlas, const AtlasRect& rect, const Bounds2& mesh_bounds, const Vec2& position);
 
 // Importer
 struct AssetImporter;

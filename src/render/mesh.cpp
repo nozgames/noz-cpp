@@ -1,5 +1,5 @@
 //
-//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 #include "../platform.h"
@@ -107,6 +107,10 @@ void UploadMesh(Mesh* mesh)
     assert(mesh);
     MeshImpl* impl = static_cast<MeshImpl*>(mesh);
     assert(!impl->vertex_buffer);
+
+    if (impl->vertex_count == 0 || impl->index_count == 0)
+        return;
+
     impl->vertex_buffer = PlatformCreateVertexBuffer(
         impl->vertices,
         impl->vertex_count,

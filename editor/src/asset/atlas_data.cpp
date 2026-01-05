@@ -1,5 +1,5 @@
 //
-//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 #include <plutovg.h>
@@ -8,6 +8,57 @@
 using namespace noz;
 
 extern void InitAtlasEditor(AtlasData* atlas);
+
+
+static void DrawAtlasData(AssetData* a) {
+    assert(a);
+    assert(a->type == ASSET_TYPE_ATLAS);
+
+    AtlasData* atlas = static_cast<AtlasData*>(a);
+    AtlasDataImpl* impl = atlas->impl;
+
+    DrawBounds(a, 0.05f);
+
+    // Sync pixels to GPU if dirty
+    SyncAtlasTexture(atlas);
+
+    // Scale factor to display atlas in world units
+    float scale = 10.0f / (float)impl->width;  // Normalize to 10 units
+    Vec2 size = Vec2{(float)impl->width, (float)impl->height} * scale;
+
+    // Draw the atlas texture if available
+    if (impl->material) {
+        BindDepth(-0.1f);
+        BindColor(COLOR_WHITE);
+        BindMaterial(impl->material);
+        // Flip Y because texture coords are top-down
+        DrawMesh(g_view.quad_mesh, Translate(a->position) * Scale(Vec2{size.x, -size.y}));
+    } else {
+        // Draw a gray placeholder
+        BindDepth(0.0f);
+        BindMaterial(g_view.editor_material);
+        BindColor(Color{0.2f, 0.2f, 0.2f, 1.0f});
+        DrawMesh(g_view.quad_mesh, Translate(a->position) * Scale(size));
+    }
+
+    // Draw rect outlines for each attached mesh
+    BindDepth(0.1f);
+    BindMaterial(g_view.editor_material);
+    for (int i = 0; i < impl->rect_count; i++) {
+        if (!impl->rects[i].valid) continue;
+
+        Vec2 rect_pos = Vec2{(float)impl->rects[i].x, (float)impl->rects[i].y} * scale;
+        Vec2 rect_size = Vec2{(float)impl->rects[i].width, (float)impl->rects[i].height} * scale;
+
+        // Position relative to atlas origin (top-left)
+        Vec2 center = a->position - size * 0.5f + rect_pos + rect_size * 0.5f;
+        // Flip Y
+        center.y = a->position.y + size.y * 0.5f - rect_pos.y - rect_size.y * 0.5f;
+
+        BindColor(Color{0.4f, 0.8f, 0.4f, 0.3f});
+        DrawMesh(g_view.quad_mesh, Translate(center) * Scale(rect_size));
+    }
+}
 
 static void AllocAtlasDataImpl(AssetData* a) {
     assert(a->type == ASSET_TYPE_ATLAS);
@@ -18,7 +69,7 @@ static void AllocAtlasDataImpl(AssetData* a) {
     atlas->impl->height = ATLAS_DEFAULT_SIZE;
     atlas->impl->dpi = ATLAS_DEFAULT_DPI;
     atlas->impl->dirty = true;
-    atlas->impl->packer = new rect_packer(ATLAS_DEFAULT_SIZE, ATLAS_DEFAULT_SIZE);
+    // packer is created in LoadAtlasData with correct dimensions
 }
 
 static void DestroyAtlasData(AssetData* a) {
@@ -45,11 +96,21 @@ static void CloneAtlasData(AssetData* a) {
     int old_height = old_impl->height;
     AllocAtlasDataImpl(a);
     memcpy(atlas->impl, old_impl, sizeof(AtlasDataImpl));
-    // Don't share pixel buffer or packer - force regeneration
+    // Don't share pixel buffer or packer - create new ones
     atlas->impl->pixels = nullptr;
     atlas->impl->texture = nullptr;
+    atlas->impl->material = nullptr;
     atlas->impl->packer = new rect_packer(old_width, old_height);
     atlas->impl->dirty = true;
+
+    // Mark existing rects as used in new packer
+    for (int i = 0; i < atlas->impl->rect_count; i++) {
+        if (atlas->impl->rects[i].valid) {
+            const AtlasRect& r = atlas->impl->rects[i];
+            rect_packer::BinRect bin_rect(r.x, r.y, r.width, r.height);
+            atlas->impl->packer->MarkUsed(bin_rect);
+        }
+    }
 }
 
 // Rect management
@@ -74,11 +135,11 @@ static int FindFreeRectSlot(AtlasDataImpl* impl) {
     return -1;
 }
 
-AtlasRect* AllocateRect(AtlasData* atlas, const Name* mesh_name, const Bounds2& bounds) {
+AtlasRect* AllocateRect(AtlasData* atlas, MeshData* mesh) {
     AtlasDataImpl* impl = atlas->impl;
 
-    // Calculate required size in pixels
-    Vec2 size = GetSize(bounds);
+    // Calculate required size in pixels from mesh bounds
+    Vec2 size = GetSize(mesh->bounds);
     int req_width = (int)(size.x * impl->dpi) + 2;  // +2 for padding
     int req_height = (int)(size.y * impl->dpi) + 2;
 
@@ -102,8 +163,7 @@ AtlasRect* AllocateRect(AtlasData* atlas, const Name* mesh_name, const Bounds2& 
     rect.y = bin_rect.y;
     rect.width = bin_rect.w;
     rect.height = bin_rect.h;
-    rect.mesh_name = mesh_name;
-    rect.mesh_bounds = bounds;
+    rect.mesh_name = mesh->name;
     rect.valid = true;
 
     impl->dirty = true;
@@ -160,10 +220,9 @@ void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, const AtlasRect& rect) 
     plutovg_canvas_clip_rect(canvas, (float)rect.x, (float)rect.y, (float)rect.width, (float)rect.height);
 
     // Set up transform: mesh coords -> pixel coords
-    // mesh_bounds maps to rect in pixels
     float scale = (float)impl->dpi;
-    float offset_x = rect.x + 1 - rect.mesh_bounds.min.x * scale;
-    float offset_y = rect.y + 1 - rect.mesh_bounds.min.y * scale;
+    float offset_x = rect.x + 1 - mesh->bounds.min.x * scale;
+    float offset_y = rect.y + 1 - mesh->bounds.min.y * scale;
 
     // Render each face
     for (int fi = 0; fi < mesh_impl->face_count; fi++) {
@@ -277,49 +336,35 @@ void RegenerateAtlas(AtlasData* atlas) {
     impl->dirty = true;
 }
 
-void UpdateAtlas(AtlasData* atlas) {
-    AtlasDataImpl* impl = atlas->impl;
-
-    for (int i = 0; i < impl->rect_count; i++) {
-        if (!impl->rects[i].valid) continue;
-
-        // Load the mesh
-        AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, impl->rects[i].mesh_name);
-        if (!mesh_asset) continue;
-
-        MeshData* mesh = static_cast<MeshData*>(mesh_asset);
-        Bounds2 bounds = mesh->bounds;
-
-        if (impl->rects[i].mesh_bounds == bounds) {
-            // Same bounds - just re-render into existing rect
-            RenderMeshToAtlas(atlas, mesh, impl->rects[i]);
-        } else {
-            // Bounds changed - need new rect
-            FreeRect(atlas, &impl->rects[i]);
-            AtlasRect* new_rect = AllocateRect(atlas, impl->rects[i].mesh_name, bounds);
-            if (!new_rect) {
-                // No room - full regeneration needed
-                ClearAllRects(atlas);
-                RegenerateAtlas(atlas);
-                return;
-            }
-            RenderMeshToAtlas(atlas, mesh, *new_rect);
-        }
-    }
-}
-
 // UV computation
 
-Vec2 GetAtlasUV(AtlasData* atlas, const AtlasRect& rect, const Vec2& position) {
+Vec2 GetAtlasUV(AtlasData* atlas, const AtlasRect& rect, const Bounds2& mesh_bounds, const Vec2& position) {
     AtlasDataImpl* impl = atlas->impl;
 
-    // Map position from mesh space to UV space
-    float u = (position.x - rect.mesh_bounds.min.x) / GetSize(rect.mesh_bounds).x;
-    float v = (position.y - rect.mesh_bounds.min.y) / GetSize(rect.mesh_bounds).y;
+    // Map position from mesh space to normalized [0,1] within mesh bounds
+    float u = (position.x - mesh_bounds.min.x) / GetSize(mesh_bounds).x;
+    float v = (position.y - mesh_bounds.min.y) / GetSize(mesh_bounds).y;
 
-    // Map to rect in atlas
-    u = (rect.x + u * rect.width) / (float)impl->width;
-    v = (rect.y + v * rect.height) / (float)impl->height;
+    // Inner region is 1 pixel inset from rect edges (padding from AllocateRect)
+    // Add half-texel inset for bilinear filtering safety
+    float inner_x = rect.x + 1.0f;
+    float inner_y = rect.y + 1.0f;
+    float inner_w = rect.width - 2.0f;
+    float inner_h = rect.height - 2.0f;
+
+    // Half-texel inset to prevent bilinear bleed
+    float half_texel_u = 0.5f / (float)impl->width;
+    float half_texel_v = 0.5f / (float)impl->height;
+
+    // Map to inner rect with half-texel inset
+    float min_u = (inner_x / (float)impl->width) + half_texel_u;
+    float min_v = (inner_y / (float)impl->height) + half_texel_v;
+    float max_u = ((inner_x + inner_w) / (float)impl->width) - half_texel_u;
+    float max_v = ((inner_y + inner_h) / (float)impl->height) - half_texel_v;
+
+    // Interpolate within the safe region
+    u = min_u + u * (max_u - min_u);
+    v = min_v + v * (max_v - min_v);
 
     return {u, v};
 }
@@ -330,19 +375,54 @@ static void SaveAtlasData(AssetData* a, const std::filesystem::path& path) {
     AtlasData* atlas = static_cast<AtlasData*>(a);
     AtlasDataImpl* impl = atlas->impl;
 
-    // Save atlas configuration
-    std::ofstream file(path);
-    if (!file.is_open()) return;
+    Stream* stream = CreateStream(ALLOCATOR_DEFAULT, 4096);
 
-    file << "w " << impl->width << "\n";
-    file << "h " << impl->height << "\n";
-    file << "dpi " << impl->dpi << "\n";
+    WriteCSTR(stream, "w %d\n", impl->width);
+    WriteCSTR(stream, "h %d\n", impl->height);
+    WriteCSTR(stream, "d %d\n", impl->dpi);
+    WriteCSTR(stream, "\n");
 
-    // Save attached meshes
+    // Save rects: r "mesh_name" x y w h
     for (int i = 0; i < impl->rect_count; i++) {
         if (impl->rects[i].valid && impl->rects[i].mesh_name) {
-            file << "m " << impl->rects[i].mesh_name->value << "\n";
+            const AtlasRect& r = impl->rects[i];
+            WriteCSTR(stream, "r \"%s\" %d %d %d %d\n",
+                r.mesh_name->value,
+                r.x, r.y, r.width, r.height);
         }
+    }
+
+    SaveStream(stream, path);
+    Free(stream);
+}
+
+static void ParseRect(AtlasData* atlas, Tokenizer& tk) {
+    AtlasDataImpl* impl = atlas->impl;
+
+    if (!ExpectQuotedString(tk))
+        ThrowError("missing rect mesh name");
+
+    const Name* mesh_name = GetName(tk);
+
+    int x, y, w, h;
+    if (!ExpectInt(tk, &x)) ThrowError("missing rect x");
+    if (!ExpectInt(tk, &y)) ThrowError("missing rect y");
+    if (!ExpectInt(tk, &w)) ThrowError("missing rect width");
+    if (!ExpectInt(tk, &h)) ThrowError("missing rect height");
+
+    int slot = FindFreeRectSlot(impl);
+    if (slot >= 0) {
+        AtlasRect& rect = impl->rects[slot];
+        rect.mesh_name = mesh_name;
+        rect.x = x;
+        rect.y = y;
+        rect.width = w;
+        rect.height = h;
+        rect.valid = true;
+
+        // Mark this space as used in the packer
+        rect_packer::BinRect bin_rect(x, y, w, h);
+        impl->packer->MarkUsed(bin_rect);
     }
 }
 
@@ -350,55 +430,53 @@ static void LoadAtlasData(AssetData* a) {
     AtlasData* atlas = static_cast<AtlasData*>(a);
     AtlasDataImpl* impl = atlas->impl;
 
-    std::ifstream file(a->path);
-    if (!file.is_open()) return;
+    std::string contents = ReadAllText(ALLOCATOR_DEFAULT, a->path.value);
+    Tokenizer tk;
+    Init(tk, contents.c_str());
 
-    std::vector<const Name*> mesh_names;
-
-    std::string line;
-    while (std::getline(file, line)) {
-        std::istringstream iss(line);
-        std::string cmd;
-        if (!(iss >> cmd)) continue;
-
-        if (cmd == "w") {
-            iss >> impl->width;
-        } else if (cmd == "h") {
-            iss >> impl->height;
-        } else if (cmd == "dpi") {
-            iss >> impl->dpi;
-        } else if (cmd == "m") {
-            std::string mesh_name;
-            if (iss >> mesh_name) {
-                mesh_names.push_back(GetName(mesh_name.c_str()));
+    while (!IsEOF(tk)) {
+        if (ExpectIdentifier(tk, "w")) {
+            if (!ExpectInt(tk, &impl->width))
+                ThrowError("missing atlas width");
+        } else if (ExpectIdentifier(tk, "h")) {
+            if (!ExpectInt(tk, &impl->height))
+                ThrowError("missing atlas height");
+        } else if (ExpectIdentifier(tk, "d")) {
+            if (!ExpectInt(tk, &impl->dpi))
+                ThrowError("missing atlas dpi");
+        } else if (ExpectIdentifier(tk, "r")) {
+            // Ensure packer is initialized with correct dimensions before parsing rects
+            if (!impl->packer) {
+                impl->packer = new rect_packer(impl->width, impl->height);
             }
+            ParseRect(atlas, tk);
+        } else {
+            char error[256];
+            GetString(tk, error, sizeof(error) - 1);
+            ThrowError("invalid token '%s' in atlas", error);
         }
     }
 
-    // Attach meshes (they may not be loaded yet, so we store names and allocate rects later in post_load)
-    for (const Name* mesh_name : mesh_names) {
-        int slot = FindFreeRectSlot(impl);
-        if (slot >= 0) {
-            impl->rects[slot].mesh_name = mesh_name;
-            impl->rects[slot].valid = false;  // Will be properly allocated in post_load
-        }
+    // Initialize packer if no rects were loaded
+    if (!impl->packer) {
+        impl->packer = new rect_packer(impl->width, impl->height);
     }
+
+    Vec2 tsize = Vec2{static_cast<float>(impl->width), static_cast<float>(impl->height)} / 72.0f;
+    a->bounds = Bounds2{-tsize.x*0.5f, -tsize.y*0.5f, tsize.x*0.5f, tsize.y*0.5f};
 }
 
 static void PostLoadAtlasData(AssetData* a) {
     AtlasData* atlas = static_cast<AtlasData*>(a);
     AtlasDataImpl* impl = atlas->impl;
 
-    // Now allocate proper rects for all attached meshes
+    // Render all valid rects now that meshes are loaded
     for (int i = 0; i < impl->rect_count; i++) {
-        if (impl->rects[i].mesh_name && !impl->rects[i].valid) {
+        if (impl->rects[i].valid && impl->rects[i].mesh_name) {
             AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, impl->rects[i].mesh_name);
             if (mesh_asset) {
                 MeshData* mesh = static_cast<MeshData*>(mesh_asset);
-                AtlasRect* rect = AllocateRect(atlas, impl->rects[i].mesh_name, mesh->bounds);
-                if (rect) {
-                    RenderMeshToAtlas(atlas, mesh, *rect);
-                }
+                RenderMeshToAtlas(atlas, mesh, impl->rects[i]);
             }
         }
     }
@@ -444,12 +522,13 @@ void InitAtlasData(AssetData* a) {
         .save = SaveAtlasData,
         .load_metadata = LoadAtlasMetaData,
         .save_metadata = SaveAtlasMetaData,
+        .draw = DrawAtlasData,
         .clone = CloneAtlasData,
     };
 }
 
 AssetData* NewAtlasData(const std::filesystem::path& path) {
-    constexpr const char* default_atlas = "w 1024\nh 1024\ndpi 96\n";
+    constexpr const char* default_atlas = "w 1024\nh 1024\nd 96\n";
 
     std::string type_folder = ToString(ASSET_TYPE_ATLAS);
     Lower(type_folder.data(), (u32)type_folder.size());

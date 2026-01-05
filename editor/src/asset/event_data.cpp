@@ -1,5 +1,5 @@
 //
-//  NozEd - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 extern Mesh* MESH_ASSET_ICON_EVENT;

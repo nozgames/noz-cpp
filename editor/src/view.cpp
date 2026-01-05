@@ -1,5 +1,5 @@
 //
-//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 extern void InitMeshEditor();
@@ -429,6 +429,7 @@ static void ViewOverlay() {
 
 void UpdateViewUI() {
     UpdateConfirmDialog();
+    bool help_visible = UpdateHelp();
 
     if (GetState() == VIEW_STATE_EDIT) {
         assert(g_editor.editing_asset);
@@ -436,7 +437,8 @@ void UpdateViewUI() {
             g_editor.editing_asset->vtable.editor_update();
     }
 
-    ViewOverlay();
+    if (!help_visible)
+        ViewOverlay();
 
     UpdateCommandInput();
     UpdateNotifications();
@@ -869,6 +871,7 @@ static Shortcut g_common_shortcuts[] = {
     { KEY_EQUALS, false, true, false, IncreaseUIScale },
     { KEY_MINUS, false, true, false, DecreaseUIScale },
     { KEY_0, false, true, false, ResetUIScale },
+    { KEY_F1, false, false, false, ToggleHelp },
     { INPUT_CODE_NONE }
 };
 
@@ -964,6 +967,7 @@ void InitView() {
     EnableButton(g_view.input, KEY_RIGHT_CTRL);
     EnableButton(g_view.input, KEY_RIGHT_SHIFT);
     EnableButton(g_view.input, KEY_RIGHT_ALT);
+    EnableButton(g_view.input, KEY_ESCAPE);
     EnableButton(g_view.input, MOUSE_LEFT);
     EnableButton(g_view.input, MOUSE_LEFT_DOUBLE_CLICK);
     EnableButton(g_view.input, MOUSE_RIGHT);

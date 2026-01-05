@@ -1,5 +1,5 @@
 //
-//  NozEd - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 #include <editor.h>
@@ -68,17 +68,17 @@ void DrawArrow(const Vec2& v, const Vec2& dir) {
     DrawArrow(v, dir, DEFAULT_ARROW_SIZE);
 }
 
-void DrawOrigin(AssetData* ea) {
+void DrawOrigin(AssetData* a) {
     BindMaterial(g_view.vertex_material);
     BindColor(COLOR_ORIGIN);
-    DrawVertex(ea->position, ORIGIN_SIZE);
+    DrawVertex(a->position, ORIGIN_SIZE);
 }
 
-void DrawBounds(AssetData* ea, float expand, const Color& color) {
+void DrawBounds(AssetData* a, float expand, const Color& color) {
     BindMaterial(g_view.vertex_material);
     BindColor(color);
-    Bounds2 b = Expand(GetBounds(ea), expand);
-    Vec2 center = GetCenter(b) + ea->position;
+    Bounds2 b = Expand(GetBounds(a), expand);
+    Vec2 center = GetCenter(b) + a->position;
     Vec2 size = GetSize(b);
     DrawLine ({center.x - size.x * 0.5f, center.y - size.y * 0.5f}, {center.x + size.x * 0.5f, center.y - size.y * 0.5f});
     DrawLine ({center.x + size.x * 0.5f, center.y - size.y * 0.5f}, {center.x + size.x * 0.5f, center.y + size.y * 0.5f});

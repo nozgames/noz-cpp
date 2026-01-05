@@ -1,5 +1,5 @@
 //
-//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 // @STL
 
@@ -32,7 +32,7 @@ static Mesh* ToMeshWithAtlasUVs(MeshData* mesh_data, AtlasData* atlas, const Atl
             VertexData& v = mesh_data->impl->vertices[f->vertices[vi]];
 
             // Compute UV based on position in atlas rect
-            Vec2 uv = GetAtlasUV(atlas, rect, v.position);
+            Vec2 uv = GetAtlasUV(atlas, rect, mesh_data->bounds, v.position);
 
             MeshVertex mv = {
                 .position = v.position,
@@ -79,15 +79,8 @@ static void ImportMesh(AssetData* a, const std::filesystem::path& path, Props* c
         if (atlas_asset) {
             AtlasData* atlas = static_cast<AtlasData*>(atlas_asset);
 
-            // Find or create rect for this mesh
+            // Find existing rect (allocated during parenting)
             AtlasRect* rect = FindRectForMesh(atlas, mesh_data->name);
-            if (!rect) {
-                rect = AllocateRect(atlas, mesh_data->name, mesh_data->bounds);
-                if (rect) {
-                    RenderMeshToAtlas(atlas, mesh_data, *rect);
-                }
-            }
-
             if (rect) {
                 m = ToMeshWithAtlasUVs(mesh_data, atlas, *rect);
             }

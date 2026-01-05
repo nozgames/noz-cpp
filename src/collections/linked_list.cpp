@@ -1,5 +1,5 @@
 //
-//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 #define GET_NODE(list, node) ((LinkedListNode*)((char*)(node) + (list).node_offset))

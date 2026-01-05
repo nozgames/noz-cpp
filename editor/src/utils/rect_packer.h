@@ -1,5 +1,5 @@
 //
-//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 #pragma once
@@ -48,6 +48,9 @@ namespace noz
 
         int Insert(const Vec2Int& size, method method, BinRect& result);
         int Insert(int32_t width, int32_t height, method method, BinRect& result) { return Insert(Vec2Int(width, height), method, result); }
+
+        // Mark a rect as used (for restoring saved atlas state)
+        void MarkUsed(const BinRect& rect);
 
         float GetOccupancy(void) const;
 

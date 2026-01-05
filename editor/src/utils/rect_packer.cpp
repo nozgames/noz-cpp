@@ -1,5 +1,5 @@
 //
-//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 #include "rect_packer.h"
@@ -76,6 +76,11 @@ void rect_packer::PlaceRect(const BinRect& rect)
     PruneFreeList();
 
     used_.push_back(rect);
+}
+
+void rect_packer::MarkUsed(const BinRect& rect)
+{
+    PlaceRect(rect);
 }
 
 rect_packer::BinRect rect_packer::ScoreRect(BinSize size, method method, int32_t& score1, int32_t& score2) const

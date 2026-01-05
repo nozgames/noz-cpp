@@ -1,5 +1,5 @@
 //
-//  NoZ Game Engine - Copyright(c) 2025 NoZ Games, LLC
+//  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
 constexpr float OUTLINE_WIDTH = 0.015f;
@@ -104,6 +104,8 @@ int GetOrAddEdge(MeshData* m, int v0, int v1, int face_index) {
     ee.v0 = fv0;
     ee.v1 = fv1;
     ee.normal = Normalize(-Perpendicular(m->impl->vertices[v1].position - m->impl->vertices[v0].position));
+    ee.selected = false;
+    ee.curve_offset = VEC2_ZERO;
 
     return edge_index;
 }
