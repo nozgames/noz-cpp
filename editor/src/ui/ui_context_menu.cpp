@@ -58,14 +58,18 @@ bool UpdateContextMenu () {
     for (int index=0; item->label != nullptr; item++, index++) {
         BeginContainer({.height=STYLE_CONTEXT_MENU_ITEM_HEIGHT, .id=static_cast<ElementId>(CONTEXT_MENU_ID_ITEMS+index)});
 
-        if (IsHovered()) {
+        if (IsHovered() && item->enabled) {
             Container({.margin=EdgeInsetsSymmetric(0, -4), .color=STYLE_SELECTION_COLOR()});
         }
 
         Label(item->label, {
             .font=FONT_SEGUISB,
             .font_size=STYLE_CONTEXT_MENU_TEXT_SIZE,
-            .color=IsHovered() ? STYLE_OVERLAY_ACCENT_TEXT_COLOR() : STYLE_OVERLAY_TEXT_COLOR(),
+            .color=!item->enabled ?
+                STYLE_OVERLAY_DISABLED_TEXT_COLOR() :
+                IsHovered()
+                    ? STYLE_OVERLAY_ACCENT_TEXT_COLOR()
+                    : STYLE_OVERLAY_TEXT_COLOR(),
             .align=ALIGN_CENTER_LEFT
         });
 
@@ -82,6 +86,9 @@ bool UpdateContextMenu () {
 
     EndContainer();
     EndCanvas();
+
+    if (WasButtonPressed(KEY_ESCAPE))
+        close = true;
 
     if (close) {
         g_context_menu.visible = false;

@@ -18,8 +18,9 @@ constexpr int MESH_EDITOR_ID_ATLAS = OVERLAY_BASE_ID + 3;
 constexpr int MESH_EDITOR_ID_VERTEX_MODE = OVERLAY_BASE_ID + 4;
 constexpr int MESH_EDITOR_ID_EDGE_MODE = OVERLAY_BASE_ID + 5;
 constexpr int MESH_EDITOR_ID_FACE_MODE = OVERLAY_BASE_ID + 6;
+constexpr int MESH_EDITOR_ID_WEIGHT_MODE = OVERLAY_BASE_ID + 7;
 
-constexpr int MESH_EDITOR_ID_PALETTES = OVERLAY_BASE_ID + 7;
+constexpr int MESH_EDITOR_ID_PALETTES = OVERLAY_BASE_ID + 8;
 constexpr int MESH_EDITOR_ID_COLORS = MESH_EDITOR_ID_PALETTES + MAX_PALETTES;
 
 enum MeshEditorMode {
@@ -584,7 +585,8 @@ static bool TryDoubleClickSelectFaceVertices() {
 }
 
 static void UpdateDefaultState() {
-    if (!IsToolActive() && g_view.drag_started) {
+    // Only start box select for left-drag, not right-drag (which is for panning)
+    if (!IsToolActive() && g_view.drag_started && g_view.drag_button == MOUSE_LEFT) {
         BeginBoxSelect(HandleBoxSelect);
         return;
     }
@@ -597,8 +599,10 @@ static void UpdateDefaultState() {
         }
     }
 
-    // Select
-    if (!g_mesh_editor.ignore_up && !g_view.drag && WasButtonReleased(g_mesh_editor.input, MOUSE_LEFT)) {
+    // Select (skip if right-drag is active or just ended to prevent accidental deselection after panning)
+    bool right_drag_active = g_view.drag && g_view.drag_button == MOUSE_RIGHT;
+    bool right_released = WasButtonReleased(GetInputSet(), MOUSE_RIGHT);
+    if (!g_mesh_editor.ignore_up && !right_drag_active && !right_released && WasButtonReleased(g_mesh_editor.input, MOUSE_LEFT)) {
         g_mesh_editor.clear_selection_on_up = false;
         g_mesh_editor.clear_weight_bone_on_up = false;
 
@@ -616,7 +620,7 @@ static void UpdateDefaultState() {
 
     g_mesh_editor.ignore_up &= !WasButtonReleased(g_mesh_editor.input, MOUSE_LEFT);
 
-    if (WasButtonReleased(g_mesh_editor.input, MOUSE_LEFT)) {
+    if (!right_drag_active && !right_released && WasButtonReleased(g_mesh_editor.input, MOUSE_LEFT)) {
         if (g_mesh_editor.clear_selection_on_up)
             ClearSelection();
 
@@ -790,6 +794,7 @@ static void ColorPicker(){
 }
 
 static void MeshEditorToolbar() {
+    MeshData* m = GetMeshData();
     bool show_palette_picker = g_mesh_editor.show_palette_picker;
 
     BeginOverlay(MESH_EDITOR_ID_TOOLBAR, ALIGN_BOTTOM_CENTER);
@@ -804,9 +809,10 @@ static void MeshEditorToolbar() {
         g_mesh_editor.mode = MESH_EDITOR_MODE_EDGE;
     if (EditorToggleButton(MESH_EDITOR_ID_FACE_MODE, MESH_ICON_FACE_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_FACE))
         g_mesh_editor.mode = MESH_EDITOR_MODE_FACE;
+    if (EditorToggleButton(MESH_EDITOR_ID_WEIGHT_MODE, MESH_ICON_WEIGHT_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_FACE, m->impl->skeleton == nullptr))
+        g_mesh_editor.mode = MESH_EDITOR_MODE_WEIGHT;
     EndRow();
 
-    MeshData* m = GetMeshData();
     if (m->impl->atlas_name) {
         BeginRow({.align=ALIGN_CENTER, .spacing=4});
         BeginContainer({.width=STYLE_TOGGLE_BUTTON_HEIGHT, .height=STYLE_TOGGLE_BUTTON_HEIGHT});
@@ -968,25 +974,6 @@ static void BeginCurveToolFromSelection() {
     BeginCurveTool(m, selected_edges, count);
 }
 
-static void FlattenEdges() {
-    MeshData* m = GetMeshData();
-    MeshDataImpl* impl = m->impl;
-
-    if (impl->selected_edge_count == 0)
-        return;
-
-    RecordUndo(m);
-
-    for (int i = 0; i < impl->edge_count; i++) {
-        EdgeData& e = impl->edges[i];
-        if (e.selected)
-            e.curve_offset = VEC2_ZERO;
-    }
-
-    MarkDirty(m);
-    MarkModified(m);
-}
-
 static void UpdateRotateTool(float angle) {
     if (IsCtrlDown()) {
         int angle_step = (int)(angle / 15.0f);
@@ -1146,6 +1133,9 @@ static void SetFaceMode() {
 }
 
 static void SetWeightMode() {
+    if (GetMeshData()->impl->skeleton == nullptr)
+        return;
+
     g_mesh_editor.mode = MESH_EDITOR_MODE_WEIGHT;
 }
 
@@ -1950,7 +1940,6 @@ static Shortcut g_mesh_editor_shortcuts[] = {
     { KEY_S, false, false, false, BeginScaleTool, "Scale" },
     { KEY_C, false, false, false, BeginCurveToolFromSelection, "Curve" },
     { KEY_C, false, true, true, CenterMesh, "Center mesh" },
-    { KEY_F, false, false, true, FlattenEdges, "Flatten edges" },
     { KEY_D, false, true, false, DuplicateSelected, "Duplicate" },
     { KEY_S, false, false, true, SubDivide, "Subdivide" },
     { KEY_C, false, false, true, BeginAutoCurve, "Auto curve" },
@@ -1981,6 +1970,21 @@ static Shortcut g_mesh_editor_shortcuts[] = {
     { INPUT_CODE_NONE }
 };
 
+
+static void OpenMeshEditorContextMenu() {
+    MeshData* m = GetMeshData();
+    if (g_mesh_editor.mode == MESH_EDITOR_MODE_VERTEX) {
+        bool any_selected = m->impl->selected_vertex_count;
+        OpenContextMenuAtMouse({
+           .title="Vertex",
+           .items = {
+               { "Delete", DissolveSelected, any_selected },
+               { "Subdivide", SubDivide, any_selected },
+           },
+           .item_count = 4
+       });
+    }
+}
 
 static void MeshEditorHelp() {
     HelpGroup("Mesh", g_mesh_editor_shortcuts);
@@ -2022,4 +2026,5 @@ void InitMeshEditor(MeshData* m) {
     m->vtable.editor_bounds = GetMeshEditorBounds;
     m->vtable.editor_overlay = MeshEditorOverlay;
     m->vtable.editor_help = MeshEditorHelp;
+    m->vtable.editor_context_menu = OpenMeshEditorContextMenu;
 }

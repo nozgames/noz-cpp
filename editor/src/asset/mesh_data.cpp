@@ -207,6 +207,16 @@ void UpdateEdges(MeshData* m) {
         }
     }
 
+    // Apply pending curves (from SplitEdge with update=false)
+    for (int i = 0; i < m->impl->pending_curve_count; i++) {
+        PendingCurve& pc = m->impl->pending_curves[i];
+        int edge = GetEdge(m, pc.v0, pc.v1);
+        if (edge != -1) {
+            m->impl->edges[edge].curve_offset = pc.offset;
+        }
+    }
+    m->impl->pending_curve_count = 0;
+
     for (int edge_index=0; edge_index<m->impl->edge_count; edge_index++) {
         EdgeData& e = m->impl->edges[edge_index];
         m->impl->vertices[e.v0].ref_count++;
@@ -662,11 +672,30 @@ int SplitEdge(MeshData* m, int edge_index, float edge_pos, bool update) {
     VertexData& v0 = m->impl->vertices[e.v0];
     VertexData& v1 = m->impl->vertices[e.v1];
 
+    // Save curve data before modifying
+    Vec2 original_curve_offset = e.curve_offset;
+    int original_v0 = e.v0;
+    int original_v1 = e.v1;
+
     int new_vertex_index = m->impl->vertex_count++;
     VertexData& new_vertex = m->impl->vertices[new_vertex_index];
     new_vertex.edge_size = (v0.edge_size + v1.edge_size) * 0.5f;
-    new_vertex.position = (v0.position * (1.0f - edge_pos) + v1.position * edge_pos);
     new_vertex.gradient = (v0.gradient * (1.0f - edge_pos) + v1.gradient * edge_pos);
+
+    // Place vertex on the Bezier curve if edge has a curve
+    if (LengthSqr(original_curve_offset) > 0.0001f) {
+        // Quadratic Bezier: B(t) = (1-t)²P0 + 2t(1-t)P1 + t²P2
+        Vec2 p0 = v0.position;
+        Vec2 p2 = v1.position;
+        Vec2 p1 = (p0 + p2) * 0.5f + original_curve_offset;  // Control point
+        float t = edge_pos;
+        float t2 = t * t;
+        float mt = 1.0f - t;
+        float mt2 = mt * mt;
+        new_vertex.position = p0 * mt2 + p1 * (2.0f * t * mt) + p2 * t2;
+    } else {
+        new_vertex.position = (v0.position * (1.0f - edge_pos) + v1.position * edge_pos);
+    }
 
     // Interpolate bone weights from edge endpoints
     for (int i = 0; i < MESH_MAX_VERTEX_WEIGHTS; i++) {
@@ -712,7 +741,33 @@ int SplitEdge(MeshData* m, int edge_index, float edge_pos, bool update) {
         f.vertices[face_edge + 1] = new_vertex_index;
     }
 
-    if (update) {
+    // Queue or apply curve offsets to the two new edges using de Casteljau subdivision
+    if (LengthSqr(original_curve_offset) > 0.0001f) {
+        Vec2 offset1, offset2;
+        SplitBezierCurve(v0.position, v1.position, original_curve_offset, edge_pos, &offset1, &offset2);
+
+        if (update) {
+            // Apply immediately after UpdateEdges
+            UpdateEdges(m);
+
+            int edge1 = GetEdge(m, original_v0, new_vertex_index);
+            int edge2 = GetEdge(m, new_vertex_index, original_v1);
+
+            if (edge1 >= 0)
+                m->impl->edges[edge1].curve_offset = offset1;
+            if (edge2 >= 0)
+                m->impl->edges[edge2].curve_offset = offset2;
+
+            MarkDirty(m);
+        } else {
+            // Queue for later when UpdateEdges is called
+            MeshDataImpl* impl = m->impl;
+            if (impl->pending_curve_count < MESH_MAX_EDGES - 1) {
+                impl->pending_curves[impl->pending_curve_count++] = { original_v0, new_vertex_index, offset1 };
+                impl->pending_curves[impl->pending_curve_count++] = { new_vertex_index, original_v1, offset2 };
+            }
+        }
+    } else if (update) {
         UpdateEdges(m);
         MarkDirty(m);
     }
@@ -776,7 +831,20 @@ int HitTestEdge(MeshData* m, const Mat3& transform, const Vec2& hit_pos, float* 
                             best_edge = i;
                             best_dist = dist;
                             // Calculate approximate t value along full curve
-                            best_where = ((float)(s - 1) + proj / seg_length) / (float)segments;
+                            float approx_t = ((float)(s - 1) + proj / seg_length) / (float)segments;
+
+                            // Refine t using Newton-Raphson to find exact point on Bezier
+                            for (int iter = 0; iter < 4; iter++) {
+                                float mt = 1.0f - approx_t;
+                                Vec2 curve_pt = v0 * (mt * mt) + control * (2.0f * approx_t * mt) + v1 * (approx_t * approx_t);
+                                Vec2 derivative = (control - v0) * (2.0f * mt) + (v1 - control) * (2.0f * approx_t);
+                                Vec2 diff = curve_pt - hit_pos;
+                                float deriv_len_sq = LengthSqr(derivative);
+                                if (deriv_len_sq < F32_EPSILON) break;
+                                float dt = Dot(diff, derivative) / deriv_len_sq;
+                                approx_t = Clamp(approx_t - dt, 0.0f, 1.0f);
+                            }
+                            best_where = approx_t;
                         }
                     }
                 }
@@ -1248,16 +1316,15 @@ static void SaveMeshData(AssetData* a, const std::filesystem::path& path) {
 }
 
 AssetData* NewMeshData(const std::filesystem::path& path) {
-    constexpr const char* default_mesh = "v -1 -1 e {0} h 0\n"
-                               "v 1 -1 e {0} h 0\n"
-                               "v 1 1 e {0} h 0\n"
-                               "v -1 1 e {0} h 0\n"
-                               "\n"
-                               "f 0 1 2 3 c 0 0\n";
+    constexpr const char* default_mesh =
+        "v -1 -1\n"
+        "v 1 -1\n"
+        "v 1 1\n"
+        "v -1 1\n"
+        "\n"
+        "f 0 1 2 3 c 0 0\n";
 
-    float edge_size = g_config->GetFloat("mesh", "default_edge_size", 1.0f);
-
-    std::string text = std::format(default_mesh, edge_size);
+    std::string text = std::format(default_mesh);
 
     if (g_view.selected_asset_count == 1) {
         AssetData* selected = GetFirstSelectedAsset();
@@ -1642,10 +1709,15 @@ Vec2 HitTestSnap(MeshData* m, const Vec2& position) {
 }
 
 Vec2 GetEdgePoint(MeshData* m, int edge_index, float t) {
-    return Mix(
-        m->impl->vertices[m->impl->edges[edge_index].v0].position,
-        m->impl->vertices[m->impl->edges[edge_index].v1].position,
-        t);
+    Vec2 p0 = m->impl->vertices[m->impl->edges[edge_index].v0].position;
+    Vec2 p2 = m->impl->vertices[m->impl->edges[edge_index].v1].position;
+
+    if (IsEdgeCurved(m, edge_index)) {
+        Vec2 p1 = GetEdgeControlPoint(m, edge_index);
+        return EvalQuadraticBezier(p0, p1, p2, t);
+    }
+
+    return Mix(p0, p2, t);
 }
 
 void SetOrigin(MeshData* m, const Vec2& origin) {

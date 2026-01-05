@@ -114,32 +114,11 @@ static void UpdateAutoCurveTool() {
     MarkDirty(g_auto_curve.mesh);
 }
 
-// Scale factor for quadratic Bezier circle approximation: 2*(sqrt(2)-1) ≈ 0.828
-// This makes the curve pass through the actual circle at the midpoint
-constexpr float CIRCLE_BEZIER_FACTOR = 0.82842712f;  // 2*(sqrt(2)-1)
-
-static Vec2 CalculateCircleOffset(MeshDataImpl* impl, const Vec2& centroid, int vi0, int vi1) {
+// Wrapper to call the utility function with vertex indices
+static Vec2 CalcCircleOffsetFromIndices(MeshDataImpl* impl, const Vec2& centroid, int vi0, int vi1) {
     Vec2 p0 = impl->vertices[vi0].position;
     Vec2 p1 = impl->vertices[vi1].position;
-    Vec2 midpoint = (p0 + p1) * 0.5f;
-
-    // Tangent at each vertex is perpendicular to radius
-    Vec2 r0 = p0 - centroid;
-    Vec2 r1 = p1 - centroid;
-    Vec2 t0 = Perpendicular(r0);
-    Vec2 t1 = Perpendicular(r1);
-
-    // Find intersection of tangent lines
-    float denom = t0.x * t1.y - t0.y * t1.x;
-    if (Abs(denom) < 0.0001f)
-        return VEC2_ZERO;
-
-    Vec2 dp = p1 - p0;
-    float s = (dp.x * t1.y - dp.y * t1.x) / denom;
-    Vec2 control_point = p0 + t0 * s;
-
-    // Scale by Bezier factor for better circle approximation
-    return (control_point - midpoint) * CIRCLE_BEZIER_FACTOR;
+    return CalculateCircleOffset(p0, p1, centroid);
 }
 
 void BeginAutoCurveTool(MeshData* mesh) {
@@ -223,7 +202,7 @@ void BeginAutoCurveTool(MeshData* mesh) {
             AutoCurveEdgeState& es = g_auto_curve.edges[g_auto_curve.edge_count++];
             es.edge_index = edge_index;
             es.original_offset = e.curve_offset;
-            es.circle_offset = CalculateCircleOffset(impl, g_auto_curve.centroid, v0, v1);
+            es.circle_offset = CalcCircleOffsetFromIndices(impl, g_auto_curve.centroid, v0, v1);
             es.inverted_circle_offset = es.circle_offset * -1.0f;
             es.outward_dir = dist > 0.0001f ? to_mid / dist : VEC2_ZERO;
             es.edge_length = Length(p1 - p0);

@@ -2,8 +2,6 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-#include <editor.h>
-
 constexpr float DEFAULT_LINE_WIDTH = 0.01f;
 constexpr float DEFAULT_VERTEX_SIZE = 0.1f;
 constexpr float DEFAULT_DASH_LENGTH = 0.1f;

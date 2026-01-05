@@ -59,6 +59,7 @@ enum EditorEvent {
 };
 
 #include "utils/props.h"
+#include "utils/curve_utils.h"
 #include <noz/tokenizer.h>
 #include "utils/file_helpers.h"
 #include "style.h"

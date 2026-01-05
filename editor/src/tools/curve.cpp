@@ -19,9 +19,6 @@ struct CurveTool {
 
 static CurveTool g_curve = {};
 
-// Scale factor for quadratic Bezier circle approximation: 2*(sqrt(2)-1) ≈ 0.828
-constexpr float CIRCLE_BEZIER_FACTOR = 0.82842712f;
-
 static Vec2 CalculateCurveCircleOffset(MeshDataImpl* impl, int edge_index, Vec2* out_outward_dir) {
     EdgeData& e = impl->edges[edge_index];
 
@@ -66,22 +63,8 @@ static Vec2 CalculateCurveCircleOffset(MeshDataImpl* impl, int edge_index, Vec2*
     float dist = Length(to_mid);
     *out_outward_dir = dist > 0.0001f ? to_mid / dist : VEC2_ZERO;
 
-    // Tangent intersection method for circle offset
-    Vec2 r0 = p0 - centroid;
-    Vec2 r1 = p1 - centroid;
-    Vec2 t0 = Perpendicular(r0);
-    Vec2 t1 = Perpendicular(r1);
-
-    float denom = t0.x * t1.y - t0.y * t1.x;
-    if (Abs(denom) < 0.0001f)
-        return VEC2_ZERO;
-
-    Vec2 dp = p1 - p0;
-    float s = (dp.x * t1.y - dp.y * t1.x) / denom;
-    Vec2 control_point = p0 + t0 * s;
-
-    // Scale by Bezier factor for better circle approximation
-    return (control_point - midpoint) * CIRCLE_BEZIER_FACTOR;
+    // Use utility function for the tangent intersection calculation
+    return CalculateCircleOffset(p0, p1, centroid);
 }
 
 static void EndCurve(bool commit) {

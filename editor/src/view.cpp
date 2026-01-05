@@ -149,18 +149,22 @@ static void CommitBoxSelect(const Bounds2& bounds) {
 }
 
 static void UpdatePanState() {
+    // Track camera position when right-click starts (for panning)
     if (WasButtonPressed(GetInputSet(), MOUSE_RIGHT)) {
-        g_view.pan_position = g_view.mouse_position;
         g_view.pan_position_camera = GetPosition(g_view.camera);
     }
 
+    // Open context menu only if right-click released without significant drag
+    // (drag_position is set when button pressed, so we can check distance even after drag ends)
     if (WasButtonReleased(MOUSE_RIGHT)) {
-        OpenAssetContextMenu();
+        if (Distance(g_view.mouse_position, g_view.drag_position) < DRAG_MIN) {
+            OpenAssetContextMenu();
+        }
     }
 
-    if (IsButtonDown(GetInputSet(), MOUSE_RIGHT)) {
-        Vec2 delta = g_view.mouse_position - g_view.pan_position;
-        Vec2 world_delta = ScreenToWorld(g_view.camera, delta) - ScreenToWorld(g_view.camera, VEC2_ZERO);
+    // Pan camera with right-drag
+    if (g_view.drag && g_view.drag_button == MOUSE_RIGHT) {
+        Vec2 world_delta = ScreenToWorld(g_view.camera, g_view.drag_delta) - ScreenToWorld(g_view.camera, VEC2_ZERO);
         SetPosition(g_view.camera, g_view.pan_position_camera - world_delta);
     }
 }
@@ -288,13 +292,16 @@ static void UpdateDrag() {
 }
 
 void EndDrag() {
+    if (g_view.drag_button != INPUT_CODE_NONE)
+        ConsumeButton(g_view.drag_button);
     g_view.drag = false;
     g_view.drag_started = false;
-    ConsumeButton(MOUSE_LEFT);
+    g_view.drag_ended = true;
+    g_view.drag_button = INPUT_CODE_NONE;
 }
 
-void BeginDrag() {
-    if (!IsButtonDown(GetInputSet(), MOUSE_LEFT)) {
+void BeginDrag(InputCode button) {
+    if (!IsButtonDown(GetInputSet(), button)) {
         g_view.drag_position = g_view.mouse_position;
         g_view.drag_world_position = g_view.mouse_world_position;
     }
@@ -303,22 +310,29 @@ void BeginDrag() {
 
     g_view.drag = true;
     g_view.drag_started = true;
+    g_view.drag_button = button;
 }
 
 static void UpdateMouse() {
     g_view.mouse_position = GetMousePosition();
     g_view.mouse_world_position = ScreenToWorld(g_view.camera, g_view.mouse_position);
+    g_view.drag_ended = false;  // Clear at start of frame
 
     if (g_view.drag) {
-        if (WasButtonReleased(GetInputSet(), MOUSE_LEFT))
+        if (WasButtonReleased(GetInputSet(), g_view.drag_button))
             EndDrag();
         else
             UpdateDrag();
     } else if (WasButtonPressed(GetInputSet(), MOUSE_LEFT)) {
         g_view.drag_position = g_view.mouse_position;
         g_view.drag_world_position = g_view.mouse_world_position;
+    } else if (WasButtonPressed(GetInputSet(), MOUSE_RIGHT)) {
+        g_view.drag_position = g_view.mouse_position;
+        g_view.drag_world_position = g_view.mouse_world_position;
     } else if (IsButtonDown(GetInputSet(), MOUSE_LEFT) && Distance(g_view.mouse_position, g_view.drag_position) >= DRAG_MIN) {
-        BeginDrag();
+        BeginDrag(MOUSE_LEFT);
+    } else if (IsButtonDown(GetInputSet(), MOUSE_RIGHT) && Distance(g_view.mouse_position, g_view.drag_position) >= DRAG_MIN) {
+        BeginDrag(MOUSE_RIGHT);
     }
 }
 
@@ -973,18 +987,25 @@ static void ToggleGrid() {
 }
 
 static void OpenAssetContextMenu() {
-    static ContextMenuItem items[] = {
-        { "Edit", ToggleEdit, true },
-        { "Duplicate", DuplicateAsset, true },
-        { "Rename", RenameAsset, true },
-        { "Delete", DeleteSelectedAssets, true },
-        { nullptr, nullptr, false }
-    };
+    if (g_view.state == VIEW_STATE_EDIT) {
+        assert(g_editor.editing_asset);
+        if (g_editor.editing_asset->vtable.editor_context_menu)
+            g_editor.editing_asset->vtable.editor_context_menu();
 
-    OpenContextMenuAtMouse({
-        .title="Asset",
-        .items = items
-    });
+    } else if (g_view.state == VIEW_STATE_DEFAULT) {
+        bool any_selected = g_view.selected_asset_count > 0;
+        OpenContextMenuAtMouse({
+            .title="Asset",
+            .items = {
+                { "Edit", ToggleEdit, any_selected },
+                { "Duplicate", DuplicateAsset, any_selected },
+                { "Rename", RenameAsset, any_selected },
+                { "Delete", DeleteSelectedAssets, any_selected },
+            },
+            .item_count = 4
+        });
+    }
+
 }
 
 void InitView() {

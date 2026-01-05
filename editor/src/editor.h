@@ -192,15 +192,19 @@ extern bool EditorCloseButton(ElementId id);
 extern bool UpdateContextMenu();
 
 // @context_menu
+constexpr int CONTEXT_MENU_MAX_ITEMS = 64;
+
 struct ContextMenuItem {
     const char* label;
     void (*action)();
     bool enabled;
+    int level;
 };
 
 struct ContextMenuConfig {
     const char* title;
-    const ContextMenuItem* items;
+    ContextMenuItem items[CONTEXT_MENU_MAX_ITEMS];
+    int item_count;
 };
 
 extern void OpenContextMenuAtMouse(const ContextMenuConfig& config);

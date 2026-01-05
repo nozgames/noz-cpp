@@ -2,8 +2,6 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-#include <editor.h>
-#include "nozed_assets.h"
 #include "asset_registry.h"
 #include <stb_image.h>
 

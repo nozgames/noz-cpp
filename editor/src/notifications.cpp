@@ -2,9 +2,6 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-#include <editor.h>
-#include "nozed_assets.h"
-
 constexpr int MAX_NOTIFICATIONS = 8;
 constexpr float NOTIFICATION_DURATION = 3.0f;
 constexpr float NOTIFICATION_SPACING = 8.0f;

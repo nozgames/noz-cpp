@@ -63,12 +63,13 @@ struct View {
     InputSet* input_tool;
     bool clear_selection_on_release;
     Vec2 pan_position_camera;
-    Vec2 pan_position;
 
     u32 selected_asset_count;
 
     bool drag;
     bool drag_started;
+    bool drag_ended;  // True for one frame after drag ends
+    InputCode drag_button;  // Which button started the drag (MOUSE_LEFT or MOUSE_RIGHT)
     Vec2 drag_position;
     Vec2 drag_world_position;
     Vec2 drag_delta;
@@ -101,7 +102,7 @@ extern void SetState(ViewState state);
 extern void HandleRename(const Name* name);
 extern void AddEditorAsset(AssetData* ea);
 extern void EndEdit();
-extern void BeginDrag();
+extern void BeginDrag(InputCode button = MOUSE_LEFT);
 extern void EndDrag();
 extern void EnableCommonShortcuts(InputSet* input_set);
 extern Vec2Int GetUIRefSize();

@@ -20,6 +20,7 @@ struct Style {
     Color overlay_background_color;
     Color overlay_text_color;
     Color overlay_accent_text_color;
+    Color overlay_disabled_text_color;
     Color overlay_icon_color;
     Color overlay_content_color;
 
@@ -86,6 +87,7 @@ inline Color    STYLE_OVERLAY_BACKGROUND_COLOR() { return GetStyle().overlay_bac
 inline Color    STYLE_OVERLAY_TEXT_COLOR() { return GetStyle().overlay_text_color; }
 inline int      STYLE_OVERLAY_TEXT_SIZE = 14;
 inline Color    STYLE_OVERLAY_ACCENT_TEXT_COLOR() { return GetStyle().overlay_accent_text_color; }
+inline Color    STYLE_OVERLAY_DISABLED_TEXT_COLOR() { return GetStyle().overlay_disabled_text_color; }
 inline Color    STYLE_OVERLAY_ICON_COLOR() { return GetStyle().overlay_icon_color; }
 inline Color    STYLE_OVERLAY_CONTENT_COLOR() { return GetStyle().overlay_content_color; }
 inline float    STYLE_OVERLAY_CONTENT_BORDER_RADIUS = 9.0f;

@@ -59,6 +59,11 @@ struct TagData {
     VertexWeight weights[MESH_MAX_VERTEX_WEIGHTS];
 };
 
+struct PendingCurve {
+    int v0, v1;
+    Vec2 offset;
+};
+
 struct MeshDataImpl {
     // Large arrays
     VertexData vertices[MESH_MAX_VERTICES];
@@ -66,6 +71,10 @@ struct MeshDataImpl {
     FaceData faces[MESH_MAX_FACES];
     TagData tags[MESH_MAX_TAGS];
     int face_vertices[MESH_MAX_INDICES];
+
+    // Pending curves to apply after UpdateEdges (used by SplitEdge when update=false)
+    PendingCurve pending_curves[MESH_MAX_EDGES];
+    int pending_curve_count;
 
     // Metadata
     SkeletonData* skeleton;
