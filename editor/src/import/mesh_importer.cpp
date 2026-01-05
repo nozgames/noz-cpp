@@ -15,48 +15,31 @@ struct OutlineConfig {
 };
 
 static Mesh* ToMeshWithAtlasUVs(MeshData* mesh_data, AtlasData* atlas, const AtlasRect& rect) {
-    // Create a mesh with UVs mapping into the atlas texture instead of palette colors
-    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_DEFAULT, MAX_VERTICES, MAX_INDICES);
+    // Create a simple quad with UVs mapping into the atlas texture
+    // The mesh geometry is pre-rendered to the atlas, so we just need a bounds quad
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_DEFAULT, 4, 6);
 
     float depth = 0.01f + 0.99f * (mesh_data->impl->depth - MIN_DEPTH) / (float)(MAX_DEPTH - MIN_DEPTH);
 
-    // Process each face
-    for (int fi = 0; fi < mesh_data->impl->face_count; fi++) {
-        FaceData* f = &mesh_data->impl->faces[fi];
-        if (f->vertex_count < 3) continue;
+    // Four corners of the mesh bounds
+    Vec2 min = mesh_data->bounds.min;
+    Vec2 max = mesh_data->bounds.max;
 
-        SetBaseVertex(builder, GetVertexCount(builder));
+    // Get atlas UVs for each corner
+    Vec2 uv_bl = GetAtlasUV(atlas, rect, mesh_data->bounds, {min.x, min.y});
+    Vec2 uv_br = GetAtlasUV(atlas, rect, mesh_data->bounds, {max.x, min.y});
+    Vec2 uv_tr = GetAtlasUV(atlas, rect, mesh_data->bounds, {max.x, max.y});
+    Vec2 uv_tl = GetAtlasUV(atlas, rect, mesh_data->bounds, {min.x, max.y});
 
-        // Add vertices with atlas UVs
-        for (int vi = 0; vi < f->vertex_count; vi++) {
-            VertexData& v = mesh_data->impl->vertices[f->vertices[vi]];
+    // Add quad vertices (bottom-left, bottom-right, top-right, top-left)
+    AddVertex(builder, {{min.x, min.y}, depth, uv_bl});
+    AddVertex(builder, {{max.x, min.y}, depth, uv_br});
+    AddVertex(builder, {{max.x, max.y}, depth, uv_tr});
+    AddVertex(builder, {{min.x, max.y}, depth, uv_tl});
 
-            // Compute UV based on position in atlas rect
-            Vec2 uv = GetAtlasUV(atlas, rect, mesh_data->bounds, v.position);
-
-            MeshVertex mv = {
-                .position = v.position,
-                .depth = depth,
-                .uv = uv
-            };
-            mv.bone_weights.x = v.weights[0].weight;
-            mv.bone_weights.y = v.weights[1].weight;
-            mv.bone_weights.z = v.weights[2].weight;
-            mv.bone_weights.w = v.weights[3].weight;
-            mv.bone_indices.x = v.weights[0].bone_index;
-            mv.bone_indices.y = v.weights[1].bone_index;
-            mv.bone_indices.z = v.weights[2].bone_index;
-            mv.bone_indices.w = v.weights[3].bone_index;
-            AddVertex(builder, mv);
-        }
-
-        // Triangulate using ear clipping
-        for (u16 i = 1; i < f->vertex_count - 1; i++) {
-            AddIndex(builder, 0);
-            AddIndex(builder, i);
-            AddIndex(builder, (u16)(i + 1));
-        }
-    }
+    // Two triangles for the quad
+    AddTriangle(builder, 0, 1, 2);
+    AddTriangle(builder, 0, 2, 3);
 
     Mesh* mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, mesh_data->name, false);
     Free(builder);
@@ -73,18 +56,11 @@ static void ImportMesh(AssetData* a, const std::filesystem::path& path, Props* c
 
     Mesh* m = nullptr;
 
-    // Check if mesh is attached to an atlas
-    if (mesh_data->impl->atlas_name) {
-        AssetData* atlas_asset = GetAssetData(ASSET_TYPE_ATLAS, mesh_data->impl->atlas_name);
-        if (atlas_asset) {
-            AtlasData* atlas = static_cast<AtlasData*>(atlas_asset);
-
-            // Find existing rect (allocated during parenting)
-            AtlasRect* rect = FindRectForMesh(atlas, mesh_data->name);
-            if (rect) {
-                m = ToMeshWithAtlasUVs(mesh_data, atlas, *rect);
-            }
-        }
+    // Check if mesh is in an atlas (atlas is source of truth)
+    AtlasRect* rect = nullptr;
+    AtlasData* atlas = FindAtlasForMesh(mesh_data->name, &rect);
+    if (atlas && rect) {
+        m = ToMeshWithAtlasUVs(mesh_data, atlas, *rect);
     }
 
     // Fall back to normal mesh if no atlas

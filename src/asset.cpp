@@ -276,7 +276,7 @@ void InitAssets() {
     RegisterAssetType({ASSET_TYPE_ANIMATED_MESH, "AnimatedMesh", "AnimMesh", ".animatedmesh", LoadAnimatedMesh, nullptr});
     RegisterAssetType({ASSET_TYPE_EVENT, "Event", "Event", ".event", nullptr, nullptr});
     RegisterAssetType({ASSET_TYPE_BIN, "Bin", "Bin", ".bin", LoadBin, nullptr});
-    RegisterAssetType({ASSET_TYPE_ATLAS, "Atlas", "Atlas", ".atlas", nullptr, nullptr});
+    RegisterAssetType({ASSET_TYPE_ATLAS, "Atlas", "Atlas", ".atlas", LoadTexture, nullptr});
 
 #if defined(NOZ_LUA)
     RegisterAssetType({ASSET_TYPE_LUA, "Script", "Lua", ".lua", LoadLuaScript,

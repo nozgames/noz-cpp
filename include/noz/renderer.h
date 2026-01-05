@@ -20,6 +20,7 @@ struct Shader : Asset {};
 struct Skeleton : Asset {};
 struct AnimatedMesh : Asset {};
 struct MeshBuilder {};
+struct Atlas : Texture {};
 struct Animator;
 
 // @renderer_traits
@@ -266,6 +267,7 @@ extern Mesh* GetMesh(const Name* name);
 extern Mesh** MESH;
 extern Font** FONT;
 extern Texture** TEXTURE;
+extern Atlas** ATLAS;
 extern Shader** SHADER;
 extern Skeleton** SKELETON;
 extern AnimatedMesh** ANIMMESH;
@@ -276,3 +278,4 @@ extern int TEXTURE_COUNT;
 extern int SHADER_COUNT;
 extern int ANIMMESH_COUNT;
 extern int SKELETON_COUNT;
+extern int ATLAS_COUNT;

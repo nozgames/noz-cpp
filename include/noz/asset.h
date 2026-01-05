@@ -116,6 +116,9 @@ Asset* LoadLuaScript(Allocator* allocator, Stream* stream, AssetHeader* header, 
 #define NOZ_LOAD_TEXTURE(allocator, path, member) \
     member = (Texture*)LoadAsset(allocator, path, ASSET_TYPE_TEXTURE, LoadTexture, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
 
+#define NOZ_LOAD_ATLAS(allocator, path, member) \
+    member = (Atlas*)LoadAsset(allocator, path, ASSET_TYPE_ATLAS, LoadTexture, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
+
 #define NOZ_LOAD_MESH(allocator, path, member) \
     member = (Mesh*)LoadAsset(allocator, path, ASSET_TYPE_MESH, LoadMesh, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
 
@@ -151,6 +154,7 @@ Asset* LoadLuaScript(Allocator* allocator, Stream* stream, AssetHeader* header, 
 #define NOZ_RELOAD_ANIMATION(asset_name, asset)
 #define NOZ_RELOAD_ANIMMESH(asset_name, asset)
 #define NOZ_RELOAD_BIN(asset_name, asset)
+#define NOZ_RELOAD_ATLAS(asset_name, asset)
 
 #if !defined(NOZ_BUILTIN_ASSETS)
 extern void ReloadAsset(const Name* name, AssetType asset_type, Asset* asset, void (*reload)(Asset*, Stream*, const AssetHeader& header, const Name** name_table));
@@ -175,6 +179,11 @@ extern void ReloadLuaScript(Asset* asset, Stream* stream, const AssetHeader& hea
 #define NOZ_RELOAD_TEXTURE(asset_name, asset) \
     if(asset_name == incoming_name && incoming_type == ASSET_TYPE_TEXTURE) { \
         ReloadAsset(asset_name, ASSET_TYPE_TEXTURE, asset, ReloadTexture); return; }
+
+#undef NOZ_RELOAD_ATLAS
+#define NOZ_RELOAD_ATLAS(asset_name, asset) \
+    if(asset_name == incoming_name && incoming_type == ASSET_TYPE_ATLAS) { \
+        ReloadAsset(asset_name, ASSET_TYPE_ATLAS, asset, ReloadTexture); return; }
 
 #if defined(NOZ_LUA)
 #define NOZ_RELOAD_LUA(asset_name, asset) \

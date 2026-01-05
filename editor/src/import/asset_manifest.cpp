@@ -60,10 +60,10 @@ static void GenerateLuaLoader(ManifestGenerator& generator);
 
 static std::string GetNameVar(const Name* name) {
     std::string result = name->value;
-    Upper(result.data(), (u32)result.size());
-    Replace(result.data(), (u32)result.size(), '/', '_');
-    Replace(result.data(), (u32)result.size(), '.', '_');
-    Replace(result.data(), (u32)result.size(), ' ', '_');
+    Upper(result.data(), static_cast<u32>(result.size()));
+    Replace(result.data(), static_cast<u32>(result.size()), '/', '_');
+    Replace(result.data(), static_cast<u32>(result.size()), '.', '_');
+    Replace(result.data(), static_cast<u32>(result.size()), ' ', '_');
     return result;
 }
 
@@ -114,11 +114,11 @@ static bool ReadAsset(u32 item_index, void* item_ptr, void* user_data) {
     (void)item_index;
 
     assert(item_ptr);
-    AssetData* a = (AssetData*)item_ptr;
+    AssetData* a = static_cast<AssetData *>(item_ptr);
     if (a->editor_only || !a->name)
         return true;
 
-    ManifestGenerator& generator = *(ManifestGenerator*)user_data;
+    ManifestGenerator& generator = *static_cast<ManifestGenerator *>(user_data);
 
     std::vector<const Name*> names;
     AssetType asset_type = ReadAssetHeader(a, generator, names);
@@ -129,7 +129,9 @@ static bool ReadAsset(u32 item_index, void* item_ptr, void* user_data) {
     if (!type_name)
         return true;
 
-    std::string var_name = std::string(type_name) + "_" + a->name->value;
+    // Use original asset type for var_name (e.g., ATLAS_BLOCKS not TEXTURE_BLOCKS)
+    const char* var_type_name = ToShortString(a->type);
+    std::string var_name = std::string(var_type_name ? var_type_name : type_name) + "_" + a->name->value;
     Upper(var_name.data(), static_cast<u32>(var_name.size()));
 
     // Skip if asset with same var_name already exists from an earlier source path
@@ -507,6 +509,7 @@ static const char* GetLuauTypeName(AssetType type) {
         case ASSET_TYPE_MESH: return "Mesh";
         case ASSET_TYPE_FONT: return "Font";
         case ASSET_TYPE_TEXTURE: return "Texture";
+        case ASSET_TYPE_ATLAS: return "Texture";  // Atlas loads as Texture
         case ASSET_TYPE_SOUND: return "Sound";
         case ASSET_TYPE_SKELETON: return "Skeleton";
         case ASSET_TYPE_ANIMATION: return "Animation";
@@ -565,6 +568,7 @@ static const char* GetLuaLoaderFunc(AssetType type) {
         case ASSET_TYPE_MESH: return "LoadMesh";
         case ASSET_TYPE_FONT: return "LoadFont";
         case ASSET_TYPE_TEXTURE: return "LoadTexture";
+        case ASSET_TYPE_ATLAS: return "LoadTexture";  // Atlas loads as Texture
         case ASSET_TYPE_SOUND: return "LoadSound";
         case ASSET_TYPE_SKELETON: return "LoadSkeleton";
         case ASSET_TYPE_ANIMATION: return "LoadAnimation";

@@ -6,7 +6,9 @@
 #include "../platform.h"
 
 Texture** TEXTURE = nullptr;
+Atlas** ATLAS = nullptr;
 int TEXTURE_COUNT = 0;
+int ATLAS_COUNT = 0;
 
 struct TextureImpl : Texture {
     PlatformTexture* platform_texture = nullptr;

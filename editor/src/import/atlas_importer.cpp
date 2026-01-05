@@ -2,6 +2,8 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
+#include <plutovg.h>
+
 namespace fs = std::filesystem;
 
 static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* config, Props* meta) {
@@ -30,11 +32,17 @@ static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* 
         TEXTURE_CLAMP_REPEAT :
         TEXTURE_CLAMP_CLAMP;
 
-    Stream* stream = CreateStream(ALLOCATOR_DEFAULT, impl->width * impl->height * 4 + 1024);
+    // Convert from PlutoVG's premultiplied ARGB to RGBA
+    u32 pixel_size = impl->width * impl->height * 4;
+    u8* rgba_pixels = static_cast<u8*>(Alloc(ALLOCATOR_SCRATCH, pixel_size));
+    memcpy(rgba_pixels, impl->pixels, pixel_size);
+    plutovg_convert_argb_to_rgba(rgba_pixels, rgba_pixels, impl->width, impl->height, impl->width * 4);
+
+    Stream* stream = CreateStream(ALLOCATOR_DEFAULT, pixel_size + 1024);
 
     AssetHeader header = {};
     header.signature = ASSET_SIGNATURE;
-    header.type = ASSET_TYPE_TEXTURE;  // Export as texture for runtime
+    header.type = ASSET_TYPE_ATLAS;
     header.version = 1;
     header.flags = ASSET_FLAG_NONE;
     WriteAssetHeader(stream, &header);
@@ -45,7 +53,7 @@ static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* 
     WriteU8(stream, (u8)clamp_value);
     WriteU32(stream, impl->width);
     WriteU32(stream, impl->height);
-    WriteBytes(stream, impl->pixels, impl->width * impl->height * 4);
+    WriteBytes(stream, rgba_pixels, pixel_size);
 
     SaveStream(stream, path);
     Free(stream);

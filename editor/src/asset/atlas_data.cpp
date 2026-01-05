@@ -125,6 +125,22 @@ AtlasRect* FindRectForMesh(AtlasData* atlas, const Name* mesh_name) {
     return nullptr;
 }
 
+AtlasData* FindAtlasForMesh(const Name* mesh_name, AtlasRect** out_rect) {
+    // Search all atlas assets for one containing this mesh
+    for (int i = 0, count = GetAssetCount(); i < count; i++) {
+        AssetData* asset = GetAssetData(i);
+        if (asset->type != ASSET_TYPE_ATLAS) continue;
+
+        AtlasData* atlas = static_cast<AtlasData*>(asset);
+        AtlasRect* rect = FindRectForMesh(atlas, mesh_name);
+        if (rect) {
+            if (out_rect) *out_rect = rect;
+            return atlas;
+        }
+    }
+    return nullptr;
+}
+
 static int FindFreeRectSlot(AtlasDataImpl* impl) {
     for (int i = 0; i < impl->rect_count; i++) {
         if (!impl->rects[i].valid) return i;
@@ -173,6 +189,14 @@ AtlasRect* AllocateRect(AtlasData* atlas, MeshData* mesh) {
 
 void FreeRect(AtlasData* atlas, AtlasRect* rect) {
     if (rect) {
+        // Clear the mesh's atlas reference
+        if (rect->mesh_name) {
+            AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, rect->mesh_name);
+            if (mesh_asset) {
+                MeshData* mesh = static_cast<MeshData*>(mesh_asset);
+                mesh->impl->atlas_name = nullptr;
+            }
+        }
         rect->valid = false;
         rect->mesh_name = nullptr;
         atlas->impl->dirty = true;
@@ -182,6 +206,14 @@ void FreeRect(AtlasData* atlas, AtlasRect* rect) {
 void ClearAllRects(AtlasData* atlas) {
     AtlasDataImpl* impl = atlas->impl;
     for (int i = 0; i < impl->rect_count; i++) {
+        // Clear the mesh's atlas reference
+        if (impl->rects[i].valid && impl->rects[i].mesh_name) {
+            AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, impl->rects[i].mesh_name);
+            if (mesh_asset) {
+                MeshData* mesh = static_cast<MeshData*>(mesh_asset);
+                mesh->impl->atlas_name = nullptr;
+            }
+        }
         impl->rects[i].valid = false;
         impl->rects[i].mesh_name = nullptr;
     }
@@ -205,82 +237,123 @@ static void EnsurePixelBuffer(AtlasData* atlas) {
     }
 }
 
+static void AddFaceToPath(plutovg_canvas_t* canvas, MeshData* mesh, FaceData& face, float offset_x, float offset_y, float scale, float expand = 0.0f) {
+    MeshDataImpl* mesh_impl = mesh->impl;
+
+    // Calculate face center for expansion direction
+    Vec2 center = {0, 0};
+    for (int vi = 0; vi < face.vertex_count; vi++) {
+        center = center + mesh_impl->vertices[face.vertices[vi]].position;
+    }
+    center = center / (float)face.vertex_count;
+
+    for (int vi = 0; vi < face.vertex_count; vi++) {
+        int v_idx = face.vertices[vi];
+        Vec2 pos = mesh_impl->vertices[v_idx].position;
+
+        // Expand vertex outward from face center
+        if (expand > 0.0f) {
+            Vec2 dir = Normalize(pos - center);
+            pos = pos + dir * (expand / scale);  // expand in mesh space
+        }
+
+        float px = offset_x + pos.x * scale;
+        float py = offset_y + pos.y * scale;
+
+        if (vi == 0) {
+            plutovg_canvas_move_to(canvas, px, py);
+        } else {
+            int prev_vi = (vi - 1 + face.vertex_count) % face.vertex_count;
+            int prev_v_idx = face.vertices[prev_vi];
+
+            int edge_idx = GetEdge(mesh, prev_v_idx, v_idx);
+            if (edge_idx >= 0 && IsEdgeCurved(mesh, edge_idx)) {
+                Vec2 control = GetEdgeControlPoint(mesh, edge_idx);
+                if (expand > 0.0f) {
+                    Vec2 dir = Normalize(control - center);
+                    control = control + dir * (expand / scale);
+                }
+                float cpx = offset_x + control.x * scale;
+                float cpy = offset_y + control.y * scale;
+                plutovg_canvas_quad_to(canvas, cpx, cpy, px, py);
+            } else {
+                plutovg_canvas_line_to(canvas, px, py);
+            }
+        }
+    }
+
+    // Close the path - handle potential curve on last edge
+    int last_v_idx = face.vertices[face.vertex_count - 1];
+    int first_v_idx = face.vertices[0];
+    int edge_idx = GetEdge(mesh, last_v_idx, first_v_idx);
+    if (edge_idx >= 0 && IsEdgeCurved(mesh, edge_idx)) {
+        Vec2 control = GetEdgeControlPoint(mesh, edge_idx);
+        Vec2 first_pos = mesh_impl->vertices[first_v_idx].position;
+        if (expand > 0.0f) {
+            Vec2 dir = Normalize(control - center);
+            control = control + dir * (expand / scale);
+            dir = Normalize(first_pos - center);
+            first_pos = first_pos + dir * (expand / scale);
+        }
+        float cpx = offset_x + control.x * scale;
+        float cpy = offset_y + control.y * scale;
+        float px = offset_x + first_pos.x * scale;
+        float py = offset_y + first_pos.y * scale;
+        plutovg_canvas_quad_to(canvas, cpx, cpy, px, py);
+    } else {
+        plutovg_canvas_close_path(canvas);
+    }
+}
+
 void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, const AtlasRect& rect) {
     AtlasDataImpl* impl = atlas->impl;
     MeshDataImpl* mesh_impl = mesh->impl;
 
     EnsurePixelBuffer(atlas);
 
-    // Create a surface for the entire atlas
     plutovg_surface_t* surface = plutovg_surface_create_for_data(
         impl->pixels, impl->width, impl->height, impl->width * 4
     );
     plutovg_canvas_t* canvas = plutovg_canvas_create(surface);
 
-    // Clip to the rect
     plutovg_canvas_clip_rect(canvas, (float)rect.x, (float)rect.y, (float)rect.width, (float)rect.height);
 
-    // Set up transform: mesh coords -> pixel coords
     float scale = (float)impl->dpi;
     float offset_x = rect.x + 1 - mesh->bounds.min.x * scale;
     float offset_y = rect.y + 1 - mesh->bounds.min.y * scale;
 
-    // Render each face
+    int palette_index = g_editor.palette_map[mesh_impl->palette];
+
+    // Sub-pixel expansion to ensure faces overlap and prevent AA gaps
+    constexpr float EXPAND = 0.5f;
+
+    // Render each color group, batching same-colored faces
+    bool rendered[MAX_FACES] = {};
     for (int fi = 0; fi < mesh_impl->face_count; fi++) {
+        if (rendered[fi]) continue;
+
         FaceData& face = mesh_impl->faces[fi];
         if (face.vertex_count < 3) continue;
 
+        int color_index = face.color;
+        Color color = g_editor.palettes[palette_index].colors[color_index];
+
+        // Start a new path for this color
         plutovg_canvas_new_path(canvas);
+        AddFaceToPath(canvas, mesh, face, offset_x, offset_y, scale, EXPAND);
+        rendered[fi] = true;
 
-        // Build path for this face
-        for (int vi = 0; vi < face.vertex_count; vi++) {
-            int v_idx = face.vertices[vi];
-            Vec2 pos = mesh_impl->vertices[v_idx].position;
+        // Add all other faces with the same color to this path
+        for (int fj = fi + 1; fj < mesh_impl->face_count; fj++) {
+            if (rendered[fj]) continue;
+            FaceData& other_face = mesh_impl->faces[fj];
+            if (other_face.vertex_count < 3) continue;
+            if (other_face.color != color_index) continue;
 
-            // Transform to pixel coordinates
-            float px = offset_x + pos.x * scale;
-            float py = offset_y + pos.y * scale;
-
-            if (vi == 0) {
-                plutovg_canvas_move_to(canvas, px, py);
-            } else {
-                // Check if edge to this vertex is curved
-                int prev_vi = (vi - 1 + face.vertex_count) % face.vertex_count;
-                int prev_v_idx = face.vertices[prev_vi];
-
-                // Find the edge between prev_v_idx and v_idx
-                int edge_idx = GetEdge(mesh, prev_v_idx, v_idx);
-                if (edge_idx >= 0 && IsEdgeCurved(mesh, edge_idx)) {
-                    // Quadratic bezier curve
-                    Vec2 control = GetEdgeControlPoint(mesh, edge_idx);
-                    float cpx = offset_x + control.x * scale;
-                    float cpy = offset_y + control.y * scale;
-                    plutovg_canvas_quad_to(canvas, cpx, cpy, px, py);
-                } else {
-                    plutovg_canvas_line_to(canvas, px, py);
-                }
-            }
+            AddFaceToPath(canvas, mesh, other_face, offset_x, offset_y, scale, EXPAND);
+            rendered[fj] = true;
         }
 
-        // Close the path - handle potential curve on last edge
-        int last_v_idx = face.vertices[face.vertex_count - 1];
-        int first_v_idx = face.vertices[0];
-        int edge_idx = GetEdge(mesh, last_v_idx, first_v_idx);
-        if (edge_idx >= 0 && IsEdgeCurved(mesh, edge_idx)) {
-            Vec2 control = GetEdgeControlPoint(mesh, edge_idx);
-            Vec2 first_pos = mesh_impl->vertices[first_v_idx].position;
-            float cpx = offset_x + control.x * scale;
-            float cpy = offset_y + control.y * scale;
-            float px = offset_x + first_pos.x * scale;
-            float py = offset_y + first_pos.y * scale;
-            plutovg_canvas_quad_to(canvas, cpx, cpy, px, py);
-        } else {
-            plutovg_canvas_close_path(canvas);
-        }
-
-        // Get face color from palette
-        int palette_index = g_editor.palette_map[mesh_impl->palette];
-        Color color = g_editor.palettes[palette_index].colors[face.color];
         plutovg_canvas_set_rgba(canvas, color.r, color.g, color.b, color.a);
         plutovg_canvas_fill(canvas);
     }
@@ -526,12 +599,13 @@ static void PostLoadAtlasData(AssetData* a) {
     AtlasData* atlas = static_cast<AtlasData*>(a);
     AtlasDataImpl* impl = atlas->impl;
 
-    // Render all valid rects now that meshes are loaded
+    // Bind meshes to this atlas and render them
     for (int i = 0; i < impl->rect_count; i++) {
         if (impl->rects[i].valid && impl->rects[i].mesh_name) {
             AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, impl->rects[i].mesh_name);
             if (mesh_asset) {
                 MeshData* mesh = static_cast<MeshData*>(mesh_asset);
+                mesh->impl->atlas_name = atlas->name;  // Atlas owns this relationship
                 RenderMeshToAtlas(atlas, mesh, impl->rects[i]);
             }
         }

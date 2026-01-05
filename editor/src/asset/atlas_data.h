@@ -43,6 +43,9 @@ extern AtlasRect* FindRectForMesh(AtlasData* atlas, const Name* mesh_name);
 extern void FreeRect(AtlasData* atlas, AtlasRect* rect);
 extern void ClearAllRects(AtlasData* atlas);
 
+// Find the atlas containing a mesh (searches all atlases)
+extern AtlasData* FindAtlasForMesh(const Name* mesh_name, AtlasRect** out_rect = nullptr);
+
 // Rendering
 extern void RenderMeshToAtlas(AtlasData* atlas, struct MeshData* mesh, const AtlasRect& rect);
 extern void RegenerateAtlas(AtlasData* atlas);   // Re-render meshes to existing rects
