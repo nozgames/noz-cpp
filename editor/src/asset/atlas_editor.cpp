@@ -93,7 +93,7 @@ static void DrawAtlasEditor() {
         float h = r.height * scale;
 
         // Rect position is bottom-left corner in world space
-        Vec2 rect_pos = atlas_bottom_left + Vec2{x, size.y - y - h};
+        Vec2 rect_pos = atlas_bottom_left + Vec2{x, y};
         Bounds2 rect_bounds = {0, 0, w, h};
 
         Color rect_color = r.frame_count > 1 ? COLOR_GREEN : COLOR_YELLOW;
