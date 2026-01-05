@@ -44,6 +44,7 @@ struct MeshEditor {
     float fixed_value;
     Shortcut* shortcuts;
     VertexData saved[MAX_VERTICES];
+    Vec2 saved_curves[MAX_EDGES];
     InputSet* input;
     Mesh* color_picker_mesh;
     MeshData* mesh_data;
@@ -307,6 +308,8 @@ static void SaveMeshState() {
     MeshDataImpl* impl = m->impl;
     for (int i=0; i<impl->vertex_count; i++)
         g_mesh_editor.saved[i] = impl->vertices[i];
+    for (int i=0; i<impl->edge_count; i++)
+        g_mesh_editor.saved_curves[i] = impl->edges[i].curve_offset;
 }
 
 static void RevertMeshState() {
@@ -314,6 +317,8 @@ static void RevertMeshState() {
     MeshDataImpl* impl = m->impl;
     for (int i=0; i < impl->vertex_count; i++)
         impl->vertices[i] = g_mesh_editor.saved[i];
+    for (int i=0; i < impl->edge_count; i++)
+        impl->edges[i].curve_offset = g_mesh_editor.saved_curves[i];
 
     MarkDirty(m);
     MarkModified(m);
@@ -702,7 +707,7 @@ static bool Palette(int palette_index, bool* selected_colors) {
             .width=COLOR_PICKER_COLOR_SIZE - 4,
             .height=COLOR_PICKER_COLOR_SIZE - 4,
             .align=ALIGN_CENTER,
-            .color=color.a > 0 ? color : STYLE_COLOR_BLACK_10PCT,
+            .color=color.a > 0 ? color : COLOR_BLACK_10PCT,
             .border={.radius=6.0f,},
             .id=static_cast<ElementId>(MESH_EDITOR_ID_COLORS + i)
         });
@@ -963,6 +968,25 @@ static void BeginCurveToolFromSelection() {
     BeginCurveTool(m, selected_edges, count);
 }
 
+static void FlattenEdges() {
+    MeshData* m = GetMeshData();
+    MeshDataImpl* impl = m->impl;
+
+    if (impl->selected_edge_count == 0)
+        return;
+
+    RecordUndo(m);
+
+    for (int i = 0; i < impl->edge_count; i++) {
+        EdgeData& e = impl->edges[i];
+        if (e.selected)
+            e.curve_offset = VEC2_ZERO;
+    }
+
+    MarkDirty(m);
+    MarkModified(m);
+}
+
 static void UpdateRotateTool(float angle) {
     if (IsCtrlDown()) {
         int angle_step = (int)(angle / 15.0f);
@@ -1021,6 +1045,15 @@ static void UpdateScaleTool(const Vec2& scale) {
 
         Vec2 dir = g_mesh_editor.saved[i].position - center;
         v.position = center + dir * scale;
+    }
+
+    // Scale curve offsets for edges where both vertices are selected
+    for (i32 i=0; i<impl->edge_count; i++) {
+        EdgeData& e = impl->edges[i];
+        if (!impl->vertices[e.v0].selected || !impl->vertices[e.v1].selected)
+            continue;
+
+        e.curve_offset = g_mesh_editor.saved_curves[i] * scale;
     }
 
     UpdateEdges(m);
@@ -1120,6 +1153,7 @@ static void CenterMesh() {
     Center(GetMeshData());
 }
 
+#if 0
 static void CircleMesh() {
     if (GetMeshData()->impl->selected_vertex_count < 2)
         return;
@@ -1156,6 +1190,7 @@ static void CircleMesh() {
         MarkModified(m);
     }});
 }
+#endif
 
 static bool ExtrudeSelectedEdges(MeshData* m) {
     MeshDataImpl* impl = m->impl;
@@ -1659,6 +1694,18 @@ static void BeginKnifeCut() {
     BeginKnifeTool(m, restrict_to_selected);
 }
 
+static void BeginPenDraw() {
+    MeshData* m = GetMeshData();
+    if (!m) return;
+    BeginPenTool(m);
+}
+
+static void BeginAutoCurve() {
+    MeshData* m = GetMeshData();
+    if (!m) return;
+    BeginAutoCurveTool(m);
+}
+
 static void SendBackward() {
     if (g_mesh_editor.mode != MESH_EDITOR_MODE_FACE)
         return;
@@ -1895,53 +1942,64 @@ void ShutdownMeshEditor() {
     g_mesh_editor = {};
 }
 
+
+static Shortcut g_mesh_editor_shortcuts[] = {
+    { KEY_A, false, false, false, SelectAll, "Select all" },
+    { KEY_G, false, false, false, BeginMoveTool, "Move" },
+    { KEY_R, false, false, false, BeginRotateTool, "Rotate" },
+    { KEY_S, false, false, false, BeginScaleTool, "Scale" },
+    { KEY_C, false, false, false, BeginCurveToolFromSelection, "Curve" },
+    { KEY_C, false, true, true, CenterMesh, "Center mesh" },
+    { KEY_F, false, false, true, FlattenEdges, "Flatten edges" },
+    { KEY_D, false, true, false, DuplicateSelected, "Duplicate" },
+    { KEY_S, false, false, true, SubDivide, "Subdivide" },
+    { KEY_C, false, false, true, BeginAutoCurve, "Auto curve" },
+    { KEY_X, false, false, false, DissolveSelected, "Delete" },
+
+    { KEY_R, false, false, true, FlipHorizontal, "Flip horiztonal" },
+    { KEY_F, false, false, true, NewFace, "New face" },
+
+    { KEY_V, false, false, true, BeginKnifeCut, "Knife tool" },
+    { KEY_N, false, false, false, BeginPenDraw, "Pen tool" },
+    { KEY_E, false, true, false, ExtrudeSelected, "Extrude tool" },
+    { KEY_W, false, false, false, BeginWeightTool, "Vertex Weight tool" },
+    { KEY_P, false, false, false, BeginParentTool, "Parent tool" },
+
+    { KEY_V, false, false, false, InsertVertex, "Add vertex" },
+    { KEY_1, false, false, false, SetVertexMode, "Vertex mode" },
+    { KEY_2, false, false, false, SetEdgeMode, "Edge mode" },
+    { KEY_3, false, false, false, SetFaceMode, "Face mode" },
+    { KEY_4, false, false, false, SetWeightMode, "Weight mode" },
+    //{ KEY_C, false, false, true, CircleMesh },
+    { KEY_X, true, false, false, ToggleXRay, "Toggle X-ray" },
+
+    { KEY_LEFT_BRACKET, false, true, false, SendToBack, "Send to back" },
+    { KEY_LEFT_BRACKET, false, false, false, SendBackward, "Send backward" },
+    { KEY_RIGHT_BRACKET, false, false, false, BringForward, "Bring forward" },
+    { KEY_RIGHT_BRACKET, false, true, false, BringToFront, "Bring to front" },
+
+    { INPUT_CODE_NONE }
+};
+
+
+static void MeshEditorHelp() {
+    HelpGroup("Mesh", g_mesh_editor_shortcuts);
+}
+
 void InitMeshEditor() {
     g_mesh_editor.color_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
-
-    static Shortcut shortcuts[] = {
-        { KEY_D, false, true, false, DuplicateSelected },
-        { KEY_G, false, false, false, BeginMoveTool },
-        { KEY_B, false, false, false, BeginCurveToolFromSelection },
-        { KEY_R, false, false, false, BeginRotateTool },
-        { KEY_R, false, false, true, FlipHorizontal },
-        { KEY_S, false, false, false, BeginScaleTool },
-        { KEY_S, false, false, true, SubDivide },
-        { KEY_W, false, false, false, BeginWeightTool },
-        { KEY_A, false, false, false, SelectAll },
-        //{ KEY_A, false, false, true, ToggleAnchor },
-        { KEY_X, false, false, false, DissolveSelected },
-        { KEY_V, false, false, false, InsertVertex },
-        { KEY_1, false, false, false, SetVertexMode },
-        { KEY_2, false, false, false, SetEdgeMode },
-        { KEY_3, false, false, false, SetFaceMode },
-        { KEY_4, false, false, false, SetWeightMode },
-        { KEY_C, false, false, false, CenterMesh },
-        { KEY_C, false, false, true, CircleMesh },
-        { KEY_E, false, true, false, ExtrudeSelected },
-        { KEY_N, false, false, false, NewFace },
-        { KEY_V, false, false, true, BeginKnifeCut },
-        { KEY_X, true, false, false, ToggleXRay },
-
-        { KEY_LEFT_BRACKET, false, false, false, SendBackward },
-        { KEY_RIGHT_BRACKET, false, false, false, BringForward },
-        { KEY_RIGHT_BRACKET, false, true, false, BringToFront },
-        { KEY_LEFT_BRACKET, false, true, false, SendToBack },
-        { KEY_P, false, false, false, BeginParentTool },
-
-        { INPUT_CODE_NONE }
-    };
 
     g_mesh_editor.input = CreateInputSet(ALLOCATOR_DEFAULT);
     EnableModifiers(g_mesh_editor.input);
     EnableButton(g_mesh_editor.input, MOUSE_LEFT);
     EnableButton(g_mesh_editor.input, MOUSE_LEFT_DOUBLE_CLICK);
 
-    g_mesh_editor.shortcuts = shortcuts;
+    g_mesh_editor.shortcuts = g_mesh_editor_shortcuts;
     EnableButton(g_mesh_editor.input, KEY_Q);
     EnableButton(g_mesh_editor.input, KEY_O);
     EnableButton(g_mesh_editor.input, KEY_SPACE);
     EnableButton(g_mesh_editor.input, KEY_H);
-    EnableShortcuts(shortcuts, g_mesh_editor.input);
+    EnableShortcuts(g_mesh_editor_shortcuts, g_mesh_editor.input);
     EnableCommonShortcuts(g_mesh_editor.input);
 
     PushScratch();
@@ -1963,4 +2021,5 @@ void InitMeshEditor(MeshData* m) {
     m->vtable.editor_update = UpdateMeshEditor;
     m->vtable.editor_bounds = GetMeshEditorBounds;
     m->vtable.editor_overlay = MeshEditorOverlay;
+    m->vtable.editor_help = MeshEditorHelp;
 }

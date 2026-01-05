@@ -25,6 +25,7 @@ Mesh* MESH_ASSET_ICON_LUA = nullptr;
 Mesh* MESH_ASSET_ICON_SHADER = nullptr;
 Mesh* MESH_ASSET_ICON_SOUND = nullptr;
 Mesh* MESH_ASSET_ICON_VFX = nullptr;
+Mesh* MESH_ICON_CLOSE = nullptr;
 Mesh* MESH_ICON_DROPDOWN = nullptr;
 Mesh* MESH_ICON_EDGE_MODE = nullptr;
 Mesh* MESH_ICON_EXPAND_DOWN = nullptr;
@@ -34,11 +35,11 @@ Mesh* MESH_ICON_LOOP = nullptr;
 Mesh* MESH_ICON_MIRROR = nullptr;
 Mesh* MESH_ICON_ONION = nullptr;
 Mesh* MESH_ICON_PALETTE = nullptr;
-Mesh* MESH_ICON_PALETTE_0 = nullptr;
 Mesh* MESH_ICON_PUBLISH = nullptr;
 Mesh* MESH_ICON_ROOT_MOTION = nullptr;
 Mesh* MESH_ICON_TILING = nullptr;
 Mesh* MESH_ICON_VERTEX_MODE = nullptr;
+Mesh* MESH_ICON_WEIGHT_MODE = nullptr;
 
 // @Texture
 Texture* TEXTURE_EDITOR_PALETTE = nullptr;
@@ -95,6 +96,7 @@ const Name* PATH_MESH_ASSET_ICON_LUA = nullptr;
 const Name* PATH_MESH_ASSET_ICON_SHADER = nullptr;
 const Name* PATH_MESH_ASSET_ICON_SOUND = nullptr;
 const Name* PATH_MESH_ASSET_ICON_VFX = nullptr;
+const Name* PATH_MESH_ICON_CLOSE = nullptr;
 const Name* PATH_MESH_ICON_DROPDOWN = nullptr;
 const Name* PATH_MESH_ICON_EDGE_MODE = nullptr;
 const Name* PATH_MESH_ICON_EXPAND_DOWN = nullptr;
@@ -104,11 +106,11 @@ const Name* PATH_MESH_ICON_LOOP = nullptr;
 const Name* PATH_MESH_ICON_MIRROR = nullptr;
 const Name* PATH_MESH_ICON_ONION = nullptr;
 const Name* PATH_MESH_ICON_PALETTE = nullptr;
-const Name* PATH_MESH_ICON_PALETTE_0 = nullptr;
 const Name* PATH_MESH_ICON_PUBLISH = nullptr;
 const Name* PATH_MESH_ICON_ROOT_MOTION = nullptr;
 const Name* PATH_MESH_ICON_TILING = nullptr;
 const Name* PATH_MESH_ICON_VERTEX_MODE = nullptr;
+const Name* PATH_MESH_ICON_WEIGHT_MODE = nullptr;
 const Name* PATH_SHADER_EDITOR = nullptr;
 const Name* PATH_SHADER_MESH = nullptr;
 const Name* PATH_SHADER_POSTPROCESS_DESATURATE = nullptr;
@@ -161,6 +163,7 @@ bool LoadAssets(Allocator* allocator)
     PATH_MESH_ASSET_ICON_SHADER = GetName("asset_icon_shader");
     PATH_MESH_ASSET_ICON_SOUND = GetName("asset_icon_sound");
     PATH_MESH_ASSET_ICON_VFX = GetName("asset_icon_vfx");
+    PATH_MESH_ICON_CLOSE = GetName("icon_close");
     PATH_MESH_ICON_DROPDOWN = GetName("icon_dropdown");
     PATH_MESH_ICON_EDGE_MODE = GetName("icon_edge_mode");
     PATH_MESH_ICON_EXPAND_DOWN = GetName("icon_expand_down");
@@ -170,11 +173,11 @@ bool LoadAssets(Allocator* allocator)
     PATH_MESH_ICON_MIRROR = GetName("icon_mirror");
     PATH_MESH_ICON_ONION = GetName("icon_onion");
     PATH_MESH_ICON_PALETTE = GetName("icon_palette");
-    PATH_MESH_ICON_PALETTE_0 = GetName("icon_palette_0");
     PATH_MESH_ICON_PUBLISH = GetName("icon_publish");
     PATH_MESH_ICON_ROOT_MOTION = GetName("icon_root_motion");
     PATH_MESH_ICON_TILING = GetName("icon_tiling");
     PATH_MESH_ICON_VERTEX_MODE = GetName("icon_vertex_mode");
+    PATH_MESH_ICON_WEIGHT_MODE = GetName("icon_weight_mode");
     PATH_SHADER_EDITOR = GetName("editor");
     PATH_SHADER_MESH = GetName("mesh");
     PATH_SHADER_POSTPROCESS_DESATURATE = GetName("postprocess_desaturate");
@@ -199,6 +202,7 @@ bool LoadAssets(Allocator* allocator)
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_SHADER, MESH_ASSET_ICON_SHADER);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_SOUND, MESH_ASSET_ICON_SOUND);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ASSET_ICON_VFX, MESH_ASSET_ICON_VFX);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_CLOSE, MESH_ICON_CLOSE);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_DROPDOWN, MESH_ICON_DROPDOWN);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_EDGE_MODE, MESH_ICON_EDGE_MODE);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_EXPAND_DOWN, MESH_ICON_EXPAND_DOWN);
@@ -208,11 +212,11 @@ bool LoadAssets(Allocator* allocator)
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_MIRROR, MESH_ICON_MIRROR);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_ONION, MESH_ICON_ONION);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_PALETTE, MESH_ICON_PALETTE);
-    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_PALETTE_0, MESH_ICON_PALETTE_0);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_PUBLISH, MESH_ICON_PUBLISH);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_ROOT_MOTION, MESH_ICON_ROOT_MOTION);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_TILING, MESH_ICON_TILING);
     NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_VERTEX_MODE, MESH_ICON_VERTEX_MODE);
+    NOZ_LOAD_MESH(allocator, PATH_MESH_ICON_WEIGHT_MODE, MESH_ICON_WEIGHT_MODE);
 
     static Mesh* _MESH[] = {
         MESH_ASSET_ICON_ATLAS,
@@ -223,6 +227,7 @@ bool LoadAssets(Allocator* allocator)
         MESH_ASSET_ICON_SHADER,
         MESH_ASSET_ICON_SOUND,
         MESH_ASSET_ICON_VFX,
+        MESH_ICON_CLOSE,
         MESH_ICON_DROPDOWN,
         MESH_ICON_EDGE_MODE,
         MESH_ICON_EXPAND_DOWN,
@@ -232,11 +237,11 @@ bool LoadAssets(Allocator* allocator)
         MESH_ICON_MIRROR,
         MESH_ICON_ONION,
         MESH_ICON_PALETTE,
-        MESH_ICON_PALETTE_0,
         MESH_ICON_PUBLISH,
         MESH_ICON_ROOT_MOTION,
         MESH_ICON_TILING,
         MESH_ICON_VERTEX_MODE,
+        MESH_ICON_WEIGHT_MODE,
         nullptr
     };
 
@@ -315,6 +320,7 @@ void UnloadAssets()
     Free(MESH_ASSET_ICON_SHADER);
     Free(MESH_ASSET_ICON_SOUND);
     Free(MESH_ASSET_ICON_VFX);
+    Free(MESH_ICON_CLOSE);
     Free(MESH_ICON_DROPDOWN);
     Free(MESH_ICON_EDGE_MODE);
     Free(MESH_ICON_EXPAND_DOWN);
@@ -324,11 +330,11 @@ void UnloadAssets()
     Free(MESH_ICON_MIRROR);
     Free(MESH_ICON_ONION);
     Free(MESH_ICON_PALETTE);
-    Free(MESH_ICON_PALETTE_0);
     Free(MESH_ICON_PUBLISH);
     Free(MESH_ICON_ROOT_MOTION);
     Free(MESH_ICON_TILING);
     Free(MESH_ICON_VERTEX_MODE);
+    Free(MESH_ICON_WEIGHT_MODE);
 
     // @Texture
     Free(TEXTURE_EDITOR_PALETTE);
@@ -365,6 +371,7 @@ void BindLuaAssets(noz::lua::State* state) {
     SetGlobal(state, "MESH_ASSET_ICON_SHADER", MESH_ASSET_ICON_SHADER);
     SetGlobal(state, "MESH_ASSET_ICON_SOUND", MESH_ASSET_ICON_SOUND);
     SetGlobal(state, "MESH_ASSET_ICON_VFX", MESH_ASSET_ICON_VFX);
+    SetGlobal(state, "MESH_ICON_CLOSE", MESH_ICON_CLOSE);
     SetGlobal(state, "MESH_ICON_DROPDOWN", MESH_ICON_DROPDOWN);
     SetGlobal(state, "MESH_ICON_EDGE_MODE", MESH_ICON_EDGE_MODE);
     SetGlobal(state, "MESH_ICON_EXPAND_DOWN", MESH_ICON_EXPAND_DOWN);
@@ -374,11 +381,11 @@ void BindLuaAssets(noz::lua::State* state) {
     SetGlobal(state, "MESH_ICON_MIRROR", MESH_ICON_MIRROR);
     SetGlobal(state, "MESH_ICON_ONION", MESH_ICON_ONION);
     SetGlobal(state, "MESH_ICON_PALETTE", MESH_ICON_PALETTE);
-    SetGlobal(state, "MESH_ICON_PALETTE_0", MESH_ICON_PALETTE_0);
     SetGlobal(state, "MESH_ICON_PUBLISH", MESH_ICON_PUBLISH);
     SetGlobal(state, "MESH_ICON_ROOT_MOTION", MESH_ICON_ROOT_MOTION);
     SetGlobal(state, "MESH_ICON_TILING", MESH_ICON_TILING);
     SetGlobal(state, "MESH_ICON_VERTEX_MODE", MESH_ICON_VERTEX_MODE);
+    SetGlobal(state, "MESH_ICON_WEIGHT_MODE", MESH_ICON_WEIGHT_MODE);
 
     // Texture
     SetGlobal(state, "TEXTURE_EDITOR_PALETTE", TEXTURE_EDITOR_PALETTE);
@@ -417,6 +424,7 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_SHADER, MESH_ASSET_ICON_SHADER);
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_SOUND, MESH_ASSET_ICON_SOUND);
     NOZ_RELOAD_MESH(PATH_MESH_ASSET_ICON_VFX, MESH_ASSET_ICON_VFX);
+    NOZ_RELOAD_MESH(PATH_MESH_ICON_CLOSE, MESH_ICON_CLOSE);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_DROPDOWN, MESH_ICON_DROPDOWN);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_EDGE_MODE, MESH_ICON_EDGE_MODE);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_EXPAND_DOWN, MESH_ICON_EXPAND_DOWN);
@@ -426,11 +434,11 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     NOZ_RELOAD_MESH(PATH_MESH_ICON_MIRROR, MESH_ICON_MIRROR);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_ONION, MESH_ICON_ONION);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_PALETTE, MESH_ICON_PALETTE);
-    NOZ_RELOAD_MESH(PATH_MESH_ICON_PALETTE_0, MESH_ICON_PALETTE_0);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_PUBLISH, MESH_ICON_PUBLISH);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_ROOT_MOTION, MESH_ICON_ROOT_MOTION);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_TILING, MESH_ICON_TILING);
     NOZ_RELOAD_MESH(PATH_MESH_ICON_VERTEX_MODE, MESH_ICON_VERTEX_MODE);
+    NOZ_RELOAD_MESH(PATH_MESH_ICON_WEIGHT_MODE, MESH_ICON_WEIGHT_MODE);
 
     // @Texture
     NOZ_RELOAD_TEXTURE(PATH_TEXTURE_EDITOR_PALETTE, TEXTURE_EDITOR_PALETTE);

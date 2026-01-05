@@ -9,6 +9,7 @@ void UpdateInputState(InputSet* input_set);
 void ResetInputState(InputSet* input_set);
 extern void SetActive(InputSet* input_set, bool active);
 extern void Copy(InputSet* dst, InputSet* src);
+extern void InitStrings();
 
 struct Input {
     LinkedList active_sets;
@@ -92,6 +93,7 @@ void InitInput() {
     assert(INPUT_CODE_COUNT < 256);
     PlatformInitInput();
     InputActiveInputSetList(g_input.active_sets);
+    InitStrings();
 }
 
 void ShutdownInput() {

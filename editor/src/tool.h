@@ -86,3 +86,9 @@ extern void BeginVertexWeightTool(const VertexWeightToolOptions& options);
 
 // @curve
 extern void BeginCurveTool(MeshData* mesh, int* edge_indices, int edge_count);
+
+// @pen
+extern void BeginPenTool(MeshData* mesh);
+
+// @auto_curve
+extern void BeginAutoCurveTool(MeshData* mesh);

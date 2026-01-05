@@ -30,6 +30,10 @@ struct Style {
     Color button_checked_text_color;
     Color button_disabled_color;
     Color button_disabled_text_color;
+
+    // @context_menu
+    Color context_menu_title_color;
+    Color context_menu_separator_color;
 };
 
 extern Style* g_style;
@@ -61,7 +65,6 @@ constexpr Color STYLE_SKELETON_BONE_COLOR = COLOR_BLACK;
 constexpr float STYLE_SKELETON_PARENT_DASH = 0.1f;
 
 
-
 inline Color STYLE_BACKGROUND_COLOR() { return GetStyle().background_color; }
 inline Color STYLE_SELECTION_COLOR() { return GetStyle().selection_color; }
 
@@ -71,6 +74,8 @@ inline Color STYLE_BUTTON_CHECKED_COLOR() { return GetStyle().button_checked_col
 inline Color STYLE_BUTTON_CHECKED_TEXT_COLOR() { return GetStyle().button_checked_text_color; }
 inline Color STYLE_BUTTON_DISABLED_COLOR() { return GetStyle().button_disabled_color; }
 inline Color STYLE_BUTTON_DISABLED_TEXT_COLOR() { return GetStyle().button_disabled_text_color; }
+constexpr float STYLE_BUTTON_HEIGHT = 32.0f;
+constexpr float STYLE_BUTTON_BORDER_RADIUS = 8.0f;
 
 inline Color STYLE_WORKSPACE_COLOR() { return GetStyle().workspace_color; }
 constexpr float STYLE_WORKSPACE_PADDING = 16.0f;
@@ -88,11 +93,16 @@ constexpr float STYLE_OVERLAY_PADDING = 12.0f;
 constexpr float STYLE_OVERLAY_BORDER_RADIUS = 16.0f;
 
 
-constexpr float STYLE_TOGGLE_BUTTON_HEIGHT = 32.0f;
+constexpr float STYLE_TOGGLE_BUTTON_HEIGHT = STYLE_BUTTON_HEIGHT;
 constexpr float STYLE_TOGGLE_BUTTON_PADDING = 6.0f;
 constexpr float STYLE_TOGGLE_BUTTON_BORDER_RADIUS = 8.0f;
 
 
-constexpr Color STYLE_COLOR_BLACK_2PCT = {0,0,0,0.02f};
-constexpr Color STYLE_COLOR_BLACK_5PCT = {0,0,0,0.05f};
-constexpr Color STYLE_COLOR_BLACK_10PCT = {0,0,0,0.1f};
+// @context_menu
+constexpr int STYLE_CONTEXT_MENU_MIN_WIDTH = 100;
+constexpr int STYLE_CONTEXT_MENU_TEXT_SIZE = 12;
+constexpr float STYLE_CONTEXT_MENU_SEPARATOR_HEIGHT = 2.0f;
+constexpr float STYLE_CONTEXT_MENU_SEPARATOR_SPACING = 12.0f;
+constexpr float STYLE_CONTEXT_MENU_ITEM_HEIGHT = 20.0f;
+inline Color STYLE_CONTEXT_MENU_SEPARATOR_COLOR() { return GetStyle().context_menu_separator_color; }
+inline Color STYLE_CONTEXT_MENU_TITLE_COLOR() { return GetStyle().context_menu_title_color; }

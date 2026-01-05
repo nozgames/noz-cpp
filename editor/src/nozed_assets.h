@@ -16,6 +16,7 @@ extern Mesh* MESH_ASSET_ICON_LUA;
 extern Mesh* MESH_ASSET_ICON_SHADER;
 extern Mesh* MESH_ASSET_ICON_SOUND;
 extern Mesh* MESH_ASSET_ICON_VFX;
+extern Mesh* MESH_ICON_CLOSE;
 extern Mesh* MESH_ICON_DROPDOWN;
 extern Mesh* MESH_ICON_EDGE_MODE;
 extern Mesh* MESH_ICON_EXPAND_DOWN;
@@ -25,11 +26,11 @@ extern Mesh* MESH_ICON_LOOP;
 extern Mesh* MESH_ICON_MIRROR;
 extern Mesh* MESH_ICON_ONION;
 extern Mesh* MESH_ICON_PALETTE;
-extern Mesh* MESH_ICON_PALETTE_0;
 extern Mesh* MESH_ICON_PUBLISH;
 extern Mesh* MESH_ICON_ROOT_MOTION;
 extern Mesh* MESH_ICON_TILING;
 extern Mesh* MESH_ICON_VERTEX_MODE;
+extern Mesh* MESH_ICON_WEIGHT_MODE;
 
 // @Texture
 extern Texture* TEXTURE_EDITOR_PALETTE;

@@ -160,19 +160,6 @@ extern bool EditorToggleButton(ElementId id, Mesh* icon, bool state, bool disabl
 extern void BeginOverlay(ElementId id=ELEMENT_ID_NONE, Align align=ALIGN_TOP_LEFT);
 extern void EndOverlay();
 
-// @shortcut
-struct Shortcut
-{
-    InputCode button;
-    bool alt;
-    bool ctrl;
-    bool shift;
-    void (*action)();
-};
-
-extern void EnableShortcuts(const Shortcut* shortcuts, InputSet* input_set=nullptr);
-extern void CheckShortcuts(const Shortcut* shortcuts, InputSet* input_set=nullptr);
-
 constexpr Color COLOR_VERTEX_SELECTED = Color32ToColor(255, 121, 0, 255);
 constexpr Color COLOR_VERTEX = COLOR_BLACK;
 constexpr Color COLOR_EDGE = COLOR_BLACK;
@@ -196,6 +183,7 @@ constexpr int CANVAS_ID_COMMAND = 1;
 constexpr int CANVAS_ID_CONFIRM = 2;
 constexpr int CANVAS_ID_OVERLAY = 3;
 constexpr int CANVAS_ID_HELP = 4;
+constexpr int CANVAS_ID_CONTEXT_MENU = 4;
 
 constexpr int CANVAS_ID_ANIMATION_EDITOR = 5;
 

@@ -38,3 +38,19 @@ void BeginOverlay(ElementId id, Align align) {
 void EndOverlay() {
     EndContainer();
 }
+
+bool EditorCloseButton(ElementId id) {
+    bool pressed = false;
+    BeginContainer({
+        .width=STYLE_BUTTON_HEIGHT,
+        .height=STYLE_BUTTON_HEIGHT,
+        .align=ALIGN_TOP_RIGHT,
+        .padding=EdgeInsetsAll(STYLE_BUTTON_PADDING),
+        .id=id
+    });
+    Image(MESH_ICON_CLOSE);
+    pressed = WasPressed();
+    EndContainer();
+
+    return pressed;
+}

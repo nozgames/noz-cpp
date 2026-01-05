@@ -168,12 +168,42 @@ extern const std::filesystem::path& GetManifestLuaPath();
 extern Vec2 SnapToGrid(const Vec2& position);
 extern float SnapAngle(float angle);
 
+// @shortcut
+struct Shortcut {
+    InputCode button;
+    bool alt;
+    bool ctrl;
+    bool shift;
+    void (*action)();
+    const char* description;
+};
+
+extern void EnableShortcuts(const Shortcut* shortcuts, InputSet* input_set=nullptr);
+extern void CheckShortcuts(const Shortcut* shortcuts, InputSet* input_set=nullptr);
+
 // @ui
 extern Color GetButtonHoverColor(ElementFlags state, float time, void* user_data);
 extern void UpdateConfirmDialog();
 extern void ShowConfirmDialog(const char* message, const std::function<void()>& callback);
 extern bool UpdateHelp();
 extern void ToggleHelp();
+extern void HelpGroup(const char* title, const Shortcut* shortcuts);
+extern bool EditorCloseButton(ElementId id);
+extern bool UpdateContextMenu();
+
+// @context_menu
+struct ContextMenuItem {
+    const char* label;
+    void (*action)();
+    bool enabled;
+};
+
+struct ContextMenuConfig {
+    const char* title;
+    const ContextMenuItem* items;
+};
+
+extern void OpenContextMenuAtMouse(const ContextMenuConfig& config);
 
 // @editor
 inline AssetData* GetAssetData() { return g_editor.editing_asset; }

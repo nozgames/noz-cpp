@@ -190,6 +190,14 @@ static UI g_ui;
 
 static int LayoutElement(int element_index, const Vec2& size);
 
+CanvasId GetFocusedCanvasId() {
+    return g_ui.current_focus_canvas_id;
+}
+
+extern ElementId GetFocusedElementId() {
+    return g_ui.focus_id;
+}
+
 static void SetId(Element* e, ElementId id) {
     if (id == ELEMENT_ID_NONE)
         return;
@@ -827,6 +835,10 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
                 container->style.padding.top +
                 container->style.padding.bottom +
                 container->style.border.width * 2.0f);
+
+        // Apply min size constraints
+        e->measured_size.x = Max(e->measured_size.x, container->style.min_width);
+        e->measured_size.y = Max(e->measured_size.y, container->style.min_height);
 
     // @measure_label
     } else if (e->type == ELEMENT_TYPE_LABEL) {

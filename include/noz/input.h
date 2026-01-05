@@ -21,6 +21,9 @@ extern bool IsGamepadActive();
 extern bool IsMouseOverWindow();
 inline bool IsActive(InputSet* input_set) { return GetInputSet() == input_set; }
 
+extern const char* g_input_code_strings[INPUT_CODE_COUNT];
+inline const char* ToString(InputCode code) { return g_input_code_strings[code]; }
+
 // @InputSet
 extern InputSet* CreateInputSet(Allocator* allocator, const Name* name=nullptr);
 extern bool IsButtonDown(InputSet* map, InputCode code);
@@ -33,6 +36,7 @@ inline bool IsCtrlDown() { return IsButtonDown(KEY_LEFT_CTRL) || IsButtonDown(KE
 extern bool WasButtonPressed(InputSet* map, InputCode code);
 inline bool WasButtonPressed(InputCode code) { return WasButtonPressed(GetInputSet(), code); }
 extern bool WasButtonReleased(InputSet* map, InputCode code);
+inline bool WasButtonReleased(InputCode code) { return WasButtonReleased(GetInputSet(), code); }
 extern void EnableButton(InputSet* map, InputCode code);
 extern void EnableCharacters(InputSet* input_set);
 extern void EnableModifiers(InputSet* input_set);

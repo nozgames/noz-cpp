@@ -154,3 +154,13 @@ constexpr Color COLOR_BLUE = {0.0f, 0.0f, 1.0f, 1.0f};
 constexpr Color COLOR_TRANSPARENT = {0.0f, 0.0f, 0.0f, 0.0f};
 
 constexpr Color32 COLOR32_TRANSPARENT = {0,0,0,0};
+
+
+constexpr Color COLOR_BLACK_2PCT = {0,0,0,0.02f};
+constexpr Color COLOR_BLACK_5PCT = {0,0,0,0.05f};
+constexpr Color COLOR_BLACK_10PCT = {0,0,0,0.1f};
+
+constexpr Color COLOR_WHITE_1PCT = {1,1,1,0.01f};
+constexpr Color COLOR_WHITE_2PCT = {1,1,1,0.02f};
+constexpr Color COLOR_WHITE_5PCT = {1,1,1,0.05f};
+constexpr Color COLOR_WHITE_10PCT = {1,1,1,0.1f};

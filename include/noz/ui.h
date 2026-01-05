@@ -154,7 +154,9 @@ struct CanvasStyle {
 
 struct ContainerStyle {
     float width = F32_AUTO;
+    float min_width = 0.0f;
     float height = F32_AUTO;
+    float min_height = 0.0f;
     Align align = ALIGN_NONE;
     EdgeInsets margin;
     EdgeInsets padding;
@@ -230,6 +232,8 @@ inline bool WasPressed() { return CheckElementFlags(ELEMENT_FLAG_PRESSED); }
 inline bool IsDown() { return CheckElementFlags(ELEMENT_FLAG_DOWN); }
 extern bool HasFocus();
 extern void SetFocus(CanvasId canvas_id, ElementId element_id);
+extern CanvasId GetFocusedCanvasId();
+extern ElementId GetFocusedElementId();
 
 // @textbox
 extern bool TextBox(Text& text, const TextBoxStyle& style = {});

@@ -65,14 +65,16 @@ void UpdateNotifications() {
         BeginContainer({
             .width=300,
             .height=40,
-            .padding=EdgeInsetsAll(NOTIFICATION_PADDING),
-            .color=STYLE_BACKGROUND_COLOR()});
+            .padding=EdgeInsetsAll(STYLE_OVERLAY_PADDING),
+            .color=STYLE_OVERLAY_BACKGROUND_COLOR(),
+            .border={.radius=STYLE_OVERLAY_BORDER_RADIUS}
+        });
         Label(n->text, {
             .font=FONT_SEGUISB,
             .font_size=STYLE_TEXT_FONT_SIZE,
             .color=n->type == NOTIFICATION_TYPE_ERROR
                 ? STYLE_ERROR_COLOR
-                : STYLE_TEXT_COLOR,
+                : STYLE_OVERLAY_ACCENT_TEXT_COLOR(),
             .align=ALIGN_CENTER_LEFT});
         EndContainer();
     }

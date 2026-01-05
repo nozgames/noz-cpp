@@ -27,4 +27,6 @@ void InitStyles() {
     g_style->overlay_accent_text_color = Color24ToColor(0xd2d2d2);
     g_style->overlay_icon_color = Color24ToColor(0x585858);
     g_style->overlay_content_color = Color24ToColor(0x2a2a2a);
+    g_style->context_menu_separator_color = Color24ToColor(0x2a2a2a);
+    g_style->context_menu_title_color = Color24ToColor(0x636363);
 }

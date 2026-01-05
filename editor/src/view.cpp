@@ -71,6 +71,9 @@ Vec2Int GetUIRefSize() {
 
 inline ViewState GetState() { return g_view.state; }
 static void CheckCommonShortcuts();
+static void BeginSetOriginTool();
+static void ToggleGrid();
+static void OpenAssetContextMenu();
 
 static void UpdateCamera() {
     float DPI = g_view.dpi * g_view.ui_scale * g_view.zoom;
@@ -149,6 +152,10 @@ static void UpdatePanState() {
     if (WasButtonPressed(GetInputSet(), MOUSE_RIGHT)) {
         g_view.pan_position = g_view.mouse_position;
         g_view.pan_position_camera = GetPosition(g_view.camera);
+    }
+
+    if (WasButtonReleased(MOUSE_RIGHT)) {
+        OpenAssetContextMenu();
     }
 
     if (IsButtonDown(GetInputSet(), MOUSE_RIGHT)) {
@@ -428,8 +435,10 @@ static void ViewOverlay() {
 }
 
 void UpdateViewUI() {
+    if (UpdateHelp())
+        return;
+
     UpdateConfirmDialog();
-    bool help_visible = UpdateHelp();
 
     if (GetState() == VIEW_STATE_EDIT) {
         assert(g_editor.editing_asset);
@@ -437,12 +446,12 @@ void UpdateViewUI() {
             g_editor.editing_asset->vtable.editor_update();
     }
 
-    if (!help_visible)
-        ViewOverlay();
-
+    ViewOverlay();
+    UpdateAssetNames();
     UpdateCommandInput();
     UpdateNotifications();
-    UpdateAssetNames();
+
+    UpdateContextMenu();
 }
 
 void UpdateView() {
@@ -716,7 +725,7 @@ static void ScaleCommand(const Command& command) {
         return;
     }
 
-    float scale = (float)atof(command.args[0]);
+    float scale = static_cast<float>(atof(command.args[0]));
     if (scale <= 0.0f) {
         AddNotification(NOTIFICATION_TYPE_ERROR, "scale must be positive");
         return;
@@ -859,31 +868,55 @@ static void PlayAsset() {
     }
 }
 
+static Shortcut g_workspace_shortcuts[] = {
+    { KEY_G, false, false, false, BeginMoveTool, "Move asset" },
+    { KEY_X, false, false, false, DeleteSelectedAssets, "Delete asset" },
+    { KEY_D, false, true, false, DuplicateAsset, "Duplicate asset" },
+    { KEY_F2, false, false, false, RenameAsset, "Rename asset" },
+    { KEY_O, false, false, true, BeginSetOriginTool },
+    { KEY_LEFT_BRACKET, false, false, false, SendBackward },
+    { KEY_RIGHT_BRACKET, false, false, false, BringForward },
+    { KEY_RIGHT_BRACKET, false, true, false, BringToFront },
+    { KEY_LEFT_BRACKET, false, true, false, SendToBack },
+    { KEY_SEMICOLON, false, false, true, BeginCommandInput },
+    { KEY_SPACE, false, false, false, PlayAsset },
+    { INPUT_CODE_NONE }
+};
+
 // @shortcut
-static Shortcut g_common_shortcuts[] = {
-    { KEY_S, false, true, false, SaveAssetData },
-    { KEY_F, false, false, false, FrameSelected },
-    { KEY_N, true, false, false, ToggleNames },
-    { KEY_W, true, false, false, ToggleModeWireframe },
-    { KEY_Z, false, true, false, HandleUndo },
-    { KEY_Y, false, true, false, HandleRedo },
-    { KEY_TAB, false, false, false, ToggleEdit },
-    { KEY_EQUALS, false, true, false, IncreaseUIScale },
-    { KEY_MINUS, false, true, false, DecreaseUIScale },
-    { KEY_0, false, true, false, ResetUIScale },
-    { KEY_F1, false, false, false, ToggleHelp },
+static Shortcut g_general_shortcuts[] = {
+    { KEY_F1, false, false, false, ToggleHelp, "Toggle this help screen" },
+    { KEY_S, false, true, false, SaveAssetData, "Save All" },
+    { KEY_Z, false, true, false, HandleUndo, "Undo" },
+    { KEY_Y, false, true, false, HandleRedo, "Redo" },
+    { KEY_TAB, false, false, false, ToggleEdit, "Enter/Exit edit mode" },
+    { KEY_F, false, false, false, FrameSelected, "Frame selected" },
+    { KEY_QUOTE, true, false, false, ToggleGrid, "Toggle grid" },
+    { KEY_N, true, false, false, ToggleNames, "Toggle names" },
+    { KEY_W, true, false, false, ToggleModeWireframe, "Toggle wireframe" },
+    { KEY_EQUALS, false, true, false, IncreaseUIScale, "Increase UI scale" },
+    { KEY_MINUS, false, true, false, DecreaseUIScale, "Decrease UI scale" },
+    { KEY_0, false, true, false, ResetUIScale, "Reset UI scale" },
     { INPUT_CODE_NONE }
 };
 
 
 void EnableCommonShortcuts(InputSet* input_set) {
-    EnableShortcuts(g_common_shortcuts, input_set);
+    EnableShortcuts(g_general_shortcuts, input_set);
     EnableModifiers(input_set);
     EnableButton(input_set, MOUSE_RIGHT);
 }
 
 void CheckCommonShortcuts() {
-    CheckShortcuts(g_common_shortcuts, GetInputSet());
+    CheckShortcuts(g_general_shortcuts, GetInputSet());
+}
+
+void GeneralHelp() {
+    HelpGroup("General", g_general_shortcuts);
+}
+
+void WorkspaceHelp() {
+    HelpGroup("Workspace", g_workspace_shortcuts);
 }
 
 static void DrawSetOriginTool(const Vec2& position) {
@@ -937,6 +970,21 @@ void BeginSetOriginTool() {
 
 static void ToggleGrid() {
     g_view.grid = !g_view.grid;
+}
+
+static void OpenAssetContextMenu() {
+    static ContextMenuItem items[] = {
+        { "Edit", ToggleEdit, true },
+        { "Duplicate", DuplicateAsset, true },
+        { "Rename", RenameAsset, true },
+        { "Delete", DeleteSelectedAssets, true },
+        { nullptr, nullptr, false }
+    };
+
+    OpenContextMenuAtMouse({
+        .title="Asset",
+        .items = items
+    });
 }
 
 void InitView() {
@@ -1040,24 +1088,8 @@ void InitView() {
     InitGrid();
     g_view.state = VIEW_STATE_DEFAULT;
 
-    static Shortcut shortcuts[] = {
-        { KEY_G, false, false, false, BeginMoveTool },
-        { KEY_X, false, false, false, DeleteSelectedAssets },
-        { KEY_D, false, true, false, DuplicateAsset },
-        { KEY_O, false, false, true, BeginSetOriginTool },
-        { KEY_LEFT_BRACKET, false, false, false, SendBackward },
-        { KEY_RIGHT_BRACKET, false, false, false, BringForward },
-        { KEY_RIGHT_BRACKET, false, true, false, BringToFront },
-        { KEY_LEFT_BRACKET, false, true, false, SendToBack },
-        { KEY_SEMICOLON, false, false, true, BeginCommandInput },
-        { KEY_F2, false, false, false, RenameAsset },
-        { KEY_SPACE, false, false, false, PlayAsset },
-        { KEY_QUOTE, true, false, false, ToggleGrid },
-        { INPUT_CODE_NONE }
-    };
-
-    g_view.shortcuts = shortcuts;
-    EnableShortcuts(shortcuts);
+    g_view.shortcuts = g_workspace_shortcuts;
+    EnableShortcuts(g_workspace_shortcuts);
 
     InitMeshEditor();
     InitTextureEditor();

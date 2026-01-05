@@ -171,7 +171,7 @@ void UpdateEdges(MeshData* m) {
     int saved_curve_count = 0;
     for (int i = 0; i < m->impl->edge_count; i++) {
         EdgeData& e = m->impl->edges[i];
-        if (LengthSqr(e.curve_offset) > 0.0001f) {
+        if (LengthSqr(e.curve_offset) > 0.0000001f) {
             saved_curves[saved_curve_count++] = { e.v0, e.v1, e.curve_offset };
         }
     }

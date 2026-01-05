@@ -46,6 +46,7 @@ set(SOURCE_FILES
     src/event.cpp
     src/input/input.cpp
     src/input/input_set.cpp
+    src/input/input_code.cpp
     src/log.cpp
     src/bin.cpp
     src/tween.cpp
