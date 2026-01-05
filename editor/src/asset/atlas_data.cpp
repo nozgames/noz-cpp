@@ -4,6 +4,7 @@
 
 #include <plutovg.h>
 #include "utils/rect_packer.h"
+#include "animated_mesh_data.h"
 
 using namespace noz;
 
@@ -39,24 +40,6 @@ static void DrawAtlasData(AssetData* a) {
         BindMaterial(g_view.editor_material);
         BindColor(Color{0.2f, 0.2f, 0.2f, 1.0f});
         DrawMesh(g_view.quad_mesh, Translate(a->position) * Scale(size));
-    }
-
-    // Draw rect outlines for each attached mesh
-    BindDepth(0.1f);
-    BindMaterial(g_view.editor_material);
-    for (int i = 0; i < impl->rect_count; i++) {
-        if (!impl->rects[i].valid) continue;
-
-        Vec2 rect_pos = Vec2{(float)impl->rects[i].x, (float)impl->rects[i].y} * scale;
-        Vec2 rect_size = Vec2{(float)impl->rects[i].width, (float)impl->rects[i].height} * scale;
-
-        // Position relative to atlas origin (top-left)
-        Vec2 center = a->position - size * 0.5f + rect_pos + rect_size * 0.5f;
-        // Flip Y
-        center.y = a->position.y + size.y * 0.5f - rect_pos.y - rect_size.y * 0.5f;
-
-        BindColor(Color{0.4f, 0.8f, 0.4f, 0.3f});
-        DrawMesh(g_view.quad_mesh, Translate(center) * Scale(rect_size));
     }
 }
 
@@ -182,6 +165,53 @@ AtlasRect* AllocateRect(AtlasData* atlas, MeshData* mesh) {
     rect.height = bin_rect.h;
     rect.mesh_name = mesh->name;
     rect.valid = true;
+    rect.frame_count = 1;
+
+    impl->dirty = true;
+    return &rect;
+}
+
+AtlasRect* AllocateRect(AtlasData* atlas, AnimatedMeshData* amesh) {
+    AtlasDataImpl* impl = atlas->impl;
+    AnimatedMeshDataImpl* amesh_impl = amesh->impl;
+
+    if (amesh_impl->frame_count == 0) return nullptr;
+
+    // Calculate max bounds across all frames
+    Bounds2 max_bounds = amesh_impl->frames[0].bounds;
+    for (int i = 1; i < amesh_impl->frame_count; i++) {
+        max_bounds = Union(max_bounds, amesh_impl->frames[i].bounds);
+    }
+
+    Vec2 frame_size = GetSize(max_bounds);
+    int frame_width = (int)(frame_size.x * impl->dpi) + 2;   // +2 for padding
+    int frame_height = (int)(frame_size.y * impl->dpi) + 2;
+
+    // Total strip size: frames laid out horizontally
+    int total_width = frame_width * amesh_impl->frame_count;
+    int total_height = frame_height;
+
+    if (total_width > impl->width || total_height > impl->height) {
+        return nullptr;  // Too large for atlas
+    }
+
+    int slot = FindFreeRectSlot(impl);
+    if (slot < 0) return nullptr;
+
+    RectPacker::Rect bin_rect;
+    int result = impl->packer->Insert(total_width, total_height, RectPacker::method::BottomLeftRule, bin_rect);
+    if (result < 0) {
+        return nullptr;
+    }
+
+    AtlasRect& rect = impl->rects[slot];
+    rect.x = bin_rect.x;
+    rect.y = bin_rect.y;
+    rect.width = bin_rect.w;
+    rect.height = bin_rect.h;
+    rect.mesh_name = amesh->name;
+    rect.valid = true;
+    rect.frame_count = amesh_impl->frame_count;
 
     impl->dirty = true;
     return &rect;
@@ -191,14 +221,25 @@ void FreeRect(AtlasData* atlas, AtlasRect* rect) {
     if (rect) {
         // Clear the mesh's atlas reference
         if (rect->mesh_name) {
-            AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, rect->mesh_name);
-            if (mesh_asset) {
-                MeshData* mesh = static_cast<MeshData*>(mesh_asset);
-                mesh->impl->atlas_name = nullptr;
+            if (rect->frame_count > 1) {
+                // Animated mesh
+                AssetData* amesh_asset = GetAssetData(ASSET_TYPE_ANIMATED_MESH, rect->mesh_name);
+                if (amesh_asset) {
+                    AnimatedMeshData* amesh = static_cast<AnimatedMeshData*>(amesh_asset);
+                    amesh->impl->atlas_name = nullptr;
+                }
+            } else {
+                // Static mesh
+                AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, rect->mesh_name);
+                if (mesh_asset) {
+                    MeshData* mesh = static_cast<MeshData*>(mesh_asset);
+                    mesh->impl->atlas_name = nullptr;
+                }
             }
         }
         rect->valid = false;
         rect->mesh_name = nullptr;
+        rect->frame_count = 1;
         atlas->impl->dirty = true;
     }
 }
@@ -208,14 +249,25 @@ void ClearAllRects(AtlasData* atlas) {
     for (int i = 0; i < impl->rect_count; i++) {
         // Clear the mesh's atlas reference
         if (impl->rects[i].valid && impl->rects[i].mesh_name) {
-            AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, impl->rects[i].mesh_name);
-            if (mesh_asset) {
-                MeshData* mesh = static_cast<MeshData*>(mesh_asset);
-                mesh->impl->atlas_name = nullptr;
+            if (impl->rects[i].frame_count > 1) {
+                // Animated mesh
+                AssetData* amesh_asset = GetAssetData(ASSET_TYPE_ANIMATED_MESH, impl->rects[i].mesh_name);
+                if (amesh_asset) {
+                    AnimatedMeshData* amesh = static_cast<AnimatedMeshData*>(amesh_asset);
+                    amesh->impl->atlas_name = nullptr;
+                }
+            } else {
+                // Static mesh
+                AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, impl->rects[i].mesh_name);
+                if (mesh_asset) {
+                    MeshData* mesh = static_cast<MeshData*>(mesh_asset);
+                    mesh->impl->atlas_name = nullptr;
+                }
             }
         }
         impl->rects[i].valid = false;
         impl->rects[i].mesh_name = nullptr;
+        impl->rects[i].frame_count = 1;
     }
     impl->rect_count = 0;
     impl->dirty = true;
@@ -364,6 +416,81 @@ void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, const AtlasRect& rect) 
     impl->dirty = true;
 }
 
+void RenderAnimatedMeshToAtlas(AtlasData* atlas, AnimatedMeshData* amesh, const AtlasRect& rect) {
+    AtlasDataImpl* impl = atlas->impl;
+    AnimatedMeshDataImpl* amesh_impl = amesh->impl;
+
+    if (amesh_impl->frame_count == 0) return;
+
+    EnsurePixelBuffer(atlas);
+
+    // Calculate max bounds across all frames (same as in AllocateRect)
+    Bounds2 max_bounds = amesh_impl->frames[0].bounds;
+    for (int i = 1; i < amesh_impl->frame_count; i++) {
+        max_bounds = Union(max_bounds, amesh_impl->frames[i].bounds);
+    }
+
+    float scale = (float)impl->dpi;
+    int frame_width = rect.width / rect.frame_count;
+
+    // Render each frame at its position in the strip
+    for (int frame_idx = 0; frame_idx < amesh_impl->frame_count; frame_idx++) {
+        MeshData* frame_mesh = &amesh_impl->frames[frame_idx];
+        MeshDataImpl* mesh_impl = frame_mesh->impl;
+
+        int frame_x = rect.x + frame_idx * frame_width;
+
+        plutovg_surface_t* surface = plutovg_surface_create_for_data(
+            impl->pixels, impl->width, impl->height, impl->width * 4
+        );
+        plutovg_canvas_t* canvas = plutovg_canvas_create(surface);
+
+        // Clip to this frame's region
+        plutovg_canvas_clip_rect(canvas, (float)frame_x, (float)rect.y, (float)frame_width, (float)rect.height);
+
+        // Use max_bounds for consistent positioning across all frames
+        float offset_x = frame_x + 1 - max_bounds.min.x * scale;
+        float offset_y = rect.y + 1 - max_bounds.min.y * scale;
+
+        int palette_index = g_editor.palette_map[mesh_impl->palette];
+        constexpr float EXPAND = 0.5f;
+
+        // Render each color group
+        bool rendered[MAX_FACES] = {};
+        for (int fi = 0; fi < mesh_impl->face_count; fi++) {
+            if (rendered[fi]) continue;
+
+            FaceData& face = mesh_impl->faces[fi];
+            if (face.vertex_count < 3) continue;
+
+            int color_index = face.color;
+            Color color = g_editor.palettes[palette_index].colors[color_index];
+
+            plutovg_canvas_new_path(canvas);
+            AddFaceToPath(canvas, frame_mesh, face, offset_x, offset_y, scale, EXPAND);
+            rendered[fi] = true;
+
+            for (int fj = fi + 1; fj < mesh_impl->face_count; fj++) {
+                if (rendered[fj]) continue;
+                FaceData& other_face = mesh_impl->faces[fj];
+                if (other_face.vertex_count < 3) continue;
+                if (other_face.color != color_index) continue;
+
+                AddFaceToPath(canvas, frame_mesh, other_face, offset_x, offset_y, scale, EXPAND);
+                rendered[fj] = true;
+            }
+
+            plutovg_canvas_set_rgba(canvas, color.r, color.g, color.b, color.a);
+            plutovg_canvas_fill(canvas);
+        }
+
+        plutovg_canvas_destroy(canvas);
+        plutovg_surface_destroy(surface);
+    }
+
+    impl->dirty = true;
+}
+
 void SyncAtlasTexture(AtlasData* atlas) {
     AtlasDataImpl* impl = atlas->impl;
     if (!impl->pixels || !impl->dirty) return;
@@ -399,11 +526,20 @@ void RegenerateAtlas(AtlasData* atlas) {
     for (int i = 0; i < impl->rect_count; i++) {
         if (!impl->rects[i].valid) continue;
 
-        // Load the mesh
-        AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, impl->rects[i].mesh_name);
-        if (mesh_asset) {
-            MeshData* mesh = static_cast<MeshData*>(mesh_asset);
-            RenderMeshToAtlas(atlas, mesh, impl->rects[i]);
+        if (impl->rects[i].frame_count > 1) {
+            // Animated mesh
+            AssetData* amesh_asset = GetAssetData(ASSET_TYPE_ANIMATED_MESH, impl->rects[i].mesh_name);
+            if (amesh_asset) {
+                AnimatedMeshData* amesh = static_cast<AnimatedMeshData*>(amesh_asset);
+                RenderAnimatedMeshToAtlas(atlas, amesh, impl->rects[i]);
+            }
+        } else {
+            // Static mesh
+            AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, impl->rects[i].mesh_name);
+            if (mesh_asset) {
+                MeshData* mesh = static_cast<MeshData*>(mesh_asset);
+                RenderMeshToAtlas(atlas, mesh, impl->rects[i]);
+            }
         }
     }
 
@@ -413,16 +549,22 @@ void RegenerateAtlas(AtlasData* atlas) {
 void RebuildAtlas(AtlasData* atlas) {
     AtlasDataImpl* impl = atlas->impl;
 
-    // Collect mesh names before clearing
-    const Name* mesh_names[ATLAS_MAX_RECTS];
-    int mesh_count = 0;
+    // Collect mesh names and frame counts before clearing
+    struct RectInfo {
+        const Name* name;
+        int frame_count;
+    };
+    RectInfo rect_infos[ATLAS_MAX_RECTS];
+    int rect_info_count = 0;
     for (int i = 0; i < impl->rect_count; i++) {
         if (impl->rects[i].valid && impl->rects[i].mesh_name) {
-            mesh_names[mesh_count++] = impl->rects[i].mesh_name;
+            rect_infos[rect_info_count].name = impl->rects[i].mesh_name;
+            rect_infos[rect_info_count].frame_count = impl->rects[i].frame_count;
+            rect_info_count++;
         }
     }
 
-    int original_count = mesh_count;
+    int original_count = rect_info_count;
 
     // Clear all rects (resets packer)
     ClearAllRects(atlas);
@@ -434,26 +576,42 @@ void RebuildAtlas(AtlasData* atlas) {
 
     // Re-allocate and render each mesh
     int success_count = 0;
-    for (int i = 0; i < mesh_count; i++) {
-        AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, mesh_names[i]);
-        if (!mesh_asset) {
-            LogError("RebuildAtlas: mesh '%s' not found", mesh_names[i]->value);
-            continue;
-        }
+    for (int i = 0; i < rect_info_count; i++) {
+        if (rect_infos[i].frame_count > 1) {
+            // Animated mesh
+            AssetData* amesh_asset = GetAssetData(ASSET_TYPE_ANIMATED_MESH, rect_infos[i].name);
+            if (!amesh_asset) {
+                LogError("RebuildAtlas: animated mesh '%s' not found", rect_infos[i].name->value);
+                continue;
+            }
 
-        MeshData* mesh = static_cast<MeshData*>(mesh_asset);
-
-        // Allocate fresh rect
-        AtlasRect* rect = AllocateRect(atlas, mesh);
-        if (rect) {
-            RenderMeshToAtlas(atlas, mesh, *rect);
-            success_count++;
+            AnimatedMeshData* amesh = static_cast<AnimatedMeshData*>(amesh_asset);
+            AtlasRect* rect = AllocateRect(atlas, amesh);
+            if (rect) {
+                RenderAnimatedMeshToAtlas(atlas, amesh, *rect);
+                success_count++;
+            } else {
+                LogError("RebuildAtlas: failed to allocate rect for '%s'", rect_infos[i].name->value);
+            }
+            MarkModified(amesh_asset);
         } else {
-            LogError("RebuildAtlas: failed to allocate rect for '%s'", mesh_names[i]->value);
-        }
+            // Static mesh
+            AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, rect_infos[i].name);
+            if (!mesh_asset) {
+                LogError("RebuildAtlas: mesh '%s' not found", rect_infos[i].name->value);
+                continue;
+            }
 
-        // Mark mesh as modified
-        MarkModified(mesh_asset);
+            MeshData* mesh = static_cast<MeshData*>(mesh_asset);
+            AtlasRect* rect = AllocateRect(atlas, mesh);
+            if (rect) {
+                RenderMeshToAtlas(atlas, mesh, *rect);
+                success_count++;
+            } else {
+                LogError("RebuildAtlas: failed to allocate rect for '%s'", rect_infos[i].name->value);
+            }
+            MarkModified(mesh_asset);
+        }
     }
 
     if (success_count < original_count) {
@@ -509,13 +667,21 @@ static void SaveAtlasData(AssetData* a, const std::filesystem::path& path) {
     WriteCSTR(stream, "d %d\n", impl->dpi);
     WriteCSTR(stream, "\n");
 
-    // Save rects: r "mesh_name" x y w h
+    // Save rects: r "mesh_name" x y w h [frame_count]
     for (int i = 0; i < impl->rect_count; i++) {
         if (impl->rects[i].valid && impl->rects[i].mesh_name) {
             const AtlasRect& r = impl->rects[i];
-            WriteCSTR(stream, "r \"%s\" %d %d %d %d\n",
-                r.mesh_name->value,
-                r.x, r.y, r.width, r.height);
+            if (r.frame_count > 1) {
+                // Animated mesh with multiple frames
+                WriteCSTR(stream, "r \"%s\" %d %d %d %d %d\n",
+                    r.mesh_name->value,
+                    r.x, r.y, r.width, r.height, r.frame_count);
+            } else {
+                // Static mesh (default frame_count = 1)
+                WriteCSTR(stream, "r \"%s\" %d %d %d %d\n",
+                    r.mesh_name->value,
+                    r.x, r.y, r.width, r.height);
+            }
         }
     }
 
@@ -537,6 +703,10 @@ static void ParseRect(AtlasData* atlas, Tokenizer& tk) {
     if (!ExpectInt(tk, &w)) ThrowError("missing rect width");
     if (!ExpectInt(tk, &h)) ThrowError("missing rect height");
 
+    // Optional frame_count for animated meshes (default = 1)
+    int frame_count = 1;
+    ExpectInt(tk, &frame_count);
+
     int slot = FindFreeRectSlot(impl);
     if (slot >= 0) {
         AtlasRect& rect = impl->rects[slot];
@@ -545,6 +715,7 @@ static void ParseRect(AtlasData* atlas, Tokenizer& tk) {
         rect.y = y;
         rect.width = w;
         rect.height = h;
+        rect.frame_count = frame_count;
         rect.valid = true;
 
         // Mark this space as used in the packer
@@ -602,11 +773,22 @@ static void PostLoadAtlasData(AssetData* a) {
     // Bind meshes to this atlas and render them
     for (int i = 0; i < impl->rect_count; i++) {
         if (impl->rects[i].valid && impl->rects[i].mesh_name) {
-            AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, impl->rects[i].mesh_name);
-            if (mesh_asset) {
-                MeshData* mesh = static_cast<MeshData*>(mesh_asset);
-                mesh->impl->atlas_name = atlas->name;  // Atlas owns this relationship
-                RenderMeshToAtlas(atlas, mesh, impl->rects[i]);
+            if (impl->rects[i].frame_count > 1) {
+                // Animated mesh
+                AssetData* amesh_asset = GetAssetData(ASSET_TYPE_ANIMATED_MESH, impl->rects[i].mesh_name);
+                if (amesh_asset) {
+                    AnimatedMeshData* amesh = static_cast<AnimatedMeshData*>(amesh_asset);
+                    amesh->impl->atlas_name = atlas->name;  // Atlas owns this relationship
+                    RenderAnimatedMeshToAtlas(atlas, amesh, impl->rects[i]);
+                }
+            } else {
+                // Static mesh
+                AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, impl->rects[i].mesh_name);
+                if (mesh_asset) {
+                    MeshData* mesh = static_cast<MeshData*>(mesh_asset);
+                    mesh->impl->atlas_name = atlas->name;  // Atlas owns this relationship
+                    RenderMeshToAtlas(atlas, mesh, impl->rects[i]);
+                }
             }
         }
     }

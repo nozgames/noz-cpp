@@ -29,6 +29,10 @@ struct AnimatedMeshEditor {
 
 static AnimatedMeshEditor g_animated_mesh_editor = {};
 
+AnimatedMeshData* GetActiveAnimatedMesh() {
+    return g_animated_mesh_editor.data;
+}
+
 inline AnimatedMeshData* GetAnimatedMeshData() {
     AssetData* a = g_animated_mesh_editor.data;
     assert(a->type == ASSET_TYPE_ANIMATED_MESH);

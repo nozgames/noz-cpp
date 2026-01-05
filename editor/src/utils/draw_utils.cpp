@@ -72,16 +72,19 @@ void DrawOrigin(AssetData* a) {
     DrawVertex(a->position, ORIGIN_SIZE);
 }
 
-void DrawBounds(AssetData* a, float expand, const Color& color) {
+void DrawBounds(const Bounds2& bounds, const Vec2& position, const Color& color) {
     BindMaterial(g_view.vertex_material);
     BindColor(color);
-    Bounds2 b = Expand(GetBounds(a), expand);
-    Vec2 center = GetCenter(b) + a->position;
-    Vec2 size = GetSize(b);
+    Vec2 center = GetCenter(bounds) + position;
+    Vec2 size = GetSize(bounds);
     DrawLine ({center.x - size.x * 0.5f, center.y - size.y * 0.5f}, {center.x + size.x * 0.5f, center.y - size.y * 0.5f});
     DrawLine ({center.x + size.x * 0.5f, center.y - size.y * 0.5f}, {center.x + size.x * 0.5f, center.y + size.y * 0.5f});
     DrawLine ({center.x + size.x * 0.5f, center.y + size.y * 0.5f}, {center.x - size.x * 0.5f, center.y + size.y * 0.5f});
     DrawLine ({center.x - size.x * 0.5f, center.y + size.y * 0.5f}, {center.x - size.x * 0.5f, center.y - size.y * 0.5f});
+}
+
+void DrawBounds(AssetData* a, float expand, const Color& color) {
+    DrawBounds(Expand(GetBounds(a), expand), a->position, color);
 }
 
 void DrawBone(const Vec2& a, const Vec2& b) {

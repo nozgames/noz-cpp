@@ -11,9 +11,11 @@ constexpr int ATLAS_DEFAULT_DPI = 96;
 constexpr int ATLAS_DEFAULT_SIZE = 1024;
 
 struct AtlasRect {
-    int x, y, width, height;
-    const Name* mesh_name;   // Which mesh owns this rect
-    bool valid;              // Is this rect in use?
+    int x, y, width, height;         // Full rect (for animated: width = frame_width * frame_count)
+    const Name* mesh_name;           // Which mesh/animated mesh owns this rect
+    bool valid;                      // Is this rect in use?
+    int frame_count;                 // Number of frames (1 = static mesh, >1 = animated strip)
+    // For animated: frame_width = width / frame_count, frames are laid out left-to-right
 };
 
 struct AtlasDataImpl {
@@ -39,6 +41,7 @@ extern AssetData* NewAtlasData(const std::filesystem::path& path);
 
 // Rect management
 extern AtlasRect* AllocateRect(AtlasData* atlas, struct MeshData* mesh);
+extern AtlasRect* AllocateRect(AtlasData* atlas, struct AnimatedMeshData* amesh);  // Allocates all frames
 extern AtlasRect* FindRectForMesh(AtlasData* atlas, const Name* mesh_name);
 extern void FreeRect(AtlasData* atlas, AtlasRect* rect);
 extern void ClearAllRects(AtlasData* atlas);
@@ -48,6 +51,7 @@ extern AtlasData* FindAtlasForMesh(const Name* mesh_name, AtlasRect** out_rect =
 
 // Rendering
 extern void RenderMeshToAtlas(AtlasData* atlas, struct MeshData* mesh, const AtlasRect& rect);
+extern void RenderAnimatedMeshToAtlas(AtlasData* atlas, struct AnimatedMeshData* amesh, const AtlasRect& rect);
 extern void RegenerateAtlas(AtlasData* atlas);   // Re-render meshes to existing rects
 extern void RebuildAtlas(AtlasData* atlas);      // Clear and reallocate all rects, mark meshes modified
 extern void SyncAtlasTexture(AtlasData* atlas);  // Upload pixels to GPU (editor only)

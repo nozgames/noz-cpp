@@ -1794,6 +1794,8 @@ static void ToggleXRay() {
     g_mesh_editor.xray = !g_mesh_editor.xray;
 }
 
+extern AnimatedMeshData* GetActiveAnimatedMesh();
+
 static void CommitParentTool(const Vec2& position) {
     AssetData* hit_asset = HitTestAssets(position);
     if (!hit_asset)
@@ -1808,20 +1810,41 @@ static void CommitParentTool(const Vec2& position) {
         impl->skeleton_name = hit_asset->name;
         MarkModified(m);
     } else if (hit_asset->type == ASSET_TYPE_ATLAS) {
-        RecordUndo(m);
-        impl->atlas_name = hit_asset->name;
-        MarkModified(m);
-
-        // Add mesh to atlas and render it
         AtlasData* atlas = static_cast<AtlasData*>(hit_asset);
-        AtlasRect* rect = FindRectForMesh(atlas, m->name);
-        if (!rect) {
-            rect = AllocateRect(atlas, m);
-        }
-        if (rect) {
-            RenderMeshToAtlas(atlas, m, *rect);
-            MarkModified(atlas);
-            AddNotification(NOTIFICATION_TYPE_INFO, "'%s' added to '%s'", m->name->value, atlas->name->value);
+
+        // Check if we're editing an animated mesh - if so, parent the whole animated mesh
+        AnimatedMeshData* amesh = GetActiveAnimatedMesh();
+        if (amesh) {
+            RecordUndo(amesh);
+            amesh->impl->atlas_name = hit_asset->name;
+            MarkModified(amesh);
+
+            // Add animated mesh to atlas and render it
+            AtlasRect* rect = FindRectForMesh(atlas, amesh->name);
+            if (!rect) {
+                rect = AllocateRect(atlas, amesh);
+            }
+            if (rect) {
+                RenderAnimatedMeshToAtlas(atlas, amesh, *rect);
+                MarkModified(atlas);
+                AddNotification(NOTIFICATION_TYPE_INFO, "'%s' added to '%s'", amesh->name->value, atlas->name->value);
+            }
+        } else {
+            // Regular mesh parenting
+            RecordUndo(m);
+            impl->atlas_name = hit_asset->name;
+            MarkModified(m);
+
+            // Add mesh to atlas and render it
+            AtlasRect* rect = FindRectForMesh(atlas, m->name);
+            if (!rect) {
+                rect = AllocateRect(atlas, m);
+            }
+            if (rect) {
+                RenderMeshToAtlas(atlas, m, *rect);
+                MarkModified(atlas);
+                AddNotification(NOTIFICATION_TYPE_INFO, "'%s' added to '%s'", m->name->value, atlas->name->value);
+            }
         }
     }
 }

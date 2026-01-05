@@ -140,6 +140,7 @@ extern void DrawArrow(const Vec2& v, const Vec2& dir);
 extern void DrawArrow(const Vec2& v, const Vec2& dir, f32 size);
 extern void DrawOrigin(AssetData* a);
 extern void DrawBounds(AssetData* a, float expand=0, const Color& color=COLOR_BLACK);
+extern void DrawBounds(const Bounds2& bounds, const Vec2& position, const Color& color);
 extern void DrawBone(const Vec2& a, const Vec2& b);
 extern void DrawBone(const Mat3& transform, const Mat3& parent_transform, const Vec2& position, float length=BONE_DEFAULT_LENGTH);
 extern void DrawBone(const Mat3& transform, float length);

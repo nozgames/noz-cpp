@@ -60,12 +60,14 @@ static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* 
 }
 
 static bool AtlasDependsOn(AssetData* atlas_asset, AssetData* dependency) {
-    if (dependency->type != ASSET_TYPE_MESH) return false;
+    if (dependency->type != ASSET_TYPE_MESH && dependency->type != ASSET_TYPE_ANIMATED_MESH) {
+        return false;
+    }
 
     AtlasData* atlas = static_cast<AtlasData*>(atlas_asset);
     AtlasDataImpl* impl = atlas->impl;
 
-    // Check if this mesh is attached to the atlas
+    // Check if this mesh/animated mesh is attached to the atlas
     for (int i = 0; i < impl->rect_count; i++) {
         if (impl->rects[i].valid && impl->rects[i].mesh_name == dependency->name) {
             return true;

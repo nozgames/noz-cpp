@@ -66,11 +66,46 @@ static void UpdateAtlasEditor() {
     // Handle input updates if needed
 }
 
+static void DrawAtlasEditor() {
+    AtlasData* atlas = GetAtlasData();
+    AtlasDataImpl* impl = atlas->impl;
+    AssetData* a = atlas;
+
+    // Draw the atlas itself (texture, bounds, etc)
+    a->vtable.draw(a);
+
+    // Scale factor to display atlas in world units
+    float scale = 10.0f / (float)impl->width;
+    Vec2 size = Vec2{(float)impl->width, (float)impl->height} * scale;
+
+    // Draw rect bounds for each attached mesh
+    Vec2 atlas_bottom_left = a->position - size * 0.5f;
+
+    for (int i = 0; i < impl->rect_count; i++) {
+        if (!impl->rects[i].valid) continue;
+
+        const AtlasRect& r = impl->rects[i];
+
+        // Convert pixel coords to world coords
+        float x = r.x * scale;
+        float y = r.y * scale;
+        float w = r.width * scale;
+        float h = r.height * scale;
+
+        // Rect position is bottom-left corner in world space
+        Vec2 rect_pos = atlas_bottom_left + Vec2{x, size.y - y - h};
+        Bounds2 rect_bounds = {0, 0, w, h};
+
+        Color rect_color = r.frame_count > 1 ? COLOR_GREEN : COLOR_YELLOW;
+        DrawBounds(rect_bounds, rect_pos, rect_color);
+    }
+}
+
 void InitAtlasEditor(AtlasData* atlas) {
     atlas->vtable.editor_bounds = GetAtlasBounds;
     atlas->vtable.editor_begin = BeginAtlasEditor;
     atlas->vtable.editor_end = EndAtlasEditor;
     atlas->vtable.editor_update = UpdateAtlasEditor;
-    // Don't set editor_draw - let the normal draw function handle it
+    atlas->vtable.editor_draw = DrawAtlasEditor;
     atlas->vtable.editor_overlay = AtlasEditorOverlay;
 }

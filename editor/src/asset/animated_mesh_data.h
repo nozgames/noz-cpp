@@ -12,6 +12,7 @@ struct AnimatedMeshDataImpl {
     int current_frame;
     AnimatedMesh* playing;
     float play_time;
+    const Name* atlas_name;  // Runtime: set by atlas post-load, not persisted
 };
 
 struct AnimatedMeshData : AssetData {
