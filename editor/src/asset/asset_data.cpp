@@ -2,6 +2,8 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
+#include "atlas_manager.h"
+
 namespace fs = std::filesystem;
 
 const Name* MakeCanonicalAssetName(const fs::path& path)
@@ -171,6 +173,9 @@ void DrawFaceCenters(MeshData* m, const Vec2& position) {
 }
 
 void SaveAssetData() {
+    // Update atlases for any dirty meshes before saving
+    UpdateDirtyMeshAtlases();
+
     SaveAssetMetadata();
 
     u32 count = 0;

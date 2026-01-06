@@ -9,7 +9,9 @@
       "Bash(grep:*)",
       "Bash(del \"D:\\\\git\\\\noz\\\\editor\\\\src\\\\asset\\\\animated_mesh_data.h\")",
       "Bash(del \"D:\\\\git\\\\noz\\\\editor\\\\src\\\\asset\\\\animated_mesh_data.cpp\")",
-      "Bash(del \"D:\\\\git\\\\noz\\\\editor\\\\src\\\\asset\\\\animated_mesh_editor.cpp\")"
+      "Bash(del \"D:\\\\git\\\\noz\\\\editor\\\\src\\\\asset\\\\animated_mesh_editor.cpp\")",
+      "Bash(git -C D:/git/noz log --oneline --all)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

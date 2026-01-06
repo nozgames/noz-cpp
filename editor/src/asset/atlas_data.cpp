@@ -4,6 +4,7 @@
 
 #include <plutovg.h>
 #include "utils/rect_packer.h"
+#include "atlas_manager.h"
 
 using namespace noz;
 
@@ -71,6 +72,10 @@ static void AllocAtlasDataImpl(AssetData* a) {
 
 static void DestroyAtlasData(AssetData* a) {
     AtlasData* atlas = static_cast<AtlasData*>(a);
+
+    // Unregister from atlas manager
+    UnregisterManagedAtlas(atlas);
+
     if (atlas->impl) {
         if (atlas->impl->pixels) {
             Free(atlas->impl->pixels);
@@ -647,6 +652,9 @@ static void LoadAtlasData(AssetData* a) {
 static void PostLoadAtlasData(AssetData* a) {
     AtlasData* atlas = static_cast<AtlasData*>(a);
     AtlasDataImpl* impl = atlas->impl;
+
+    // Register as managed atlas if it has the auto-managed naming convention
+    RegisterManagedAtlas(atlas);
 
     // Bind meshes to this atlas and render them
     for (int i = 0; i < impl->rect_count; i++) {

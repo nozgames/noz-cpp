@@ -70,8 +70,10 @@ PFNGLBLITFRAMEBUFFERPROC glBlitFramebuffer = nullptr;
 PFNGLSCISSORPROC glScissor = nullptr;
 PFNGLSHADERSOURCEPROC glShaderSource = nullptr;
 PFNGLTEXIMAGE2DPROC glTexImage2D = nullptr;
+PFNGLTEXIMAGE3DPROC glTexImage3D = nullptr;
 PFNGLTEXPARAMETERIPROC glTexParameteri = nullptr;
 PFNGLTEXSUBIMAGE2DPROC glTexSubImage2D = nullptr;
+PFNGLTEXSUBIMAGE3DPROC glTexSubImage3D = nullptr;
 PFNGLUNIFORM1FPROC glUniform1f = nullptr;
 PFNGLUNIFORM1IPROC glUniform1i = nullptr;
 PFNGLUNIFORM2FPROC glUniform2f = nullptr;
@@ -436,6 +438,95 @@ void PlatformBindTexture(PlatformTexture* texture, int slot) {
     glActiveTexture(GL_TEXTURE0 + slot);
     g_gl.current_texture_unit = slot;
     glBindTexture(GL_TEXTURE_2D, tex_id);
+    g_gl.bound_textures[slot] = tex_id;
+}
+
+PlatformTexture* PlatformCreateTextureArray(
+    void** layer_data,
+    int layer_count,
+    size_t width,
+    size_t height,
+    int channels,
+    const SamplerOptions& sampler_options,
+    const char* name) {
+    (void)name;
+
+    if (layer_count <= 0 || !layer_data) return nullptr;
+
+    PlatformTexture* texture = new PlatformTexture();
+    texture->size = {static_cast<i32>(width), static_cast<i32>(height)};
+    texture->channels = channels;
+    texture->sampler_options = sampler_options;
+    texture->is_array = true;
+    texture->layer_count = layer_count;
+
+    glGenTextures(1, &texture->gl_texture);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, texture->gl_texture);
+
+    GLenum format, internal_format;
+    switch (channels) {
+        case 1:
+            format = GL_RED;
+            internal_format = GL_R8;
+            break;
+        case 3:
+            format = GL_RGB;
+            internal_format = GL_RGB8;
+            break;
+        case 4:
+        default:
+            format = GL_RGBA;
+            internal_format = GL_RGBA8;
+            break;
+    }
+
+    // Allocate texture array storage
+    glTexImage3D(
+        GL_TEXTURE_2D_ARRAY,
+        0,
+        internal_format,
+        static_cast<GLsizei>(width),
+        static_cast<GLsizei>(height),
+        static_cast<GLsizei>(layer_count),
+        0,
+        format,
+        GL_UNSIGNED_BYTE,
+        nullptr);
+
+    // Upload each layer
+    for (int i = 0; i < layer_count; i++) {
+        if (layer_data[i]) {
+            glTexSubImage3D(
+                GL_TEXTURE_2D_ARRAY,
+                0,
+                0, 0, i,
+                static_cast<GLsizei>(width),
+                static_cast<GLsizei>(height),
+                1,
+                format,
+                GL_UNSIGNED_BYTE,
+                layer_data[i]);
+        }
+    }
+
+    // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, ToGL(sampler_options.filter));
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, ToGL(sampler_options.filter));
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, ToGL(sampler_options.clamp));
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, ToGL(sampler_options.clamp));
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+
+    return texture;
+}
+
+void PlatformBindTextureArray(PlatformTexture* texture, int slot) {
+    GLuint tex_id = texture ? texture->gl_texture : 0;
+
+    glActiveTexture(GL_TEXTURE0 + slot);
+    g_gl.current_texture_unit = slot;
+    glBindTexture(GL_TEXTURE_2D_ARRAY, tex_id);
     g_gl.bound_textures[slot] = tex_id;
 }
 

@@ -41,6 +41,8 @@ struct PlatformTexture {
     SamplerOptions sampler_options;
     Vec2Int size;
     i32 channels;
+    bool is_array = false;  // True for texture arrays (GL_TEXTURE_2D_ARRAY)
+    i32 layer_count = 1;    // Number of layers in array
 };
 
 struct PlatformShader {

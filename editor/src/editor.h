@@ -102,6 +102,7 @@ struct Editor {
     int palette_map[COLOR_PALETTE_COUNT];
     int palette_count;
 
+    int atlas_size = 1024;  // Default, overridden from editor.cfg
 };
 
 extern Editor g_editor;

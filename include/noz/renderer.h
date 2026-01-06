@@ -55,6 +55,12 @@ void UpdateTexture(Texture* texture, void* data);  // Update entire texture with
 int GetBytesPerPixel(TextureFormat format);
 Vec2Int GetSize(Texture* texture);
 
+// Texture arrays (for atlas binding)
+Texture* CreateTextureArray(Allocator* allocator, Texture** textures, int texture_count, const Name* name);
+void BindTextureArray(Texture* texture_array, int slot);
+bool IsTextureArray(Texture* texture);
+int GetLayerCount(Texture* texture);
+
 // @material
 Material* CreateMaterial(Allocator* allocator, Shader* shader);
 Shader* GetShader(Material* material);
@@ -264,6 +270,7 @@ extern Mesh** MESH;
 extern Font** FONT;
 extern Texture** TEXTURE;
 extern Atlas** ATLAS;
+extern Texture* ATLAS_ARRAY;  // Texture array containing all atlases
 extern Shader** SHADER;
 extern Skeleton** SKELETON;
 

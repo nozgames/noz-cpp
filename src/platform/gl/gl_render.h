@@ -96,6 +96,8 @@ typedef ptrdiff_t GLintptr;
 #define GL_DECR                           0x1E03
 
 #define GL_TEXTURE_2D                     0x0DE1
+#define GL_TEXTURE_2D_ARRAY               0x8C1A
+#define GL_TEXTURE_WRAP_R                 0x8072
 
 #define GL_BYTE                           0x1400
 #define GL_UNSIGNED_BYTE                  0x1401
@@ -257,8 +259,10 @@ typedef void (*PFNGLBLITFRAMEBUFFERPROC)(GLint srcX0, GLint srcY0, GLint srcX1, 
 typedef void (*PFNGLSCISSORPROC)(GLint x, GLint y, GLsizei width, GLsizei height);
 typedef void (*PFNGLSHADERSOURCEPROC)(GLuint shader, GLsizei count, const GLchar* const* string, const GLint* length);
 typedef void (*PFNGLTEXIMAGE2DPROC)(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* pixels);
+typedef void (*PFNGLTEXIMAGE3DPROC)(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const void* pixels);
 typedef void (*PFNGLTEXPARAMETERIPROC)(GLenum target, GLenum pname, GLint param);
 typedef void (*PFNGLTEXSUBIMAGE2DPROC)(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void* pixels);
+typedef void (*PFNGLTEXSUBIMAGE3DPROC)(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void* pixels);
 typedef void (*PFNGLUNIFORM1FPROC)(GLint location, GLfloat v0);
 typedef void (*PFNGLUNIFORM1IPROC)(GLint location, GLint v0);
 typedef void (*PFNGLUNIFORM2FPROC)(GLint location, GLfloat v0, GLfloat v1);
@@ -341,8 +345,10 @@ extern PFNGLBLITFRAMEBUFFERPROC glBlitFramebuffer;
 extern PFNGLSCISSORPROC glScissor;
 extern PFNGLSHADERSOURCEPROC glShaderSource;
 extern PFNGLTEXIMAGE2DPROC glTexImage2D;
+extern PFNGLTEXIMAGE3DPROC glTexImage3D;
 extern PFNGLTEXPARAMETERIPROC glTexParameteri;
 extern PFNGLTEXSUBIMAGE2DPROC glTexSubImage2D;
+extern PFNGLTEXSUBIMAGE3DPROC glTexSubImage3D;
 extern PFNGLUNIFORM1FPROC glUniform1f;
 extern PFNGLUNIFORM1IPROC glUniform1i;
 extern PFNGLUNIFORM2FPROC glUniform2f;

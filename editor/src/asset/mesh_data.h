@@ -92,6 +92,7 @@ struct MeshDataImpl {
     AtlasData* atlas;        // Runtime: set by atlas post-load, not persisted in mesh metadata
     int palette;
     int depth;
+    bool atlas_dirty;        // Needs re-render to atlas on save
 
     // Animation playback state (for editor preview)
     Mesh* playing;

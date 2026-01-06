@@ -2,6 +2,8 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
+#include "atlas_manager.h"
+
 constexpr float OUTLINE_WIDTH = 0.015f;
 
 static void Init(MeshData* m);
@@ -354,6 +356,9 @@ void MarkDirty(MeshData* m) {
 
     if (IsFile(m))
         g_editor.meshes[GetUnsortedIndex(m)] = nullptr;
+
+    // Mark mesh for atlas re-render on save
+    MarkMeshAtlasDirty(m);
 }
 
 Mesh* ToMesh(MeshData* m, bool upload, bool use_cache) {
@@ -1438,6 +1443,12 @@ void SaveMeshData(MeshData* m, Stream* stream) {
 static void SaveMeshData(AssetData* a, const std::filesystem::path& path) {
     assert(a->type == ASSET_TYPE_MESH);
     MeshData* m = static_cast<MeshData*>(a);
+
+    // Auto-assign to atlas if needed (lazy assignment)
+    if (NeedsAtlasAssignment(m)) {
+        AutoAssignMeshToAtlas(m);
+    }
+
     Stream* stream = CreateStream(ALLOCATOR_DEFAULT, 4096);
     SaveMeshData(m, stream);
     SaveStream(stream, path);
@@ -1911,7 +1922,7 @@ static void DestroyMeshData(AssetData* a) {
 static void MeshUndoRedo(AssetData* a) {
     assert(a->type == ASSET_TYPE_MESH);
     MeshData* m = static_cast<MeshData*>(a);
-    MarkDirty(m);
+    MarkDirty(m);  // This also marks atlas dirty via MarkMeshAtlasDirty
 }
 
 static void Init(MeshData* m) {

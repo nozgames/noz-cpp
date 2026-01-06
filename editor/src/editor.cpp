@@ -3,6 +3,8 @@
 //
 
 #include "asset_registry.h"
+#include "asset/atlas_data.h"
+#include "asset/atlas_manager.h"
 #include <stb_image.h>
 
 namespace fs = std::filesystem;
@@ -208,6 +210,7 @@ static void InitConfig() {
     g_editor.unity_path = fs::absolute(project_path / fs::path(g_config->GetString("editor", "unity_path", "./assets/noz")));
     g_editor.save_dir = g_config->GetString("editor", "save_path", "assets");
     g_editor.project_path = project_path.string();
+    g_editor.atlas_size = g_config->GetInt("editor", "atlas_size", ATLAS_DEFAULT_SIZE);
 
     fs::create_directories(g_editor.output_path);
 }
@@ -218,6 +221,7 @@ void InitEditor() {
     g_editor.asset_allocator = CreatePoolAllocator(sizeof(GenericAssetData), MAX_ASSETS);
 
     InitEditorAssets();
+    InitAtlasManager();
     InitLog(HandleLog);
     Listen(EDITOR_EVENT_STATS, HandleStatsEvents);
     Listen(EDITOR_EVENT_IMPORTED, HandleImported);
@@ -227,6 +231,7 @@ void ShutdownEditor() {
     SaveUserConfig();
     ShutdownCommandInput();
     ShutdownView();
+    ShutdownAtlasManager();
     //ShutdownEditorServer();
     ShutdownImporter();
 }

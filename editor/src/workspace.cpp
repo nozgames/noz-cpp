@@ -2,6 +2,8 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
+#include "asset/atlas_manager.h"
+
 extern void InitMeshEditor();
 extern void InitTextureEditor();
 extern void InitSkeletonEditor();
@@ -764,6 +766,13 @@ static void ScaleCommand(const Command& command) {
         AddNotification(NOTIFICATION_TYPE_INFO, "scaled %d asset(s) by %.2f", asset_count, scale);
 }
 
+static void RebuildAtlasesCommand(const Command& cmd) {
+    (void)cmd;
+    RebuildAllAtlases();
+    ReimportAll();  // Re-import all assets to pick up atlas changes
+    AddNotification(NOTIFICATION_TYPE_INFO, "Atlases rebuilt and optimized");
+}
+
 static void BeginCommandInput() {
     static CommandHandler commands[] = {
         { NAME_S, NAME_SAVE, SaveAssetsCommand },
@@ -771,6 +780,7 @@ static void BeginCommandInput() {
         { NAME_B, NAME_BUILD, BuildAssets },
         { GetName("reimport"), GetName("reimport"), ReimportAssets },
         { GetName("scale"), GetName("scale"), ScaleCommand },
+        { GetName("reatlas"), GetName("reatlas"), RebuildAtlasesCommand },
         { nullptr, nullptr, nullptr }
     };
 
