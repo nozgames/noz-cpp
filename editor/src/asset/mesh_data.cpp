@@ -164,15 +164,48 @@ static Vec2 ComputeFaceCentroid(MeshData* m, FaceData& f) {
     return centroid * factor;
 }
 
-void UpdateEdges(MeshData* m) {
-    // Save curve data before rebuilding edges (keyed by min(v0,v1), max(v0,v1))
-    struct CurveData { int v0, v1; Vec2 offset; };
-    CurveData saved_curves[MESH_MAX_EDGES];
-    int saved_curve_count = 0;
+// Quantize position to u64 key for reliable comparison (0.0001 precision)
+static u64 QuantizePosition(Vec2 p) {
+    i32 x = (i32)(p.x * 10000.0f);
+    i32 y = (i32)(p.y * 10000.0f);
+    return ((u64)(u32)x << 32) | (u64)(u32)y;
+}
+
+// Create edge key from two positions (ordered so key is consistent regardless of direction)
+static u64 MakeEdgeKey(Vec2 p0, Vec2 p1) {
+    u64 k0 = QuantizePosition(p0);
+    u64 k1 = QuantizePosition(p1);
+    return k0 < k1 ? (k0 ^ (k1 * 31)) : (k1 ^ (k0 * 31));
+}
+
+// Static storage for saved curves (used between SaveCurves and UpdateEdges)
+struct SavedCurve { u64 key; Vec2 offset; };
+static SavedCurve g_saved_curves[MESH_MAX_EDGES];
+static int g_saved_curve_count = 0;
+
+// Save all curve data with position keys (call before modifying vertices)
+static void SaveCurves(MeshData* m) {
+    g_saved_curve_count = 0;
     for (int i = 0; i < m->impl->edge_count; i++) {
         EdgeData& e = m->impl->edges[i];
         if (LengthSqr(e.curve_offset) > 0.0000001f) {
-            saved_curves[saved_curve_count++] = { e.v0, e.v1, e.curve_offset };
+            Vec2 p0 = m->impl->vertices[e.v0].position;
+            Vec2 p1 = m->impl->vertices[e.v1].position;
+            g_saved_curves[g_saved_curve_count++] = { MakeEdgeKey(p0, p1), e.curve_offset };
+        }
+    }
+}
+
+void UpdateEdges(MeshData* m) {
+    // If no pre-saved curves, save them now (edges still have valid indices)
+    if (g_saved_curve_count == 0) {
+        for (int i = 0; i < m->impl->edge_count; i++) {
+            EdgeData& e = m->impl->edges[i];
+            if (LengthSqr(e.curve_offset) > 0.0000001f) {
+                Vec2 p0 = m->impl->vertices[e.v0].position;
+                Vec2 p1 = m->impl->vertices[e.v1].position;
+                g_saved_curves[g_saved_curve_count++] = { MakeEdgeKey(p0, p1), e.curve_offset };
+            }
         }
     }
 
@@ -199,13 +232,20 @@ void UpdateEdges(MeshData* m) {
         GetOrAddEdge(m, vs, ve, face_index);
     }
 
-    // Restore curve data to rebuilt edges
-    for (int i = 0; i < saved_curve_count; i++) {
-        int edge = GetEdge(m, saved_curves[i].v0, saved_curves[i].v1);
-        if (edge != -1) {
-            m->impl->edges[edge].curve_offset = saved_curves[i].offset;
+    // Restore curve data to rebuilt edges (match by quantized position key)
+    for (int i = 0; i < g_saved_curve_count; i++) {
+        const SavedCurve& curve = g_saved_curves[i];
+        for (int edge = 0; edge < m->impl->edge_count; edge++) {
+            EdgeData& e = m->impl->edges[edge];
+            Vec2 p0 = m->impl->vertices[e.v0].position;
+            Vec2 p1 = m->impl->vertices[e.v1].position;
+            if (MakeEdgeKey(p0, p1) == curve.key) {
+                e.curve_offset = curve.offset;
+                break;
+            }
         }
     }
+    g_saved_curve_count = 0;
 
     // Apply pending curves (from SplitEdge with update=false)
     for (int i = 0; i < m->impl->pending_curve_count; i++) {
@@ -393,6 +433,9 @@ void DissolveEdge(MeshData* m, int edge_index) {
 
 void DeleteVertex(MeshData* m, int vertex_index) {
     assert(vertex_index >= 0 && vertex_index < m->impl->vertex_count);
+
+    // Save curve data before modifying vertices (edges still have valid indices)
+    SaveCurves(m);
 
     for (int face_index=m->impl->face_count-1; face_index >= 0; face_index--) {
         FaceData& f = m->impl->faces[face_index];

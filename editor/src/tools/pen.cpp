@@ -20,6 +20,9 @@ struct PenTool {
     bool hovering_existing_vertex;
     int hover_vertex_index;
     Vec2 hover_snap_position;
+    bool hovering_edge;
+    int hover_edge_index;
+    float hover_edge_t;
     bool snapping_to_grid;
     Vec2 grid_snap_position;
 };
@@ -157,10 +160,12 @@ static void DrawPenTool() {
         Vec2 last_world = g_pen_tool.points[g_pen_tool.point_count - 1].position + m->position;
         Vec2 target = g_view.mouse_world_position;
 
-        // Snap preview line to existing vertex, first point, or grid
+        // Snap preview line to existing vertex, first point, edge, or grid
         if (g_pen_tool.hovering_first_point) {
             target = g_pen_tool.points[0].position + m->position;
         } else if (g_pen_tool.hovering_existing_vertex) {
+            target = g_pen_tool.hover_snap_position + m->position;
+        } else if (g_pen_tool.hovering_edge) {
             target = g_pen_tool.hover_snap_position + m->position;
         } else if (g_pen_tool.snapping_to_grid) {
             target = g_pen_tool.grid_snap_position + m->position;
@@ -192,6 +197,12 @@ static void DrawPenTool() {
 
     // Highlight snap target vertex
     if (g_pen_tool.hovering_existing_vertex && !g_pen_tool.hovering_first_point) {
+        BindColor(COLOR_GREEN);
+        DrawVertex(g_pen_tool.hover_snap_position + m->position);
+    }
+
+    // Highlight snap point on edge
+    if (g_pen_tool.hovering_edge) {
         BindColor(COLOR_GREEN);
         DrawVertex(g_pen_tool.hover_snap_position + m->position);
     }
@@ -244,9 +255,23 @@ static void UpdatePenTool() {
         }
     }
 
+    // Check if hovering over existing edge (for snapping)
+    g_pen_tool.hovering_edge = false;
+    g_pen_tool.hover_edge_index = -1;
+    if (!g_pen_tool.hovering_first_point && !g_pen_tool.hovering_existing_vertex) {
+        float edge_t = 0.0f;
+        int edge_index = HitTestEdge(m, g_view.mouse_world_position, &edge_t, PEN_HIT_TOLERANCE);
+        if (edge_index >= 0) {
+            g_pen_tool.hovering_edge = true;
+            g_pen_tool.hover_edge_index = edge_index;
+            g_pen_tool.hover_edge_t = edge_t;
+            g_pen_tool.hover_snap_position = GetEdgePoint(m, edge_index, edge_t);
+        }
+    }
+
     // Check for grid snapping (Ctrl held)
     g_pen_tool.snapping_to_grid = false;
-    if (!g_pen_tool.hovering_first_point && !g_pen_tool.hovering_existing_vertex) {
+    if (!g_pen_tool.hovering_first_point && !g_pen_tool.hovering_existing_vertex && !g_pen_tool.hovering_edge) {
         if (IsCtrlDown(GetInputSet())) {
             g_pen_tool.snapping_to_grid = true;
             g_pen_tool.grid_snap_position = SnapToGrid(g_view.mouse_world_position) - m->position;
@@ -283,7 +308,16 @@ static void UpdatePenTool() {
             return;
         }
 
-        // Case 3: New point in empty space
+        // Case 3: Snapping to edge (creates new point on edge)
+        if (g_pen_tool.hovering_edge) {
+            g_pen_tool.points[g_pen_tool.point_count++] = {
+                .position = g_pen_tool.hover_snap_position,
+                .existing_vertex = -1
+            };
+            return;
+        }
+
+        // Case 4: New point in empty space
         Vec2 new_position = mouse_local;
         if (IsCtrlDown(GetInputSet())) {
             new_position = SnapToGrid(m->position + mouse_local) - m->position;
@@ -313,6 +347,8 @@ void BeginPenTool(MeshData* mesh) {
     g_pen_tool.hovering_first_point = false;
     g_pen_tool.hovering_existing_vertex = false;
     g_pen_tool.hover_vertex_index = -1;
+    g_pen_tool.hovering_edge = false;
+    g_pen_tool.hover_edge_index = -1;
 
     SetSystemCursor(SYSTEM_CURSOR_SELECT);
 }

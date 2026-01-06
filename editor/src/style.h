@@ -4,6 +4,33 @@
 
 #pragma once
 
+
+// DEPRECATED
+constexpr Color COLOR_VERTEX_SELECTED = Color32ToColor(255, 121, 0, 255);
+constexpr Color COLOR_VERTEX = COLOR_BLACK;
+constexpr Color COLOR_EDGE = COLOR_BLACK;
+constexpr Color COLOR_EDGE_SELECTED = Color32ToColor(253, 151, 11, 255);
+constexpr Color COLOR_ORIGIN = Color32ToColor(255, 159, 44, 255);
+
+constexpr Color COLOR_SELECTED = { 1,1,1,1 };
+constexpr Color COLOR_CENTER = { 1, 1, 1, 0.5f};
+constexpr Color COLOR_BONE_SELECTED = COLOR_EDGE_SELECTED;
+constexpr Color COLOR_UI_BACKGROUND = Color24ToColor(0x262525);
+constexpr Color COLOR_UI_BORDER = Color24ToColor(0x2c323c);
+constexpr Color COLOR_UI_TEXT = Color24ToColor(0xdcdfe4);
+constexpr Color COLOR_UI_ERROR_TEXT = Color24ToColor(0xdf6b6d);
+constexpr Color COLOR_UI_BUTTON_HOVER = Color24ToColor(0x76a8ff);
+constexpr Color COLOR_UI_BUTTON = {0.9f, 0.9f, 0.9f, 1.0f};
+constexpr Color COLOR_UI_BUTTON_TEXT = COLOR_UI_BACKGROUND;
+
+constexpr float UI_BORDER_WIDTH = 2.0f;
+
+// DEPRECATED END
+
+
+
+
+
 enum StyleId {
     STYLE_ID_DARK,
     STYLE_ID_COUNT
@@ -110,3 +137,12 @@ constexpr float STYLE_CONTEXT_MENU_SEPARATOR_SPACING = 12.0f;
 constexpr float STYLE_CONTEXT_MENU_ITEM_HEIGHT = 20.0f;
 inline Color STYLE_CONTEXT_MENU_SEPARATOR_COLOR() { return GetStyle().context_menu_separator_color; }
 inline Color STYLE_CONTEXT_MENU_TITLE_COLOR() { return GetStyle().context_menu_title_color; }
+
+
+// @mesh_editor
+constexpr float COLOR_PICKER_BORDER_WIDTH = 2.5f;
+constexpr float COLOR_PICKER_COLOR_SIZE = 26.0f;
+constexpr float COLOR_PICKER_WIDTH = COLOR_PICKER_COLOR_SIZE * 64 + COLOR_PICKER_BORDER_WIDTH * 2;
+constexpr float COLOR_PICKER_HEIGHT = COLOR_PICKER_COLOR_SIZE + COLOR_PICKER_BORDER_WIDTH * 2;
+constexpr float COLOR_PICKER_SELECTION_BORDER_WIDTH = 3.0f;
+constexpr Color COLOR_PICKER_SELECTION_BORDER_COLOR = COLOR_VERTEX_SELECTED;

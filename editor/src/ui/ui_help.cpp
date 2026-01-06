@@ -48,6 +48,9 @@ static void HelpKey(InputCode key) {
 }
 
 static void Help(const Shortcut* shortcut, int index) {
+    if (!shortcut->description)
+        return;
+
     BeginRow({.color=index % 2 ? COLOR_TRANSPARENT : COLOR_WHITE_1PCT, .spacing=8});
 
     BeginContainer({.width=HELP_KEY_SIZE * 4.0f});
