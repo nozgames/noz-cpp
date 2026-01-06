@@ -286,7 +286,7 @@ static void AddFaceToPathFrame(plutovg_canvas_t* canvas, MeshFrameData* frame, F
     plutovg_canvas_close_path(canvas);
 }
 
-void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, AtlasRect& rect) {
+void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, bool update_bounds) {
     AtlasDataImpl* impl = atlas->impl;
     MeshDataImpl* mesh_impl = mesh->impl;
 
@@ -300,8 +300,17 @@ void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, AtlasRect& rect) {
         max_bounds = Union(max_bounds, GetFrameBounds(&mesh_impl->frames[i]));
     }
 
-    // Update stored bounds for UV calculation
-    rect.mesh_bounds = max_bounds;
+    // Determine which bounds to use for rendering
+    // When loading from file (update_bounds=false), use saved bounds for consistency
+    // When updating (update_bounds=true), use fresh max_bounds
+    Bounds2 render_bounds;
+    if (update_bounds) {
+        rect.mesh_bounds = max_bounds;
+        render_bounds = max_bounds;
+    } else {
+        // Use saved bounds - ensures UV coords match what's rendered
+        render_bounds = rect.mesh_bounds;
+    }
 
     float scale = (float)impl->dpi;
     int frame_width = rect.width / rect.frame_count;
@@ -320,9 +329,9 @@ void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, AtlasRect& rect) {
         // Clip to this frame's region
         plutovg_canvas_clip_rect(canvas, (float)frame_x, (float)rect.y, (float)frame_width, (float)rect.height);
 
-        // Use max_bounds for consistent positioning across all frames
-        float offset_x = frame_x + 1 - max_bounds.min.x * scale;
-        float offset_y = rect.y + 1 - max_bounds.min.y * scale;
+        // Use render_bounds for consistent positioning across all frames
+        float offset_x = frame_x + 1 - render_bounds.min.x * scale;
+        float offset_y = rect.y + 1 - render_bounds.min.y * scale;
 
         int palette_index = g_editor.palette_map[mesh_impl->palette];
         constexpr float EXPAND = 0.5f;
@@ -509,9 +518,17 @@ void RebuildAtlas(AtlasData* atlas) {
 Vec2 GetAtlasUV(AtlasData* atlas, const AtlasRect& rect, const Bounds2& mesh_bounds, const Vec2& position) {
     AtlasDataImpl* impl = atlas->impl;
 
+    // Guard against zero-sized bounds (would cause division by zero)
+    Vec2 size = GetSize(mesh_bounds);
+    if (size.x < F32_EPSILON || size.y < F32_EPSILON) {
+        LogError("GetAtlasUV: mesh_bounds has zero size! bounds=(%.3f,%.3f - %.3f,%.3f)",
+            mesh_bounds.min.x, mesh_bounds.min.y, mesh_bounds.max.x, mesh_bounds.max.y);
+        return {0.0f, 0.0f};
+    }
+
     // Map position from mesh space to normalized [0,1] within mesh bounds
-    float u = (position.x - mesh_bounds.min.x) / GetSize(mesh_bounds).x;
-    float v = (position.y - mesh_bounds.min.y) / GetSize(mesh_bounds).y;
+    float u = (position.x - mesh_bounds.min.x) / size.x;
+    float v = (position.y - mesh_bounds.min.y) / size.y;
 
     // For animated meshes, use only the first frame's width
     int frame_count = rect.frame_count > 0 ? rect.frame_count : 1;
@@ -663,14 +680,21 @@ static void PostLoadAtlasData(AssetData* a) {
     // Register as managed atlas if it has the auto-managed naming convention
     RegisterManagedAtlas(atlas);
 
-    // Bind meshes to this atlas and render them
+    // Bind meshes to this atlas and render pixels
     for (int i = 0; i < impl->rect_count; i++) {
         if (impl->rects[i].valid && impl->rects[i].mesh_name) {
             AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, impl->rects[i].mesh_name);
             if (mesh_asset) {
                 MeshData* mesh = static_cast<MeshData*>(mesh_asset);
                 mesh->impl->atlas = atlas;
-                RenderMeshToAtlas(atlas, mesh, impl->rects[i]);
+
+                // Check if bounds are valid (non-zero size)
+                Vec2 size = GetSize(impl->rects[i].mesh_bounds);
+                bool bounds_valid = size.x > F32_EPSILON && size.y > F32_EPSILON;
+
+                // If bounds are invalid (old file format), update them from mesh
+                // Otherwise preserve bounds loaded from atlas file to prevent race conditions
+                RenderMeshToAtlas(atlas, mesh, impl->rects[i], !bounds_valid);
             }
         }
     }

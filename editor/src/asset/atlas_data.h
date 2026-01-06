@@ -50,7 +50,7 @@ extern void ClearAllRects(AtlasData* atlas);
 extern AtlasData* FindAtlasForMesh(const Name* mesh_name, AtlasRect** out_rect = nullptr);
 
 // Rendering
-extern void RenderMeshToAtlas(AtlasData* atlas, struct MeshData* mesh, AtlasRect& rect);  // Renders all frames
+extern void RenderMeshToAtlas(AtlasData* atlas, struct MeshData* mesh, AtlasRect& rect, bool update_bounds = true);  // Renders all frames
 extern void RegenerateAtlas(AtlasData* atlas);   // Re-render meshes to existing rects
 extern void RebuildAtlas(AtlasData* atlas);      // Clear and reallocate all rects, mark meshes modified
 extern void SyncAtlasTexture(AtlasData* atlas);  // Upload pixels to GPU (editor only)
