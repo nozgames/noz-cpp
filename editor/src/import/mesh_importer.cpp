@@ -25,7 +25,7 @@ static Mesh* ToMeshWithAtlasUVs(MeshData* mesh_data, AtlasData* atlas, const Atl
     Vec2 min = mesh_data->bounds.min;
     Vec2 max = mesh_data->bounds.max;
 
-    // Get atlas UVs for each corner (uses frame 0 for animated meshes)
+    // Get atlas UVs for each corner
     Vec2 uv_bl = GetAtlasUV(atlas, rect, mesh_data->bounds, {min.x, min.y});
     Vec2 uv_br = GetAtlasUV(atlas, rect, mesh_data->bounds, {max.x, min.y});
     Vec2 uv_tr = GetAtlasUV(atlas, rect, mesh_data->bounds, {max.x, max.y});
