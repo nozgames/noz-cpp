@@ -66,7 +66,6 @@ set(SOURCE_FILES
     src/math/vec3.cpp
     src/math/angle.cpp
     src/name.cpp
-    src/debug.cpp
     src/physics/physics.cpp
     src/physics/rigid_body.cpp
     src/physics/collider.cpp
@@ -99,6 +98,10 @@ set(SOURCE_FILES
     src/network/http.cpp
     src/network/websocket.cpp
     src/network/websocket_server.cpp
+
+    src/debug/debug.cpp
+    src/debug/debug_ui.cpp
+    src/debug/debug_gizmo.cpp
 )
 
 if (NOZ_LUA)

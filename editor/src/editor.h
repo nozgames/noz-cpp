@@ -223,6 +223,6 @@ extern void ShutdownEditorServer();
 extern void Build();
 
 #include "asset/asset_data.h"
-#include "view.h"
+#include "workspace.h"
 #include "import/asset_importer.h"
 #include "tool.h"

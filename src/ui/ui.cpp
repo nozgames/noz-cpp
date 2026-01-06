@@ -9,6 +9,7 @@ constexpr int MAX_ELEMENT_STACK = 128;
 constexpr int MAX_TEXT_MESHES = 4096;
 
 extern void UpdateInputState(InputSet* input_set);
+extern void UpdateDebugUI();
 
 enum ElementType : u8 {
     ELEMENT_TYPE_UNKNOWN = 0,
@@ -1660,6 +1661,8 @@ static void HandleInput() {
 }
 
 void EndUI() {
+    UpdateDebugUI();
+
     for (u32 element_index=0; element_index < g_ui.element_count; )
         element_index = MeasureElement(element_index, g_ui.ortho_size);
     for (u32 element_index=0; element_index < g_ui.element_count; )

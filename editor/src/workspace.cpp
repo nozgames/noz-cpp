@@ -8,37 +8,6 @@ extern void InitSkeletonEditor();
 extern void InitAnimationEditor();
 extern void InitStyles();
 
-extern Font* FONT_SEGUISB;
-extern const Name* NAME_MESH;
-extern const Name* NAME_M;
-extern const Name* NAME_S;
-extern const Name* NAME_SKELETON;
-extern const Name* NAME_ANIMATION;
-extern const Name* NAME_A;
-extern const Name* NAME_VFX;
-extern const Name* NAME_AM;
-extern const Name* NAME_ANIMATEDMESH;
-extern const Name* NAME_E;
-extern const Name* NAME_EVENT;
-extern const Name* NAME_SAVE;
-extern const Name* NAME_N;
-extern const Name* NAME_B;
-extern const Name* NAME_NEW;
-extern const Name* NAME_BUILD;
-extern const Name* NAME_RENAME;
-extern const Name* NAME_DELETE;
-extern const Name* NAME_DUPLICATE;
-extern const Name* NAME_EXPORT;
-extern const Name* NAME_IMPORT;
-extern const Name* NAME_EDIT;
-extern const Name* NAME_RESET;
-extern const Name* NAME_MIRROR;
-extern const Name* NAME_RU;
-extern const Name* NAME_R;
-extern Shader* SHADER_SKINNED_MESH;
-extern Shader* SHADER_EDITOR;
-extern Shader* SHADER_POSTPROCESS_UI_COMPOSITE;
-
 constexpr float SELECT_SIZE = 60.0f;
 constexpr float DRAG_MIN = 5;
 constexpr float DEFAULT_DPI = 72.0f;
@@ -628,6 +597,7 @@ void EndEdit() {
 
     SetSystemCursor(SYSTEM_CURSOR_DEFAULT);
     SetState(VIEW_STATE_DEFAULT);
+    SaveAssetData();
 }
 
 void HandleUndo() { Undo(); }
@@ -847,6 +817,10 @@ static void PlayAsset() {
     }
 }
 
+static void ToggleDebugUI() {
+    ToggleDebugUI(nullptr);
+}
+
 static Shortcut g_workspace_shortcuts[] = {
     { KEY_G, false, false, false, BeginMoveTool, "Move asset" },
     { KEY_X, false, false, false, DeleteSelectedAssets, "Delete asset" },
@@ -876,6 +850,7 @@ static Shortcut g_general_shortcuts[] = {
     { KEY_EQUALS, false, true, false, IncreaseUIScale, "Increase UI scale" },
     { KEY_MINUS, false, true, false, DecreaseUIScale, "Decrease UI scale" },
     { KEY_0, false, true, false, ResetUIScale, "Reset UI scale" },
+    { KEY_TILDE, false, false, false, ToggleDebugUI, nullptr },
     { INPUT_CODE_NONE }
 };
 

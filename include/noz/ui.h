@@ -21,7 +21,8 @@ constexpr ElementId ELEMENT_ID_MAX = 255;
 
 typedef u32 CanvasId;
 constexpr CanvasId CANVAS_ID_NONE = 0;
-constexpr CanvasId CANVAS_ID_MIN = 1;
+constexpr CanvasId CANVAS_ID_DEBUG = 1;
+constexpr CanvasId CANVAS_ID_MIN = 2;
 
 
 typedef Color (*AnimatedColorFunc)(ElementFlags state, float time, void* user_data);

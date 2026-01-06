@@ -162,31 +162,11 @@ extern bool EditorButton(ElementId id, Mesh* icon, bool state, bool disabled=fal
 extern void BeginOverlay(ElementId id=ELEMENT_ID_NONE, Align align=ALIGN_TOP_LEFT);
 extern void EndOverlay();
 
-constexpr Color COLOR_VERTEX_SELECTED = Color32ToColor(255, 121, 0, 255);
-constexpr Color COLOR_VERTEX = COLOR_BLACK;
-constexpr Color COLOR_EDGE = COLOR_BLACK;
-constexpr Color COLOR_EDGE_SELECTED = Color32ToColor(253, 151, 11, 255);
-constexpr Color COLOR_ORIGIN = Color32ToColor(255, 159, 44, 255);
-
-constexpr Color COLOR_SELECTED = { 1,1,1,1 };
-constexpr Color COLOR_CENTER = { 1, 1, 1, 0.5f};
-constexpr Color COLOR_BONE_SELECTED = COLOR_EDGE_SELECTED;
-constexpr Color COLOR_UI_BACKGROUND = Color24ToColor(0x262525);
-constexpr Color COLOR_UI_BORDER = Color24ToColor(0x2c323c);
-constexpr Color COLOR_UI_TEXT = Color24ToColor(0xdcdfe4);
-constexpr Color COLOR_UI_ERROR_TEXT = Color24ToColor(0xdf6b6d);
-constexpr Color COLOR_UI_BUTTON_HOVER = Color24ToColor(0x76a8ff);
-constexpr Color COLOR_UI_BUTTON = {0.9f, 0.9f, 0.9f, 1.0f};
-constexpr Color COLOR_UI_BUTTON_TEXT = COLOR_UI_BACKGROUND;
-
-constexpr float UI_BORDER_WIDTH = 2.0f;
-
-constexpr int CANVAS_ID_COMMAND = 1;
-constexpr int CANVAS_ID_CONFIRM = 2;
-constexpr int CANVAS_ID_OVERLAY = 3;
-constexpr int CANVAS_ID_HELP = 4;
-constexpr int CANVAS_ID_CONTEXT_MENU = 4;
-
-constexpr int CANVAS_ID_ANIMATION_EDITOR = 5;
+constexpr int CANVAS_ID_COMMAND = CANVAS_ID_MIN + 0;
+constexpr int CANVAS_ID_CONFIRM = CANVAS_ID_MIN + 1;
+constexpr int CANVAS_ID_OVERLAY = CANVAS_ID_MIN + 2;
+constexpr int CANVAS_ID_HELP = CANVAS_ID_MIN + 3;
+constexpr int CANVAS_ID_CONTEXT_MENU = CANVAS_ID_MIN + 4;
+constexpr int CANVAS_ID_ANIMATION_EDITOR = CANVAS_ID_MIN + 5;
 
 constexpr ElementId OVERLAY_BASE_ID = ELEMENT_ID_MIN + 0;

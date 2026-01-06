@@ -89,6 +89,7 @@ static void UpdateEditor() {
     DrawView();
     DrawVfx();
     DrawUI();
+    DrawDebugGizmos();
     EndRender();
 }
 
@@ -395,6 +396,7 @@ void Main() {
 
     MESH = g_editor.meshes;
     MESH_COUNT = MAX_ASSETS;
+    FONT_DEFAULT = FONT_SEGUISB;
 
     InitView();
     InitCommandInput();
