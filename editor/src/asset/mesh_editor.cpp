@@ -2274,6 +2274,17 @@ void InitMeshEditor() {
     PopScratch();
 }
 
+static void RenameMesh(AssetData* a, const Name* new_name) {
+    MeshData* m = static_cast<MeshData*>(a);
+    if (m->impl->atlas) {
+        AtlasRect* rect = FindRectForMesh(m->impl->atlas, a->name);
+        if (rect) {
+            rect->mesh_name = new_name;
+            MarkModified(m->impl->atlas);
+        }
+    }
+}
+
 void InitMeshEditor(MeshData* m) {
     m->vtable.editor_begin = BeginMeshEditor;
     m->vtable.editor_end = EndMeshEditor;
@@ -2283,4 +2294,5 @@ void InitMeshEditor(MeshData* m) {
     m->vtable.editor_overlay = MeshEditorOverlay;
     m->vtable.editor_help = MeshEditorHelp;
     m->vtable.editor_context_menu = OpenMeshEditorContextMenu;
+    m->vtable.editor_rename = RenameMesh;
 }

@@ -472,6 +472,10 @@ bool Rename(AssetData* a, const Name* new_name) {
     // Save old meta path BEFORE updating a->path
     fs::path old_meta_path = fs::path(std::string(a->path) + ".meta");
 
+    // Let asset type handle pre-rename logic (e.g., mesh updating its atlas)
+    if (a->vtable.editor_rename)
+        a->vtable.editor_rename(a, new_name);
+
     try {
         fs::rename(a->path.value, new_path);
     } catch (...) {

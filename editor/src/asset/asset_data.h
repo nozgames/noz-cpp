@@ -36,6 +36,7 @@ struct AssetVtable {
     void (*editor_overlay)();
     void (*editor_help)();
     void (*editor_context_menu)();
+    void (*editor_rename)(AssetData* a, const Name* new_name);
     Bounds2 (*editor_bounds)();
 };
 
