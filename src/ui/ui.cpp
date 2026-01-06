@@ -118,7 +118,6 @@ struct LabelElement : Element {
 struct ImageElement : Element {
     ImageStyle style;
     Mesh* mesh = nullptr;
-    AnimatedMesh* animated_mesh = nullptr;
     Texture* texture;
     float animated_time = 0.0f;
 };
@@ -584,9 +583,9 @@ void Image(Mesh* mesh, const ImageStyle& style) {
         image->style.material = g_ui.image_element_material;
 }
 
-void Image(AnimatedMesh* mesh, float time, const ImageStyle& style) {
+void Image(Mesh* mesh, float time, const ImageStyle& style) {
     ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
-    image->animated_mesh = mesh;
+    image->mesh = mesh;
     image->animated_time = time;
     image->style = style;
     if (!image->style.material)
@@ -859,9 +858,7 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
     // @measure_image
     } else if (e->type == ELEMENT_TYPE_IMAGE) {
         ImageElement* i = static_cast<ImageElement*>(e);
-        if (i->animated_mesh) {
-            e->measured_size = GetSize(i->animated_mesh) * i->style.scale * 72.0f;
-        } else if (i->mesh) {
+        if (i->mesh) {
             e->measured_size = GetSize(i->mesh) * i->style.scale * 72.0f;
         } else if (i->texture) {
             e->measured_size = ToVec2(GetSize(i->texture)) * i->style.scale;
@@ -1267,10 +1264,6 @@ static int DrawElement(int element_index) {
             image_bounds = GetBounds(image->mesh);
             image_size = GetSize(image_bounds);
             BindMaterial(image->style.material);
-        } else if (image->animated_mesh) {
-            image_bounds = GetBounds(image->animated_mesh);
-            image_size = GetSize(image_bounds);
-            BindMaterial(image->style.material);
         } else if (image->texture) {
             image_scale = ToVec2(GetSize(image->texture)) * Vec2{1,-1};
             image_size = ToVec2(GetSize(image->texture));
@@ -1317,11 +1310,12 @@ static int DrawElement(int element_index) {
             image_transform = transform * Translate(image_offset) * Scale(image_scale * image->style.scale);
         }
 
-        if (image->animated_mesh)
-            DrawMesh(image->animated_mesh, image_transform, image->animated_time);
-        else if (image->mesh)
-            DrawMesh(image->mesh, image_transform);
-        else if (image->texture)
+        if (image->mesh) {
+            if (image->animated_time != 0.0f)
+                DrawMesh(image->mesh, image_transform, image->animated_time);
+            else
+                DrawMesh(image->mesh, image_transform);
+        } else if (image->texture)
             DrawMesh(g_ui.image_element_mesh, image_transform);
 
     // @render_container

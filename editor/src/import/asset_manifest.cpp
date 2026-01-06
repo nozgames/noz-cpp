@@ -513,7 +513,6 @@ static const char* GetLuauTypeName(AssetType type) {
         case ASSET_TYPE_SOUND: return "Sound";
         case ASSET_TYPE_SKELETON: return "Skeleton";
         case ASSET_TYPE_ANIMATION: return "Animation";
-        case ASSET_TYPE_ANIMATED_MESH: return "AnimatedMesh";
         case ASSET_TYPE_SHADER: return "Shader";
         case ASSET_TYPE_BIN: return "Bin";
         default: return nullptr;
@@ -572,7 +571,6 @@ static const char* GetLuaLoaderFunc(AssetType type) {
         case ASSET_TYPE_SOUND: return "LoadSound";
         case ASSET_TYPE_SKELETON: return "LoadSkeleton";
         case ASSET_TYPE_ANIMATION: return "LoadAnimation";
-        case ASSET_TYPE_ANIMATED_MESH: return "LoadAnimatedMesh";
         case ASSET_TYPE_SHADER: return "LoadShader";
         case ASSET_TYPE_VFX: return "LoadVfx";
         default: return nullptr;

@@ -56,8 +56,6 @@ extern Shader* SHADER_VFX;
 
 // @name
 extern const Name* NAME_A;
-extern const Name* NAME_AM;
-extern const Name* NAME_ANIMATEDMESH;
 extern const Name* NAME_ANIMATION;
 extern const Name* NAME_ATLAS;
 extern const Name* NAME_B;

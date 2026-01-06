@@ -65,8 +65,6 @@ Shader* SHADER_VFX = nullptr;
 
 // @name
 const Name* NAME_A = nullptr;
-const Name* NAME_AM = nullptr;
-const Name* NAME_ANIMATEDMESH = nullptr;
 const Name* NAME_ANIMATION = nullptr;
 const Name* NAME_ATLAS = nullptr;
 const Name* NAME_B = nullptr;
@@ -133,8 +131,6 @@ bool LoadAssets(Allocator* allocator)
 {
     // @name
     NAME_A = GetName("a");
-    NAME_AM = GetName("am");
-    NAME_ANIMATEDMESH = GetName("animatedmesh");
     NAME_ANIMATION = GetName("animation");
     NAME_ATLAS = GetName("atlas");
     NAME_B = GetName("b");

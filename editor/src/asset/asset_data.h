@@ -4,17 +4,15 @@
 
 #pragma once
 
+struct Animation;
 struct AssetData;
 struct MeshData;
-struct AnimatedMeshData;
-struct Animation;
 
 constexpr int SKIN_MAX = 64;
 
 struct Skin {
     const Name* asset_name;
     MeshData* mesh;
-    AnimatedMeshData* animated_mesh;
     Animation* animation;;
 };
 
@@ -142,7 +140,6 @@ inline Bounds2 GetBounds(AssetData* a) { return a->bounds; }
 #include "shader_data.h"
 #include "sound_data.h"
 #include "font_data.h"
-#include "animated_mesh_data.h"
 #include "event_data.h"
 #include "bin_data.h"
 #include "lua_data.h"

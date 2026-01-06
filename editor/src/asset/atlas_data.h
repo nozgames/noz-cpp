@@ -40,8 +40,7 @@ extern void InitAtlasData(AssetData* a);
 extern AssetData* NewAtlasData(const std::filesystem::path& path);
 
 // Rect management
-extern AtlasRect* AllocateRect(AtlasData* atlas, struct MeshData* mesh);
-extern AtlasRect* AllocateRect(AtlasData* atlas, struct AnimatedMeshData* amesh);  // Allocates all frames
+extern AtlasRect* AllocateRect(AtlasData* atlas, struct MeshData* mesh);  // Allocates all frames for multi-frame meshes
 extern AtlasRect* FindRectForMesh(AtlasData* atlas, const Name* mesh_name);
 extern void FreeRect(AtlasData* atlas, AtlasRect* rect);
 extern void ClearAllRects(AtlasData* atlas);
@@ -50,8 +49,7 @@ extern void ClearAllRects(AtlasData* atlas);
 extern AtlasData* FindAtlasForMesh(const Name* mesh_name, AtlasRect** out_rect = nullptr);
 
 // Rendering
-extern void RenderMeshToAtlas(AtlasData* atlas, struct MeshData* mesh, const AtlasRect& rect);
-extern void RenderAnimatedMeshToAtlas(AtlasData* atlas, struct AnimatedMeshData* amesh, const AtlasRect& rect);
+extern void RenderMeshToAtlas(AtlasData* atlas, struct MeshData* mesh, const AtlasRect& rect);  // Renders all frames
 extern void RegenerateAtlas(AtlasData* atlas);   // Re-render meshes to existing rects
 extern void RebuildAtlas(AtlasData* atlas);      // Clear and reallocate all rects, mark meshes modified
 extern void SyncAtlasTexture(AtlasData* atlas);  // Upload pixels to GPU (editor only)

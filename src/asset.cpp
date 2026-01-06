@@ -95,7 +95,6 @@ const char* ToString(AssetType asset_type) {
         case ASSET_TYPE_ANIMATION: return "Animation";
         case ASSET_TYPE_VFX: return "Vfx";
         case ASSET_TYPE_SHADER: return "Shader";
-        case ASSET_TYPE_ANIMATED_MESH: return "AnimatedMesh";
         case ASSET_TYPE_EVENT: return "Event";
         case ASSET_TYPE_BIN: return "Bin";
         case ASSET_TYPE_LUA: return "Script";
@@ -273,7 +272,6 @@ void InitAssets() {
         nullptr
 #endif
     });
-    RegisterAssetType({ASSET_TYPE_ANIMATED_MESH, "AnimatedMesh", "AnimMesh", ".animatedmesh", LoadAnimatedMesh, nullptr});
     RegisterAssetType({ASSET_TYPE_EVENT, "Event", "Event", ".event", nullptr, nullptr});
     RegisterAssetType({ASSET_TYPE_BIN, "Bin", "Bin", ".bin", LoadBin, nullptr});
     RegisterAssetType({ASSET_TYPE_ATLAS, "Atlas", "Atlas", ".atlas", LoadTexture, nullptr});

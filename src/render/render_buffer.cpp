@@ -5,6 +5,7 @@
 #include "../platform.h"
 
 extern void RenderMesh(Mesh* mesh);
+extern void RenderMesh(Mesh* mesh, float time, bool loop = false);
 extern void BindMaterialInternal(Material* material);
 extern void BindTextureInternal(Texture* texture, i32 slot);
 extern void BindShaderInternal(Shader* shader);
@@ -288,21 +289,22 @@ void DrawMesh(Mesh* mesh, const Mat3& transform) {
     DrawMesh(mesh);
 }
 
-void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, float time, bool loop) {
+void DrawMesh(Mesh* mesh, const Mat3& transform, float time, bool loop) {
     DrawMesh(mesh, transform, GetFrameIndex(mesh, time, loop));
 }
 
-void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, int frame_index) {
+void DrawMesh(Mesh* mesh, const Mat3& transform, int frame_index) {
     if (!mesh)
         return;
 
     frame_index = Clamp(frame_index, 0, GetFrameCount(mesh) - 1);
-    DrawMesh(GetFrame(mesh, frame_index), transform);
+    BindTransform(transform);
+    RenderMesh(mesh, static_cast<float>(frame_index) / static_cast<float>(GetFrameCount(mesh)) * GetDuration(mesh), false);
 }
 
-void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, Animator& animator, int bone_index, float time) {
+void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index, float time) {
     BindTransform(transform, animator, bone_index);
-    DrawMesh(GetFrame(mesh, GetFrameIndex(mesh, time)));
+    RenderMesh(mesh, time);
 }
 
 void DrawMesh(Mesh* mesh) {

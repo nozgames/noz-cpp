@@ -30,12 +30,12 @@ static void EndPenTool(bool commit);
 
 static void CommitPenFace() {
     MeshData* m = g_pen_tool.mesh;
-    MeshDataImpl* impl = m->impl;
+    MeshFrameData* frame = GetCurrentFrame(m);
 
     if (g_pen_tool.point_count < 3)
         return;
 
-    if (impl->face_count >= MESH_MAX_FACES)
+    if (frame->face_count >= MESH_MAX_FACES)
         return;
 
     // Create vertices for new points (reuse existing where snapped)
@@ -50,11 +50,11 @@ static void CommitPenFace() {
             vertex_indices[i] = pt.existing_vertex;
         } else {
             // Create new vertex
-            if (impl->vertex_count >= MESH_MAX_VERTICES)
+            if (frame->vertex_count >= MESH_MAX_VERTICES)
                 return;
 
-            int new_index = impl->vertex_count++;
-            VertexData& v = impl->vertices[new_index];
+            int new_index = frame->vertex_count++;
+            VertexData& v = frame->vertices[new_index];
             v = {};
             v.position = pt.position;
             v.edge_size = default_edge_size;
@@ -77,8 +77,8 @@ static void CommitPenFace() {
         if (g_pen_tool.points[i].existing_vertex >= 0) {
             int vi = g_pen_tool.points[i].existing_vertex;
             // Find faces using this vertex and count their colors
-            for (int fi = 0; fi < impl->face_count; fi++) {
-                FaceData& f = impl->faces[fi];
+            for (int fi = 0; fi < frame->face_count; fi++) {
+                FaceData& f = frame->faces[fi];
                 for (int fv = 0; fv < f.vertex_count; fv++) {
                     if (f.vertices[fv] == vi) {
                         color_counts[f.color]++;
@@ -102,14 +102,14 @@ static void CommitPenFace() {
     // Positive = counter-clockwise, negative = clockwise
     float signed_area = 0.0f;
     for (int i = 0; i < g_pen_tool.point_count; i++) {
-        Vec2 v0 = impl->vertices[vertex_indices[i]].position;
-        Vec2 v1 = impl->vertices[vertex_indices[(i + 1) % g_pen_tool.point_count]].position;
+        Vec2 v0 = frame->vertices[vertex_indices[i]].position;
+        Vec2 v1 = frame->vertices[vertex_indices[(i + 1) % g_pen_tool.point_count]].position;
         signed_area += (v1.x - v0.x) * (v1.y + v0.y);
     }
 
     // Create face preserving user's click order
-    int face_index = impl->face_count++;
-    FaceData& f = impl->faces[face_index];
+    int face_index = frame->face_count++;
+    FaceData& f = frame->faces[face_index];
     f.vertex_count = g_pen_tool.point_count;
     f.color = best_color;
     f.normal = {0, 0, 1};
@@ -240,7 +240,7 @@ static void UpdatePenTool() {
         if (vertex_index >= 0) {
             g_pen_tool.hovering_existing_vertex = true;
             g_pen_tool.hover_vertex_index = vertex_index;
-            g_pen_tool.hover_snap_position = m->impl->vertices[vertex_index].position;
+            g_pen_tool.hover_snap_position = GetCurrentFrame(m)->vertices[vertex_index].position;
         }
     }
 

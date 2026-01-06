@@ -91,17 +91,6 @@ static int LuaLoadAnimation(lua_State* L) {
     return 0;
 }
 
-static int LuaLoadAnimatedMesh(lua_State* L) {
-    const char* path = luaL_checkstring(L, 1);
-    const Name* name = GetName(path);
-    AnimatedMesh* animated_mesh = (AnimatedMesh*)LoadAsset(ALLOCATOR_DEFAULT, name, ASSET_TYPE_ANIMATED_MESH, LoadAnimatedMesh);
-    if (animated_mesh) {
-        Wrap(L, (Asset*)animated_mesh);
-        return 1;
-    }
-    return 0;
-}
-
 static int LuaLoadVfx(lua_State* L) {
     const char* path = luaL_checkstring(L, 1);
     const Name* name = GetName(path);
@@ -122,7 +111,6 @@ void noz::lua::InitLuaAsset(lua_State* L) {
         { "LoadSound", LuaLoadSound },
         { "LoadSkeleton", LuaLoadSkeleton },
         { "LoadAnimation", LuaLoadAnimation },
-        { "LoadAnimatedMesh", LuaLoadAnimatedMesh },
         { "LoadVfx", LuaLoadVfx },
         { nullptr, nullptr }
     };

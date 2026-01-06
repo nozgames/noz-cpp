@@ -19,8 +19,8 @@ struct CurveTool {
 
 static CurveTool g_curve = {};
 
-static Vec2 CalculateCurveCircleOffset(MeshDataImpl* impl, int edge_index, Vec2* out_outward_dir) {
-    EdgeData& e = impl->edges[edge_index];
+static Vec2 CalculateCurveCircleOffset(MeshFrameData* frame, int edge_index, Vec2* out_outward_dir) {
+    EdgeData& e = frame->edges[edge_index];
 
     // Find a face that uses this edge to get proper vertex ordering
     int face_index = e.face_index[0];
@@ -29,12 +29,12 @@ static Vec2 CalculateCurveCircleOffset(MeshDataImpl* impl, int edge_index, Vec2*
         return VEC2_ZERO;
     }
 
-    FaceData& face = impl->faces[face_index];
+    FaceData& face = frame->faces[face_index];
 
     // Calculate face centroid
     Vec2 centroid = VEC2_ZERO;
     for (int i = 0; i < face.vertex_count; i++)
-        centroid += impl->vertices[face.vertices[i]].position;
+        centroid += frame->vertices[face.vertices[i]].position;
     centroid = centroid / (float)face.vertex_count;
 
     // Find the edge vertices in face winding order
@@ -54,8 +54,8 @@ static Vec2 CalculateCurveCircleOffset(MeshDataImpl* impl, int edge_index, Vec2*
         return VEC2_ZERO;
     }
 
-    Vec2 p0 = impl->vertices[vi0].position;
-    Vec2 p1 = impl->vertices[vi1].position;
+    Vec2 p0 = frame->vertices[vi0].position;
+    Vec2 p1 = frame->vertices[vi1].position;
     Vec2 midpoint = (p0 + p1) * 0.5f;
 
     // Outward direction from centroid to midpoint
@@ -70,8 +70,9 @@ static Vec2 CalculateCurveCircleOffset(MeshDataImpl* impl, int edge_index, Vec2*
 static void EndCurve(bool commit) {
     if (!commit) {
         // Restore all original offsets
+        MeshFrameData* frame = GetCurrentFrame(g_curve.mesh);
         for (int i = 0; i < g_curve.edge_count; i++) {
-            g_curve.mesh->impl->edges[g_curve.edges[i].edge_index].curve_offset = g_curve.edges[i].original_offset;
+            frame->edges[g_curve.edges[i].edge_index].curve_offset = g_curve.edges[i].original_offset;
         }
         MarkDirty(g_curve.mesh);
     }
@@ -116,7 +117,7 @@ static void UpdateCurve() {
             }
         }
 
-        g_curve.mesh->impl->edges[ce.edge_index].curve_offset = new_offset;
+        GetCurrentFrame(g_curve.mesh)->edges[ce.edge_index].curve_offset = new_offset;
     }
 
     MarkDirty(g_curve.mesh);
@@ -140,14 +141,14 @@ void BeginCurveTool(MeshData* mesh, int* edge_indices, int edge_count) {
     g_curve.edge_count = edge_count;
     g_curve.drag_start = g_view.mouse_world_position;
 
-    MeshDataImpl* impl = mesh->impl;
+    MeshFrameData* frame = GetCurrentFrame(mesh);
 
     // Save original offsets and calculate circle offsets for all edges
     for (int i = 0; i < edge_count; i++) {
         CurveToolEdge& ce = g_curve.edges[i];
         ce.edge_index = edge_indices[i];
-        ce.original_offset = impl->edges[edge_indices[i]].curve_offset;
-        ce.circle_offset = CalculateCurveCircleOffset(impl, edge_indices[i], &ce.outward_dir);
+        ce.original_offset = frame->edges[edge_indices[i]].curve_offset;
+        ce.circle_offset = CalculateCurveCircleOffset(frame, edge_indices[i], &ce.outward_dir);
         ce.circle_amount = Dot(ce.circle_offset, ce.outward_dir);
     }
 

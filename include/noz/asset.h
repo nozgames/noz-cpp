@@ -21,7 +21,6 @@ enum AssetType {
     ASSET_TYPE_TEXTURE,
     ASSET_TYPE_FONT,
     ASSET_TYPE_SHADER,
-    ASSET_TYPE_ANIMATED_MESH,
     ASSET_TYPE_EVENT,
     ASSET_TYPE_BIN,
     ASSET_TYPE_LUA,
@@ -94,7 +93,6 @@ Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const 
 Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
-Asset* LoadAnimatedMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 Asset* LoadBin(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 
 #if defined(NOZ_LUA)
@@ -137,9 +135,6 @@ Asset* LoadLuaScript(Allocator* allocator, Stream* stream, AssetHeader* header, 
 #define NOZ_LOAD_ANIMATION(allocator, path, member) \
     member = (Animation*)LoadAsset(allocator, path, ASSET_TYPE_ANIMATION, LoadAnimation, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
 
-#define NOZ_LOAD_ANIMMESH(allocator, path, member) \
-    member = static_cast<AnimatedMesh*>(LoadAsset(allocator, path, ASSET_TYPE_ANIMATED_MESH, LoadAnimatedMesh));
-
 #define NOZ_LOAD_BIN(allocator, path, member) \
     member = static_cast<Bin*>(LoadAsset(allocator, path, ASSET_TYPE_BIN, LoadBin,  NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member)));
 
@@ -152,7 +147,6 @@ Asset* LoadLuaScript(Allocator* allocator, Stream* stream, AssetHeader* header, 
 #define NOZ_RELOAD_SOUND(asset_name, asset)
 #define NOZ_RELOAD_SKELETON(asset_name, asset)
 #define NOZ_RELOAD_ANIMATION(asset_name, asset)
-#define NOZ_RELOAD_ANIMMESH(asset_name, asset)
 #define NOZ_RELOAD_BIN(asset_name, asset)
 #define NOZ_RELOAD_ATLAS(asset_name, asset)
 

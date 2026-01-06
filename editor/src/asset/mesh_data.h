@@ -64,7 +64,8 @@ struct PendingCurve {
     Vec2 offset;
 };
 
-struct MeshDataImpl {
+// Per-frame data for a mesh
+struct MeshFrameData {
     // Large arrays
     VertexData vertices[MESH_MAX_VERTICES];
     EdgeData edges[MESH_MAX_EDGES];
@@ -76,29 +77,57 @@ struct MeshDataImpl {
     PendingCurve pending_curves[MESH_MAX_EDGES];
     int pending_curve_count;
 
-    // Metadata
-    SkeletonData* skeleton;
-    const Name* skeleton_name;
-    const Name* atlas_name;  // Runtime: set by atlas post-load, not persisted in mesh metadata
-    int palette;
+    // Per-frame counts
     int vertex_count;
     int edge_count;
     int face_count;
     int tag_count;
+
+    // Selection state
     int selected_vertex_count;
     int selected_edge_count;
     int selected_face_count;
+
+    // Cached meshes
     Mesh* mesh;
     Mesh* outline;
     int outline_version;
+
+    // Per-frame properties
     Vec2Int edge_color;
-    int depth;
     int hold;
+};
+
+struct MeshDataImpl {
+    // Frame array - frame 0 always exists
+    MeshFrameData frames[MESH_MAX_FRAMES];
+    int frame_count;      // >= 1
+    int current_frame;    // Currently edited frame index
+
+    // Shared metadata (applies to all frames)
+    SkeletonData* skeleton;
+    const Name* skeleton_name;
+    const Name* atlas_name;  // Runtime: set by atlas post-load, not persisted in mesh metadata
+    int palette;
+    int depth;
+
+    // Animation playback state (for editor preview)
+    Mesh* playing;
+    float play_time;
 };
 
 struct MeshData : AssetData {
     MeshDataImpl* impl;
 };
+
+// Frame management functions
+extern MeshFrameData* GetCurrentFrame(MeshData* m);
+extern void SetCurrentFrame(MeshData* m, int frame_index);
+extern int GetFrameCount(MeshData* m);
+extern void AddFrame(MeshData* m, int after_index);
+extern void DeleteFrame(MeshData* m, int frame_index);
+extern void CopyFrame(MeshData* m, int src_frame, MeshFrameData* dst);
+extern void PasteFrame(MeshData* m, int dst_frame, const MeshFrameData* src);
 
 extern void InitMeshData(AssetData* a);
 extern AssetData* NewMeshData(const std::filesystem::path& path);
@@ -138,7 +167,7 @@ extern bool IsVertexOnOutsideEdge(MeshData* m, int v0);
 extern Vec2 GetFaceCenter(MeshData* m, int face_index);
 extern Vec2 GetEdgePoint(MeshData* m, int edge_index, float t);
 inline Vec2 GetVertexPoint(MeshData* m, int vertex_index) {
-    return m->impl->vertices[vertex_index].position;
+    return GetCurrentFrame(m)->vertices[vertex_index].position;
 }
 extern void UpdateEdges(MeshData* m);
 extern void Center(MeshData* m);

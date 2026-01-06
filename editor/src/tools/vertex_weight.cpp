@@ -15,7 +15,7 @@ static VertexWeightTool g_vertex_weight = {};
 
 static void EndVertexWeightTool(bool commit) {
     MeshData* m = g_vertex_weight.options.mesh;
-    MeshDataImpl* impl = m->impl;
+    MeshFrameData* frame = GetCurrentFrame(m);
     if (commit) {
         MarkModified(m);
         MarkDirty(m);
@@ -24,7 +24,7 @@ static void EndVertexWeightTool(bool commit) {
         int vertex_count = g_vertex_weight.options.vertex_count;
         for (int vertex_index=0; vertex_index<vertex_count; vertex_index++)
             for (int weight_index=0; weight_index<MESH_MAX_VERTEX_WEIGHTS; weight_index++)
-                impl->vertices[g_vertex_weight.options.vertices[vertex_index]].weights[weight_index].weight =
+                frame->vertices[g_vertex_weight.options.vertices[vertex_index]].weights[weight_index].weight =
                     g_vertex_weight.initial_weights[vertex_index * MESH_MAX_VERTEX_WEIGHTS + weight_index];
 
         CancelUndo();
@@ -71,10 +71,11 @@ void BeginVertexWeightTool(const VertexWeightToolOptions& options) {
     g_vertex_weight.options = options;
 
     MeshData* m = options.mesh;
+    MeshFrameData* frame = GetCurrentFrame(m);
     for (int vertex_index=0; vertex_index<options.vertex_count; vertex_index++)
         for (int weight_index=0; weight_index<MESH_MAX_VERTEX_WEIGHTS; weight_index++)
             g_vertex_weight.initial_weights[vertex_index * MESH_MAX_VERTEX_WEIGHTS + weight_index] =
-                m->impl->vertices[options.vertices[vertex_index]].weights[weight_index].weight;
+                frame->vertices[options.vertices[vertex_index]].weights[weight_index].weight;
 
     BeginDrag();
 }

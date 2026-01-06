@@ -8,7 +8,7 @@
 
 constexpr int MAX_BONES = 64;
 constexpr u32 MAX_UNIFORM_BUFFER_SIZE = sizeof(Mat4) * 64;
-constexpr int ANIMATED_MESH_MAX_FRAMES = 32;
+constexpr int MESH_MAX_FRAMES = 32;  // Max frames for animated meshes
 constexpr int MESH_MAX_VERTEX_WEIGHTS = 4;
 
 // @types
@@ -18,7 +18,6 @@ struct Material : Asset {};
 struct Font : Asset {};
 struct Shader : Asset {};
 struct Skeleton : Asset {};
-struct AnimatedMesh : Asset {};
 struct MeshBuilder {};
 struct Atlas : Texture {};
 struct Animator;
@@ -97,16 +96,11 @@ extern bool IsUploaded(Mesh* mesh);
 extern void UpdateMesh(Mesh* mesh, const MeshVertex* vertices, u16 vertex_count, const u16* indices, u16 index_count);
 extern Bounds2 ToBounds(const MeshVertex* vertices, int vertex_count);
 
-// @animated_mesh
-extern AnimatedMesh* CreateAnimatedMesh(Allocator* allocator, const Name* name, int frame_count, Mesh** frames);
-extern float GetDuration(AnimatedMesh* mesh);
-extern int GetFrameCount(AnimatedMesh* mesh);
-extern Mesh* GetFrame(AnimatedMesh* mesh, int frame_index);
-extern float Update(AnimatedMesh* mesh, float current_time, float speed=1.0f, bool loop=true);
-extern float Update(AnimatedMesh* mesh, float current_time, float speed, bool loop, int min_frame, int max_frame=-1);
-extern int GetFrameIndex(AnimatedMesh* mesh, float time, bool loop=false);
-extern Bounds2 GetBounds(AnimatedMesh* mesh);
-extern Vec2 GetSize(AnimatedMesh* mesh);
+// Animation support (mesh can have multiple frames)
+extern int GetFrameCount(Mesh* mesh);
+extern float GetDuration(Mesh* mesh);
+extern int GetFrameIndex(Mesh* mesh, float time, bool loop=false);
+extern float Update(Mesh* mesh, float current_time, float speed=1.0f, bool loop=true);
 
 // @mesh_builder
 extern MeshBuilder* CreateMeshBuilder(Allocator* allocator, u16 max_vertices, u16 max_indices);
@@ -180,10 +174,9 @@ extern void BindTexture(Texture* texture);
 extern void DrawMesh(Mesh* mesh);
 extern void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index);
 extern void DrawMesh(Mesh* mesh, const Mat3& transform);
-
-extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, int frame_index);
-extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, float time, bool loop=false);
-extern void DrawMesh(AnimatedMesh* mesh, const Mat3& transform, Animator& animator, int bone_index, float time);
+extern void DrawMesh(Mesh* mesh, const Mat3& transform, int frame_index);
+extern void DrawMesh(Mesh* mesh, const Mat3& transform, float time, bool loop=false);
+extern void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index, float time);
 
 // @clipping
 extern void BeginClip();      // Start writing clip mask to stencil
@@ -270,12 +263,10 @@ extern Texture** TEXTURE;
 extern Atlas** ATLAS;
 extern Shader** SHADER;
 extern Skeleton** SKELETON;
-extern AnimatedMesh** ANIMMESH;
 
 extern int MESH_COUNT;
 extern int FONT_COUNT;
 extern int TEXTURE_COUNT;
 extern int SHADER_COUNT;
-extern int ANIMMESH_COUNT;
 extern int SKELETON_COUNT;
 extern int ATLAS_COUNT;

@@ -109,13 +109,14 @@ void SetPosition(AssetData* a, const Vec2& position) {
 void DrawSelectedEdges(MeshData* m, const Vec2& position) {
     BindMaterial(g_view.vertex_material);
 
-    for (i32 edge_index=0; edge_index < m->impl->edge_count; edge_index++) {
-        const EdgeData& ee = m->impl->edges[edge_index];
+    MeshFrameData* frame = GetCurrentFrame(m);
+    for (i32 edge_index=0; edge_index < frame->edge_count; edge_index++) {
+        const EdgeData& ee = frame->edges[edge_index];
         if (!ee.selected)
             continue;
 
-        const Vec2& v0 = m->impl->vertices[ee.v0].position;
-        const Vec2& v1 = m->impl->vertices[ee.v1].position;
+        const Vec2& v0 = frame->vertices[ee.v0].position;
+        const Vec2& v1 = frame->vertices[ee.v1].position;
         DrawLine(v0 + position, v1 + position);
     }
 }
@@ -123,19 +124,21 @@ void DrawSelectedEdges(MeshData* m, const Vec2& position) {
 void DrawEdges(MeshData* m, const Vec2& position) {
     BindMaterial(g_view.vertex_material);
 
-    for (i32 edge_index=0; edge_index < m->impl->edge_count; edge_index++) {
-        const EdgeData& ee = m->impl->edges[edge_index];
-        DrawLine(m->impl->vertices[ee.v0].position + position, m->impl->vertices[ee.v1].position + position);
+    MeshFrameData* frame = GetCurrentFrame(m);
+    for (i32 edge_index=0; edge_index < frame->edge_count; edge_index++) {
+        const EdgeData& ee = frame->edges[edge_index];
+        DrawLine(frame->vertices[ee.v0].position + position, frame->vertices[ee.v1].position + position);
     }
 }
 
 void DrawEdges(MeshData* m, const Mat3& transform) {
     BindMaterial(g_view.vertex_material);
 
-    for (i32 edge_index=0; edge_index < m->impl->edge_count; edge_index++) {
-        const EdgeData& ee = m->impl->edges[edge_index];
-        Vec2 p1 = TransformPoint(transform, m->impl->vertices[ee.v0].position);
-        Vec2 p2 = TransformPoint(transform, m->impl->vertices[ee.v1].position);
+    MeshFrameData* frame = GetCurrentFrame(m);
+    for (i32 edge_index=0; edge_index < frame->edge_count; edge_index++) {
+        const EdgeData& ee = frame->edges[edge_index];
+        Vec2 p1 = TransformPoint(transform, frame->vertices[ee.v0].position);
+        Vec2 p2 = TransformPoint(transform, frame->vertices[ee.v1].position);
         DrawLine(p1, p2);
     }
 }
@@ -143,23 +146,25 @@ void DrawEdges(MeshData* m, const Mat3& transform) {
 void DrawSelectedFaces(MeshData* m, const Vec2& position) {
     BindMaterial(g_view.vertex_material);
 
-    for (i32 face_index=0; face_index < m->impl->face_count; face_index++) {
-        const FaceData& f = m->impl->faces[face_index];
+    MeshFrameData* frame = GetCurrentFrame(m);
+    for (i32 face_index=0; face_index < frame->face_count; face_index++) {
+        const FaceData& f = frame->faces[face_index];
         if (!f.selected)
             continue;
 
         for (int vertex_index=0; vertex_index<f.vertex_count; vertex_index++) {
             int v0 = f.vertices[vertex_index];
             int v1 = f.vertices[(vertex_index + 1) % f.vertex_count];
-            DrawLine(m->impl->vertices[v0].position + position, m->impl->vertices[v1].position + position);
+            DrawLine(frame->vertices[v0].position + position, frame->vertices[v1].position + position);
         }
     }
 }
 
 void DrawFaceCenters(MeshData* m, const Vec2& position) {
     BindMaterial(g_view.vertex_material);
-    for (int i=0; i<m->impl->face_count; i++) {
-        FaceData& ef = m->impl->faces[i];
+    MeshFrameData* frame = GetCurrentFrame(m);
+    for (int i=0; i<frame->face_count; i++) {
+        FaceData& ef = frame->faces[i];
         BindColor(ef.selected ? COLOR_VERTEX_SELECTED : COLOR_VERTEX);
         DrawVertex(position + GetFaceCenter(m, i));
     }
@@ -508,8 +513,6 @@ void NewAsset(AssetType asset_type, const Name* asset_name, const Vec2* position
         a = NewAnimationData(asset_name->value);
     else if (asset_type == ASSET_TYPE_VFX)
         a = NewVfxData(asset_name->value);
-    else if (asset_type == ASSET_TYPE_ANIMATED_MESH)
-        a = NewAnimatedMeshData(asset_name->value);
     else if (asset_type == ASSET_TYPE_EVENT)
         a = NewEventData(asset_name->value);
     else if (asset_type == ASSET_TYPE_ATLAS)

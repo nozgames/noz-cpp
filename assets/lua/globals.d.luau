@@ -7,7 +7,6 @@ declare class Texture end
 declare class Sound end
 declare class Skeleton end
 declare class Animation end
-declare class AnimatedMesh end
 declare class Shader end
 declare class Bin end
 declare class Vfx end
@@ -20,7 +19,6 @@ declare function LoadFont(path: string): Font
 declare function LoadSound(path: string): Sound
 declare function LoadSkeleton(path: string): Skeleton
 declare function LoadAnimation(path: string): Animation
-declare function LoadAnimatedMesh(path: string): AnimatedMesh
 declare function LoadVfx(path: string): Vfx
 
 declare class Color

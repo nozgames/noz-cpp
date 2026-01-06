@@ -60,7 +60,7 @@ static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* 
 }
 
 static bool AtlasDependsOn(AssetData* atlas_asset, AssetData* dependency) {
-    if (dependency->type != ASSET_TYPE_MESH && dependency->type != ASSET_TYPE_ANIMATED_MESH) {
+    if (dependency->type != ASSET_TYPE_MESH) {
         return false;
     }
 

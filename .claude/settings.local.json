@@ -6,7 +6,10 @@
       "Bash(curl:*)",
       "Bash(cat:*)",
       "Bash(ls -la \"D:\\\\git\\\\noz\\\\editor\\\\src\\\\import\"\" 2>/dev/null || echo \"Import directory not found \")",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(del \"D:\\\\git\\\\noz\\\\editor\\\\src\\\\asset\\\\animated_mesh_data.h\")",
+      "Bash(del \"D:\\\\git\\\\noz\\\\editor\\\\src\\\\asset\\\\animated_mesh_data.cpp\")",
+      "Bash(del \"D:\\\\git\\\\noz\\\\editor\\\\src\\\\asset\\\\animated_mesh_editor.cpp\")"
     ],
     "deny": [],
     "ask": []

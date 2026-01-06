@@ -26,13 +26,6 @@ Place this file in your project directory or Visual Studio's natvis folder.
     </Expand>
   </Type>
 
-  <Type Name="AnimatedMesh">
-    <DisplayString>AnimatedMesh</DisplayString>
-    <Expand>
-      <ExpandedItem>(AnimatedMeshImpl*)this</ExpandedItem>
-    </Expand>
-  </Type>
-
   <Type Name="Mesh">
     <DisplayString>Mesh</DisplayString>
     <Expand>

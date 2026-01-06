@@ -6,7 +6,6 @@ extern void InitMeshEditor();
 extern void InitTextureEditor();
 extern void InitSkeletonEditor();
 extern void InitAnimationEditor();
-extern void InitAnimatedMeshEditor();
 extern void InitStyles();
 
 extern Font* FONT_SEGUISB;
@@ -678,8 +677,6 @@ static void NewAssetCommand(const Command& command) {
         asset_type = ASSET_TYPE_ANIMATION;
     else if (type == NAME_VFX)
         asset_type = ASSET_TYPE_VFX;
-    else if (type == NAME_AM || type == NAME_ANIMATEDMESH)
-        asset_type = ASSET_TYPE_ANIMATED_MESH;
     else if (type == NAME_EVENT || type == NAME_E)
         asset_type = ASSET_TYPE_EVENT;
     else if (type == NAME_ATLAS)
@@ -745,13 +742,13 @@ static void ScaleCommand(const Command& command) {
 
         if (a->type == ASSET_TYPE_MESH) {
             MeshData* m = static_cast<MeshData*>(a);
-            MeshDataImpl* impl = m->impl;
+            MeshFrameData* frame = GetCurrentFrame(m);
 
-            for (int vi = 0; vi < impl->vertex_count; vi++)
-                impl->vertices[vi].position = impl->vertices[vi].position * scale;
+            for (int vi = 0; vi < frame->vertex_count; vi++)
+                frame->vertices[vi].position = frame->vertices[vi].position * scale;
 
-            for (int ti = 0; ti < impl->tag_count; ti++)
-                impl->tags[ti].position = impl->tags[ti].position * scale;
+            for (int ti = 0; ti < frame->tag_count; ti++)
+                frame->tags[ti].position = frame->tags[ti].position * scale;
 
             MarkDirty(m);
             MarkModified(m);
@@ -785,25 +782,6 @@ static void ScaleCommand(const Command& command) {
             MarkModified(n);
             asset_count++;
 
-        } else if (a->type == ASSET_TYPE_ANIMATED_MESH) {
-            AnimatedMeshData* am = static_cast<AnimatedMeshData*>(a);
-
-            // Scale each frame
-            for (int fi = 0; fi < am->impl->frame_count; fi++) {
-                MeshData* m = &am->impl->frames[fi];
-                MeshDataImpl* impl = m->impl;
-
-                for (int vi = 0; vi < impl->vertex_count; vi++)
-                    impl->vertices[vi].position = impl->vertices[vi].position * scale;
-
-                for (int ti = 0; ti < impl->tag_count; ti++)
-                    impl->tags[ti].position = impl->tags[ti].position * scale;
-
-                MarkDirty(m);
-            }
-
-            MarkModified(am);
-            asset_count++;
         }
     }
 
@@ -975,7 +953,6 @@ static void ToggleGrid() {
 
 static void NewMesh() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_MESH, nullptr, &pos); }
 static void NewEvent() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_EVENT, nullptr, &pos); }
-static void NewAnimatedMesh() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_ANIMATED_MESH, nullptr, &pos); }
 static void NewAtlas() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_ATLAS, nullptr, &pos); }
 static void NewSkeleton() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_SKELETON, nullptr, &pos); }
 static void NewAnimation() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_ANIMATION, nullptr, &pos); }
@@ -993,7 +970,6 @@ static void OpenAssetContextMenu() {
             .title="Asset",
             .items = {
                 { "New", nullptr, true },
-                { "Animated Mesh", NewAnimatedMesh, true, 1 },
                 { "Animation", NewAnimation, true, 1 },
                 { "Atlas", NewAtlas, true, 1 },
                 { "Event", NewEvent, true, 1 },
@@ -1006,7 +982,7 @@ static void OpenAssetContextMenu() {
                 { "Rename", RenameAsset, any_selected },
                 { "Delete", DeleteSelectedAssets, any_selected },
             },
-            .item_count = 13
+            .item_count = 12
         });
     }
 }
@@ -1119,7 +1095,6 @@ void InitView() {
     InitTextureEditor();
     InitSkeletonEditor();
     InitAnimationEditor();
-    InitAnimatedMeshEditor();
 
     NAME_MESH = GetName("mesh");
     NAME_VFX = GetName("vfx");
@@ -1136,10 +1111,8 @@ void InitView() {
     NAME_EDIT = GetName("edit");
     NAME_R = GetName("r");
     NAME_M = GetName("m");
-    NAME_AM = GetName("am");
     NAME_SAVE = GetName("save");
     NAME_RU = GetName("ru");
-    NAME_ANIMATEDMESH = GetName("animatedmesh");
     NAME_S = GetName("s");
     NAME_SKELETON = GetName("skeleton");
 
