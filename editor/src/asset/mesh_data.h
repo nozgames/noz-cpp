@@ -16,7 +16,6 @@ constexpr int MESH_MAX_VERTICES = 1024;
 constexpr int MESH_MAX_INDICES = 1024;
 constexpr int MESH_MAX_FACES = 256;
 constexpr int MESH_MAX_EDGES = 2048;
-constexpr int MESH_MAX_TAGS = 8;
 
 struct VertexWeight {
     int bone_index;
@@ -52,49 +51,30 @@ struct FaceData {
     int vertex_count;
 };
 
-struct TagData {
-    Vec2 position;
-    float rotation;
-    const Name* name;
-    VertexWeight weights[MESH_MAX_VERTEX_WEIGHTS];
-};
-
 struct PendingCurve {
     int v0, v1;
     Vec2 offset;
 };
 
-// Per-frame data for a mesh
 struct MeshFrameData {
-    // Large arrays
     VertexData vertices[MESH_MAX_VERTICES];
     EdgeData edges[MESH_MAX_EDGES];
     FaceData faces[MESH_MAX_FACES];
-    TagData tags[MESH_MAX_TAGS];
     int face_vertices[MESH_MAX_INDICES];
-
-    // Pending curves to apply after UpdateEdges (used by SplitEdge when update=false)
     PendingCurve pending_curves[MESH_MAX_EDGES];
-    int pending_curve_count;
 
-    // Per-frame counts
+    int pending_curve_count;
     int vertex_count;
     int edge_count;
     int face_count;
-    int tag_count;
 
-    // Selection state
     int selected_vertex_count;
     int selected_edge_count;
     int selected_face_count;
 
-    // Cached meshes
     Mesh* mesh;
     Mesh* outline;
     int outline_version;
-
-    // Per-frame properties
-    Vec2Int edge_color;
     int hold;
 };
 
@@ -141,15 +121,12 @@ extern int HitTestVertex(MeshData* m, const Mat3& transform, const Vec2& positio
 inline int HitTestVertex(MeshData* m, const Vec2& position, float size_mult=1.0f) {
     return HitTestVertex(m, Translate(m->position), position, size_mult);
 }
+extern Vec2 HitTestSnap(MeshData* m, const Vec2& position);
 extern int HitTestVertex(const Vec2& position, const Vec2& hit_pos, float size_mult=1.0f);
 extern int HitTestEdge(MeshData* m, const Mat3& transform, const Vec2& position, float* where=nullptr, float size_mult=1.0f);
 inline int HitTestEdge(MeshData* m, const Vec2& position, float* where=nullptr, float size_mult=1.0f) {
     return HitTestEdge(m, Translate(m->position), position, where, size_mult);
 }
-extern int HitTestTag(MeshData* m, const Vec2& position, float size_mult=1.0f);
-extern Vec2 HitTestSnap(MeshData* m, const Vec2& position);
-extern void AddTag(MeshData* m, const Vec2& position);
-extern void RemoveTag(MeshData* m, int index);
 extern Bounds2 GetSelectedBounds(MeshData* m);
 extern void MarkDirty(MeshData* m);
 extern void SetSelecteFaceColor(MeshData* m, int color);

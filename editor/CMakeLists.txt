@@ -54,7 +54,7 @@ target_link_libraries(nozed PRIVATE
 )
 
 if(MSVC)
-    target_compile_options(nozed PRIVATE /W4 /WX)
+    target_compile_options(nozed PRIVATE /W4 /WX  /wd4100 /wd4189)
 endif()
 
 if(NOT NOZ_EDITOR_LIB)

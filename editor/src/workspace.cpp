@@ -717,9 +717,6 @@ static void ScaleCommand(const Command& command) {
             for (int vi = 0; vi < frame->vertex_count; vi++)
                 frame->vertices[vi].position = frame->vertices[vi].position * scale;
 
-            for (int ti = 0; ti < frame->tag_count; ti++)
-                frame->tags[ti].position = frame->tags[ti].position * scale;
-
             MarkDirty(m);
             MarkModified(m);
             asset_count++;

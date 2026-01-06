@@ -79,7 +79,7 @@ static void HandleBoxSelect(const Bounds2& bounds);
 
 // Forward declarations for animation functions
 static bool ShouldShowDopesheet();
-static void DrawDopesheet();
+static void Dopesheet();
 static void DrawOnionSkin();
 
 inline MeshData* GetMeshData() {
@@ -809,6 +809,10 @@ static void MeshEditorToolbar() {
     BeginOverlay(MESH_EDITOR_ID_TOOLBAR, ALIGN_BOTTOM_CENTER);
     BeginColumn({.spacing=8});
 
+    if (ShouldShowDopesheet()) {
+        Dopesheet();
+    }
+
     // Buttons
     BeginContainer();
     BeginRow({.align=ALIGN_LEFT, .spacing=4});
@@ -1390,18 +1394,51 @@ static void NewFace() {
     SelectFace(face_index, true);
 }
 
-static void UpdateMeshEditor() {
-    // Check animation shortcuts (frame navigation, etc.)
-    CheckShortcuts(g_mesh_editor.animation_shortcuts, g_mesh_editor.input);
+// Get total animation duration in frames (accounting for hold)
+static int GetTotalAnimationFrames(MeshData* m) {
+    int total = 0;
+    for (int i = 0; i < m->impl->frame_count; i++)
+        total += 1 + m->impl->frames[i].hold;
+    return total;
+}
 
-    // Check regular mesh editing shortcuts
-    CheckShortcuts(g_mesh_editor.shortcuts, g_mesh_editor.input);
-    UpdateDefaultState();
-
-    // Show dopesheet if needed
-    if (ShouldShowDopesheet()) {
-        DrawDopesheet();
+// Get which frame index to display for a given playback frame (accounting for hold)
+static int GetFrameForPlaybackTime(MeshData* m, int playback_frame) {
+    int accumulated = 0;
+    for (int i = 0; i < m->impl->frame_count; i++) {
+        int frame_duration = 1 + m->impl->frames[i].hold;
+        if (playback_frame < accumulated + frame_duration)
+            return i;
+        accumulated += frame_duration;
     }
+    return m->impl->frame_count - 1;
+}
+
+static void UpdateMeshEditor() {
+    CheckShortcuts(g_mesh_editor.animation_shortcuts, g_mesh_editor.input);
+    CheckShortcuts(g_mesh_editor.shortcuts, g_mesh_editor.input);
+
+    // Update animation playback
+    if (g_mesh_editor.is_playing) {
+        MeshData* m = GetMeshData();
+        if (m->impl->frame_count > 1) {
+            float frame_rate = (float)g_config->GetInt("animation", "frame_rate", 12);
+            g_mesh_editor.playback_time += GetFrameTime();
+
+            int total_frames = GetTotalAnimationFrames(m);
+            float total_duration = total_frames / frame_rate;
+
+            // Loop animation
+            while (g_mesh_editor.playback_time >= total_duration)
+                g_mesh_editor.playback_time -= total_duration;
+
+            int playback_frame = (int)(g_mesh_editor.playback_time * frame_rate);
+            int frame_index = GetFrameForPlaybackTime(m, playback_frame);
+            SetCurrentFrame(m, frame_index);
+        }
+    }
+
+    UpdateDefaultState();
 }
 
 static void DrawSkeleton() {
@@ -1589,6 +1626,10 @@ static void DrawMeshEditor() {
 
     BindColor(COLOR_WHITE, Vec2Int{0,impl->palette});
     DrawMesh(m, Translate(m->position));
+
+    // Skip editor overlays when playing animation
+    if (g_mesh_editor.is_playing)
+        return;
 
     // Draw tiled copies if tiling preview is enabled
     if (g_mesh_editor.show_tiling) {
@@ -1909,6 +1950,184 @@ static void DuplicateSelected() {
     BeginMoveTool();
 }
 
+
+// ===== Animation functions =====
+
+// Build edge outline mesh for onion skin display
+static Mesh* BuildEdgeMesh(MeshFrameData* frame, Mesh* existing) {
+    PushScratch();
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, MAX_VERTICES * 4, MAX_EDGES * 6);
+
+    float line_width = 0.02f * g_view.zoom_ref_scale;
+
+    for (int i = 0; i < frame->edge_count; i++) {
+        const EdgeData& e = frame->edges[i];
+        Vec2 v0 = frame->vertices[e.v0].position;
+        Vec2 v1 = frame->vertices[e.v1].position;
+        Vec2 dir = Normalize(v1 - v0);
+        Vec2 n = Perpendicular(dir) * line_width;
+
+        u16 base = GetVertexCount(builder);
+        AddVertex(builder, v0 - n);
+        AddVertex(builder, v0 + n);
+        AddVertex(builder, v1 + n);
+        AddVertex(builder, v1 - n);
+        AddTriangle(builder, base, base + 1, base + 2);
+        AddTriangle(builder, base, base + 2, base + 3);
+    }
+
+    Mesh* result;
+    if (!existing)
+        result = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
+    else {
+        UpdateMeshFromBuilder(existing, builder);
+        result = existing;
+    }
+
+    PopScratch();
+    return result;
+}
+
+// Check if dopesheet should be shown
+static bool ShouldShowDopesheet() {
+    MeshData* m = GetMeshData();
+    return m->impl->frame_count > 1 || GetCurrentFrame(m)->hold > 0;
+}
+
+// Navigate to previous frame
+static void SetPrevFrame() {
+    MeshData* m = GetMeshData();
+    if (m->impl->frame_count <= 1) return;
+    int new_frame = (m->impl->current_frame - 1 + m->impl->frame_count) % m->impl->frame_count;
+    SetCurrentFrame(m, new_frame);
+    RefreshMeshEditorSelection();
+}
+
+// Navigate to next frame
+static void SetNextFrame() {
+    MeshData* m = GetMeshData();
+    if (m->impl->frame_count <= 1) return;
+    int new_frame = (m->impl->current_frame + 1) % m->impl->frame_count;
+    SetCurrentFrame(m, new_frame);
+    RefreshMeshEditorSelection();
+}
+
+// Insert a new frame after current (duplicates current frame)
+static void InsertFrameAfter() {
+    MeshData* m = GetMeshData();
+    if (m->impl->frame_count >= MESH_MAX_FRAMES) return;
+
+    RecordUndo(m);
+    AddFrame(m, m->impl->current_frame);
+    MarkModified();
+}
+
+static void DeleteCurrentFrame() {
+    MeshData* m = GetMeshData();
+    if (m->impl->frame_count <= 1) return;
+
+    RecordUndo(m);
+    DeleteFrame(m, m->impl->current_frame);
+    RefreshMeshEditorSelection();
+    MarkModified();
+}
+
+static void TogglePlayAnimation() {
+    g_mesh_editor.is_playing = !g_mesh_editor.is_playing;
+    g_mesh_editor.playback_time = 0.0f;
+}
+
+static void IncHoldFrame() {
+    MeshData* m = GetMeshData();
+    GetCurrentFrame(m)->hold++;
+    MarkModified();
+}
+
+static void DecHoldFrame() {
+    MeshData* m = GetMeshData();
+    MeshFrameData* frame = GetCurrentFrame(m);
+    if (frame->hold > 0) {
+        frame->hold--;
+        MarkModified();
+    }
+}
+
+// Toggle onion skin display
+static void ToggleOnionSkin() {
+    g_mesh_editor.onion_skin_enabled = !g_mesh_editor.onion_skin_enabled;
+}
+
+// Draw the dopesheet timeline UI
+static void Dopesheet() {
+    MeshData* m = GetMeshData();
+    MeshDataImpl* impl = m->impl;
+
+    BeginContainer({.padding=EdgeInsetsAll(4), .color=COLOR_WHITE_2PCT, .border{.radius=STYLE_OVERLAY_CONTENT_BORDER_RADIUS}});
+    BeginRow();
+
+    for (int frame_index = 0; frame_index < impl->frame_count; frame_index++) {
+        MeshFrameData* f = &impl->frames[frame_index];
+        BeginContainer({
+            .width=FRAME_SIZE_X * (1 + f->hold) + FRAME_BORDER_SIZE * 2,
+            .height=FRAME_SIZE_Y + FRAME_BORDER_SIZE * 2,
+            .margin=EdgeInsetsLeft(-2),
+            .color = frame_index == impl->current_frame
+                ? DOPESHEET_SELECTED_FRAME_COLOR
+                : FRAME_COLOR,
+            .border = {.radius=6, .width=FRAME_BORDER_SIZE, .color=FRAME_BORDER_COLOR}
+        });
+        BeginContainer({.align=ALIGN_BOTTOM_LEFT, .margin=EdgeInsetsBottomLeft(DOPESHEET_FRAME_DOT_OFFSET_Y, DOPESHEET_FRAME_DOT_OFFSET_X)});
+            Container({.width=DOPESHEET_FRAME_DOT_SIZE, .height=DOPESHEET_FRAME_DOT_SIZE, .color=DOPESHEET_FRAME_DOT_COLOR});
+        EndContainer();
+        EndContainer();
+    }
+
+    EndRow();
+    EndContainer();
+}
+
+// Draw onion skin overlays
+static void DrawOnionSkin() {
+    MeshData* m = GetMeshData();
+    MeshDataImpl* impl = m->impl;
+
+    if (!g_mesh_editor.onion_skin_enabled || impl->frame_count <= 1)
+        return;
+
+    // Rebuild edge meshes if frame changed
+    if (g_mesh_editor.cached_frame != impl->current_frame) {
+        g_mesh_editor.cached_frame = impl->current_frame;
+
+        int prev_frame = (impl->current_frame - 1 + impl->frame_count) % impl->frame_count;
+        if (prev_frame != impl->current_frame) {
+            MeshFrameData* pf = &impl->frames[prev_frame];
+            g_mesh_editor.prev_frame_mesh = BuildEdgeMesh(pf, g_mesh_editor.prev_frame_mesh);
+        }
+
+        int next_frame = (impl->current_frame + 1) % impl->frame_count;
+        if (next_frame != impl->current_frame) {
+            MeshFrameData* nf = &impl->frames[next_frame];
+            g_mesh_editor.next_frame_mesh = BuildEdgeMesh(nf, g_mesh_editor.next_frame_mesh);
+        }
+    }
+
+    // Draw prev frame edges in red
+    int prev_frame = (impl->current_frame - 1 + impl->frame_count) % impl->frame_count;
+    if (prev_frame != impl->current_frame && g_mesh_editor.prev_frame_mesh) {
+        BindColor(COLOR_RED);
+        BindMaterial(g_view.shaded_material);
+        DrawMesh(g_mesh_editor.prev_frame_mesh, Translate(m->position));
+    }
+
+    // Draw next frame edges in green
+    int next_frame = (impl->current_frame + 1) % impl->frame_count;
+    if (next_frame != impl->current_frame && g_mesh_editor.next_frame_mesh) {
+        BindColor(COLOR_GREEN);
+        BindMaterial(g_view.shaded_material);
+        DrawMesh(g_mesh_editor.next_frame_mesh, Translate(m->position));
+    }
+}
+
 static void BeginMeshEditor(AssetData* a) {
     g_mesh_editor.mesh_data = static_cast<MeshData*>(a);
     g_view.vtable = {
@@ -1992,6 +2211,17 @@ static Shortcut g_mesh_editor_shortcuts[] = {
     { INPUT_CODE_NONE }
 };
 
+static Shortcut g_animation_shortcuts[] = {
+    { KEY_Q, false, false, false, SetPrevFrame, "Prev frame" },
+    { KEY_E, false, false, false, SetNextFrame, "Next frame" },
+    { KEY_O, false, false, false, InsertFrameAfter, "Insert frame after" },
+    { KEY_X, false, false, true, DeleteCurrentFrame, "Delete frame" },
+    { KEY_H, false, false, false, IncHoldFrame, "Add hold frame" },
+    { KEY_H, true, false, false, DecHoldFrame, "Remove hold frame" },
+    { KEY_O, true, false, false, ToggleOnionSkin, "Toggle onion skin" },
+    { KEY_SPACE, false, false, false, TogglePlayAnimation, "Play/Pause animation" },
+    { INPUT_CODE_NONE }
+};
 
 static void OpenMeshEditorContextMenu() {
     MeshData* m = GetMeshData();
@@ -2010,203 +2240,8 @@ static void OpenMeshEditorContextMenu() {
 
 static void MeshEditorHelp() {
     HelpGroup("Mesh", g_mesh_editor_shortcuts);
+    HelpGroup("Animation", g_animation_shortcuts);
 }
-
-// ===== Animation functions =====
-
-// Build edge outline mesh for onion skin display
-static Mesh* BuildEdgeMesh(MeshFrameData* frame, Mesh* existing) {
-    PushScratch();
-    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, MAX_VERTICES * 4, MAX_EDGES * 6);
-
-    float line_width = 0.02f * g_view.zoom_ref_scale;
-
-    for (int i = 0; i < frame->edge_count; i++) {
-        const EdgeData& e = frame->edges[i];
-        Vec2 v0 = frame->vertices[e.v0].position;
-        Vec2 v1 = frame->vertices[e.v1].position;
-        Vec2 dir = Normalize(v1 - v0);
-        Vec2 n = Perpendicular(dir) * line_width;
-
-        u16 base = GetVertexCount(builder);
-        AddVertex(builder, v0 - n);
-        AddVertex(builder, v0 + n);
-        AddVertex(builder, v1 + n);
-        AddVertex(builder, v1 - n);
-        AddTriangle(builder, base, base + 1, base + 2);
-        AddTriangle(builder, base, base + 2, base + 3);
-    }
-
-    Mesh* result;
-    if (!existing)
-        result = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
-    else {
-        UpdateMeshFromBuilder(existing, builder);
-        result = existing;
-    }
-
-    PopScratch();
-    return result;
-}
-
-// Check if dopesheet should be shown
-static bool ShouldShowDopesheet() {
-    MeshData* m = GetMeshData();
-    return m->impl->frame_count > 1 || GetCurrentFrame(m)->hold > 0;
-}
-
-// Navigate to previous frame
-static void SetPrevFrame() {
-    MeshData* m = GetMeshData();
-    if (m->impl->frame_count <= 1) return;
-    int new_frame = (m->impl->current_frame - 1 + m->impl->frame_count) % m->impl->frame_count;
-    SetCurrentFrame(m, new_frame);
-    RefreshMeshEditorSelection();
-}
-
-// Navigate to next frame
-static void SetNextFrame() {
-    MeshData* m = GetMeshData();
-    if (m->impl->frame_count <= 1) return;
-    int new_frame = (m->impl->current_frame + 1) % m->impl->frame_count;
-    SetCurrentFrame(m, new_frame);
-    RefreshMeshEditorSelection();
-}
-
-// Insert a new frame after current (duplicates current frame)
-static void InsertFrameAfter() {
-    MeshData* m = GetMeshData();
-    if (m->impl->frame_count >= MESH_MAX_FRAMES) return;
-
-    RecordUndo(m);
-    AddFrame(m, m->impl->current_frame);
-    MarkModified();
-}
-
-// Delete current frame
-static void DeleteCurrentFrame() {
-    MeshData* m = GetMeshData();
-    if (m->impl->frame_count <= 1) return;
-
-    RecordUndo(m);
-    DeleteFrame(m, m->impl->current_frame);
-    RefreshMeshEditorSelection();
-    MarkModified();
-}
-
-// Toggle animation playback
-static void TogglePlayAnimation() {
-    g_mesh_editor.is_playing = !g_mesh_editor.is_playing;
-    g_mesh_editor.playback_time = 0.0f;
-}
-
-// Increase hold on current frame
-static void IncHoldFrame() {
-    MeshData* m = GetMeshData();
-    GetCurrentFrame(m)->hold++;
-    MarkModified();
-}
-
-// Decrease hold on current frame
-static void DecHoldFrame() {
-    MeshData* m = GetMeshData();
-    MeshFrameData* frame = GetCurrentFrame(m);
-    if (frame->hold > 0) {
-        frame->hold--;
-        MarkModified();
-    }
-}
-
-// Toggle onion skin display
-static void ToggleOnionSkin() {
-    g_mesh_editor.onion_skin_enabled = !g_mesh_editor.onion_skin_enabled;
-}
-
-// Draw the dopesheet timeline UI
-static void DrawDopesheet() {
-    MeshData* m = GetMeshData();
-    MeshDataImpl* impl = m->impl;
-
-    BeginCanvas();
-    BeginContainer({.align=ALIGN_BOTTOM_CENTER, .margin=EdgeInsetsBottom(60)});
-    BeginRow();
-
-    for (int frame_index = 0; frame_index < impl->frame_count; frame_index++) {
-        MeshFrameData* f = &impl->frames[frame_index];
-        BeginContainer({
-            .width=FRAME_SIZE_X * (1 + f->hold) + FRAME_BORDER_SIZE * 2,
-            .height=FRAME_SIZE_Y + FRAME_BORDER_SIZE * 2,
-            .margin=EdgeInsetsLeft(-2),
-            .color = frame_index == impl->current_frame
-                ? DOPESHEET_SELECTED_FRAME_COLOR
-                : FRAME_COLOR,
-            .border = {.width=FRAME_BORDER_SIZE, .color=FRAME_BORDER_COLOR}
-        });
-        BeginContainer({.align=ALIGN_BOTTOM_LEFT, .margin=EdgeInsetsBottomLeft(DOPESHEET_FRAME_DOT_OFFSET_Y, DOPESHEET_FRAME_DOT_OFFSET_X)});
-            Container({.width=DOPESHEET_FRAME_DOT_SIZE, .height=DOPESHEET_FRAME_DOT_SIZE, .color=DOPESHEET_FRAME_DOT_COLOR});
-        EndContainer();
-        EndContainer();
-    }
-
-    EndRow();
-    EndContainer();
-    EndCanvas();
-}
-
-// Draw onion skin overlays
-static void DrawOnionSkin() {
-    MeshData* m = GetMeshData();
-    MeshDataImpl* impl = m->impl;
-
-    if (!g_mesh_editor.onion_skin_enabled || impl->frame_count <= 1)
-        return;
-
-    // Rebuild edge meshes if frame changed
-    if (g_mesh_editor.cached_frame != impl->current_frame) {
-        g_mesh_editor.cached_frame = impl->current_frame;
-
-        int prev_frame = (impl->current_frame - 1 + impl->frame_count) % impl->frame_count;
-        if (prev_frame != impl->current_frame) {
-            MeshFrameData* pf = &impl->frames[prev_frame];
-            g_mesh_editor.prev_frame_mesh = BuildEdgeMesh(pf, g_mesh_editor.prev_frame_mesh);
-        }
-
-        int next_frame = (impl->current_frame + 1) % impl->frame_count;
-        if (next_frame != impl->current_frame) {
-            MeshFrameData* nf = &impl->frames[next_frame];
-            g_mesh_editor.next_frame_mesh = BuildEdgeMesh(nf, g_mesh_editor.next_frame_mesh);
-        }
-    }
-
-    // Draw prev frame edges in red
-    int prev_frame = (impl->current_frame - 1 + impl->frame_count) % impl->frame_count;
-    if (prev_frame != impl->current_frame && g_mesh_editor.prev_frame_mesh) {
-        BindColor(COLOR_RED);
-        BindMaterial(g_view.shaded_material);
-        DrawMesh(g_mesh_editor.prev_frame_mesh, Translate(m->position));
-    }
-
-    // Draw next frame edges in green
-    int next_frame = (impl->current_frame + 1) % impl->frame_count;
-    if (next_frame != impl->current_frame && g_mesh_editor.next_frame_mesh) {
-        BindColor(COLOR_GREEN);
-        BindMaterial(g_view.shaded_material);
-        DrawMesh(g_mesh_editor.next_frame_mesh, Translate(m->position));
-    }
-}
-
-// Animation shortcuts (only active when multiple frames)
-static Shortcut g_animation_shortcuts[] = {
-    { KEY_Q, false, false, false, SetPrevFrame },
-    { KEY_E, false, false, false, SetNextFrame },
-    { KEY_O, false, false, false, InsertFrameAfter },
-    { KEY_O, true, false, false, ToggleOnionSkin },      // Shift+O
-    { KEY_SPACE, false, false, false, TogglePlayAnimation },
-    { KEY_H, false, false, false, IncHoldFrame },
-    { KEY_H, true, false, false, DecHoldFrame },         // Shift+H
-    { KEY_X, true, false, false, DeleteCurrentFrame },   // Shift+X
-    { INPUT_CODE_NONE }
-};
 
 void InitMeshEditor() {
     g_mesh_editor.color_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);

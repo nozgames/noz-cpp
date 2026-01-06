@@ -1085,30 +1085,6 @@ static void ParseVertexWeight(Tokenizer& tk, VertexWeight& vertex_weight) {
     vertex_weight = { index, weight };
 }
 
-static void ParseTag(MeshData* m, Tokenizer& tk) {
-    if (!ExpectQuotedString(tk))
-        ThrowError("missing tag name");
-
-    TagData tag = {};
-    tag.name = GetName(tk);
-
-    int weight_count = 0;
-    while (!IsEOF(tk)) {
-        if (ExpectIdentifier(tk, "p")) {
-            tag.position.x = ExpectFloat(tk);
-            tag.position.y = ExpectFloat(tk);
-        } else if (ExpectIdentifier(tk, "r")) {
-            tag.rotation = ExpectFloat(tk);
-        } else if (ExpectIdentifier(tk, "w")) {
-            ParseVertexWeight(tk, tag.weights[weight_count++]);
-        } else {
-            break;
-        }
-    }
-
-    GetCurrentFrame(m)->tags[GetCurrentFrame(m)->tag_count++] = tag;
-}
-
 static void ParseVertex(MeshData* m, Tokenizer& tk) {
     if (GetCurrentFrame(m)->vertex_count >= MAX_VERTICES)
         ThrowError("too many vertices");
@@ -1140,16 +1116,12 @@ static void ParseVertex(MeshData* m, Tokenizer& tk) {
     }
 }
 
-static void ParseEdgeColor(MeshData* em, Tokenizer& tk) {
+static void ParseEdgeColor(MeshData* m, Tokenizer& tk) {
     int cx;
-    if (!ExpectInt(tk, &cx))
-        ThrowError("missing edge color x value");
+    if (!ExpectInt(tk, &cx)) ThrowError("missing edge color x value");
 
     int cy;
-    if (!ExpectInt(tk, &cy))
-        ThrowError("missing edge color y value");
-
-    GetCurrentFrame(em)->edge_color = {(u8)cx, (u8)cy};
+    if (!ExpectInt(tk, &cy)) ThrowError("missing edge color y value");
 }
 
 static void ParseFaceColor(FaceData& f, Tokenizer& tk) {
@@ -1270,11 +1242,6 @@ void LoadMeshData(MeshData* m, Tokenizer& tk, bool multiple_mesh=false) {
     while (!IsEOF(tk)) {
         if (ExpectIdentifier(tk, "f")) {
             ParseFace(m, tk);
-        } else if (ExpectIdentifier(tk, "frame_count")) {
-            // Skip frame_count header (we determine count from frame markers)
-            int count;
-            ExpectInt(tk, &count);
-            (void)count;
         } else if (ExpectIdentifier(tk, "frame")) {
             // New frame marker: "frame N hold H"
 
@@ -1290,10 +1257,6 @@ void LoadMeshData(MeshData* m, Tokenizer& tk, bool multiple_mesh=false) {
                 }
             }
 
-            // Parse frame index (ignored, we track sequentially)
-            int frame_idx;
-            ExpectInt(tk, &frame_idx);
-
             // Parse hold if present
             if (ExpectIdentifier(tk, "hold")) {
                 int hold = 0;
@@ -1304,8 +1267,6 @@ void LoadMeshData(MeshData* m, Tokenizer& tk, bool multiple_mesh=false) {
             ParseVertex(m, tk);
         } else if (ExpectIdentifier(tk, "s")) {
             ParseSkeleton(m, tk);
-        } else if (ExpectIdentifier(tk, "t")) {
-            ParseTag(m, tk);
         } else if (ExpectIdentifier(tk, "d")) {
             ParseDepth(m, tk);
         } else if (ExpectIdentifier(tk, "p")) {
@@ -1409,15 +1370,6 @@ static void WriteVertexWeights(Stream* stream, const VertexWeight* weights) {
 
 // Save a single frame's data (helper for SaveMeshData)
 static void SaveFrameData(MeshFrameData* frame, Stream* stream) {
-    WriteCSTR(stream, "e %d %d\n", frame->edge_color.x, frame->edge_color.y);
-
-    for (int tag_index=0; tag_index<frame->tag_count; tag_index++) {
-        const TagData& t = frame->tags[tag_index];
-        WriteCSTR(stream, "t %s p %f %f r %f", t.name->value, t.position.x, t.position.y, t.rotation);
-        WriteVertexWeights(stream, t.weights);
-        WriteCSTR(stream, "\n");
-    }
-
     for (int i=0; i<frame->vertex_count; i++) {
         const VertexData& v = frame->vertices[i];
         WriteCSTR(stream, "v %f %f e %f", v.position.x, v.position.y, v.edge_size);
@@ -1461,7 +1413,10 @@ void SaveMeshData(MeshData* m, Stream* stream) {
 
         // Write frame header (only if multiple frames or frame has hold)
         if (m->impl->frame_count > 1 || frame->hold > 0) {
-            WriteCSTR(stream, "frame %d hold %d\n", frame_index, frame->hold);
+            WriteCSTR(stream, "frame");
+            if (frame->hold > 0)
+                WriteCSTR(stream, " h %d", frame->hold);
+            WriteCSTR(stream, "\n");
         }
 
         SaveFrameData(frame, stream);
@@ -1833,50 +1788,9 @@ int GetSelectedEdges(MeshData* m, int edges[MAX_EDGES]) {
     return selected_edge_count;
 }
 
-void AddTag(MeshData* m, const Vec2& position) {
-    if (GetCurrentFrame(m)->tag_count >= MESH_MAX_TAGS)
-        return;
-
-    GetCurrentFrame(m)->tags[GetCurrentFrame(m)->tag_count++].position = position;
-}
-
-void RemoveTag(MeshData* m, int index) {
-    assert(index >= 0 && index < GetCurrentFrame(m)->tag_count);
-    for (int tag_index = index; tag_index < GetCurrentFrame(m)->tag_count - 1; tag_index++)
-        GetCurrentFrame(m)->tags[tag_index] = GetCurrentFrame(m)->tags[tag_index + 1];
-
-    GetCurrentFrame(m)->tag_count--;
-}
-
-int HitTestTag(MeshData* m, const Vec2& position, float size_mult) {
-    float size = g_view.select_size * size_mult;
-    float best_dist = F32_MAX;
-    int best_index = -1;
-    for (int i = 0; i < GetCurrentFrame(m)->tag_count; i++) {
-        const TagData& t = GetCurrentFrame(m)->tags[i];
-        float dist = Length(position - t.position);
-        if (dist < size && dist < best_dist) {
-            best_index = i;
-            best_dist = dist;
-        }
-    }
-
-    return best_index;
-}
-
 Vec2 HitTestSnap(MeshData* m, const Vec2& position) {
     float best_dist_sqr = LengthSqr(position);
     Vec2 best_snap = VEC2_ZERO;
-
-    for (int i = 0; i < GetCurrentFrame(m)->tag_count; i++) {
-        const TagData& t = GetCurrentFrame(m)->tags[i];
-        float dist_sqr = DistanceSqr(t.position, position);
-        if (dist_sqr < best_dist_sqr) {
-            best_dist_sqr = dist_sqr;
-            best_snap = t.position;
-        }
-    }
-
     return best_snap;
 }
 
@@ -1896,9 +1810,6 @@ void SetOrigin(MeshData* m, const Vec2& origin) {
     Vec2 delta = m->position - origin;
     for (int vertex_index = 0; vertex_index < GetCurrentFrame(m)->vertex_count; vertex_index++)
         GetCurrentFrame(m)->vertices[vertex_index].position += delta;
-
-    for (int anchor_index = 0; anchor_index < GetCurrentFrame(m)->tag_count; anchor_index++)
-        GetCurrentFrame(m)->tags[anchor_index].position += delta;
 
     m->position = origin;
     UpdateEdges(m);
