@@ -687,6 +687,12 @@ static void BuildAssets(const Command& command) {
     Build();
 }
 
+static void ReimportAssets(const Command& command) {
+    (void)command;
+    ReimportAll();
+    AddNotification(NOTIFICATION_TYPE_INFO, "queued all assets for reimport");
+}
+
 static void ScaleCommand(const Command& command) {
     if (command.arg_count < 1) {
         AddNotification(NOTIFICATION_TYPE_ERROR, "usage: scale <value>");
@@ -763,6 +769,7 @@ static void BeginCommandInput() {
         { NAME_S, NAME_SAVE, SaveAssetsCommand },
         { NAME_N, NAME_NEW, NewAssetCommand },
         { NAME_B, NAME_BUILD, BuildAssets },
+        { GetName("reimport"), GetName("reimport"), ReimportAssets },
         { GetName("scale"), GetName("scale"), ScaleCommand },
         { nullptr, nullptr, nullptr }
     };

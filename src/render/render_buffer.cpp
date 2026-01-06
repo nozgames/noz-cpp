@@ -290,21 +290,22 @@ void DrawMesh(Mesh* mesh, const Mat3& transform) {
 }
 
 void DrawMesh(Mesh* mesh, const Mat3& transform, float time, bool loop) {
-    DrawMesh(mesh, transform, GetFrameIndex(mesh, time, loop));
+    (void)time;
+    (void)loop;
+    BindTransform(transform);
+    DrawMesh(mesh);
 }
 
 void DrawMesh(Mesh* mesh, const Mat3& transform, int frame_index) {
-    if (!mesh)
-        return;
-
-    frame_index = Clamp(frame_index, 0, GetFrameCount(mesh) - 1);
+    (void)frame_index;
     BindTransform(transform);
-    RenderMesh(mesh, static_cast<float>(frame_index) / static_cast<float>(GetFrameCount(mesh)) * GetDuration(mesh), false);
+    DrawMesh(mesh);
 }
 
 void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index, float time) {
+    (void)time;
     BindTransform(transform, animator, bone_index);
-    RenderMesh(mesh, time);
+    DrawMesh(mesh);
 }
 
 void DrawMesh(Mesh* mesh) {

@@ -463,11 +463,15 @@ Vec2 GetAtlasUV(AtlasData* atlas, const AtlasRect& rect, const Bounds2& mesh_bou
     float u = (position.x - mesh_bounds.min.x) / GetSize(mesh_bounds).x;
     float v = (position.y - mesh_bounds.min.y) / GetSize(mesh_bounds).y;
 
+    // For animated meshes, use only the first frame's width
+    int frame_count = rect.frame_count > 0 ? rect.frame_count : 1;
+    float frame_width = (float)rect.width / (float)frame_count;
+
     // Inner region is 1 pixel inset from rect edges (padding from AllocateRect)
     // Add half-texel inset for bilinear filtering safety
     float inner_x = rect.x + 1.0f;
     float inner_y = rect.y + 1.0f;
-    float inner_w = rect.width - 2.0f;
+    float inner_w = frame_width - 2.0f;
     float inner_h = rect.height - 2.0f;
 
     // Half-texel inset to prevent bilinear bleed

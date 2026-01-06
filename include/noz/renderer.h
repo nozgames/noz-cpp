@@ -98,9 +98,12 @@ extern Bounds2 ToBounds(const MeshVertex* vertices, int vertex_count);
 
 // Animation support (mesh can have multiple frames)
 extern int GetFrameCount(Mesh* mesh);
+extern int GetFrameRate(Mesh* mesh);
+extern float GetFrameWidthUV(Mesh* mesh);
 extern float GetDuration(Mesh* mesh);
 extern int GetFrameIndex(Mesh* mesh, float time, bool loop=false);
 extern float Update(Mesh* mesh, float current_time, float speed=1.0f, bool loop=true);
+extern void SetAnimationInfo(Mesh* mesh, int frame_count, int frame_rate, float frame_width_uv);
 
 // @mesh_builder
 extern MeshBuilder* CreateMeshBuilder(Allocator* allocator, u16 max_vertices, u16 max_indices);
@@ -174,8 +177,8 @@ extern void BindTexture(Texture* texture);
 extern void DrawMesh(Mesh* mesh);
 extern void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index);
 extern void DrawMesh(Mesh* mesh, const Mat3& transform);
-extern void DrawMesh(Mesh* mesh, const Mat3& transform, int frame_index);
-extern void DrawMesh(Mesh* mesh, const Mat3& transform, float time, bool loop=false);
+extern void DrawMesh(Mesh* mesh, const Mat3& transform, int frame_index);  // frame_index ignored (UV animation)
+extern void DrawMesh(Mesh* mesh, const Mat3& transform, float time, bool loop=false);  // time/loop ignored (UV animation)
 extern void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index, float time);
 
 // @clipping

@@ -1,4 +1,5 @@
 # incoming
+- [ ] sound editor so you can adjust values such as random pitch, voluem ,etc
 - [ ] replace randomint with min-max exclusive 
 - [ ] color override push in render buffer (PushColorOverride / PopColorOverride)
 - [ ] notifcation ui is not aligning to bottom right

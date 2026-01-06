@@ -25,7 +25,7 @@ static Mesh* ToMeshWithAtlasUVs(MeshData* mesh_data, AtlasData* atlas, const Atl
     Vec2 min = mesh_data->bounds.min;
     Vec2 max = mesh_data->bounds.max;
 
-    // Get atlas UVs for each corner
+    // Get atlas UVs for each corner (uses frame 0 for animated meshes)
     Vec2 uv_bl = GetAtlasUV(atlas, rect, mesh_data->bounds, {min.x, min.y});
     Vec2 uv_br = GetAtlasUV(atlas, rect, mesh_data->bounds, {max.x, min.y});
     Vec2 uv_tr = GetAtlasUV(atlas, rect, mesh_data->bounds, {max.x, max.y});
@@ -43,6 +43,16 @@ static Mesh* ToMeshWithAtlasUVs(MeshData* mesh_data, AtlasData* atlas, const Atl
 
     Mesh* mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, mesh_data->name, false);
     Free(builder);
+
+    // Set animation info from atlas rect (use default 12 fps for animated meshes)
+    if (rect.frame_count > 1) {
+        // Calculate frame_width_uv: full frame width in UV space (including padding)
+        // This ensures the shader shifts by the correct amount between frames
+        float frame_width_pixels = static_cast<float>(rect.width) / static_cast<float>(rect.frame_count);
+        float frame_width_uv = frame_width_pixels / static_cast<float>(atlas->impl->width);
+        SetAnimationInfo(mesh, rect.frame_count, 12, frame_width_uv);
+    }
+
     return mesh;
 }
 

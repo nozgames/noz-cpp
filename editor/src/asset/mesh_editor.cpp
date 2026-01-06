@@ -796,7 +796,7 @@ static void ColorPicker(){
             }
         }
 
-        Palette(current_palette_index, selected_colors);
+        Palette(current_palette_index, g_mesh_editor.is_playing ? nullptr : selected_colors);
     }
     EndColumn();
     EndContainer();

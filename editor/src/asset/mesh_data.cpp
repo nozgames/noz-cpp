@@ -1308,15 +1308,24 @@ void SerializeMesh(Mesh* m, Stream* stream) {
         return;
     }
 
+    u16 vertex_count = GetVertexCount(m);
+    u16 index_count = GetIndexCount(m);
+
     WriteStruct(stream, GetBounds(m));
-    WriteU16(stream, GetVertexCount(m));
-    WriteU16(stream, GetIndexCount(m));
+    WriteU16(stream, vertex_count);
+    WriteU16(stream, index_count);
 
-    const MeshVertex* v = GetVertices(m);
-    WriteBytes(stream, v, sizeof(MeshVertex) * GetVertexCount(m));
+    if (vertex_count > 0) {
+        const MeshVertex* v = GetVertices(m);
+        WriteBytes(stream, v, sizeof(MeshVertex) * GetVertexCount(m));
 
-    const u16* i = GetIndices(m);
-    WriteBytes(stream, i, sizeof(u16) * GetIndexCount(m));
+        const u16* i = GetIndices(m);
+        WriteBytes(stream, i, sizeof(u16) * GetIndexCount(m));
+    }
+
+    WriteU8(stream, static_cast<u8>(GetFrameCount(m)));
+    WriteU8(stream, static_cast<u8>(GetFrameRate(m)));
+    WriteFloat(stream, GetFrameWidthUV(m));
 }
 
 static void LoadMeshData(AssetData* a) {

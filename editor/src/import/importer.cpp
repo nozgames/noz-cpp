@@ -52,7 +52,7 @@ bool InitImporter(AssetData* a) {
     return true;
 }
 
-static void QueueImport(AssetData* a) {
+static void QueueImport(AssetData* a, bool force = false) {
     fs::path path = a->path.value;
     if (!fs::exists(path))
         return;
@@ -65,13 +65,15 @@ static void QueueImport(AssetData* a) {
     fs::path source_meta_path = path;
     source_meta_path += ".meta";
 
-    bool target_exists = fs::exists(target_path);
-    bool meta_changed = !target_exists || (fs::exists(source_meta_path) && CompareModifiedTime(source_meta_path, target_path) > 0);
-    bool source_changed = !target_exists || CompareModifiedTime(path, target_path) > 0;
-    bool config_changed = !target_exists || CompareModifiedTime(g_editor.config_timestamp, fs::last_write_time(target_path)) > 0;
+    if (!force) {
+        bool target_exists = fs::exists(target_path);
+        bool meta_changed = !target_exists || (fs::exists(source_meta_path) && CompareModifiedTime(source_meta_path, target_path) > 0);
+        bool source_changed = !target_exists || CompareModifiedTime(path, target_path) > 0;
+        bool config_changed = !target_exists || CompareModifiedTime(g_editor.config_timestamp, fs::last_write_time(target_path)) > 0;
 
-    if (!meta_changed && !source_changed && !config_changed)
-        return;
+        if (!meta_changed && !source_changed && !config_changed)
+            return;
+    }
 
     ImportJob* job = new ImportJob{
         .asset = a,
@@ -231,6 +233,11 @@ static void InitialImport() {
 
     WaitForImportTasks();
     CleanupOrphanedAssets();
+}
+
+void ReimportAll() {
+    for (u32 i=0, c=GetAssetCount(); i<c; i++)
+        QueueImport(GetAssetData(i), true);  // force reimport
 }
 
 static void RunImporter() {

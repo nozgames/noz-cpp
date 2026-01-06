@@ -150,6 +150,7 @@ extern void ShutdownImporter();
 extern void UpdateImporter();
 extern void QueueImport(const std::filesystem::path& path);
 extern void WaitForImportTasks();
+extern void ReimportAll();
 
 extern AssetImporter GetShaderImporter();
 extern AssetImporter GetTextureImporter();
