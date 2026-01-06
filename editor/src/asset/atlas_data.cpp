@@ -201,7 +201,7 @@ void FreeRect(AtlasData* atlas, AtlasRect* rect) {
             AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, rect->mesh_name);
             if (mesh_asset) {
                 MeshData* mesh = static_cast<MeshData*>(mesh_asset);
-                mesh->impl->atlas_name = nullptr;
+                mesh->impl->atlas = nullptr;
             }
         }
         rect->valid = false;
@@ -219,7 +219,7 @@ void ClearAllRects(AtlasData* atlas) {
             AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, impl->rects[i].mesh_name);
             if (mesh_asset) {
                 MeshData* mesh = static_cast<MeshData*>(mesh_asset);
-                mesh->impl->atlas_name = nullptr;
+                mesh->impl->atlas = nullptr;
             }
         }
         impl->rects[i].valid = false;
@@ -349,6 +349,47 @@ void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, const AtlasRect& rect) 
 
         plutovg_canvas_destroy(canvas);
         plutovg_surface_destroy(surface);
+
+        // Dilate content into padding to prevent bilinear filtering seams
+        // Content is at (frame_x+1, rect.y+1) with size (frame_width-2, rect.height-2)
+        int content_x = frame_x + 1;
+        int content_y = rect.y + 1;
+        int content_w = frame_width - 2;
+        int content_h = rect.height - 2;
+        int stride = impl->width * 4;
+        u8* pixels = impl->pixels;
+
+        // Top edge: copy row content_y to row content_y-1
+        memcpy(pixels + (content_y - 1) * stride + content_x * 4,
+               pixels + content_y * stride + content_x * 4,
+               content_w * 4);
+
+        // Bottom edge: copy row content_y+content_h-1 to row content_y+content_h
+        memcpy(pixels + (content_y + content_h) * stride + content_x * 4,
+               pixels + (content_y + content_h - 1) * stride + content_x * 4,
+               content_w * 4);
+
+        // Left edge: copy column content_x to column content_x-1
+        for (int y = content_y; y < content_y + content_h; y++) {
+            memcpy(pixels + y * stride + (content_x - 1) * 4,
+                   pixels + y * stride + content_x * 4, 4);
+        }
+
+        // Right edge: copy column content_x+content_w-1 to column content_x+content_w
+        for (int y = content_y; y < content_y + content_h; y++) {
+            memcpy(pixels + y * stride + (content_x + content_w) * 4,
+                   pixels + y * stride + (content_x + content_w - 1) * 4, 4);
+        }
+
+        // Corners
+        memcpy(pixels + (content_y - 1) * stride + (content_x - 1) * 4,
+               pixels + content_y * stride + content_x * 4, 4);  // Top-left
+        memcpy(pixels + (content_y - 1) * stride + (content_x + content_w) * 4,
+               pixels + content_y * stride + (content_x + content_w - 1) * 4, 4);  // Top-right
+        memcpy(pixels + (content_y + content_h) * stride + (content_x - 1) * 4,
+               pixels + (content_y + content_h - 1) * stride + content_x * 4, 4);  // Bottom-left
+        memcpy(pixels + (content_y + content_h) * stride + (content_x + content_w) * 4,
+               pixels + (content_y + content_h - 1) * stride + (content_x + content_w - 1) * 4, 4);  // Bottom-right
     }
 
     impl->dirty = true;
@@ -613,7 +654,7 @@ static void PostLoadAtlasData(AssetData* a) {
             AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, impl->rects[i].mesh_name);
             if (mesh_asset) {
                 MeshData* mesh = static_cast<MeshData*>(mesh_asset);
-                mesh->impl->atlas_name = atlas->name;  // Atlas owns this relationship
+                mesh->impl->atlas = atlas;
                 RenderMeshToAtlas(atlas, mesh, impl->rects[i]);
             }
         }

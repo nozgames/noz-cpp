@@ -826,12 +826,12 @@ static void MeshEditorToolbar() {
         g_mesh_editor.mode = MESH_EDITOR_MODE_WEIGHT;
     EndRow();
 
-    if (m->impl->atlas_name) {
+    if (m->impl->atlas) {
         BeginRow({.align=ALIGN_CENTER, .spacing=4});
         BeginContainer({.width=STYLE_TOGGLE_BUTTON_HEIGHT, .height=STYLE_TOGGLE_BUTTON_HEIGHT});
         Image(MESH_ASSET_ICON_ATLAS, {.color=STYLE_BUTTON_DISABLED_TEXT_COLOR()});
         EndContainer();
-        Label(m->impl->atlas_name, {.font=FONT_SEGUISB, .font_size=STYLE_OVERLAY_TEXT_SIZE, .color=STYLE_OVERLAY_TEXT_COLOR(), .align=ALIGN_CENTER});
+        Label(m->impl->atlas->name, {.font=FONT_SEGUISB, .font_size=STYLE_OVERLAY_TEXT_SIZE, .color=STYLE_OVERLAY_TEXT_COLOR(), .align=ALIGN_CENTER});
         EndRow();
     }
 
@@ -1857,7 +1857,7 @@ static void CommitParentTool(const Vec2& position) {
         AtlasData* atlas = static_cast<AtlasData*>(hit_asset);
 
         RecordUndo(m);
-        impl->atlas_name = hit_asset->name;
+        impl->atlas = atlas;
         MarkModified(m);
 
         // Add mesh to atlas and render it (handles multi-frame meshes automatically)

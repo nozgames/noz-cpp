@@ -66,7 +66,7 @@ static void ImportMesh(AssetData* a, const std::filesystem::path& path, Props* c
 
     Mesh* m = nullptr;
 
-    // Check if mesh is in an atlas (atlas is source of truth)
+    // Check if mesh is in an atlas (use lookup since import may run before post-load)
     AtlasRect* rect = nullptr;
     AtlasData* atlas = FindAtlasForMesh(mesh_data->name, &rect);
     if (atlas && rect) {

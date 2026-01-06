@@ -4,6 +4,8 @@
 
 #pragma once
 
+struct AtlasData;
+
 constexpr int MAX_VERTICES = 2048;
 constexpr int MAX_FACES = 1024;
 constexpr int MAX_INDICES = 4096;
@@ -87,7 +89,7 @@ struct MeshDataImpl {
     // Shared metadata (applies to all frames)
     SkeletonData* skeleton;
     const Name* skeleton_name;
-    const Name* atlas_name;  // Runtime: set by atlas post-load, not persisted in mesh metadata
+    AtlasData* atlas;        // Runtime: set by atlas post-load, not persisted in mesh metadata
     int palette;
     int depth;
 
