@@ -20,6 +20,13 @@ struct TextureImpl : Texture {
     int layer_count = 1;
 };
 
+struct AtlasImpl : Atlas {
+    void* pixel_data = nullptr;
+    Vec2Int size;
+    TextureFormat format;
+    SamplerOptions sampler_options;
+};
+
 static SamplerOptions g_default_sampler_options = {
     TEXTURE_FILTER_LINEAR,
     TEXTURE_CLAMP_CLAMP,
@@ -165,11 +172,44 @@ Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, co
     return impl;
 }
 
+Asset* LoadAtlas(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
+    (void)name_table;
+    (void)header;
+
+    assert(stream);
+    assert(name);
+    assert(header);
+
+    AtlasImpl* impl = (AtlasImpl*)Alloc(allocator, sizeof(AtlasImpl));
+    if (!impl)
+        return nullptr;
+
+    impl->name = name;
+    impl->format = (TextureFormat)ReadU8(stream);
+    impl->sampler_options.filter = (TextureFilter)ReadU8(stream);
+    impl->sampler_options.clamp = (TextureClamp)ReadU8(stream);
+    impl->size.x = ReadU32(stream);
+    impl->size.y = ReadU32(stream);
+
+    const int channels = GetBytesPerPixel(impl->format);
+    const u32 data_size = impl->size.x * impl->size.y * channels;
+    impl->pixel_data = Alloc(allocator, data_size);
+    if (impl->pixel_data) {
+        ReadBytes(stream, impl->pixel_data, data_size);
+    }
+
+    return impl;
+}
+
 void BindTextureInternal(Texture* texture, i32 slot) {
     if (!texture)
         texture = TEXTURE_WHITE;
 
-    return PlatformBindTexture(static_cast<TextureImpl*>(texture)->platform_texture, slot);
+    TextureImpl* impl = static_cast<TextureImpl*>(texture);
+    if (impl->is_array)
+        return PlatformBindTextureArray(impl->platform_texture, slot);
+    else
+        return PlatformBindTexture(impl->platform_texture, slot);
 }
 
 #if !defined(NOZ_BUILTIN_ASSETS)
@@ -192,25 +232,20 @@ void ReloadTexture(Asset* asset, Stream* stream, const AssetHeader& header, cons
 
 // Texture array support
 
-Texture* CreateTextureArray(Allocator* allocator, Texture** textures, int texture_count, const Name* name) {
-    if (texture_count <= 0 || !textures) return nullptr;
+Texture* CreateTextureArray(Allocator* allocator, Atlas** atlases, int atlas_count, const Name* name) {
+    if (atlas_count <= 0 || !atlases) return nullptr;
 
-    // Get dimensions from first texture - all must match
-    TextureImpl* first = static_cast<TextureImpl*>(textures[0]);
+    // Get dimensions from first atlas - all must match
+    AtlasImpl* first = static_cast<AtlasImpl*>(atlases[0]);
     int width = first->size.x;
     int height = first->size.y;
     int channels = GetBytesPerPixel(first->format);
 
-    // Collect pixel data pointers (would need to load pixels from GPU or keep CPU copies)
-    // For now, this requires textures that still have their data available
-    // This is a limitation - in practice, atlas textures would need to provide their pixel data
-
-    // Allocate array of data pointers
-    void** layer_data = (void**)Alloc(ALLOCATOR_SCRATCH, texture_count * sizeof(void*));
-    for (int i = 0; i < texture_count; i++) {
-        // Note: This assumes textures have CPU-accessible pixel data
-        // In practice, you'd need to read back from GPU or maintain CPU copies
-        layer_data[i] = nullptr;  // Placeholder - actual implementation needs pixel access
+    // Collect pixel data pointers from atlases
+    void** layer_data = (void**)Alloc(ALLOCATOR_SCRATCH, atlas_count * sizeof(void*));
+    for (int i = 0; i < atlas_count; i++) {
+        AtlasImpl* atlas = static_cast<AtlasImpl*>(atlases[i]);
+        layer_data[i] = atlas->pixel_data;
     }
 
     TextureImpl* impl = static_cast<TextureImpl*>(Alloc(allocator, sizeof(TextureImpl)));
@@ -224,11 +259,11 @@ Texture* CreateTextureArray(Allocator* allocator, Texture** textures, int textur
     impl->format = first->format;
     impl->sampler_options = first->sampler_options;
     impl->is_array = true;
-    impl->layer_count = texture_count;
+    impl->layer_count = atlas_count;
 
     impl->platform_texture = PlatformCreateTextureArray(
         layer_data,
-        texture_count,
+        atlas_count,
         width,
         height,
         channels,
@@ -236,6 +271,16 @@ Texture* CreateTextureArray(Allocator* allocator, Texture** textures, int textur
         name->value);
 
     Free(layer_data);
+
+    // Free pixel data from atlases - no longer needed
+    for (int i = 0; i < atlas_count; i++) {
+        AtlasImpl* atlas = static_cast<AtlasImpl*>(atlases[i]);
+        if (atlas->pixel_data) {
+            Free(atlas->pixel_data);
+            atlas->pixel_data = nullptr;
+        }
+    }
+
     return impl;
 }
 

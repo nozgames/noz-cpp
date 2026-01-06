@@ -327,14 +327,14 @@ static void GenerateCppSource(ManifestGenerator& generator) {
         WriteCSTR(stream, "    };\n");
         WriteCSTR(stream, "\n");
         WriteCSTR(stream, "    %s = _%s;\n", short_name_upper.c_str(), short_name_upper.c_str());
-        WriteCSTR(stream, "    %s_COUNT = sizeof(_%s) / sizeof(void*);\n", short_name_upper.c_str(), short_name_upper.c_str());
+        WriteCSTR(stream, "    %s_COUNT = sizeof(_%s) / sizeof(void*) - 1;\n", short_name_upper.c_str(), short_name_upper.c_str());
 
         // Create ATLAS_ARRAY texture array for atlas binding
         if (asset_type == ASSET_TYPE_ATLAS) {
             WriteCSTR(stream, "\n");
             WriteCSTR(stream, "    // Create texture array from all atlases\n");
-            WriteCSTR(stream, "    if (ATLAS_COUNT > 1) {\n");
-            WriteCSTR(stream, "        ATLAS_ARRAY = CreateTextureArray(allocator, (Texture**)ATLAS, ATLAS_COUNT - 1, GetName(\"atlas_array\"));\n");
+            WriteCSTR(stream, "    if (ATLAS_COUNT > 0) {\n");
+            WriteCSTR(stream, "        ATLAS_ARRAY = CreateTextureArray(allocator, ATLAS, ATLAS_COUNT, GetName(\"atlas_array\"));\n");
             WriteCSTR(stream, "    } else {\n");
             WriteCSTR(stream, "        ATLAS_ARRAY = nullptr;\n");
             WriteCSTR(stream, "    }\n");

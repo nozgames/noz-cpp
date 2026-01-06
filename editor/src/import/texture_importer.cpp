@@ -111,9 +111,13 @@ static void ImportTexture(AssetData* a, const std::filesystem::path& path, Props
 
 
     if (Contains(a->path, "reference", true)) {
-        a->editor_only = true;
+        // Only mark meta_modified if the value is actually changing
+        // to avoid a save->reimport->save loop via file watcher
+        if (!a->editor_only) {
+            a->editor_only = true;
+            MarkMetaModified(a);
+        }
         InitTextureEditor(static_cast<TextureData*>(a));
-        MarkMetaModified(a);
     }
 }
 

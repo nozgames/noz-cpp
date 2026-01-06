@@ -86,6 +86,7 @@ inline int GetCustomTypeId(Asset* asset) { return asset->custom_type_id; }
 
 // @loaders
 Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+Asset* LoadAtlas(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
@@ -115,7 +116,7 @@ Asset* LoadLuaScript(Allocator* allocator, Stream* stream, AssetHeader* header, 
     member = (Texture*)LoadAsset(allocator, path, ASSET_TYPE_TEXTURE, LoadTexture, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
 
 #define NOZ_LOAD_ATLAS(allocator, path, member) \
-    member = (Atlas*)LoadAsset(allocator, path, ASSET_TYPE_ATLAS, LoadTexture, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
+    member = (Atlas*)LoadAsset(allocator, path, ASSET_TYPE_ATLAS, LoadAtlas, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));
 
 #define NOZ_LOAD_MESH(allocator, path, member) \
     member = (Mesh*)LoadAsset(allocator, path, ASSET_TYPE_MESH, LoadMesh, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member));

@@ -769,7 +769,8 @@ static void ScaleCommand(const Command& command) {
 static void RebuildAtlasesCommand(const Command& cmd) {
     (void)cmd;
     RebuildAllAtlases();
-    ReimportAll();  // Re-import all assets to pick up atlas changes
+    SaveAssetData();  // Save atlas files with new rect data before reimport
+    ReimportAll();    // Re-import all assets to pick up atlas changes
     AddNotification(NOTIFICATION_TYPE_INFO, "Atlases rebuilt and optimized");
 }
 

@@ -46,8 +46,10 @@ void DrawTextureData(AssetData* a) {
 
 void UpdateBounds(TextureData* t) {
     TextureDataImpl* impl = t->impl;
+    // 512 pixels = 10 units for grid alignment with power-of-2 textures
+    constexpr float PIXELS_PER_UNIT = 51.2f;
     if (impl->texture) {
-        Vec2 tsize = ToVec2(GetSize(impl->texture)) / 72.0f;
+        Vec2 tsize = ToVec2(GetSize(impl->texture)) / PIXELS_PER_UNIT;
         t->bounds = Bounds2{-tsize.x*0.5f, -tsize.y*0.5f, tsize.x*0.5f, tsize.y*0.5f};
     } else {
         t->bounds = Bounds2{

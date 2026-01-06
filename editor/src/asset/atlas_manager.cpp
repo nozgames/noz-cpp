@@ -10,8 +10,8 @@ namespace fs = std::filesystem;
 
 static std::vector<AtlasData*> g_managed_atlases;
 
-// Auto-managed atlases use _atlas_N naming convention
-static constexpr const char* MANAGED_ATLAS_PREFIX = "_atlas_";
+// Auto-managed atlases use atlasNN naming convention
+static constexpr const char* MANAGED_ATLAS_PREFIX = "atlas";
 
 static bool IsManagedAtlasName(const Name* name) {
     if (!name) return false;
@@ -32,11 +32,11 @@ static int GetNextAtlasIndex() {
 
 static AtlasData* CreateManagedAtlas() {
     int index = GetNextAtlasIndex();
-    char name[64];
-    snprintf(name, sizeof(name), "%s%d", MANAGED_ATLAS_PREFIX, index);
+    String64 name;
+    Format(name, "%s%02d", MANAGED_ATLAS_PREFIX, index);
 
     // Create the atlas file
-    fs::path atlas_path = fs::path(g_editor.project_path) / g_editor.save_dir / "atlas" / name;
+    fs::path atlas_path = fs::path(g_editor.project_path) / g_editor.save_dir / "atlas" / name.value;
     atlas_path += ".atlas";
     fs::create_directories(atlas_path.parent_path());
 
@@ -106,6 +106,13 @@ AtlasData* GetManagedAtlas(int index) {
 
 int GetManagedAtlasCount() {
     return (int)g_managed_atlases.size();
+}
+
+int GetAtlasIndex(AtlasData* atlas) {
+    for (int i = 0; i < (int)g_managed_atlases.size(); i++) {
+        if (g_managed_atlases[i] == atlas) return i;
+    }
+    return 0;  // Default to 0 if not found
 }
 
 bool NeedsAtlasAssignment(MeshData* mesh) {
@@ -185,7 +192,7 @@ static std::string GetNamePrefix(const Name* name) {
 void RebuildAllAtlases() {
     LogInfo("Rebuilding all atlases...");
 
-    // Collect all meshes that are currently in managed atlases
+    // Collect all meshes that should be in managed atlases
     struct MeshInfo {
         MeshData* mesh;
         std::string prefix;
@@ -204,7 +211,6 @@ void RebuildAllAtlases() {
         bool in_managed = mesh->impl->atlas && IsManagedAtlas(mesh->impl->atlas);
         bool needs_assignment = NeedsAtlasAssignment(mesh);
 
-        // Rebuild processes all meshes that should be in auto-managed atlases
         if (in_managed || needs_assignment) {
             all_meshes.push_back({
                 mesh,
@@ -229,22 +235,25 @@ void RebuildAllAtlases() {
 
     LogInfo("Rebuilding %d meshes sorted by prefix", (int)all_meshes.size());
 
-    // Clear all managed atlases
-    for (AtlasData* atlas : g_managed_atlases) {
-        if (atlas) {
-            ClearAllRects(atlas);
-            // Clear pixel buffer
-            if (atlas->impl->pixels) {
-                memset(atlas->impl->pixels, 0, atlas->impl->width * atlas->impl->height * 4);
-            }
-        }
+    // Clear all mesh atlas references
+    for (const MeshInfo& info : all_meshes) {
+        info.mesh->impl->atlas = nullptr;
     }
 
-    // Re-assign meshes in sorted order
+    // Clear existing atlases (rects + pixels) but keep the files
+    for (AtlasData* atlas : g_managed_atlases) {
+        if (!atlas || !atlas->impl) continue;
+        ClearAllRects(atlas);
+        if (atlas->impl->pixels) {
+            memset(atlas->impl->pixels, 0, atlas->impl->width * atlas->impl->height * 4);
+        }
+        atlas->impl->dirty = true;
+        MarkModified(atlas);
+    }
+
+    // Re-assign meshes in sorted order (will use existing atlases first, create new if needed)
     int success_count = 0;
     for (const MeshInfo& info : all_meshes) {
-        info.mesh->impl->atlas = nullptr;  // Clear old assignment
-
         AtlasData* atlas = AutoAssignMeshToAtlas(info.mesh);
         if (atlas) {
             success_count++;
@@ -253,7 +262,7 @@ void RebuildAllAtlases() {
         }
     }
 
-    // Remove empty managed atlases
+    // Delete any atlases that ended up empty
     std::vector<AtlasData*> empty_atlases;
     for (AtlasData* atlas : g_managed_atlases) {
         if (!atlas) continue;
@@ -272,10 +281,13 @@ void RebuildAllAtlases() {
     }
 
     for (AtlasData* empty : empty_atlases) {
-        LogInfo("Deleting empty atlas: %s", empty->name->value);
+        LogInfo("Deleting unused atlas: %s", empty->name->value);
         UnregisterManagedAtlas(empty);
         DeleteAsset(empty);
     }
+
+    // Rebuild sorted asset list to include any newly created atlases
+    SortAssets();
 
     LogInfo("Atlas rebuild complete: %d/%d meshes assigned to %d atlases",
         success_count, (int)all_meshes.size(), (int)g_managed_atlases.size());
@@ -286,7 +298,29 @@ void MarkMeshAtlasDirty(MeshData* mesh) {
     mesh->impl->atlas_dirty = true;
 }
 
+// Calculate required rect size for a mesh
+static void GetRequiredRectSize(MeshData* mesh, AtlasData* atlas, int* out_width, int* out_height) {
+    MeshDataImpl* mesh_impl = mesh->impl;
+    AtlasDataImpl* impl = atlas->impl;
+
+    if (mesh_impl->frame_count == 0) {
+        *out_width = 0;
+        *out_height = 0;
+        return;
+    }
+
+    // Use mesh bounds (already computed as max across all frames)
+    Vec2 frame_size = GetSize(mesh->bounds);
+    int frame_width = (int)(frame_size.x * impl->dpi) + 2;   // +2 for padding
+    int frame_height = (int)(frame_size.y * impl->dpi) + 2;
+
+    *out_width = frame_width * mesh_impl->frame_count;
+    *out_height = frame_height;
+}
+
 void UpdateDirtyMeshAtlases() {
+    bool needs_rebuild = false;
+
     for (u32 i = 0; i < GetAssetCount(); i++) {
         AssetData* asset = GetAssetData(i);
         if (asset->type != ASSET_TYPE_MESH) continue;
@@ -299,8 +333,26 @@ void UpdateDirtyMeshAtlases() {
         AtlasRect* rect = nullptr;
         AtlasData* atlas = FindAtlasForMesh(mesh->name, &rect);
         if (atlas && rect) {
-            RenderMeshToAtlas(atlas, mesh, *rect);
-            MarkModified(atlas);
+            // Check if the mesh still fits in its current rect
+            int required_width, required_height;
+            GetRequiredRectSize(mesh, atlas, &required_width, &required_height);
+
+            if (required_width > rect->width || required_height > rect->height ||
+                mesh->impl->frame_count != rect->frame_count) {
+                // Mesh no longer fits or frame count changed - need full rebuild
+                LogInfo("Mesh '%s' changed size, triggering atlas rebuild", mesh->name->value);
+                needs_rebuild = true;
+            } else {
+                // Mesh still fits, just re-render
+                RenderMeshToAtlas(atlas, mesh, *rect);
+                MarkModified(atlas);
+            }
         }
+    }
+
+    if (needs_rebuild) {
+        RebuildAllAtlases();
+        // Force reimport of all assets to pick up atlas changes
+        ReimportAll();
     }
 }

@@ -139,6 +139,8 @@ static void LoadGLESFunctions() {
     glTexImage2D = (PFNGLTEXIMAGE2DPROC)GetGLProcAddress("glTexImage2D");
     glTexParameteri = (PFNGLTEXPARAMETERIPROC)GetGLProcAddress("glTexParameteri");
     glTexSubImage2D = (PFNGLTEXSUBIMAGE2DPROC)GetGLProcAddress("glTexSubImage2D");
+    glTexImage3D = (PFNGLTEXIMAGE3DPROC)GetGLProcAddress("glTexImage3D");
+    glTexSubImage3D = (PFNGLTEXSUBIMAGE3DPROC)GetGLProcAddress("glTexSubImage3D");
     glUniform1f = (PFNGLUNIFORM1FPROC)GetGLProcAddress("glUniform1f");
     glUniform1i = (PFNGLUNIFORM1IPROC)GetGLProcAddress("glUniform1i");
     glUniform2f = (PFNGLUNIFORM2FPROC)GetGLProcAddress("glUniform2f");

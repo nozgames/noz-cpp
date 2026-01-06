@@ -365,8 +365,7 @@ Mesh* ToMesh(MeshData* m, bool upload, bool use_cache) {
     if (use_cache && GetCurrentFrame(m)->mesh)
         return GetCurrentFrame(m)->mesh;
 
-    PushScratch();
-    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, MAX_VERTICES, MAX_INDICES);
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_DEFAULT, MAX_VERTICES, MAX_INDICES);
 
     float depth = 0.01f + 0.99f * (m->impl->depth - MIN_DEPTH) / (float)(MAX_DEPTH-MIN_DEPTH);
     for (int i = 0; i < GetCurrentFrame(m)->face_count; i++)
@@ -381,7 +380,7 @@ Mesh* ToMesh(MeshData* m, bool upload, bool use_cache) {
     if (IsFile(m))
         g_editor.meshes[GetUnsortedIndex(m)] = mesh;
 
-    PopScratch();
+    Free(builder);
 
     return mesh;
 }
@@ -400,8 +399,7 @@ Mesh* ToOutlineMesh(MeshData* m) {
     if (!GetCurrentFrame(m)->mesh)
         ToMesh(m, false);
 
-    PushScratch();
-    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, MAX_VERTICES, MAX_INDICES);
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_DEFAULT, MAX_VERTICES, MAX_INDICES);
 
     float outline_size = g_view.zoom_ref_scale * OUTLINE_WIDTH * 0.5f;
 
@@ -429,7 +427,6 @@ Mesh* ToOutlineMesh(MeshData* m) {
     GetCurrentFrame(m)->outline_version = g_view.zoom_version;
 
     Free(builder);
-    PopScratch();
 
     return GetCurrentFrame(m)->outline;
 }

@@ -19,7 +19,7 @@ struct Font : Asset {};
 struct Shader : Asset {};
 struct Skeleton : Asset {};
 struct MeshBuilder {};
-struct Atlas : Texture {};
+struct Atlas : Asset {};
 struct Animator;
 
 // @renderer_traits
@@ -56,7 +56,7 @@ int GetBytesPerPixel(TextureFormat format);
 Vec2Int GetSize(Texture* texture);
 
 // Texture arrays (for atlas binding)
-Texture* CreateTextureArray(Allocator* allocator, Texture** textures, int texture_count, const Name* name);
+Texture* CreateTextureArray(Allocator* allocator, Atlas** atlases, int atlas_count, const Name* name);
 void BindTextureArray(Texture* texture_array, int slot);
 bool IsTextureArray(Texture* texture);
 int GetLayerCount(Texture* texture);
@@ -79,6 +79,7 @@ struct MeshVertex {
     Vec2 normal;
     Vec4Int bone_indices;
     Vec4 bone_weights = {1.0f, 0.0f, 0.0f, 0.0f};
+    int atlas_index = 0;
 };
 
 extern Mesh* CreateMesh(

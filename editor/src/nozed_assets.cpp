@@ -15,6 +15,7 @@ extern int MESH_COUNT;
 extern int TEXTURE_COUNT;
 extern int FONT_COUNT;
 extern int SHADER_COUNT;
+extern int ATLAS_COUNT;
 
 // @Mesh
 Mesh* MESH_ASSET_ICON_ATLAS = nullptr;
@@ -63,6 +64,9 @@ Shader* SHADER_UI_IMAGE_TEXTURE = nullptr;
 Shader* SHADER_UI_VIGNETTE = nullptr;
 Shader* SHADER_VFX = nullptr;
 
+// @Atlas
+Atlas* ATLAS_ATLAS00 = nullptr;
+
 // @name
 const Name* NAME_A = nullptr;
 const Name* NAME_ANIMATION = nullptr;
@@ -86,6 +90,7 @@ const Name* NAME_SKELETON = nullptr;
 const Name* NAME_VFX = nullptr;
 
 // @path
+const Name* PATH_ATLAS_ATLAS00 = nullptr;
 const Name* PATH_FONT_SEGUISB = nullptr;
 const Name* PATH_MESH_ASSET_ICON_ATLAS = nullptr;
 const Name* PATH_MESH_ASSET_ICON_BIN = nullptr;
@@ -152,6 +157,7 @@ bool LoadAssets(Allocator* allocator)
     NAME_VFX = GetName("vfx");
 
     // @path
+    PATH_ATLAS_ATLAS00 = GetName("atlas00");
     PATH_FONT_SEGUISB = GetName("seguisb");
     PATH_MESH_ASSET_ICON_ATLAS = GetName("asset_icon_atlas");
     PATH_MESH_ASSET_ICON_BIN = GetName("asset_icon_bin");
@@ -247,7 +253,7 @@ bool LoadAssets(Allocator* allocator)
     };
 
     MESH = _MESH;
-    MESH_COUNT = sizeof(_MESH) / sizeof(void*);
+    MESH_COUNT = sizeof(_MESH) / sizeof(void*) - 1;
 
     // @Texture
     NOZ_LOAD_TEXTURE(allocator, PATH_TEXTURE_EDITOR_PALETTE, TEXTURE_EDITOR_PALETTE);
@@ -258,7 +264,7 @@ bool LoadAssets(Allocator* allocator)
     };
 
     TEXTURE = _TEXTURE;
-    TEXTURE_COUNT = sizeof(_TEXTURE) / sizeof(void*);
+    TEXTURE_COUNT = sizeof(_TEXTURE) / sizeof(void*) - 1;
 
     // @Font
     NOZ_LOAD_FONT(allocator, PATH_FONT_SEGUISB, FONT_SEGUISB);
@@ -269,7 +275,7 @@ bool LoadAssets(Allocator* allocator)
     };
 
     FONT = _FONT;
-    FONT_COUNT = sizeof(_FONT) / sizeof(void*);
+    FONT_COUNT = sizeof(_FONT) / sizeof(void*) - 1;
 
     // @Shader
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_EDITOR, SHADER_EDITOR);
@@ -304,7 +310,25 @@ bool LoadAssets(Allocator* allocator)
     };
 
     SHADER = _SHADER;
-    SHADER_COUNT = sizeof(_SHADER) / sizeof(void*);
+    SHADER_COUNT = sizeof(_SHADER) / sizeof(void*) - 1;
+
+    // @Atlas
+    NOZ_LOAD_ATLAS(allocator, PATH_ATLAS_ATLAS00, ATLAS_ATLAS00);
+
+    static Atlas* _ATLAS[] = {
+        ATLAS_ATLAS00,
+        nullptr
+    };
+
+    ATLAS = _ATLAS;
+    ATLAS_COUNT = sizeof(_ATLAS) / sizeof(void*) - 1;
+
+    // Create texture array from all atlases
+    if (ATLAS_COUNT > 0) {
+        ATLAS_ARRAY = CreateTextureArray(allocator, ATLAS, ATLAS_COUNT, GetName("atlas_array"));
+    } else {
+        ATLAS_ARRAY = nullptr;
+    }
 
     return true;
 }
@@ -358,6 +382,10 @@ void UnloadAssets()
     Free(SHADER_UI_IMAGE_TEXTURE);
     Free(SHADER_UI_VIGNETTE);
     Free(SHADER_VFX);
+
+    // @Atlas
+    Free(ATLAS_ATLAS00);
+    if (ATLAS_ARRAY) { Free(ATLAS_ARRAY); ATLAS_ARRAY = nullptr; }
 }
 
 #ifdef NOZ_LUA
@@ -410,6 +438,9 @@ void BindLuaAssets(noz::lua::State* state) {
     SetGlobal(state, "SHADER_UI_IMAGE_TEXTURE", SHADER_UI_IMAGE_TEXTURE);
     SetGlobal(state, "SHADER_UI_VIGNETTE", SHADER_UI_VIGNETTE);
     SetGlobal(state, "SHADER_VFX", SHADER_VFX);
+
+    // Atlas
+    SetGlobal(state, "ATLAS_ATLAS00", ATLAS_ATLAS00);
 }
 
 #endif
@@ -464,6 +495,9 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     NOZ_RELOAD_SHADER(PATH_SHADER_UI_IMAGE_TEXTURE, SHADER_UI_IMAGE_TEXTURE);
     NOZ_RELOAD_SHADER(PATH_SHADER_UI_VIGNETTE, SHADER_UI_VIGNETTE);
     NOZ_RELOAD_SHADER(PATH_SHADER_VFX, SHADER_VFX);
+
+    // @Atlas
+    NOZ_RELOAD_ATLAS(PATH_ATLAS_ATLAS00, ATLAS_ATLAS00);
 }
 
 #endif

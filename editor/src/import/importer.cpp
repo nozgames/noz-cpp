@@ -2,6 +2,7 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
+#include <set>
 #include <utils/file_watcher.h>
 #include <noz/task.h>
 #include "asset_manifest.h"
@@ -27,6 +28,7 @@ struct Importer {
     std::mutex mutex;
     std::vector<noz::Task> tasks;
     std::vector<ImportEvent> import_events;
+    std::set<AssetData*> pending_imports;  // Track assets with pending import jobs
     noz::Task post_import_task;
 };
 
@@ -75,13 +77,20 @@ static void QueueImport(AssetData* a, bool force = false) {
             return;
     }
 
+    std::lock_guard lock(g_importer.mutex);
+
+    // Skip if this asset already has a pending import job
+    if (g_importer.pending_imports.contains(a)) {
+        return;
+    }
+    g_importer.pending_imports.insert(a);
+
     ImportJob* job = new ImportJob{
         .asset = a,
         .source_path = fs::path(path).make_preferred(),
         .meta_path = source_meta_path.make_preferred()
     };
 
-    std::lock_guard lock(g_importer.mutex);
     g_importer.tasks.push_back(noz::CreateTask({
         .run = [job](noz::Task) -> void* {
             ExecuteImportJob(job);
@@ -131,8 +140,16 @@ static void HandleFileChangeEvent(const FileChangeEvent& event) {
 static void ExecuteImportJob(ImportJob* job) {
     std::unique_ptr<ImportJob> job_guard(job);
 
-    if (!fs::exists(job->source_path))
+    // Remove from pending set when job completes (success or failure)
+    auto cleanup_pending = [asset = job->asset]() {
+        std::lock_guard lock(g_importer.mutex);
+        g_importer.pending_imports.erase(asset);
+    };
+
+    if (!fs::exists(job->source_path)) {
+        cleanup_pending();
         return;
+    }
 
     Props* meta = nullptr;
     std::filesystem::path meta_path = job->source_path;
@@ -162,10 +179,12 @@ static void ExecuteImportJob(ImportJob* job) {
         type_info->importer.import_func(job->asset, target_dir_lower, g_config, meta);
     } catch (const std::exception& e) {
         AddNotification(NOTIFICATION_TYPE_ERROR, "Failed to import asset '%s': %s", job->asset->name->value, e.what());
+        cleanup_pending();
         return;
     }
 
     std::lock_guard lock(g_importer.mutex);
+    g_importer.pending_imports.erase(job->asset);
     g_importer.import_events.push_back({
         .name =  job->asset->name,
         .type = job->asset->type

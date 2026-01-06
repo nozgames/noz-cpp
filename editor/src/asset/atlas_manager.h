@@ -33,6 +33,7 @@ extern bool IsManagedAtlas(AtlasData* atlas);
 // Get managed atlas by index
 extern AtlasData* GetManagedAtlas(int index);
 extern int GetManagedAtlasCount();
+extern int GetAtlasIndex(AtlasData* atlas);
 
 // Mark mesh as needing atlas re-render (call when mesh is modified)
 extern void MarkMeshAtlasDirty(MeshData* mesh);

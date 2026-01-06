@@ -54,6 +54,9 @@ extern Shader* SHADER_UI_IMAGE_TEXTURE;
 extern Shader* SHADER_UI_VIGNETTE;
 extern Shader* SHADER_VFX;
 
+// @Atlas
+extern Atlas* ATLAS_ATLAS00;
+
 // @name
 extern const Name* NAME_A;
 extern const Name* NAME_ANIMATION;

@@ -38,9 +38,9 @@ static void DrawAtlasData(AssetData* a) {
     // Sync pixels to GPU if dirty
     SyncAtlasTexture(atlas);
 
-    // Scale factor to display atlas in world units
-    float scale = 10.0f / (float)impl->width;  // Normalize to 10 units
-    Vec2 size = Vec2{(float)impl->width, (float)impl->height} * scale;
+    // Scale factor to display atlas in world units (512 pixels = 10 units for grid alignment)
+    constexpr float PIXELS_PER_UNIT = 51.2f;
+    Vec2 size = Vec2{(float)impl->width, (float)impl->height} / PIXELS_PER_UNIT;
 
     // Draw the atlas texture if available
     if (impl->material) {
@@ -194,6 +194,7 @@ AtlasRect* AllocateRect(AtlasData* atlas, MeshData* mesh) {
     rect.mesh_name = mesh->name;
     rect.valid = true;
     rect.frame_count = mesh_impl->frame_count;
+    rect.mesh_bounds = max_bounds;  // Store bounds for UV calculation
 
     impl->dirty = true;
     return &rect;
@@ -285,7 +286,7 @@ static void AddFaceToPathFrame(plutovg_canvas_t* canvas, MeshFrameData* frame, F
     plutovg_canvas_close_path(canvas);
 }
 
-void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, const AtlasRect& rect) {
+void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, AtlasRect& rect) {
     AtlasDataImpl* impl = atlas->impl;
     MeshDataImpl* mesh_impl = mesh->impl;
 
@@ -298,6 +299,9 @@ void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, const AtlasRect& rect) 
     for (int i = 1; i < mesh_impl->frame_count; i++) {
         max_bounds = Union(max_bounds, GetFrameBounds(&mesh_impl->frames[i]));
     }
+
+    // Update stored bounds for UV calculation
+    rect.mesh_bounds = max_bounds;
 
     float scale = (float)impl->dpi;
     int frame_width = rect.width / rect.frame_count;
@@ -550,21 +554,15 @@ static void SaveAtlasData(AssetData* a, const std::filesystem::path& path) {
     WriteCSTR(stream, "d %d\n", impl->dpi);
     WriteCSTR(stream, "\n");
 
-    // Save rects: r "mesh_name" x y w h [frame_count]
+    // Save rects: r "mesh_name" x y w h frame_count bounds_min_x bounds_min_y bounds_max_x bounds_max_y
     for (int i = 0; i < impl->rect_count; i++) {
         if (impl->rects[i].valid && impl->rects[i].mesh_name) {
             const AtlasRect& r = impl->rects[i];
-            if (r.frame_count > 1) {
-                // Animated mesh with multiple frames
-                WriteCSTR(stream, "r \"%s\" %d %d %d %d %d\n",
-                    r.mesh_name->value,
-                    r.x, r.y, r.width, r.height, r.frame_count);
-            } else {
-                // Static mesh (default frame_count = 1)
-                WriteCSTR(stream, "r \"%s\" %d %d %d %d\n",
-                    r.mesh_name->value,
-                    r.x, r.y, r.width, r.height);
-            }
+            WriteCSTR(stream, "r \"%s\" %d %d %d %d %d %.6f %.6f %.6f %.6f\n",
+                r.mesh_name->value,
+                r.x, r.y, r.width, r.height, r.frame_count,
+                r.mesh_bounds.min.x, r.mesh_bounds.min.y,
+                r.mesh_bounds.max.x, r.mesh_bounds.max.y);
         }
     }
 
@@ -586,9 +584,17 @@ static void ParseRect(AtlasData* atlas, Tokenizer& tk) {
     if (!ExpectInt(tk, &w)) ThrowError("missing rect width");
     if (!ExpectInt(tk, &h)) ThrowError("missing rect height");
 
-    // Optional frame_count for animated meshes (default = 1)
+    // frame_count (required now, was optional before)
     int frame_count = 1;
     ExpectInt(tk, &frame_count);
+
+    // mesh_bounds (optional for backwards compatibility)
+    Bounds2 mesh_bounds = BOUNDS2_ZERO;
+    float bmin_x, bmin_y, bmax_x, bmax_y;
+    if (ExpectFloat(tk, &bmin_x) && ExpectFloat(tk, &bmin_y) &&
+        ExpectFloat(tk, &bmax_x) && ExpectFloat(tk, &bmax_y)) {
+        mesh_bounds = {{bmin_x, bmin_y}, {bmax_x, bmax_y}};
+    }
 
     int slot = FindFreeRectSlot(impl);
     if (slot >= 0) {
@@ -599,6 +605,7 @@ static void ParseRect(AtlasData* atlas, Tokenizer& tk) {
         rect.width = w;
         rect.height = h;
         rect.frame_count = frame_count;
+        rect.mesh_bounds = mesh_bounds;
         rect.valid = true;
 
         // Mark this space as used in the packer
@@ -643,9 +650,9 @@ static void LoadAtlasData(AssetData* a) {
         impl->packer = new RectPacker(impl->width, impl->height);
     }
 
-    // Use same scale as DrawAtlasData (10 units for full width)
-    float scale = 10.0f / (float)impl->width;
-    Vec2 tsize = Vec2{static_cast<float>(impl->width), static_cast<float>(impl->height)} * scale;
+    // Use same scale as DrawAtlasData (512 pixels = 10 units for grid alignment)
+    constexpr float PIXELS_PER_UNIT = 51.2f;
+    Vec2 tsize = Vec2{static_cast<float>(impl->width), static_cast<float>(impl->height)} / PIXELS_PER_UNIT;
     a->bounds = Bounds2{-tsize.x*0.5f, -tsize.y*0.5f, tsize.x*0.5f, tsize.y*0.5f};
 }
 
@@ -671,27 +678,15 @@ static void PostLoadAtlasData(AssetData* a) {
 
 static void LoadAtlasMetaData(AssetData* a, Props* meta) {
     AtlasData* atlas = static_cast<AtlasData*>(a);
-    AtlasDataImpl* impl = atlas->impl;
-
-    impl->width = meta->GetInt("atlas", "width", ATLAS_DEFAULT_SIZE);
-    impl->height = meta->GetInt("atlas", "height", ATLAS_DEFAULT_SIZE);
-    impl->dpi = meta->GetInt("atlas", "dpi", ATLAS_DEFAULT_DPI);
-
-    // Resize packer to match loaded dimensions
-    if (impl->packer) {
-        impl->packer->Resize(impl->width, impl->height);
-    }
+    (void)meta;  // Width/height/dpi come from the .atlas file, not metadata
 
     InitAtlasEditor(atlas);
 }
 
 static void SaveAtlasMetaData(AssetData* a, Props* meta) {
-    AtlasData* atlas = static_cast<AtlasData*>(a);
-    AtlasDataImpl* impl = atlas->impl;
-
-    meta->SetInt("atlas", "width", impl->width);
-    meta->SetInt("atlas", "height", impl->height);
-    meta->SetInt("atlas", "dpi", impl->dpi);
+    (void)a;
+    (void)meta;
+    // Width/height/dpi are saved in the .atlas file, not metadata
 }
 
 void InitAtlasData(AssetData* a) {

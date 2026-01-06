@@ -15,6 +15,7 @@ struct AtlasRect {
     const Name* mesh_name;           // Which mesh/animated mesh owns this rect
     bool valid;                      // Is this rect in use?
     int frame_count;                 // Number of frames (1 = static mesh, >1 = animated strip)
+    Bounds2 mesh_bounds;             // Mesh bounds used when rendering (for correct UV calculation)
     // For animated: frame_width = width / frame_count, frames are laid out left-to-right
 };
 
@@ -49,7 +50,7 @@ extern void ClearAllRects(AtlasData* atlas);
 extern AtlasData* FindAtlasForMesh(const Name* mesh_name, AtlasRect** out_rect = nullptr);
 
 // Rendering
-extern void RenderMeshToAtlas(AtlasData* atlas, struct MeshData* mesh, const AtlasRect& rect);  // Renders all frames
+extern void RenderMeshToAtlas(AtlasData* atlas, struct MeshData* mesh, AtlasRect& rect);  // Renders all frames
 extern void RegenerateAtlas(AtlasData* atlas);   // Re-render meshes to existing rects
 extern void RebuildAtlas(AtlasData* atlas);      // Clear and reallocate all rects, mark meshes modified
 extern void SyncAtlasTexture(AtlasData* atlas);  // Upload pixels to GPU (editor only)

@@ -74,8 +74,9 @@ static void DrawAtlasEditor() {
     // Draw the atlas itself (texture, bounds, etc)
     a->vtable.draw(a);
 
-    // Scale factor to display atlas in world units
-    float scale = 10.0f / (float)impl->width;
+    // Use same scale as atlas bounds (512 pixels = 10 units)
+    constexpr float PIXELS_PER_UNIT = 51.2f;
+    float scale = 1.0f / PIXELS_PER_UNIT;
     Vec2 size = Vec2{(float)impl->width, (float)impl->height} * scale;
 
     // Draw rect bounds for each attached mesh
