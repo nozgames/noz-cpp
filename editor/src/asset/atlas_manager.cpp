@@ -10,19 +10,24 @@ namespace fs = std::filesystem;
 
 static std::vector<AtlasData*> g_managed_atlases;
 
-// Auto-managed atlases use atlasNN naming convention
-static constexpr const char* MANAGED_ATLAS_PREFIX = "atlas";
+// Get the atlas prefix from config
+static const char* GetManagedAtlasPrefix() {
+    return g_editor.atlas_prefix.value;
+}
 
 static bool IsManagedAtlasName(const Name* name) {
     if (!name) return false;
-    return strncmp(name->value, MANAGED_ATLAS_PREFIX, strlen(MANAGED_ATLAS_PREFIX)) == 0;
+    const char* prefix = GetManagedAtlasPrefix();
+    return strncmp(name->value, prefix, strlen(prefix)) == 0;
 }
 
 static int GetNextAtlasIndex() {
     int max_index = -1;
+    const char* prefix = GetManagedAtlasPrefix();
+    size_t prefix_len = strlen(prefix);
     for (AtlasData* atlas : g_managed_atlases) {
         if (atlas && atlas->name) {
-            const char* suffix = atlas->name->value + strlen(MANAGED_ATLAS_PREFIX);
+            const char* suffix = atlas->name->value + prefix_len;
             int index = atoi(suffix);
             if (index > max_index) max_index = index;
         }
@@ -33,7 +38,7 @@ static int GetNextAtlasIndex() {
 static AtlasData* CreateManagedAtlas() {
     int index = GetNextAtlasIndex();
     String64 name;
-    Format(name, "%s%02d", MANAGED_ATLAS_PREFIX, index);
+    Format(name, "%s%02d", GetManagedAtlasPrefix(), index);
 
     // Create the atlas file
     fs::path atlas_path = fs::path(g_editor.project_path) / g_editor.save_dir / "atlas" / name.value;
@@ -311,16 +316,14 @@ static void GetRequiredRectSize(MeshData* mesh, AtlasData* atlas, int* out_width
 
     // Use mesh bounds (already computed as max across all frames)
     Vec2 frame_size = GetSize(mesh->bounds);
-    int frame_width = (int)(frame_size.x * impl->dpi) + 2;   // +2 for padding
-    int frame_height = (int)(frame_size.y * impl->dpi) + 2;
+    int frame_width = (int)(frame_size.x * impl->dpi) + ATLAS_RECT_PADDING * 2;
+    int frame_height = (int)(frame_size.y * impl->dpi) + ATLAS_RECT_PADDING * 2;
 
     *out_width = frame_width * mesh_impl->frame_count;
     *out_height = frame_height;
 }
 
 void UpdateDirtyMeshAtlases() {
-    bool needs_rebuild = false;
-
     for (u32 i = 0; i < GetAssetCount(); i++) {
         AssetData* asset = GetAssetData(i);
         if (asset->type != ASSET_TYPE_MESH) continue;
@@ -332,27 +335,42 @@ void UpdateDirtyMeshAtlases() {
 
         AtlasRect* rect = nullptr;
         AtlasData* atlas = FindAtlasForMesh(mesh->name, &rect);
-        if (atlas && rect) {
-            // Check if the mesh still fits in its current rect
-            int required_width, required_height;
-            GetRequiredRectSize(mesh, atlas, &required_width, &required_height);
 
-            if (required_width > rect->width || required_height > rect->height ||
-                mesh->impl->frame_count != rect->frame_count) {
-                // Mesh no longer fits or frame count changed - need full rebuild
-                LogInfo("Mesh '%s' changed size, triggering atlas rebuild", mesh->name->value);
-                needs_rebuild = true;
-            } else {
-                // Mesh still fits, just re-render
-                RenderMeshToAtlas(atlas, mesh, *rect);
+        if (!atlas || !rect) continue;  // Not in an atlas yet
+
+        // Calculate new required size
+        int required_width, required_height;
+        GetRequiredRectSize(mesh, atlas, &required_width, &required_height);
+
+        bool fits = (required_width <= rect->width &&
+                     required_height <= rect->height &&
+                     mesh->impl->frame_count == rect->frame_count);
+
+        if (fits) {
+            // SIMPLE PATH: Clear and rerender in same spot
+            ClearRectPixels(atlas, *rect);
+            RenderMeshToAtlas(atlas, mesh, *rect);
+            MarkModified(atlas);
+        } else {
+            // BIGGER: Burn old spot, allocate new rect
+            LogInfo("Mesh '%s' changed size, allocating new rect", mesh->name->value);
+            ClearRectPixels(atlas, *rect);  // Clear old pixels
+            rect->valid = false;             // Mark old rect invalid (dead space)
+            rect->mesh_name = nullptr;
+
+            // Try to allocate new rect in same atlas
+            AtlasRect* new_rect = AllocateRect(atlas, mesh);
+            if (new_rect) {
+                RenderMeshToAtlas(atlas, mesh, *new_rect);
                 MarkModified(atlas);
+            } else {
+                // Atlas full - try other atlases or create new
+                AtlasData* new_atlas = AutoAssignMeshToAtlas(mesh);
+                if (new_atlas) {
+                    MarkModified(new_atlas);
+                }
             }
         }
     }
-
-    if (needs_rebuild) {
-        RebuildAllAtlases();
-        // Force reimport of all assets to pick up atlas changes
-        ReimportAll();
-    }
+    // NO automatic RebuildAllAtlases() - let user run reatlas command to optimize
 }

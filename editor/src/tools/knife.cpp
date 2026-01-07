@@ -272,7 +272,6 @@ static int AddKnifeVertex(MeshData* m, const Vec2& position) {
     VertexData& v = frame->vertices[index];
     v.position = position;
     v.edge_normal = VEC2_ZERO;
-    v.edge_size = 0.0f;
     v.selected = false;
     v.ref_count = 0;
     v.gradient = 0.0f;
@@ -316,6 +315,7 @@ static int SplitFaceAtPositions(MeshData* m, int face_index, int pos0, int pos1,
     FaceData& new_face = frame->faces[frame->face_count];
     new_face.color = old_face.color;
     new_face.normal = old_face.normal;
+    new_face.opacity = old_face.opacity;
     new_face.selected = false;
     new_face.vertex_count = 0;
 
@@ -821,6 +821,7 @@ static int GetOrCreateVertex(MeshData* m, KnifePathPoint& pt) {
         int edge_index = GetEdge(m, pt.edge_v0, pt.edge_v1);
         if (edge_index >= 0) {
             Vec2 curve_offset = frame->edges[edge_index].curve_offset;
+            float curve_weight = frame->edges[edge_index].curve_weight;
             Vec2 p0 = frame->vertices[pt.edge_v0].position;
             Vec2 p2 = frame->vertices[pt.edge_v1].position;
 
@@ -831,13 +832,13 @@ static int GetOrCreateVertex(MeshData* m, KnifePathPoint& pt) {
                 // Use the stored edge_t parameter (from hit test or intersection detection)
                 float t = pt.edge_t;
 
-                // Place vertex exactly on the curve at parameter t
-                float mt = 1.0f - t;
-                Vec2 curve_pos = p0 * (mt * mt) + p1 * (2.0f * t * mt) + p2 * (t * t);
+                // Place vertex exactly on the rational bezier curve at parameter t
+                Vec2 curve_pos = EvalQuadraticBezier(p0, p1, p2, t, curve_weight);
 
-                // Use de Casteljau subdivision to get correct curve offsets for sub-curves
+                // Use de Casteljau subdivision to get correct curve offsets/weights for sub-curves
                 Vec2 left_offset, right_offset;
-                SplitBezierCurve(p0, p2, curve_offset, t, &left_offset, &right_offset);
+                float left_weight, right_weight;
+                SplitBezierCurve(p0, p2, curve_offset, curve_weight, t, &left_offset, &left_weight, &right_offset, &right_weight);
 
                 // Queue pending curves for the split
                 int new_vertex = AddKnifeVertex(m, curve_pos);
@@ -845,8 +846,8 @@ static int GetOrCreateVertex(MeshData* m, KnifePathPoint& pt) {
                 pt.position = curve_pos;  // Update position to exact curve point
 
                 if (frame->pending_curve_count < MESH_MAX_EDGES - 1) {
-                    frame->pending_curves[frame->pending_curve_count++] = { pt.edge_v0, new_vertex, left_offset };
-                    frame->pending_curves[frame->pending_curve_count++] = { new_vertex, pt.edge_v1, right_offset };
+                    frame->pending_curves[frame->pending_curve_count++] = { pt.edge_v0, new_vertex, left_offset, left_weight };
+                    frame->pending_curves[frame->pending_curve_count++] = { new_vertex, pt.edge_v1, right_offset, right_weight };
                 }
                 return new_vertex;
             }
@@ -1146,6 +1147,7 @@ static void ExecuteInnerFace(MeshData* m, KnifePathPoint* path, KnifeAction& act
     FaceData& inner_face = frame->faces[frame->face_count];
     inner_face.color = f.color;
     inner_face.normal = f.normal;
+    inner_face.opacity = f.opacity;
     inner_face.selected = false;
     inner_face.vertex_count = 0;
 
@@ -1556,6 +1558,8 @@ static void UpdateKnifeTool() {
             position = GetVertexPoint(m, vertex_index);
         else if (edge_index != -1)
             position = GetEdgePoint(m, edge_index, edge_hit);
+        else if (IsCtrlDown())
+            position = SnapToGrid(g_view.mouse_world_position) - m->position;
 
         g_knife_tool.cuts[g_knife_tool.cut_count++] = {
             .position = position,

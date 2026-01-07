@@ -103,6 +103,7 @@ struct Editor {
     int palette_count;
 
     int atlas_size = 1024;  // Default, overridden from editor.cfg
+    String32 atlas_prefix;  // Prefix for managed atlases
 };
 
 extern Editor g_editor;
@@ -183,6 +184,15 @@ extern void EnableShortcuts(const Shortcut* shortcuts, InputSet* input_set=nullp
 extern void CheckShortcuts(const Shortcut* shortcuts, InputSet* input_set=nullptr);
 
 // @ui
+struct EditorButtonConfig {
+    ElementId id;
+    Mesh* icon;
+    bool checked;
+    bool disabled;
+    void (*content_func)();
+    bool (*popup_func)();
+};
+
 extern Color GetButtonHoverColor(ElementFlags state, float time, void* user_data);
 extern void UpdateConfirmDialog();
 extern void ShowConfirmDialog(const char* message, const std::function<void()>& callback);
@@ -191,6 +201,10 @@ extern void ToggleHelp();
 extern void HelpGroup(const char* title, const Shortcut* shortcuts);
 extern bool EditorCloseButton(ElementId id);
 extern bool UpdateContextMenu();
+extern bool EditorButton(const EditorButtonConfig& config);
+extern bool EditorButton(ElementId id, Mesh* icon, bool state, bool disabled=false);
+extern void BeginOverlay(ElementId id=ELEMENT_ID_NONE, Align align=ALIGN_TOP_LEFT);
+extern void EndOverlay();
 
 // @context_menu
 constexpr int CONTEXT_MENU_MAX_ITEMS = 64;

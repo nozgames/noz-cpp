@@ -26,7 +26,7 @@ static void DestroySoundData(AssetData* a) {
 }
 
 static void DrawSoundData(AssetData* a) {
-    BindMaterial(g_view.shaded_material);
+    BindMaterial(g_view.editor_mesh_material);
     BindColor(COLOR_WHITE);
     DrawMesh(MESH_ASSET_ICON_SOUND, Translate(a->position));
 }

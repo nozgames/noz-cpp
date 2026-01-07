@@ -160,6 +160,7 @@ static void LoadGLESFunctions() {
     glStencilMask = (PFNGLSTENCILMASKPROC)GetGLProcAddress("glStencilMask");
     glColorMask = (PFNGLCOLORMASKPROC)GetGLProcAddress("glColorMask");
     glClearStencil = (PFNGLCLEARSTENCILPROC)GetGLProcAddress("glClearStencil");
+    glObjectLabel = (PFNGLOBJECTLABELPROC)GetGLProcAddress("glObjectLabel");
 
     // WGL extensions
     wglCreateContextAttribsARB_ptr = (wglCreateContextAttribsARB_t*)GetGLProcAddress("wglCreateContextAttribsARB");

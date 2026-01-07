@@ -2,8 +2,6 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-extern Mesh* MESH_ASSET_ICON_SHADER;
-
 static void DrawShaderData(AssetData* a) {
     BindMaterial(g_view.editor_mesh_material);
     BindColor(COLOR_WHITE);

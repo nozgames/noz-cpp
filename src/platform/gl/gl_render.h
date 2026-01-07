@@ -197,6 +197,15 @@ typedef ptrdiff_t GLintptr;
 #define GL_DRAW_FRAMEBUFFER               0x8CA9
 #define GL_MAX_SAMPLES                    0x8D57
 
+// Debug label constants (GL_KHR_debug / GL 4.3+)
+#define GL_DEBUG_OUTPUT                   0x92E0
+#define GL_TEXTURE                        0x1702
+#define GL_BUFFER                         0x82E0
+#define GL_SHADER                         0x82E1
+#define GL_PROGRAM                        0x82E2
+#define GL_FRAMEBUFFER_OBJ                0x8D40
+#define GL_RENDERBUFFER_OBJ               0x8D41
+
 // Function pointer typedefs
 typedef void (*PFNGLACTIVETEXTUREPROC)(GLenum texture);
 typedef void (*PFNGLATTACHSHADERPROC)(GLuint program, GLuint shader);
@@ -282,6 +291,7 @@ typedef void (*PFNGLSTENCILOPPROC)(GLenum sfail, GLenum dpfail, GLenum dppass);
 typedef void (*PFNGLSTENCILMASKPROC)(GLuint mask);
 typedef void (*PFNGLCOLORMASKPROC)(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 typedef void (*PFNGLCLEARSTENCILPROC)(GLint s);
+typedef void (*PFNGLOBJECTLABELPROC)(GLenum identifier, GLuint name, GLsizei length, const GLchar* label);
 
 // Global function pointers
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
@@ -368,5 +378,6 @@ extern PFNGLSTENCILOPPROC glStencilOp;
 extern PFNGLSTENCILMASKPROC glStencilMask;
 extern PFNGLCOLORMASKPROC glColorMask;
 extern PFNGLCLEARSTENCILPROC glClearStencil;
+extern PFNGLOBJECTLABELPROC glObjectLabel;
 
 #endif // NOZ_PLATFORM_WEB

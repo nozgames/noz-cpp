@@ -25,7 +25,8 @@ constexpr int MESH_EDITOR_ID_EDGE_MODE = OVERLAY_BASE_ID + 5;
 constexpr int MESH_EDITOR_ID_FACE_MODE = OVERLAY_BASE_ID + 6;
 constexpr int MESH_EDITOR_ID_WEIGHT_MODE = OVERLAY_BASE_ID + 7;
 
-constexpr int MESH_EDITOR_ID_PALETTES = OVERLAY_BASE_ID + 8;
+constexpr int MESH_EDITOR_ID_OPACITY = OVERLAY_BASE_ID + 8;
+constexpr int MESH_EDITOR_ID_PALETTES = MESH_EDITOR_ID_OPACITY + 11;
 constexpr int MESH_EDITOR_ID_COLORS = MESH_EDITOR_ID_PALETTES + MAX_PALETTES;
 
 enum MeshEditorMode {
@@ -40,6 +41,7 @@ struct MeshEditor {
     MeshEditorMode mode;
     Vec2 selection_drag_start;
     Vec2 selection_center;
+    int selection_opacity;
     Material* color_material;
     bool clear_selection_on_up;
     bool clear_weight_bone_on_up;
@@ -70,6 +72,17 @@ struct MeshEditor {
     bool has_clipboard;
     float playback_time;           // Animation preview time
     bool is_playing;               // Animation playing
+    bool show_opacity_popup;
+
+    // Geometry clipboard for copy/paste across meshes
+    struct {
+        VertexData vertices[MESH_MAX_VERTICES];
+        FaceData faces[MESH_MAX_FACES];
+        int vertex_count;
+        int face_count;
+        Vec2 center;
+        bool has_content;
+    } geometry_clipboard;
 };
 
 static MeshEditor g_mesh_editor = {};
@@ -244,6 +257,20 @@ static void UpdateSelectionCenter() {
         g_mesh_editor.selection_center = VEC2_ZERO;
 }
 
+static void UpdateSelectionOpacity() {
+    MeshData* m = GetMeshData();
+    float opacity = 1.0f;
+    MeshFrameData* frame = GetCurrentFrame(m);
+    for (int face_index=0; face_index<frame->face_count; face_index++) {
+        FaceData* f = &frame->faces[face_index];
+        if (!f->selected) continue;
+        opacity = f->opacity;
+        break;
+    }
+
+    g_mesh_editor.selection_opacity = Clamp((int)(opacity * 10.0f), 0, 10);
+}
+
 static void UpdateSelection(MeshEditorMode mode=MESH_EDITOR_MODE_CURRENT) {
     MeshData* m = GetMeshData();
 
@@ -259,6 +286,7 @@ static void UpdateSelection(MeshEditorMode mode=MESH_EDITOR_MODE_CURRENT) {
     }
 
     UpdateSelectionCenter();
+    UpdateSelectionOpacity();
 }
 
 void RefreshMeshEditorSelection() {
@@ -407,24 +435,15 @@ static bool TrySelectFace() {
     bool shift = IsShiftDown();
     int hit_index = 0;
     if (shift) {
+        // With shift: cycle through overlapping faces to toggle selection
         for (;hit_index<hit_count; hit_index++)
             if (GetCurrentFrame(m)->faces[hit_faces[hit_index]].selected)
                 break;
 
         if (hit_index == hit_count)
             hit_index = 0;
-    } else {
-        // Search forward for currently selected face (hit_faces[0] is topmost)
-        for (hit_index = 0; hit_index < hit_count; hit_index++)
-            if (GetCurrentFrame(m)->faces[hit_faces[hit_index]].selected)
-                break;
-
-        // If none selected or at bottom, wrap to top; otherwise select next one down
-        if (hit_index >= hit_count - 1)
-            hit_index = 0;
-        else
-            hit_index++;
     }
+    // Without shift: always select topmost face (hit_index stays 0)
 
     int face_index = hit_faces[hit_index];
     if (!shift)
@@ -750,7 +769,7 @@ static bool Palette(int palette_index, bool* selected_colors) {
 
         if (selected_colors && WasPressed()) {
             RecordUndo(GetMeshData());
-            SetSelecteFaceColor(GetMeshData(), i);
+            SetFaceColor(GetMeshData(), i);
             MarkModified(GetMeshData());
         }
         EndContainer();
@@ -802,6 +821,69 @@ static void ColorPicker(){
     EndContainer();
 }
 
+static bool OpacityPopup() {
+    bool open = true;
+
+    BeginPopup({.anchor=ALIGN_TOP_LEFT, .align=ALIGN_BOTTOM_LEFT});
+    open = !IsClosed();
+
+    BeginContainer({
+        .padding=EdgeInsetsAll(6),
+        .color=STYLE_OVERLAY_BACKGROUND_COLOR(),
+        .border{.radius=STYLE_OVERLAY_CONTENT_BORDER_RADIUS}});
+    BeginColumn({.spacing=3});
+    for (int i=0; i<=10; i++) {
+        float opacity = 1.0f - (i / 10.0f);
+        BeginContainer({.id=static_cast<ElementId>(MESH_EDITOR_ID_OPACITY + i + 1)});
+        if (WasPressed()) {
+            SetFaceOpacity(GetMeshData(), opacity);
+            MarkModified(GetMeshData());
+            MarkDirty(GetMeshData());
+            open = false;
+        }
+
+        BeginContainer({
+            .width=STYLE_BUTTON_HEIGHT,
+            .height=STYLE_BUTTON_HEIGHT,
+            .border={.radius=STYLE_BUTTON_BORDER_RADIUS},
+            .clip=false
+        });
+
+        if (IsHovered() || g_mesh_editor.selection_opacity == 10 - i)
+            Container({
+                .margin=EdgeInsetsAll(-2),
+                .padding=EdgeInsetsAll(2),
+                .color=STYLE_SELECTION_COLOR(),
+                .border={.radius=STYLE_BUTTON_BORDER_RADIUS},
+            });
+
+        BeginContainer();
+        Image(MESH_ICON_OPACITY, {.align=ALIGN_CENTER, .material=g_view.editor_mesh_material});
+        Image(MESH_ICON_OPACITY_OVERLAY, {
+            .align=ALIGN_CENTER,
+            .color=SetAlpha(COLOR_WHITE, opacity),
+            .material=g_view.editor_mesh_material});
+        EndContainer();
+
+        EndContainer();
+        EndContainer();
+    }
+    EndColumn();
+    EndContainer();
+    EndPopup();
+
+    return open;
+}
+
+static void OpacityContent() {
+    Image(MESH_ICON_OPACITY, {.align=ALIGN_CENTER, .material=g_view.editor_mesh_material});
+    Image(MESH_ICON_OPACITY_OVERLAY, {
+        .align=ALIGN_CENTER,
+        .color=SetAlpha(COLOR_WHITE, g_mesh_editor.selection_opacity / 10.0f),
+        .material=g_view.editor_mesh_material
+    });
+}
+
 static void MeshEditorToolbar() {
     MeshData* m = GetMeshData();
     bool show_palette_picker = g_mesh_editor.show_palette_picker;
@@ -816,6 +898,7 @@ static void MeshEditorToolbar() {
     // Buttons
     BeginContainer();
     BeginRow({.align=ALIGN_LEFT, .spacing=4});
+
     if (EditorButton(MESH_EDITOR_ID_VERTEX_MODE, MESH_ICON_VERTEX_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_VERTEX))
         g_mesh_editor.mode = MESH_EDITOR_MODE_VERTEX;
     if (EditorButton(MESH_EDITOR_ID_EDGE_MODE, MESH_ICON_EDGE_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_EDGE))
@@ -824,16 +907,16 @@ static void MeshEditorToolbar() {
         g_mesh_editor.mode = MESH_EDITOR_MODE_FACE;
     if (EditorButton(MESH_EDITOR_ID_WEIGHT_MODE, MESH_ICON_WEIGHT_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_FACE, m->impl->skeleton == nullptr))
         g_mesh_editor.mode = MESH_EDITOR_MODE_WEIGHT;
-    EndRow();
 
-    if (m->impl->atlas) {
-        BeginRow({.align=ALIGN_CENTER, .spacing=4});
-        BeginContainer({.width=STYLE_TOGGLE_BUTTON_HEIGHT, .height=STYLE_TOGGLE_BUTTON_HEIGHT});
-        Image(MESH_ASSET_ICON_ATLAS, {.color=STYLE_BUTTON_DISABLED_TEXT_COLOR()});
-        EndContainer();
-        Label(m->impl->atlas->name, {.font=FONT_SEGUISB, .font_size=STYLE_OVERLAY_TEXT_SIZE, .color=STYLE_OVERLAY_TEXT_COLOR(), .align=ALIGN_CENTER});
-        EndRow();
-    }
+    Spacer(16.0f);
+    if (EditorButton({
+        .id=MESH_EDITOR_ID_OPACITY,
+        .checked=g_mesh_editor.show_opacity_popup,
+        .content_func=OpacityContent,
+        .popup_func=OpacityPopup}))
+            g_mesh_editor.show_opacity_popup = !g_mesh_editor.show_opacity_popup;
+
+    EndRow();
 
     BeginRow({.align=ALIGN_RIGHT, .spacing=6});
     if (EditorButton(MESH_EDITOR_ID_TILE, MESH_ICON_TILING, g_mesh_editor.show_tiling))
@@ -1268,9 +1351,10 @@ static bool ExtrudeSelectedEdges(MeshData* m) {
             new_edge_count++;
         }
 
-        // Find the face that contains this edge to inherit its color and determine orientation
+        // Find the face that contains this edge to inherit its color/opacity and determine orientation
         int face_color = 0; // Default color
-        Vec3 face_normal = {0, 0, 1}; // Default normal
+        float face_opacity = 1.0f; // Default opacity
+        Vec2 face_normal = {0, 0}; // Default normal
         bool edge_reversed = false; // Track if edge direction is reversed in the face
         bool found_face = false;
 
@@ -1284,11 +1368,13 @@ static bool ExtrudeSelectedEdges(MeshData* m) {
 
                 if (v0_idx == old_v0 && v1_idx == old_v1) {
                     face_color = f.color;
+                    face_opacity = f.opacity;
                     face_normal = f.normal;
                     edge_reversed = false;
                     found_face = true;
                 } else if (v0_idx == old_v1 && v1_idx == old_v0) {
                     face_color = f.color;
+                    face_opacity = f.opacity;
                     face_normal = f.normal;
                     edge_reversed = true;
                     found_face = true;
@@ -1298,6 +1384,7 @@ static bool ExtrudeSelectedEdges(MeshData* m) {
 
         FaceData& quad = GetCurrentFrame(m)->faces[GetCurrentFrame(m)->face_count++];
         quad.color = face_color;
+        quad.opacity = face_opacity;
         quad.normal = face_normal;
         quad.selected = false;
         quad.vertex_count = 4;
@@ -1359,20 +1446,14 @@ static void NewFace() {
     if ((g_mesh_editor.mode == MESH_EDITOR_MODE_VERTEX || g_mesh_editor.mode == MESH_EDITOR_MODE_EDGE) && GetCurrentFrame(m)->selected_vertex_count >= 3) {
         face_index = CreateFace(m);
     } else {
-        float edge_size = g_config->GetFloat("mesh", "default_edge_size", 1.0f);
-
         GetCurrentFrame(m)->vertex_count += 4;
-        GetCurrentFrame(m)->vertices[GetCurrentFrame(m)->vertex_count - 4] = { .position = { -0.25f, -0.25f }, .edge_size = edge_size };
-        GetCurrentFrame(m)->vertices[GetCurrentFrame(m)->vertex_count - 3] = { .position = {  0.25f, -0.25f }, .edge_size = edge_size };
-        GetCurrentFrame(m)->vertices[GetCurrentFrame(m)->vertex_count - 2] = { .position = {  0.25f,  0.25f }, .edge_size = edge_size };
-        GetCurrentFrame(m)->vertices[GetCurrentFrame(m)->vertex_count - 1] = { .position = { -0.25f,  0.25f }, .edge_size = edge_size };
+        GetCurrentFrame(m)->vertices[GetCurrentFrame(m)->vertex_count - 4] = { .position = { -0.25f, -0.25f }};
+        GetCurrentFrame(m)->vertices[GetCurrentFrame(m)->vertex_count - 3] = { .position = {  0.25f, -0.25f }};
+        GetCurrentFrame(m)->vertices[GetCurrentFrame(m)->vertex_count - 2] = { .position = {  0.25f,  0.25f }};
+        GetCurrentFrame(m)->vertices[GetCurrentFrame(m)->vertex_count - 1] = { .position = { -0.25f,  0.25f }};
 
         FaceData& f = GetCurrentFrame(m)->faces[GetCurrentFrame(m)->face_count++];
-        f = {
-            .color = 0,
-            .normal = { 0, 0, 0 },
-            .vertex_count = 4
-        };
+        f = { .color = 0, .normal = { 0, 0 }, .vertex_count = 4, .opacity = 1.0f };
         f.vertices[0] = GetCurrentFrame(m)->vertex_count - 4;
         f.vertices[1] = GetCurrentFrame(m)->vertex_count - 3;
         f.vertices[2] = GetCurrentFrame(m)->vertex_count - 2;
@@ -1500,11 +1581,12 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
         if (IsEdgeCurved(m, edge_index)) {
             // Draw curved edge as line segments
             Vec2 control = GetEdgeControlPoint(m, edge_index) + m->position;
+            float weight = GetCurrentFrame(m)->edges[edge_index].curve_weight;
             constexpr int segments = 8;
             Vec2 prev = v0;
             for (int s = 1; s <= segments; s++) {
                 float t = (float)s / (float)segments;
-                Vec2 curr = EvalQuadraticBezier(v0, control, v1, t);
+                Vec2 curr = EvalQuadraticBezier(v0, control, v1, t, weight);
                 AddEditorLine(builder, prev, curr, line_width, COLOR_EDGE);
                 prev = curr;
             }
@@ -1534,11 +1616,12 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
 
             if (IsEdgeCurved(m, edge_index)) {
                 Vec2 control = GetEdgeControlPoint(m, edge_index) + m->position;
+                float weight = GetCurrentFrame(m)->edges[edge_index].curve_weight;
                 constexpr int segments = 8;
                 Vec2 prev = v0;
                 for (int s = 1; s <= segments; s++) {
                     float t = (float)s / (float)segments;
-                    Vec2 curr = EvalQuadraticBezier(v0, control, v1, t);
+                    Vec2 curr = EvalQuadraticBezier(v0, control, v1, t, weight);
                     AddEditorLine(builder, prev, curr, selected_line_width, COLOR_EDGE_SELECTED);
                     prev = curr;
                 }
@@ -1559,11 +1642,12 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
                 int edge_index = GetEdge(m, v0_idx, v1_idx);
                 if (edge_index != -1 && IsEdgeCurved(m, edge_index)) {
                     Vec2 control = GetEdgeControlPoint(m, edge_index) + m->position;
+                    float weight = GetCurrentFrame(m)->edges[edge_index].curve_weight;
                     constexpr int segments = 8;
                     Vec2 prev = v0;
                     for (int s = 1; s <= segments; s++) {
                         float t = (float)s / (float)segments;
-                        Vec2 curr = EvalQuadraticBezier(v0, control, v1, t);
+                        Vec2 curr = EvalQuadraticBezier(v0, control, v1, t, weight);
                         AddEditorLine(builder, prev, curr, selected_line_width, COLOR_VERTEX_SELECTED);
                         prev = curr;
                     }
@@ -1910,6 +1994,109 @@ static void FlipHorizontal() {
     MarkModified(m);
 }
 
+static void CopySelection() {
+    MeshData* m = GetMeshData();
+    MeshFrameData* frame = GetCurrentFrame(m);
+
+    if (frame->selected_face_count == 0)
+        return;
+
+    auto& clip = g_mesh_editor.geometry_clipboard;
+    clip.vertex_count = 0;
+    clip.face_count = 0;
+
+    // Build vertex map: old index -> new clipboard index
+    int vertex_map[MESH_MAX_VERTICES];
+    for (int i = 0; i < MESH_MAX_VERTICES; i++)
+        vertex_map[i] = -1;
+
+    // First pass: collect vertices used by selected faces
+    for (int face_index = 0; face_index < frame->face_count; face_index++) {
+        FaceData& f = frame->faces[face_index];
+        if (!f.selected) continue;
+
+        for (int vi = 0; vi < f.vertex_count; vi++) {
+            int old_idx = f.vertices[vi];
+            if (vertex_map[old_idx] == -1) {
+                vertex_map[old_idx] = clip.vertex_count;
+                clip.vertices[clip.vertex_count++] = frame->vertices[old_idx];
+            }
+        }
+    }
+
+    // Calculate center of copied geometry
+    clip.center = VEC2_ZERO;
+    for (int i = 0; i < clip.vertex_count; i++)
+        clip.center = clip.center + clip.vertices[i].position;
+    if (clip.vertex_count > 0)
+        clip.center = clip.center * (1.0f / clip.vertex_count);
+
+    // Second pass: copy faces with remapped vertex indices
+    for (int face_index = 0; face_index < frame->face_count; face_index++) {
+        FaceData& f = frame->faces[face_index];
+        if (!f.selected) continue;
+
+        FaceData& nf = clip.faces[clip.face_count++];
+        nf = f;
+        nf.selected = false;
+
+        for (int vi = 0; vi < f.vertex_count; vi++)
+            nf.vertices[vi] = vertex_map[f.vertices[vi]];
+    }
+
+    clip.has_content = true;
+}
+
+static void PasteSelection() {
+    auto& clip = g_mesh_editor.geometry_clipboard;
+    if (!clip.has_content)
+        return;
+
+    MeshData* m = GetMeshData();
+    MeshFrameData* frame = GetCurrentFrame(m);
+
+    if (frame->face_count + clip.face_count > MAX_FACES)
+        return;
+    if (frame->vertex_count + clip.vertex_count > MAX_VERTICES)
+        return;
+
+    RecordUndo(m);
+
+    // Calculate paste offset: paste at mouse position relative to clipboard center
+    Vec2 paste_offset = g_view.mouse_world_position - m->position - clip.center;
+
+    // Clear current selection
+    for (int i = 0; i < frame->vertex_count; i++)
+        frame->vertices[i].selected = false;
+    for (int i = 0; i < frame->face_count; i++)
+        frame->faces[i].selected = false;
+
+    // Add vertices with offset
+    int vertex_base = frame->vertex_count;
+    for (int i = 0; i < clip.vertex_count; i++) {
+        VertexData& v = frame->vertices[frame->vertex_count++];
+        v = clip.vertices[i];
+        v.position = v.position + paste_offset;
+        v.selected = true;
+        v.ref_count = 0;  // Will be recalculated
+    }
+
+    // Add faces with remapped vertex indices
+    for (int i = 0; i < clip.face_count; i++) {
+        FaceData& nf = frame->faces[frame->face_count++];
+        nf = clip.faces[i];
+        nf.selected = true;
+
+        for (int vi = 0; vi < nf.vertex_count; vi++)
+            nf.vertices[vi] = nf.vertices[vi] + vertex_base;
+    }
+
+    MarkDirty(m);
+    UpdateEdges(m);
+    UpdateSelection(MESH_EDITOR_MODE_FACE);
+    MarkModified(m);
+}
+
 static void DuplicateSelected() {
     MeshData* m = GetMeshData();
     if (GetCurrentFrame(m)->face_count + GetCurrentFrame(m)->selected_face_count > MAX_FACES)
@@ -2182,6 +2369,8 @@ static Shortcut g_mesh_editor_shortcuts[] = {
     { KEY_C, false, false, false, BeginCurveToolFromSelection, "Curve" },
     { KEY_C, false, true, true, CenterMesh, "Center mesh" },
     { KEY_D, false, true, false, DuplicateSelected, "Duplicate" },
+    { KEY_C, false, true, false, CopySelection, "Copy" },
+    { KEY_V, false, true, false, PasteSelection, "Paste" },
     { KEY_S, false, false, true, SubDivide, "Subdivide" },
     { KEY_C, false, false, true, BeginAutoCurve, "Auto curve" },
     { KEY_X, false, false, false, DissolveSelected, "Delete" },

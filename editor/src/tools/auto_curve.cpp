@@ -8,11 +8,13 @@ constexpr float AUTO_CURVE_LINE_WIDTH = 0.02f;
 struct AutoCurveEdgeState {
     int edge_index;
     Vec2 original_offset;
+    float original_weight;
     Vec2 circle_offset;
     Vec2 inverted_circle_offset;
     Vec2 outward_dir;
     float edge_length;
     float circle_amount;  // Magnitude of circle offset in outward direction (for clamping)
+    float circle_weight;  // Weight for perfect circular arc (cos(half_angle))
 };
 
 struct AutoCurveTool {
@@ -30,6 +32,7 @@ static void CancelAutoCurve() {
     for (int i = 0; i < g_auto_curve.edge_count; i++) {
         AutoCurveEdgeState& es = g_auto_curve.edges[i];
         frame->edges[es.edge_index].curve_offset = es.original_offset;
+        frame->edges[es.edge_index].curve_weight = es.original_weight;
     }
     MarkDirty(g_auto_curve.mesh);
 }
@@ -77,25 +80,32 @@ static void UpdateAutoCurveTool() {
         // Use raw delta (not scaled) for snapping to make snap points easier to hit
         for (int i = 0; i < g_auto_curve.edge_count; i++) {
             AutoCurveEdgeState& es = g_auto_curve.edges[i];
+            EdgeData& edge = frame->edges[es.edge_index];
 
             // Boundaries at halfway between snap points
             float half_circle = es.circle_amount * 0.5f;
 
             Vec2 offset;
+            float weight;
             if (delta < -half_circle) {
                 offset = es.inverted_circle_offset;
+                weight = es.circle_weight;  // Use circle weight for inverted too
             } else if (delta > half_circle) {
                 offset = es.circle_offset;
+                weight = es.circle_weight;  // Perfect circle weight
             } else {
                 offset = VEC2_ZERO;
+                weight = 1.0f;
             }
-            frame->edges[es.edge_index].curve_offset = offset;
+            edge.curve_offset = offset;
+            edge.curve_weight = weight;
         }
     } else {
         // Proportional curve based on drag, relative to original
         // Clamp to inverted circle as minimum (can't go more concave than that)
         for (int i = 0; i < g_auto_curve.edge_count; i++) {
             AutoCurveEdgeState& es = g_auto_curve.edges[i];
+            EdgeData& edge = frame->edges[es.edge_index];
             float amount = delta * 0.5f;
 
             // Calculate current offset in outward direction
@@ -107,7 +117,8 @@ static void UpdateAutoCurveTool() {
                 amount = -es.circle_amount - original_amount;
             }
 
-            frame->edges[es.edge_index].curve_offset = es.original_offset + es.outward_dir * amount;
+            edge.curve_offset = es.original_offset + es.outward_dir * amount;
+            edge.curve_weight = 1.0f;  // Standard bezier weight for non-snapped curves
         }
     }
 
@@ -202,11 +213,13 @@ void BeginAutoCurveTool(MeshData* mesh) {
             AutoCurveEdgeState& es = g_auto_curve.edges[g_auto_curve.edge_count++];
             es.edge_index = edge_index;
             es.original_offset = e.curve_offset;
+            es.original_weight = e.curve_weight;
             es.circle_offset = CalcCircleOffsetFromIndices(frame, g_auto_curve.centroid, v0, v1);
             es.inverted_circle_offset = es.circle_offset * -1.0f;
             es.outward_dir = dist > 0.0001f ? to_mid / dist : VEC2_ZERO;
             es.edge_length = Length(p1 - p0);
             es.circle_amount = Dot(es.circle_offset, es.outward_dir);  // How far circle extends outward
+            es.circle_weight = CalculateCircleWeight(p0, p1, g_auto_curve.centroid);  // Weight for perfect arc
         }
     }
 

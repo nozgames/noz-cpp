@@ -23,23 +23,39 @@ static Mesh* ToMeshWithAtlasUVs(MeshData* mesh_data, AtlasData* atlas, const Atl
 
     float depth = 0.01f + 0.99f * (mesh_data->impl->depth - MIN_DEPTH) / (float)(MAX_DEPTH - MIN_DEPTH);
     int atlas_idx = GetAtlasIndex(atlas);
+    float dpi = (float)atlas->impl->dpi;
 
-    // Use the bounds that were used when rendering to atlas (stored in rect)
-    // This ensures UVs match exactly what was rendered
-    Vec2 min = rect.mesh_bounds.min;
-    Vec2 max = rect.mesh_bounds.max;
+    // Convert pixel bounds to world units for quad vertices
+    // pixel bounds are relative to where mesh_bounds.min was rendered
+    Vec2 mesh_size = GetSize(rect.mesh_bounds);
+    float expected_pixel_w = mesh_size.x * dpi;
+    float expected_pixel_h = mesh_size.y * dpi;
 
-    // Get atlas UVs for each corner
-    Vec2 uv_bl = GetAtlasUV(atlas, rect, rect.mesh_bounds, {min.x, min.y});
-    Vec2 uv_br = GetAtlasUV(atlas, rect, rect.mesh_bounds, {max.x, min.y});
-    Vec2 uv_tr = GetAtlasUV(atlas, rect, rect.mesh_bounds, {max.x, max.y});
-    Vec2 uv_tl = GetAtlasUV(atlas, rect, rect.mesh_bounds, {min.x, max.y});
+    // Calculate how much the actual content extends beyond expected bounds (in world units)
+    float offset_min_x = (rect.pixel_min_x - ATLAS_RECT_PADDING) / dpi;
+    float offset_min_y = (rect.pixel_min_y - ATLAS_RECT_PADDING) / dpi;
+    float offset_max_x = (rect.pixel_max_x - ATLAS_RECT_PADDING - expected_pixel_w + 1) / dpi;
+    float offset_max_y = (rect.pixel_max_y - ATLAS_RECT_PADDING - expected_pixel_h + 1) / dpi;
+
+    Vec2 min = rect.mesh_bounds.min + Vec2{offset_min_x, offset_min_y};
+    Vec2 max = rect.mesh_bounds.max + Vec2{offset_max_x, offset_max_y};
+
+    // UVs map directly to pixel bounds
+    float u_min = (float)(rect.x + rect.pixel_min_x) / (float)atlas->impl->width;
+    float v_min = (float)(rect.y + rect.pixel_min_y) / (float)atlas->impl->height;
+    float u_max = (float)(rect.x + rect.pixel_max_x + 1) / (float)atlas->impl->width;
+    float v_max = (float)(rect.y + rect.pixel_max_y + 1) / (float)atlas->impl->height;
+
+    Vec2 uv_bl = {u_min, v_min};
+    Vec2 uv_br = {u_max, v_min};
+    Vec2 uv_tr = {u_max, v_max};
+    Vec2 uv_tl = {u_min, v_max};
 
     // Add quad vertices (bottom-left, bottom-right, top-right, top-left)
-    AddVertex(builder, {{min.x, min.y}, depth, uv_bl, {}, {}, {}, atlas_idx});
-    AddVertex(builder, {{max.x, min.y}, depth, uv_br, {}, {}, {}, atlas_idx});
-    AddVertex(builder, {{max.x, max.y}, depth, uv_tr, {}, {}, {}, atlas_idx});
-    AddVertex(builder, {{min.x, max.y}, depth, uv_tl, {}, {}, {}, atlas_idx});
+    AddVertex(builder, {{min.x, min.y}, depth, 1.0f, uv_bl, {}, {}, {}, atlas_idx});
+    AddVertex(builder, {{max.x, min.y}, depth, 1.0f, uv_br, {}, {}, {}, atlas_idx});
+    AddVertex(builder, {{max.x, max.y}, depth, 1.0f, uv_tr, {}, {}, {}, atlas_idx});
+    AddVertex(builder, {{min.x, max.y}, depth, 1.0f, uv_tl, {}, {}, {}, atlas_idx});
 
     // Two triangles for the quad
     AddTriangle(builder, 0, 1, 2);

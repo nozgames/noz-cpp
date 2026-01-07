@@ -1,5 +1,4 @@
 # incoming
-- [ ] sound editor so you can adjust values such as random pitch, voluem ,etc
 - [ ] replace randomint with min-max exclusive 
 - [ ] color override push in render buffer (PushColorOverride / PopColorOverride)
 - [ ] notifcation ui is not aligning to bottom right
@@ -10,21 +9,23 @@
 - [ ] write palettes to asset manifest
 
 # UI
-- [ ] scrollable
+- [ ] Begin/End Popup
+  - [ ] Anchor Align
 - [ ] hash the entity styles to see if they have changed, if not then dont redo transforms
 - [ ] optimize container alignment when top-left is being used.
+
+# Sound
+- [ ] sound editor so you can adjust values such as random pitch, voluem ,etc
  
 # Mesh
+- [ ] opacity selector 
 - [ ] do not allow extruding an internal edge (check face count)
-- [ ] new mesh should use click to add verts to create shape, enter to close
-- [ ] There are some bugs with deletting edges and vertices
-- [ ] vertices left behind when deleting faces nad edges
-- [ ] remove edge support
-- [ ] key to hide / show palette (alt-c?)
+
+# Atlas
+- [ ] Hover on atlas rect should highlight the asset 
 
 # Skeleton
 
-- [ ] event editor
 - [ ] higlight asset on hover in select tool
 - [ ] Creating a new skeleton dos not appear until restarting
 - [ ] After altering bone transforms in the skeleton the animations do not update until going into edit mode on the animation

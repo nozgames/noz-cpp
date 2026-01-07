@@ -75,6 +75,7 @@ struct Mesh : Asset { };
 struct MeshVertex {
     Vec2 position;
     float depth;
+    float opacity = 1.0f;
     Vec2 uv;
     Vec2 normal;
     Vec4Int bone_indices;

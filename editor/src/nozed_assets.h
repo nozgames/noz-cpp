@@ -16,6 +16,7 @@ extern Mesh* MESH_ASSET_ICON_LUA;
 extern Mesh* MESH_ASSET_ICON_SHADER;
 extern Mesh* MESH_ASSET_ICON_SOUND;
 extern Mesh* MESH_ASSET_ICON_VFX;
+extern Mesh* MESH_ICON_CIRCLE;
 extern Mesh* MESH_ICON_CLOSE;
 extern Mesh* MESH_ICON_DROPDOWN;
 extern Mesh* MESH_ICON_EDGE_MODE;
@@ -25,6 +26,8 @@ extern Mesh* MESH_ICON_FACE_MODE;
 extern Mesh* MESH_ICON_LOOP;
 extern Mesh* MESH_ICON_MIRROR;
 extern Mesh* MESH_ICON_ONION;
+extern Mesh* MESH_ICON_OPACITY;
+extern Mesh* MESH_ICON_OPACITY_OVERLAY;
 extern Mesh* MESH_ICON_PALETTE;
 extern Mesh* MESH_ICON_PUBLISH;
 extern Mesh* MESH_ICON_ROOT_MOTION;
@@ -41,11 +44,10 @@ extern Font* FONT_SEGUISB;
 
 // @Shader
 extern Shader* SHADER_EDITOR;
+extern Shader* SHADER_EDITOR_MESH;
 extern Shader* SHADER_MESH;
-extern Shader* SHADER_POSTPROCESS_DESATURATE;
 extern Shader* SHADER_POSTPROCESS_UI_COMPOSITE;
 extern Shader* SHADER_SKINNED_MESH;
-extern Shader* SHADER_SOLID;
 extern Shader* SHADER_TEXT;
 extern Shader* SHADER_TEXTURED_MESH;
 extern Shader* SHADER_UI;
@@ -55,7 +57,7 @@ extern Shader* SHADER_UI_VIGNETTE;
 extern Shader* SHADER_VFX;
 
 // @Atlas
-extern Atlas* ATLAS_ATLAS00;
+extern Atlas* ATLAS_EDITOR_ATLAS00;
 
 // @name
 extern const Name* NAME_A;

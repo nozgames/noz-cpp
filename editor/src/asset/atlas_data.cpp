@@ -10,7 +10,7 @@ using namespace noz;
 
 extern void InitAtlasEditor(AtlasData* atlas);
 
-// Calculate bounds from vertices in a frame
+// Calculate bounds from vertices and curve control points in a frame
 static Bounds2 GetFrameBounds(MeshFrameData* frame) {
     if (frame->vertex_count == 0)
         return BOUNDS2_ZERO;
@@ -22,6 +22,21 @@ static Bounds2 GetFrameBounds(MeshFrameData* frame) {
         bounds.max.x = Max(bounds.max.x, frame->vertices[i].position.x);
         bounds.max.y = Max(bounds.max.y, frame->vertices[i].position.y);
     }
+
+    // Include curve control points in bounds
+    for (int i = 0; i < frame->edge_count; i++) {
+        EdgeData& e = frame->edges[i];
+        if (LengthSqr(e.curve_offset) > 0.0001f) {
+            Vec2 p0 = frame->vertices[e.v0].position;
+            Vec2 p1 = frame->vertices[e.v1].position;
+            Vec2 control = (p0 + p1) * 0.5f + e.curve_offset;
+            bounds.min.x = Min(bounds.min.x, control.x);
+            bounds.min.y = Min(bounds.min.y, control.y);
+            bounds.max.x = Max(bounds.max.x, control.x);
+            bounds.max.y = Max(bounds.max.y, control.y);
+        }
+    }
+
     return bounds;
 }
 
@@ -166,8 +181,8 @@ AtlasRect* AllocateRect(AtlasData* atlas, MeshData* mesh) {
     }
 
     Vec2 frame_size = GetSize(max_bounds);
-    int frame_width = (int)(frame_size.x * impl->dpi) + 2;   // +2 for padding
-    int frame_height = (int)(frame_size.y * impl->dpi) + 2;
+    int frame_width = (int)(frame_size.x * impl->dpi) + ATLAS_RECT_PADDING * 2;
+    int frame_height = (int)(frame_size.y * impl->dpi) + ATLAS_RECT_PADDING * 2;
 
     // Total strip size: frames laid out horizontally
     int total_width = frame_width * mesh_impl->frame_count;
@@ -217,6 +232,23 @@ void FreeRect(AtlasData* atlas, AtlasRect* rect) {
     }
 }
 
+void ClearRectPixels(AtlasData* atlas, const AtlasRect& rect) {
+    AtlasDataImpl* impl = atlas->impl;
+    if (!impl->pixels) return;
+
+    // Clear each row of the rect to transparent black
+    int stride = impl->width * 4;
+    for (int y = rect.y; y < rect.y + rect.height && y < impl->height; y++) {
+        int offset = y * stride + rect.x * 4;
+        int bytes = rect.width * 4;
+        if (rect.x + rect.width > impl->width) {
+            bytes = (impl->width - rect.x) * 4;
+        }
+        memset(impl->pixels + offset, 0, bytes);
+    }
+    impl->dirty = true;
+}
+
 void ClearAllRects(AtlasData* atlas) {
     AtlasDataImpl* impl = atlas->impl;
     for (int i = 0; i < impl->rect_count; i++) {
@@ -252,8 +284,30 @@ static void EnsurePixelBuffer(AtlasData* atlas) {
     }
 }
 
+// Helper to find edge index between two vertices in a frame
+static int GetFrameEdge(MeshFrameData* frame, int v0, int v1) {
+    for (int i = 0; i < frame->edge_count; i++) {
+        EdgeData& e = frame->edges[i];
+        if ((e.v0 == v0 && e.v1 == v1) || (e.v0 == v1 && e.v1 == v0))
+            return i;
+    }
+    return -1;
+}
+
+// Evaluate rational quadratic Bezier for atlas rendering
+static Vec2 EvalRationalBezierAtlas(Vec2 p0, Vec2 control, Vec2 p1, float w, float t) {
+    float u = 1.0f - t;
+    float u2 = u * u;
+    float t2 = t * t;
+    float wt = 2.0f * u * t * w;
+    float denom = u2 + wt + t2;
+    return (p0 * u2 + control * wt + p1 * t2) / denom;
+}
+
 // Frame-based version for multi-frame rendering
 static void AddFaceToPathFrame(plutovg_canvas_t* canvas, MeshFrameData* frame, FaceData& face, float offset_x, float offset_y, float scale, float expand = 0.0f) {
+    constexpr int CURVE_SEGMENTS = 8;
+
     // Calculate face center for expansion direction
     Vec2 center = {0, 0};
     for (int vi = 0; vi < face.vertex_count; vi++) {
@@ -261,38 +315,69 @@ static void AddFaceToPathFrame(plutovg_canvas_t* canvas, MeshFrameData* frame, F
     }
     center = center / (float)face.vertex_count;
 
-    for (int vi = 0; vi < face.vertex_count; vi++) {
-        int v_idx = face.vertices[vi];
-        Vec2 pos = frame->vertices[v_idx].position;
-
-        // Expand vertex outward from face center
+    auto expand_pos = [&](Vec2 pos) -> Vec2 {
         if (expand > 0.0f) {
             Vec2 dir = Normalize(pos - center);
             pos = pos + dir * (expand / scale);
         }
+        return pos;
+    };
 
-        float px = offset_x + pos.x * scale;
-        float py = offset_y + pos.y * scale;
+    for (int vi = 0; vi < face.vertex_count; vi++) {
+        int v0_idx = face.vertices[vi];
+        int v1_idx = face.vertices[(vi + 1) % face.vertex_count];
+        Vec2 p0 = frame->vertices[v0_idx].position;
+        Vec2 p1 = frame->vertices[v1_idx].position;
+
+        Vec2 pos0 = expand_pos(p0);
 
         if (vi == 0) {
+            float px = offset_x + pos0.x * scale;
+            float py = offset_y + pos0.y * scale;
             plutovg_canvas_move_to(canvas, px, py);
-        } else {
-            // For multi-frame meshes, we skip curve handling (edges are frame-specific)
-            // Edges with curves should use the MeshData version
-            plutovg_canvas_line_to(canvas, px, py);
         }
+
+        // Check if edge has a curve
+        int edge_idx = GetFrameEdge(frame, v0_idx, v1_idx);
+        if (edge_idx >= 0) {
+            EdgeData& e = frame->edges[edge_idx];
+            if (LengthSqr(e.curve_offset) > 0.0001f) {
+                // Tessellate curved edge using rational bezier
+                Vec2 control = (p0 + p1) * 0.5f + e.curve_offset;
+                float w = e.curve_weight;
+
+                // Flip curve direction if edge is reversed relative to face winding
+                bool reversed = (e.v0 != v0_idx);
+
+                for (int s = 1; s <= CURVE_SEGMENTS; s++) {
+                    float t = (float)s / CURVE_SEGMENTS;
+                    if (reversed) t = 1.0f - t;
+
+                    Vec2 pt = EvalRationalBezierAtlas(p0, control, p1, w, reversed ? 1.0f - t : t);
+                    pt = expand_pos(pt);
+                    float px = offset_x + pt.x * scale;
+                    float py = offset_y + pt.y * scale;
+                    plutovg_canvas_line_to(canvas, px, py);
+                }
+                continue;
+            }
+        }
+
+        // Straight edge
+        Vec2 pos1 = expand_pos(p1);
+        float px = offset_x + pos1.x * scale;
+        float py = offset_y + pos1.y * scale;
+        plutovg_canvas_line_to(canvas, px, py);
     }
 
     plutovg_canvas_close_path(canvas);
 }
 
-void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, bool update_bounds) {
+void RenderMeshToBuffer(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, u8* pixels, bool update_bounds) {
     AtlasDataImpl* impl = atlas->impl;
     MeshDataImpl* mesh_impl = mesh->impl;
 
     if (mesh_impl->frame_count == 0) return;
-
-    EnsurePixelBuffer(atlas);
 
     // Calculate max bounds across all frames
     Bounds2 max_bounds = GetFrameBounds(&mesh_impl->frames[0]);
@@ -322,7 +407,7 @@ void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, bool u
         int frame_x = rect.x + frame_idx * frame_width;
 
         plutovg_surface_t* surface = plutovg_surface_create_for_data(
-            impl->pixels, impl->width, impl->height, impl->width * 4
+            pixels, impl->width, impl->height, impl->width * 4
         );
         plutovg_canvas_t* canvas = plutovg_canvas_create(surface);
 
@@ -330,8 +415,8 @@ void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, bool u
         plutovg_canvas_clip_rect(canvas, (float)frame_x, (float)rect.y, (float)frame_width, (float)rect.height);
 
         // Use render_bounds for consistent positioning across all frames
-        float offset_x = frame_x + 1 - render_bounds.min.x * scale;
-        float offset_y = rect.y + 1 - render_bounds.min.y * scale;
+        float offset_x = frame_x + ATLAS_RECT_PADDING - render_bounds.min.x * scale;
+        float offset_y = rect.y + ATLAS_RECT_PADDING - render_bounds.min.y * scale;
 
         int palette_index = g_editor.palette_map[mesh_impl->palette];
         constexpr float EXPAND = 0.5f;
@@ -367,50 +452,52 @@ void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, bool u
 
         plutovg_canvas_destroy(canvas);
         plutovg_surface_destroy(surface);
+    }
+}
 
-        // Dilate content into padding to prevent bilinear filtering seams
-        // Content is at (frame_x+1, rect.y+1) with size (frame_width-2, rect.height-2)
-        int content_x = frame_x + 1;
-        int content_y = rect.y + 1;
-        int content_w = frame_width - 2;
-        int content_h = rect.height - 2;
-        int stride = impl->width * 4;
-        u8* pixels = impl->pixels;
+// Scan rendered pixels to find actual content bounds (non-zero alpha)
+static void ScanPixelBounds(u8* pixels, int atlas_width, AtlasRect& rect) {
+    int frame_width = rect.width / rect.frame_count;
 
-        // Top edge: copy row content_y to row content_y-1
-        memcpy(pixels + (content_y - 1) * stride + content_x * 4,
-               pixels + content_y * stride + content_x * 4,
-               content_w * 4);
+    // Initialize to invalid bounds (will be set on first pixel found)
+    rect.pixel_min_x = rect.width;
+    rect.pixel_min_y = rect.height;
+    rect.pixel_max_x = 0;
+    rect.pixel_max_y = 0;
 
-        // Bottom edge: copy row content_y+content_h-1 to row content_y+content_h
-        memcpy(pixels + (content_y + content_h) * stride + content_x * 4,
-               pixels + (content_y + content_h - 1) * stride + content_x * 4,
-               content_w * 4);
+    // Only scan first frame for bounds (all frames should have similar bounds)
+    int frame_x = rect.x;
 
-        // Left edge: copy column content_x to column content_x-1
-        for (int y = content_y; y < content_y + content_h; y++) {
-            memcpy(pixels + y * stride + (content_x - 1) * 4,
-                   pixels + y * stride + content_x * 4, 4);
+    for (int y = 0; y < rect.height; y++) {
+        for (int x = 0; x < frame_width; x++) {
+            int px = frame_x + x;
+            int py = rect.y + y;
+            int idx = (py * atlas_width + px) * 4;
+            u8 alpha = pixels[idx + 3];  // ARGB format, alpha is at offset 3
+
+            if (alpha > 0) {
+                if (x < rect.pixel_min_x) rect.pixel_min_x = x;
+                if (y < rect.pixel_min_y) rect.pixel_min_y = y;
+                if (x > rect.pixel_max_x) rect.pixel_max_x = x;
+                if (y > rect.pixel_max_y) rect.pixel_max_y = y;
+            }
         }
-
-        // Right edge: copy column content_x+content_w-1 to column content_x+content_w
-        for (int y = content_y; y < content_y + content_h; y++) {
-            memcpy(pixels + y * stride + (content_x + content_w) * 4,
-                   pixels + y * stride + (content_x + content_w - 1) * 4, 4);
-        }
-
-        // Corners
-        memcpy(pixels + (content_y - 1) * stride + (content_x - 1) * 4,
-               pixels + content_y * stride + content_x * 4, 4);  // Top-left
-        memcpy(pixels + (content_y - 1) * stride + (content_x + content_w) * 4,
-               pixels + content_y * stride + (content_x + content_w - 1) * 4, 4);  // Top-right
-        memcpy(pixels + (content_y + content_h) * stride + (content_x - 1) * 4,
-               pixels + (content_y + content_h - 1) * stride + content_x * 4, 4);  // Bottom-left
-        memcpy(pixels + (content_y + content_h) * stride + (content_x + content_w) * 4,
-               pixels + (content_y + content_h - 1) * stride + (content_x + content_w - 1) * 4, 4);  // Bottom-right
     }
 
-    impl->dirty = true;
+    // If no pixels found, set to full rect
+    if (rect.pixel_min_x > rect.pixel_max_x) {
+        rect.pixel_min_x = 0;
+        rect.pixel_min_y = 0;
+        rect.pixel_max_x = frame_width - 1;
+        rect.pixel_max_y = rect.height - 1;
+    }
+}
+
+void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, bool update_bounds) {
+    EnsurePixelBuffer(atlas);
+    RenderMeshToBuffer(atlas, mesh, rect, atlas->impl->pixels, update_bounds);
+    ScanPixelBounds(atlas->impl->pixels, atlas->impl->width, rect);
+    atlas->impl->dirty = true;
 }
 
 void SyncAtlasTexture(AtlasData* atlas) {
@@ -436,13 +523,19 @@ void SyncAtlasTexture(AtlasData* atlas) {
     impl->dirty = false;
 }
 
-void RegenerateAtlas(AtlasData* atlas) {
+void RegenerateAtlas(AtlasData* atlas, u8* buffer) {
     AtlasDataImpl* impl = atlas->impl;
 
-    // Clear pixel buffer
-    if (impl->pixels) {
-        memset(impl->pixels, 0, impl->width * impl->height * 4);
+    // Use provided buffer or fall back to impl->pixels
+    u8* pixels = buffer;
+    if (!pixels) {
+        EnsurePixelBuffer(atlas);
+        pixels = impl->pixels;
     }
+    if (!pixels) return;
+
+    // Clear pixel buffer
+    memset(pixels, 0, impl->width * impl->height * 4);
 
     // Re-render all attached meshes
     for (int i = 0; i < impl->rect_count; i++) {
@@ -451,11 +544,75 @@ void RegenerateAtlas(AtlasData* atlas) {
         AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, impl->rects[i].mesh_name);
         if (mesh_asset) {
             MeshData* mesh = static_cast<MeshData*>(mesh_asset);
-            RenderMeshToAtlas(atlas, mesh, impl->rects[i]);
+            RenderMeshToBuffer(atlas, mesh, impl->rects[i], pixels, true);
         }
     }
 
-    impl->dirty = true;
+    if (!buffer) {
+        impl->dirty = true;
+    }
+}
+
+void DilateAtlasRect(u8* pixels, int atlas_width, int atlas_height, const AtlasRect& rect) {
+    if (rect.frame_count <= 0 || rect.width <= 0 || rect.height <= 0) return;
+    if (rect.height <= ATLAS_RECT_PADDING * 2) return;  // Too small to have content
+
+    int frame_width = rect.width / rect.frame_count;
+    if (frame_width <= ATLAS_RECT_PADDING * 2) return;  // Too small to have content
+
+    for (int frame_idx = 0; frame_idx < rect.frame_count; frame_idx++) {
+        int frame_x = rect.x + frame_idx * frame_width;
+
+        // Content area within the rect (after padding)
+        int content_x = frame_x + ATLAS_RECT_PADDING;
+        int content_y = rect.y + ATLAS_RECT_PADDING;
+        int content_w = frame_width - ATLAS_RECT_PADDING * 2;
+        int content_h = rect.height - ATLAS_RECT_PADDING * 2;
+        int stride = atlas_width * 4;
+
+        // Bounds check - ensure we don't write outside atlas
+        if (content_y - 1 < 0 || content_y + content_h >= atlas_height) continue;
+        if (content_x - 1 < 0 || content_x + content_w >= atlas_width) continue;
+
+        // Sample from 1 pixel inside to avoid AA edge pixels (EXPAND pushes content 0.5px outward)
+        int src_x = content_x + 1;
+        int src_y = content_y + 1;
+        int src_w = content_w - 2;
+        int src_h = content_h - 2;
+        if (src_w <= 0 || src_h <= 0) continue;
+
+        // Top edge: copy row src_y to row content_y-1
+        memcpy(pixels + (content_y - 1) * stride + content_x * 4,
+               pixels + src_y * stride + content_x * 4,
+               content_w * 4);
+
+        // Bottom edge: copy row src_y+src_h-1 to row content_y+content_h
+        memcpy(pixels + (content_y + content_h) * stride + content_x * 4,
+               pixels + (src_y + src_h - 1) * stride + content_x * 4,
+               content_w * 4);
+
+        // Left edge: copy column src_x to column content_x-1
+        for (int y = content_y; y < content_y + content_h; y++) {
+            memcpy(pixels + y * stride + (content_x - 1) * 4,
+                   pixels + y * stride + src_x * 4, 4);
+        }
+
+        // Right edge: copy column src_x+src_w-1 to column content_x+content_w
+        for (int y = content_y; y < content_y + content_h; y++) {
+            memcpy(pixels + y * stride + (content_x + content_w) * 4,
+                   pixels + y * stride + (src_x + src_w - 1) * 4, 4);
+        }
+
+        // Corners - sample from inside corners
+        memcpy(pixels + (content_y - 1) * stride + (content_x - 1) * 4,
+               pixels + src_y * stride + src_x * 4, 4);  // Top-left
+        memcpy(pixels + (content_y - 1) * stride + (content_x + content_w) * 4,
+               pixels + src_y * stride + (src_x + src_w - 1) * 4, 4);  // Top-right
+        memcpy(pixels + (content_y + content_h) * stride + (content_x - 1) * 4,
+               pixels + (src_y + src_h - 1) * stride + src_x * 4, 4);  // Bottom-left
+        memcpy(pixels + (content_y + content_h) * stride + (content_x + content_w) * 4,
+               pixels + (src_y + src_h - 1) * stride + (src_x + src_w - 1) * 4, 4);  // Bottom-right
+    }
 }
 
 void RebuildAtlas(AtlasData* atlas) {
@@ -527,33 +684,17 @@ Vec2 GetAtlasUV(AtlasData* atlas, const AtlasRect& rect, const Bounds2& mesh_bou
     }
 
     // Map position from mesh space to normalized [0,1] within mesh bounds
-    float u = (position.x - mesh_bounds.min.x) / size.x;
-    float v = (position.y - mesh_bounds.min.y) / size.y;
+    float tx = (position.x - mesh_bounds.min.x) / size.x;
+    float ty = (position.y - mesh_bounds.min.y) / size.y;
 
-    // For animated meshes, use only the first frame's width
-    int frame_count = rect.frame_count > 0 ? rect.frame_count : 1;
-    float frame_width = (float)rect.width / (float)frame_count;
+    // Map to actual pixel bounds (from pixel scan)
+    // pixel_min/max are relative to frame origin, add rect.x/y for absolute position
+    float pixel_x = rect.x + rect.pixel_min_x + tx * (rect.pixel_max_x - rect.pixel_min_x + 1);
+    float pixel_y = rect.y + rect.pixel_min_y + ty * (rect.pixel_max_y - rect.pixel_min_y + 1);
 
-    // Inner region is 1 pixel inset from rect edges (padding from AllocateRect)
-    // Add half-texel inset for bilinear filtering safety
-    float inner_x = rect.x + 1.0f;
-    float inner_y = rect.y + 1.0f;
-    float inner_w = frame_width - 2.0f;
-    float inner_h = rect.height - 2.0f;
-
-    // Half-texel inset to prevent bilinear bleed
-    float half_texel_u = 0.5f / (float)impl->width;
-    float half_texel_v = 0.5f / (float)impl->height;
-
-    // Map to inner rect with half-texel inset
-    float min_u = (inner_x / (float)impl->width) + half_texel_u;
-    float min_v = (inner_y / (float)impl->height) + half_texel_v;
-    float max_u = ((inner_x + inner_w) / (float)impl->width) - half_texel_u;
-    float max_v = ((inner_y + inner_h) / (float)impl->height) - half_texel_v;
-
-    // Interpolate within the safe region
-    u = min_u + u * (max_u - min_u);
-    v = min_v + v * (max_v - min_v);
+    // Convert to UV
+    float u = pixel_x / (float)impl->width;
+    float v = pixel_y / (float)impl->height;
 
     return {u, v};
 }
@@ -571,15 +712,16 @@ static void SaveAtlasData(AssetData* a, const std::filesystem::path& path) {
     WriteCSTR(stream, "d %d\n", impl->dpi);
     WriteCSTR(stream, "\n");
 
-    // Save rects: r "mesh_name" x y w h frame_count bounds_min_x bounds_min_y bounds_max_x bounds_max_y
+    // Save rects: r "mesh_name" x y w h frame_count bounds_min_x bounds_min_y bounds_max_x bounds_max_y pixel_bounds
     for (int i = 0; i < impl->rect_count; i++) {
         if (impl->rects[i].valid && impl->rects[i].mesh_name) {
             const AtlasRect& r = impl->rects[i];
-            WriteCSTR(stream, "r \"%s\" %d %d %d %d %d %.6f %.6f %.6f %.6f\n",
+            WriteCSTR(stream, "r \"%s\" %d %d %d %d %d %.6f %.6f %.6f %.6f %d %d %d %d\n",
                 r.mesh_name->value,
                 r.x, r.y, r.width, r.height, r.frame_count,
                 r.mesh_bounds.min.x, r.mesh_bounds.min.y,
-                r.mesh_bounds.max.x, r.mesh_bounds.max.y);
+                r.mesh_bounds.max.x, r.mesh_bounds.max.y,
+                r.pixel_min_x, r.pixel_min_y, r.pixel_max_x, r.pixel_max_y);
         }
     }
 
@@ -607,11 +749,25 @@ static void ParseRect(AtlasData* atlas, Tokenizer& tk) {
 
     // mesh_bounds (optional for backwards compatibility)
     Bounds2 mesh_bounds = BOUNDS2_ZERO;
-    float bmin_x, bmin_y, bmax_x, bmax_y;
-    if (ExpectFloat(tk, &bmin_x) && ExpectFloat(tk, &bmin_y) &&
-        ExpectFloat(tk, &bmax_x) && ExpectFloat(tk, &bmax_y)) {
+    float bmin_x = 0.0f;
+    float bmin_y = 0.0f;
+    float bmax_x = 0.0f;
+    float bmax_y = 0.0f;
+    bool has_bounds = ExpectFloat(tk, &bmin_x) && ExpectFloat(tk, &bmin_y) &&
+                      ExpectFloat(tk, &bmax_x) && ExpectFloat(tk, &bmax_y);
+    if (has_bounds) {
         mesh_bounds = {{bmin_x, bmin_y}, {bmax_x, bmax_y}};
     }
+
+    // pixel_bounds (optional for backwards compatibility)
+    int pixel_min_x = ATLAS_RECT_PADDING;
+    int pixel_min_y = ATLAS_RECT_PADDING;
+    int pixel_max_x = w / frame_count - ATLAS_RECT_PADDING - 1;
+    int pixel_max_y = h - ATLAS_RECT_PADDING - 1;
+    ExpectInt(tk, &pixel_min_x);
+    ExpectInt(tk, &pixel_min_y);
+    ExpectInt(tk, &pixel_max_x);
+    ExpectInt(tk, &pixel_max_y);
 
     int slot = FindFreeRectSlot(impl);
     if (slot >= 0) {
@@ -623,6 +779,10 @@ static void ParseRect(AtlasData* atlas, Tokenizer& tk) {
         rect.height = h;
         rect.frame_count = frame_count;
         rect.mesh_bounds = mesh_bounds;
+        rect.pixel_min_x = pixel_min_x;
+        rect.pixel_min_y = pixel_min_y;
+        rect.pixel_max_x = pixel_max_x;
+        rect.pixel_max_y = pixel_max_y;
         rect.valid = true;
 
         // Mark this space as used in the packer

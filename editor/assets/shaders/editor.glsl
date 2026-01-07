@@ -16,10 +16,11 @@ layout(set = 1, binding = 0, row_major) uniform ObjectBuffer {
 
 layout(location = 0) in vec2 v_position;
 layout(location = 1) in float v_depth;
-layout(location = 2) in vec2 v_uv;
-layout(location = 3) in vec2 v_normal;
-layout(location = 4) in ivec4 v_bone_indices;
-layout(location = 5) in vec4 v_bone_weights;  // Used as vertex color (RGBA)
+layout(location = 2) in float v_opacity;
+layout(location = 3) in vec2 v_uv;
+layout(location = 4) in vec2 v_normal;
+layout(location = 5) in ivec4 v_bone_indices;
+layout(location = 6) in vec4 v_bone_weights;  // Used as vertex color (RGBA)
 
 layout(location = 0) out vec4 f_color;
 

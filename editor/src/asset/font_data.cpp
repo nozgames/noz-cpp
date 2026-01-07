@@ -5,7 +5,7 @@
 extern Mesh* MESH_ASSET_ICON_FONT;
 
 static void DrawFontData(AssetData* a) {
-    BindMaterial(g_view.shaded_material);
+    BindMaterial(g_view.editor_mesh_material);
     BindColor(COLOR_WHITE);
     DrawMesh(MESH_ASSET_ICON_FONT, Translate(a->position));
 }

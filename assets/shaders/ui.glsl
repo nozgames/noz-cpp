@@ -20,8 +20,9 @@ layout(set = 3, binding = 0, row_major) uniform VertexUserBuffer {
 
 layout(location = 0) in vec2 v_position;
 layout(location = 1) in float v_depth;
-layout(location = 2) in vec2 v_uv;
-layout(location = 3) in vec2 v_normal;
+layout(location = 2) in float v_opacity;
+layout(location = 3) in vec2 v_uv;
+layout(location = 4) in vec2 v_normal;
 
 layout(location = 0) out vec2 f_uv;
 
@@ -70,6 +71,12 @@ void main() {
     // premultiply
     color.rgb *= color.a;
     border_color.rgb *= border_color.a;
+
+    // Skip distance calculation for simple rectangles (border_ratio < 0 signals no rounding)
+    if (ui_buffer.border_ratio < 0.0) {
+        outColor = color;
+        return;
+    }
 
     // Distance calculation - blend between squircle and square based on square_corners
     // Squircle: superellipse formula |x|^n + |y|^n = 1 (n=4)

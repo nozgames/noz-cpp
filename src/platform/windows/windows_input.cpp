@@ -106,6 +106,8 @@ static InputCode VKToInputCode(int vk) {
         case VK_F10: return KEY_F10;
         case VK_F11: return KEY_F11;
         case VK_F12: return KEY_F12;
+        case VK_LWIN: return KEY_LEFT_SUPER;
+        case VK_RWIN: return KEY_RIGHT_SUPER;
         case VK_OEM_1: return KEY_SEMICOLON;
         case VK_OEM_3: return KEY_TILDE;
         case VK_OEM_4: return KEY_LEFT_BRACKET;
@@ -154,8 +156,14 @@ bool PlatformIsInputButtonDown(InputCode code) {
     if (code == MOUSE_LEFT_DOUBLE_CLICK)
         return g_windows_input.double_click;
 
-    if (IsMouse(code) || IsKeyboard(code))
+    if (IsMouse(code) || IsKeyboard(code)) {
+        // Ignore keyboard input (except super keys) when Windows key is held
+        if (IsKeyboard(code) && code != KEY_LEFT_SUPER && code != KEY_RIGHT_SUPER) {
+            if (g_windows_input.key_states[KEY_LEFT_SUPER] || g_windows_input.key_states[KEY_RIGHT_SUPER])
+                return false;
+        }
         return g_windows_input.key_states[code];
+    }
 
     // Handle gamepad buttons
     if (IsGamepad(code) && IsButton(code)) {

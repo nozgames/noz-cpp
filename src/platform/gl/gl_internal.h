@@ -41,7 +41,7 @@ struct PlatformTexture {
     SamplerOptions sampler_options;
     Vec2Int size;
     i32 channels;
-    bool is_array = false;  // True for texture arrays (GL_TEXTURE_2D_ARRAY)
+    int target = GL_TEXTURE_2D;
     i32 layer_count = 1;    // Number of layers in array
 };
 
@@ -99,7 +99,6 @@ struct GLState {
 
     // State caching for textures
     GLuint bound_textures[8];
-    int current_texture_unit;
 
     // State caching for shader flags (blend/depth state)
     ShaderFlags current_shader_flags;
@@ -110,6 +109,9 @@ struct GLState {
 
     float depth_conversion_factor;
     RendererTraits traits;
+
+    // Stencil clipping
+    int stencil_ref;
 };
 
 // Global GL state - defined in gles_render.cpp

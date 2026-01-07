@@ -93,6 +93,7 @@ PFNGLSTENCILOPPROC glStencilOp = nullptr;
 PFNGLSTENCILMASKPROC glStencilMask = nullptr;
 PFNGLCOLORMASKPROC glColorMask = nullptr;
 PFNGLCLEARSTENCILPROC glClearStencil = nullptr;
+PFNGLOBJECTLABELPROC glObjectLabel = nullptr;
 #endif // NOZ_PLATFORM_WEB
 
 GLState g_gl = {};
@@ -334,19 +335,22 @@ void PlatformBindVertexBuffer(PlatformBuffer* buffer) {
     glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, depth));
 
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, uv));
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, opacity));
 
     glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, normal));
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, uv));
 
     glEnableVertexAttribArray(4);
-    glVertexAttribIPointer(4, 4, GL_INT, sizeof(MeshVertex), (void*)offsetof(MeshVertex, bone_indices));
+    glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, normal));
 
     glEnableVertexAttribArray(5);
-    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, bone_weights));
+    glVertexAttribIPointer(5, 4, GL_INT, sizeof(MeshVertex), (void*)offsetof(MeshVertex, bone_indices));
 
     glEnableVertexAttribArray(6);
-    glVertexAttribIPointer(6, 1, GL_INT, sizeof(MeshVertex), (void*)offsetof(MeshVertex, atlas_index));
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, bone_weights));
+
+    glEnableVertexAttribArray(7);
+    glVertexAttribIPointer(7, 1, GL_INT, sizeof(MeshVertex), (void*)offsetof(MeshVertex, atlas_index));
 }
 
 void PlatformBindIndexBuffer(PlatformBuffer* buffer) {
@@ -380,9 +384,9 @@ PlatformTexture* PlatformCreateTexture(
     int channels,
     const SamplerOptions& sampler_options,
     const char* name) {
-    (void)name;
     PlatformTexture* texture = new PlatformTexture();
     texture->size = {static_cast<i32>(width), static_cast<i32>(height)};
+    texture->target = GL_TEXTURE_2D;
     texture->channels = channels;
     texture->sampler_options = sampler_options;
 
@@ -422,6 +426,11 @@ PlatformTexture* PlatformCreateTexture(
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, ToGL(sampler_options.clamp));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, ToGL(sampler_options.clamp));
 
+    // Debug label for RenderDoc
+    if (glObjectLabel && name) {
+        glObjectLabel(GL_TEXTURE, texture->gl_texture, -1, name);
+    }
+
     glBindTexture(GL_TEXTURE_2D, 0);
 
     return texture;
@@ -435,12 +444,18 @@ void PlatformFree(PlatformTexture* texture) {
 }
 
 void PlatformBindTexture(PlatformTexture* texture, int slot) {
-    GLuint tex_id = texture ? texture->gl_texture : 0;
+    GLuint tex_id = 0;
+    int target = GL_TEXTURE_2D;
+    if (texture) {
+        tex_id = texture->gl_texture;
+        target = texture->target;
+    }
 
-    // Always switch texture unit and bind (disable caching for debugging)
+    if (tex_id == g_gl.bound_textures[slot])
+        return;
+
     glActiveTexture(GL_TEXTURE0 + slot);
-    g_gl.current_texture_unit = slot;
-    glBindTexture(GL_TEXTURE_2D, tex_id);
+    glBindTexture(target, tex_id);
     g_gl.bound_textures[slot] = tex_id;
 }
 
@@ -452,7 +467,6 @@ PlatformTexture* PlatformCreateTextureArray(
     int channels,
     const SamplerOptions& sampler_options,
     const char* name) {
-    (void)name;
 
     if (layer_count <= 0 || !layer_data) return nullptr;
 
@@ -460,7 +474,7 @@ PlatformTexture* PlatformCreateTextureArray(
     texture->size = {static_cast<i32>(width), static_cast<i32>(height)};
     texture->channels = channels;
     texture->sampler_options = sampler_options;
-    texture->is_array = true;
+    texture->target = GL_TEXTURE_2D_ARRAY;
     texture->layer_count = layer_count;
 
     glGenTextures(1, &texture->gl_texture);
@@ -519,44 +533,14 @@ PlatformTexture* PlatformCreateTextureArray(
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, ToGL(sampler_options.clamp));
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
+    // Debug label for RenderDoc
+    if (glObjectLabel && name) {
+        glObjectLabel(GL_TEXTURE, texture->gl_texture, -1, name);
+    }
+
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
     return texture;
-}
-
-void PlatformBindTextureArray(PlatformTexture* texture, int slot) {
-    GLuint tex_id = texture ? texture->gl_texture : 0;
-
-    glActiveTexture(GL_TEXTURE0 + slot);
-    g_gl.current_texture_unit = slot;
-    glBindTexture(GL_TEXTURE_2D_ARRAY, tex_id);
-    g_gl.bound_textures[slot] = tex_id;
-}
-
-void UpdateTexture(PlatformTexture* texture, void* data, const noz::Rect& rect) {
-    if (!texture || !data) return;
-
-    glBindTexture(GL_TEXTURE_2D, texture->gl_texture);
-
-    GLenum format;
-    switch (texture->channels) {
-        case 1: format = GL_RED; break;
-        case 3: format = GL_RGB; break;
-        case 4:
-        default: format = GL_RGBA; break;
-    }
-    glTexSubImage2D(
-        GL_TEXTURE_2D,
-        0,
-        static_cast<GLint>(rect.x),
-        static_cast<GLint>(rect.y),
-        static_cast<GLsizei>(rect.width),
-        static_cast<GLsizei>(rect.height),
-        format,
-        GL_UNSIGNED_BYTE,
-        data);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void PlatformUpdateTexture(PlatformTexture* texture, void* data) {
@@ -594,6 +578,11 @@ void PlatformBeginScenePass(Color clear_color) {
         ? g_gl.offscreen.msaa_framebuffer
         : g_gl.offscreen.framebuffer;
 
+    g_gl.bound_textures[0] = 0;
+    g_gl.bound_textures[1] = 0;
+    g_gl.bound_textures[2] = 0;
+    g_gl.bound_textures[3] = 0;
+
     glBindFramebuffer(GL_FRAMEBUFFER, fb);
     glViewport(0, 0, g_gl.screen_size.x, g_gl.screen_size.y);
     glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
@@ -603,21 +592,20 @@ void PlatformBeginScenePass(Color clear_color) {
     glStencilMask(0xFF);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glStencilMask(0x00);
+    glDisable(GL_STENCIL_TEST);
+    g_gl.stencil_ref = 0;
 }
 
-// Stencil-based clipping
-static int g_stencil_ref = 0;
-
 void PlatformBeginClip() {
-    if (g_stencil_ref == 0) {
+    if (g_gl.stencil_ref == 0) {
         glEnable(GL_STENCIL_TEST);
         // First level: always pass (stencil buffer is 0)
         glStencilFunc(GL_ALWAYS, 0, 0xFF);
     } else {
         // Nested clip: only pass where parent's stencil matches
-        glStencilFunc(GL_EQUAL, g_stencil_ref, 0xFF);
+        glStencilFunc(GL_EQUAL, g_gl.stencil_ref, 0xFF);
     }
-    g_stencil_ref++;
+    g_gl.stencil_ref++;
 
     // INCREMENT stencil on pass (not REPLACE!)
     // This ensures nested masks only write inside parent's region
@@ -629,7 +617,7 @@ void PlatformBeginClip() {
 
 void PlatformEndClipWrite() {
     // Switch to stencil test mode for children
-    glStencilFunc(GL_EQUAL, g_stencil_ref, 0xFF);
+    glStencilFunc(GL_EQUAL, g_gl.stencil_ref, 0xFF);
     glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
     glStencilMask(0x00);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -637,11 +625,11 @@ void PlatformEndClipWrite() {
 }
 
 void PlatformEndClip() {
-    g_stencil_ref--;
-    if (g_stencil_ref == 0) {
+    g_gl.stencil_ref--;
+    if (g_gl.stencil_ref == 0) {
         glDisable(GL_STENCIL_TEST);
     } else {
-        glStencilFunc(GL_EQUAL, g_stencil_ref, 0xFF);
+        glStencilFunc(GL_EQUAL, g_gl.stencil_ref, 0xFF);
     }
 }
 

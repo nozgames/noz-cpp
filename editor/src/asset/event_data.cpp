@@ -5,7 +5,7 @@
 extern Mesh* MESH_ASSET_ICON_EVENT;
 
 static void DrawEventData(AssetData* a) {
-    BindMaterial(g_view.shaded_material);
+    BindMaterial(g_view.editor_mesh_material);
     BindColor(COLOR_WHITE);
     DrawMesh(MESH_ASSET_ICON_EVENT, Translate(a->position));
 }

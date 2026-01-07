@@ -98,7 +98,6 @@ extern PlatformTexture* PlatformCreateTextureArray(
     const char* name);
 extern void PlatformUpdateTexture(PlatformTexture* texture, void* data);
 extern void PlatformFree(PlatformTexture* texture);
-extern void PlatformBindTextureArray(PlatformTexture* texture, int slot);
 extern void PlatformEnablePostProcess(bool enabled);
 extern void PlatformBeginPostProcPass();
 extern void PlatformEndPostProcPass();

@@ -180,23 +180,22 @@ Asset* LoadAtlas(Allocator* allocator, Stream* stream, AssetHeader* header, cons
     assert(name);
     assert(header);
 
-    AtlasImpl* impl = (AtlasImpl*)Alloc(allocator, sizeof(AtlasImpl));
+    AtlasImpl* impl = static_cast<AtlasImpl*>(Alloc(allocator, sizeof(AtlasImpl)));
     if (!impl)
         return nullptr;
 
     impl->name = name;
-    impl->format = (TextureFormat)ReadU8(stream);
-    impl->sampler_options.filter = (TextureFilter)ReadU8(stream);
-    impl->sampler_options.clamp = (TextureClamp)ReadU8(stream);
+    impl->format = static_cast<TextureFormat>(ReadU8(stream));
+    impl->sampler_options.filter = static_cast<TextureFilter>(ReadU8(stream));
+    impl->sampler_options.clamp = static_cast<TextureClamp>(ReadU8(stream));
     impl->size.x = ReadU32(stream);
     impl->size.y = ReadU32(stream);
 
     const int channels = GetBytesPerPixel(impl->format);
     const u32 data_size = impl->size.x * impl->size.y * channels;
     impl->pixel_data = Alloc(allocator, data_size);
-    if (impl->pixel_data) {
+    if (impl->pixel_data)
         ReadBytes(stream, impl->pixel_data, data_size);
-    }
 
     return impl;
 }
@@ -206,10 +205,7 @@ void BindTextureInternal(Texture* texture, i32 slot) {
         texture = TEXTURE_WHITE;
 
     TextureImpl* impl = static_cast<TextureImpl*>(texture);
-    if (impl->is_array)
-        return PlatformBindTextureArray(impl->platform_texture, slot);
-    else
-        return PlatformBindTexture(impl->platform_texture, slot);
+    return PlatformBindTexture(impl->platform_texture, slot);
 }
 
 #if !defined(NOZ_BUILTIN_ASSETS)
@@ -282,17 +278,6 @@ Texture* CreateTextureArray(Allocator* allocator, Atlas** atlases, int atlas_cou
     }
 
     return impl;
-}
-
-void BindTextureArray(Texture* texture_array, int slot) {
-    if (!texture_array) return;
-    TextureImpl* impl = static_cast<TextureImpl*>(texture_array);
-    if (!impl->is_array) {
-        // Fall back to regular binding if not an array
-        PlatformBindTexture(impl->platform_texture, slot);
-        return;
-    }
-    PlatformBindTextureArray(impl->platform_texture, slot);
 }
 
 bool IsTextureArray(Texture* texture) {

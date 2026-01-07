@@ -12,14 +12,6 @@ static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* 
     AtlasData* atlas = static_cast<AtlasData*>(a);
     AtlasDataImpl* impl = atlas->impl;
 
-    // Ensure atlas is up to date
-    RegenerateAtlas(atlas);
-
-    if (!impl->pixels) {
-        // No pixel data - nothing to export
-        return;
-    }
-
     // Export as texture
     std::string filter = meta->GetString("atlas", "filter", "linear");
     std::string clamp = meta->GetString("atlas", "clamp", "clamp");
@@ -32,11 +24,20 @@ static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* 
         TEXTURE_CLAMP_REPEAT :
         TEXTURE_CLAMP_CLAMP;
 
-    // Convert from PlutoVG's premultiplied ARGB to RGBA
+    // Regenerate atlas to impl->pixels (ensures it's up to date)
+    RegenerateAtlas(atlas);
+
+    if (!impl->pixels) {
+        return;
+    }
+
+    // Copy to temporary buffer for export processing
     u32 pixel_size = impl->width * impl->height * 4;
-    u8* rgba_pixels = static_cast<u8*>(Alloc(ALLOCATOR_SCRATCH, pixel_size));
-    memcpy(rgba_pixels, impl->pixels, pixel_size);
-    plutovg_convert_argb_to_rgba(rgba_pixels, rgba_pixels, impl->width, impl->height, impl->width * 4);
+    u8* pixels = static_cast<u8*>(Alloc(ALLOCATOR_DEFAULT, pixel_size));
+    memcpy(pixels, impl->pixels, pixel_size);
+
+    // Convert from PlutoVG's premultiplied ARGB to RGBA
+    plutovg_convert_argb_to_rgba(pixels, pixels, impl->width, impl->height, impl->width * 4);
 
     Stream* stream = CreateStream(ALLOCATOR_DEFAULT, pixel_size + 1024);
 
@@ -53,10 +54,11 @@ static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* 
     WriteU8(stream, (u8)clamp_value);
     WriteU32(stream, impl->width);
     WriteU32(stream, impl->height);
-    WriteBytes(stream, rgba_pixels, pixel_size);
+    WriteBytes(stream, pixels, pixel_size);
 
     SaveStream(stream, path);
     Free(stream);
+    Free(pixels);
 }
 
 static bool AtlasDependsOn(AssetData* atlas_asset, AssetData* dependency) {

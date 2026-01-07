@@ -212,6 +212,8 @@ static void InitConfig() {
     g_editor.project_path = project_path.string();
     g_editor.atlas_size = g_config->GetInt("editor", "atlas_size", ATLAS_DEFAULT_SIZE);
 
+    Set(g_editor.atlas_prefix, g_config->GetString("editor", "atlas_prefix", "atlas").c_str());
+
     fs::create_directories(g_editor.output_path);
 }
 

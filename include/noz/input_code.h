@@ -60,6 +60,9 @@ enum InputCode
     KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6,
     KEY_F7, KEY_F8, KEY_F9, KEY_F10, KEY_F11, KEY_F12,
 
+    KEY_LEFT_SUPER,
+    KEY_RIGHT_SUPER,
+
     // GAMEPAD BUTTONS (WORKS FOR ANY CONNECTED GAMEPAD)
     GAMEPAD_A,           // CROSS ON PS, A ON XBOX
     GAMEPAD_B,           // CIRCLE ON PS, B ON XBOX
@@ -153,7 +156,7 @@ enum InputCode
 };
 
 inline bool IsKeyboard(InputCode code) {
-    return code >= KEY_A && code <= KEY_F12;
+    return code >= KEY_A && code <= KEY_RIGHT_SUPER;
 }
 
 inline bool IsMouse(InputCode code) {

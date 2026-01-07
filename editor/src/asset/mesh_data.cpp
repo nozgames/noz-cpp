@@ -177,6 +177,7 @@ int GetOrAddEdge(MeshData* m, int v0, int v1, int face_index) {
     ee.normal = Normalize(-Perpendicular(GetCurrentFrame(m)->vertices[v1].position - GetCurrentFrame(m)->vertices[v0].position));
     ee.selected = false;
     ee.curve_offset = VEC2_ZERO;
+    ee.curve_weight = 1.0f;
 
     return edge_index;
 }
@@ -197,10 +198,15 @@ bool IsEdgeCurved(MeshData* m, int edge_index) {
     return LengthSqr(offset) > 0.0001f;
 }
 
-// Quadratic Bezier evaluation: B(t) = (1-t)^2*p0 + 2(1-t)t*control + t^2*p1
-Vec2 EvalQuadraticBezier(const Vec2& p0, const Vec2& control, const Vec2& p1, float t) {
+// Rational quadratic Bezier evaluation
+// w = 1.0 gives standard bezier, w = cos(half_angle) gives circular arc
+Vec2 EvalQuadraticBezier(const Vec2& p0, const Vec2& control, const Vec2& p1, float t, float w) {
     float u = 1.0f - t;
-    return u * u * p0 + 2.0f * u * t * control + t * t * p1;
+    float u2 = u * u;
+    float t2 = t * t;
+    float wt = 2.0f * u * t * w;
+    float denom = u2 + wt + t2;
+    return (p0 * u2 + control * wt + p1 * t2) / denom;
 }
 
 // Compute centroid using signed area formula (works for concave polygons and holes)
@@ -250,7 +256,7 @@ static u64 MakeEdgeKey(Vec2 p0, Vec2 p1) {
 }
 
 // Static storage for saved curves (used between SaveCurves and UpdateEdges)
-struct SavedCurve { u64 key; Vec2 offset; };
+struct SavedCurve { u64 key; Vec2 offset; float weight; };
 static SavedCurve g_saved_curves[MESH_MAX_EDGES];
 static int g_saved_curve_count = 0;
 
@@ -263,7 +269,7 @@ static void SaveCurves(MeshData* m) {
         if (LengthSqr(e.curve_offset) > 0.0000001f) {
             Vec2 p0 = frame->vertices[e.v0].position;
             Vec2 p1 = frame->vertices[e.v1].position;
-            g_saved_curves[g_saved_curve_count++] = { MakeEdgeKey(p0, p1), e.curve_offset };
+            g_saved_curves[g_saved_curve_count++] = { MakeEdgeKey(p0, p1), e.curve_offset, e.curve_weight };
         }
     }
 }
@@ -278,7 +284,7 @@ void UpdateEdges(MeshData* m) {
             if (LengthSqr(e.curve_offset) > 0.0000001f) {
                 Vec2 p0 = frame->vertices[e.v0].position;
                 Vec2 p1 = frame->vertices[e.v1].position;
-                g_saved_curves[g_saved_curve_count++] = { MakeEdgeKey(p0, p1), e.curve_offset };
+                g_saved_curves[g_saved_curve_count++] = { MakeEdgeKey(p0, p1), e.curve_offset, e.curve_weight };
             }
         }
     }
@@ -315,6 +321,7 @@ void UpdateEdges(MeshData* m) {
             Vec2 p1 = frame->vertices[e.v1].position;
             if (MakeEdgeKey(p0, p1) == curve.key) {
                 e.curve_offset = curve.offset;
+                e.curve_weight = curve.weight;
                 break;
             }
         }
@@ -327,6 +334,7 @@ void UpdateEdges(MeshData* m) {
         int edge = GetEdge(m, pc.v0, pc.v1);
         if (edge != -1) {
             GetCurrentFrame(m)->edges[edge].curve_offset = pc.offset;
+            GetCurrentFrame(m)->edges[edge].curve_weight = pc.weight;
         }
     }
     GetCurrentFrame(m)->pending_curve_count = 0;
@@ -431,12 +439,26 @@ Mesh* ToOutlineMesh(MeshData* m) {
     return GetCurrentFrame(m)->outline;
 }
 
-void SetSelecteFaceColor(MeshData* m, int color) {
+void SetFaceColor(MeshData* m, int color) {
     int count = 0;
     for (i32 face_index = 0; face_index < GetCurrentFrame(m)->face_count; face_index++) {
         FaceData& f = GetCurrentFrame(m)->faces[face_index];
         if (!f.selected) continue;
         f.color = color;
+        count++;
+    }
+
+    if (!count) return;
+
+    MarkDirty(m);
+}
+
+void SetFaceOpacity(MeshData* m, float opacity) {
+    int count = 0;
+    for (i32 face_index = 0; face_index < GetCurrentFrame(m)->face_count; face_index++) {
+        FaceData& f = GetCurrentFrame(m)->faces[face_index];
+        if (!f.selected) continue;
+        f.opacity = opacity;
         count++;
     }
 
@@ -704,7 +726,8 @@ int CreateFace(MeshData* m) {
     FaceData& f = GetCurrentFrame(m)->faces[face_index];
     f.vertex_count = selected_count;
     f.color = best_color;
-    f.normal = {0, 0, 1};
+    f.opacity = 1.0f;
+    f.normal = {0, 0};
     f.selected = false;
 
     for (int i = 0; i < selected_count; i++)
@@ -755,6 +778,7 @@ int SplitFaces(MeshData* m, int v0, int v1) {
     FaceData& new_face = GetCurrentFrame(m)->faces[GetCurrentFrame(m)->face_count++];
     new_face.color = old_face.color;
     new_face.normal = old_face.normal;
+    new_face.opacity = old_face.opacity;
     new_face.selected = old_face.selected;
 
     int old_vertex_count = old_face.vertex_count - (v1_pos - v0_pos - 1);
@@ -791,25 +815,21 @@ int SplitEdge(MeshData* m, int edge_index, float edge_pos, bool update) {
 
     // Save curve data before modifying
     Vec2 original_curve_offset = e.curve_offset;
+    float original_curve_weight = e.curve_weight;
     int original_v0 = e.v0;
     int original_v1 = e.v1;
 
     int new_vertex_index = GetCurrentFrame(m)->vertex_count++;
     VertexData& new_vertex = GetCurrentFrame(m)->vertices[new_vertex_index];
-    new_vertex.edge_size = (v0.edge_size + v1.edge_size) * 0.5f;
     new_vertex.gradient = (v0.gradient * (1.0f - edge_pos) + v1.gradient * edge_pos);
 
     // Place vertex on the Bezier curve if edge has a curve
     if (LengthSqr(original_curve_offset) > 0.0001f) {
-        // Quadratic Bezier: B(t) = (1-t)²P0 + 2t(1-t)P1 + t²P2
+        // Rational quadratic Bezier: B(t) = ((1-t)²P0 + 2w(1-t)t·P1 + t²P2) / ((1-t)² + 2w(1-t)t + t²)
         Vec2 p0 = v0.position;
         Vec2 p2 = v1.position;
         Vec2 p1 = (p0 + p2) * 0.5f + original_curve_offset;  // Control point
-        float t = edge_pos;
-        float t2 = t * t;
-        float mt = 1.0f - t;
-        float mt2 = mt * mt;
-        new_vertex.position = p0 * mt2 + p1 * (2.0f * t * mt) + p2 * t2;
+        new_vertex.position = EvalQuadraticBezier(p0, p1, p2, edge_pos, original_curve_weight);
     } else {
         new_vertex.position = (v0.position * (1.0f - edge_pos) + v1.position * edge_pos);
     }
@@ -861,7 +881,8 @@ int SplitEdge(MeshData* m, int edge_index, float edge_pos, bool update) {
     // Queue or apply curve offsets to the two new edges using de Casteljau subdivision
     if (LengthSqr(original_curve_offset) > 0.0001f) {
         Vec2 offset1, offset2;
-        SplitBezierCurve(v0.position, v1.position, original_curve_offset, edge_pos, &offset1, &offset2);
+        float weight1, weight2;
+        SplitBezierCurve(v0.position, v1.position, original_curve_offset, original_curve_weight, edge_pos, &offset1, &weight1, &offset2, &weight2);
 
         if (update) {
             // Apply immediately after UpdateEdges
@@ -870,18 +891,22 @@ int SplitEdge(MeshData* m, int edge_index, float edge_pos, bool update) {
             int edge1 = GetEdge(m, original_v0, new_vertex_index);
             int edge2 = GetEdge(m, new_vertex_index, original_v1);
 
-            if (edge1 >= 0)
+            if (edge1 >= 0) {
                 GetCurrentFrame(m)->edges[edge1].curve_offset = offset1;
-            if (edge2 >= 0)
+                GetCurrentFrame(m)->edges[edge1].curve_weight = weight1;
+            }
+            if (edge2 >= 0) {
                 GetCurrentFrame(m)->edges[edge2].curve_offset = offset2;
+                GetCurrentFrame(m)->edges[edge2].curve_weight = weight2;
+            }
 
             MarkDirty(m);
         } else {
             // Queue for later when UpdateEdges is called
             MeshFrameData* frame = GetCurrentFrame(m);
             if (frame->pending_curve_count < MESH_MAX_EDGES - 1) {
-                frame->pending_curves[frame->pending_curve_count++] = { original_v0, new_vertex_index, offset1 };
-                frame->pending_curves[frame->pending_curve_count++] = { new_vertex_index, original_v1, offset2 };
+                frame->pending_curves[frame->pending_curve_count++] = { original_v0, new_vertex_index, offset1, weight1 };
+                frame->pending_curves[frame->pending_curve_count++] = { new_vertex_index, original_v1, offset2, weight2 };
             }
         }
     } else if (update) {
@@ -928,11 +953,12 @@ int HitTestEdge(MeshData* m, const Mat3& transform, const Vec2& hit_pos, float* 
         if (IsEdgeCurved(m, i)) {
             // Test against subdivided curve segments
             Vec2 control = TransformPoint(transform, GetEdgeControlPoint(m, i));
+            float weight = e.curve_weight > 0.0f ? e.curve_weight : 1.0f;
             constexpr int segments = 8;
             Vec2 prev = v0;
             for (int s = 1; s <= segments; s++) {
                 float t = (float)s / (float)segments;
-                Vec2 curr = EvalQuadraticBezier(v0, control, v1, t);
+                Vec2 curr = EvalQuadraticBezier(v0, control, v1, t, weight);
 
                 // Test point against this line segment
                 Vec2 seg_dir = curr - prev;
@@ -1070,11 +1096,6 @@ int HitTestFace(MeshData* m, const Mat3& transform, const Vec2& position) {
     return hit_count > 0 ? faces[0] : -1;
 }
 
-static void ParseVertexEdge(VertexData& ev, Tokenizer& tk) {
-    if (!ExpectFloat(tk, &ev.edge_size))
-        ThrowError("missing vertex edge value");
-}
-
 static void ParseVertexWeight(Tokenizer& tk, VertexWeight& vertex_weight) {
     f32 weight = 0.0f;
     i32 index = 0;
@@ -1106,7 +1127,9 @@ static void ParseVertex(MeshData* m, Tokenizer& tk) {
     int weight_count = 0;
     while (!IsEOF(tk)) {
         if (ExpectIdentifier(tk, "e")) {
-            ParseVertexEdge(v, tk);
+            // deprecated
+            float e;
+            ExpectFloat(tk, &e);
         } else if (ExpectIdentifier(tk, "h")) {
             float temp = 0.0f;
             ExpectFloat(tk, &temp);
@@ -1134,6 +1157,10 @@ static void ParseFaceColor(FaceData& f, Tokenizer& tk) {
     // Ignore old face color
     int cy;
     ExpectInt(tk, &cy);
+
+    float opacity = 1.0f;
+    ExpectFloat(tk, &opacity);
+    f.opacity = Clamp01(opacity);
 }
 
 static void ParseFaceNormal(FaceData& ef, Tokenizer& tk) {
@@ -1145,11 +1172,11 @@ static void ParseFaceNormal(FaceData& ef, Tokenizer& tk) {
     if (!ExpectFloat(tk, &ny))
         ThrowError("missing face normal y value");
 
+    // deprecated but keep for old
     f32 nz;
-    if (!ExpectFloat(tk, &nz))
-        ThrowError("missing face normal z value");
+    ExpectFloat(tk, &nz);
 
-    ef.normal = {nx, ny, nz};
+    ef.normal = {nx, ny};
 }
 
 static void ParseFace(MeshData* m, Tokenizer& tk) {
@@ -1170,6 +1197,7 @@ static void ParseFace(MeshData* m, Tokenizer& tk) {
 
     FaceData& f = GetCurrentFrame(m)->faces[GetCurrentFrame(m)->face_count++];
     f = {};  // Initialize to zero
+    f.opacity = 1.0f;  // Default opacity for new/loaded faces
     f.vertices[f.vertex_count++] = v0;
     f.vertices[f.vertex_count++] = v1;
     f.vertices[f.vertex_count++] = v2;
@@ -1229,6 +1257,7 @@ static void FinalizeFrame(MeshData* m, PendingCurve* pending_curves, int pending
         int edge = GetEdge(m, pending_curves[i].v0, pending_curves[i].v1);
         if (edge != -1) {
             GetCurrentFrame(m)->edges[edge].curve_offset = pending_curves[i].offset;
+            GetCurrentFrame(m)->edges[edge].curve_weight = pending_curves[i].weight;
         }
     }
 
@@ -1276,13 +1305,14 @@ void LoadMeshData(MeshData* m, Tokenizer& tk, bool multiple_mesh=false) {
         } else if (ExpectIdentifier(tk, "e")) {
             ParseEdgeColor(m, tk);
         } else if (ExpectIdentifier(tk, "curve")) {
-            // Parse curve data: curve v0 v1 offset_x offset_y
+            // Parse curve data: curve v0 v1 offset_x offset_y [weight]
             // Store for later since edges don't exist yet
             int v0, v1;
-            float ox, oy;
+            float ox, oy, weight = 1.0f;
             if (ExpectInt(tk, &v0) && ExpectInt(tk, &v1) && ExpectFloat(tk, &ox) && ExpectFloat(tk, &oy)) {
+                ExpectFloat(tk, &weight);  // Optional - old files won't have it
                 if (pending_curve_count < MESH_MAX_EDGES) {
-                    pending_curves[pending_curve_count++] = { v0, v1, {ox, oy} };
+                    pending_curves[pending_curve_count++] = { v0, v1, {ox, oy}, weight };
                 }
             }
         } else if (multiple_mesh && Peek(tk, "m")) {
@@ -1383,7 +1413,7 @@ static void WriteVertexWeights(Stream* stream, const VertexWeight* weights) {
 static void SaveFrameData(MeshFrameData* frame, Stream* stream) {
     for (int i=0; i<frame->vertex_count; i++) {
         const VertexData& v = frame->vertices[i];
-        WriteCSTR(stream, "v %f %f e %f", v.position.x, v.position.y, v.edge_size);
+        WriteCSTR(stream, "v %f %f", v.position.x, v.position.y);
         WriteVertexWeights(stream, v.weights);
         WriteCSTR(stream, "\n");
     }
@@ -1397,14 +1427,20 @@ static void SaveFrameData(MeshFrameData* frame, Stream* stream) {
         for (int vertex_index=0; vertex_index<f.vertex_count; vertex_index++)
             WriteCSTR(stream, " %d", f.vertices[vertex_index]);
 
-        WriteCSTR(stream, " c %d n %f %f %f\n", f.color, f.normal.x, f.normal.y, f.normal.z);
+        WriteCSTR(stream, " c %d", f.color);
+        if (f.opacity < 1.0f)
+            WriteCSTR(stream, " %f", f.opacity);
+        if (LengthSqr(f.normal) > 0.0001f)
+            WriteCSTR(stream, " n %f %f", f.normal.x, f.normal.y);
+
+        WriteCSTR(stream, "\n");
     }
 
     // Write curve data for curved edges
     for (int i = 0; i < frame->edge_count; i++) {
         const EdgeData& e = frame->edges[i];
         if (LengthSqr(e.curve_offset) > 0.0001f) {
-            WriteCSTR(stream, "curve %d %d %f %f\n", e.v0, e.v1, e.curve_offset.x, e.curve_offset.y);
+            WriteCSTR(stream, "curve %d %d %f %f %f\n", e.v0, e.v1, e.curve_offset.x, e.curve_offset.y, e.curve_weight);
         }
     }
 }
@@ -1610,7 +1646,6 @@ static void TriangulateFace(MeshData* m, FaceData* f, MeshBuilder* builder, floa
 
     Vec2 uv_color = ToVec2(Vec2Int(f->color, m->impl->palette));
 
-    // Check if any edges are curved - if so, we need to expand the vertex list
     bool has_curves = false;
     for (int i = 0; i < f->vertex_count; i++) {
         int v0_idx = f->vertices[i];
@@ -1630,7 +1665,6 @@ static void TriangulateFace(MeshData* m, FaceData* f, MeshBuilder* builder, floa
     Vec2 expanded_normals[MAX_VERTICES * CURVE_SEGMENTS];
 
     if (has_curves) {
-        // Build expanded vertex list with curve samples
         for (int i = 0; i < f->vertex_count; i++) {
             int v0_idx = f->vertices[i];
             int v1_idx = f->vertices[(i + 1) % f->vertex_count];
@@ -1639,12 +1673,13 @@ static void TriangulateFace(MeshData* m, FaceData* f, MeshBuilder* builder, floa
 
             int edge_index = GetEdge(m, v0_idx, v1_idx);
             if (edge_index != -1 && IsEdgeCurved(m, edge_index)) {
+                EdgeData& edge = GetCurrentFrame(m)->edges[edge_index];
                 Vec2 control = GetEdgeControlPoint(m, edge_index);
+                float weight = edge.curve_weight > 0.0f ? edge.curve_weight : 1.0f;
 
-                // Add curve samples (excluding the endpoint which is the next vertex's start)
                 for (int s = 0; s < CURVE_SEGMENTS; s++) {
-                    float t = (float)s / (float)CURVE_SEGMENTS;
-                    expanded_positions[expanded_count] = EvalQuadraticBezier(v0.position, control, v1.position, t);
+                    float t = static_cast<float>(s) / static_cast<float>(CURVE_SEGMENTS);
+                    expanded_positions[expanded_count] = EvalQuadraticBezier(v0.position, control, v1.position, t, weight);
 
                     // Interpolate bone weights
                     expanded_bone_weights[expanded_count] = {
@@ -1676,19 +1711,28 @@ static void TriangulateFace(MeshData* m, FaceData* f, MeshBuilder* builder, floa
             }
         }
 
-        // Add all expanded vertices to the builder
         for (int i = 0; i < expanded_count; i++) {
-            MeshVertex mv = { .position = expanded_positions[i], .depth = depth, .uv = uv_color };
-            mv.bone_weights = expanded_bone_weights[i];
-            mv.bone_indices = expanded_bone_indices[i];
-            mv.normal = expanded_normals[i];
+            MeshVertex mv = {
+                .position = expanded_positions[i],
+                .depth = depth,
+                .opacity = f->opacity,
+                .uv = uv_color,
+                .normal = expanded_normals[i],
+                .bone_indices = expanded_bone_indices[i],
+                .bone_weights = expanded_bone_weights[i]
+            };
             AddVertex(builder, mv);
         }
     } else {
         // No curves - use original vertex adding logic
         for (int vertex_index = 0; vertex_index < f->vertex_count; vertex_index++) {
             VertexData& v = GetCurrentFrame(m)->vertices[f->vertices[vertex_index]];
-            MeshVertex mv = { .position = v.position, .depth = depth, .uv = uv_color };
+            MeshVertex mv = {
+                .position = v.position,
+                .depth = depth,
+                .opacity = f->opacity,
+                .uv = uv_color
+            };
             mv.bone_weights.x = v.weights[0].weight;
             mv.bone_weights.y = v.weights[1].weight;
             mv.bone_weights.z = v.weights[2].weight;
@@ -1703,13 +1747,12 @@ static void TriangulateFace(MeshData* m, FaceData* f, MeshBuilder* builder, floa
         expanded_count = f->vertex_count;
     }
 
-    u16 base_vertex = GetVertexCount(builder) - (u16)expanded_count;
+    u16 base_vertex = GetVertexCount(builder) - static_cast<u16>(expanded_count);
     if (expanded_count == 3) {
         AddTriangle(builder, base_vertex, base_vertex + 1, base_vertex + 2);
         return;
     }
 
-    // Track positions in the expanded vertex list
     int positions[MAX_VERTICES * CURVE_SEGMENTS];
     for (int i = 0; i < expanded_count; i++)
         positions[i] = i;
@@ -1812,12 +1855,14 @@ Vec2 HitTestSnap(MeshData* m, const Vec2& position) {
 }
 
 Vec2 GetEdgePoint(MeshData* m, int edge_index, float t) {
-    Vec2 p0 = GetCurrentFrame(m)->vertices[GetCurrentFrame(m)->edges[edge_index].v0].position;
-    Vec2 p2 = GetCurrentFrame(m)->vertices[GetCurrentFrame(m)->edges[edge_index].v1].position;
+    EdgeData& edge = GetCurrentFrame(m)->edges[edge_index];
+    Vec2 p0 = GetCurrentFrame(m)->vertices[edge.v0].position;
+    Vec2 p2 = GetCurrentFrame(m)->vertices[edge.v1].position;
 
     if (IsEdgeCurved(m, edge_index)) {
         Vec2 p1 = GetEdgeControlPoint(m, edge_index);
-        return EvalQuadraticBezier(p0, p1, p2, t);
+        float weight = edge.curve_weight > 0.0f ? edge.curve_weight : 1.0f;
+        return EvalQuadraticBezier(p0, p1, p2, t, weight);
     }
 
     return Mix(p0, p2, t);

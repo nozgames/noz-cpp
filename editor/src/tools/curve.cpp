@@ -5,9 +5,11 @@
 struct CurveToolEdge {
     int edge_index;
     Vec2 original_offset;
+    float original_weight;
     Vec2 circle_offset;
     Vec2 outward_dir;
     float circle_amount;
+    float circle_weight;
 };
 
 struct CurveTool {
@@ -19,13 +21,14 @@ struct CurveTool {
 
 static CurveTool g_curve = {};
 
-static Vec2 CalculateCurveCircleOffset(MeshFrameData* frame, int edge_index, Vec2* out_outward_dir) {
+static Vec2 CalculateCurveCircleOffset(MeshFrameData* frame, int edge_index, Vec2* out_outward_dir, float* out_circle_weight) {
     EdgeData& e = frame->edges[edge_index];
 
     // Find a face that uses this edge to get proper vertex ordering
     int face_index = e.face_index[0];
     if (face_index < 0) {
         *out_outward_dir = VEC2_ZERO;
+        *out_circle_weight = 1.0f;
         return VEC2_ZERO;
     }
 
@@ -51,6 +54,7 @@ static Vec2 CalculateCurveCircleOffset(MeshFrameData* frame, int edge_index, Vec
 
     if (vi0 < 0) {
         *out_outward_dir = VEC2_ZERO;
+        *out_circle_weight = 1.0f;
         return VEC2_ZERO;
     }
 
@@ -63,16 +67,20 @@ static Vec2 CalculateCurveCircleOffset(MeshFrameData* frame, int edge_index, Vec
     float dist = Length(to_mid);
     *out_outward_dir = dist > 0.0001f ? to_mid / dist : VEC2_ZERO;
 
+    // Calculate circle weight for perfect arc
+    *out_circle_weight = CalculateCircleWeight(p0, p1, centroid);
+
     // Use utility function for the tangent intersection calculation
     return CalculateCircleOffset(p0, p1, centroid);
 }
 
 static void EndCurve(bool commit) {
     if (!commit) {
-        // Restore all original offsets
+        // Restore all original offsets and weights
         MeshFrameData* frame = GetCurrentFrame(g_curve.mesh);
         for (int i = 0; i < g_curve.edge_count; i++) {
             frame->edges[g_curve.edges[i].edge_index].curve_offset = g_curve.edges[i].original_offset;
+            frame->edges[g_curve.edges[i].edge_index].curve_weight = g_curve.edges[i].original_weight;
         }
         MarkDirty(g_curve.mesh);
     }
@@ -100,7 +108,9 @@ static void UpdateCurve() {
     // Apply delta to all selected edges
     for (int i = 0; i < g_curve.edge_count; i++) {
         CurveToolEdge& ce = g_curve.edges[i];
+        EdgeData& edge = GetCurrentFrame(g_curve.mesh)->edges[ce.edge_index];
         Vec2 new_offset = ce.original_offset + delta;
+        float new_weight = 1.0f;
 
         // Ctrl snaps to: inverted circle, zero, or circle
         if (IsCtrlDown(GetInputSet())) {
@@ -110,14 +120,18 @@ static void UpdateCurve() {
 
             if (projected < -half_circle) {
                 new_offset = ce.circle_offset * -1.0f;  // Inverted circle
+                new_weight = ce.circle_weight;
             } else if (projected > half_circle) {
                 new_offset = ce.circle_offset;          // Circle
+                new_weight = ce.circle_weight;
             } else {
                 new_offset = VEC2_ZERO;                 // Flat
+                new_weight = 1.0f;
             }
         }
 
-        GetCurrentFrame(g_curve.mesh)->edges[ce.edge_index].curve_offset = new_offset;
+        edge.curve_offset = new_offset;
+        edge.curve_weight = new_weight;
     }
 
     MarkDirty(g_curve.mesh);
@@ -143,12 +157,13 @@ void BeginCurveTool(MeshData* mesh, int* edge_indices, int edge_count) {
 
     MeshFrameData* frame = GetCurrentFrame(mesh);
 
-    // Save original offsets and calculate circle offsets for all edges
+    // Save original offsets/weights and calculate circle offsets/weights for all edges
     for (int i = 0; i < edge_count; i++) {
         CurveToolEdge& ce = g_curve.edges[i];
         ce.edge_index = edge_indices[i];
         ce.original_offset = frame->edges[edge_indices[i]].curve_offset;
-        ce.circle_offset = CalculateCurveCircleOffset(frame, edge_indices[i], &ce.outward_dir);
+        ce.original_weight = frame->edges[edge_indices[i]].curve_weight;
+        ce.circle_offset = CalculateCurveCircleOffset(frame, edge_indices[i], &ce.outward_dir, &ce.circle_weight);
         ce.circle_amount = Dot(ce.circle_offset, ce.outward_dir);
     }
 

@@ -157,11 +157,6 @@ extern bool InspectorCheckbox(const char* name, bool state);
 extern void BeginInspectorGroup();
 extern void EndInspectorGroup();
 
-// @controls
-extern bool EditorButton(ElementId id, Mesh* icon, bool state, bool disabled=false);
-extern void BeginOverlay(ElementId id=ELEMENT_ID_NONE, Align align=ALIGN_TOP_LEFT);
-extern void EndOverlay();
-
 constexpr int CANVAS_ID_COMMAND = CANVAS_ID_MIN + 0;
 constexpr int CANVAS_ID_CONFIRM = CANVAS_ID_MIN + 1;
 constexpr int CANVAS_ID_OVERLAY = CANVAS_ID_MIN + 2;

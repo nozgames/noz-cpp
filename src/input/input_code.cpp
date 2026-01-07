@@ -69,6 +69,8 @@ void InitStrings() {
     g_input_code_strings[KEY_RIGHT_ALT] = "ALT";
     g_input_code_strings[KEY_LEFT_SHIFT] = "SHIFT";
     g_input_code_strings[KEY_RIGHT_SHIFT] = "SHIFT";
+    g_input_code_strings[KEY_LEFT_SUPER] = "WIN";
+    g_input_code_strings[KEY_RIGHT_SUPER] = "WIN";
 
     g_input_code_strings[KEY_LEFT_BRACKET] = "[";
     g_input_code_strings[KEY_RIGHT_BRACKET] = "]";

@@ -984,7 +984,7 @@ void InitView() {
     g_view.camera = CreateCamera(ALLOCATOR_DEFAULT);
     g_view.shaded_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_MESH);
     g_view.vertex_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_UI);
-    g_view.editor_mesh_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_MESH);
+    g_view.editor_mesh_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_EDITOR_MESH);
     g_view.shaded_skinned_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_SKINNED_MESH);
     g_view.editor_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_EDITOR);
     g_view.zoom = ZOOM_DEFAULT;
@@ -1106,12 +1106,13 @@ void InitView() {
     NAME_S = GetName("s");
     NAME_SKELETON = GetName("skeleton");
 
+    SetTexture(g_view.editor_mesh_material, ATLAS_ARRAY);
+
     TextureData* palette_texture_data = static_cast<TextureData*>(GetAssetData(
         ASSET_TYPE_TEXTURE,
         GetName(g_config->GetString("editor", "palette", "palette").c_str())));
     if (palette_texture_data) {
         LogInfo("[View] Loading palette texture from: %s (asset_path_index=%d)", palette_texture_data->path, palette_texture_data->asset_path_index);
-        SetTexture(g_view.editor_mesh_material, TEXTURE_EDITOR_PALETTE);
         SetTexture(g_view.shaded_material, palette_texture_data->impl->texture);
         SetTexture(g_view.shaded_skinned_material, palette_texture_data->impl->texture);
         SetPaletteTexture(palette_texture_data->impl->texture);

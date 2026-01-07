@@ -27,7 +27,6 @@ struct VertexWeight {
 struct VertexData {
     Vec2 position;
     Vec2 edge_normal;
-    float edge_size;
     bool selected;
     int ref_count;
     float gradient;
@@ -41,21 +40,24 @@ struct EdgeData {
     int face_index[2];
     Vec2 normal;
     bool selected;
-    Vec2 curve_offset;  // Offset from edge midpoint for quadratic Bezier control point (0,0 = straight)
+    Vec2 curve_offset;    // Offset from edge midpoint for quadratic Bezier control point (0,0 = straight)
+    float curve_weight;   // Weight for rational bezier (1.0 = standard, 0.707 = circular arc)
 };
 
 struct FaceData {
     int color;
-    Vec3 normal;
+    Vec2 normal;
     Vec2 center;
     bool selected;
     int vertices[MAX_FACE_VERTICES];
     int vertex_count;
+    float opacity;
 };
 
 struct PendingCurve {
     int v0, v1;
     Vec2 offset;
+    float weight;
 };
 
 struct MeshFrameData {
@@ -156,7 +158,7 @@ extern int GetOrAddEdge(MeshData* m, int v0, int v1, int face_index);
 extern Vec2 GetEdgeMidpoint(MeshData* m, int edge_index);
 extern Vec2 GetEdgeControlPoint(MeshData* m, int edge_index);
 extern bool IsEdgeCurved(MeshData* m, int edge_index);
-extern Vec2 EvalQuadraticBezier(const Vec2& p0, const Vec2& control, const Vec2& p1, float t);
+extern Vec2 EvalQuadraticBezier(const Vec2& p0, const Vec2& control, const Vec2& p1, float t, float w);
 extern bool FixWinding(MeshData* m, FaceData& ef);
 extern void DrawEdges(MeshData* m, const Vec2& position);
 extern void DrawEdges(MeshData* m, const Mat3& transform);
@@ -173,3 +175,6 @@ extern void SetOrigin(MeshData* m, const Vec2& origin);
 extern float GetVertexWeight(MeshData* m, int vertex_index, int bone_index);
 extern void AddVertexWeight(MeshData* m, int vertex_index, int bone_index, float weight);
 extern void SetVertexWeight(MeshData* m, int vertex_index, int bone_index, float weight);
+
+extern void SetFaceColor(MeshData* m, int color);
+extern void SetFaceOpacity(MeshData* m, float opacity);

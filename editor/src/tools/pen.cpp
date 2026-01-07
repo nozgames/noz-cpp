@@ -60,7 +60,6 @@ static void CommitPenFace() {
             VertexData& v = frame->vertices[new_index];
             v = {};
             v.position = pt.position;
-            v.edge_size = default_edge_size;
             v.selected = false;
 
             // Initialize bone weights to -1
@@ -115,7 +114,8 @@ static void CommitPenFace() {
     FaceData& f = frame->faces[face_index];
     f.vertex_count = g_pen_tool.point_count;
     f.color = best_color;
-    f.normal = {0, 0, 1};
+    f.opacity = 1.0f;
+    f.normal = {0, 0};
     f.selected = false;
 
     // If clockwise (negative area), reverse the order to make it counter-clockwise

@@ -20,12 +20,14 @@ layout(set = 2, binding = 0, row_major) uniform SkeletonBuffer {
 
 layout(location = 0) in vec2 v_position;
 layout(location = 1) in float v_depth;
-layout(location = 2) in vec2 v_uv;
-layout(location = 3) in vec2 v_normal;
-layout(location = 4) in ivec4 v_bones_indices;
-layout(location = 5) in vec4 v_bone_weights;
+layout(location = 2) in float v_opacity;
+layout(location = 3) in vec2 v_uv;
+layout(location = 4) in vec2 v_normal;
+layout(location = 5) in ivec4 v_bones_indices;
+layout(location = 6) in vec4 v_bone_weights;
 
 layout(location = 0) out vec2 f_uv;
+layout(location = 1) out float f_opacity;
 
 void main() {
     vec3 position = vec3(v_position, 1.0);
@@ -40,6 +42,7 @@ void main() {
     float depth = (object.depth + (v_depth * object.depth_scale) - object.depth_min) / (object.depth_max - object.depth_min);
     gl_Position = vec4(screen_pos.xy, 1.0f - depth, 1.0);
     f_uv = vec2(v_uv.x * 0.015625 + 0.0078125, v_uv.y * 0.015625 + 0.0078125);
+    f_opacity = v_opacity;
 }
 
 //@ END
@@ -47,6 +50,7 @@ void main() {
 //@ FRAGMENT
 
 layout(location = 0) in vec2 f_uv;
+layout(location = 1) in float f_opacity;
 layout(location = 0) out vec4 outColor;
 
 layout(set = 4, binding = 0) uniform ColorBuffer {
@@ -60,7 +64,7 @@ layout(set = 6, binding = 0) uniform sampler2D mainTexture;
 
 void main() {
     vec4 diffuse = texture(mainTexture, f_uv + color_buffer.uv_offset * 0.015625) * color_buffer.color;
-    outColor = vec4(mix(diffuse.rgb, color_buffer.emission.rgb, color_buffer.emission.a), diffuse.a);
+    outColor = vec4(mix(diffuse.rgb, color_buffer.emission.rgb, color_buffer.emission.a), diffuse.a * f_opacity);
 }
 
 //@ END

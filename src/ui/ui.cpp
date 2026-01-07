@@ -7,6 +7,7 @@
 constexpr int MAX_ELEMENTS = 4096;
 constexpr int MAX_ELEMENT_STACK = 128;
 constexpr int MAX_TEXT_MESHES = 4096;
+constexpr int MAX_POPUPS = 4;
 
 extern void UpdateInputState(InputSet* input_set);
 extern void UpdateDebugUI();
@@ -27,6 +28,7 @@ enum ElementType : u8 {
     ELEMENT_TYPE_SPACER,
     ELEMENT_TYPE_TRANSFORM,
     ELEMENT_TYPE_TEXTBOX,
+    ELEMENT_TYPE_POPUP,
     ELEMENT_TYPE_COUNT
 };
 
@@ -123,6 +125,10 @@ struct ImageElement : Element {
     float animated_time = 0.0f;
 };
 
+struct PopupElement : Element {
+    PopupStyle style;
+};
+
 struct SceneElement : Element {
     SceneStyle style;
     void (*draw_scene)(void*);
@@ -164,9 +170,11 @@ struct UI {
     Camera* cursor_camera;
     Element* elements[MAX_ELEMENTS];
     Element* element_stack[MAX_ELEMENTS];
+    Element* popups[MAX_POPUPS];
     ElementState element_states[ELEMENT_ID_MAX + 1];
     u16 element_count;
     u16 element_stack_count;
+    u16 popup_count;
     ElementId focus_id;
     ElementId pending_focus_id;
     ElementId textbox_id;
@@ -185,6 +193,7 @@ struct UI {
     CanvasId current_focus_canvas_id;
     ElementId active_scroll_id;
     float last_scroll_mouse_y;
+    bool close_popups;
 };
 
 static UI g_ui;
@@ -218,11 +227,11 @@ static void SetId(Element* e, ElementId id) {
 
 static Element* CreateElement(ElementType type) {
     Element* element = static_cast<Element*>(Alloc(g_ui.allocator, sizeof(FatElement)));
-    element->type = type;
     element->index = g_ui.element_count;
-    element->next_sibling_index = element->index + 1;
+    element->type = type;
     element->canvas_id = g_ui.current_canvas_id;
-    g_ui.elements[g_ui.element_count++] = element;
+    g_ui.elements[element->index] = element;
+    g_ui.element_count++;
 
     if (g_ui.element_stack_count > 0) {
         g_ui.element_stack[g_ui.element_stack_count-1]->child_count++;
@@ -325,6 +334,7 @@ static void PopElement() {
         return;
 
     GetCurrentElement()->next_sibling_index = g_ui.element_count;
+
     g_ui.element_stack_count--;
 }
 
@@ -354,8 +364,19 @@ void EndColumn() {
     EndElement(ELEMENT_TYPE_COLUMN);
 }
 
+void BeginPopup(const PopupStyle& style) {
+    PopupElement* e = static_cast<PopupElement*>(CreateElement(ELEMENT_TYPE_POPUP));
+    e->style = style;
+    PushElement(e);
+
+    g_ui.popups[g_ui.popup_count++] = e;
+}
+
+void EndPopup() {
+    EndElement(ELEMENT_TYPE_POPUP);
+}
+
 static float GetFixedParentHeight() {
-    // Walk up the element stack to find a parent with fixed height
     for (int i = g_ui.element_stack_count - 1; i >= 0; i--) {
         Element* parent = g_ui.element_stack[i];
 
@@ -955,6 +976,19 @@ static int MeasureElement(int element_index, const Vec2& available_size) {
         e->measured_size = available_size;
         e->measured_size.x = max_width;
 
+    // @measure_popup
+    } else if (e->type == ELEMENT_TYPE_POPUP) {
+
+        Vec2 max_content_size = VEC2_ZERO;
+        Vec2 content_size = g_ui.ortho_size;
+        for (u16 i = 0; i < e->child_count; i++) {
+            Element* child = g_ui.elements[element_index];
+            element_index = MeasureElement(element_index, content_size);
+            max_content_size = Max(max_content_size, child->measured_size);
+        }
+
+        e->measured_size = max_content_size;
+
     } else {
         assert(false && "Unhandled element type in MeasureElements");
     }
@@ -1073,6 +1107,8 @@ static int LayoutElement(int element_index, const Vec2& size) {
             element_index = LayoutElement(element_index, content_size);
     } else if (e->type == ELEMENT_TYPE_SPACER) {
     } else if (e->type == ELEMENT_TYPE_TRANSFORM) {
+        e->rect.width = size.x;
+        e->rect.height = size.y;
         Vec2 content_size = GetSize(e->rect);
         for (u16 i = 0; i < e->child_count; i++)
             element_index = LayoutElement(element_index, content_size);
@@ -1093,13 +1129,30 @@ static int LayoutElement(int element_index, const Vec2& size) {
         e->rect.width = size.x;
         e->rect.height = size.y;
         Vec2 content_size = GetSize(e->rect);
-        //float child_y = 0;
-        for (u16 i = 0; i < e->child_count; i++) {
-            //Element* child = g_ui.elements[element_index];
+        for (u16 i = 0; i < e->child_count; i++)
             element_index = LayoutElement(element_index, content_size);
-            //child->rect.y = child_y;
-            //child_y += GetSize(child->rect).y;
-        }
+
+    // @layout_popup
+    } else if (e->type == ELEMENT_TYPE_POPUP) {
+        Vec2 content_size = GetSize(e->rect);
+        for (u16 i = 0; i < e->child_count; i++)
+            element_index = LayoutElement(element_index, content_size);
+
+        PopupElement* popup = static_cast<PopupElement*>(e);
+        Vec2 parent_size = size;
+        const AlignInfo& anchor_info = g_align_info[popup->style.anchor];
+        const AlignInfo& align_info = g_align_info[popup->style.align];
+
+        // Anchor point on parent rect
+        float anchor_x = anchor_info.has_x ? parent_size.x * anchor_info.x : 0.0f;
+        float anchor_y = anchor_info.has_y ? parent_size.y * anchor_info.y : 0.0f;
+
+        // Which point of the popup aligns to the anchor
+        float popup_offset_x = align_info.has_x ? e->rect.width * align_info.x : 0.0f;
+        float popup_offset_y = align_info.has_y ? e->rect.height * align_info.y : 0.0f;
+
+        e->rect.x = anchor_x - popup_offset_x + popup->style.margin.left;
+        e->rect.y = anchor_y - popup_offset_y + popup->style.margin.top;
 
     } else {
         assert(false && "Unhandled element type in LayoutElements");
@@ -1213,7 +1266,7 @@ static void DrawContainer(ContainerElement* container, const Mat3& transform) {
     }
 }
 
-static int DrawElement(int element_index) {
+static int DrawElement(int element_index, bool is_popup) {
     Element* e = g_ui.elements[element_index++];
     const Mat3& transform = e->local_to_world;
 
@@ -1336,15 +1389,20 @@ static int DrawElement(int element_index) {
             BindColor(COLOR_WHITE);  // Color doesn't matter, stencil only
 
             // Use the border mesh if we have a radius, otherwise simple quad
+            struct BorderVertex { float radius; };
+            struct BorderFragment { Color color; float border_ratio; float square_corners; float p0; float p1; };
             if (container->style.border.radius > 0.0f) {
-                struct BorderVertex { float radius; };
-                struct BorderFragment { Color color; float border_ratio; float square_corners; float p0; float p1; };
                 BorderVertex v = { .radius = container->style.border.radius };
                 BorderFragment f = { .color = COLOR_TRANSPARENT, .border_ratio = 0.0f, .square_corners = 0.0f };
                 BindVertexUserData(&v, sizeof(v));
                 BindFragmentUserData(&f, sizeof(f));
                 DrawMesh(g_ui.element_with_border_mesh);
             } else {
+                BorderVertex v = { .radius = 0.0f };
+                // Set border_ratio to -1 to signal "no clipping" in shader
+                BorderFragment f = { .color = COLOR_TRANSPARENT, .border_ratio = -1.0f, .square_corners = 1.0f };
+                BindVertexUserData(&v, sizeof(v));
+                BindFragmentUserData(&f, sizeof(f));
                 DrawMesh(g_ui.element_mesh);
             }
 
@@ -1410,14 +1468,24 @@ static int DrawElement(int element_index) {
         BindTransform(transform * Scale(Vec2{e->rect.width, e->rect.height}));
         BindMaterial(g_ui.element_material);
         BindColor(COLOR_WHITE);  // Color doesn't matter, stencil only
+        struct BorderVertex { float radius; };
+        struct BorderFragment { Color color; float border_ratio; float square_corners; float p0; float p1; };
+        BorderVertex v = { .radius = 0.0f };
+        BorderFragment f = { .color = COLOR_TRANSPARENT, .border_ratio = -1.0f, .square_corners = 1.0f };
+        BindVertexUserData(&v, sizeof(v));
+        BindFragmentUserData(&f, sizeof(f));
         DrawMesh(g_ui.element_mesh);
 
         EndClipWrite();
+
+        // @render_popup
+    } else if (e->type == ELEMENT_TYPE_POPUP && !is_popup) {
+        return e->next_sibling_index;
     }
 
     // Draw children
     for (u32 i = 0; i < e->child_count; i++)
-        element_index = DrawElement(element_index);
+        element_index = DrawElement(element_index, false);
 
     // End clipping after children are drawn
     if (IsContainerType(e->type)) {
@@ -1438,6 +1506,7 @@ void BeginUI(u32 ref_width, u32 ref_height) {
     g_ui.ref_size = { static_cast<i32>(ref_width), static_cast<i32>(ref_height) };
     g_ui.element_stack_count = 0;
     g_ui.element_count = 0;
+    g_ui.popup_count = 0;
 
     Clear(g_ui.allocator);
 
@@ -1494,6 +1563,24 @@ static void HandleInput() {
     bool focus_element_found = false;
     TextboxElement* focused_textbox = nullptr;
     noz::Rect focused_textbox_rect = {};
+
+    // Close popups when clicking outside
+    g_ui.close_popups = false;
+    if (mouse_left_pressed && g_ui.popup_count > 0) {
+        bool click_inside_popup = false;
+        for (int i = 0; i < g_ui.popup_count; i++) {
+            PopupElement* popup = static_cast<PopupElement*>(g_ui.popups[i]);
+            Vec2 local_mouse = TransformPoint(popup->world_to_local, mouse);
+            if (Contains(Bounds2{0, 0, popup->rect.width, popup->rect.height}, local_mouse)) {
+                click_inside_popup = true;
+                break;
+            }
+        }
+        if (!click_inside_popup) {
+            g_ui.close_popups = true;
+            return;
+        }
+    }
 
     // First pass: set flags for all elements (don't consume yet)
     for (u16 element_index=g_ui.element_count; element_index>0; element_index--) {
@@ -1663,11 +1750,11 @@ static void HandleInput() {
 void EndUI() {
     UpdateDebugUI();
 
-    for (u32 element_index=0; element_index < g_ui.element_count; )
+    for (int element_index=0; element_index < g_ui.element_count; )
         element_index = MeasureElement(element_index, g_ui.ortho_size);
-    for (u32 element_index=0; element_index < g_ui.element_count; )
+    for (int element_index=0; element_index < g_ui.element_count; )
         element_index = LayoutElement(element_index, g_ui.ortho_size);
-    for (u32 element_index=0; element_index < g_ui.element_count; )
+    for (int element_index=0; element_index < g_ui.element_count; )
         element_index = CalculateTransforms(element_index, MAT3_IDENTITY);
 
     HandleInput();
@@ -1676,7 +1763,13 @@ void EndUI() {
 void DrawUI() {
     BindDepth(g_ui.depth, 0);
     for (u32 element_index = 0; element_index < g_ui.element_count; )
-        element_index = DrawElement(element_index);
+        element_index = DrawElement(element_index, false);
+
+    for (int popup_index=0; popup_index < g_ui.popup_count; popup_index++) {
+        PopupElement* p = static_cast<PopupElement*>(g_ui.popups[popup_index]);
+        for (u32 element_index = p->index; element_index < p->next_sibling_index; )
+            element_index = DrawElement(element_index, true);
+    }
 
     // cursor
     BindDepth(g_ui.depth, 0);
@@ -1777,6 +1870,10 @@ static void CreateImageElementMesh() {
     PopScratch();
 }
 
+bool IsClosed() {
+    return GetCurrentElement()->type == ELEMENT_TYPE_POPUP && g_ui.close_popups;
+}
+
 void InitUI(const ApplicationTraits* traits) {
     memset(&g_ui, 0, sizeof(g_ui));
     g_ui.allocator = CreateArenaAllocator(sizeof(FatElement) * MAX_ELEMENTS, "UI");
@@ -1786,6 +1883,8 @@ void InitUI(const ApplicationTraits* traits) {
     g_ui.input = CreateInputSet(ALLOCATOR_DEFAULT);
     g_ui.text_mesh_allocator = CreatePoolAllocator(sizeof(CachedTextMesh), MAX_TEXT_MESHES);
     g_ui.depth = traits->ui_depth >= F32_MAX ? traits->renderer.max_depth - 0.01f : traits->ui_depth;
+    g_ui.popup_count = 0;
+    g_ui.close_popups = false;
 
     g_ui.cursor_camera = CreateCamera(ALLOCATOR_DEFAULT);
 

@@ -86,6 +86,7 @@ void AddVertex(MeshBuilder* builder, const Vec2& position, const Vec2& uv, float
     impl->vertices[index] = {
         .position = position,
         .depth = depth,
+        .opacity = 1.0f,
         .uv = uv,
         .bone_weights = { 0.0f }
     };

@@ -15,30 +15,51 @@ inline Color STYLE_EDITOR_BUTTON_TEXT_COLOR(bool state, bool disabled) {
     return STYLE_BUTTON_TEXT_COLOR();
 }
 
-bool EditorButton(ElementId id, Mesh* icon, bool state, bool disabled) {
+bool EditorButton(const EditorButtonConfig& config) {
     bool was_pressed = false;
     BeginContainer({
         .width=STYLE_TOGGLE_BUTTON_HEIGHT,
         .height=STYLE_TOGGLE_BUTTON_HEIGHT,
-        .id = id});
+        .id = config.id});
 
-    bool hovered = IsHovered();
-    was_pressed = WasPressed();
+    bool hovered = !config.disabled && IsHovered();
+    was_pressed = !config.disabled && WasPressed();
 
     BeginContainer({
         .padding=EdgeInsetsAll(STYLE_TOGGLE_BUTTON_PADDING),
-        .color=STYLE_EDITOR_BUTTON_COLOR(state, hovered, disabled),
+        .color=STYLE_EDITOR_BUTTON_COLOR(config.checked, hovered, config.disabled),
         .border={.radius=STYLE_TOGGLE_BUTTON_BORDER_RADIUS}});
 
-    Image(icon, {
-        .align=ALIGN_CENTER,
-        .color=STYLE_EDITOR_BUTTON_TEXT_COLOR(state, disabled),
-        .material = g_view.editor_mesh_material,
-    });
+    if (config.content_func)
+        config.content_func();
+
+    if (config.icon) {
+        Image(config.icon, {
+            .align=ALIGN_CENTER,
+            .color=STYLE_EDITOR_BUTTON_TEXT_COLOR(config.checked, config.disabled),
+            .material = g_view.editor_mesh_material,
+        });
+    }
 
     EndContainer();
+
+    if (config.popup_func && config.checked && !config.disabled) {
+        if (!config.popup_func() )
+            was_pressed = true;
+    }
+
     EndContainer();
     return was_pressed;
+
+}
+
+bool EditorButton(ElementId id, Mesh* icon, bool state, bool disabled) {
+    return EditorButton({
+        .id = id,
+        .icon = icon,
+        .checked = state,
+        .disabled = disabled
+    });
 }
 
 void BeginOverlay(ElementId id, Align align) {

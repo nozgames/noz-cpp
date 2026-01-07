@@ -143,6 +143,12 @@ struct TextBoxStyle {
     NavigationStyle nav;
 };
 
+struct PopupStyle {
+    Align anchor = ALIGN_TOP_LEFT;
+    Align align = ALIGN_TOP_LEFT;
+    EdgeInsets margin = {};
+};
+
 struct CanvasStyle {
     CanvasType type = CANVAS_TYPE_SCREEN;
     Color color;
@@ -212,6 +218,8 @@ extern void BeginCenter();
 extern void BeginExpanded(const ExpandedStyle& style={});
 extern void BeginGrid(const GridStyle& style);
 extern float BeginScrollable(float offset, const ScrollableStyle& style={});
+extern void BeginPopup(const PopupStyle& style);
+
 extern void EndCanvas();
 extern void EndContainer();
 extern void EndColumn();
@@ -223,11 +231,14 @@ extern void EndGrid();
 extern void EndScrollable();
 extern float GetScrollOffset(ElementId id);
 extern void EndTransformed();
+extern void EndPopup();
+
 extern void Container(const ContainerStyle& style);
 extern void Expanded(const ExpandedStyle& style={});
 extern void Spacer(float size);
 
 // @input
+extern bool IsClosed();
 inline bool IsHovered() { return CheckElementFlags(ELEMENT_FLAG_HOVERED); }
 inline bool WasPressed() { return CheckElementFlags(ELEMENT_FLAG_PRESSED); }
 inline bool IsDown() { return CheckElementFlags(ELEMENT_FLAG_DOWN); }
