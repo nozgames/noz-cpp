@@ -1065,6 +1065,20 @@ static bool CreateShaderInternal(
             .format = VK_FORMAT_R32G32B32A32_SFLOAT,
             .offset = offsetof(MeshVertex, bone_weights)
         },
+        // Atlas Index
+        {
+            .location = 6,
+            .binding = 0,
+            .format = VK_FORMAT_R32_SINT,
+            .offset = offsetof(MeshVertex, atlas_index)
+        },
+        // Color
+        {
+            .location = 7,
+            .binding = 0,
+            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+            .offset = offsetof(MeshVertex, color)
+        },
     };
 
     VkVertexInputBindingDescription binding_desc = {

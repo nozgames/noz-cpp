@@ -68,7 +68,7 @@ static void CreateTexture(
         name->value);
 }
 
-Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const Name* name) {
+Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const Name* name, TextureFilter filter) {
     assert(width > 0);
     assert(height > 0);
     assert(name);
@@ -82,6 +82,7 @@ Texture* CreateTexture(Allocator* allocator, int width, int height, TextureForma
     impl->size.y = height;
     impl->name = name;
     impl->sampler_options = g_default_sampler_options;
+    impl->sampler_options.filter = filter;
     impl->platform_texture = PlatformCreateTexture(
         nullptr,
         width,
@@ -98,7 +99,8 @@ Texture* CreateTexture(
     size_t width,
     size_t height,
     TextureFormat format,
-    const Name* name) {
+    const Name* name,
+    TextureFilter filter) {
     assert(data);
     assert(name);
 
@@ -107,6 +109,7 @@ Texture* CreateTexture(
         return nullptr;
 
     impl->sampler_options = g_default_sampler_options;
+    impl->sampler_options.filter = filter;
     CreateTexture(impl, data, width, height, format, name);
     return impl;
 }

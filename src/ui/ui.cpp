@@ -8,6 +8,7 @@ constexpr int MAX_ELEMENTS = 4096;
 constexpr int MAX_ELEMENT_STACK = 128;
 constexpr int MAX_TEXT_MESHES = 4096;
 constexpr int MAX_POPUPS = 4;
+constexpr int MAX_FOCUS_STACK = 16;
 
 extern void UpdateInputState(InputSet* input_set);
 extern void UpdateDebugUI();
@@ -37,6 +38,11 @@ struct AlignInfo {
     float x;
     bool has_y;
     float y;
+};
+
+struct FocusStack {
+    CanvasId canvas_id;
+    ElementId element_id;
 };
 
 inline bool IsAuto(float v) { return v >= F32_AUTO; }
@@ -172,9 +178,11 @@ struct UI {
     Element* element_stack[MAX_ELEMENTS];
     Element* popups[MAX_POPUPS];
     ElementState element_states[ELEMENT_ID_MAX + 1];
+    FocusStack focus_stack[MAX_FOCUS_STACK];
     u16 element_count;
     u16 element_stack_count;
     u16 popup_count;
+    u16 focus_stack_count;
     ElementId focus_id;
     ElementId pending_focus_id;
     ElementId textbox_id;
@@ -259,6 +267,24 @@ static void CommitTextBox() {
 
 bool HasFocus() {
     return g_ui.focus_id != 0 && GetCurrentElement()->id == g_ui.focus_id;
+}
+
+void PushFocus() {
+    if (g_ui.focus_stack_count == MAX_FOCUS_STACK)
+        return;
+
+    g_ui.focus_stack[g_ui.focus_stack_count] = {
+        GetFocusedCanvasId(),
+        GetFocusedElementId()
+    };
+}
+
+void PopFocus() {
+    if (g_ui.focus_stack_count == 0)
+        return;
+
+    const FocusStack& fs = g_ui.focus_stack[g_ui.focus_stack_count - 1];
+    SetFocus(fs.canvas_id, fs.element_id);
 }
 
 static void SetFocus(ElementId focus_id) {
@@ -1885,6 +1911,7 @@ void InitUI(const ApplicationTraits* traits) {
     g_ui.depth = traits->ui_depth >= F32_MAX ? traits->renderer.max_depth - 0.01f : traits->ui_depth;
     g_ui.popup_count = 0;
     g_ui.close_popups = false;
+    g_ui.focus_stack_count = 0;
 
     g_ui.cursor_camera = CreateCamera(ALLOCATOR_DEFAULT);
 

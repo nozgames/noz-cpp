@@ -9,7 +9,8 @@ namespace noz { class RectPacker; }
 constexpr int ATLAS_MAX_RECTS = 256;
 constexpr int ATLAS_DEFAULT_DPI = 96;
 constexpr int ATLAS_DEFAULT_SIZE = 1024;
-constexpr int ATLAS_RECT_PADDING = 2;  // Padding on each side of content in rect
+constexpr int ATLAS_RECT_PADDING = 4;  // Padding on each side of content in rect
+constexpr float ATLAS_HULL_EXPAND = 4.0f;
 
 struct AtlasRect {
     int x, y, width, height;         // Full rect (for animated: width = frame_width * frame_count)
@@ -33,6 +34,9 @@ struct AtlasDataImpl {
     Texture* texture = nullptr;
     Material* material = nullptr;
     noz::RectPacker* packer = nullptr;
+    Mesh* outline_mesh = nullptr;       // Editor outline mesh for all export quads
+    bool outline_dirty = true;          // Rebuild outline mesh when true
+    int outline_zoom_version = 0;       // Track zoom for outline rebuild
 };
 
 struct AtlasData : AssetData {
@@ -62,6 +66,21 @@ extern void SyncAtlasTexture(AtlasData* atlas);  // Upload pixels to GPU (editor
 
 // UV computation
 extern Vec2 GetAtlasUV(AtlasData* atlas, const AtlasRect& rect, const Bounds2& mesh_bounds, const Vec2& position);
+
+// Export mesh visualization (single outline mesh for all rects)
+extern Mesh* GetAtlasOutlineMesh(AtlasData* atlas);
+
+// Export quad geometry calculation (shared between importer and visualization)
+// Returns inset bounds and UV coordinates for non-skinned mesh export quad
+extern void GetExportQuadGeometry(AtlasData* atlas, const AtlasRect& rect,
+    Vec2* out_min, Vec2* out_max,
+    float* out_u_min, float* out_v_min, float* out_u_max, float* out_v_max);
+
+// Skinned mesh detection and hull computation (shared between importer and visualization)
+extern bool IsSkinnedMesh(struct MeshData* mesh);
+extern int GetSingleBoneIndex(struct MeshData* mesh);  // Returns bone index or -1 if not single-bone
+extern int ComputeConvexHull(struct MeshData* mesh, int* hull_indices, int max_hull);  // Returns hull count
+extern void ExpandHullByEdgeNormals(struct MeshData* mesh, const int* hull_indices, int hull_count, float expand, Vec2* out_positions);
 
 // Importer
 struct AssetImporter;

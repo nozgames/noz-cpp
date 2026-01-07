@@ -52,6 +52,7 @@ struct FaceData {
     int vertices[MAX_FACE_VERTICES];
     int vertex_count;
     float opacity;
+    int island;  // Island ID - faces sharing vertices have the same island
 };
 
 struct PendingCurve {
@@ -95,6 +96,7 @@ struct MeshDataImpl {
     int palette;
     int depth;
     bool atlas_dirty;        // Needs re-render to atlas on save
+    int bone_count;          // Number of bones with weights (0 = not skinned), updated on edge rebuild
 
     // Animation playback state (for editor preview)
     Mesh* playing;

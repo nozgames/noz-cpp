@@ -244,6 +244,8 @@ inline bool WasPressed() { return CheckElementFlags(ELEMENT_FLAG_PRESSED); }
 inline bool IsDown() { return CheckElementFlags(ELEMENT_FLAG_DOWN); }
 extern bool HasFocus();
 extern void SetFocus(CanvasId canvas_id, ElementId element_id);
+extern void PushFocus();
+extern void PopFocus();
 extern CanvasId GetFocusedCanvasId();
 extern ElementId GetFocusedElementId();
 extern noz::Rect GetElementRect(ElementId id);

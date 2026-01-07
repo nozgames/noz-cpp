@@ -117,6 +117,10 @@ static void DestroyAtlasData(AssetData* a) {
             delete atlas->impl->packer;
             atlas->impl->packer = nullptr;
         }
+        if (atlas->impl->outline_mesh) {
+            Free(atlas->impl->outline_mesh);
+            atlas->impl->outline_mesh = nullptr;
+        }
         Free(atlas->impl);
         atlas->impl = nullptr;
     }
@@ -229,6 +233,7 @@ AtlasRect* AllocateRect(AtlasData* atlas, MeshData* mesh) {
     rect.mesh_bounds = max_bounds;  // Store bounds for UV calculation
 
     impl->dirty = true;
+    impl->outline_dirty = true;
     return &rect;
 }
 
@@ -246,6 +251,7 @@ void FreeRect(AtlasData* atlas, AtlasRect* rect) {
         rect->mesh_name = nullptr;
         rect->frame_count = 1;
         atlas->impl->dirty = true;
+        atlas->impl->outline_dirty = true;
     }
 }
 
@@ -283,6 +289,7 @@ void ClearAllRects(AtlasData* atlas) {
     }
     impl->rect_count = 0;
     impl->dirty = true;
+    impl->outline_dirty = true;
 
     // Reset packer
     if (impl->packer) {
@@ -531,6 +538,7 @@ void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, bool u
     RenderMeshToBuffer(atlas, mesh, rect, atlas->impl->pixels, update_bounds);
     ScanPixelBounds(atlas->impl->pixels, atlas->impl->width, rect);
     atlas->impl->dirty = true;
+    atlas->impl->outline_dirty = true;
 }
 
 void SyncAtlasTexture(AtlasData* atlas) {
@@ -544,7 +552,7 @@ void SyncAtlasTexture(AtlasData* atlas) {
 
     if (!impl->texture) {
         impl->texture = CreateTexture(ALLOCATOR_DEFAULT, rgba_pixels, impl->width, impl->height,
-                                       TEXTURE_FORMAT_RGBA8, GetName("atlas_texture"));
+                                       TEXTURE_FORMAT_RGBA8, GetName("atlas_texture"), TEXTURE_FILTER_NEAREST);
         impl->material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_TEXTURED_MESH);
         SetTexture(impl->material, impl->texture, 0);
     } else {
@@ -701,7 +709,126 @@ void RebuildAtlas(AtlasData* atlas) {
     impl->dirty = true;
 }
 
-// UV computation
+// UV computation and export mesh visualization
+
+// Check if mesh is skinned (has a skeleton or any bone weights) AND has valid geometry
+bool IsSkinnedMesh(MeshData* mesh) {
+    if (!mesh || !mesh->impl) return false;
+    if (mesh->impl->frame_count == 0) return false;
+
+    // Must have face data to be triangulated
+    MeshFrameData* frame = &mesh->impl->frames[0];
+    if (frame->face_count == 0 || frame->vertex_count == 0) return false;
+
+    // Check skeleton reference or cached bone count (updated in UpdateEdges)
+    return mesh->impl->skeleton_name != nullptr || mesh->impl->bone_count > 0;
+}
+
+// Check if all vertices are weighted to exactly one bone, return that bone index (-1 if not single-bone)
+int GetSingleBoneIndex(MeshData* mesh) {
+    if (!mesh || !mesh->impl || mesh->impl->bone_count != 1) return -1;
+
+    MeshFrameData* frame = &mesh->impl->frames[0];
+    int single_bone = -1;
+
+    for (int vi = 0; vi < frame->vertex_count; vi++) {
+        const VertexData& v = frame->vertices[vi];
+        int bone_idx = -1;
+        for (int w = 0; w < MESH_MAX_VERTEX_WEIGHTS; w++) {
+            if (v.weights[w].weight > F32_EPSILON) {
+                if (bone_idx >= 0 && bone_idx != v.weights[w].bone_index) {
+                    return -1;  // Multiple bones on this vertex
+                }
+                bone_idx = v.weights[w].bone_index;
+            }
+        }
+        if (bone_idx >= 0) {
+            if (single_bone < 0) {
+                single_bone = bone_idx;
+            } else if (single_bone != bone_idx) {
+                return -1;  // Different vertices weighted to different bones
+            }
+        }
+    }
+    return single_bone;
+}
+
+// Expand hull vertices outward along edge normals (proper polygon inflation)
+// Returns expanded positions in out_positions array
+void ExpandHullByEdgeNormals(MeshData* mesh, const int* hull_indices, int hull_count, float expand, Vec2* out_positions) {
+    MeshFrameData* frame = &mesh->impl->frames[0];
+
+    for (int i = 0; i < hull_count; i++) {
+        // Get current vertex and adjacent edges
+        Vec2 curr = frame->vertices[hull_indices[i]].position;
+        Vec2 prev = frame->vertices[hull_indices[(i + hull_count - 1) % hull_count]].position;
+        Vec2 next = frame->vertices[hull_indices[(i + 1) % hull_count]].position;
+
+        // Compute outward normals for both adjacent edges
+        Vec2 edge_prev = curr - prev;
+        Vec2 edge_next = next - curr;
+
+        // Perpendicular (rotate 90 degrees CW for outward normal on CW hull from gift wrap)
+        Vec2 n_prev = Normalize(Vec2{edge_prev.y, -edge_prev.x});
+        Vec2 n_next = Normalize(Vec2{edge_next.y, -edge_next.x});
+
+        // Average the normals for the vertex offset direction
+        Vec2 n_avg = Normalize(n_prev + n_next);
+
+        // Compute how much to scale the offset to maintain edge distance
+        // (miter calculation - accounts for angle between edges)
+        float dot = Dot(n_avg, n_prev);
+        float scale = (dot > 0.1f) ? (1.0f / dot) : 1.0f;  // Clamp to avoid extreme miter
+        scale = Min(scale, 3.0f);  // Limit max miter
+
+        out_positions[i] = curr + n_avg * expand * scale;
+    }
+}
+
+// Compute convex hull of mesh vertices using gift wrapping algorithm
+// Returns hull vertex indices in CCW order
+int ComputeConvexHull(MeshData* mesh, int* hull_indices, int max_hull) {
+    MeshFrameData* frame = &mesh->impl->frames[0];
+    if (frame->vertex_count < 3) return 0;
+
+    // Find leftmost point
+    int start = 0;
+    for (int i = 1; i < frame->vertex_count; i++) {
+        if (frame->vertices[i].position.x < frame->vertices[start].position.x) {
+            start = i;
+        }
+    }
+
+    int hull_count = 0;
+    int current = start;
+
+    do {
+        if (hull_count >= max_hull) break;
+        hull_indices[hull_count++] = current;
+
+        int next = 0;
+        for (int i = 1; i < frame->vertex_count; i++) {
+            if (i == current) continue;
+            if (next == current) {
+                next = i;
+                continue;
+            }
+
+            Vec2 a = frame->vertices[current].position;
+            Vec2 b = frame->vertices[next].position;
+            Vec2 c = frame->vertices[i].position;
+
+            // Cross product to determine turn direction
+            float cross = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+            if (cross < 0 || (cross == 0 && LengthSqr(c - a) > LengthSqr(b - a))) {
+                next = i;
+            }
+        }
+        current = next;
+    } while (current != start && hull_count < max_hull);
+
+    return hull_count;
+}
 
 Vec2 GetAtlasUV(AtlasData* atlas, const AtlasRect& rect, const Bounds2& mesh_bounds, const Vec2& position) {
     AtlasDataImpl* impl = atlas->impl;
@@ -729,6 +856,203 @@ Vec2 GetAtlasUV(AtlasData* atlas, const AtlasRect& rect, const Bounds2& mesh_bou
     float v = pixel_y / (float)impl->height;
 
     return {u, v};
+}
+
+void GetExportQuadGeometry(AtlasData* atlas, const AtlasRect& rect,
+    Vec2* out_min, Vec2* out_max,
+    float* out_u_min, float* out_v_min, float* out_u_max, float* out_v_max) {
+
+    float dpi = (float)atlas->impl->dpi;
+
+    // Geometry at exact mesh_bounds so adjacent tiles meet perfectly
+    *out_min = rect.mesh_bounds.min;
+    *out_max = rect.mesh_bounds.max;
+
+    // Calculate UV range that maps mesh_bounds to atlas pixels
+    // UVs inset by 0.5 pixels to sample at texel centers (avoids edge sampling issues)
+    Vec2 mesh_size = GetSize(rect.mesh_bounds);
+    float expected_pixel_w = mesh_size.x * dpi;
+    float expected_pixel_h = mesh_size.y * dpi;
+
+    // Map mesh_bounds corners to atlas pixel coordinates, sampling at texel centers
+    float pixel_at_min_x = rect.x + ATLAS_RECT_PADDING + 0.5f;
+    float pixel_at_min_y = rect.y + ATLAS_RECT_PADDING + 0.5f;
+    float pixel_at_max_x = rect.x + ATLAS_RECT_PADDING + expected_pixel_w - 0.5f;
+    float pixel_at_max_y = rect.y + ATLAS_RECT_PADDING + expected_pixel_h - 0.5f;
+
+    *out_u_min = pixel_at_min_x / (float)atlas->impl->width;
+    *out_v_min = pixel_at_min_y / (float)atlas->impl->height;
+    *out_u_max = pixel_at_max_x / (float)atlas->impl->width;
+    *out_v_max = pixel_at_max_y / (float)atlas->impl->height;
+}
+
+// Helper to add a line segment as a quad to the mesh builder
+static void AddLineQuad(MeshBuilder* builder, const Vec2& p0, const Vec2& p1, float thickness, const Vec4& color) {
+    Vec2 dir = p1 - p0;
+    float len = Length(dir);
+    if (len < F32_EPSILON) return;
+    dir = dir / len;
+    Vec2 n = Perpendicular(dir);
+
+    u16 base = GetVertexCount(builder);
+    MeshVertex v = {};
+    v.opacity = 1.0f;
+    v.color = color;
+
+    v.position = p0 - n * thickness; AddVertex(builder, v);
+    v.position = p0 + n * thickness; AddVertex(builder, v);
+    v.position = p1 + n * thickness; AddVertex(builder, v);
+    v.position = p1 - n * thickness; AddVertex(builder, v);
+    AddTriangle(builder, base + 0, base + 1, base + 3);
+    AddTriangle(builder, base + 1, base + 2, base + 3);
+}
+
+Mesh* GetAtlasOutlineMesh(AtlasData* atlas) {
+    if (!atlas || !atlas->impl) return nullptr;
+
+    AtlasDataImpl* impl = atlas->impl;
+
+    // Return cached mesh if not dirty and zoom hasn't changed
+    if (impl->outline_mesh && !impl->outline_dirty && impl->outline_zoom_version == g_view.zoom_version) {
+        return impl->outline_mesh;
+    }
+
+    // Free old mesh
+    if (impl->outline_mesh) {
+        Free(impl->outline_mesh);
+        impl->outline_mesh = nullptr;
+    }
+
+    // Count valid rects and estimate edge count
+    int valid_count = 0;
+    int total_edges = 0;
+    for (int i = 0; i < impl->rect_count; i++) {
+        if (!impl->rects[i].valid) continue;
+        valid_count++;
+
+        // Get mesh to check if skinned
+        AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, impl->rects[i].mesh_name);
+        if (mesh_asset) {
+            MeshData* mesh = static_cast<MeshData*>(mesh_asset);
+            if (IsSkinnedMesh(mesh)) {
+                int single_bone = GetSingleBoneIndex(mesh);
+                if (single_bone >= 0) {
+                    // Single-bone: hull edges (estimate vertex count as upper bound)
+                    total_edges += mesh->impl->frames[0].vertex_count;
+                } else {
+                    // Multi-bone: triangulated edges
+                    Mesh* tri_mesh = ToMesh(mesh, false, true);
+                    if (tri_mesh) {
+                        total_edges += GetIndexCount(tri_mesh);
+                    }
+                }
+            } else {
+                total_edges += 4;  // Quad: 4 edges
+            }
+        } else {
+            total_edges += 4;  // Default quad
+        }
+    }
+    if (valid_count == 0) return nullptr;
+
+    // Each edge is a quad (4 verts, 6 indices)
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_DEFAULT, (u16)(total_edges * 4), (u16)(total_edges * 6));
+
+    float dpi = (float)impl->dpi;
+
+    // Outline thickness - use zoom_ref_scale for consistent width at any zoom
+    constexpr float LINE_WIDTH = 0.01f;
+    float outline_size = LINE_WIDTH * g_view.zoom_ref_scale;
+
+    constexpr float PIXELS_PER_UNIT = 51.2f;
+    float pixel_to_world = 1.0f / PIXELS_PER_UNIT;
+    Vec4 yellow = {1.0f, 1.0f, 0.0f, 1.0f};
+
+    for (int ri = 0; ri < impl->rect_count; ri++) {
+        const AtlasRect& r = impl->rects[ri];
+        if (!r.valid) continue;
+
+        // Transform from mesh space to atlas display space
+        float mesh_to_world = dpi * pixel_to_world;
+        Vec2 atlas_size = Vec2{(float)impl->width, (float)impl->height} * pixel_to_world;
+        Vec2 atlas_bottom_left = -atlas_size * 0.5f;
+        Vec2 mesh_offset = atlas_bottom_left +
+            Vec2{(float)(r.x + ATLAS_RECT_PADDING), (float)(r.y + ATLAS_RECT_PADDING)} * pixel_to_world -
+            r.mesh_bounds.min * mesh_to_world;
+
+        // Get mesh to check if skinned
+        AssetData* mesh_asset = GetAssetData(ASSET_TYPE_MESH, r.mesh_name);
+        MeshData* mesh_data = mesh_asset ? static_cast<MeshData*>(mesh_asset) : nullptr;
+
+        if (mesh_data && IsSkinnedMesh(mesh_data)) {
+            int single_bone = GetSingleBoneIndex(mesh_data);
+            if (single_bone >= 0) {
+                // Single-bone mesh: draw convex hull outline (with edge-normal expansion)
+                int hull_indices[MESH_MAX_VERTICES];
+                int hull_count = ComputeConvexHull(mesh_data, hull_indices, MESH_MAX_VERTICES);
+
+                // Expand hull using edge normals (1.5 pixels to cover edges and corners)
+                float expand = ATLAS_HULL_EXPAND / dpi;
+                Vec2 expanded[MESH_MAX_VERTICES];
+                ExpandHullByEdgeNormals(mesh_data, hull_indices, hull_count, expand, expanded);
+
+                for (int i = 0; i < hull_count; i++) {
+                    Vec2 p0 = expanded[i];
+                    Vec2 p1 = expanded[(i + 1) % hull_count];
+
+                    p0 = p0 * mesh_to_world + mesh_offset;
+                    p1 = p1 * mesh_to_world + mesh_offset;
+
+                    AddLineQuad(builder, p0, p1, outline_size, yellow);
+                }
+            } else {
+                // Multi-bone skinned mesh: draw actual triangulated mesh edges
+                Mesh* tri_mesh = ToMesh(mesh_data, false, true);
+                if (tri_mesh) {
+                    const MeshVertex* verts = GetVertices(tri_mesh);
+                    const u16* indices = GetIndices(tri_mesh);
+                    u16 index_count = GetIndexCount(tri_mesh);
+
+                    // Draw each triangle edge
+                    for (int i = 0; i < index_count; i += 3) {
+                        for (int e = 0; e < 3; e++) {
+                            Vec2 p0 = verts[indices[i + e]].position;
+                            Vec2 p1 = verts[indices[i + (e + 1) % 3]].position;
+
+                            p0 = p0 * mesh_to_world + mesh_offset;
+                            p1 = p1 * mesh_to_world + mesh_offset;
+
+                            AddLineQuad(builder, p0, p1, outline_size, yellow);
+                        }
+                    }
+                }
+            }
+        } else {
+            // Non-skinned: draw quad outline using shared export geometry
+            Vec2 mesh_min, mesh_max;
+            float u_min, v_min, u_max, v_max;
+            GetExportQuadGeometry(atlas, r, &mesh_min, &mesh_max, &u_min, &v_min, &u_max, &v_max);
+
+            Vec2 corners[4] = {
+                Vec2{mesh_min.x, mesh_min.y} * mesh_to_world + mesh_offset,
+                Vec2{mesh_max.x, mesh_min.y} * mesh_to_world + mesh_offset,
+                Vec2{mesh_max.x, mesh_max.y} * mesh_to_world + mesh_offset,
+                Vec2{mesh_min.x, mesh_max.y} * mesh_to_world + mesh_offset
+            };
+
+            for (int i = 0; i < 4; i++) {
+                AddLineQuad(builder, corners[i], corners[(i + 1) % 4], outline_size, yellow);
+            }
+        }
+    }
+
+    impl->outline_mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, atlas->name, true);
+    impl->outline_dirty = false;
+    impl->outline_zoom_version = g_view.zoom_version;
+
+    Free(builder);
+
+    return impl->outline_mesh;
 }
 
 // Save/Load

@@ -20,7 +20,9 @@ layout(location = 2) in float v_opacity;
 layout(location = 3) in vec2 v_uv;
 layout(location = 4) in vec2 v_normal;
 layout(location = 5) in ivec4 v_bone_indices;
-layout(location = 6) in vec4 v_bone_weights;  // Used as vertex color (RGBA)
+layout(location = 6) in vec4 v_bone_weights;
+layout(location = 7) in int v_atlas_index;
+layout(location = 8) in vec4 v_color;  // Vertex color (RGBA)
 
 layout(location = 0) out vec4 f_color;
 
@@ -29,7 +31,7 @@ void main() {
     vec3 screen_pos = vec3(v_position, 1.0) * mvp;
     float depth = (object.depth + (v_depth * object.depth_scale) - object.depth_min) / (object.depth_max - object.depth_min);
     gl_Position = vec4(screen_pos.xy, 1.0f - depth, 1.0);
-    f_color = v_bone_weights;  // Pass vertex color to fragment
+    f_color = v_color;
 }
 
 //@ END

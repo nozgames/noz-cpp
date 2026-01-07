@@ -187,6 +187,8 @@ extern void CheckShortcuts(const Shortcut* shortcuts, InputSet* input_set=nullpt
 // @ui
 struct EditorButtonConfig {
     ElementId id;
+    float width = STYLE_TOGGLE_BUTTON_HEIGHT;
+    float height = STYLE_TOGGLE_BUTTON_HEIGHT;
     Mesh* icon;
     bool checked;
     bool disabled;

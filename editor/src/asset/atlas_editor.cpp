@@ -68,37 +68,18 @@ static void UpdateAtlasEditor() {
 
 static void DrawAtlasEditor() {
     AtlasData* atlas = GetAtlasData();
-    AtlasDataImpl* impl = atlas->impl;
     AssetData* a = atlas;
 
     // Draw the atlas itself (texture, bounds, etc)
     a->vtable.draw(a);
 
-    // Use same scale as atlas bounds (512 pixels = 10 units)
-    constexpr float PIXELS_PER_UNIT = 51.2f;
-    float scale = 1.0f / PIXELS_PER_UNIT;
-    Vec2 size = Vec2{(float)impl->width, (float)impl->height} * scale;
-
-    // Draw rect bounds for each attached mesh
-    Vec2 atlas_bottom_left = a->position - size * 0.5f;
-
-    for (int i = 0; i < impl->rect_count; i++) {
-        if (!impl->rects[i].valid) continue;
-
-        const AtlasRect& r = impl->rects[i];
-
-        // Convert pixel coords to world coords
-        float x = r.x * scale;
-        float y = r.y * scale;
-        float w = r.width * scale;
-        float h = r.height * scale;
-
-        // Rect position is bottom-left corner in world space
-        Vec2 rect_pos = atlas_bottom_left + Vec2{x, y};
-        Bounds2 rect_bounds = {0, 0, w, h};
-
-        Color rect_color = r.frame_count > 1 ? COLOR_GREEN : COLOR_YELLOW;
-        DrawBounds(rect_bounds, rect_pos, rect_color);
+    // Draw export mesh outlines (single mesh for all rects)
+    Mesh* outline = GetAtlasOutlineMesh(atlas);
+    if (outline) {
+        BindMaterial(g_view.editor_material);
+        BindColor(COLOR_YELLOW);
+        BindDepth(0.1f);  // In front of grid (at 0)
+        DrawMesh(outline, Translate(a->position));
     }
 }
 

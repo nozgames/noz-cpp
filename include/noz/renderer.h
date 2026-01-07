@@ -49,8 +49,8 @@ enum TextureFormat {
     TEXTURE_FORMAT_R8
 };
 
-Texture* CreateTexture(Allocator* allocator, void* data, size_t width, size_t height, TextureFormat format, const Name* name);
-Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const Name* name);
+Texture* CreateTexture(Allocator* allocator, void* data, size_t width, size_t height, TextureFormat format, const Name* name, TextureFilter filter = TEXTURE_FILTER_LINEAR);
+Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const Name* name, TextureFilter filter = TEXTURE_FILTER_LINEAR);
 void UpdateTexture(Texture* texture, void* data);  // Update entire texture with new data
 int GetBytesPerPixel(TextureFormat format);
 Vec2Int GetSize(Texture* texture);
@@ -81,6 +81,7 @@ struct MeshVertex {
     Vec4Int bone_indices;
     Vec4 bone_weights = {1.0f, 0.0f, 0.0f, 0.0f};
     int atlas_index = 0;
+    Vec4 color = {1.0f, 1.0f, 1.0f, 1.0f};  // Vertex color (RGBA)
 };
 
 extern Mesh* CreateMesh(

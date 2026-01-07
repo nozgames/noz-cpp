@@ -354,6 +354,66 @@ void UpdateEdges(MeshData* m) {
         if (Length(v.edge_normal) > F32_EPSILON)
             v.edge_normal = Normalize(v.edge_normal);
     }
+
+    // Compute face islands using union-find
+    // Faces that share a vertex belong to the same island
+    int island[MESH_MAX_FACES];
+    for (int i = 0; i < frame->face_count; i++)
+        island[i] = i;
+
+    // Find with path compression
+    auto find = [&](int x) {
+        while (island[x] != x) {
+            island[x] = island[island[x]];
+            x = island[x];
+        }
+        return x;
+    };
+
+    // Union two faces into the same island
+    auto unite = [&](int a, int b) {
+        int ra = find(a);
+        int rb = find(b);
+        if (ra != rb)
+            island[ra] = rb;
+    };
+
+    // For each vertex, union all faces that contain it
+    for (int vi = 0; vi < frame->vertex_count; vi++) {
+        int first_face = -1;
+        for (int fi = 0; fi < frame->face_count; fi++) {
+            FaceData& f = frame->faces[fi];
+            for (int fvi = 0; fvi < f.vertex_count; fvi++) {
+                if (f.vertices[fvi] == vi) {
+                    if (first_face < 0)
+                        first_face = fi;
+                    else
+                        unite(first_face, fi);
+                    break;
+                }
+            }
+        }
+    }
+
+    // Flatten and assign final island IDs to faces
+    for (int fi = 0; fi < frame->face_count; fi++)
+        frame->faces[fi].island = find(fi);
+
+    // Count bones with weights (for skinned mesh detection)
+    int bone_count = 0;
+    bool bone_used[MAX_BONES] = {};
+    for (int vi = 0; vi < frame->vertex_count; vi++) {
+        const VertexData& v = frame->vertices[vi];
+        for (int w = 0; w < MESH_MAX_VERTEX_WEIGHTS; w++) {
+            if (v.weights[w].weight > F32_EPSILON && v.weights[w].bone_index >= 0 && v.weights[w].bone_index < MAX_BONES) {
+                if (!bone_used[v.weights[w].bone_index]) {
+                    bone_used[v.weights[w].bone_index] = true;
+                    bone_count++;
+                }
+            }
+        }
+    }
+    m->impl->bone_count = bone_count;
 }
 
 void MarkDirty(MeshData* m) {

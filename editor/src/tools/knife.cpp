@@ -174,30 +174,15 @@ static void AddFaceToCut(int face_index) {
     }
 }
 
-// Check if two faces share a vertex (are connected)
-static bool AreFacesConnected(MeshData* m, int face_a, int face_b) {
-    if (face_a < 0 || face_b < 0)
-        return false;
-    MeshFrameData* frame = GetCurrentFrame(m);
-    FaceData& fa = frame->faces[face_a];
-    FaceData& fb = frame->faces[face_b];
-
-    for (int i = 0; i < fa.vertex_count; i++) {
-        for (int j = 0; j < fb.vertex_count; j++) {
-            if (fa.vertices[i] == fb.vertices[j])
-                return true;
-        }
-    }
-    return false;
-}
-
-// Check if a face is connected to any face in the cut
+// Check if a face is on the same island as any face in the cut
 static bool IsFaceConnectedToCut(MeshData* m, int face_index) {
     if (g_knife_tool.cut_face_count == 0)
         return true;  // No faces in cut yet, anything is valid
 
+    MeshFrameData* frame = GetCurrentFrame(m);
+    int island = frame->faces[face_index].island;
     for (int i = 0; i < g_knife_tool.cut_face_count; i++) {
-        if (AreFacesConnected(m, face_index, g_knife_tool.cut_faces[i]))
+        if (frame->faces[g_knife_tool.cut_faces[i]].island == island)
             return true;
     }
     return false;
@@ -1505,6 +1490,18 @@ static void UpdateKnifeTool() {
         int edge_index = vertex_index == -1
             ? HitTestEdge(m, g_view.mouse_world_position, &edge_hit, KNIFE_HIT_TOLERANCE)
             : -1;
+
+        // If we have an active cut, check if the hit vertex/edge is valid for the cut.
+        // If not, treat it as empty space - this prevents snapping to disconnected faces.
+        if (vertex_index >= 0 && g_knife_tool.cut_face_count > 0) {
+            if (GetValidFaceForVertex(m, vertex_index) < 0)
+                vertex_index = -1;
+        }
+        if (edge_index >= 0 && g_knife_tool.cut_face_count > 0) {
+            if (GetValidFaceForEdge(m, edge_index) < 0)
+                edge_index = -1;
+        }
+
         int face_index = (vertex_index == -1 && edge_index == -1)
             ? HitTestFace(m, Translate(m->position), g_view.mouse_world_position)
             : -1;
@@ -1546,17 +1543,17 @@ static void UpdateKnifeTool() {
         // If clicking on a face/edge/vertex, validate it
         if (click_face >= 0) {
             // Check if face is valid for cutting (selection restriction)
-            if (!IsFaceValidForCut(m, click_face)) {
-                return;
+            // or not connected to the cut - treat as clicking on empty space
+            if (!IsFaceValidForCut(m, click_face) || !CanAddFaceToCut(m, click_face)) {
+                // Treat as floating point - clear all geometry references
+                click_face = -1;
+                face_index = -1;
+                edge_index = -1;
+                vertex_index = -1;
+            } else {
+                // Add this face to the cut faces list
+                AddFaceToCut(click_face);
             }
-
-            // Check connectivity - must be connected to existing cut or be first click
-            if (!CanAddFaceToCut(m, click_face)) {
-                return;
-            }
-
-            // Add this face to the cut faces list
-            AddFaceToCut(click_face);
         }
         // Clicks outside faces are allowed - they just don't add to the face list
 

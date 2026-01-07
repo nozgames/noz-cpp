@@ -18,8 +18,8 @@ inline Color STYLE_EDITOR_BUTTON_TEXT_COLOR(bool state, bool disabled) {
 bool EditorButton(const EditorButtonConfig& config) {
     bool was_pressed = false;
     BeginContainer({
-        .width=STYLE_TOGGLE_BUTTON_HEIGHT,
-        .height=STYLE_TOGGLE_BUTTON_HEIGHT,
+        .width=config.width,
+        .height=config.height,
         .id = config.id});
 
     bool hovered = !config.disabled && IsHovered();

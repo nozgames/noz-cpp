@@ -1112,7 +1112,6 @@ void InitView() {
         ASSET_TYPE_TEXTURE,
         GetName(g_config->GetString("editor", "palette", "palette").c_str())));
     if (palette_texture_data) {
-        LogInfo("[View] Loading palette texture from: %s (asset_path_index=%d)", palette_texture_data->path, palette_texture_data->asset_path_index);
         SetTexture(g_view.shaded_material, palette_texture_data->impl->texture);
         SetTexture(g_view.shaded_skinned_material, palette_texture_data->impl->texture);
         SetPaletteTexture(palette_texture_data->impl->texture);

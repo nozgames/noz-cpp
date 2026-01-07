@@ -352,6 +352,9 @@ void PlatformBindVertexBuffer(PlatformBuffer* buffer) {
 
     glEnableVertexAttribArray(7);
     glVertexAttribIPointer(7, 1, GL_INT, sizeof(MeshVertex), (void*)offsetof(MeshVertex, atlas_index));
+
+    glEnableVertexAttribArray(8);
+    glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, color));
 }
 
 void PlatformBindIndexBuffer(PlatformBuffer* buffer) {

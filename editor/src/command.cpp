@@ -114,6 +114,7 @@ void BeginCommandInput(const CommandInputOptions& options) {
         g_command_input.pop_input = false;
     }
 
+    PushFocus();
     SetFocus(CANVAS_ID_COMMAND, 1);
 }
 
@@ -126,6 +127,8 @@ void EndCommandInput() {
     g_command_input.hide_empty = false;
     g_command_input.prefix = nullptr;
     g_command_input.placeholder = nullptr;
+
+    PopFocus();
 }
 
 void InitCommandInput() {

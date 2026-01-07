@@ -709,11 +709,6 @@ static void MeshStats() {
 }
 
 static bool Palette(int palette_index, bool* selected_colors) {
-    int col_count = 64;
-    float max_color_width = GetUISize().x * 0.9f;
-    while (col_count * COLOR_PICKER_COLOR_SIZE > max_color_width)
-        col_count/=2;
-
     BeginContainer({
         .padding=EdgeInsetsAll(COLOR_PICKER_BORDER_WIDTH),
         .id = static_cast<ElementId>(MESH_EDITOR_ID_PALETTES + palette_index)
@@ -739,7 +734,7 @@ static bool Palette(int palette_index, bool* selected_colors) {
 
     Spacer(2.0f);
 
-    BeginGrid({.columns=col_count, .cell={COLOR_PICKER_COLOR_SIZE, COLOR_PICKER_COLOR_SIZE}});
+    BeginGrid({.columns=32, .cell={COLOR_PICKER_COLOR_SIZE, COLOR_PICKER_COLOR_SIZE}});
     for (int i=0; i<COLOR_COUNT; i++) {
         bool selected = (selected_colors && selected_colors[i]);
         Color color = g_editor.palettes[palette_index].colors[i];
@@ -784,42 +779,6 @@ static bool Palette(int palette_index, bool* selected_colors) {
     return pressed;
 }
 
-static void ColorPicker(){
-    // todo: we could cache this when the mesh is modified or selection changes update it
-    static bool selected_colors[COLOR_COUNT] = {};
-    memset(selected_colors, 0, sizeof(selected_colors));
-    MeshData* m = GetMeshData();
-    MeshDataImpl* impl = m->impl;
-    for (int face_index=0; face_index<GetCurrentFrame(m)->face_count; face_index++) {
-        FaceData* f = &GetCurrentFrame(m)->faces[face_index];
-        if (!f->selected) continue;
-        selected_colors[f->color] = true;
-    }
-
-    // palettes
-    BeginContainer({.padding=EdgeInsetsAll(4), .color=STYLE_OVERLAY_CONTENT_COLOR(), .border{.radius=STYLE_OVERLAY_CONTENT_BORDER_RADIUS}});
-    BeginColumn();
-    {
-        int current_palette_index = g_editor.palette_map[impl->palette];
-        if (g_mesh_editor.show_palette_picker) {
-            for (int palette_index=0; palette_index<g_editor.palette_count; palette_index++) {
-                if (palette_index == current_palette_index) continue;
-                if (Palette(palette_index, nullptr)) {
-                    RecordUndo(m);
-                    impl->palette = g_editor.palettes[palette_index].id;
-                    MarkDirty(m);
-                    MarkModified(m);
-                }
-
-                Spacer(2.0f);
-            }
-        }
-
-        Palette(current_palette_index, g_mesh_editor.is_playing ? nullptr : selected_colors);
-    }
-    EndColumn();
-    EndContainer();
-}
 
 static bool OpacityPopup() {
     bool open = true;
@@ -884,6 +843,54 @@ static void OpacityContent() {
     });
 }
 
+static void ColorPicker(){
+    // todo: we could cache this when the mesh is modified or selection changes update it
+    static bool selected_colors[COLOR_COUNT] = {};
+    memset(selected_colors, 0, sizeof(selected_colors));
+    MeshData* m = GetMeshData();
+    MeshDataImpl* impl = m->impl;
+    for (int face_index=0; face_index<GetCurrentFrame(m)->face_count; face_index++) {
+        FaceData* f = &GetCurrentFrame(m)->faces[face_index];
+        if (!f->selected) continue;
+        selected_colors[f->color] = true;
+    }
+
+    // palettes
+    BeginContainer({.padding=EdgeInsetsAll(4), .color=STYLE_OVERLAY_CONTENT_COLOR(), .border{.radius=STYLE_OVERLAY_CONTENT_BORDER_RADIUS}});
+    BeginColumn();
+    {
+        int current_palette_index = g_editor.palette_map[impl->palette];
+        if (g_mesh_editor.show_palette_picker) {
+            for (int palette_index=0; palette_index<g_editor.palette_count; palette_index++) {
+                if (palette_index == current_palette_index) continue;
+                if (Palette(palette_index, nullptr)) {
+                    RecordUndo(m);
+                    impl->palette = g_editor.palettes[palette_index].id;
+                    MarkDirty(m);
+                    MarkModified(m);
+                }
+
+                Spacer(2.0f);
+            }
+        }
+
+        BeginRow();
+        Palette(current_palette_index, g_mesh_editor.is_playing ? nullptr : selected_colors);
+        if (EditorButton({
+            .id=MESH_EDITOR_ID_OPACITY,
+            .width = COLOR_PICKER_COLOR_SIZE * 2,
+            .height = COLOR_PICKER_COLOR_SIZE * 2,
+            .checked=g_mesh_editor.show_opacity_popup,
+            .content_func=OpacityContent,
+            .popup_func=OpacityPopup}))
+            g_mesh_editor.show_opacity_popup = !g_mesh_editor.show_opacity_popup;
+
+        EndRow();
+    }
+    EndColumn();
+    EndContainer();
+}
+
 static void MeshEditorToolbar() {
     MeshData* m = GetMeshData();
     bool show_palette_picker = g_mesh_editor.show_palette_picker;
@@ -907,14 +914,6 @@ static void MeshEditorToolbar() {
         g_mesh_editor.mode = MESH_EDITOR_MODE_FACE;
     if (EditorButton(MESH_EDITOR_ID_WEIGHT_MODE, MESH_ICON_WEIGHT_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_FACE, m->impl->skeleton == nullptr))
         g_mesh_editor.mode = MESH_EDITOR_MODE_WEIGHT;
-
-    Spacer(16.0f);
-    if (EditorButton({
-        .id=MESH_EDITOR_ID_OPACITY,
-        .checked=g_mesh_editor.show_opacity_popup,
-        .content_func=OpacityContent,
-        .popup_func=OpacityPopup}))
-            g_mesh_editor.show_opacity_popup = !g_mesh_editor.show_opacity_popup;
 
     EndRow();
 
