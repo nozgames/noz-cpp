@@ -210,9 +210,11 @@ static void InitConfig() {
     g_editor.unity_path = fs::absolute(project_path / fs::path(g_config->GetString("editor", "unity_path", "./assets/noz")));
     g_editor.save_dir = g_config->GetString("editor", "save_path", "assets");
     g_editor.project_path = project_path.string();
-    g_editor.atlas_size = g_config->GetInt("editor", "atlas_size", ATLAS_DEFAULT_SIZE);
 
-    Set(g_editor.atlas_prefix, g_config->GetString("editor", "atlas_prefix", "atlas").c_str());
+    // Atlas settings from [atlas] section
+    g_editor.atlas_size = g_config->GetInt("atlas", "size", ATLAS_DEFAULT_SIZE);
+    g_editor.atlas_dpi = g_config->GetInt("atlas", "dpi", ATLAS_DEFAULT_DPI);
+    Set(g_editor.atlas_prefix, g_config->GetString("atlas", "prefix", "atlas").c_str());
 
     fs::create_directories(g_editor.output_path);
 }

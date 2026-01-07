@@ -50,7 +50,7 @@ static AtlasData* CreateManagedAtlas() {
     Stream* stream = CreateStream(ALLOCATOR_DEFAULT, 256);
     WriteCSTR(stream, "w %d\n", size);
     WriteCSTR(stream, "h %d\n", size);
-    WriteCSTR(stream, "d %d\n", ATLAS_DEFAULT_DPI);
+    WriteCSTR(stream, "d %d\n", g_editor.atlas_dpi);
     SaveStream(stream, atlas_path);
     Free(stream);
 

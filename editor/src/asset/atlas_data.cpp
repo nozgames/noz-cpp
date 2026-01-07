@@ -97,7 +97,7 @@ static void AllocAtlasDataImpl(AssetData* a) {
     memset(atlas->impl, 0, sizeof(AtlasDataImpl));
     atlas->impl->width = ATLAS_DEFAULT_SIZE;
     atlas->impl->height = ATLAS_DEFAULT_SIZE;
-    atlas->impl->dpi = ATLAS_DEFAULT_DPI;
+    atlas->impl->dpi = g_editor.atlas_dpi;
     atlas->impl->dirty = true;
     // packer is created in LoadAtlasData with correct dimensions
 }

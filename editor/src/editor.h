@@ -103,7 +103,8 @@ struct Editor {
     int palette_count;
 
     int atlas_size = 1024;  // Default, overridden from editor.cfg
-    String32 atlas_prefix;  // Prefix for managed atlases
+    int atlas_dpi = 96;     // Default, overridden from editor.cfg [atlas] dpi
+    String32 atlas_prefix;  // Prefix for managed atlases, from [atlas] prefix
 };
 
 extern Editor g_editor;
