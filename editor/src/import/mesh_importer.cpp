@@ -40,11 +40,12 @@ static Mesh* ToMeshWithAtlasUVs(MeshData* mesh_data, AtlasData* atlas, const Atl
     Vec2 min = rect.mesh_bounds.min + Vec2{offset_min_x, offset_min_y};
     Vec2 max = rect.mesh_bounds.max + Vec2{offset_max_x, offset_max_y};
 
-    // UVs map directly to pixel bounds
-    float u_min = (float)(rect.x + rect.pixel_min_x) / (float)atlas->impl->width;
-    float v_min = (float)(rect.y + rect.pixel_min_y) / (float)atlas->impl->height;
-    float u_max = (float)(rect.x + rect.pixel_max_x + 1) / (float)atlas->impl->width;
-    float v_max = (float)(rect.y + rect.pixel_max_y + 1) / (float)atlas->impl->height;
+    // UVs map to texel centers to ensure point filtering samples valid pixels
+    // Using pixel edges (pixel_max + 1) can sample outside content at boundaries
+    float u_min = (float)(rect.x + rect.pixel_min_x + 0.5f) / (float)atlas->impl->width;
+    float v_min = (float)(rect.y + rect.pixel_min_y + 0.5f) / (float)atlas->impl->height;
+    float u_max = (float)(rect.x + rect.pixel_max_x + 0.5f) / (float)atlas->impl->width;
+    float v_max = (float)(rect.y + rect.pixel_max_y + 0.5f) / (float)atlas->impl->height;
 
     Vec2 uv_bl = {u_min, v_min};
     Vec2 uv_br = {u_max, v_min};

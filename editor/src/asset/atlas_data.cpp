@@ -718,10 +718,11 @@ Vec2 GetAtlasUV(AtlasData* atlas, const AtlasRect& rect, const Bounds2& mesh_bou
     float tx = (position.x - mesh_bounds.min.x) / size.x;
     float ty = (position.y - mesh_bounds.min.y) / size.y;
 
-    // Map to actual pixel bounds (from pixel scan)
+    // Map to actual pixel bounds (from pixel scan), sampling at texel centers
     // pixel_min/max are relative to frame origin, add rect.x/y for absolute position
-    float pixel_x = rect.x + rect.pixel_min_x + tx * (rect.pixel_max_x - rect.pixel_min_x + 1);
-    float pixel_y = rect.y + rect.pixel_min_y + ty * (rect.pixel_max_y - rect.pixel_min_y + 1);
+    // Add 0.5 to sample at pixel centers, use (max - min) not (max - min + 1) to stay within bounds
+    float pixel_x = rect.x + rect.pixel_min_x + 0.5f + tx * (rect.pixel_max_x - rect.pixel_min_x);
+    float pixel_y = rect.y + rect.pixel_min_y + 0.5f + ty * (rect.pixel_max_y - rect.pixel_min_y);
 
     // Convert to UV
     float u = pixel_x / (float)impl->width;
