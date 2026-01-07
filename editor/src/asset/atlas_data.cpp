@@ -8,6 +8,23 @@
 
 using namespace noz;
 
+// Convert from PlutoVG's native-endian premultiplied ARGB to premultiplied RGBA
+// (preserves premultiplication, unlike plutovg_convert_argb_to_rgba which un-premultiplies)
+void ConvertARGBToRGBA(u8* dst, const u8* src, int width, int height) {
+    const u32* src_pixels = (const u32*)src;
+    for (int i = 0; i < width * height; i++) {
+        u32 pixel = src_pixels[i];
+        u8 a = (pixel >> 24) & 0xFF;
+        u8 r = (pixel >> 16) & 0xFF;
+        u8 g = (pixel >> 8) & 0xFF;
+        u8 b = (pixel >> 0) & 0xFF;
+        dst[i * 4 + 0] = r;
+        dst[i * 4 + 1] = g;
+        dst[i * 4 + 2] = b;
+        dst[i * 4 + 3] = a;
+    }
+}
+
 extern void InitAtlasEditor(AtlasData* atlas);
 
 // Calculate bounds from vertices and curve control points in a frame
@@ -363,10 +380,10 @@ static void AddFaceToPathFrame(plutovg_canvas_t* canvas, MeshFrameData* frame, F
             }
         }
 
-        // Straight edge
+        // Straight edge - snap to pixel boundaries to avoid AA
         Vec2 pos1 = expand_pos(p1);
-        float px = offset_x + pos1.x * scale;
-        float py = offset_y + pos1.y * scale;
+        float px = roundf(offset_x + pos1.x * scale);
+        float py = roundf(offset_y + pos1.y * scale);
         plutovg_canvas_line_to(canvas, px, py);
     }
 
@@ -421,7 +438,7 @@ void RenderMeshToBuffer(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, u8* p
         int palette_index = g_editor.palette_map[mesh_impl->palette];
         constexpr float EXPAND = 0.5f;
 
-        // Render each color group
+        // Render each color/opacity group
         bool rendered[MAX_FACES] = {};
         for (int fi = 0; fi < frame->face_count; fi++) {
             if (rendered[fi]) continue;
@@ -430,23 +447,28 @@ void RenderMeshToBuffer(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, u8* p
             if (face.vertex_count < 3) continue;
 
             int color_index = face.color;
+            float face_opacity = face.opacity;
             Color color = g_editor.palettes[palette_index].colors[color_index];
 
             plutovg_canvas_new_path(canvas);
             AddFaceToPathFrame(canvas, frame, face, offset_x, offset_y, scale, EXPAND);
             rendered[fi] = true;
 
+            // Only batch faces with same color AND same opacity
             for (int fj = fi + 1; fj < frame->face_count; fj++) {
                 if (rendered[fj]) continue;
                 FaceData& other_face = frame->faces[fj];
                 if (other_face.vertex_count < 3) continue;
                 if (other_face.color != color_index) continue;
+                if (other_face.opacity != face_opacity) continue;
 
                 AddFaceToPathFrame(canvas, frame, other_face, offset_x, offset_y, scale, EXPAND);
                 rendered[fj] = true;
             }
 
-            plutovg_canvas_set_rgba(canvas, color.r, color.g, color.b, color.a);
+            // Apply face opacity to the color alpha
+            float final_alpha = color.a * face_opacity;
+            plutovg_canvas_set_rgba(canvas, color.r, color.g, color.b, final_alpha);
             plutovg_canvas_fill(canvas);
         }
 
@@ -504,12 +526,10 @@ void SyncAtlasTexture(AtlasData* atlas) {
     AtlasDataImpl* impl = atlas->impl;
     if (!impl->pixels || !impl->dirty) return;
 
-    // Convert from premultiplied ARGB to RGBA for GPU upload
-    // We need a temporary buffer since we want to keep impl->pixels in ARGB for further PlutoVG rendering
+    // Convert from premultiplied ARGB to premultiplied RGBA for GPU upload
     u32 buffer_size = impl->width * impl->height * 4;
     u8* rgba_pixels = static_cast<u8 *>(Alloc(ALLOCATOR_SCRATCH, buffer_size));
-    memcpy(rgba_pixels, impl->pixels, buffer_size);
-    plutovg_convert_argb_to_rgba(rgba_pixels, rgba_pixels, impl->width, impl->height, impl->width * 4);
+    ConvertARGBToRGBA(rgba_pixels, impl->pixels, impl->width, impl->height);
 
     if (!impl->texture) {
         impl->texture = CreateTexture(ALLOCATOR_DEFAULT, rgba_pixels, impl->width, impl->height,

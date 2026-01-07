@@ -4,6 +4,8 @@
 
 #include <plutovg.h>
 
+extern void ConvertARGBToRGBA(u8* dst, const u8* src, int width, int height);
+
 namespace fs = std::filesystem;
 
 static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* config, Props* meta) {
@@ -36,8 +38,8 @@ static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* 
     u8* pixels = static_cast<u8*>(Alloc(ALLOCATOR_DEFAULT, pixel_size));
     memcpy(pixels, impl->pixels, pixel_size);
 
-    // Convert from PlutoVG's premultiplied ARGB to RGBA
-    plutovg_convert_argb_to_rgba(pixels, pixels, impl->width, impl->height, impl->width * 4);
+    // Convert from PlutoVG's premultiplied ARGB to premultiplied RGBA
+    ConvertARGBToRGBA(pixels, pixels, impl->width, impl->height);
 
     Stream* stream = CreateStream(ALLOCATOR_DEFAULT, pixel_size + 1024);
 

@@ -62,13 +62,14 @@ static void CommitPenFace() {
             v.position = pt.position;
             v.selected = false;
 
-            // Initialize bone weights to -1
+            // Initialize bone weights to -1 (will be inferred from neighbors after edges are created)
             for (int w = 0; w < MESH_MAX_VERTEX_WEIGHTS; w++) {
                 v.weights[w].bone_index = -1;
                 v.weights[w].weight = 0.0f;
             }
 
             vertex_indices[i] = new_index;
+            pt.existing_vertex = -2;  // Mark as newly created (not -1 which means no snap)
         }
     }
 
@@ -128,6 +129,13 @@ static void CommitPenFace() {
     }
 
     UpdateEdges(m);
+
+    // Infer bone weights for newly created vertices from their neighbors
+    for (int i = 0; i < g_pen_tool.point_count; i++) {
+        if (g_pen_tool.points[i].existing_vertex == -2)
+            InferVertexWeightsFromNeighbors(m, vertex_indices[i]);
+    }
+
     MarkDirty(m);
 }
 

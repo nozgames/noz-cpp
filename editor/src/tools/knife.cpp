@@ -845,6 +845,9 @@ static int GetOrCreateVertex(MeshData* m, KnifePathPoint& pt) {
                 pt.vertex_index = new_vertex;
                 pt.position = curve_pos;  // Update position to exact curve point
 
+                // Interpolate bone weights from edge endpoints
+                InterpolateVertexWeights(m, new_vertex, pt.edge_v0, pt.edge_v1, t);
+
                 if (frame->pending_curve_count < MESH_MAX_EDGES - 1) {
                     frame->pending_curves[frame->pending_curve_count++] = { pt.edge_v0, new_vertex, left_offset, left_weight };
                     frame->pending_curves[frame->pending_curve_count++] = { new_vertex, pt.edge_v1, right_offset, right_weight };
@@ -857,6 +860,11 @@ static int GetOrCreateVertex(MeshData* m, KnifePathPoint& pt) {
     // Create a new vertex (no curve to preserve)
     int new_vertex = AddKnifeVertex(m, pt.position);
     pt.vertex_index = new_vertex;
+
+    // Interpolate bone weights for edge points from edge endpoints
+    if (IsEdgePoint(pt) && pt.edge_v0 >= 0 && pt.edge_v1 >= 0)
+        InterpolateVertexWeights(m, new_vertex, pt.edge_v0, pt.edge_v1, pt.edge_t);
+
     return new_vertex;
 }
 

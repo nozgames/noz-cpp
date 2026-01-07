@@ -161,6 +161,7 @@ static void LoadGLESFunctions() {
     glColorMask = (PFNGLCOLORMASKPROC)GetGLProcAddress("glColorMask");
     glClearStencil = (PFNGLCLEARSTENCILPROC)GetGLProcAddress("glClearStencil");
     glObjectLabel = (PFNGLOBJECTLABELPROC)GetGLProcAddress("glObjectLabel");
+    glDebugMessageControl = (PFNGLDEBUGMESSAGECONTROLPROC)GetGLProcAddress("glDebugMessageControl");
 
     // WGL extensions
     wglCreateContextAttribsARB_ptr = (wglCreateContextAttribsARB_t*)GetGLProcAddress("wglCreateContextAttribsARB");
@@ -280,6 +281,10 @@ void InitRenderDriver(const RendererTraits* traits, HWND hwnd) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_MULTISAMPLE);
+
+    // Disable verbose debug notification messages (e.g., buffer memory hints from NVIDIA)
+    if (glDebugMessageControl)
+        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
 
     // Use standard GL conventions (Y-up, bottom-left origin)
     glFrontFace(GL_CCW);

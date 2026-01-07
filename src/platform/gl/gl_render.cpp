@@ -94,6 +94,7 @@ PFNGLSTENCILMASKPROC glStencilMask = nullptr;
 PFNGLCOLORMASKPROC glColorMask = nullptr;
 PFNGLCLEARSTENCILPROC glClearStencil = nullptr;
 PFNGLOBJECTLABELPROC glObjectLabel = nullptr;
+PFNGLDEBUGMESSAGECONTROLPROC glDebugMessageControl = nullptr;
 #endif // NOZ_PLATFORM_WEB
 
 GLState g_gl = {};
@@ -857,9 +858,11 @@ void PlatformBindShader(PlatformShader* shader) {
         bool is_blend = (flags & SHADER_FLAGS_BLEND) != 0;
 
         if (is_premultiplied || is_ui_composite) {
-            // Premultiplied alpha: src * 1 + dst * (1 - src_alpha)
+            // Premultiplied alpha blending
+            // Color: src * 1 + dst * (1 - src_alpha)
+            // Alpha: src * 1 + dst * 1
             glEnable(GL_BLEND);
-            glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+            glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
         } else if (is_blend) {
             // Standard alpha blending
             glEnable(GL_BLEND);

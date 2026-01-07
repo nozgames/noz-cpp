@@ -175,6 +175,8 @@ extern void SetOrigin(MeshData* m, const Vec2& origin);
 extern float GetVertexWeight(MeshData* m, int vertex_index, int bone_index);
 extern void AddVertexWeight(MeshData* m, int vertex_index, int bone_index, float weight);
 extern void SetVertexWeight(MeshData* m, int vertex_index, int bone_index, float weight);
+extern void InterpolateVertexWeights(MeshData* m, int new_vertex_index, int v0_index, int v1_index, float t);
+extern void InferVertexWeightsFromNeighbors(MeshData* m, int vertex_index);
 
 extern void SetFaceColor(MeshData* m, int color);
 extern void SetFaceOpacity(MeshData* m, float opacity);

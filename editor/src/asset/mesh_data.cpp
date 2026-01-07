@@ -1937,6 +1937,133 @@ void AddVertexWeight(MeshData* m, int vertex_index, int bone_index, float weight
     w.weight = Clamp01(w.weight + weight);
 }
 
+void InterpolateVertexWeights(MeshData* m, int new_vertex_index, int v0_index, int v1_index, float t) {
+    MeshFrameData* frame = GetCurrentFrame(m);
+    VertexData& new_vertex = frame->vertices[new_vertex_index];
+    const VertexData& v0 = frame->vertices[v0_index];
+    const VertexData& v1 = frame->vertices[v1_index];
+
+    // Initialize weights to empty
+    for (int i = 0; i < MESH_MAX_VERTEX_WEIGHTS; i++) {
+        new_vertex.weights[i].bone_index = -1;
+        new_vertex.weights[i].weight = 0.0f;
+    }
+
+    // Collect all unique bones from both vertices and interpolate their weights
+    for (int i = 0; i < MESH_MAX_VERTEX_WEIGHTS; i++) {
+        if (v0.weights[i].weight > F32_EPSILON) {
+            int bone = v0.weights[i].bone_index;
+            float w0 = v0.weights[i].weight;
+            float w1 = GetVertexWeight(m, v1_index, bone);
+            float interpolated = w0 * (1.0f - t) + w1 * t;
+            if (interpolated > F32_EPSILON)
+                SetVertexWeight(m, new_vertex_index, bone, interpolated);
+        }
+    }
+    for (int i = 0; i < MESH_MAX_VERTEX_WEIGHTS; i++) {
+        if (v1.weights[i].weight > F32_EPSILON) {
+            int bone = v1.weights[i].bone_index;
+            // Only process if we haven't already handled this bone from v0
+            bool already_set = false;
+            for (int j = 0; j < MESH_MAX_VERTEX_WEIGHTS && !already_set; j++)
+                already_set = (new_vertex.weights[j].bone_index == bone && new_vertex.weights[j].weight > F32_EPSILON);
+            if (!already_set) {
+                float w0 = GetVertexWeight(m, v0_index, bone);
+                float w1 = v1.weights[i].weight;
+                float interpolated = w0 * (1.0f - t) + w1 * t;
+                if (interpolated > F32_EPSILON)
+                    SetVertexWeight(m, new_vertex_index, bone, interpolated);
+            }
+        }
+    }
+}
+
+void InferVertexWeightsFromNeighbors(MeshData* m, int vertex_index) {
+    MeshFrameData* frame = GetCurrentFrame(m);
+    VertexData& v = frame->vertices[vertex_index];
+
+    // Find all neighboring vertices (vertices that share an edge)
+    int neighbor_count = 0;
+    int neighbors[16];
+    for (int ei = 0; ei < frame->edge_count; ei++) {
+        const EdgeData& e = frame->edges[ei];
+        int neighbor = -1;
+        if (e.v0 == vertex_index)
+            neighbor = e.v1;
+        else if (e.v1 == vertex_index)
+            neighbor = e.v0;
+        if (neighbor >= 0 && neighbor_count < 16) {
+            // Avoid duplicates
+            bool found = false;
+            for (int i = 0; i < neighbor_count && !found; i++)
+                found = (neighbors[i] == neighbor);
+            if (!found)
+                neighbors[neighbor_count++] = neighbor;
+        }
+    }
+
+    if (neighbor_count == 0)
+        return;
+
+    // Initialize weights
+    for (int i = 0; i < MESH_MAX_VERTEX_WEIGHTS; i++) {
+        v.weights[i].bone_index = -1;
+        v.weights[i].weight = 0.0f;
+    }
+
+    // Average weights from all neighbors
+    // First, collect total weight for each bone across neighbors
+    struct BoneWeight { int bone; float total; int count; };
+    BoneWeight bone_weights[64] = {};
+    int bone_weight_count = 0;
+
+    for (int ni = 0; ni < neighbor_count; ni++) {
+        const VertexData& nv = frame->vertices[neighbors[ni]];
+        for (int wi = 0; wi < MESH_MAX_VERTEX_WEIGHTS; wi++) {
+            if (nv.weights[wi].weight <= F32_EPSILON)
+                continue;
+            int bone = nv.weights[wi].bone_index;
+            // Find or add bone entry
+            int found_idx = -1;
+            for (int bi = 0; bi < bone_weight_count && found_idx < 0; bi++)
+                if (bone_weights[bi].bone == bone)
+                    found_idx = bi;
+            if (found_idx < 0 && bone_weight_count < 64) {
+                found_idx = bone_weight_count++;
+                bone_weights[found_idx].bone = bone;
+                bone_weights[found_idx].total = 0;
+                bone_weights[found_idx].count = 0;
+            }
+            if (found_idx >= 0) {
+                bone_weights[found_idx].total += nv.weights[wi].weight;
+                bone_weights[found_idx].count++;
+            }
+        }
+    }
+
+    // Sort by average weight (descending) and assign top weights
+    for (int i = 0; i < bone_weight_count - 1; i++) {
+        for (int j = i + 1; j < bone_weight_count; j++) {
+            float avg_i = bone_weights[i].total / bone_weights[i].count;
+            float avg_j = bone_weights[j].total / bone_weights[j].count;
+            if (avg_j > avg_i) {
+                BoneWeight tmp = bone_weights[i];
+                bone_weights[i] = bone_weights[j];
+                bone_weights[j] = tmp;
+            }
+        }
+    }
+
+    // Assign top MESH_MAX_VERTEX_WEIGHTS bones
+    for (int i = 0; i < MESH_MAX_VERTEX_WEIGHTS && i < bone_weight_count; i++) {
+        float avg = bone_weights[i].total / bone_weights[i].count;
+        if (avg > F32_EPSILON) {
+            v.weights[i].bone_index = bone_weights[i].bone;
+            v.weights[i].weight = avg;
+        }
+    }
+}
+
 static void PostLoadMeshData(AssetData* a) {
     assert(a);
     assert(a->type == ASSET_TYPE_MESH);
