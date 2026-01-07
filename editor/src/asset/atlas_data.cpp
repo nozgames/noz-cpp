@@ -2,8 +2,8 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-#include <plutovg.h>
 #include "utils/rect_packer.h"
+#include "utils/scanline_rasterizer.h"
 #include "atlas_manager.h"
 
 using namespace noz;
@@ -322,7 +322,7 @@ static Vec2 EvalRationalBezierAtlas(Vec2 p0, Vec2 control, Vec2 p1, float w, flo
 }
 
 // Frame-based version for multi-frame rendering
-static void AddFaceToPathFrame(plutovg_canvas_t* canvas, MeshFrameData* frame, FaceData& face, float offset_x, float offset_y, float scale, float expand = 0.0f) {
+static void AddFaceToPath(ScanlineRasterizer* rasterizer, MeshFrameData* frame, FaceData& face, float offset_x, float offset_y, float scale, float expand = 0.0f) {
     constexpr int CURVE_SEGMENTS = 8;
 
     // Calculate face center for expansion direction
@@ -351,7 +351,7 @@ static void AddFaceToPathFrame(plutovg_canvas_t* canvas, MeshFrameData* frame, F
         if (vi == 0) {
             float px = offset_x + pos0.x * scale;
             float py = offset_y + pos0.y * scale;
-            plutovg_canvas_move_to(canvas, px, py);
+            MoveTo(rasterizer, px, py);
         }
 
         // Check if edge has a curve
@@ -374,20 +374,20 @@ static void AddFaceToPathFrame(plutovg_canvas_t* canvas, MeshFrameData* frame, F
                     pt = expand_pos(pt);
                     float px = offset_x + pt.x * scale;
                     float py = offset_y + pt.y * scale;
-                    plutovg_canvas_line_to(canvas, px, py);
+                    LineTo(rasterizer, px, py);
                 }
                 continue;
             }
         }
 
-        // Straight edge - snap to pixel boundaries to avoid AA
+        // Straight edge
         Vec2 pos1 = expand_pos(p1);
-        float px = roundf(offset_x + pos1.x * scale);
-        float py = roundf(offset_y + pos1.y * scale);
-        plutovg_canvas_line_to(canvas, px, py);
+        float px = offset_x + pos1.x * scale;
+        float py = offset_y + pos1.y * scale;
+        LineTo(rasterizer, px, py);
     }
 
-    plutovg_canvas_close_path(canvas);
+    ClosePath(rasterizer);
 }
 
 void RenderMeshToBuffer(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, u8* pixels, bool update_bounds) {
@@ -417,32 +417,27 @@ void RenderMeshToBuffer(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, u8* p
     float scale = (float)impl->dpi;
     int frame_width = rect.width / rect.frame_count;
 
+    // Set up rasterizer for the entire atlas
+    ScanlineRasterizer* rasterizer = CreateScanlineRasterizer();
+    SetTarget(rasterizer, pixels, impl->width, impl->height);
+
     // Render each frame at its position in the strip
     for (int frame_idx = 0; frame_idx < mesh_impl->frame_count; frame_idx++) {
         MeshFrameData* frame = &mesh_impl->frames[frame_idx];
 
         int frame_x = rect.x + frame_idx * frame_width;
 
-        plutovg_surface_t* surface = plutovg_surface_create_for_data(
-            pixels, impl->width, impl->height, impl->width * 4
-        );
-        plutovg_canvas_t* canvas = plutovg_canvas_create(surface);
-
         // Clip to this frame's region
-        plutovg_canvas_clip_rect(canvas, (float)frame_x, (float)rect.y, (float)frame_width, (float)rect.height);
+        SetClipRect(rasterizer, frame_x, rect.y, frame_width, rect.height);
 
         // Use render_bounds for consistent positioning across all frames
         float offset_x = frame_x + ATLAS_RECT_PADDING - render_bounds.min.x * scale;
         float offset_y = rect.y + ATLAS_RECT_PADDING - render_bounds.min.y * scale;
 
         int palette_index = g_editor.palette_map[mesh_impl->palette];
-        constexpr float EXPAND = 0.5f;
 
-        // Render each color/opacity group
-        bool rendered[MAX_FACES] = {};
+        // Render each face individually (no batching to avoid even-odd fill issues with shared edges)
         for (int fi = 0; fi < frame->face_count; fi++) {
-            if (rendered[fi]) continue;
-
             FaceData& face = frame->faces[fi];
             if (face.vertex_count < 3) continue;
 
@@ -450,30 +445,46 @@ void RenderMeshToBuffer(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, u8* p
             float face_opacity = face.opacity;
             Color color = g_editor.palettes[palette_index].colors[color_index];
 
-            plutovg_canvas_new_path(canvas);
-            AddFaceToPathFrame(canvas, frame, face, offset_x, offset_y, scale, EXPAND);
-            rendered[fi] = true;
-
-            // Only batch faces with same color AND same opacity
-            for (int fj = fi + 1; fj < frame->face_count; fj++) {
-                if (rendered[fj]) continue;
-                FaceData& other_face = frame->faces[fj];
-                if (other_face.vertex_count < 3) continue;
-                if (other_face.color != color_index) continue;
-                if (other_face.opacity != face_opacity) continue;
-
-                AddFaceToPathFrame(canvas, frame, other_face, offset_x, offset_y, scale, EXPAND);
-                rendered[fj] = true;
-            }
-
             // Apply face opacity to the color alpha
             float final_alpha = color.a * face_opacity;
-            plutovg_canvas_set_rgba(canvas, color.r, color.g, color.b, final_alpha);
-            plutovg_canvas_fill(canvas);
-        }
+            SetColor(rasterizer, color.r, color.g, color.b, final_alpha);
 
-        plutovg_canvas_destroy(canvas);
-        plutovg_surface_destroy(surface);
+            BeginPath(rasterizer);
+            AddFaceToPath(rasterizer, frame, face, offset_x, offset_y, scale, 0.0f);
+            Fill(rasterizer);
+        }
+    }
+
+    DestroyScanlineRasterizer(rasterizer);
+
+    // Dilate pixels to prevent bilinear filtering from sampling empty (black) pixels
+    // For each empty pixel adjacent to a filled pixel, copy the filled pixel's color
+    for (int frame_idx = 0; frame_idx < mesh_impl->frame_count; frame_idx++) {
+        int frame_x = rect.x + frame_idx * frame_width;
+
+        for (int y = rect.y; y < rect.y + rect.height; y++) {
+            for (int x = frame_x; x < frame_x + frame_width; x++) {
+                u32* pixel = (u32*)(pixels + (y * impl->width + x) * 4);
+                if ((*pixel >> 24) != 0) continue; // Already filled
+
+                // Check 4 neighbors for a filled pixel to copy from
+                static const int dx[] = {-1, 1, 0, 0};
+                static const int dy[] = {0, 0, -1, 1};
+                for (int d = 0; d < 4; d++) {
+                    int nx = x + dx[d];
+                    int ny = y + dy[d];
+                    if (nx < frame_x || nx >= frame_x + frame_width) continue;
+                    if (ny < rect.y || ny >= rect.y + rect.height) continue;
+
+                    u32* neighbor = (u32*)(pixels + (ny * impl->width + nx) * 4);
+                    if ((*neighbor >> 24) != 0) {
+                        // Copy color but set alpha to 0 (for proper blending at edges)
+                        *pixel = *neighbor & 0x00FFFFFF;
+                        break;
+                    }
+                }
+            }
+        }
     }
 }
 

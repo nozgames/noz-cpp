@@ -68,4 +68,5 @@ target_include_directories(nozed PRIVATE
     res/windows
     ${CMAKE_CURRENT_SOURCE_DIR}/../libs
     ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/agg/include
 )
