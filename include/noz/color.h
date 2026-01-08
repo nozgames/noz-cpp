@@ -81,6 +81,15 @@ inline Color32 MultiplyAlpha(const Color32& color, u8 multiply){
     return { color.r, color.g, color.b, static_cast<u8>((multiply / 255.0f) * (color.a / 255.0f) * 255.0f) };
 }
 
+inline Color32 Blend(const Color32& a, const Color32& b) {
+    float alpha = b.a / 255.0f;
+    return {
+        static_cast<u8>(a.r + (b.r - a.r) * alpha),
+        static_cast<u8>(a.g + (b.g - a.g) * alpha),
+        static_cast<u8>(a.b + (b.b - a.b) * alpha),
+        static_cast<u8>(a.a + (b.a - a.a) * alpha)
+    };
+}
 
 inline Color Mix(const Color& a, const Color& b, float t)
 {
@@ -143,6 +152,18 @@ constexpr Color Color32ToColor(u32 rgb, float alpha) {
     return Color32ToColor((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, (u8)(alpha * 255.0f));
 }
 
+constexpr Color32 ColorToColor32(float r, float g, float b, float a) {
+    return Color32 {
+        static_cast<u8>(r * 255.0f),
+        static_cast<u8>(g * 255.0f),
+        static_cast<u8>(b * 255.0f),
+        static_cast<u8>(a * 255.0f)
+    };
+}
+
+constexpr Color32 ColorToColor32(const Color& color) {
+    return ColorToColor32(color.r, color.g, color.b, color.a);
+}
 
 constexpr Color COLOR_BLACK = {0.0f, 0.0f, 0.0f, 1.0f};
 constexpr Color COLOR_WHITE = {1.0f, 1.0f, 1.0f, 1.0f};

@@ -3,13 +3,11 @@
 //
 
 float FindBezierParameter(Vec2 p0, Vec2 control, Vec2 p2, Vec2 point) {
-    // Start with linear approximation
     float t = 0.5f;
     Vec2 edge = p2 - p0;
     float edge_len_sq = LengthSqr(edge);
-    if (edge_len_sq > F32_EPSILON) {
+    if (edge_len_sq > F32_EPSILON)
         t = Clamp(Dot(point - p0, edge) / edge_len_sq, 0.0f, 1.0f);
-    }
 
     // Newton-Raphson refinement
     for (int i = 0; i < 4; i++) {
@@ -97,6 +95,15 @@ float CalculateCircleWeight(Vec2 p0, Vec2 p1, Vec2 center) {
     float cos_angle = Clamp(Dot(r0, r1), -1.0f, 1.0f);
     float half_angle = acosf(cos_angle) * 0.5f;
     return cosf(half_angle);
+}
+
+Vec2 EvalQuadraticBezier(Vec2 p0, Vec2 control, Vec2 p1, float t, float w) {
+    float u = 1.0f - t;
+    float u2 = u * u;
+    float t2 = t * t;
+    float wt = 2.0f * u * t * w;
+    float denom = u2 + wt + t2;
+    return (p0 * u2 + control * wt + p1 * t2) / denom;
 }
 
 bool LineCurveIntersect(Vec2 line_start, Vec2 line_end, Vec2 p0, Vec2 control, Vec2 p2, Vec2* out_point, float* out_t) {

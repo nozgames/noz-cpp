@@ -118,19 +118,15 @@ void MarkPreviewDirty() {
 static void SyncPreviewTexture(int width, int height) {
     if (!g_mesh_editor.preview_pixels) return;
 
-    // Convert ARGB to RGBA
-    u8* rgba = (u8*)Alloc(ALLOCATOR_SCRATCH, width * height * 4);
-    ConvertARGBToRGBA(rgba, g_mesh_editor.preview_pixels, width, height);
-
     if (!g_mesh_editor.preview_texture) {
         g_mesh_editor.preview_texture = CreateTexture(
-            ALLOCATOR_DEFAULT, rgba, width, height,
+            ALLOCATOR_DEFAULT, g_mesh_editor.preview_pixels, width, height,
             TEXTURE_FORMAT_RGBA8, GetName("mesh_preview"),
             g_editor.atlas.filter);
         g_mesh_editor.preview_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_TEXTURED_MESH);
         SetTexture(g_mesh_editor.preview_material, g_mesh_editor.preview_texture, 0);
     } else {
-        UpdateTexture(g_mesh_editor.preview_texture, rgba);
+        UpdateTexture(g_mesh_editor.preview_texture, g_mesh_editor.preview_pixels);
     }
 }
 
@@ -1841,6 +1837,14 @@ static void DrawMeshEditor() {
             Vec2 min, max;
             float u_min, v_min, u_max, v_max;
             GetExportQuadGeometry(atlas, *rect, &min, &max, &u_min, &v_min, &u_max, &v_max);
+
+            // For animated meshes, offset UVs to show current frame
+            if (rect->frame_count > 1 && m->impl->current_frame > 0) {
+                float frame_width_pixels = (float)rect->width / (float)rect->frame_count;
+                float frame_offset_uv = (m->impl->current_frame * frame_width_pixels) / (float)atlas->impl->width;
+                u_min += frame_offset_uv;
+                u_max += frame_offset_uv;
+            }
 
             // Build textured quad
             MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);

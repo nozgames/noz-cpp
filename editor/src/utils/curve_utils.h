@@ -27,3 +27,7 @@ extern void SplitBezierCurve(Vec2 p0, Vec2 p2, Vec2 curve_offset, float curve_we
 
 // Calculate the weight for a perfect circular arc between p0 and p1 around center
 extern float CalculateCircleWeight(Vec2 p0, Vec2 p1, Vec2 center);
+
+// Evaluate a rational quadratic Bezier curve at parameter t
+// w = 1.0 gives standard bezier, w = cos(half_angle) gives circular arc
+extern Vec2 EvalQuadraticBezier(Vec2 p0, Vec2 control, Vec2 p1, float t, float w);

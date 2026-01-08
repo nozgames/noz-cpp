@@ -160,7 +160,6 @@ extern int GetOrAddEdge(MeshData* m, int v0, int v1, int face_index);
 extern Vec2 GetEdgeMidpoint(MeshData* m, int edge_index);
 extern Vec2 GetEdgeControlPoint(MeshData* m, int edge_index);
 extern bool IsEdgeCurved(MeshData* m, int edge_index);
-extern Vec2 EvalQuadraticBezier(const Vec2& p0, const Vec2& control, const Vec2& p1, float t, float w);
 extern bool FixWinding(MeshData* m, FaceData& ef);
 extern void DrawEdges(MeshData* m, const Vec2& position);
 extern void DrawEdges(MeshData* m, const Mat3& transform);

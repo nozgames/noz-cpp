@@ -15,10 +15,6 @@ option(NOZ_EDITOR_LIB "Build nozed as a static library instead of executable" OF
 
 add_subdirectory(../ noz)
 
-set(PLUTOVG_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(PLUTOVG_DISABLE_FONT_FACE_CACHE_LOAD ON CACHE BOOL "" FORCE)
-add_subdirectory(libs/plutovg)
-
 target_compile_definitions(noz PUBLIC NOZ_EDITOR)
 
 file(GLOB SRC_FILES
@@ -40,7 +36,6 @@ endif()
 target_compile_definitions(nozed PRIVATE _CRT_SECURE_NO_WARNINGS NOZ_LUA)
 target_link_libraries(nozed PRIVATE
     noz
-    plutovg
     debug ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/glslangd.lib
     debug ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/SPIRVd.lib
     debug ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/SPVRemapperd.lib
@@ -68,5 +63,4 @@ target_include_directories(nozed PRIVATE
     res/windows
     ${CMAKE_CURRENT_SOURCE_DIR}/../libs
     ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/libs/agg/include
 )

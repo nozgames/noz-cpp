@@ -2,10 +2,6 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-#include <plutovg.h>
-
-extern void ConvertARGBToRGBA(u8* dst, const u8* src, int width, int height);
-
 namespace fs = std::filesystem;
 
 static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* config, Props* meta) {
@@ -25,13 +21,7 @@ static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* 
         return;
     }
 
-    // Copy to temporary buffer for export processing
     u32 pixel_size = impl->width * impl->height * 4;
-    u8* pixels = static_cast<u8*>(Alloc(ALLOCATOR_DEFAULT, pixel_size));
-    memcpy(pixels, impl->pixels, pixel_size);
-
-    // Convert from PlutoVG's premultiplied ARGB to premultiplied RGBA
-    ConvertARGBToRGBA(pixels, pixels, impl->width, impl->height);
 
     Stream* stream = CreateStream(ALLOCATOR_DEFAULT, pixel_size + 1024);
 
@@ -48,11 +38,10 @@ static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* 
     WriteU8(stream, (u8)clamp_value);
     WriteU32(stream, impl->width);
     WriteU32(stream, impl->height);
-    WriteBytes(stream, pixels, pixel_size);
+    WriteBytes(stream, impl->pixels, pixel_size);
 
     SaveStream(stream, path);
     Free(stream);
-    Free(pixels);
 }
 
 static bool AtlasDependsOn(AssetData* atlas_asset, AssetData* dependency) {

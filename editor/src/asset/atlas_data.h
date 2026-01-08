@@ -60,9 +60,7 @@ extern AtlasData* FindAtlasForMesh(const Name* mesh_name, AtlasRect** out_rect =
 // Rendering
 extern void RenderMeshToAtlas(AtlasData* atlas, struct MeshData* mesh, AtlasRect& rect, bool update_bounds = true);  // Renders all frames
 extern void RenderMeshPreview(struct MeshData* mesh, u8* pixels, int width, int height, Bounds2* out_bounds);  // Render current frame to buffer
-extern void ConvertARGBToRGBA(u8* dst, const u8* src, int width, int height);  // Convert pixel format for GPU upload
 extern void RegenerateAtlas(AtlasData* atlas, u8* buffer = nullptr);  // Re-render meshes to buffer (or impl->pixels if null)
-extern void DilateAtlasRect(u8* pixels, int atlas_width, int atlas_height, const AtlasRect& rect);  // Dilate rect edges for bilinear filtering
 extern void RebuildAtlas(AtlasData* atlas);      // Clear and reallocate all rects, mark meshes modified
 extern void SyncAtlasTexture(AtlasData* atlas);  // Upload pixels to GPU (editor only)
 
@@ -88,6 +86,9 @@ extern bool IsSkinnedMesh(struct MeshData* mesh);
 extern int GetSingleBoneIndex(struct MeshData* mesh);  // Returns bone index or -1 if not single-bone
 extern int ComputeConvexHull(struct MeshData* mesh, int* hull_indices, int max_hull);  // Returns hull count
 extern void ExpandHullByEdgeNormals(struct MeshData* mesh, const int* hull_indices, int hull_count, float expand, Vec2* out_positions);
+
+// Pixel-based hull generation (for pixel-art pipeline)
+extern int ComputePixelHull(AtlasData* atlas, const AtlasRect& rect, Vec2* out_hull, int max_hull, float expand);
 
 // Importer
 struct AssetImporter;

@@ -237,17 +237,6 @@ bool IsEdgeCurved(MeshData* m, int edge_index) {
     return LengthSqr(offset) > 0.0001f;
 }
 
-// Rational quadratic Bezier evaluation
-// w = 1.0 gives standard bezier, w = cos(half_angle) gives circular arc
-Vec2 EvalQuadraticBezier(const Vec2& p0, const Vec2& control, const Vec2& p1, float t, float w) {
-    float u = 1.0f - t;
-    float u2 = u * u;
-    float t2 = t * t;
-    float wt = 2.0f * u * t * w;
-    float denom = u2 + wt + t2;
-    return (p0 * u2 + control * wt + p1 * t2) / denom;
-}
-
 // Compute centroid using signed area formula (works for concave polygons and holes)
 static Vec2 ComputeFaceCentroid(MeshData* m, FaceData& f) {
     if (f.vertex_count < 3)
