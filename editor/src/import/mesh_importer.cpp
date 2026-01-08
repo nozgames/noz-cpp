@@ -24,10 +24,10 @@ static Mesh* ToMeshWithAtlasUVs(MeshData* mesh_data, AtlasData* atlas, const Atl
     float depth = 0.01f + 0.99f * (mesh_data->impl->depth - MIN_DEPTH) / (float)(MAX_DEPTH - MIN_DEPTH);
     int atlas_idx = GetAtlasIndex(atlas);
 
-    // Get geometry and UVs from shared function
+    // Get tight geometry (pixel bounds) and UVs from shared function
     Vec2 min, max;
     float u_min, v_min, u_max, v_max;
-    GetExportQuadGeometry(atlas, rect, &min, &max, &u_min, &v_min, &u_max, &v_max);
+    GetTightQuadGeometry(atlas, rect, &min, &max, &u_min, &v_min, &u_max, &v_max);
 
     Vec2 uv_bl = {u_min, v_min};
     Vec2 uv_br = {u_max, v_min};
@@ -114,57 +114,6 @@ static Mesh* ToMeshWithAtlasUVsHull(MeshData* mesh_data, AtlasData* atlas, const
     return result;
 }
 
-// Create triangulated mesh with atlas UVs (for skinned meshes that need bone weights preserved)
-static Mesh* ToMeshWithAtlasUVsTriangulated(MeshData* mesh_data, AtlasData* atlas, const AtlasRect& rect) {
-    // Ensure mesh data has faces before trying to triangulate
-    if (!mesh_data || !mesh_data->impl || mesh_data->impl->frames[0].face_count == 0) {
-        return nullptr;
-    }
-
-    // Get the triangulated mesh with bone weights
-    Mesh* tri_mesh = ToMesh(mesh_data, false, false);
-    if (!tri_mesh) return nullptr;
-
-    // Create new mesh builder to rebuild with atlas UVs
-    u16 vertex_count = GetVertexCount(tri_mesh);
-    u16 index_count = GetIndexCount(tri_mesh);
-
-    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_DEFAULT, vertex_count, index_count);
-
-    const MeshVertex* src_vertices = GetVertices(tri_mesh);
-    const u16* src_indices = GetIndices(tri_mesh);
-    int atlas_idx = GetAtlasIndex(atlas);
-
-    // Remap each vertex's UV to atlas UV, preserve bone data
-    for (int i = 0; i < vertex_count; i++) {
-        MeshVertex v = src_vertices[i];
-        // Replace UV with atlas UV based on vertex position
-        // Use bounds stored in rect to match what was rendered to atlas
-        v.uv = GetAtlasUV(atlas, rect, rect.mesh_bounds, v.position);
-        v.atlas_index = atlas_idx;
-        // bone_indices and bone_weights are already set in v from src_vertices
-        AddVertex(builder, v);
-    }
-
-    // Copy indices
-    for (int i = 0; i < index_count; i += 3) {
-        AddTriangle(builder, src_indices[i], src_indices[i+1], src_indices[i+2]);
-    }
-
-    Mesh* result = CreateMesh(ALLOCATOR_DEFAULT, builder, mesh_data->name, false);
-    Free(builder);
-    Free(tri_mesh);
-
-    // Set animation info for animated meshes
-    if (rect.frame_count > 1) {
-        float frame_width_pixels = static_cast<float>(rect.width) / static_cast<float>(rect.frame_count);
-        float frame_width_uv = frame_width_pixels / static_cast<float>(atlas->impl->width);
-        SetAnimationInfo(result, rect.frame_count, 12, frame_width_uv);
-    }
-
-    return result;
-}
-
 static void ImportMesh(AssetData* a, const std::filesystem::path& path, Props* config, Props* meta) {
     (void)config;
     (void)meta;
@@ -188,8 +137,10 @@ static void ImportMesh(AssetData* a, const std::filesystem::path& path, Props* c
                 // Single-bone: use simplified convex hull
                 m = ToMeshWithAtlasUVsHull(mesh_data, atlas, *rect, single_bone);
             } else {
-                // Multi-bone: need full triangulated geometry
-                m = ToMeshWithAtlasUVsTriangulated(mesh_data, atlas, *rect);
+                // Multi-bone not supported - warn and export as non-skinned
+                LogWarning("Mesh '%s' has multi-bone weights which is not supported, exporting as non-skinned",
+                    mesh_data->name->value);
+                m = ToMeshWithAtlasUVs(mesh_data, atlas, *rect);
             }
         } else {
             m = ToMeshWithAtlasUVs(mesh_data, atlas, *rect);

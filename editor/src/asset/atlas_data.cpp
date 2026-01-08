@@ -563,6 +563,72 @@ void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, bool u
     atlas->impl->outline_dirty = true;
 }
 
+void RenderMeshPreview(MeshData* mesh, u8* pixels, int width, int height, Bounds2* out_bounds) {
+    MeshDataImpl* mesh_impl = mesh->impl;
+    if (mesh_impl->frame_count == 0) return;
+
+    MeshFrameData* frame = GetCurrentFrame(mesh);
+
+    // Calculate bounds from current frame
+    Bounds2 bounds = BOUNDS2_ZERO;
+    if (frame->vertex_count > 0) {
+        bounds = {frame->vertices[0].position, frame->vertices[0].position};
+        for (int i = 1; i < frame->vertex_count; i++) {
+            bounds.min.x = Min(bounds.min.x, frame->vertices[i].position.x);
+            bounds.min.y = Min(bounds.min.y, frame->vertices[i].position.y);
+            bounds.max.x = Max(bounds.max.x, frame->vertices[i].position.x);
+            bounds.max.y = Max(bounds.max.y, frame->vertices[i].position.y);
+        }
+        // Include curve control points
+        for (int i = 0; i < frame->edge_count; i++) {
+            EdgeData& e = frame->edges[i];
+            if (LengthSqr(e.curve_offset) > 0.0001f) {
+                Vec2 p0 = frame->vertices[e.v0].position;
+                Vec2 p1 = frame->vertices[e.v1].position;
+                Vec2 control = (p0 + p1) * 0.5f + e.curve_offset;
+                bounds.min.x = Min(bounds.min.x, control.x);
+                bounds.min.y = Min(bounds.min.y, control.y);
+                bounds.max.x = Max(bounds.max.x, control.x);
+                bounds.max.y = Max(bounds.max.y, control.y);
+            }
+        }
+    }
+
+    if (out_bounds) *out_bounds = bounds;
+
+    // Clear buffer
+    memset(pixels, 0, width * height * 4);
+
+    if (frame->face_count == 0) return;
+
+    float dpi = (float)g_editor.atlas.dpi;
+    int padding = g_editor.atlas.padding;
+
+    // Set up rasterizer
+    ScanlineRasterizer* rasterizer = CreateScanlineRasterizer();
+    SetTarget(rasterizer, pixels, width, height);
+    SetAntialias(rasterizer, g_editor.atlas.antialias);
+
+    float offset_x = padding - bounds.min.x * dpi;
+    float offset_y = padding - bounds.min.y * dpi;
+    int palette_index = g_editor.palette_map[mesh_impl->palette];
+    bool snap_to_pixels = !g_editor.atlas.antialias;
+
+    for (int fi = 0; fi < frame->face_count; fi++) {
+        FaceData& face = frame->faces[fi];
+        if (face.vertex_count < 3) continue;
+
+        Color color = g_editor.palettes[palette_index].colors[face.color];
+        float alpha = color.a * face.opacity;
+        SetColor(rasterizer, color.r, color.g, color.b, alpha);
+        BeginPath(rasterizer);
+        AddFaceToPath(rasterizer, frame, face, offset_x, offset_y, dpi, 0.75f, snap_to_pixels);
+        Fill(rasterizer);
+    }
+
+    DestroyScanlineRasterizer(rasterizer);
+}
+
 void SyncAtlasTexture(AtlasData* atlas) {
     AtlasDataImpl* impl = atlas->impl;
     if (!impl->pixels || !impl->dirty) return;
@@ -914,6 +980,33 @@ void GetExportQuadGeometry(AtlasData* atlas, const AtlasRect& rect,
     *out_v_max = pixel_at_max_y / (float)atlas->impl->height;
 }
 
+void GetTightQuadGeometry(AtlasData* atlas, const AtlasRect& rect,
+    Vec2* out_min, Vec2* out_max,
+    float* out_u_min, float* out_v_min, float* out_u_max, float* out_v_max) {
+
+    // For now, just use the full mesh_bounds like GetExportQuadGeometry
+    // Tight bounds calculation is complex due to Y-flip between pixel and world space
+    // and needs more careful implementation
+    *out_min = rect.mesh_bounds.min;
+    *out_max = rect.mesh_bounds.max;
+
+    float dpi = (float)atlas->impl->dpi;
+    Vec2 mesh_size = GetSize(rect.mesh_bounds);
+    float expected_pixel_w = mesh_size.x * dpi;
+    float expected_pixel_h = mesh_size.y * dpi;
+
+    // Map mesh_bounds corners to atlas pixel coordinates, sampling at texel centers
+    float pixel_at_min_x = rect.x + g_editor.atlas.padding + 0.5f;
+    float pixel_at_min_y = rect.y + g_editor.atlas.padding + 0.5f;
+    float pixel_at_max_x = rect.x + g_editor.atlas.padding + expected_pixel_w - 0.5f;
+    float pixel_at_max_y = rect.y + g_editor.atlas.padding + expected_pixel_h - 0.5f;
+
+    *out_u_min = pixel_at_min_x / (float)atlas->impl->width;
+    *out_v_min = pixel_at_min_y / (float)atlas->impl->height;
+    *out_u_max = pixel_at_max_x / (float)atlas->impl->width;
+    *out_v_max = pixel_at_max_y / (float)atlas->impl->height;
+}
+
 // Helper to add a line segment as a quad to the mesh builder
 static void AddLineQuad(MeshBuilder* builder, const Vec2& p0, const Vec2& p1, float thickness, const Vec4& color) {
     Vec2 dir = p1 - p0;
@@ -1056,10 +1149,10 @@ Mesh* GetAtlasOutlineMesh(AtlasData* atlas) {
                 }
             }
         } else {
-            // Non-skinned: draw quad outline using shared export geometry
+            // Non-skinned: draw quad outline using tight pixel bounds
             Vec2 mesh_min, mesh_max;
             float u_min, v_min, u_max, v_max;
-            GetExportQuadGeometry(atlas, r, &mesh_min, &mesh_max, &u_min, &v_min, &u_max, &v_max);
+            GetTightQuadGeometry(atlas, r, &mesh_min, &mesh_max, &u_min, &v_min, &u_max, &v_max);
 
             Vec2 corners[4] = {
                 Vec2{mesh_min.x, mesh_min.y} * mesh_to_world + mesh_offset,

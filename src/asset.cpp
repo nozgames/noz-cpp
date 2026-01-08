@@ -159,7 +159,7 @@ const Name** ReadNameTable(const AssetHeader& header, Stream* stream) {
     const Name** name_table = nullptr;
     if (header.names > 0)
     {
-        name_table = (const Name**)Alloc(ALLOCATOR_SCRATCH, sizeof(Name*) * header.names);
+        name_table = (const Name**)Alloc(ALLOCATOR_DEFAULT, sizeof(Name*) * header.names);
         for (u32 i = 0; i < header.names; i++)
             name_table[i] = ReadName(stream);
     }
@@ -187,8 +187,8 @@ Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType
 
 Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, const u8* data, u32 data_size) {
     Stream* stream = data != nullptr
-        ? LoadStream(ALLOCATOR_SCRATCH, data, data_size)
-        : LoadAssetStream(ALLOCATOR_SCRATCH, asset_name, asset_type);
+        ? LoadStream(ALLOCATOR_DEFAULT, data, data_size)
+        : LoadAssetStream(ALLOCATOR_DEFAULT, asset_name, asset_type);
 
     if (!stream)
         return nullptr;
@@ -219,7 +219,7 @@ void ReloadAsset(const Name* name, AssetType asset_type, Asset* asset, void (*re
 
     assert(name);
 
-    Stream* stream = LoadAssetStream(ALLOCATOR_SCRATCH, name, asset_type);
+    Stream* stream = LoadAssetStream(ALLOCATOR_DEFAULT, name, asset_type);
     if (!stream)
         return;
 

@@ -59,6 +59,8 @@ extern AtlasData* FindAtlasForMesh(const Name* mesh_name, AtlasRect** out_rect =
 
 // Rendering
 extern void RenderMeshToAtlas(AtlasData* atlas, struct MeshData* mesh, AtlasRect& rect, bool update_bounds = true);  // Renders all frames
+extern void RenderMeshPreview(struct MeshData* mesh, u8* pixels, int width, int height, Bounds2* out_bounds);  // Render current frame to buffer
+extern void ConvertARGBToRGBA(u8* dst, const u8* src, int width, int height);  // Convert pixel format for GPU upload
 extern void RegenerateAtlas(AtlasData* atlas, u8* buffer = nullptr);  // Re-render meshes to buffer (or impl->pixels if null)
 extern void DilateAtlasRect(u8* pixels, int atlas_width, int atlas_height, const AtlasRect& rect);  // Dilate rect edges for bilinear filtering
 extern void RebuildAtlas(AtlasData* atlas);      // Clear and reallocate all rects, mark meshes modified
@@ -71,8 +73,13 @@ extern Vec2 GetAtlasUV(AtlasData* atlas, const AtlasRect& rect, const Bounds2& m
 extern Mesh* GetAtlasOutlineMesh(AtlasData* atlas);
 
 // Export quad geometry calculation (shared between importer and visualization)
-// Returns inset bounds and UV coordinates for non-skinned mesh export quad
+// Returns mesh_bounds and UV coordinates for non-skinned mesh export quad (for tiling)
 extern void GetExportQuadGeometry(AtlasData* atlas, const AtlasRect& rect,
+    Vec2* out_min, Vec2* out_max,
+    float* out_u_min, float* out_v_min, float* out_u_max, float* out_v_max);
+
+// Returns tight pixel bounds and UV coordinates for non-skinned mesh export quad
+extern void GetTightQuadGeometry(AtlasData* atlas, const AtlasRect& rect,
     Vec2* out_min, Vec2* out_max,
     float* out_u_min, float* out_v_min, float* out_u_max, float* out_v_max);
 

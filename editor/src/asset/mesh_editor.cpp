@@ -83,6 +83,15 @@ struct MeshEditor {
         Vec2 center;
         bool has_content;
     } geometry_clipboard;
+
+    // Pixel art preview state
+    u8* preview_pixels;
+    int preview_width;
+    int preview_height;
+    Texture* preview_texture;
+    Material* preview_material;
+    bool preview_dirty;
+    Bounds2 preview_bounds;  // Cached bounds from last render (includes curves)
 };
 
 static MeshEditor g_mesh_editor = {};
@@ -101,6 +110,92 @@ inline MeshData* GetMeshData() {
     return (MeshData*)a;
 }
 
+// Preview rendering functions
+void MarkPreviewDirty() {
+    g_mesh_editor.preview_dirty = true;
+}
+
+static void SyncPreviewTexture(int width, int height) {
+    if (!g_mesh_editor.preview_pixels) return;
+
+    // Convert ARGB to RGBA
+    u8* rgba = (u8*)Alloc(ALLOCATOR_SCRATCH, width * height * 4);
+    ConvertARGBToRGBA(rgba, g_mesh_editor.preview_pixels, width, height);
+
+    if (!g_mesh_editor.preview_texture) {
+        g_mesh_editor.preview_texture = CreateTexture(
+            ALLOCATOR_DEFAULT, rgba, width, height,
+            TEXTURE_FORMAT_RGBA8, GetName("mesh_preview"),
+            g_editor.atlas.filter);
+        g_mesh_editor.preview_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_TEXTURED_MESH);
+        SetTexture(g_mesh_editor.preview_material, g_mesh_editor.preview_texture, 0);
+    } else {
+        UpdateTexture(g_mesh_editor.preview_texture, rgba);
+    }
+}
+
+static Bounds2 RenderPreview(MeshData* m) {
+    float dpi = (float)g_editor.atlas.dpi;
+    int padding = g_editor.atlas.padding;
+
+    // Get bounds for current frame (must match RenderMeshPreview calculation)
+    Bounds2 bounds;
+    MeshFrameData* frame = GetCurrentFrame(m);
+    if (frame->vertex_count == 0) {
+        bounds = {{-0.5f, -0.5f}, {0.5f, 0.5f}};
+    } else {
+        bounds = {frame->vertices[0].position, frame->vertices[0].position};
+        for (int i = 1; i < frame->vertex_count; i++) {
+            bounds.min.x = Min(bounds.min.x, frame->vertices[i].position.x);
+            bounds.min.y = Min(bounds.min.y, frame->vertices[i].position.y);
+            bounds.max.x = Max(bounds.max.x, frame->vertices[i].position.x);
+            bounds.max.y = Max(bounds.max.y, frame->vertices[i].position.y);
+        }
+        // Include curve control points (must match RenderMeshPreview)
+        for (int i = 0; i < frame->edge_count; i++) {
+            EdgeData& e = frame->edges[i];
+            if (LengthSqr(e.curve_offset) > 0.0001f) {
+                Vec2 p0 = frame->vertices[e.v0].position;
+                Vec2 p1 = frame->vertices[e.v1].position;
+                Vec2 control = (p0 + p1) * 0.5f + e.curve_offset;
+                bounds.min.x = Min(bounds.min.x, control.x);
+                bounds.min.y = Min(bounds.min.y, control.y);
+                bounds.max.x = Max(bounds.max.x, control.x);
+                bounds.max.y = Max(bounds.max.y, control.y);
+            }
+        }
+    }
+
+    Vec2 size = GetSize(bounds);
+    int width = (int)ceilf(size.x * dpi) + padding * 2;
+    int height = (int)ceilf(size.y * dpi) + padding * 2;
+    width = Max(width, 1);
+    height = Max(height, 1);
+
+    // Reallocate buffer if size changed
+    if (width != g_mesh_editor.preview_width || height != g_mesh_editor.preview_height) {
+        Free(g_mesh_editor.preview_pixels);
+        g_mesh_editor.preview_pixels = (u8*)Alloc(ALLOCATOR_DEFAULT, width * height * 4);
+        g_mesh_editor.preview_width = width;
+        g_mesh_editor.preview_height = height;
+        // Force texture recreation
+        if (g_mesh_editor.preview_texture) {
+            Free(g_mesh_editor.preview_texture);
+            g_mesh_editor.preview_texture = nullptr;
+            g_mesh_editor.preview_material = nullptr;
+        }
+    }
+
+    // Render mesh to preview buffer
+    RenderMeshPreview(m, g_mesh_editor.preview_pixels, width, height, &bounds);
+
+    // Upload to GPU
+    SyncPreviewTexture(width, height);
+
+    g_mesh_editor.preview_dirty = false;
+    g_mesh_editor.preview_bounds = bounds;  // Cache for non-dirty frames
+    return bounds;
+}
 
 static void UpdateVertexSelection(MeshData* m) {
     MeshFrameData* frame = GetCurrentFrame(m);
@@ -1722,10 +1817,78 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
 
 static void DrawMeshEditor() {
     MeshData* m = GetMeshData();
-    MeshDataImpl* impl = m->impl;
 
-    BindColor(COLOR_WHITE, Vec2Int{0,impl->palette});
-    DrawMesh(m, Translate(m->position));
+    // Check if mesh is in atlas - use atlas rendering for consistency with non-edit mode
+    AtlasRect* rect = nullptr;
+    AtlasData* atlas = FindAtlasForMesh(m->name, &rect);
+
+    if (atlas && rect) {
+        // Use atlas rendering path (same as non-edit mode)
+        if (!atlas->impl->pixels) {
+            RegenerateAtlas(atlas);
+        }
+
+        // Re-render mesh to atlas if dirty (for live preview updates)
+        if (m->impl->atlas_dirty) {
+            ClearRectPixels(atlas, *rect);
+            RenderMeshToAtlas(atlas, m, *rect, true);
+            m->impl->atlas_dirty = false;
+        }
+
+        SyncAtlasTexture(atlas);
+
+        if (atlas->impl->material) {
+            Vec2 min, max;
+            float u_min, v_min, u_max, v_max;
+            GetExportQuadGeometry(atlas, *rect, &min, &max, &u_min, &v_min, &u_max, &v_max);
+
+            // Build textured quad
+            MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
+            MeshVertex v = {};
+            v.depth = 0.5f;
+            v.opacity = 1.0f;
+
+            v.position = min; v.uv = {u_min, v_min}; AddVertex(builder, v);
+            v.position = {max.x, min.y}; v.uv = {u_max, v_min}; AddVertex(builder, v);
+            v.position = max; v.uv = {u_max, v_max}; AddVertex(builder, v);
+            v.position = {min.x, max.y}; v.uv = {u_min, v_max}; AddVertex(builder, v);
+            AddTriangle(builder, 0, 1, 2);
+            AddTriangle(builder, 0, 2, 3);
+
+            Mesh* quad = CreateMesh(ALLOCATOR_SCRATCH, builder, nullptr, false);
+            Free(builder);
+
+            BindMaterial(atlas->impl->material);
+            BindColor(COLOR_WHITE);
+            BindDepth(-0.1f);
+            DrawMesh(quad, Translate(m->position));
+        }
+    } else {
+        // Fallback: standalone preview for meshes not in atlas
+        Bounds2 preview_bounds;
+        if (g_mesh_editor.preview_dirty || !g_mesh_editor.preview_texture) {
+            preview_bounds = RenderPreview(m);
+        } else {
+            preview_bounds = g_mesh_editor.preview_bounds;
+        }
+
+        if (g_mesh_editor.preview_material && g_mesh_editor.preview_width > 0) {
+            float dpi = (float)g_editor.atlas.dpi;
+            Vec2 texture_size = {
+                (float)g_mesh_editor.preview_width / dpi,
+                (float)g_mesh_editor.preview_height / dpi
+            };
+            float padding_world = (float)g_editor.atlas.padding / dpi;
+            Vec2 quad_min = preview_bounds.min - Vec2{padding_world, padding_world};
+            Vec2 quad_max = quad_min + texture_size;
+            Vec2 center = (quad_min + quad_max) * 0.5f;
+
+            BindColor(COLOR_WHITE);
+            BindMaterial(g_mesh_editor.preview_material);
+            BindDepth(-0.1f);
+            DrawMesh(g_view.quad_mesh, Translate(m->position + center) * Scale(Vec2{texture_size.x, -texture_size.y}));
+        }
+    }
 
     // Skip editor overlays when playing animation
     if (g_mesh_editor.is_playing)
@@ -1733,27 +1896,65 @@ static void DrawMeshEditor() {
 
     // Draw tiled copies if tiling preview is enabled
     if (g_mesh_editor.show_tiling) {
-        Bounds2 bounds = GetBounds(m);
-        Vec2 size = GetSize(bounds);
+        Vec2 tile_size = {}, quad_min = {}, quad_max = {};
+        Material* tile_material = nullptr;
+        float u_min = 0, v_min = 0, u_max = 1, v_max = 1;
 
-        // 8 surrounding offsets
-        Vec2 offsets[8] = {
-            {-size.x, -size.y}, // bottom-left
-            {   0.0f, -size.y}, // bottom
-            { size.x, -size.y}, // bottom-right
-            {-size.x,    0.0f}, // left
-            { size.x,    0.0f}, // right
-            {-size.x,  size.y}, // top-left
-            {   0.0f,  size.y}, // top
-            { size.x,  size.y}, // top-right
-        };
-
-        BindColor(SetAlpha(COLOR_WHITE, 0.5f), Vec2Int{0,impl->palette});
-        for (int i = 0; i < 8; i++) {
-            Vec2 offset = offsets[i];
-            DrawMesh(m, Translate(m->position + offset));
+        if (atlas && rect && atlas->impl->material) {
+            // Use atlas geometry for tiling
+            GetExportQuadGeometry(atlas, *rect, &quad_min, &quad_max, &u_min, &v_min, &u_max, &v_max);
+            tile_size = GetSize(rect->mesh_bounds);
+            tile_material = atlas->impl->material;
+        } else if (g_mesh_editor.preview_material && g_mesh_editor.preview_width > 0) {
+            // Use standalone preview
+            float dpi = (float)g_editor.atlas.dpi;
+            Vec2 texture_size = {
+                (float)g_mesh_editor.preview_width / dpi,
+                (float)g_mesh_editor.preview_height / dpi
+            };
+            float padding_world = (float)g_editor.atlas.padding / dpi;
+            quad_min = g_mesh_editor.preview_bounds.min - Vec2{padding_world, padding_world};
+            quad_max = quad_min + texture_size;
+            tile_size = GetSize(g_mesh_editor.preview_bounds);
+            tile_material = g_mesh_editor.preview_material;
         }
-        BindColor(COLOR_WHITE, Vec2Int{0,impl->palette});
+
+        if (tile_material) {
+            // Build tiled quad mesh
+            MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
+            MeshVertex v = {};
+            v.depth = 0.5f;
+            v.opacity = 1.0f;
+
+            v.position = quad_min; v.uv = {u_min, v_min}; AddVertex(builder, v);
+            v.position = {quad_max.x, quad_min.y}; v.uv = {u_max, v_min}; AddVertex(builder, v);
+            v.position = quad_max; v.uv = {u_max, v_max}; AddVertex(builder, v);
+            v.position = {quad_min.x, quad_max.y}; v.uv = {u_min, v_max}; AddVertex(builder, v);
+            AddTriangle(builder, 0, 1, 2);
+            AddTriangle(builder, 0, 2, 3);
+
+            Mesh* tile_quad = CreateMesh(ALLOCATOR_SCRATCH, builder, nullptr, false);
+            Free(builder);
+
+            // 8 surrounding offsets
+            Vec2 offsets[8] = {
+                {-tile_size.x, -tile_size.y},
+                {        0.0f, -tile_size.y},
+                { tile_size.x, -tile_size.y},
+                {-tile_size.x,         0.0f},
+                { tile_size.x,         0.0f},
+                {-tile_size.x,  tile_size.y},
+                {        0.0f,  tile_size.y},
+                { tile_size.x,  tile_size.y},
+            };
+
+            BindMaterial(tile_material);
+            BindColor(SetAlpha(COLOR_WHITE, 0.5f));
+            for (int i = 0; i < 8; i++) {
+                DrawMesh(tile_quad, Translate(m->position + offsets[i]));
+            }
+            BindColor(COLOR_WHITE);
+        }
     }
 
     // Draw onion skin (previous/next frame outlines)
@@ -2349,6 +2550,9 @@ static void BeginMeshEditor(AssetData* a) {
     g_mesh_editor.is_playing = false;
     g_mesh_editor.playback_time = 0.0f;
 
+    // Mark preview dirty for new mesh
+    g_mesh_editor.preview_dirty = true;
+
     SetFocus(CANVAS_ID_OVERLAY, MESH_EDITOR_ID_EXPAND);
 }
 
@@ -2372,6 +2576,11 @@ void ShutdownMeshEditor() {
     // Clean up animation state
     Free(g_mesh_editor.prev_frame_mesh);
     Free(g_mesh_editor.next_frame_mesh);
+
+    // Clean up preview resources
+    Free(g_mesh_editor.preview_pixels);
+    Free(g_mesh_editor.preview_texture);
+    Free(g_mesh_editor.preview_material);
 
     g_mesh_editor = {};
 }

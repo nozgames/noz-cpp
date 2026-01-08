@@ -103,6 +103,45 @@ static void DrawMesh(AssetData* a) {
 }
 
 void DrawMesh(MeshData* m, const Mat3& transform, Material* material) {
+    // Check if mesh is in an atlas - render as pixel art textured quad
+    AtlasRect* rect = nullptr;
+    AtlasData* atlas = FindAtlasForMesh(m->name, &rect);
+    if (atlas && rect) {
+        // Ensure atlas is rendered and texture is uploaded to GPU
+        if (!atlas->impl->pixels) {
+            RegenerateAtlas(atlas);
+        }
+        SyncAtlasTexture(atlas);
+        if (!atlas->impl->material) goto fallback;
+        // Get geometry at exact mesh bounds (matches selection outline)
+        Vec2 min, max;
+        float u_min, v_min, u_max, v_max;
+        GetExportQuadGeometry(atlas, *rect, &min, &max, &u_min, &v_min, &u_max, &v_max);
+
+        // Build textured quad
+        MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
+        MeshVertex v = {};
+        v.depth = 0.5f;
+        v.opacity = 1.0f;
+
+        v.position = min; v.uv = {u_min, v_min}; AddVertex(builder, v);
+        v.position = {max.x, min.y}; v.uv = {u_max, v_min}; AddVertex(builder, v);
+        v.position = max; v.uv = {u_max, v_max}; AddVertex(builder, v);
+        v.position = {min.x, max.y}; v.uv = {u_min, v_max}; AddVertex(builder, v);
+        AddTriangle(builder, 0, 1, 2);
+        AddTriangle(builder, 0, 2, 3);
+
+        Mesh* quad = CreateMesh(ALLOCATOR_SCRATCH, builder, nullptr, false);
+        Free(builder);
+
+        BindMaterial(atlas->impl->material);
+        BindColor(COLOR_WHITE);
+        DrawMesh(quad, transform);
+        return;
+    }
+
+fallback:
+    // Fall back to vector mesh rendering
     BindMaterial(material ? material : g_view.shaded_material);
     if (g_view.draw_mode == VIEW_DRAW_MODE_WIREFRAME) {
         BindColor(COLOR_EDGE);
@@ -416,6 +455,8 @@ void UpdateEdges(MeshData* m) {
     m->impl->bone_count = bone_count;
 }
 
+extern void MarkPreviewDirty();
+
 void MarkDirty(MeshData* m) {
     Free(GetCurrentFrame(m)->mesh);
     Free(GetCurrentFrame(m)->outline);
@@ -427,6 +468,9 @@ void MarkDirty(MeshData* m) {
 
     // Mark mesh for atlas re-render on save
     MarkMeshAtlasDirty(m);
+
+    // Mark editor preview for re-render
+    MarkPreviewDirty();
 }
 
 Mesh* ToMesh(MeshData* m, bool upload, bool use_cache) {
@@ -1995,6 +2039,33 @@ void AddVertexWeight(MeshData* m, int vertex_index, int bone_index, float weight
     VertexWeight& w = v.weights[weight_index];
     w.bone_index = bone_index;
     w.weight = Clamp01(w.weight + weight);
+}
+
+void SetSingleBone(MeshData* m, int bone_index) {
+    MeshFrameData* frame = GetCurrentFrame(m);
+
+    for (int vi = 0; vi < frame->vertex_count; vi++) {
+        VertexData& v = frame->vertices[vi];
+
+        // Clear all weights
+        for (int w = 0; w < MESH_MAX_VERTEX_WEIGHTS; w++) {
+            v.weights[w].bone_index = -1;
+            v.weights[w].weight = 0.0f;
+        }
+
+        // Set single bone weight
+        if (bone_index >= 0) {
+            v.weights[0].bone_index = bone_index;
+            v.weights[0].weight = 1.0f;
+        }
+    }
+
+    UpdateEdges(m);
+    MarkDirty(m);
+}
+
+void ClearBone(MeshData* m) {
+    SetSingleBone(m, -1);
 }
 
 void InterpolateVertexWeights(MeshData* m, int new_vertex_index, int v0_index, int v1_index, float t) {
