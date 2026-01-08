@@ -763,9 +763,26 @@ static bool Palette(int palette_index, bool* selected_colors) {
         });
 
         if (selected_colors && WasPressed()) {
-            RecordUndo(GetMeshData());
-            SetFaceColor(GetMeshData(), i);
-            MarkModified(GetMeshData());
+            if (IsShiftDown()) {
+                ClearSelection();
+                // Shift+click: select all faces with this color
+                MeshData* m = GetMeshData();
+                MeshFrameData* frame = GetCurrentFrame(m);
+                bool any_selected = false;
+                for (int face_index = 0; face_index < frame->face_count; face_index++) {
+                    FaceData& f = frame->faces[face_index];
+                    if (f.color == i) {
+                        f.selected = true;
+                        any_selected = true;
+                    }
+                }
+                if (any_selected)
+                    UpdateSelection(MESH_EDITOR_MODE_FACE);
+            } else {
+                RecordUndo(GetMeshData());
+                SetFaceColor(GetMeshData(), i);
+                MarkModified(GetMeshData());
+            }
         }
         EndContainer();
     }

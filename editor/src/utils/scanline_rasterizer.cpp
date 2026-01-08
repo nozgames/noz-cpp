@@ -30,6 +30,10 @@ void SetColor(ScanlineRasterizer* rasterizer, float r, float g, float b, float a
     PlatformSetColor((PlatformRasterizer*)rasterizer, r, g, b, a);
 }
 
+void SetAntialias(ScanlineRasterizer* rasterizer, bool enabled) {
+    PlatformSetAntialias((PlatformRasterizer*)rasterizer, enabled);
+}
+
 void BeginPath(ScanlineRasterizer* rasterizer) {
     PlatformBeginPath((PlatformRasterizer*)rasterizer);
 }

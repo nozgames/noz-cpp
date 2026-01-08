@@ -102,9 +102,14 @@ struct Editor {
     int palette_map[COLOR_PALETTE_COUNT];
     int palette_count;
 
-    int atlas_size = 1024;  // Default, overridden from editor.cfg
-    int atlas_dpi = 96;     // Default, overridden from editor.cfg [atlas] dpi
-    String32 atlas_prefix;  // Prefix for managed atlases, from [atlas] prefix
+    struct {
+        int size = 1024;
+        int dpi = 96;
+        int padding = 4;
+        String32 prefix;
+        TextureFilter filter = TEXTURE_FILTER_LINEAR;
+        bool antialias = false;
+    } atlas;
 };
 
 extern Editor g_editor;

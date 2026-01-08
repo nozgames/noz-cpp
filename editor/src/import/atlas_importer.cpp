@@ -14,17 +14,9 @@ static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* 
     AtlasData* atlas = static_cast<AtlasData*>(a);
     AtlasDataImpl* impl = atlas->impl;
 
-    // Export as texture
-    std::string filter = meta->GetString("atlas", "filter", "linear");
-    std::string clamp = meta->GetString("atlas", "clamp", "clamp");
-
-    TextureFilter filter_value = filter == "nearest" || filter == "point"
-        ? TEXTURE_FILTER_NEAREST
-        : TEXTURE_FILTER_LINEAR;
-
-    TextureClamp clamp_value = clamp == "repeat" ?
-        TEXTURE_CLAMP_REPEAT :
-        TEXTURE_CLAMP_CLAMP;
+    // Export as texture - filter from config [atlas] section, clamp always on
+    TextureFilter filter_value = g_editor.atlas.filter;
+    TextureClamp clamp_value = TEXTURE_CLAMP_CLAMP;
 
     // Regenerate atlas to impl->pixels (ensures it's up to date)
     RegenerateAtlas(atlas);

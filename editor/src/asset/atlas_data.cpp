@@ -97,7 +97,7 @@ static void AllocAtlasDataImpl(AssetData* a) {
     memset(atlas->impl, 0, sizeof(AtlasDataImpl));
     atlas->impl->width = ATLAS_DEFAULT_SIZE;
     atlas->impl->height = ATLAS_DEFAULT_SIZE;
-    atlas->impl->dpi = g_editor.atlas_dpi;
+    atlas->impl->dpi = g_editor.atlas.dpi;
     atlas->impl->dirty = true;
     // packer is created in LoadAtlasData with correct dimensions
 }
@@ -202,8 +202,8 @@ AtlasRect* AllocateRect(AtlasData* atlas, MeshData* mesh) {
     }
 
     Vec2 frame_size = GetSize(max_bounds);
-    int frame_width = (int)(frame_size.x * impl->dpi) + ATLAS_RECT_PADDING * 2;
-    int frame_height = (int)(frame_size.y * impl->dpi) + ATLAS_RECT_PADDING * 2;
+    int frame_width = (int)(frame_size.x * impl->dpi) + g_editor.atlas.padding * 2;
+    int frame_height = (int)(frame_size.y * impl->dpi) + g_editor.atlas.padding * 2;
 
     // Total strip size: frames laid out horizontally
     int total_width = frame_width * mesh_impl->frame_count;
@@ -329,23 +329,15 @@ static Vec2 EvalRationalBezierAtlas(Vec2 p0, Vec2 control, Vec2 p1, float w, flo
 }
 
 // Frame-based version for multi-frame rendering
-static void AddFaceToPath(ScanlineRasterizer* rasterizer, MeshFrameData* frame, FaceData& face, float offset_x, float offset_y, float scale, float expand = 0.0f) {
+static void AddFaceToPath(ScanlineRasterizer* rasterizer, MeshFrameData* frame, FaceData& face, float offset_x, float offset_y, float scale, float expand = 0.0f, bool snap_to_pixels = false) {
     constexpr int CURVE_SEGMENTS = 8;
 
-    // Calculate face center for expansion direction
+    // Calculate face center for determining outward direction
     Vec2 center = {0, 0};
     for (int vi = 0; vi < face.vertex_count; vi++) {
         center = center + frame->vertices[face.vertices[vi]].position;
     }
     center = center / (float)face.vertex_count;
-
-    auto expand_pos = [&](Vec2 pos) -> Vec2 {
-        if (expand > 0.0f) {
-            Vec2 dir = Normalize(pos - center);
-            pos = pos + dir * (expand / scale);
-        }
-        return pos;
-    };
 
     for (int vi = 0; vi < face.vertex_count; vi++) {
         int v0_idx = face.vertices[vi];
@@ -353,16 +345,34 @@ static void AddFaceToPath(ScanlineRasterizer* rasterizer, MeshFrameData* frame, 
         Vec2 p0 = frame->vertices[v0_idx].position;
         Vec2 p1 = frame->vertices[v1_idx].position;
 
-        Vec2 pos0 = expand_pos(p0);
+        // Check if this edge is shared (internal) - only expand shared edges to fill gaps
+        int edge_idx = GetFrameEdge(frame, v0_idx, v1_idx);
+        bool is_shared = edge_idx >= 0 && frame->edges[edge_idx].face_count > 1;
+
+        // Calculate edge normal pointing outward from face center
+        Vec2 edge_normal = {0, 0};
+        if (expand > 0.0f && is_shared) {
+            Vec2 edge_dir = Normalize(p1 - p0);
+            edge_normal = {-edge_dir.y, edge_dir.x};
+            Vec2 mid = (p0 + p1) * 0.5f;
+            if (Dot(edge_normal, mid - center) < 0) edge_normal = -edge_normal;
+            edge_normal = edge_normal * (expand / scale);
+        }
+
+        Vec2 pos0 = p0 + edge_normal;
 
         if (vi == 0) {
             float px = offset_x + pos0.x * scale;
             float py = offset_y + pos0.y * scale;
+            // Snap to pixel corners for non-AA rendering to avoid sub-pixel artifacts
+            if (snap_to_pixels) {
+                px = roundf(px);
+                py = roundf(py);
+            }
             MoveTo(rasterizer, px, py);
         }
 
         // Check if edge has a curve
-        int edge_idx = GetFrameEdge(frame, v0_idx, v1_idx);
         if (edge_idx >= 0) {
             EdgeData& e = frame->edges[edge_idx];
             if (LengthSqr(e.curve_offset) > 0.0001f) {
@@ -378,9 +388,13 @@ static void AddFaceToPath(ScanlineRasterizer* rasterizer, MeshFrameData* frame, 
                     if (reversed) t = 1.0f - t;
 
                     Vec2 pt = EvalRationalBezierAtlas(p0, control, p1, w, reversed ? 1.0f - t : t);
-                    pt = expand_pos(pt);
+                    pt = pt + edge_normal;  // Apply same expansion to curve points
                     float px = offset_x + pt.x * scale;
                     float py = offset_y + pt.y * scale;
+                    if (snap_to_pixels) {
+                        px = roundf(px);
+                        py = roundf(py);
+                    }
                     LineTo(rasterizer, px, py);
                 }
                 continue;
@@ -388,9 +402,13 @@ static void AddFaceToPath(ScanlineRasterizer* rasterizer, MeshFrameData* frame, 
         }
 
         // Straight edge
-        Vec2 pos1 = expand_pos(p1);
+        Vec2 pos1 = p1 + edge_normal;
         float px = offset_x + pos1.x * scale;
         float py = offset_y + pos1.y * scale;
+        if (snap_to_pixels) {
+            px = roundf(px);
+            py = roundf(py);
+        }
         LineTo(rasterizer, px, py);
     }
 
@@ -427,6 +445,7 @@ void RenderMeshToBuffer(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, u8* p
     // Set up rasterizer for the entire atlas
     ScanlineRasterizer* rasterizer = CreateScanlineRasterizer();
     SetTarget(rasterizer, pixels, impl->width, impl->height);
+    SetAntialias(rasterizer, g_editor.atlas.antialias);
 
     // Render each frame at its position in the strip
     for (int frame_idx = 0; frame_idx < mesh_impl->frame_count; frame_idx++) {
@@ -438,12 +457,13 @@ void RenderMeshToBuffer(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, u8* p
         SetClipRect(rasterizer, frame_x, rect.y, frame_width, rect.height);
 
         // Use render_bounds for consistent positioning across all frames
-        float offset_x = frame_x + ATLAS_RECT_PADDING - render_bounds.min.x * scale;
-        float offset_y = rect.y + ATLAS_RECT_PADDING - render_bounds.min.y * scale;
+        float offset_x = frame_x + g_editor.atlas.padding - render_bounds.min.x * scale;
+        float offset_y = rect.y + g_editor.atlas.padding - render_bounds.min.y * scale;
 
         int palette_index = g_editor.palette_map[mesh_impl->palette];
 
         // Render each face individually (no batching to avoid even-odd fill issues with shared edges)
+        bool snap_to_pixels = !g_editor.atlas.antialias;
         for (int fi = 0; fi < frame->face_count; fi++) {
             FaceData& face = frame->faces[fi];
             if (face.vertex_count < 3) continue;
@@ -451,13 +471,12 @@ void RenderMeshToBuffer(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, u8* p
             int color_index = face.color;
             float face_opacity = face.opacity;
             Color color = g_editor.palettes[palette_index].colors[color_index];
-
-            // Apply face opacity to the color alpha
             float final_alpha = color.a * face_opacity;
-            SetColor(rasterizer, color.r, color.g, color.b, final_alpha);
 
+            SetColor(rasterizer, color.r, color.g, color.b, final_alpha);
             BeginPath(rasterizer);
-            AddFaceToPath(rasterizer, frame, face, offset_x, offset_y, scale, 0.0f);
+            // Expansion fills gaps at internal coplanar edges (only applied to shared edges)
+            AddFaceToPath(rasterizer, frame, face, offset_x, offset_y, scale, 0.75f, snap_to_pixels);
             Fill(rasterizer);
         }
     }
@@ -465,29 +484,32 @@ void RenderMeshToBuffer(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, u8* p
     DestroyScanlineRasterizer(rasterizer);
 
     // Dilate pixels to prevent bilinear filtering from sampling empty (black) pixels
-    // For each empty pixel adjacent to a filled pixel, copy the filled pixel's color
-    for (int frame_idx = 0; frame_idx < mesh_impl->frame_count; frame_idx++) {
-        int frame_x = rect.x + frame_idx * frame_width;
+    // Skip dilation when using AA/premultiplied - premultiplied blending handles edges correctly
+    // and dilation would cause bright halos instead
+    if (!g_editor.atlas.antialias) {
+        for (int frame_idx = 0; frame_idx < mesh_impl->frame_count; frame_idx++) {
+            int frame_x = rect.x + frame_idx * frame_width;
 
-        for (int y = rect.y; y < rect.y + rect.height; y++) {
-            for (int x = frame_x; x < frame_x + frame_width; x++) {
-                u32* pixel = (u32*)(pixels + (y * impl->width + x) * 4);
-                if ((*pixel >> 24) != 0) continue; // Already filled
+            for (int y = rect.y; y < rect.y + rect.height; y++) {
+                for (int x = frame_x; x < frame_x + frame_width; x++) {
+                    u32* pixel = (u32*)(pixels + (y * impl->width + x) * 4);
+                    if ((*pixel >> 24) != 0) continue; // Already filled
 
-                // Check 4 neighbors for a filled pixel to copy from
-                static const int dx[] = {-1, 1, 0, 0};
-                static const int dy[] = {0, 0, -1, 1};
-                for (int d = 0; d < 4; d++) {
-                    int nx = x + dx[d];
-                    int ny = y + dy[d];
-                    if (nx < frame_x || nx >= frame_x + frame_width) continue;
-                    if (ny < rect.y || ny >= rect.y + rect.height) continue;
+                    // Check 4 neighbors for a filled pixel to copy from
+                    static const int dx[] = {-1, 1, 0, 0};
+                    static const int dy[] = {0, 0, -1, 1};
+                    for (int d = 0; d < 4; d++) {
+                        int nx = x + dx[d];
+                        int ny = y + dy[d];
+                        if (nx < frame_x || nx >= frame_x + frame_width) continue;
+                        if (ny < rect.y || ny >= rect.y + rect.height) continue;
 
-                    u32* neighbor = (u32*)(pixels + (ny * impl->width + nx) * 4);
-                    if ((*neighbor >> 24) != 0) {
-                        // Copy color but set alpha to 0 (for proper blending at edges)
-                        *pixel = *neighbor & 0x00FFFFFF;
-                        break;
+                        u32* neighbor = (u32*)(pixels + (ny * impl->width + nx) * 4);
+                        if ((*neighbor >> 24) != 0) {
+                            // Copy color but set alpha to 0 (for proper blending at edges)
+                            *pixel = *neighbor & 0x00FFFFFF;
+                            break;
+                        }
                     }
                 }
             }
@@ -551,8 +573,14 @@ void SyncAtlasTexture(AtlasData* atlas) {
     ConvertARGBToRGBA(rgba_pixels, impl->pixels, impl->width, impl->height);
 
     if (!impl->texture) {
-        impl->texture = CreateTexture(ALLOCATOR_DEFAULT, rgba_pixels, impl->width, impl->height,
-                                       TEXTURE_FORMAT_RGBA8, GetName("atlas_texture"), TEXTURE_FILTER_NEAREST);
+        impl->texture = CreateTexture(
+            ALLOCATOR_DEFAULT,
+            rgba_pixels,
+            impl->width,
+            impl->height,
+            TEXTURE_FORMAT_RGBA8,
+            GetName("atlas"),
+            TEXTURE_FILTER_NEAREST);
         impl->material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_TEXTURED_MESH);
         SetTexture(impl->material, impl->texture, 0);
     } else {
@@ -594,19 +622,19 @@ void RegenerateAtlas(AtlasData* atlas, u8* buffer) {
 
 void DilateAtlasRect(u8* pixels, int atlas_width, int atlas_height, const AtlasRect& rect) {
     if (rect.frame_count <= 0 || rect.width <= 0 || rect.height <= 0) return;
-    if (rect.height <= ATLAS_RECT_PADDING * 2) return;  // Too small to have content
+    if (rect.height <= g_editor.atlas.padding * 2) return;  // Too small to have content
 
     int frame_width = rect.width / rect.frame_count;
-    if (frame_width <= ATLAS_RECT_PADDING * 2) return;  // Too small to have content
+    if (frame_width <= g_editor.atlas.padding * 2) return;  // Too small to have content
 
     for (int frame_idx = 0; frame_idx < rect.frame_count; frame_idx++) {
         int frame_x = rect.x + frame_idx * frame_width;
 
         // Content area within the rect (after padding)
-        int content_x = frame_x + ATLAS_RECT_PADDING;
-        int content_y = rect.y + ATLAS_RECT_PADDING;
-        int content_w = frame_width - ATLAS_RECT_PADDING * 2;
-        int content_h = rect.height - ATLAS_RECT_PADDING * 2;
+        int content_x = frame_x + g_editor.atlas.padding;
+        int content_y = rect.y + g_editor.atlas.padding;
+        int content_w = frame_width - g_editor.atlas.padding * 2;
+        int content_h = rect.height - g_editor.atlas.padding * 2;
         int stride = atlas_width * 4;
 
         // Bounds check - ensure we don't write outside atlas
@@ -875,10 +903,10 @@ void GetExportQuadGeometry(AtlasData* atlas, const AtlasRect& rect,
     float expected_pixel_h = mesh_size.y * dpi;
 
     // Map mesh_bounds corners to atlas pixel coordinates, sampling at texel centers
-    float pixel_at_min_x = rect.x + ATLAS_RECT_PADDING + 0.5f;
-    float pixel_at_min_y = rect.y + ATLAS_RECT_PADDING + 0.5f;
-    float pixel_at_max_x = rect.x + ATLAS_RECT_PADDING + expected_pixel_w - 0.5f;
-    float pixel_at_max_y = rect.y + ATLAS_RECT_PADDING + expected_pixel_h - 0.5f;
+    float pixel_at_min_x = rect.x + g_editor.atlas.padding + 0.5f;
+    float pixel_at_min_y = rect.y + g_editor.atlas.padding + 0.5f;
+    float pixel_at_max_x = rect.x + g_editor.atlas.padding + expected_pixel_w - 0.5f;
+    float pixel_at_max_y = rect.y + g_editor.atlas.padding + expected_pixel_h - 0.5f;
 
     *out_u_min = pixel_at_min_x / (float)atlas->impl->width;
     *out_v_min = pixel_at_min_y / (float)atlas->impl->height;
@@ -977,7 +1005,7 @@ Mesh* GetAtlasOutlineMesh(AtlasData* atlas) {
         Vec2 atlas_size = Vec2{(float)impl->width, (float)impl->height} * pixel_to_world;
         Vec2 atlas_bottom_left = -atlas_size * 0.5f;
         Vec2 mesh_offset = atlas_bottom_left +
-            Vec2{(float)(r.x + ATLAS_RECT_PADDING), (float)(r.y + ATLAS_RECT_PADDING)} * pixel_to_world -
+            Vec2{(float)(r.x + g_editor.atlas.padding), (float)(r.y + g_editor.atlas.padding)} * pixel_to_world -
             r.mesh_bounds.min * mesh_to_world;
 
         // Get mesh to check if skinned
@@ -1116,10 +1144,10 @@ static void ParseRect(AtlasData* atlas, Tokenizer& tk) {
     }
 
     // pixel_bounds (optional for backwards compatibility)
-    int pixel_min_x = ATLAS_RECT_PADDING;
-    int pixel_min_y = ATLAS_RECT_PADDING;
-    int pixel_max_x = w / frame_count - ATLAS_RECT_PADDING - 1;
-    int pixel_max_y = h - ATLAS_RECT_PADDING - 1;
+    int pixel_min_x = g_editor.atlas.padding;
+    int pixel_min_y = g_editor.atlas.padding;
+    int pixel_max_x = w / frame_count - g_editor.atlas.padding - 1;
+    int pixel_max_y = h - g_editor.atlas.padding - 1;
     ExpectInt(tk, &pixel_min_x);
     ExpectInt(tk, &pixel_min_y);
     ExpectInt(tk, &pixel_max_x);
@@ -1195,6 +1223,16 @@ static void PostLoadAtlasData(AssetData* a) {
 
     // Register as managed atlas if it has the auto-managed naming convention
     RegisterManagedAtlas(atlas);
+
+    // Check for DPI mismatch - regenerate atlas if config DPI differs from saved DPI
+    if (impl->dpi != g_editor.atlas.dpi) {
+        LogInfo("Atlas '%s' DPI mismatch (file: %d, config: %d) - regenerating",
+            a->name->value, impl->dpi, g_editor.atlas.dpi);
+        impl->dpi = g_editor.atlas.dpi;
+        RebuildAtlas(atlas);
+        MarkModified(a);
+        return;  // RebuildAtlas handles mesh binding and rendering
+    }
 
     // Bind meshes to this atlas and render pixels
     for (int i = 0; i < impl->rect_count; i++) {

@@ -17,10 +17,10 @@ void AddEditorLine(MeshBuilder* builder, const Vec2& v0, const Vec2& v1, float w
     Vec2 p2 = v1 + perp * half_width;
     Vec2 p3 = v0 + perp * half_width;
     Vec4 color_vec = {color.r, color.g, color.b, color.a};
-    MeshVertex mv0 = {.position = p0, .bone_weights = color_vec};
-    MeshVertex mv1 = {.position = p1, .bone_weights = color_vec};
-    MeshVertex mv2 = {.position = p2, .bone_weights = color_vec};
-    MeshVertex mv3 = {.position = p3, .bone_weights = color_vec};
+    MeshVertex mv0 = {.position = p0, .color = color_vec};
+    MeshVertex mv1 = {.position = p1, .color = color_vec};
+    MeshVertex mv2 = {.position = p2, .color = color_vec};
+    MeshVertex mv3 = {.position = p3, .color = color_vec};
     AddVertex(builder, mv0);
     AddVertex(builder, mv1);
     AddVertex(builder, mv2);
@@ -33,10 +33,10 @@ void AddEditorSquare(MeshBuilder* builder, const Vec2& center, float size, const
     SetBaseVertex(builder);
     float half = size * 0.5f;
     Vec4 color_vec = {color.r, color.g, color.b, color.a};
-    MeshVertex v0 = {.position = {center.x - half, center.y - half}, .bone_weights = color_vec};
-    MeshVertex v1 = {.position = {center.x + half, center.y - half}, .bone_weights = color_vec};
-    MeshVertex v2 = {.position = {center.x + half, center.y + half}, .bone_weights = color_vec};
-    MeshVertex v3 = {.position = {center.x - half, center.y + half}, .bone_weights = color_vec};
+    MeshVertex v0 = {.position = {center.x - half, center.y - half}, .color = color_vec};
+    MeshVertex v1 = {.position = {center.x + half, center.y - half}, .color = color_vec};
+    MeshVertex v2 = {.position = {center.x + half, center.y + half}, .color = color_vec};
+    MeshVertex v3 = {.position = {center.x - half, center.y + half}, .color = color_vec};
     AddVertex(builder, v0);
     AddVertex(builder, v1);
     AddVertex(builder, v2);
@@ -48,12 +48,12 @@ void AddEditorSquare(MeshBuilder* builder, const Vec2& center, float size, const
 void AddEditorCircle(MeshBuilder* builder, const Vec2& center, float radius, const Color& color) {
     SetBaseVertex(builder);
     Vec4 color_vec = {color.r, color.g, color.b, color.a};
-    MeshVertex center_vert = {.position = center, .bone_weights = color_vec};
+    MeshVertex center_vert = {.position = center, .color = color_vec};
     AddVertex(builder, center_vert);
     for (int i = 0; i <= EDITOR_CIRCLE_SEGMENTS; ++i) {
         float angle = static_cast<float>(i) / static_cast<float>(EDITOR_CIRCLE_SEGMENTS) * noz::PI * 2.0f;
         Vec2 offset = {cosf(angle) * radius, sinf(angle) * radius};
-        MeshVertex v = {.position = center + offset, .bone_weights = color_vec};
+        MeshVertex v = {.position = center + offset, .color = color_vec};
         AddVertex(builder, v);
     }
     for (int i = 0; i < EDITOR_CIRCLE_SEGMENTS; ++i)
@@ -70,8 +70,8 @@ void AddEditorCircleStroke(MeshBuilder* builder, const Vec2& center, float radiu
         float angle = i * step;
         Vec2 offset_inner = {cosf(angle) * inner_radius, sinf(angle) * inner_radius};
         Vec2 offset_outer = {cosf(angle) * outer_radius, sinf(angle) * outer_radius};
-        MeshVertex vi = {.position = center + offset_inner, .bone_weights = color_vec};
-        MeshVertex vo = {.position = center + offset_outer, .bone_weights = color_vec};
+        MeshVertex vi = {.position = center + offset_inner, .color = color_vec};
+        MeshVertex vo = {.position = center + offset_outer, .color = color_vec};
         AddVertex(builder, vi);
         AddVertex(builder, vo);
     }
@@ -90,14 +90,14 @@ void AddEditorArc(MeshBuilder* builder, const Vec2& center, float radius, float 
     fill_percent = Clamp01(fill_percent);
     SetBaseVertex(builder);
     Vec4 color_vec = {color.r, color.g, color.b, color.a};
-    MeshVertex center_vert = {.position = center, .bone_weights = color_vec};
+    MeshVertex center_vert = {.position = center, .color = color_vec};
     AddVertex(builder, center_vert);
     int arc_segments = Max(1, (int)(EDITOR_CIRCLE_SEGMENTS * fill_percent));
     float angle_end = fill_percent * noz::PI * 2.0f;
     for (int i = 0; i <= arc_segments; ++i) {
         float angle = -noz::PI * 0.5f + (float)i / (float)arc_segments * angle_end;
         Vec2 offset = {cosf(angle) * radius, sinf(angle) * radius};
-        MeshVertex v = {.position = center + offset, .bone_weights = color_vec};
+        MeshVertex v = {.position = center + offset, .color = color_vec};
         AddVertex(builder, v);
     }
     for (int i = 0; i < arc_segments; ++i)

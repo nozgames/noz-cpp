@@ -12,7 +12,7 @@ static std::vector<AtlasData*> g_managed_atlases;
 
 // Get the atlas prefix from config
 static const char* GetManagedAtlasPrefix() {
-    return g_editor.atlas_prefix.value;
+    return g_editor.atlas.prefix.value;
 }
 
 static bool IsManagedAtlasName(const Name* name) {
@@ -46,11 +46,11 @@ static AtlasData* CreateManagedAtlas() {
     fs::create_directories(atlas_path.parent_path());
 
     // Write default atlas content with configured size
-    int size = g_editor.atlas_size;
+    int size = g_editor.atlas.size;
     Stream* stream = CreateStream(ALLOCATOR_DEFAULT, 256);
     WriteCSTR(stream, "w %d\n", size);
     WriteCSTR(stream, "h %d\n", size);
-    WriteCSTR(stream, "d %d\n", g_editor.atlas_dpi);
+    WriteCSTR(stream, "d %d\n", g_editor.atlas.dpi);
     SaveStream(stream, atlas_path);
     Free(stream);
 
@@ -179,7 +179,7 @@ AtlasData* AutoAssignMeshToAtlas(MeshData* mesh) {
     }
 
     // Mesh is too large for atlas
-    LogError("Mesh '%s' is too large for atlas size %d", mesh->name->value, g_editor.atlas_size);
+    LogError("Mesh '%s' is too large for atlas size %d", mesh->name->value, g_editor.atlas.size);
     return nullptr;
 }
 
@@ -316,8 +316,8 @@ static void GetRequiredRectSize(MeshData* mesh, AtlasData* atlas, int* out_width
 
     // Use mesh bounds (already computed as max across all frames)
     Vec2 frame_size = GetSize(mesh->bounds);
-    int frame_width = (int)(frame_size.x * impl->dpi) + ATLAS_RECT_PADDING * 2;
-    int frame_height = (int)(frame_size.y * impl->dpi) + ATLAS_RECT_PADDING * 2;
+    int frame_width = (int)(frame_size.x * impl->dpi) + g_editor.atlas.padding * 2;
+    int frame_height = (int)(frame_size.y * impl->dpi) + g_editor.atlas.padding * 2;
 
     *out_width = frame_width * mesh_impl->frame_count;
     *out_height = frame_height;

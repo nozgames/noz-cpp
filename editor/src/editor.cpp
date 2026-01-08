@@ -212,9 +212,14 @@ static void InitConfig() {
     g_editor.project_path = project_path.string();
 
     // Atlas settings from [atlas] section
-    g_editor.atlas_size = g_config->GetInt("atlas", "size", ATLAS_DEFAULT_SIZE);
-    g_editor.atlas_dpi = g_config->GetInt("atlas", "dpi", ATLAS_DEFAULT_DPI);
-    Set(g_editor.atlas_prefix, g_config->GetString("atlas", "prefix", "atlas").c_str());
+    g_editor.atlas.size = g_config->GetInt("atlas", "size", ATLAS_DEFAULT_SIZE);
+    g_editor.atlas.dpi = g_config->GetInt("atlas", "dpi", ATLAS_DEFAULT_DPI);
+    g_editor.atlas.padding = g_config->GetInt("atlas", "padding", ATLAS_RECT_PADDING);
+    Set(g_editor.atlas.prefix, g_config->GetString("atlas", "prefix", "atlas").c_str());
+    std::string filter = g_config->GetString("atlas", "filter", "linear");
+    g_editor.atlas.filter = (filter == "nearest" || filter == "point")
+        ? TEXTURE_FILTER_NEAREST : TEXTURE_FILTER_LINEAR;
+    g_editor.atlas.antialias = g_config->GetBool("atlas", "antialias", false);
 
     fs::create_directories(g_editor.output_path);
 }

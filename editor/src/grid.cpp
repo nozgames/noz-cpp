@@ -15,10 +15,10 @@ static void AddLineQuad(MeshBuilder* builder, const Vec2& center, const Vec2& ha
     SetBaseVertex(builder);
 
     Vec4 color_vec = {color.r, color.g, color.b, color.a};
-    MeshVertex v0 = {.position = {center.x - half_size.x, center.y - half_size.y}, .bone_weights = color_vec};
-    MeshVertex v1 = {.position = {center.x + half_size.x, center.y - half_size.y}, .bone_weights = color_vec};
-    MeshVertex v2 = {.position = {center.x + half_size.x, center.y + half_size.y}, .bone_weights = color_vec};
-    MeshVertex v3 = {.position = {center.x - half_size.x, center.y + half_size.y}, .bone_weights = color_vec};
+    MeshVertex v0 = {.position = {center.x - half_size.x, center.y - half_size.y}, .color = color_vec};
+    MeshVertex v1 = {.position = {center.x + half_size.x, center.y - half_size.y}, .color = color_vec};
+    MeshVertex v2 = {.position = {center.x + half_size.x, center.y + half_size.y}, .color = color_vec};
+    MeshVertex v3 = {.position = {center.x - half_size.x, center.y + half_size.y}, .color = color_vec};
 
     AddVertex(builder, v0);
     AddVertex(builder, v1);
