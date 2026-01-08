@@ -5,6 +5,7 @@
     <inspection_tool class="CppCStyleCast" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CppDFAConstantConditions" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CppDFAConstantFunctionResult" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CppDFAConstantParameter" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CppLocalVariableMayBeConst" enabled="false" level="HINT" enabled_by_default="false" />
     <inspection_tool class="CppParameterMayBeConst" enabled="false" level="HINT" enabled_by_default="false" />
     <inspection_tool class="CppParameterMayBeConstPtrOrRef" enabled="false" level="WEAK WARNING" enabled_by_default="false" />

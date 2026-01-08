@@ -16,7 +16,6 @@ struct OutlineConfig {
     float boundary_taper;
 };
 
-// Create mesh from pixel hull - works for all mesh types
 static Mesh* ToMeshWithPixelHull(MeshData* mesh_data, AtlasData* atlas, const AtlasRect& rect) {
     if (!mesh_data || !mesh_data->impl) return nullptr;
 

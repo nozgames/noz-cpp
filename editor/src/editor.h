@@ -173,6 +173,7 @@ extern const std::filesystem::path& GetManifestCppPath();
 extern const std::filesystem::path& GetManifestLuaPath();
 
 // @grid
+extern Vec2 SnapToPixelGrid(const Vec2& position);
 extern Vec2 SnapToGrid(const Vec2& position);
 extern float SnapAngle(float angle);
 

@@ -6,6 +6,10 @@
 
 constexpr float OUTLINE_WIDTH = 0.015f;
 
+struct SavedCurve { u64 key; Vec2 offset; float weight; };
+static SavedCurve g_saved_curves[MESH_MAX_EDGES];
+static int g_saved_curve_count = 0;
+
 static void Init(MeshData* m);
 extern void InitMeshEditor(MeshData* m);
 
@@ -43,37 +47,18 @@ void DeleteFrame(MeshData* m, int frame_index) {
     if (m->impl->frame_count <= 1)
         return;
 
-    // Free cached meshes
     Free(m->impl->frames[frame_index].mesh);
     Free(m->impl->frames[frame_index].outline);
 
-    // Shift frames down
     for (int i = frame_index; i < m->impl->frame_count - 1; i++)
         m->impl->frames[i] = m->impl->frames[i + 1];
 
     m->impl->frame_count--;
 
-    // Adjust current frame if needed
     if (m->impl->current_frame >= m->impl->frame_count)
         m->impl->current_frame = m->impl->frame_count - 1;
 }
 
-void CopyFrame(MeshData* m, int src_frame, MeshFrameData* dst) {
-    if (src_frame >= 0 && src_frame < m->impl->frame_count)
-        *dst = m->impl->frames[src_frame];
-}
-
-void PasteFrame(MeshData* m, int dst_frame, const MeshFrameData* src) {
-    if (dst_frame >= 0 && dst_frame < m->impl->frame_count) {
-        // Free old cached meshes
-        Free(m->impl->frames[dst_frame].mesh);
-        Free(m->impl->frames[dst_frame].outline);
-
-        m->impl->frames[dst_frame] = *src;
-        m->impl->frames[dst_frame].mesh = nullptr;
-        m->impl->frames[dst_frame].outline = nullptr;
-    }
-}
 static void DeleteFaceInternal(MeshData* m, int face_index);
 static void RemoveFaceVertices(MeshData* m, int face_index, int remove_at, int remove_count);
 static void InsertFaceVertices(MeshData* m, int face_index, int insert_at, int count);
@@ -283,12 +268,7 @@ static u64 MakeEdgeKey(Vec2 p0, Vec2 p1) {
     return k0 < k1 ? (k0 ^ (k1 * 31)) : (k1 ^ (k0 * 31));
 }
 
-// Static storage for saved curves (used between SaveCurves and UpdateEdges)
-struct SavedCurve { u64 key; Vec2 offset; float weight; };
-static SavedCurve g_saved_curves[MESH_MAX_EDGES];
-static int g_saved_curve_count = 0;
 
-// Save all curve data with position keys (call before modifying vertices)
 static void SaveCurves(MeshData* m) {
     MeshFrameData* frame = GetCurrentFrame(m);
     g_saved_curve_count = 0;
@@ -2190,6 +2170,25 @@ static void PostLoadMeshData(AssetData* a) {
     MeshData* m = static_cast<MeshData*>(a);
     if (m->impl->skeleton_name)
         m->impl->skeleton = static_cast<SkeletonData*>(GetAssetData(ASSET_TYPE_SKELETON, m->impl->skeleton_name));
+
+    // Auto-snap all vertices to pixel grid
+    bool modified = false;
+    for (int fi = 0; fi < m->impl->frame_count; fi++) {
+        MeshFrameData* frame = &m->impl->frames[fi];
+        for (int vi = 0; vi < frame->vertex_count; vi++) {
+            Vec2 world_pos = m->position + frame->vertices[vi].position;
+            Vec2 snapped = SnapToPixelGrid(world_pos);
+            if (world_pos.x != snapped.x || world_pos.y != snapped.y) {
+                frame->vertices[vi].position = snapped - m->position;
+                modified = true;
+            }
+        }
+    }
+    if (modified) {
+        UpdateEdges(m);
+        MarkDirty(m);
+        MarkModified(a);
+    }
 }
 
 static void DestroyMeshData(AssetData* a) {
@@ -2208,12 +2207,6 @@ static void DestroyMeshData(AssetData* a) {
     m->impl = nullptr;
 }
 
-static void MeshUndoRedo(AssetData* a) {
-    assert(a->type == ASSET_TYPE_MESH);
-    MeshData* m = static_cast<MeshData*>(a);
-    MarkDirty(m);  // This also marks atlas dirty via MarkMeshAtlasDirty
-}
-
 static void Init(MeshData* m) {
     AllocateData(m);
 
@@ -2225,8 +2218,7 @@ static void Init(MeshData* m) {
         .load_metadata = LoadMeshMetaData,
         .save_metadata = SaveMeshMetaData,
         .draw = DrawMesh,
-        .clone = CloneMeshData,
-        .undo_redo = MeshUndoRedo
+        .clone = CloneMeshData
     };
 
     InitMeshEditor(m);

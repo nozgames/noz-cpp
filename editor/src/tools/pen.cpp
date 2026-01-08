@@ -25,6 +25,9 @@ struct PenTool {
     float hover_edge_t;
     bool snapping_to_grid;
     Vec2 grid_snap_position;
+
+    int color;
+    float opacity;
 };
 
 static PenTool g_pen_tool = {};
@@ -73,34 +76,6 @@ static void CommitPenFace() {
         }
     }
 
-    // Determine face color (inherit from adjacent faces via shared vertices)
-    int color_counts[64] = {};
-
-    for (int i = 0; i < g_pen_tool.point_count; i++) {
-        if (g_pen_tool.points[i].existing_vertex >= 0) {
-            int vi = g_pen_tool.points[i].existing_vertex;
-            // Find faces using this vertex and count their colors
-            for (int fi = 0; fi < frame->face_count; fi++) {
-                FaceData& f = frame->faces[fi];
-                for (int fv = 0; fv < f.vertex_count; fv++) {
-                    if (f.vertices[fv] == vi) {
-                        color_counts[f.color]++;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    int best_color = 0;
-    int best_count = 0;
-    for (int c = 0; c < 64; c++) {
-        if (color_counts[c] > best_count) {
-            best_count = color_counts[c];
-            best_color = c;
-        }
-    }
-
     // Calculate signed area to determine winding order
     // Positive = counter-clockwise, negative = clockwise
     float signed_area = 0.0f;
@@ -114,8 +89,8 @@ static void CommitPenFace() {
     int face_index = frame->face_count++;
     FaceData& f = frame->faces[face_index];
     f.vertex_count = g_pen_tool.point_count;
-    f.color = best_color;
-    f.opacity = 1.0f;
+    f.color = g_pen_tool.color;
+    f.opacity = g_pen_tool.opacity;
     f.normal = {0, 0};
     f.selected = false;
 
@@ -277,13 +252,12 @@ static void UpdatePenTool() {
         }
     }
 
-    // Check for grid snapping (Ctrl held)
+    // Check for grid snapping (always pixel snap, Ctrl for coarser grid)
     g_pen_tool.snapping_to_grid = false;
     if (!g_pen_tool.hovering_first_point && !g_pen_tool.hovering_existing_vertex && !g_pen_tool.hovering_edge) {
-        if (IsCtrlDown(GetInputSet())) {
-            g_pen_tool.snapping_to_grid = true;
-            g_pen_tool.grid_snap_position = SnapToGrid(g_view.mouse_world_position) - m->position;
-        }
+        g_pen_tool.snapping_to_grid = true;
+        Vec2 world_pos = g_view.mouse_world_position;
+        g_pen_tool.grid_snap_position = (IsCtrlDown(GetInputSet()) ? SnapToGrid(world_pos) : SnapToPixelGrid(world_pos)) - m->position;
     }
 
     // Add point (Left-click)
@@ -325,11 +299,9 @@ static void UpdatePenTool() {
             return;
         }
 
-        // Case 4: New point in empty space
-        Vec2 new_position = mouse_local;
-        if (IsCtrlDown(GetInputSet())) {
-            new_position = SnapToGrid(m->position + mouse_local) - m->position;
-        }
+        // Case 4: New point in empty space (always pixel snap, Ctrl for coarser)
+        Vec2 world_pos = m->position + mouse_local;
+        Vec2 new_position = (IsCtrlDown(GetInputSet()) ? SnapToGrid(world_pos) : SnapToPixelGrid(world_pos)) - m->position;
         g_pen_tool.points[g_pen_tool.point_count++] = {
             .position = new_position,
             .existing_vertex = -1
@@ -337,7 +309,7 @@ static void UpdatePenTool() {
     }
 }
 
-void BeginPenTool(MeshData* mesh) {
+void BeginPenTool(MeshData* mesh, int color, float opacity) {
     static ToolVtable vtable = {
         .update = UpdatePenTool,
         .draw = DrawPenTool
@@ -357,6 +329,8 @@ void BeginPenTool(MeshData* mesh) {
     g_pen_tool.hover_vertex_index = -1;
     g_pen_tool.hovering_edge = false;
     g_pen_tool.hover_edge_index = -1;
+    g_pen_tool.color = color;
+    g_pen_tool.opacity = opacity;
 
     SetSystemCursor(SYSTEM_CURSOR_SELECT);
 }

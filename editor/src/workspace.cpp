@@ -168,9 +168,9 @@ static void UpdateMoveTool(const Vec2& delta) {
         if (!a->selected)
             continue;
 
-        SetPosition(a, IsCtrlDown(GetInputSet())
-            ? SnapToGrid(a->saved_position + delta)
-            : a->saved_position + delta);
+        Vec2 new_pos = a->saved_position + delta;
+        new_pos = IsCtrlDown(GetInputSet()) ? SnapToGrid(new_pos) : SnapToPixelGrid(new_pos);
+        SetPosition(a, new_pos);
     }
 }
 
@@ -889,18 +889,14 @@ void WorkspaceHelp() {
 }
 
 static void DrawSetOriginTool(const Vec2& position) {
-    Vec2 snapped_position = position;
-    if (IsCtrlDown())
-        snapped_position = SnapToGrid(position);
+    Vec2 snapped_position = IsCtrlDown() ? SnapToGrid(position) : SnapToPixelGrid(position);
 
     BindColor(COLOR_WHITE);
     DrawVertex(snapped_position, -0.2f);
 }
 
 static void CommitSetOriginTool(const Vec2& position) {
-    Vec2 snapped_position = position;
-    if (IsCtrlDown())
-        snapped_position = SnapToGrid(position);
+    Vec2 snapped_position = IsCtrlDown() ? SnapToGrid(position) : SnapToPixelGrid(position);
 
     BeginUndoGroup();
 

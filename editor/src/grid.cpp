@@ -66,43 +66,75 @@ static void BuildGridLines(MeshBuilder* builder, Camera* camera, float spacing, 
         AddLineQuad(builder, Vec2{(left + right) * 0.5f, y}, Vec2{(right - left) * 0.5f, line_thickness}, color);
 }
 
-static float CalculateGridSpacing(
-    Camera* camera,
-    float min_pixels,
-    float base_spacing,
-    float* out_alpha,
-    float min_alpha,
-    float max_alpha) {
-    // Use camera to find how big this spacing is on screen
-    Vec2 world_0 = WorldToScreen(camera, Vec2{0, 0});
-    Vec2 world_1 = WorldToScreen(camera, Vec2{1.0f, 0});
-    f32 pixels_per_grid = Length(world_1 - world_0);
-    float grid_spacing = base_spacing;
+struct GridLevels
+{
+    float fineSpacing;
+    float fineAlpha;
+    float coarseSpacing;
+    float coarseAlpha;
+};
+GridLevels calculateGridLevels(float worldWidth, float screenWidth,
+                               float baseUnit,  // 1.0f / dpi
+                               float targetGridScreenSpacing)
+{
+    float worldPerPixel = worldWidth / screenWidth;
+    float idealWorldSpacing = worldPerPixel * targetGridScreenSpacing;
 
-    // Scale up by 10x as long as grid is smaller than threshold
-    while (pixels_per_grid < min_pixels) {
-        grid_spacing *= 10.0f;
-        pixels_per_grid *= 10.0f;
-    }
+    // Work in multiples of the base unit
+    float idealInBaseUnits = idealWorldSpacing / baseUnit;
 
-    // Scale down by 10x as long as grid is larger than threshold * 10
-    while (pixels_per_grid > min_pixels * 10.0f) {
-        grid_spacing *= 0.1f;
-        pixels_per_grid *= 0.1f;
-    }
+    float logSpacing = std::log10(idealInBaseUnits);
+    float clampedLog = std::max(logSpacing, 0.0f);  // Never finer than 1 base unit
+    float floorLog = std::floor(clampedLog);
 
-    *out_alpha = Mix(min_alpha, max_alpha, (pixels_per_grid - min_pixels) / (min_pixels * 10.0f));
-    return grid_spacing;
+    float t = clampedLog - floorLog;
+
+    float multiplier = std::round(std::pow(10.0f, floorLog));
+
+    float fineSpacing = baseUnit * multiplier;
+    float coarseSpacing = fineSpacing * 10.0f;
+
+    float fineAlpha = 1.0f - t;
+    float coarseAlpha = 1.0f;
+
+    return { fineSpacing, fineAlpha, coarseSpacing, coarseAlpha };
 }
-
 void DrawGrid(Camera* camera) {
     BindDepth(-9.0f);
     BindMaterial(g_view.editor_material);
 
-    float alpha1, alpha2;
-    float spacing1 = CalculateGridSpacing(camera, 72.0f, 1.0f, &alpha1, GRID_MAX_ALPHA, GRID_MAX_ALPHA);
-    float spacing2 = CalculateGridSpacing(camera, 72.0f, 0.1f, &alpha2, 0.0f, GRID_MAX_ALPHA);
-    g_grid.snap_spacing = spacing2;
+    float pixelSize = 1.0f / (float)g_editor.atlas.dpi;
+    float dpi = (float)g_editor.atlas.dpi;
+    float worldWidth = GetWorldBounds(camera).max.x - GetWorldBounds(camera).min.x;
+    float screenWidth = static_cast<float>(GetScreenSize().x);
+
+    // Main grid: 1, 10, 100... world units
+    GridLevels world = calculateGridLevels(worldWidth, screenWidth, 1.0f, dpi);
+
+    // Pixel grid: fades in when zoomed in
+    float screenPixelsPerWorldPixel = screenWidth / (worldWidth / pixelSize);
+    float pixelGridAlpha = 0.0f;
+    if (screenPixelsPerWorldPixel > 8.0f)
+        pixelGridAlpha = std::min((screenPixelsPerWorldPixel - 8.0f) / 32.0f, 1.0f);
+
+    float spacing1 = world.coarseSpacing;
+    float alpha1 = world.coarseAlpha * GRID_MAX_ALPHA;
+
+    float spacing2 = world.fineSpacing;
+    float alpha2 = world.fineAlpha * GRID_MAX_ALPHA;
+
+    float spacing3 = pixelSize;
+    float alpha3 = pixelGridAlpha * GRID_MAX_ALPHA * 0.5f;  // bit dimmer
+
+    if (alpha3 > F32_EPSILON) {
+        spacing1 = spacing2;
+        alpha1 = alpha2;
+        spacing2 = spacing3;
+        alpha2 = alpha3;
+        g_grid.snap_spacing = spacing3;
+    } else {
+        g_grid.snap_spacing = spacing2 * 0.5f;
+    }
 
     constexpr int MAX_GRID_LINES = 1024;
     constexpr int VERTS_PER_LINE = 4;
@@ -133,6 +165,14 @@ void DrawGrid(Camera* camera) {
 
 void InitGrid() {
     g_grid.mesh = nullptr;
+}
+
+Vec2 SnapToPixelGrid(const Vec2& position) {
+    float spacing = 1.0f / g_editor.atlas.dpi;
+    return Vec2{
+        roundf(position.x / spacing) * spacing,
+        roundf(position.y / spacing) * spacing
+    };
 }
 
 Vec2 SnapToGrid(const Vec2& position) {

@@ -1557,14 +1557,16 @@ static void UpdateKnifeTool() {
         }
         // Clicks outside faces are allowed - they just don't add to the face list
 
-        // Get position
-        Vec2 position = g_view.mouse_world_position - m->position;
+        // Get position (always pixel snap in free space, Ctrl for coarser grid)
+        Vec2 position;
         if (vertex_index != -1)
             position = GetVertexPoint(m, vertex_index);
         else if (edge_index != -1)
             position = GetEdgePoint(m, edge_index, edge_hit);
-        else if (IsCtrlDown())
-            position = SnapToGrid(g_view.mouse_world_position) - m->position;
+        else {
+            Vec2 world_pos = g_view.mouse_world_position;
+            position = (IsCtrlDown() ? SnapToGrid(world_pos) : SnapToPixelGrid(world_pos)) - m->position;
+        }
 
         g_knife_tool.cuts[g_knife_tool.cut_count++] = {
             .position = position,

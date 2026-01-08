@@ -1632,9 +1632,9 @@ static void HandleInput() {
         else
             state.flags = state.flags & ~ELEMENT_FLAG_HOVERED;
 
-        if (mouse_over && mouse_left_pressed) {
+        if (mouse_over && mouse_left_pressed && !focus_element_pressed) {
             state.flags = state.flags | ELEMENT_FLAG_PRESSED;
-            if (!focus_element_pressed && e->id != 0) {
+            if (e->id != 0) {
                 focus_element_pressed = true;
                 focus_element_found = true;
                 SetPendingFocus(e->id);

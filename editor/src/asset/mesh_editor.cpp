@@ -4,7 +4,6 @@
 
 extern Font* FONT_SEGUISB;
 
-// Dopesheet/animation constants
 constexpr float FRAME_SIZE_X = 20;
 constexpr float FRAME_SIZE_Y = 40;
 constexpr float FRAME_BORDER_SIZE = 1;
@@ -26,7 +25,7 @@ constexpr int MESH_EDITOR_ID_FACE_MODE = OVERLAY_BASE_ID + 6;
 constexpr int MESH_EDITOR_ID_WEIGHT_MODE = OVERLAY_BASE_ID + 7;
 
 constexpr int MESH_EDITOR_ID_OPACITY = OVERLAY_BASE_ID + 8;
-constexpr int MESH_EDITOR_ID_PALETTES = MESH_EDITOR_ID_OPACITY + 11;
+constexpr int MESH_EDITOR_ID_PALETTES = MESH_EDITOR_ID_OPACITY + 12;
 constexpr int MESH_EDITOR_ID_COLORS = MESH_EDITOR_ID_PALETTES + MAX_PALETTES;
 
 enum MeshEditorMode {
@@ -42,6 +41,7 @@ struct MeshEditor {
     Vec2 selection_drag_start;
     Vec2 selection_center;
     int selection_opacity;
+    int selection_color;
     Material* color_material;
     bool clear_selection_on_up;
     bool clear_weight_bone_on_up;
@@ -99,8 +99,6 @@ static MeshEditor g_mesh_editor = {};
 extern int SplitFaces(MeshData* m, int v0, int v1);
 static void HandleBoxSelect(const Bounds2& bounds);
 
-// Forward declarations for animation functions
-static bool ShouldShowDopesheet();
 static void Dopesheet();
 static void DrawOnionSkin();
 
@@ -348,18 +346,16 @@ static void UpdateSelectionCenter() {
         g_mesh_editor.selection_center = VEC2_ZERO;
 }
 
-static void UpdateSelectionOpacity() {
+static void UpdateSelectionColor() {
     MeshData* m = GetMeshData();
-    float opacity = 1.0f;
     MeshFrameData* frame = GetCurrentFrame(m);
     for (int face_index=0; face_index<frame->face_count; face_index++) {
         FaceData* f = &frame->faces[face_index];
         if (!f->selected) continue;
-        opacity = f->opacity;
-        break;
+        g_mesh_editor.selection_opacity = Clamp((int)(f->opacity * 10.0f), 0, 10);
+        g_mesh_editor.selection_color = f->color;
+        return;
     }
-
-    g_mesh_editor.selection_opacity = Clamp((int)(opacity * 10.0f), 0, 10);
 }
 
 static void UpdateSelection(MeshEditorMode mode=MESH_EDITOR_MODE_CURRENT) {
@@ -377,7 +373,7 @@ static void UpdateSelection(MeshEditorMode mode=MESH_EDITOR_MODE_CURRENT) {
     }
 
     UpdateSelectionCenter();
-    UpdateSelectionOpacity();
+    UpdateSelectionColor();
 }
 
 void RefreshMeshEditorSelection() {
@@ -850,7 +846,6 @@ static bool Palette(int palette_index, bool* selected_colors) {
             .align=ALIGN_CENTER,
             .color=color.a > 0 ? color : COLOR_BLACK_10PCT,
             .border={.radius=6.0f,},
-            .id=selected_colors ? static_cast<ElementId>(MESH_EDITOR_ID_COLORS + i) : ELEMENT_ID_NONE
         });
 
         if (selected_colors && WasPressed()) {
@@ -870,9 +865,16 @@ static bool Palette(int palette_index, bool* selected_colors) {
                 if (any_selected)
                     UpdateSelection(MESH_EDITOR_MODE_FACE);
             } else {
-                RecordUndo(GetMeshData());
-                SetFaceColor(GetMeshData(), i);
-                MarkModified(GetMeshData());
+                MeshData* m = GetMeshData();
+                MeshFrameData* frame = GetCurrentFrame(m);
+                if (frame->selected_face_count > 0) {
+                    RecordUndo(m);
+                    SetFaceColor(m, i);
+                    MarkModified(m);
+                    UpdateSelectionColor();
+                } else {
+                    g_mesh_editor.selection_color = i;
+                }
             }
         }
         EndContainer();
@@ -903,9 +905,18 @@ static bool OpacityPopup() {
         float opacity = 1.0f - (i / 10.0f);
         BeginContainer({.id=static_cast<ElementId>(MESH_EDITOR_ID_OPACITY + i + 1)});
         if (WasPressed()) {
-            SetFaceOpacity(GetMeshData(), opacity);
-            MarkModified(GetMeshData());
-            MarkDirty(GetMeshData());
+            MeshData* m = GetMeshData();
+            MeshFrameData* frame = GetCurrentFrame(m);
+            if (frame->selected_face_count > 0) {
+                RecordUndo(m);
+                SetFaceOpacity(m, opacity);
+                MarkModified(m);
+                MarkDirty(m);
+                UpdateSelectionColor();
+            } else {
+                g_mesh_editor.selection_opacity = i;
+            }
+
             open = false;
         }
 
@@ -957,10 +968,15 @@ static void ColorPicker(){
     memset(selected_colors, 0, sizeof(selected_colors));
     MeshData* m = GetMeshData();
     MeshDataImpl* impl = m->impl;
-    for (int face_index=0; face_index<GetCurrentFrame(m)->face_count; face_index++) {
-        FaceData* f = &GetCurrentFrame(m)->faces[face_index];
-        if (!f->selected) continue;
-        selected_colors[f->color] = true;
+    MeshFrameData* frame = GetCurrentFrame(m);
+    if (frame->selected_face_count > 0) {
+        for (int face_index=0; face_index<GetCurrentFrame(m)->face_count; face_index++) {
+            FaceData* f = frame->faces + face_index;
+            if (!f->selected) continue;
+            selected_colors[f->color] = true;
+        }
+    } else {
+        selected_colors[g_mesh_editor.selection_color] = true;
     }
 
     // palettes
@@ -984,6 +1000,7 @@ static void ColorPicker(){
 
         BeginRow();
         Palette(current_palette_index, g_mesh_editor.is_playing ? nullptr : selected_colors);
+        BeginContainer({.align=ALIGN_BOTTOM_CENTER, .margin=EdgeInsetsAll(4)});
         if (EditorButton({
             .id=MESH_EDITOR_ID_OPACITY,
             .width = COLOR_PICKER_COLOR_SIZE * 2,
@@ -992,6 +1009,7 @@ static void ColorPicker(){
             .content_func=OpacityContent,
             .popup_func=OpacityPopup}))
             g_mesh_editor.show_opacity_popup = !g_mesh_editor.show_opacity_popup;
+        EndContainer();
 
         EndRow();
     }
@@ -1006,9 +1024,7 @@ static void MeshEditorToolbar() {
     BeginOverlay(MESH_EDITOR_ID_TOOLBAR, ALIGN_BOTTOM_CENTER);
     BeginColumn({.spacing=8});
 
-    if (ShouldShowDopesheet()) {
-        Dopesheet();
-    }
+    Dopesheet();
 
     // Buttons
     BeginContainer();
@@ -1138,12 +1154,15 @@ static void CommitMoveTool(const Vec2& delta) {
 
 static void UpdateMoveTool(const Vec2& delta) {
     MeshData* m = GetMeshData();
-    bool snap = IsCtrlDown(GetInputSet());
+    bool coarse_snap = IsCtrlDown(GetInputSet());
     for (int i=0; i<GetCurrentFrame(m)->vertex_count; i++) {
         VertexData& v = GetCurrentFrame(m)->vertices[i];
         VertexData& s = g_mesh_editor.saved[i];
-        if (v.selected)
-            v.position = snap ? SnapToGrid(m->position + s.position + delta) - m->position : s.position + delta;
+        if (v.selected) {
+            Vec2 new_pos = m->position + s.position + delta;
+            new_pos = coarse_snap ? SnapToGrid(new_pos) : SnapToPixelGrid(new_pos);
+            v.position = new_pos - m->position;
+        }
     }
 
     UpdateEdges(m);
@@ -2042,7 +2061,7 @@ static void BeginKnifeCut() {
 static void BeginPenDraw() {
     MeshData* m = GetMeshData();
     if (!m) return;
-    BeginPenTool(m);
+    BeginPenTool(m, g_mesh_editor.selection_color, g_mesh_editor.selection_opacity / 10.0f);
 }
 
 static void BeginAutoCurve() {
@@ -2396,13 +2415,6 @@ static Mesh* BuildEdgeMesh(MeshFrameData* frame, Mesh* existing) {
     return result;
 }
 
-// Check if dopesheet should be shown
-static bool ShouldShowDopesheet() {
-    MeshData* m = GetMeshData();
-    return m->impl->frame_count > 1 || GetCurrentFrame(m)->hold > 0;
-}
-
-// Navigate to previous frame
 static void SetPrevFrame() {
     MeshData* m = GetMeshData();
     if (m->impl->frame_count <= 1) return;
@@ -2411,7 +2423,6 @@ static void SetPrevFrame() {
     RefreshMeshEditorSelection();
 }
 
-// Navigate to next frame
 static void SetNextFrame() {
     MeshData* m = GetMeshData();
     if (m->impl->frame_count <= 1) return;
@@ -2420,11 +2431,9 @@ static void SetNextFrame() {
     RefreshMeshEditorSelection();
 }
 
-// Insert a new frame after current (duplicates current frame)
 static void InsertFrameAfter() {
     MeshData* m = GetMeshData();
     if (m->impl->frame_count >= MESH_MAX_FRAMES) return;
-
     RecordUndo(m);
     AddFrame(m, m->impl->current_frame);
     MarkModified();
@@ -2460,15 +2469,15 @@ static void DecHoldFrame() {
     }
 }
 
-// Toggle onion skin display
 static void ToggleOnionSkin() {
     g_mesh_editor.onion_skin_enabled = !g_mesh_editor.onion_skin_enabled;
 }
 
-// Draw the dopesheet timeline UI
 static void Dopesheet() {
     MeshData* m = GetMeshData();
     MeshDataImpl* impl = m->impl;
+    if (impl->frame_count < 2 && GetCurrentFrame(m)->hold <= 0)
+        return;
 
     BeginContainer({.padding=EdgeInsetsAll(4), .color=COLOR_WHITE_2PCT, .border{.radius=STYLE_OVERLAY_CONTENT_BORDER_RADIUS}});
     BeginRow();
@@ -2703,7 +2712,17 @@ static void RenameMesh(AssetData* a, const Name* new_name) {
     }
 }
 
+static void MeshUndoRedo(AssetData* a) {
+    assert(a->type == ASSET_TYPE_MESH);
+    MeshData* m = static_cast<MeshData*>(a);
+    MarkDirty(m);
+
+    if (m->editing)
+        UpdateSelection();
+}
+
 void InitMeshEditor(MeshData* m) {
+    m->vtable.undo_redo = MeshUndoRedo;
     m->vtable.editor_begin = BeginMeshEditor;
     m->vtable.editor_end = EndMeshEditor;
     m->vtable.editor_draw = DrawMeshEditor;

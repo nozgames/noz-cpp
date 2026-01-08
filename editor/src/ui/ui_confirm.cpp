@@ -2,10 +2,10 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-constexpr int ID_YES = ELEMENT_ID_MIN + 0;
-constexpr int ID_NO = ELEMENT_ID_MIN + 1;
+constexpr int CONFIRM_CLICK_BLOCK = ELEMENT_ID_MIN + 0;
+constexpr int CONFIRM_ID_YES = ELEMENT_ID_MIN + 1;
+constexpr int CONFIRM_ID_NO = ELEMENT_ID_MIN + 2;
 
-#include "nozed_assets.h"
 enum ConfirmType {
     CONFIRM_TYPE_NONE,
     CONFIRM_TYPE_OK,
@@ -34,6 +34,8 @@ void UpdateConfirmDialog() {
     if (g_confirm.type == CONFIRM_TYPE_NONE) return;
 
     BeginCanvas({.id=CANVAS_ID_CONFIRM});
+    BeginContainer({.id=CONFIRM_CLICK_BLOCK});
+
     BeginCenter();
     BeginContainer({.width=400, .height=100, .color=COLOR_UI_BACKGROUND});
     BeginColumn();
@@ -51,13 +53,13 @@ void UpdateConfirmDialog() {
         BeginCenter();
         BeginRow({.spacing=20});
 
-        BeginContainer({.width=100, .height=24, .id=ID_YES});
+        BeginContainer({.width=100, .height=24, .id=CONFIRM_ID_YES});
         if (WasPressed()) HandleYes();
         Rectangle({.color = IsHovered() ? COLOR_UI_BUTTON_HOVER : COLOR_UI_BUTTON});
         Label("YES", {.font = FONT_SEGUISB, .font_size=18, .color=COLOR_UI_BUTTON_TEXT, .align = ALIGN_CENTER});
         EndContainer();
 
-        BeginContainer({.width=100, .height=24, .id=ID_NO});
+        BeginContainer({.width=100, .height=24, .id=CONFIRM_ID_NO});
         if (WasPressed()) HandleNo();
         Rectangle({.color = IsHovered() ? COLOR_UI_BUTTON_HOVER : COLOR_UI_BUTTON});
         Label("NO", {.font = FONT_SEGUISB, .font_size=18, .color=COLOR_UI_BUTTON_TEXT, .align = ALIGN_CENTER});
@@ -71,6 +73,8 @@ void UpdateConfirmDialog() {
     EndColumn();
     EndContainer();
     EndCenter();
+
+    EndContainer();
     EndCanvas();
 }
 
@@ -78,5 +82,5 @@ void ShowConfirmDialog(const char* message, const std::function<void()>& callbac
     g_confirm.type = CONFIRM_TYPE_YES_NO;
     Copy(g_confirm.message, sizeof(g_confirm.message) - 1, message);
     g_confirm.callback = callback;
-    SetFocus(CANVAS_ID_CONFIRM, ID_NO);
+    SetFocus(CANVAS_ID_CONFIRM, CONFIRM_ID_NO);
 }
