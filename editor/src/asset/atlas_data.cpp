@@ -663,202 +663,6 @@ int GetSingleBoneIndex(MeshData* mesh) {
     return single_bone;
 }
 
-// Expand hull vertices outward along edge normals (proper polygon inflation)
-// Returns expanded positions in out_positions array
-void ExpandHullByEdgeNormals(MeshData* mesh, const int* hull_indices, int hull_count, float expand, Vec2* out_positions) {
-    MeshFrameData* frame = &mesh->impl->frames[0];
-
-    for (int i = 0; i < hull_count; i++) {
-        // Get current vertex and adjacent edges
-        Vec2 curr = frame->vertices[hull_indices[i]].position;
-        Vec2 prev = frame->vertices[hull_indices[(i + hull_count - 1) % hull_count]].position;
-        Vec2 next = frame->vertices[hull_indices[(i + 1) % hull_count]].position;
-
-        // Compute outward normals for both adjacent edges
-        Vec2 edge_prev = curr - prev;
-        Vec2 edge_next = next - curr;
-
-        // Perpendicular (rotate 90 degrees CW for outward normal on CW hull from gift wrap)
-        Vec2 n_prev = Normalize(Vec2{edge_prev.y, -edge_prev.x});
-        Vec2 n_next = Normalize(Vec2{edge_next.y, -edge_next.x});
-
-        // Average the normals for the vertex offset direction
-        Vec2 n_avg = Normalize(n_prev + n_next);
-
-        // Compute how much to scale the offset to maintain edge distance
-        // (miter calculation - accounts for angle between edges)
-        float dot = Dot(n_avg, n_prev);
-        float scale = (dot > 0.1f) ? (1.0f / dot) : 1.0f;  // Clamp to avoid extreme miter
-        scale = Min(scale, 3.0f);  // Limit max miter
-
-        out_positions[i] = curr + n_avg * expand * scale;
-    }
-}
-
-// Compute convex hull of mesh vertices using gift wrapping algorithm
-// Returns hull vertex indices in CCW order
-int ComputeConvexHull(MeshData* mesh, int* hull_indices, int max_hull) {
-    MeshFrameData* frame = &mesh->impl->frames[0];
-    if (frame->vertex_count < 3) return 0;
-
-    // Find leftmost point
-    int start = 0;
-    for (int i = 1; i < frame->vertex_count; i++) {
-        if (frame->vertices[i].position.x < frame->vertices[start].position.x) {
-            start = i;
-        }
-    }
-
-    int hull_count = 0;
-    int current = start;
-
-    do {
-        if (hull_count >= max_hull) break;
-        hull_indices[hull_count++] = current;
-
-        int next = 0;
-        for (int i = 1; i < frame->vertex_count; i++) {
-            if (i == current) continue;
-            if (next == current) {
-                next = i;
-                continue;
-            }
-
-            Vec2 a = frame->vertices[current].position;
-            Vec2 b = frame->vertices[next].position;
-            Vec2 c = frame->vertices[i].position;
-
-            // Cross product to determine turn direction
-            float cross = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-            if (cross < 0 || (cross == 0 && LengthSqr(c - a) > LengthSqr(b - a))) {
-                next = i;
-            }
-        }
-        current = next;
-    } while (current != start && hull_count < max_hull);
-
-    return hull_count;
-}
-
-// Compute convex hull from rendered pixels in atlas
-// Returns hull vertices in world space, with expand margin
-int ComputePixelHull(AtlasData* atlas, const AtlasRect& rect, Vec2* out_hull, int max_hull, float expand) {
-    if (!atlas->impl->pixels) return 0;
-
-    u8* pixels = atlas->impl->pixels;
-    int atlas_width = atlas->impl->width;
-    float dpi = (float)atlas->impl->dpi;
-
-    // Work with first frame only
-    int frame_width = rect.width / rect.frame_count;
-    int content_x = rect.x + g_editor.atlas.padding;
-    int content_y = rect.y + g_editor.atlas.padding;
-    int content_w = frame_width - g_editor.atlas.padding * 2;
-    int content_h = rect.height - g_editor.atlas.padding * 2;
-
-    // Collect non-transparent pixel positions (corners of pixels for tighter hull)
-    constexpr int MAX_POINTS = 4096;
-    Vec2 points[MAX_POINTS];
-    int point_count = 0;
-
-    for (int py = 0; py < content_h && point_count < MAX_POINTS - 4; py++) {
-        for (int px = 0; px < content_w; px++) {
-            int atlas_x = content_x + px;
-            int atlas_y = content_y + py;
-            u8 alpha = pixels[(atlas_y * atlas_width + atlas_x) * 4 + 3];
-
-            if (alpha > 0) {
-                // Add pixel corners (in pixel space relative to content origin)
-                // This gives tighter hull than just pixel centers
-                float x0 = (float)px;
-                float y0 = (float)py;
-                float x1 = (float)(px + 1);
-                float y1 = (float)(py + 1);
-
-                // Only add if we have room
-                if (point_count + 4 <= MAX_POINTS) {
-                    points[point_count++] = {x0, y0};
-                    points[point_count++] = {x1, y0};
-                    points[point_count++] = {x0, y1};
-                    points[point_count++] = {x1, y1};
-                }
-            }
-        }
-    }
-
-    if (point_count < 3) return 0;
-
-    // Gift wrapping algorithm on pixel positions
-    // Find leftmost point
-    int start = 0;
-    for (int i = 1; i < point_count; i++) {
-        if (points[i].x < points[start].x ||
-            (points[i].x == points[start].x && points[i].y < points[start].y)) {
-            start = i;
-        }
-    }
-
-    // Temporary hull in pixel space
-    Vec2 pixel_hull[256];
-    int hull_count = 0;
-    int current = start;
-
-    do {
-        if (hull_count >= 256 || hull_count >= max_hull) break;
-        pixel_hull[hull_count++] = points[current];
-
-        int next = 0;
-        for (int i = 1; i < point_count; i++) {
-            if (i == current) continue;
-            if (next == current) {
-                next = i;
-                continue;
-            }
-
-            Vec2 a = points[current];
-            Vec2 b = points[next];
-            Vec2 c = points[i];
-
-            float cross = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-            if (cross < 0 || (cross == 0 && LengthSqr(c - a) > LengthSqr(b - a))) {
-                next = i;
-            }
-        }
-        current = next;
-    } while (current != start && hull_count < 256);
-
-    // Expand hull outward by edge normals
-    for (int i = 0; i < hull_count; i++) {
-        int prev = (i - 1 + hull_count) % hull_count;
-        int next = (i + 1) % hull_count;
-
-        Vec2 e0 = Normalize(pixel_hull[i] - pixel_hull[prev]);
-        Vec2 e1 = Normalize(pixel_hull[next] - pixel_hull[i]);
-        Vec2 n0 = {-e0.y, e0.x};
-        Vec2 n1 = {-e1.y, e1.x};
-        Vec2 n_avg = Normalize(n0 + n1);
-
-        float dot = Dot(n0, n_avg);
-        float scale = (dot > 0.1f) ? 1.0f / dot : 1.0f;
-        scale = Min(scale, 3.0f);
-
-        pixel_hull[i] = pixel_hull[i] + n_avg * expand * scale;
-    }
-
-    // Convert to world space
-    // pixel (0,0) = mesh_bounds.min, pixel (content_w, content_h) = mesh_bounds.max
-    Vec2 mesh_min = rect.mesh_bounds.min;
-    float pixel_to_world = 1.0f / dpi;
-
-    for (int i = 0; i < hull_count; i++) {
-        // Pixel Y is top-down, world Y is bottom-up
-        out_hull[i].x = mesh_min.x + pixel_hull[i].x * pixel_to_world;
-        out_hull[i].y = mesh_min.y + (content_h - pixel_hull[i].y) * pixel_to_world;
-    }
-
-    return hull_count;
-}
-
 Vec2 GetAtlasUV(AtlasData* atlas, const AtlasRect& rect, const Bounds2& mesh_bounds, const Vec2& position) {
     AtlasDataImpl* impl = atlas->impl;
 
@@ -1010,100 +814,25 @@ Mesh* GetAtlasOutlineMesh(AtlasData* atlas) {
         const AtlasRect& r = impl->rects[ri];
         if (!r.valid) continue;
 
-        // Compute hull directly in atlas pixel space (avoid mesh coord round-trip)
+        // Use tight rect around the atlas rect (with padding excluded)
         int frame_width = r.width / r.frame_count;
-        int content_x = r.x + g_editor.atlas.padding;
-        int content_y = r.y + g_editor.atlas.padding;
-        int content_w = frame_width - g_editor.atlas.padding * 2;
-        int content_h = r.height - g_editor.atlas.padding * 2;
+        float x0 = (float)(r.x + g_editor.atlas.padding);
+        float y0 = (float)(r.y + g_editor.atlas.padding);
+        float x1 = (float)(r.x + frame_width - g_editor.atlas.padding);
+        float y1 = (float)(r.y + r.height - g_editor.atlas.padding);
 
-        // Collect non-transparent pixel corners
-        constexpr int MAX_POINTS = 4096;
-        Vec2 points[MAX_POINTS];
-        int point_count = 0;
+        // Rect corners in atlas pixel space
+        Vec2 corners[4] = {
+            {x0, y0},  // top-left
+            {x1, y0},  // top-right
+            {x1, y1},  // bottom-right
+            {x0, y1}   // bottom-left
+        };
 
-        u8* pixels = impl->pixels;
-        if (!pixels) continue;
-
-        for (int py = 0; py < content_h && point_count < MAX_POINTS - 4; py++) {
-            for (int px = 0; px < content_w; px++) {
-                int atlas_x = content_x + px;
-                int atlas_y = content_y + py;
-                u8 alpha = pixels[(atlas_y * impl->width + atlas_x) * 4 + 3];
-
-                if (alpha > 0) {
-                    float x0 = (float)(content_x + px);
-                    float y0 = (float)(content_y + py);
-                    float x1 = x0 + 1.0f;
-                    float y1 = y0 + 1.0f;
-
-                    if (point_count + 4 <= MAX_POINTS) {
-                        points[point_count++] = {x0, y0};
-                        points[point_count++] = {x1, y0};
-                        points[point_count++] = {x0, y1};
-                        points[point_count++] = {x1, y1};
-                    }
-                }
-            }
-        }
-
-        if (point_count < 3) continue;
-
-        // Gift wrapping to find convex hull
-        int start = 0;
-        for (int i = 1; i < point_count; i++) {
-            if (points[i].x < points[start].x ||
-                (points[i].x == points[start].x && points[i].y < points[start].y)) {
-                start = i;
-            }
-        }
-
-        Vec2 hull[256];
-        int hull_count = 0;
-        int current = start;
-
-        do {
-            if (hull_count >= 256) break;
-            hull[hull_count++] = points[current];
-
-            int next = 0;
-            for (int i = 1; i < point_count; i++) {
-                if (i == current) continue;
-                if (next == current) { next = i; continue; }
-
-                float cross = (points[next].x - points[current].x) * (points[i].y - points[current].y) -
-                              (points[next].y - points[current].y) * (points[i].x - points[current].x);
-                if (cross < 0 || (cross == 0 && LengthSqr(points[i] - points[current]) > LengthSqr(points[next] - points[current]))) {
-                    next = i;
-                }
-            }
-            current = next;
-        } while (current != start && hull_count < 256);
-
-        if (hull_count < 3) continue;
-
-        // Expand hull by ATLAS_HULL_EXPAND pixels
-        for (int i = 0; i < hull_count; i++) {
-            int prev = (i - 1 + hull_count) % hull_count;
-            int next = (i + 1) % hull_count;
-
-            Vec2 e0 = Normalize(hull[i] - hull[prev]);
-            Vec2 e1 = Normalize(hull[next] - hull[i]);
-            Vec2 n0 = {-e0.y, e0.x};
-            Vec2 n1 = {-e1.y, e1.x};
-            Vec2 n_avg = Normalize(n0 + n1);
-
-            float dot = Dot(n0, n_avg);
-            float s = (dot > 0.1f) ? 1.0f / dot : 1.0f;
-            s = Min(s, 3.0f);
-
-            hull[i] = hull[i] + n_avg * ATLAS_HULL_EXPAND * s;
-        }
-
-        // Draw hull edges - convert atlas pixel coords to display coords
-        for (int i = 0; i < hull_count; i++) {
-            Vec2 h0 = hull[i];
-            Vec2 h1 = hull[(i + 1) % hull_count];
+        // Draw rect edges - convert atlas pixel coords to display coords
+        for (int i = 0; i < 4; i++) {
+            Vec2 h0 = corners[i];
+            Vec2 h1 = corners[(i + 1) % 4];
 
             // Atlas texture uses Scale(-Y), so display Y = half_h - atlas_y
             Vec2 d0 = { (h0.x - half_w) * pixel_to_world, (half_h - h0.y) * pixel_to_world };

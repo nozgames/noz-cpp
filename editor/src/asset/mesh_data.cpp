@@ -13,7 +13,6 @@ static int g_saved_curve_count = 0;
 static void Init(MeshData* m);
 extern void InitMeshEditor(MeshData* m);
 
-// Frame management functions
 MeshFrameData* GetCurrentFrame(MeshData* m) {
     return &m->impl->frames[m->impl->current_frame];
 }
@@ -31,11 +30,9 @@ void AddFrame(MeshData* m, int after_index) {
     if (m->impl->frame_count >= MESH_MAX_FRAMES)
         return;
 
-    // Shift frames after insertion point
     for (int i = m->impl->frame_count; i > after_index + 1; i--)
         m->impl->frames[i] = m->impl->frames[i - 1];
 
-    // Copy current frame to new slot
     m->impl->frames[after_index + 1] = m->impl->frames[after_index];
     m->impl->frames[after_index + 1].mesh = nullptr;
     m->impl->frames[after_index + 1].outline = nullptr;
@@ -1172,12 +1169,8 @@ int HitTestFace(MeshData* m, const Mat3& transform, const Vec2& position) {
 static void ParseVertexWeight(Tokenizer& tk, VertexWeight& vertex_weight) {
     f32 weight = 0.0f;
     i32 index = 0;
-    if (!ExpectInt(tk, &index))
-        ThrowError("missing weight bone index");
-
-    if (!ExpectFloat(tk, &weight))
-        ThrowError("missing vertex weight value");
-
+    if (!ExpectInt(tk, &index)) ThrowError("missing weight bone index");
+    if (!ExpectFloat(tk, &weight)) ThrowError("missing vertex weight value");
     vertex_weight = { index, weight };
 }
 
@@ -1269,8 +1262,8 @@ static void ParseFace(MeshData* m, Tokenizer& tk) {
         ThrowError("missing face v2 index");
 
     FaceData& f = GetCurrentFrame(m)->faces[GetCurrentFrame(m)->face_count++];
-    f = {};  // Initialize to zero
-    f.opacity = 1.0f;  // Default opacity for new/loaded faces
+    f = {};
+    f.opacity = 1.0f;
     f.vertices[f.vertex_count++] = v0;
     f.vertices[f.vertex_count++] = v1;
     f.vertices[f.vertex_count++] = v2;
@@ -1278,7 +1271,6 @@ static void ParseFace(MeshData* m, Tokenizer& tk) {
     while (ExpectInt(tk, &v2))
         f.vertices[f.vertex_count++] = v2;
 
-    // Handle a degenerate case where there are two points in a row.
     if (f.vertices[f.vertex_count-1] == f.vertices[0])
         f.vertex_count--;
 
@@ -1287,8 +1279,7 @@ static void ParseFace(MeshData* m, Tokenizer& tk) {
 
     f.color = 0;
 
-    while (!IsEOF(tk))
-    {
+    while (!IsEOF(tk)) {
         if (ExpectIdentifier(tk, "c"))
             ParseFaceColor(f, tk);
         else if (ExpectIdentifier(tk, "n"))
@@ -1321,11 +1312,9 @@ static void ParseSkeleton(MeshData* m, Tokenizer& tk) {
     m->impl->skeleton_name = GetName(tk);
 }
 
-// Finalize current frame after parsing (update edges, apply curves)
 static void FinalizeFrame(MeshData* m, PendingCurve* pending_curves, int pending_curve_count) {
     UpdateEdges(m);
 
-    // Apply pending curve data now that edges exist
     for (int i = 0; i < pending_curve_count; i++) {
         int edge = GetEdge(m, pending_curves[i].v0, pending_curves[i].v1);
         if (edge != -1) {
@@ -1519,7 +1508,6 @@ static void SaveFrameData(MeshFrameData* frame, Stream* stream) {
 }
 
 void SaveMeshData(MeshData* m, Stream* stream) {
-    // Write shared header
     if (m->impl->skeleton_name != nullptr)
         WriteCSTR(stream, "s \"%s\"\n", m->impl->skeleton_name->value);
 
@@ -1598,7 +1586,7 @@ AssetData* NewMeshData(const std::filesystem::path& path) {
 static void AllocateData(MeshData* m) {
     m->impl = static_cast<MeshDataImpl*>(Alloc(ALLOCATOR_DEFAULT, sizeof(MeshDataImpl)));
     memset(m->impl, 0, sizeof(MeshDataImpl));
-    m->impl->frame_count = 1;  // Always at least one frame
+    m->impl->frame_count = 1;
     m->impl->current_frame = 0;
 }
 
@@ -1610,7 +1598,6 @@ static void CloneMeshData(AssetData* a) {
     AllocateData(m);
     memcpy(m->impl, old_data, sizeof(MeshDataImpl));
 
-    // Clear all cached mesh pointers (they belong to original)
     for (int i = 0; i < m->impl->frame_count; i++) {
         m->impl->frames[i].mesh = nullptr;
         m->impl->frames[i].outline = nullptr;
@@ -1634,14 +1621,11 @@ static bool IsEar(MeshData* m, int* indices, int vertex_count, int ear_index) {
     Vec2 v1 = GetCurrentFrame(m)->vertices[indices[curr]].position;
     Vec2 v2 = GetCurrentFrame(m)->vertices[indices[next]].position;
 
-    // Check if triangle has correct winding (counter-clockwise)
     float cross = (v1.x - v0.x) * (v2.y - v0.y) - (v2.x - v0.x) * (v1.y - v0.y);
     if (cross <= 0)
         return false;
 
-    // Check if any other vertex is inside this triangle
-    for (int i = 0; i < vertex_count; i++)
-    {
+    for (int i = 0; i < vertex_count; i++) {
         if (i == prev || i == curr || i == next)
             continue;
 

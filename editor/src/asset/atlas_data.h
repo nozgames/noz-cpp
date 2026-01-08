@@ -10,7 +10,6 @@ constexpr int ATLAS_MAX_RECTS = 256;
 constexpr int ATLAS_DEFAULT_DPI = 96;
 constexpr int ATLAS_DEFAULT_SIZE = 1024;
 constexpr int ATLAS_RECT_PADDING = 4;  // Padding on each side of content in rect
-constexpr float ATLAS_HULL_EXPAND = 4.0f;
 
 struct AtlasRect {
     int x, y, width, height;         // Full rect (for animated: width = frame_width * frame_count)
@@ -81,14 +80,9 @@ extern void GetTightQuadGeometry(AtlasData* atlas, const AtlasRect& rect,
     Vec2* out_min, Vec2* out_max,
     float* out_u_min, float* out_v_min, float* out_u_max, float* out_v_max);
 
-// Skinned mesh detection and hull computation (shared between importer and visualization)
+// Skinned mesh detection
 extern bool IsSkinnedMesh(struct MeshData* mesh);
 extern int GetSingleBoneIndex(struct MeshData* mesh);  // Returns bone index or -1 if not single-bone
-extern int ComputeConvexHull(struct MeshData* mesh, int* hull_indices, int max_hull);  // Returns hull count
-extern void ExpandHullByEdgeNormals(struct MeshData* mesh, const int* hull_indices, int hull_count, float expand, Vec2* out_positions);
-
-// Pixel-based hull generation (for pixel-art pipeline)
-extern int ComputePixelHull(AtlasData* atlas, const AtlasRect& rect, Vec2* out_hull, int max_hull, float expand);
 
 // Importer
 struct AssetImporter;
