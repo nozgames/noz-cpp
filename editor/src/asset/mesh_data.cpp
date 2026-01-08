@@ -1187,32 +1187,17 @@ static void ParseVertex(MeshData* m, Tokenizer& tk) {
         ThrowError("missing vertex y coordinate");
 
     VertexData& v = GetCurrentFrame(m)->vertices[GetCurrentFrame(m)->vertex_count++];
-    v = {};  // Initialize to zero
+    v = {};
     v.position = {x,y};
 
     int weight_count = 0;
     while (!IsEOF(tk)) {
-        if (ExpectIdentifier(tk, "e")) {
-            // deprecated
-            float e;
-            ExpectFloat(tk, &e);
-        } else if (ExpectIdentifier(tk, "h")) {
-            float temp = 0.0f;
-            ExpectFloat(tk, &temp);
-        } else if (ExpectIdentifier(tk, "w")) {
+        if (ExpectIdentifier(tk, "w")) {
             ParseVertexWeight(tk, v.weights[weight_count++]);
         } else {
             break;
         }
     }
-}
-
-static void ParseEdgeColor(MeshData* m, Tokenizer& tk) {
-    int cx;
-    if (!ExpectInt(tk, &cx)) ThrowError("missing edge color x value");
-
-    int cy;
-    if (!ExpectInt(tk, &cy)) ThrowError("missing edge color y value");
 }
 
 static void ParseFaceColor(FaceData& f, Tokenizer& tk) {
@@ -1227,22 +1212,6 @@ static void ParseFaceColor(FaceData& f, Tokenizer& tk) {
     float opacity = 1.0f;
     ExpectFloat(tk, &opacity);
     f.opacity = Clamp01(opacity);
-}
-
-static void ParseFaceNormal(FaceData& ef, Tokenizer& tk) {
-    f32 nx;
-    if (!ExpectFloat(tk, &nx))
-        ThrowError("missing face normal x value");
-
-    f32 ny;
-    if (!ExpectFloat(tk, &ny))
-        ThrowError("missing face normal y value");
-
-    // deprecated but keep for old
-    f32 nz;
-    ExpectFloat(tk, &nz);
-
-    ef.normal = {nx, ny};
 }
 
 static void ParseFace(MeshData* m, Tokenizer& tk) {
@@ -1282,8 +1251,6 @@ static void ParseFace(MeshData* m, Tokenizer& tk) {
     while (!IsEOF(tk)) {
         if (ExpectIdentifier(tk, "c"))
             ParseFaceColor(f, tk);
-        else if (ExpectIdentifier(tk, "n"))
-            ParseFaceNormal(f, tk);
         else
             break;
     }
@@ -1364,8 +1331,6 @@ void LoadMeshData(MeshData* m, Tokenizer& tk, bool multiple_mesh=false) {
             ParseDepth(m, tk);
         } else if (ExpectIdentifier(tk, "p")) {
             ParsePalette(m, tk);
-        } else if (ExpectIdentifier(tk, "e")) {
-            ParseEdgeColor(m, tk);
         } else if (ExpectIdentifier(tk, "curve")) {
             // Parse curve data: curve v0 v1 offset_x offset_y [weight]
             // Store for later since edges don't exist yet
@@ -1377,9 +1342,6 @@ void LoadMeshData(MeshData* m, Tokenizer& tk, bool multiple_mesh=false) {
                     pending_curves[pending_curve_count++] = { v0, v1, {ox, oy}, weight };
                 }
             }
-        } else if (multiple_mesh && Peek(tk, "m")) {
-            // Old animated mesh format compatibility
-            break;
         } else {
             char error[1024];
             GetString(tk, error, sizeof(error) - 1);
@@ -1471,7 +1433,6 @@ static void WriteVertexWeights(Stream* stream, const VertexWeight* weights) {
     }
 }
 
-// Save a single frame's data (helper for SaveMeshData)
 static void SaveFrameData(MeshFrameData* frame, Stream* stream) {
     for (int i=0; i<frame->vertex_count; i++) {
         const VertexData& v = frame->vertices[i];
@@ -1485,15 +1446,13 @@ static void SaveFrameData(MeshFrameData* frame, Stream* stream) {
     for (int i=0; i<frame->face_count; i++) {
         const FaceData& f = frame->faces[i];
 
-        WriteCSTR(stream, "f ");
+        WriteCSTR(stream, "f");
         for (int vertex_index=0; vertex_index<f.vertex_count; vertex_index++)
             WriteCSTR(stream, " %d", f.vertices[vertex_index]);
 
         WriteCSTR(stream, " c %d", f.color);
         if (f.opacity < 1.0f)
             WriteCSTR(stream, " %f", f.opacity);
-        if (LengthSqr(f.normal) > 0.0001f)
-            WriteCSTR(stream, " n %f %f", f.normal.x, f.normal.y);
 
         WriteCSTR(stream, "\n");
     }
