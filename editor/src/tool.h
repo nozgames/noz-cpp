@@ -85,7 +85,7 @@ struct VertexWeightToolOptions {
 extern void BeginVertexWeightTool(const VertexWeightToolOptions& options);
 
 // @curve
-extern void BeginCurveTool(MeshData* mesh, int* edge_indices, int edge_count);
+extern void BeginCurveTool(MeshData* mesh, u16* edge_indices, u16 edge_count);
 
 // @pen
 extern void BeginPenTool(MeshData* mesh, int color, float opacity);

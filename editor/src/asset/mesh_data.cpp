@@ -125,40 +125,40 @@ Vec2 GetFaceCenter(MeshData* m, FaceData* f) {
     return f->center;
 }
 
-Vec2 GetFaceCenter(MeshData* m, int face_index) {
-    return GetCurrentFrame(m)->faces[face_index].center;
+Vec2 GetFaceCenter(MeshData* m, u16 face_index) {
+    return GetFace(GetCurrentFrame(m), face_index)->center;
 }
 
 u16 GetEdge(MeshData* m, u16 v0, u16 v1) {
     MeshFrameData* frame = GetCurrentFrame(m);
     int fv0 = Min(v0, v1);
     int fv1 = Max(v0, v1);
-    for (u16 i = 0; i < frame->edge_count; i++) {
-        const EdgeData* e = frame->edges + i;
+    for (u16 ei = 0; ei < frame->geom.edge_count; ei++) {
+        const EdgeData* e = GetEdge(frame, ei);
         if (e->v0 == fv0 && e->v1 == fv1)
-            return i;
+            return ei;
     }
 
     return U16_MAX;
 }
 
 Vec2 GetEdgeMidpoint(MeshFrameData* frame, u16 edge_index) {
-    const EdgeData* e = frame->edges + edge_index;
-    Vec2 v0 = frame->vertices[e->v0].position;
-    Vec2 v1 = frame->vertices[e->v1].position;
+    const EdgeData* e = GetEdge(frame, edge_index);
+    const Vec2& v0 = GetVertex(frame, e->v0)->position;
+    const Vec2& v1 = GetVertex(frame, e->v1)->position;
     return (v0 + v1) * 0.5f;
 }
 
 Vec2 GetEdgeControlPoint(MeshFrameData* frame, u16 edge_index) {
-    return GetEdgeMidpoint(frame, edge_index) + frame->edges[edge_index].curve.offset;
+    return GetEdgeMidpoint(frame, edge_index) + frame->geom.edges[edge_index].curve.offset;
 }
 
 u16 GetFaceVertices(MeshFrameData* frame, u16 face_index, u16 vertices[MESH_MAX_FACE_VERTICES]) {
-    assert(face_index < frame->face_count);
+    assert(face_index < frame->geom.face_count);
 
-    FaceData* f = frame->faces + face_index;
+    FaceData* f = frame->geom.faces + face_index;
     for (int i = 0; i < f->edge_count; i++) {
-        const EdgeData* e = frame->edges + f->edges[i];
+        const EdgeData* e = frame->geom.edges + f->edges[i];
         vertices[i] = e->face_left == face_index ? e->v0 : e->v1;
     }
 
@@ -173,23 +173,25 @@ inline u64 QuantizePosition(Vec2 p) {
     return ((u64)(u32)x << 32) | (u64)(u32)y;
 }
 
-static u64 MakeEdgeKey(Vec2 p0, Vec2 p1) {
+u64 MakeEdgeKey(const Vec2& p0, const Vec2& p1) {
     u64 k0 = QuantizePosition(p0);
     u64 k1 = QuantizePosition(p1);
     return k0 < k1 ? (k0 ^ (k1 * 31)) : (k1 ^ (k0 * 31));
 }
 
 void SaveCurves(MeshData* m) {
+#if 0
     MeshFrameData* frame = GetCurrentFrame(m);
     g_saved_curve_count = 0;
-    for (int i = 0; i < frame->edge_count; i++) {
-        EdgeData& e = frame->edges[i];
+    for (y15 i = 0; i < frame->geom.edge_count; i++) {
+        EdgeData& e = frame->geom.edges[i];
         if (LengthSqr(e.curve.offset) > FLT_EPSILON) {
-            Vec2 p0 = frame->vertices[e.v0].position;
-            Vec2 p1 = frame->vertices[e.v1].position;
+            Vec2 p0 = frame->geom.verts[e.v0].position;
+            Vec2 p1 = frame->geom.verts[e.v1].position;
             g_saved_curves[g_saved_curve_count++] = { MakeEdgeKey(p0, p1), e.curve.offset, e.curve.weight };
         }
     }
+#endif
 }
 
 static void UpdateFace(MeshFrameData* frame, FaceData* f) {
@@ -256,9 +258,9 @@ void Update(MeshData* m, int frame_index, bool force) {
     if (!force && !frame->dirty)
         return;
 
-    frame->edge_count = 0;
+    frame->geom.edge_count = 0;
 
-    for (u16 face_index=0; face_index < frame->face_count; face_index++)
+    for (u16 face_index=0; face_index < frame->geom.face_count; face_index++)
         UpdateFace(frame, GetFace(frame, face_index));
 }
 
@@ -277,7 +279,7 @@ void Update(MeshData* m, bool force) {
     bool valid = false;
     for (int frame_index=0; frame_index<impl->frame_count; frame_index++) {
         MeshFrameData* frame = &impl->frames[frame_index];
-        if (frame->vertex_count == 0) continue;
+        if (frame->geom.vert_count == 0) continue;
 
         if (!valid) {
             m->bounds = frame->bounds;
@@ -327,25 +329,25 @@ Mesh* ToMesh(MeshData* m, bool upload, bool use_cache) {
         return GetCurrentFrame(m)->mesh;
 
     MeshFrameData* frame = GetCurrentFrame(m);
-    if (frame->vertex_count == 0) {
+    if (frame->geom.vert_count == 0) {
         m->bounds = BOUNDS2_ZERO;
         return nullptr;
     }
 
-    Bounds2 bounds = {frame->vertices[0].position, frame->vertices[0].position};
-    for (int i = 1; i < frame->vertex_count; i++) {
-        bounds.min.x = Min(bounds.min.x, frame->vertices[i].position.x);
-        bounds.min.y = Min(bounds.min.y, frame->vertices[i].position.y);
-        bounds.max.x = Max(bounds.max.x, frame->vertices[i].position.x);
-        bounds.max.y = Max(bounds.max.y, frame->vertices[i].position.y);
+    Bounds2 bounds = {frame->geom.verts[0].position, frame->geom.verts[0].position};
+    for (int i = 1; i < frame->geom.vert_count; i++) {
+        bounds.min.x = Min(bounds.min.x, frame->geom.verts[i].position.x);
+        bounds.min.y = Min(bounds.min.y, frame->geom.verts[i].position.y);
+        bounds.max.x = Max(bounds.max.x, frame->geom.verts[i].position.x);
+        bounds.max.y = Max(bounds.max.y, frame->geom.verts[i].position.y);
     }
 
     // Include curve control points in bounds
-    for (int i = 0; i < frame->edge_count; i++) {
-        EdgeData& e = frame->edges[i];
+    for (int i = 0; i < frame->geom.edge_count; i++) {
+        EdgeData& e = frame->geom.edges[i];
         if (LengthSqr(e.curve.offset) > 0.0001f) {
-            Vec2 p0 = frame->vertices[e.v0].position;
-            Vec2 p1 = frame->vertices[e.v1].position;
+            Vec2 p0 = frame->geom.verts[e.v0].position;
+            Vec2 p1 = frame->geom.verts[e.v1].position;
             Vec2 control = (p0 + p1) * 0.5f + e.curve.offset;
             bounds.min.x = Min(bounds.min.x, control.x);
             bounds.min.y = Min(bounds.min.y, control.y);
@@ -399,7 +401,7 @@ Mesh* ToOutlineMesh(MeshData* m) {
 
     float outline_size = g_view.zoom_ref_scale * OUTLINE_WIDTH * 0.5f;
 
-    for (u16 edge_index=0; edge_index < frame->edge_count; edge_index++) {
+    for (u16 edge_index=0; edge_index < frame->geom.edge_count; edge_index++) {
         const EdgeData* e = GetEdge(frame, edge_index);
         const Vec2& p0 = GetVertex(frame, e->v0)->position;
         const Vec2& p1 = GetVertex(frame, e->v1)->position;
@@ -428,7 +430,7 @@ Mesh* ToOutlineMesh(MeshData* m) {
 void SetFaceColor(MeshData* m, u8 color) {
     MeshFrameData* frame = GetCurrentFrame(m);
     int count = 0;
-    for (u16 face_index=0; face_index < frame->face_count; face_index++) {
+    for (u16 face_index=0; face_index < frame->geom.face_count; face_index++) {
         FaceData* f = GetFace(frame, face_index);
         if (!IsSelected(f)) continue;
         f->color = color;
@@ -443,7 +445,7 @@ void SetFaceColor(MeshData* m, u8 color) {
 void SetFaceOpacity(MeshData* m, float opacity) {
     MeshFrameData* frame = GetCurrentFrame(m);
     int count = 0;
-    for (u16 face_index = 0; face_index < frame->face_count; face_index++) {
+    for (u16 face_index = 0; face_index < frame->geom.face_count; face_index++) {
         FaceData* f = GetFace(frame, face_index);
         if (!IsSelected(f)) continue;
         f->opacity = opacity;
@@ -494,20 +496,20 @@ void DeleteVertexInternal(MeshFrameData* frame, VertexData* v) {
         return;
 
     u16 vertex_index = GetIndex(frame, v);
-    for (u16 edge_index=0; edge_index < frame->edge_count; edge_index++) {
+    for (u16 edge_index=0; edge_index < frame->geom.edge_count; edge_index++) {
         EdgeData* e = GetEdge(frame, edge_index);
         if (e->v0 > vertex_index) e->v0--;
         if (e->v1 > vertex_index) e->v1--;
     }
 
-    for (u16 i = vertex_index; i < frame->vertex_count - 1; i++)
-        frame->vertices[i] = frame->vertices[i + 1];
+    for (u16 i = vertex_index; i < frame->geom.vert_count - 1; i++)
+        frame->geom.verts[i] = frame->geom.verts[i + 1];
 }
 
 void CollapseVertex(MeshFrameData* frame, u16 vertex_index) {
-    assert(vertex_index < frame->vertex_count);
+    assert(vertex_index < frame->geom.vert_count);
 
-    for (u16 edge_index=frame->edge_count; edge_index > 0; edge_index--) {
+    for (u16 edge_index=frame->geom.edge_count; edge_index > 0; edge_index--) {
         EdgeData* e = GetEdge(frame, edge_index-1);
         if (e->v0 != vertex_index && e->v1 != vertex_index)
             continue;
@@ -526,7 +528,7 @@ void CollapseVertex(MeshFrameData* frame, u16 vertex_index) {
                     if (face_index == U16_MAX)
 
 
-                        for (u16 face_index=frame->face_count; face_index > 0; face_index--) {
+                        for (u16 face_index=frame->geom.face_count; face_index > 0; face_index--) {
                             FaceData* f = GetFace(frame, face_index-1);
                             int vertex_pos = -1;
                             for (int face_vertex_index=0; face_vertex_index<f.vertex_count; face_vertex_index++) {
@@ -545,7 +547,7 @@ void CollapseVertex(MeshFrameData* frame, u16 vertex_index) {
                                 RemoveFaceVertices(m, face_index, vertex_pos, 1);
                         }
 
-                    for (int face_index=0; face_index < GetCurrentFrame(m)->face_count; face_index++) {
+                    for (int face_index=0; face_index < GetCurrentFrame(m)->geom.face_count; face_index++) {
                         FaceData& f = GetCurrentFrame(m)->faces[face_index];
                         for (int face_vertex_index=0; face_vertex_index<f.vertex_count; face_vertex_index++) {
                             int v_idx = f.vertices[face_vertex_index];
@@ -569,8 +571,8 @@ void DeleteEdgeInternal(MeshFrameData* frame, EdgeData* e) {
     assert(IsValid(frame, e));
 
     u16 edge_index = GetIndex(frame, e);
-    for (u16 i = edge_index; i < frame->edge_count - 1; i++)
-        frame->edges[i] = frame->edges[i + 1];
+    for (u16 i = edge_index; i < frame->geom.edge_count - 1; i++)
+        frame->geom.edges[i] = frame->geom.edges[i + 1];
 
     DeleteVertexInternal(frame, GetVertex(frame, e->v0));
     DeleteVertexInternal(frame, GetVertex(frame, e->v1));
@@ -600,8 +602,8 @@ void DeleteFace(MeshFrameData* frame, FaceData* f, bool include_verts) {
     }
 
     u16 face_index = GetIndex(frame, f);
-    for (u16 i = face_index; i < frame->face_count - 1; i++)
-        frame->faces[i] = frame->faces[i + 1];
+    for (u16 i = face_index; i < frame->geom.face_count - 1; i++)
+        frame->geom.faces[i] = frame->geom.faces[i + 1];
 #endif
 }
 
@@ -624,18 +626,18 @@ void DeleteEdge(MeshFrameData* frame, u16 edge_index) {
 
 void DeleteFaceInternal(MeshData* m, u16 face_index) {
 #if 0
-    assert(face_index >= 0 && face_index < GetCurrentFrame(m)->face_count);
+    assert(face_index >= 0 && face_index < GetCurrentFrame(m)->geom.face_count);
     RemoveFaceVertices(m, face_index, 0, -1);
-    for (int i=face_index; i < GetCurrentFrame(m)->face_count - 1; i++)
+    for (int i=face_index; i < GetCurrentFrame(m)->geom.face_count - 1; i++)
         GetCurrentFrame(m)->faces[i] = GetCurrentFrame(m)->faces[i + 1];
-    GetCurrentFrame(m)->face_count--;
+    GetCurrentFrame(m)->geom.face_count--;
 #endif
 }
 
 
 void DeleteSelectedFaces(MeshData* m) {
 #if 0
-    for (int face_index=GetCurrentFrame(m)->face_count - 1; face_index>=0; face_index--) {
+    for (int face_index=GetCurrentFrame(m)->geom.face_count - 1; face_index>=0; face_index--) {
         FaceData& ef = GetCurrentFrame(m)->faces[face_index];
         if (!ef.selected)
             continue;
@@ -717,7 +719,7 @@ int CreateFace(MeshData* m) {
     if (selected_count < 3)
         return -1;
 
-    if (GetCurrentFrame(m)->face_count >= MESH_MAX_FACES)
+    if (GetCurrentFrame(m)->geom.face_count >= MESH_MAX_FACES)
         return -1;
 
     for (int i = 0; i < selected_count; i++) {
@@ -726,7 +728,7 @@ int CreateFace(MeshData* m) {
 
         int edge_index = GetEdge(m, v0, v1);
         if (edge_index != -1) {
-            const EdgeData& e = GetCurrentFrame(m)->edges[edge_index];
+            const EdgeData& e = GetCurrentFrame(m)->geom.edges[edge_index];
             if (e.face_count >= 2)
                 return -1;
         }
@@ -739,7 +741,7 @@ int CreateFace(MeshData* m) {
         int v1 = selected_vertices[(i + 1) % selected_count];
         int edge_index = GetEdge(m, v0, v1);
         if (edge_index != -1) {
-            const EdgeData& e = GetCurrentFrame(m)->edges[edge_index];
+            const EdgeData& e = GetCurrentFrame(m)->geom.edges[edge_index];
             for (int face_idx = 0; face_idx < e.face_count; face_idx++) {
                 color_counts[GetCurrentFrame(m)->faces[e.face_index[face_idx]].color]++;
             }
@@ -782,7 +784,7 @@ int CreateFace(MeshData* m) {
         }
     }
 
-    int face_index = GetCurrentFrame(m)->face_count++;
+    int face_index = GetCurrentFrame(m)->geom.face_count++;
     FaceData& f = GetCurrentFrame(m)->faces[face_index];
     f.vertex_count = selected_count;
     f.color = best_color;
@@ -803,7 +805,7 @@ int CreateFace(MeshData* m) {
 
 int SplitFaces(MeshData* m, int v0, int v1) {
 #if 0
-    if (GetCurrentFrame(m)->face_count >= MESH_MAX_FACES)
+    if (GetCurrentFrame(m)->geom.face_count >= MESH_MAX_FACES)
         return -1;
 
     if (GetEdge(m, v0, v1) != -1)
@@ -812,7 +814,7 @@ int SplitFaces(MeshData* m, int v0, int v1) {
     int face_index = 0;
     int v0_pos = -1;
     int v1_pos = -1;
-    for (; face_index < GetCurrentFrame(m)->face_count; face_index++) {
+    for (; face_index < GetCurrentFrame(m)->geom.face_count; face_index++) {
         FaceData& f = GetCurrentFrame(m)->faces[face_index];
 
         v0_pos = -1;
@@ -827,7 +829,7 @@ int SplitFaces(MeshData* m, int v0, int v1) {
             break;
     }
 
-    if (face_index >= GetCurrentFrame(m)->face_count)
+    if (face_index >= GetCurrentFrame(m)->geom.face_count)
         return -1;
 
     if (v0_pos > v1_pos)
@@ -838,7 +840,7 @@ int SplitFaces(MeshData* m, int v0, int v1) {
     }
 
     FaceData& old_face = GetCurrentFrame(m)->faces[face_index];
-    FaceData& new_face = GetCurrentFrame(m)->faces[GetCurrentFrame(m)->face_count++];
+    FaceData& new_face = GetCurrentFrame(m)->faces[GetCurrentFrame(m)->geom.face_count++];
     new_face.color = old_face.color;
     new_face.opacity = old_face.opacity;
     new_face.selected = old_face.selected;
@@ -875,7 +877,7 @@ int SplitEdge(MeshData* m, int edge_index, float edge_pos, bool update) {
     if (GetCurrentFrame(m)->edge_count >= MESH_MAX_VERTICES)
         return -1;
 
-    EdgeData& e = GetCurrentFrame(m)->edges[edge_index];
+    EdgeData& e = GetCurrentFrame(m)->geom.edges[edge_index];
     VertexData& v0 = GetCurrentFrame(m)->vertices[e.v0];
     VertexData& v1 = GetCurrentFrame(m)->vertices[e.v1];
 
@@ -932,7 +934,7 @@ int SplitEdge(MeshData* m, int edge_index, float edge_pos, bool update) {
         }
     }
 
-    int face_count = GetCurrentFrame(m)->face_count;
+    int face_count = GetCurrentFrame(m)->geom.face_count;
     for (int face_index = 0; face_index < face_count; face_index++) {
         FaceData& f = GetCurrentFrame(m)->faces[face_index];
 
@@ -958,12 +960,12 @@ int SplitEdge(MeshData* m, int edge_index, float edge_pos, bool update) {
             int edge2 = GetEdge(m, new_vertex_index, original_v1);
 
             if (edge1 >= 0) {
-                GetCurrentFrame(m)->edges[edge1].curve.offset = offset1;
-                GetCurrentFrame(m)->edges[edge1].curve.weight = weight1;
+                GetCurrentFrame(m)->geom.edges[edge1].curve.offset = offset1;
+                GetCurrentFrame(m)->geom.edges[edge1].curve.weight = weight1;
             }
             if (edge2 >= 0) {
-                GetCurrentFrame(m)->edges[edge2].curve.offset = offset2;
-                GetCurrentFrame(m)->edges[edge2].curve.weight = weight2;
+                GetCurrentFrame(m)->geom.edges[edge2].curve.offset = offset2;
+                GetCurrentFrame(m)->geom.edges[edge2].curve.weight = weight2;
             }
 
             MarkDirty(m);
@@ -993,11 +995,12 @@ int HitTestVertex(const Vec2& position, const Vec2& hit_pos, float size_mult) {
 }
 
 int HitTestVertex(MeshData* m, const Mat3& transform, const Vec2& position, float size_mult) {
+    MeshFrameData* frame = GetCurrentFrame(m);
     float size = g_view.select_size * size_mult;
     float best_dist = F32_MAX;
     int best_vertex = -1;
-    for (int i = 0; i < GetCurrentFrame(m)->vertex_count; i++) {
-        const VertexData& v = GetCurrentFrame(m)->vertices[i];
+    for (int i = 0; i < frame->geom.vert_count; i++) {
+        const VertexData& v = frame->geom.verts[i];
         float dist = Length(position - TransformPoint(transform, v.position));
         if (dist <= size && dist < best_dist) {
             best_vertex = i;
@@ -1016,10 +1019,10 @@ int HitTestEdge(MeshData* m, const Mat3& transform, const Vec2& hit_pos, float* 
 
     MeshFrameData* frame = GetCurrentFrame(m);
 
-    for (u16 i = 0; i < GetCurrentFrame(m)->edge_count; i++) {
-        const EdgeData& e = GetCurrentFrame(m)->edges[i];
-        Vec2 v0 = TransformPoint(transform, GetCurrentFrame(m)->vertices[e.v0].position);
-        Vec2 v1 = TransformPoint(transform, GetCurrentFrame(m)->vertices[e.v1].position);
+    for (u16 i = 0; i < frame->geom.edge_count; i++) {
+        const EdgeData& e = frame->geom.edges[i];
+        Vec2 v0 = TransformPoint(transform, frame->geom.verts[e.v0].position);
+        Vec2 v1 = TransformPoint(transform, frame->geom.verts[e.v1].position);
 
         if (HasCurve(&e)) {
             // Test against subdivided curve segments
@@ -1089,6 +1092,8 @@ int HitTestEdge(MeshData* m, const Mat3& transform, const Vec2& hit_pos, float* 
 }
 
 void Center(MeshData* m) {
+#if 0
+    MeshFrameData* frame =
     if (GetCurrentFrame(m)->vertex_count == 0)
         return;
 
@@ -1106,12 +1111,13 @@ void Center(MeshData* m) {
     Update(m);
     MarkDirty(m);
     MarkModified();
+#endif
 }
 
 void SwapFace(MeshData* m, int face_index_a, int face_index_b) {
-    FaceData temp = GetCurrentFrame(m)->faces[face_index_a];
-    GetCurrentFrame(m)->faces[face_index_a] = GetCurrentFrame(m)->faces[face_index_b];
-    GetCurrentFrame(m)->faces[face_index_b] = temp;
+    FaceData temp = GetCurrentFrame(m)->geom.faces[face_index_a];
+    GetCurrentFrame(m)->geom.faces[face_index_a] = GetCurrentFrame(m)->geom.faces[face_index_b];
+    GetCurrentFrame(m)->geom.faces[face_index_b] = temp;
 }
 
 bool OverlapBounds(MeshData* m, const Vec2& position, const Bounds2& hit_bounds) {
@@ -1121,7 +1127,7 @@ bool OverlapBounds(MeshData* m, const Vec2& position, const Bounds2& hit_bounds)
 int HitTestFaces(MeshData* m, const Mat3& transform, const Vec2& position, int* faces, int max_faces) {
 #if 0
     int hit_count = 0;
-    for (int i = GetCurrentFrame(m)->face_count - 1; i >= 0 && hit_count < max_faces; i--) {
+    for (int i = GetCurrentFrame(m)->geom.face_count - 1; i >= 0 && hit_count < max_faces; i--) {
         FaceData& f = GetCurrentFrame(m)->faces[i];
 
         // Ray casting algorithm - works for both convex and concave polygons
@@ -1172,7 +1178,7 @@ int HitTestFace(MeshData* m, const Mat3& transform, const Vec2& position) {
 }
 
 static void ParseVertex(MeshData* m, Tokenizer& tk) {
-    if (GetCurrentFrame(m)->vertex_count >= MESH_MAX_VERTICES)
+    if (GetCurrentFrame(m)->geom.vert_count >= MESH_MAX_VERTICES)
         ThrowError("too many vertices");
 
     f32 x;
@@ -1183,7 +1189,7 @@ static void ParseVertex(MeshData* m, Tokenizer& tk) {
     if (!ExpectFloat(tk, &y))
         ThrowError("missing vertex y coordinate");
 
-    VertexData& v = GetCurrentFrame(m)->vertices[GetCurrentFrame(m)->vertex_count++];
+    VertexData& v = GetCurrentFrame(m)->geom.verts[GetCurrentFrame(m)->geom.vert_count++];
     v = {};
     v.position = {x,y};
 }
@@ -1203,7 +1209,7 @@ static void ParseFaceColor(FaceData* f, Tokenizer& tk) {
 static void ParseEdge(MeshData* m, Tokenizer& tk) {
 
     MeshFrameData* frame = GetCurrentFrame(m);
-    if (frame->edge_count >= MESH_MAX_EDGES)
+    if (frame->geom.edge_count >= MESH_MAX_EDGES)
         ThrowError("too many edges");
 
     int v0 = 0;
@@ -1218,7 +1224,7 @@ static void ParseEdge(MeshData* m, Tokenizer& tk) {
     ExpectFloat(tk, &oy);
     ExpectFloat(tk, &weight);
 
-    EdgeData* e = GetEdge(frame, frame->edge_count++);
+    EdgeData* e = GetEdge(frame, frame->geom.edge_count++);
     e->v0 = static_cast<u16>(v0);;
     e->v1 = static_cast<u16>(v1);
     e->curve.offset = {ox, oy};
@@ -1226,11 +1232,11 @@ static void ParseEdge(MeshData* m, Tokenizer& tk) {
 }
 
 static void ParseFace(MeshData* m, Tokenizer& tk) {
-    if (GetCurrentFrame(m)->face_count >= MESH_MAX_FACES)
+    if (GetCurrentFrame(m)->geom.face_count >= MESH_MAX_FACES)
         ThrowError("too many faces");
 
     MeshFrameData* frame = GetCurrentFrame(m);
-    FaceData* f = frame->faces + frame->face_count++;
+    FaceData* f = frame->geom.faces + frame->geom.face_count++;
     *f = {};
     f->opacity = 1.0f;
 
@@ -1283,8 +1289,8 @@ static void FinalizeFrame(MeshData* m, PendingCurve* pending_curves, int pending
     for (int i = 0; i < pending_curve_count; i++) {
         int edge = GetEdge(m, pending_curves[i].v0, pending_curves[i].v1);
         if (edge != -1) {
-            GetCurrentFrame(m)->edges[edge].curve.offset = pending_curves[i].offset;
-            GetCurrentFrame(m)->edges[edge].curve.weight = pending_curves[i].weight;
+            GetCurrentFrame(m)->geom.edges[edge].curve.offset = pending_curves[i].offset;
+            GetCurrentFrame(m)->geom.edges[edge].curve.weight = pending_curves[i].weight;
         }
     }
 
@@ -1301,7 +1307,7 @@ void LoadMeshData(MeshData* m, Tokenizer& tk) {
         if (ExpectIdentifier(tk, "f")) {
             ParseFace(m, tk);
         } else if (ExpectIdentifier(tk, "frame")) {
-            if (GetCurrentFrame(m)->vertex_count > 0) {
+            if (GetCurrentFrame(m)->geom.vert_count > 0) {
                 //FinalizeFrame(m, pending_curves, pending_curve_count);
                 pending_curve_count = 0;
 
@@ -1410,15 +1416,15 @@ static void SaveMeshMetaData(AssetData* a, Props* meta) {
 }
 
 static void SaveFrameData(MeshFrameData* frame, Stream* stream) {
-    for (int i=0; i<frame->vertex_count; i++) {
-        const VertexData& v = frame->vertices[i];
+    for (int i=0; i<frame->geom.vert_count; i++) {
+        const VertexData& v = frame->geom.verts[i];
         WriteCSTR(stream, "v %f %f", v.position.x, v.position.y);
         WriteCSTR(stream, "\n");
     }
 
     WriteCSTR(stream, "\n");
 
-    for (u16 edge_index=0; edge_index<frame->edge_count; edge_index++) {
+    for (u16 edge_index=0; edge_index<frame->geom.edge_count; edge_index++) {
         const EdgeData* e = GetEdge(frame, edge_index);
         WriteCSTR(stream, "e %d %d", e->v0, e->v1);
         if (LengthSqr(e->curve.offset) > 0.0001f)
@@ -1426,8 +1432,8 @@ static void SaveFrameData(MeshFrameData* frame, Stream* stream) {
         WriteCSTR(stream, "\n");
     }
 
-    for (int i=0; i<frame->face_count; i++) {
-        const FaceData& f = frame->faces[i];
+    for (int i=0; i<frame->geom.face_count; i++) {
+        const FaceData& f = frame->geom.faces[i];
 
         WriteCSTR(stream, "f");
         for (u16 edge_index=0; edge_index<f.edge_count; edge_index++)
@@ -1441,8 +1447,8 @@ static void SaveFrameData(MeshFrameData* frame, Stream* stream) {
     }
 
     // Write curve data for curved edges
-    for (int i = 0; i < frame->edge_count; i++) {
-        const EdgeData& e = frame->edges[i];
+    for (int i = 0; i < frame->geom.edge_count; i++) {
+        const EdgeData& e = frame->geom.edges[i];
         if (LengthSqr(e.curve.offset) > 0.0001f) {
             WriteCSTR(stream, "curve %d %d %f %f %f\n", e.v0, e.v1, e.curve.offset.x, e.curve.offset.y, e.curve.weight);
         }
@@ -1557,7 +1563,7 @@ void InitMeshData(AssetData* a) {
 int GetSelectedVertices(MeshData* m, int vertices[MESH_MAX_VERTICES]) {
     MeshFrameData* frame = GetCurrentFrame(m);
     int selected_vertex_count=0;
-    for (u16 vertex_index=0; vertex_index<frame->vertex_count; vertex_index++) {
+    for (u16 vertex_index=0; vertex_index<frame->geom.vert_count; vertex_index++) {
         VertexData* v = GetVertex(frame, vertex_index);
         if (!IsSelected(v)) continue;
         vertices[selected_vertex_count++] = vertex_index;
@@ -1565,10 +1571,10 @@ int GetSelectedVertices(MeshData* m, int vertices[MESH_MAX_VERTICES]) {
     return selected_vertex_count;
 }
 
-int GetSelectedEdges(MeshData* m, int edges[MESH_MAX_EDGES]) {
+u16 GetSelectedEdges(MeshData* m, u16 edges[MESH_MAX_EDGES]) {
     MeshFrameData* frame = GetCurrentFrame(m);
-    int selected_edge_count=0;
-    for (u16 edge_index=0; edge_index<frame->edge_count; edge_index++) {
+    u16 selected_edge_count=0;
+    for (u16 edge_index=0; edge_index<frame->geom.edge_count; edge_index++) {
         EdgeData* e = GetEdge(frame, edge_index);
         if (!IsSelected(e)) continue;
         edges[selected_edge_count++] = edge_index;
@@ -1599,8 +1605,8 @@ Vec2 GetEdgePoint(MeshFrameData* frame, u16 edge_index, float t) {
 
 void SetOrigin(MeshData* m, const Vec2& origin) {
     Vec2 delta = m->position - origin;
-    for (int vertex_index = 0; vertex_index < GetCurrentFrame(m)->vertex_count; vertex_index++)
-        GetCurrentFrame(m)->vertices[vertex_index].position += delta;
+    for (int vertex_index = 0; vertex_index < GetCurrentFrame(m)->geom.vert_count; vertex_index++)
+        GetCurrentFrame(m)->geom.verts[vertex_index].position += delta;
 
     m->position = origin;
     Update(m);
@@ -1620,13 +1626,13 @@ void ClearBone(MeshData* m) {
 
 EdgeData* GetEdge(MeshFrameData* frame, u16 edge_index) {
     assert(frame);
-    assert(edge_index < frame->edge_count);
-    return frame->edges + edge_index;
+    assert(edge_index < frame->geom.edge_count);
+    return frame->geom.edges + edge_index;
 }
 
 int GetEdge(MeshFrameData* frame, int v0, int v1) {
-    for (int i = 0; i < frame->edge_count; i++) {
-        EdgeData& e = frame->edges[i];
+    for (int i = 0; i < frame->geom.edge_count; i++) {
+        EdgeData& e = frame->geom.edges[i];
         if ((e.v0 == v0 && e.v1 == v1) || (e.v0 == v1 && e.v1 == v0))
             return i;
     }
@@ -1645,8 +1651,8 @@ static void AddFaceToPath(
 
     for (u16 edge_index = 0; edge_index < f.edge_count; edge_index++) {
         EdgeData* e = GetFaceEdge(frame, f, edge_index);
-        Vec2 p0 = frame->vertices[e->v0].position;
-        Vec2 p1 = frame->vertices[e->v1].position;
+        Vec2 p0 = frame->geom.verts[e->v0].position;
+        Vec2 p1 = frame->geom.verts[e->v1].position;
 
         Vec2 edge_normal = {0, 0};
         Vec2 pos0 = p0 + edge_normal + offset;
@@ -1655,7 +1661,7 @@ static void AddFaceToPath(
             MoveTo(rasterizer, pos0.x * scale, pos0.y * scale);
 
         if (edge_index >= 0) {
-            EdgeData& e = frame->edges[edge_idx];
+            EdgeData& e = frame->geom.edges[edge_idx];
             if (LengthSqr(e.curve.offset) > 0.0001f) {
                 // Tessellate curved edge using rational bezier
                 Vec2 control = (p0 + p1) * 0.5f + e.curve.offset;
@@ -1704,7 +1710,7 @@ void Rasterize(
 
     int palette_index = g_editor.palette_map[impl->palette];
 
-    for (u16 face_index = 0; face_index < frame->face_count; face_index++) {
+    for (u16 face_index = 0; face_index < frame->geom.face_count; face_index++) {
         FaceData* f = GetFace(frame, face_index);
         if (f->edge_count < 3) continue;
 
@@ -1727,11 +1733,11 @@ static void PostLoadMeshData(AssetData* a) {
     bool modified = false;
     for (int frame_index = 0; frame_index < m->impl->frame_count; frame_index++) {
         MeshFrameData* frame = &m->impl->frames[frame_index];
-        for (int vi = 0; vi < frame->vertex_count; vi++) {
-            Vec2 world_pos = m->position + frame->vertices[vi].position;
+        for (int vi = 0; vi < frame->geom.vert_count; vi++) {
+            Vec2 world_pos = m->position + frame->geom.verts[vi].position;
             Vec2 snapped = SnapToPixelGrid(world_pos);
             if (world_pos.x != snapped.x || world_pos.y != snapped.y) {
-                frame->vertices[vi].position = snapped - m->position;
+                frame->geom.verts[vi].position = snapped - m->position;
                 modified = true;
             }
         }

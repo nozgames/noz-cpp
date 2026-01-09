@@ -111,10 +111,10 @@ void SetPosition(AssetData* a, const Vec2& position) {
 void DrawFaceCenters(MeshData* m, const Vec2& position) {
     BindMaterial(g_view.vertex_material);
     MeshFrameData* frame = GetCurrentFrame(m);
-    for (int i=0; i<frame->face_count; i++) {
-        const FaceData* f = frame->faces + i;
+    for (u16 fi=0; fi<frame->geom.face_count; fi++) {
+        const FaceData* f = GetFace(frame, fi);
         BindColor(IsSelected(f) ? COLOR_VERTEX_SELECTED : COLOR_VERTEX);
-        DrawVertex(position + GetFaceCenter(m, i));
+        DrawVertex(position + GetFaceCenter(m, fi));
     }
 }
 

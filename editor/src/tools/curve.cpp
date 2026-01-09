@@ -78,13 +78,15 @@ static Vec2 CalculateCurveCircleOffset(MeshFrameData* frame, int edge_index, Vec
 #endif
 }
 
+#if 0
 static void EndCurve(bool commit) {
     if (!commit) {
         // Restore all original offsets and weights
         MeshFrameData* frame = GetCurrentFrame(g_curve.mesh);
-        for (int i = 0; i < g_curve.edge_count; i++) {
-            frame->edges[g_curve.edges[i].edge_index].curve.offset = g_curve.edges[i].original_offset;
-            frame->edges[g_curve.edges[i].edge_index].curve.weight = g_curve.edges[i].original_weight;
+        for (u16 ei = 0; ei < g_curve.edge_count; ei++) {
+            EdgeData* e = GetEdge(frame, ei);
+            e->curve.offset = g_curve.edges[ei].original_offset;
+            e->curve.weight = g_curve.edges[ei].original_weight;
         }
         MarkDirty(g_curve.mesh);
     }
@@ -92,8 +94,10 @@ static void EndCurve(bool commit) {
     EndDrag();
     EndTool();
 }
+#endif
 
 static void UpdateCurve() {
+#if 0
     // Escape cancels and reverts
     if (WasButtonPressed(GetInputSet(), KEY_ESCAPE)) {
         EndCurve(false);
@@ -140,9 +144,10 @@ static void UpdateCurve() {
 
     MarkDirty(g_curve.mesh);
     MarkModified(g_curve.mesh);
+#endif
 }
 
-void BeginCurveTool(MeshData* mesh, int* edge_indices, int edge_count) {
+void BeginCurveTool(MeshData* mesh, u16* edge_indices, u16 edge_count) {
     static ToolVtable vtable = {
         .update = UpdateCurve
     };
@@ -164,9 +169,10 @@ void BeginCurveTool(MeshData* mesh, int* edge_indices, int edge_count) {
     // Save original offsets/weights and calculate circle offsets/weights for all edges
     for (int i = 0; i < edge_count; i++) {
         CurveToolEdge& ce = g_curve.edges[i];
+        EdgeData* e = GetEdge(frame, edge_indices[i]);
         ce.edge_index = edge_indices[i];
-        ce.original_offset = frame->edges[edge_indices[i]].curve.offset;
-        ce.original_weight = frame->edges[edge_indices[i]].curve.weight;
+        ce.original_offset = e->curve.offset;
+        ce.original_weight = e->curve.weight;
         ce.circle_offset = CalculateCurveCircleOffset(frame, edge_indices[i], &ce.outward_dir, &ce.circle_weight);
         ce.circle_amount = Dot(ce.circle_offset, ce.outward_dir);
     }

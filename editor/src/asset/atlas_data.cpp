@@ -13,24 +13,25 @@ extern void InitAtlasEditor(AtlasData* atlas);
 
 // Calculate bounds from vertices and curve control points in a frame
 static Bounds2 GetFrameBounds(MeshFrameData* frame) {
-    if (frame->vertex_count == 0)
+    if (frame->geom.vert_count == 0)
         return BOUNDS2_ZERO;
 
-    Bounds2 bounds = { frame->vertices[0].position, frame->vertices[0].position };
-    for (int i = 1; i < frame->vertex_count; i++) {
-        bounds.min.x = Min(bounds.min.x, frame->vertices[i].position.x);
-        bounds.min.y = Min(bounds.min.y, frame->vertices[i].position.y);
-        bounds.max.x = Max(bounds.max.x, frame->vertices[i].position.x);
-        bounds.max.y = Max(bounds.max.y, frame->vertices[i].position.y);
+    Bounds2 bounds = { GetVertex(frame, 0)->position, GetVertex(frame, 0)->position };
+    for (u16 vi = 1; vi < frame->geom.vert_count; vi++) {
+        VertexData* v = GetVertex(frame, vi);
+        bounds.min.x = Min(bounds.min.x, v->position.x);
+        bounds.min.y = Min(bounds.min.y, v->position.y);
+        bounds.max.x = Max(bounds.max.x, v->position.x);
+        bounds.max.y = Max(bounds.max.y, v->position.y);
     }
 
     // Include curve control points in bounds
-    for (int i = 0; i < frame->edge_count; i++) {
-        EdgeData& e = frame->edges[i];
-        if (LengthSqr(e.curve.offset) > 0.0001f) {
-            Vec2 p0 = frame->vertices[e.v0].position;
-            Vec2 p1 = frame->vertices[e.v1].position;
-            Vec2 control = (p0 + p1) * 0.5f + e.curve.offset;
+    for (u16 ei = 0; ei < frame->geom.edge_count; ei++) {
+        EdgeData* e = GetEdge(frame, ei);
+        if (LengthSqr(e->curve.offset) > FLT_EPSILON) {
+            const Vec2& p0 = GetVertex(frame, e->v0)->position;
+            const Vec2& p1 = GetVertex(frame, e->v1)->position;
+            Vec2 control = (p0 + p1) * 0.5f + e->curve.offset;
             bounds.min.x = Min(bounds.min.x, control.x);
             bounds.min.y = Min(bounds.min.y, control.y);
             bounds.max.x = Max(bounds.max.x, control.x);

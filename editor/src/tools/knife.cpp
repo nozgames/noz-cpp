@@ -73,7 +73,7 @@ static void EnsureEdgeVertexInFace(MeshData* m, int face_index, KnifePathPoint& 
 #if 0
 static int FindFaceContainingPoint(MeshData* m, const Vec2& point) {
     MeshFrameData* frame = GetCurrentFrame(m);
-    for (int face_index = 0; face_index < frame->face_count; face_index++) {
+    for (int face_index = 0; face_index < frame->geom.face_count; face_index++) {
         FaceData& f = frame->faces[face_index];
 
         // Build polygon from face vertices and test point containment
@@ -101,14 +101,13 @@ int FindVertexInFace(FaceData* f, int vertex_index) {
 
 bool IsEdgeInFace(MeshData* m, int edge_index, int face_index) {
     MeshFrameData* frame = GetCurrentFrame(m);
-    if (face_index < 0 || face_index >= frame->face_count)
+    if (face_index < 0 || face_index >= frame->geom.face_count)
         return false;
-    if (edge_index < 0 || edge_index >= frame->edge_count)
+    if (edge_index < 0 || edge_index >= frame->geom.edge_count)
         return false;
 
-    EdgeData& e = frame->edges[edge_index];
-    FaceData& f = frame->faces[face_index];
-
+    // EdgeData* e = GetEdge(frame, edge_index);
+    // FaceData* f = GetFace(frame, face_index);
     // for (int i = 0; i < f.vertex_count; i++) {
     //     int v0 = f.vertices[i];
     //     int v1 = f.vertices[(i + 1) % f.vertex_count];
@@ -120,12 +119,12 @@ bool IsEdgeInFace(MeshData* m, int edge_index, int face_index) {
 
 bool IsPointInFace(MeshData* m, int face_index, const Vec2& point) {
     MeshFrameData* frame = GetCurrentFrame(m);
-    if (face_index < 0 || face_index >= frame->face_count)
+    if (face_index < 0 || face_index >= frame->geom.face_count)
         return false;
 
-    FaceData& f = frame->faces[face_index];
 
 #if 0
+    FaceData& f = frame->faces[face_index];
     // Point-in-polygon test using ray casting
     bool inside = false;
     for (int i = 0, j = f.vertex_count - 1; i < f.vertex_count; j = i++) {
@@ -147,7 +146,7 @@ bool IsPointInFace(MeshData* m, int face_index, const Vec2& point) {
 static bool IsFaceValidForCut(MeshData* m, int face_index) {
 #if 0
     MeshFrameData* frame = GetCurrentFrame(m);
-    if (face_index < 0 || face_index >= frame->face_count)
+    if (face_index < 0 || face_index >= frame->geom.face_count)
         return false;
 
     // If not restricted to selected, all faces are valid
@@ -181,15 +180,17 @@ void AddFaceToCut(int face_index) {
 
 // Check if a face is on the same island as any face in the cut
 static bool IsFaceConnectedToCut(MeshData* m, int face_index) {
+#if 0
     if (g_knife_tool.cut_face_count == 0)
         return true;  // No faces in cut yet, anything is valid
 
     MeshFrameData* frame = GetCurrentFrame(m);
-    int island = frame->faces[face_index].island;
+    u16 island = GetFace(frame, face_index)->island;
     for (int i = 0; i < g_knife_tool.cut_face_count; i++) {
         if (frame->faces[g_knife_tool.cut_faces[i]].island == island)
             return true;
     }
+#endif
     return false;
 }
 
@@ -212,7 +213,7 @@ int GetValidFaceForVertex(MeshData* m, int vertex_index) {
     }
 
     // Otherwise find a valid connected face
-    for (int fi = 0; fi < frame->face_count; fi++) {
+    for (int fi = 0; fi < frame->geom.face_count; fi++) {
         if (FindVertexInFace(frame->faces[fi], vertex_index) != -1) {
             if (CanAddFaceToCut(m, fi))
                 return fi;
@@ -233,7 +234,7 @@ int GetValidFaceForEdge(MeshData* m, int edge_index) {
     }
 
     // Otherwise find a valid connected face
-    for (int fi = 0; fi < frame->face_count; fi++) {
+    for (int fi = 0; fi < frame->geom.face_count; fi++) {
         if (IsEdgeInFace(m, edge_index, fi)) {
             if (CanAddFaceToCut(m, fi))
                 return fi;
@@ -244,8 +245,8 @@ int GetValidFaceForEdge(MeshData* m, int edge_index) {
 
 static int FindVertexAtPosition(MeshData* m, const Vec2& position, float tolerance = 0.001f) {
     MeshFrameData* frame = GetCurrentFrame(m);
-    for (int i = 0; i < frame->vertex_count; i++)
-        if (Length(frame->vertices[i].position - position) < tolerance)
+    for (u16 i = 0; i < frame->geom.vert_count; i++)
+        if (Length(GetVertex(frame, i)->position - position) < tolerance)
             return i;
 
     return -1;
@@ -257,10 +258,10 @@ static int AddKnifeVertex(MeshData* m, const Vec2& position) {
         return existing;
 
     MeshFrameData* frame = GetCurrentFrame(m);
-    if (frame->vertex_count >= MESH_MAX_VERTICES)
+    if (frame->geom.vert_count >= MESH_MAX_VERTICES)
         return -1;
 
-    u16 index = frame->vertex_count++;
+    u16 index = frame->geom.vert_count++;
     VertexData* v = GetVertex(frame, index);
     *v = {};
     v->position = position;
@@ -289,7 +290,7 @@ bool InsertVertexInFace(MeshData* m, int face_index, int insert_pos, int vertex_
 int SplitFaceAtPositions(MeshData* m, int face_index, int pos0, int pos1, const int* cut_vertices, int cut_vertex_count) {
 #if 0
     MeshFrameData* frame = GetCurrentFrame(m);
-    if (frame->face_count >= MESH_MAX_FACES)
+    if (frame->geom.face_count >= MESH_MAX_FACES)
         return -1;
 
     FaceData& old_face = frame->faces[face_index];
@@ -304,7 +305,7 @@ int SplitFaceAtPositions(MeshData* m, int face_index, int pos0, int pos1, const 
         old_vertices[i] = old_face.vertices[i];
 
     // Create new face
-    FaceData& new_face = frame->faces[frame->face_count];
+    FaceData& new_face = frame->faces[frame->geom.face_count];
     new_face.color = old_face.color;
     new_face.opacity = old_face.opacity;
     new_face.selected = false;
@@ -329,7 +330,7 @@ int SplitFaceAtPositions(MeshData* m, int face_index, int pos0, int pos1, const 
         old_face.vertices[old_face.vertex_count++] = cut_vertices[i];
     }
 
-    return frame->face_count++;
+    return frame->geom.face_count++;
 #else
     return 0;
 #endif
@@ -339,7 +340,7 @@ int SplitFaceAtPositions(MeshData* m, int face_index, int pos0, int pos1, const 
 static int GetFacesWithEdge(MeshData* m, int v0, int v1, int faces[2]) {
     MeshFrameData* frame = GetCurrentFrame(m);
     int count = 0;
-    for (int fi = 0; fi < frame->face_count && count < 2; fi++) {
+    for (int fi = 0; fi < frame->geom.face_count && count < 2; fi++) {
         FaceData& f = frame->faces[fi];
         for (int vi = 0; vi < f.vertex_count; vi++) {
             int fv0 = f.vertices[vi];
@@ -405,7 +406,7 @@ static int BuildKnifePath(MeshData* m, KnifePathPoint* path) {
             int hit_count = 0;
 
             MeshFrameData* frame = GetCurrentFrame(m);
-            for (int edge_i = 0; edge_i < frame->edge_count; edge_i++) {
+            for (int edge_i = 0; edge_i < frame->geom.edge_count; edge_i++) {
                 // Skip edges that were clicked on - those are already added as click points
                 if (edge_i == prev_edge || edge_i == curr_edge)
                     continue;
@@ -816,12 +817,13 @@ static int GetOrCreateVertex(MeshData* m, KnifePathPoint& pt) {
     // For edge points, preserve curve data before creating vertex
     MeshFrameData* frame = GetCurrentFrame(m);
     if (IsEdgePoint(pt) && pt.edge_v0 >= 0 && pt.edge_v1 >= 0) {
-        int edge_index = GetEdge(m, pt.edge_v0, pt.edge_v1);
-        if (edge_index >= 0) {
-            Vec2 curve_offset = frame->edges[edge_index].curve.offset;
-            float curve_weight = frame->edges[edge_index].curve.weight;
-            Vec2 p0 = frame->vertices[pt.edge_v0].position;
-            Vec2 p2 = frame->vertices[pt.edge_v1].position;
+        u16 edge_index = GetEdge(m, pt.edge_v0, pt.edge_v1);
+        if (edge_index != U16_MAX) {
+            EdgeData* e = GetEdge(frame, edge_index);
+            Vec2 curve_offset = e->curve.offset;
+            float curve_weight = e->curve.weight;
+            const Vec2& p0 = GetVertex(frame, pt.edge_v0)->position;
+            const Vec2& p2 = GetVertex(frame, pt.edge_v1)->position;
 
             if (LengthSqr(curve_offset) > 0.0001f) {
                 // Calculate the Bezier control point
@@ -873,7 +875,7 @@ static void EnsureEdgeVertexInAllFaces(MeshData* m, KnifePathPoint& pt) {
     // Find all faces that contain this edge (or a sub-edge of it)
     // We check all faces since the original edge may have been subdivided
     MeshFrameData* frame = GetCurrentFrame(m);
-    for (int face_index = 0; face_index < frame->face_count; face_index++) {
+    for (int face_index = 0; face_index < frame->geom.face_count; face_index++) {
         EnsureEdgeVertexInFace(m, face_index, pt);
     }
 }
@@ -1070,12 +1072,12 @@ static void ExecuteFaceSplit(MeshData* m, KnifePathPoint* path, KnifeAction& act
 }
 
 // Compute signed area of a polygon (positive = CCW, negative = CW)
-float ComputeSignedArea(MeshData* m, int* vertices, int count) {
+float ComputeSignedArea(MeshData* m, u16* vertices, int count) {
     MeshFrameData* frame = GetCurrentFrame(m);
     float area = 0.0f;
-    for (int i = 0; i < count; i++) {
-        Vec2 p0 = frame->vertices[vertices[i]].position;
-        Vec2 p1 = frame->vertices[vertices[(i + 1) % count]].position;
+    for (u16 i = 0; i < count; i++) {
+        const Vec2& p0 = GetVertex(frame, vertices[i])->position;
+        const Vec2& p1 = GetVertex(frame, vertices[(i + 1) % count])->position;
         area += (p0.x * p1.y - p1.x * p0.y);
     }
     return area * 0.5f;
@@ -1148,10 +1150,10 @@ static void ExecuteInnerFace(MeshData* m, KnifePathPoint* path, KnifeAction& act
     // 1. Outer face: original boundary with slit to inner loop
     // 2. Inner face: the loop itself (should have SAME winding as boundary for correct rendering)
 
-    if (frame->face_count >= MESH_MAX_FACES)
+    if (frame->geom.face_count >= MESH_MAX_FACES)
         return;
 
-    FaceData& inner_face = frame->faces[frame->face_count];
+    FaceData& inner_face = frame->faces[frame->geom.face_count];
     inner_face.color = f.color;
     inner_face.opacity = f.opacity;
     inner_face.selected = false;
@@ -1173,7 +1175,7 @@ static void ExecuteInnerFace(MeshData* m, KnifePathPoint* path, KnifeAction& act
             inner_face.vertices[inner_face.vertex_count++] = loop_vertices[idx];
         }
     }
-    frame->face_count++;
+    frame->geom.face_count++;
 
     // Now rebuild the outer face with the slit
     // The embedded hole must have OPPOSITE winding to boundary for triangulation to work
@@ -1326,7 +1328,7 @@ static void PrepareActionVertices(MeshData* m, KnifePathPoint* path, KnifeAction
 static int FindFaceWithVertices(MeshData* m, int v0, int v1) {
 #if 0
     MeshFrameData* frame = GetCurrentFrame(m);
-    for (int fi = 0; fi < frame->face_count; fi++) {
+    for (int fi = 0; fi < frame->geom.face_count; fi++) {
         FaceData& f = frame->faces[fi];
         bool has_v0 = false, has_v1 = false;
         for (int i = 0; i < f.vertex_count; i++) {
@@ -1404,8 +1406,8 @@ static void LogMesh(MeshData* m, const char* label) {
     for (int i = 0; i < frame->vertex_count; i++) {
         LogInfo("  [%d] (%.3f, %.3f)", i, frame->vertices[i].position.x, frame->vertices[i].position.y);
     }
-    LogInfo("Faces (%d):", frame->face_count);
-    for (int i = 0; i < frame->face_count; i++) {
+    LogInfo("Faces (%d):", frame->geom.face_count);
+    for (int i = 0; i < frame->geom.face_count; i++) {
         FaceData& f = frame->faces[i];
         char buf[256] = {};
         int len = 0;
@@ -1414,8 +1416,8 @@ static void LogMesh(MeshData* m, const char* label) {
         }
         LogInfo("  [%d] verts: %s", i, buf);
     }
-    LogInfo("Edges (%d):", frame->edge_count);
-    for (int i = 0; i < frame->edge_count; i++) {
+    LogInfo("Edges (%d):", frame->geom.edge_count);
+    for (int i = 0; i < frame->geom.edge_count; i++) {
         EdgeData& e = frame->edges[i];
         char buf[64] = {};
         int len = 0;
@@ -1611,7 +1613,7 @@ static void UpdateKnifeTool() {
         int prev_edge = g_knife_tool.cuts[g_knife_tool.cut_count-2].edge_index;
         int curr_edge = edge_index;
 
-        for (int i = 0; i < update_frame->edge_count; i++) {
+        for (int i = 0; i < update_frame->geom.edge_count; i++) {
             // Skip edges that were clicked on - those are already added as click points
             if (i == prev_edge || i == curr_edge)
                 continue;

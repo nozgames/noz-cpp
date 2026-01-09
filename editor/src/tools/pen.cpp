@@ -230,7 +230,7 @@ static void UpdatePenTool() {
         if (vertex_index >= 0) {
             g_pen_tool.hovering_existing_vertex = true;
             g_pen_tool.hover_vertex_index = vertex_index;
-            g_pen_tool.hover_snap_position = GetCurrentFrame(m)->vertices[vertex_index].position;
+            g_pen_tool.hover_snap_position = GetVertex(GetCurrentFrame(m), static_cast<u16>(vertex_index))->position;
         }
     }
 

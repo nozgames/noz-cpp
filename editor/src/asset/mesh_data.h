@@ -68,14 +68,17 @@ struct FaceData {
     FaceFlags flags;
 };
 
-struct MeshFrameData {
-    VertexData vertices[MESH_MAX_VERTICES];
+struct MeshGeometry {
+    VertexData verts[MESH_MAX_VERTICES];
     EdgeData edges[MESH_MAX_EDGES];
     FaceData faces[MESH_MAX_FACES];
-
-    u16 vertex_count;
+    u16 vert_count;
     u16 edge_count;
     u16 face_count;
+};
+
+struct MeshFrameData {
+    MeshGeometry geom;
 
     u16 selected_vertex_count;
     u16 selected_edge_count;
@@ -161,9 +164,9 @@ extern int SplitTriangle(MeshData* m, int triangle_index, const Vec2& position);
 extern int AddVertex(MeshData* m, const Vec2& position);
 extern int RotateEdge(MeshData* m, int edge_index);
 extern void DrawMesh(MeshData* m, const Mat3& transform, Material* material=nullptr);
-extern Vec2 GetFaceCenter(MeshData* m, int face_index);
+extern Vec2 GetFaceCenter(MeshData* m, u16 face_index);
 inline Vec2 GetVertexPoint(MeshData* m, int vertex_index) {
-    return GetCurrentFrame(m)->vertices[vertex_index].position;
+    return GetCurrentFrame(m)->geom.verts[vertex_index].position;
 }
 extern void Update(MeshData* m, bool force=false);
 extern void Update(MeshData* m, int frame_index, bool force=false);
@@ -171,8 +174,8 @@ extern void Center(MeshData* m);
 extern bool FixWinding(MeshData* m, FaceData& ef);
 extern void DrawFaceCenters(MeshData* m, const Vec2& position);
 extern int CreateFace(MeshData* m);
-extern int GetSelectedVertices(MeshData* m, int vertices[MESH_MAX_VERTICES]);
-extern int GetSelectedEdges(MeshData* m, int edges[MESH_MAX_EDGES]);
+extern u16 GetSelectedVertices(MeshData* m, u16 vertices[MESH_MAX_VERTICES]);
+extern u16 GetSelectedEdges(MeshData* m, u16 edges[MESH_MAX_EDGES]);
 extern void SerializeMesh(Mesh* m, Stream* stream);
 extern void SwapFace(MeshData* m, int face_index_a, int face_index_b);
 extern void SetOrigin(MeshData* m, const Vec2& origin);
@@ -203,13 +206,13 @@ extern void DeleteFace(MeshFrameData* frame, FaceData* f, bool include_verts=tru
 
 // @vertex
 inline bool IsValid(MeshFrameData* frame, VertexData* v) {
-    return frame && v && (v >= frame->vertices) && (v < frame->vertices + frame->vertex_count);
+    return frame && v && (v >= frame->geom.verts) && (v < frame->geom.verts + frame->geom.vert_count);
 }
 inline u16 GetIndex(MeshFrameData* frame, VertexData* v) {
-    return static_cast<u16>(v - frame->vertices);
+    return static_cast<u16>(v - frame->geom.verts);
 }
 inline VertexData* GetVertex(MeshFrameData* frame, u16 vertex_index) {
-    return frame->vertices + vertex_index;
+    return frame->geom.verts + vertex_index;
 }
 inline void SetFlags(VertexData* v, VertexFlags value, VertexFlags mask) {
     v->flags = static_cast<VertexFlags>(v->flags & ~mask);
@@ -219,16 +222,16 @@ inline bool IsSelected(const VertexData* v) {
     return (v->flags & VERTEX_FLAG_SELECTED) != VERTEX_FLAG_NONE;
 }
 inline bool IsVertexSelected(MeshFrameData* f, u16 vertex_index) {
-    return IsSelected(f->vertices + vertex_index);
+    return IsSelected(f->geom.verts + vertex_index);
 }
 extern void DeleteVertex(MeshFrameData* frame, u16 vertex_index);
 
 // @edge
 inline u16 GetIndex(MeshFrameData* frame, EdgeData* e) {
-    return static_cast<u16>(e - frame->edges);
+    return static_cast<u16>(e - frame->geom.edges);
 }
 inline bool IsValid(MeshFrameData* frame, EdgeData* e) {
-    return frame && e && (e >= frame->edges) && (e < frame->edges + frame->edge_count);
+    return frame && e && (e >= frame->geom.edges) && (e < frame->geom.edges + frame->geom.edge_count);
 }
 extern void DeleteEdge(MeshFrameData* frame, EdgeData* e, bool include_verts);
 extern EdgeData* GetEdge(MeshFrameData* frame, u16 edge_index);
@@ -246,7 +249,7 @@ inline void SetFlags(EdgeData* e, EdgeFlags value, EdgeFlags mask) {
     e->flags = static_cast<EdgeFlags>(e->flags | (value & mask));
 }
 inline bool IsEdgeSelected(MeshFrameData* f, u16 edge_index) {
-    return IsSelected(f->edges + edge_index);
+    return IsSelected(GetEdge(f, edge_index));
 }
 inline bool HasCurve(const EdgeData* e) {
     return LengthSqr(e->curve.offset) > FLT_EPSILON;
@@ -254,20 +257,20 @@ inline bool HasCurve(const EdgeData* e) {
 
 // @face
 inline u16 GetIndex(MeshFrameData* frame, FaceData* f) {
-    return static_cast<u16>(f - frame->faces);
+    return static_cast<u16>(f - frame->geom.faces);
 }
 inline bool IsValid(MeshFrameData* frame, FaceData* f) {
-    return frame && f && (f >= frame->faces) && (f < frame->faces + frame->face_count);
+    return frame && f && (f >= frame->geom.faces) && (f < frame->geom.faces + frame->geom.face_count);
 }
 inline FaceData* GetFace(MeshFrameData* frame, u16 face_index) {
-    return frame->faces + face_index;
+    return frame->geom.faces + face_index;
 }
 inline EdgeData* GetFaceEdge(MeshFrameData* frame, const FaceData* f, u16 face_edge_index) {
-    return frame->edges + f->edges[face_edge_index];
+    return frame->geom.edges + f->edges[face_edge_index];
 }
 extern u16 GetFaceVertices(MeshFrameData* frame, u16 face_index, u16 vertices[MESH_MAX_FACE_VERTICES]);
 inline u16 GetFaceVertices(MeshFrameData* frame, const FaceData* f, u16 vertices[MESH_MAX_FACE_VERTICES]) {
-    return GetFaceVertices(frame, (u16)(f - frame->faces), vertices);
+    return GetFaceVertices(frame, (u16)(f - frame->geom.faces), vertices);
 }
 inline void SetFlags(FaceData* f, FaceFlags value, FaceFlags mask) {
     f->flags = static_cast<FaceFlags>(f->flags & ~mask);
@@ -276,7 +279,7 @@ inline void SetFlags(FaceData* f, FaceFlags value, FaceFlags mask) {
 inline bool IsSelected(const FaceData* f) {
     return (f->flags & FACE_FLAG_SELECTED) != FACE_FLAG_NONE;
 }
-inline bool IsFaceSelected(MeshFrameData* f, u16 face_index) {
-    return IsSelected(f->faces + face_index);
+inline bool IsFaceSelected(MeshFrameData* frame, u16 face_index) {
+    return IsSelected(GetFace(frame, face_index));
 }
 extern int CountSharedEdges(MeshFrameData* frame, u16 face_index0, u16 face_index1);

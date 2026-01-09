@@ -722,8 +722,8 @@ static void ScaleCommand(const Command& command) {
             MeshData* m = static_cast<MeshData*>(a);
             MeshFrameData* frame = GetCurrentFrame(m);
 
-            for (int vi = 0; vi < frame->vertex_count; vi++)
-                frame->vertices[vi].position = frame->vertices[vi].position * scale;
+            for (u16 vi = 0; vi < frame->geom.vert_count; vi++)
+                frame->geom.verts[vi].position = frame->geom.verts[vi].position * scale;
 
             MarkDirty(m);
             MarkModified(m);
