@@ -66,7 +66,7 @@ void DrawArrow(const Vec2& v, const Vec2& dir) {
     DrawArrow(v, dir, DEFAULT_ARROW_SIZE);
 }
 
-void DrawOrigin(AssetData* a) {
+void DrawOrigin(Document* a) {
     BindMaterial(g_view.vertex_material);
     BindColor(COLOR_ORIGIN);
     DrawVertex(a->position, ORIGIN_SIZE);
@@ -83,7 +83,7 @@ void DrawBounds(const Bounds2& bounds, const Vec2& position, const Color& color)
     DrawLine ({center.x - size.x * 0.5f, center.y + size.y * 0.5f}, {center.x - size.x * 0.5f, center.y - size.y * 0.5f});
 }
 
-void DrawBounds(AssetData* a, float expand, const Color& color) {
+void DrawBounds(Document* a, float expand, const Color& color) {
     DrawBounds(Expand(GetBounds(a), expand), a->position, color);
 }
 

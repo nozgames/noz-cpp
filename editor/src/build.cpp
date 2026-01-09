@@ -5,7 +5,7 @@
 namespace fs = std::filesystem;
 
 struct BuildAssetEntry {
-    AssetData* asset;
+    Document* asset;
     std::string var_name;
 };
 
@@ -16,7 +16,7 @@ struct BuildCollector {
 
 static bool CollectBuildAsset(u32, void* item_data, void* user_data) {
     BuildCollector* collector = static_cast<BuildCollector*>(user_data);
-    AssetData* a = static_cast<AssetData*>(item_data);
+    Document* a = static_cast<Document*>(item_data);
 
     if (a->editor_only)
         return true;
@@ -51,7 +51,7 @@ static bool CollectBuildAsset(u32, void* item_data, void* user_data) {
     return true;
 }
 
-static void WriteBuildAsset(FILE* file, AssetData* a, const char* extension, const char* suffix) {
+static void WriteBuildAsset(FILE* file, Document* a, const char* extension, const char* suffix) {
     std::string type_upper = ToString(a->type);
     Upper(type_upper.data(), (u32)type_upper.size());
 

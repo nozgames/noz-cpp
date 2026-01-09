@@ -56,7 +56,7 @@ if(NOT NOZ_EDITOR_LIB)
     set_target_properties(nozed PROPERTIES WIN32_EXECUTABLE TRUE)
     set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT nozed)
 endif()
-target_precompile_headers(nozed PUBLIC src/pch.h)
+target_precompile_headers(nozed PUBLIC src/editor_pch.h)
 target_include_directories(nozed PRIVATE
     src
     libs

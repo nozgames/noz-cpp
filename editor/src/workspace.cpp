@@ -2,7 +2,7 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-#include "asset/atlas_manager.h"
+#include "document/atlas_manager.h"
 
 extern void InitMeshEditor();
 extern void InitTextureEditor();
@@ -59,7 +59,7 @@ static void UpdateCamera() {
     g_view.select_size = Abs((ScreenToWorld(g_view.camera, Vec2{0, SELECT_SIZE}) - ScreenToWorld(g_view.camera, VEC2_ZERO)).y);
 }
 
-static Bounds2 GetViewBounds(AssetData* a) {
+static Bounds2 GetViewBounds(Document* a) {
     if (a == g_editor.editing_asset && g_editor.editing_asset->vtable.editor_bounds)
         return a->vtable.editor_bounds() + a->position;
 
@@ -74,8 +74,8 @@ static void FrameSelected() {
     bool first = true;
 
     if (first) {
-        for (u32 i=0, c=GetAssetCount(); i<c; i++) {
-            AssetData* ea = GetAssetData(i);
+        for (u32 i=0, c=GetDocumentCount(); i<c; i++) {
+            Document* ea = GetDocument(i);
             assert(ea);
             if (!ea->selected)
                 continue;
@@ -109,8 +109,8 @@ static void CommitBoxSelect(const Bounds2& bounds) {
     if (!IsShiftDown())
         ClearAssetSelection();
 
-    for (u32 i=0, c=GetAssetCount(); i<c; i++) {
-        AssetData* a = GetAssetData(i);
+    for (u32 i=0, c=GetDocumentCount(); i<c; i++) {
+        Document* a = GetDocument(i);
         assert(a);
 
         if (OverlapBounds(a, bounds))
@@ -162,8 +162,8 @@ static void UpdateZoom() {
 }
 
 static void UpdateMoveTool(const Vec2& delta) {
-    for (u32 i=0, c=GetAssetCount(); i<c; i++) {
-        AssetData* a = GetAssetData(i);
+    for (u32 i=0, c=GetDocumentCount(); i<c; i++) {
+        Document* a = GetDocument(i);
         assert(a);
         if (!a->selected)
             continue;
@@ -175,8 +175,8 @@ static void UpdateMoveTool(const Vec2& delta) {
 }
 
 static void CancelMoveTool() {
-    for (u32 i=0, c=GetAssetCount(); i<c; i++) {
-        AssetData* a = GetAssetData(i);
+    for (u32 i=0, c=GetDocumentCount(); i<c; i++) {
+        Document* a = GetDocument(i);
         assert(a);
         if (!a->selected)
             continue;
@@ -195,7 +195,7 @@ static void ToggleEdit() {
     if (g_view.selected_asset_count != 1)
         return;
 
-    AssetData* a = GetFirstSelectedAsset();
+    Document* a = GetFirstSelectedAsset();
     assert(a);
 
     if (!a->vtable.editor_begin)
@@ -211,7 +211,7 @@ static void UpdateDefaultState() {
     CheckShortcuts(g_view.shortcuts);
 
     if (WasButtonPressed(g_view.input, MOUSE_LEFT)) {
-        AssetData* hit_asset = HitTestAssets(g_view.mouse_world_position);
+        Document* hit_asset = HitTestAssets(g_view.mouse_world_position);
         if (hit_asset != nullptr) {
             g_view.clear_selection_on_release = false;
             if (IsShiftDown())
@@ -243,7 +243,7 @@ void SetState(ViewState state) {
 
     switch (g_view.state) {
     case VIEW_STATE_EDIT:
-        GetAssetData()->editing = false;
+        GetDocument()->editing = false;
         g_editor.editing_asset = nullptr;
         g_view.vtable = {};
         break;
@@ -314,16 +314,16 @@ void DrawView() {
         DrawGrid(g_view.camera);
 
     Bounds2 camera_bounds = GetWorldBounds(g_view.camera);
-    for (u32 i=0, c=GetAssetCount(); i<c; i++) {
-        AssetData* a = GetAssetData(i);
+    for (u32 i=0, c=GetDocumentCount(); i<c; i++) {
+        Document* a = GetDocument(i);
         assert(a);
         a->clipped = !Intersects(camera_bounds, GetBounds(a) + a->position);
     }
 
     bool show_names = g_view.state == VIEW_STATE_DEFAULT && (g_view.show_names || IsAltDown(g_view.input));
     if (show_names) {
-        for (u32 i=0, c=GetAssetCount(); i<c; i++) {
-            AssetData* a = GetAssetData(i);
+        for (u32 i=0, c=GetDocumentCount(); i<c; i++) {
+            Document* a = GetDocument(i);
             if (a->clipped)
                 continue;
             DrawBounds(a);
@@ -332,8 +332,8 @@ void DrawView() {
 
     BindColor(COLOR_WHITE);
     BindMaterial(g_view.shaded_material);
-    for (u32 i=0, c=GetAssetCount(); i<c; i++) {
-        AssetData* a = GetAssetData(i);
+    for (u32 i=0, c=GetDocumentCount(); i<c; i++) {
+        Document* a = GetDocument(i);
         assert(a);
         if (a->clipped)
             continue;
@@ -350,8 +350,8 @@ void DrawView() {
     if (g_editor.editing_asset && g_editor.editing_asset->vtable.editor_draw)
         g_editor.editing_asset->vtable.editor_draw();
 
-    for (u32 i=0, c=GetAssetCount(); i<c; i++) {
-        AssetData* a = GetAssetData(i);
+    for (u32 i=0, c=GetDocumentCount(); i<c; i++) {
+        Document* a = GetDocument(i);
         assert(a);
         if (a->clipped)
             continue;
@@ -382,8 +382,8 @@ static void UpdateAssetNames() {
     if (!IsAltDown(g_view.input) && !g_view.show_names)
         return;
 
-    for (u32 i=0, c=GetAssetCount(); i<c; i++) {
-        AssetData* a = GetAssetData(i);
+    for (u32 i=0, c=GetDocumentCount(); i<c; i++) {
+        Document* a = GetDocument(i);
         if (a->clipped)
             continue;
 
@@ -501,14 +501,14 @@ static void BringForward() {
         return;
 
     BeginUndoGroup();
-    for (u32 i=0, c=GetAssetCount();i<c;i++) {
-        AssetData* a = GetAssetData(i);
+    for (u32 i=0, c=GetDocumentCount();i<c;i++) {
+        Document* a = GetDocument(i);
         RecordUndo(a);
         if (!a->selected)
             continue;
 
         if (a->type == ASSET_TYPE_MESH) {
-            MeshData* m = static_cast<MeshData*>(a);
+            MeshDocument* m = static_cast<MeshDocument*>(a);
             m->impl->depth = Clamp(m->impl->depth+1, MESH_MIN_DEPTH, MESH_MAX_DEPTH);
             MarkDirty(m);
             MarkModified(a);
@@ -523,8 +523,8 @@ static void BringToFront() {
         return;
 
     BeginUndoGroup();
-    for (u32 i=0, c=GetAssetCount();i<c;i++) {
-        AssetData* a = GetAssetData(i);
+    for (u32 i=0, c=GetDocumentCount();i<c;i++) {
+        Document* a = GetDocument(i);
         RecordUndo(a);
         if (!a->selected)
             continue;
@@ -540,14 +540,14 @@ static void SendBackward() {
         return;
 
     BeginUndoGroup();
-    for (u32 i=0, c=GetAssetCount();i<c;i++) {
-        AssetData* a = GetAssetData(i);
+    for (u32 i=0, c=GetDocumentCount();i<c;i++) {
+        Document* a = GetDocument(i);
         RecordUndo(a);
         if (!a->selected)
             continue;
 
         if (a->type == ASSET_TYPE_MESH) {
-            MeshData* m = static_cast<MeshData*>(a);
+            MeshDocument* m = static_cast<MeshDocument*>(a);
             m->impl->depth = Clamp(m->impl->depth-1, MESH_MIN_DEPTH, MESH_MAX_DEPTH);
             MarkDirty(m);
             MarkModified(a);
@@ -562,8 +562,8 @@ static void SendToBack() {
         return;
 
     BeginUndoGroup();
-    for (u32 i=0, c=GetAssetCount();i<c;i++) {
-        AssetData* a = GetAssetData(i);
+    for (u32 i=0, c=GetDocumentCount();i<c;i++) {
+        Document* a = GetDocument(i);
         RecordUndo(a);
         if (!a->selected)
             continue;
@@ -579,10 +579,10 @@ static void DeleteSelectedAssets() {
         return;
 
     ShowConfirmDialog("Delete asset?", [] {
-        AssetData* selected[MAX_ASSETS];
-        int selected_count = GetSelectedAssets(selected, MAX_ASSETS);
+        Document* selected[EDITOR_MAX_DOCUMENTS];
+        int selected_count = GetSelectedAssets(selected, EDITOR_MAX_DOCUMENTS);
         for (int i=0; i<selected_count; i++) {
-            AssetData* a = selected[i];
+            Document* a = selected[i];
             RemoveFromUndoRedo(a);
             DeleteAsset(a);
         }
@@ -592,14 +592,14 @@ static void DeleteSelectedAssets() {
 }
 
 void EndEdit() {
-    AssetData* a = GetAssetData();
+    Document* a = GetDocument();
     assert(a);
     if (a->vtable.editor_end)
         a->vtable.editor_end();
 
     SetSystemCursor(SYSTEM_CURSOR_DEFAULT);
     SetState(VIEW_STATE_DEFAULT);
-    SaveAssetData();
+    SaveDocuments();
 }
 
 void HandleUndo() { Undo(); }
@@ -607,9 +607,9 @@ void HandleRedo() { Redo(); }
 
 static void BeginMoveTool() {
     BeginUndoGroup();
-    for (u32 i=0, c=GetAssetCount(); i<c; i++)
+    for (u32 i=0, c=GetDocumentCount(); i<c; i++)
     {
-        AssetData* a = GetAssetData(i);
+        Document* a = GetDocument(i);
         assert(a);
         if (!a->selected)
             continue;
@@ -623,7 +623,7 @@ static void BeginMoveTool() {
 // @command
 static void SaveAssetsCommand(const Command& command) {
     (void)command;
-    SaveAssetData();
+    SaveDocuments();
 }
 
 static void NewAssetCommand(const Command& command) {
@@ -663,14 +663,14 @@ static void DuplicateAsset() {
         return;
     }
 
-    AssetData* selected[MAX_ASSETS];
-    int selected_count = GetSelectedAssets(selected, MAX_ASSETS);
+    Document* selected[EDITOR_MAX_DOCUMENTS];
+    int selected_count = GetSelectedAssets(selected, EDITOR_MAX_DOCUMENTS);
 
     ClearAssetSelection();
 
     for (int i=0; i<selected_count; i++) {
-        AssetData* a = selected[i];
-        AssetData* d = Duplicate(a);
+        Document* a = selected[i];
+        Document* d = Duplicate(a);
         if (!d) {
             AddNotification(NOTIFICATION_TYPE_ERROR, "DUPLICATE FAILED");
             continue;
@@ -680,7 +680,7 @@ static void DuplicateAsset() {
         SetSelected(d, true);
     }
 
-    SaveAssetData();
+    SaveDocuments();
     BeginMoveTool();
 }
 
@@ -711,15 +711,15 @@ static void ScaleCommand(const Command& command) {
 
     BeginUndoGroup();
 
-    for (u32 i = 0, c = GetAssetCount(); i < c; i++) {
-        AssetData* a = GetAssetData(i);
+    for (u32 i = 0, c = GetDocumentCount(); i < c; i++) {
+        Document* a = GetDocument(i);
         if (!a->selected)
             continue;
 
         RecordUndo(a);
 
         if (a->type == ASSET_TYPE_MESH) {
-            MeshData* m = static_cast<MeshData*>(a);
+            MeshDocument* m = static_cast<MeshDocument*>(a);
             MeshFrameData* frame = GetCurrentFrame(m);
 
             for (u16 vi = 0; vi < frame->geom.vert_count; vi++)
@@ -730,7 +730,7 @@ static void ScaleCommand(const Command& command) {
             asset_count++;
 
         } else if (a->type == ASSET_TYPE_SKELETON) {
-            SkeletonData* s = static_cast<SkeletonData*>(a);
+            SkeletonDocument* s = static_cast<SkeletonDocument*>(a);
             SkeletonDataImpl* impl = s->impl;
 
             for (int bi = 0; bi < impl->bone_count; bi++) {
@@ -743,7 +743,7 @@ static void ScaleCommand(const Command& command) {
             asset_count++;
 
         } else if (a->type == ASSET_TYPE_ANIMATION) {
-            AnimationData* n = static_cast<AnimationData*>(a);
+            AnimationDocument* n = static_cast<AnimationDocument*>(a);
             AnimationDataImpl* impl = n->impl;
 
             for (int fi = 0; fi < impl->frame_count; fi++) {
@@ -769,7 +769,7 @@ static void ScaleCommand(const Command& command) {
 static void RebuildAtlasesCommand(const Command& cmd) {
     (void)cmd;
     RebuildAllAtlases();
-    SaveAssetData();  // Save atlas files with new rect data before reimport
+    SaveDocuments();  // Save atlas files with new rect data before reimport
     ReimportAll();    // Re-import all assets to pick up atlas changes
     AddNotification(NOTIFICATION_TYPE_INFO, "Atlases rebuilt and optimized");
 }
@@ -789,7 +789,7 @@ static void BeginCommandInput() {
 }
 
 static void HandleRenameCommand(const Command& command) {
-    AssetData* a = GetFirstSelectedAsset();
+    Document* a = GetFirstSelectedAsset();
     if (!a)
         return;
 
@@ -813,7 +813,7 @@ static void RenameAsset() {
     if (g_view.selected_asset_count != 1)
         return;
 
-    AssetData* a = GetFirstSelectedAsset();
+    Document* a = GetFirstSelectedAsset();
     BeginCommandInput({
         .commands = commands,
         .initial_text = a->name->value
@@ -821,8 +821,8 @@ static void RenameAsset() {
 }
 
 static void PlayAsset() {
-    for (u32 i=0, c=GetAssetCount(); i<c; i++) {
-        AssetData* a = GetAssetData(i);
+    for (u32 i=0, c=GetDocumentCount(); i<c; i++) {
+        Document* a = GetDocument(i);
         assert(a);
         if (!a->selected)
             continue;
@@ -854,7 +854,7 @@ static Shortcut g_workspace_shortcuts[] = {
 // @shortcut
 static Shortcut g_general_shortcuts[] = {
     { KEY_F1, false, false, false, ToggleHelp, "Toggle this help screen" },
-    { KEY_S, false, true, false, SaveAssetData, "Save All" },
+    { KEY_S, false, true, false, SaveDocuments, "Save All" },
     { KEY_Z, false, true, false, HandleUndo, "Undo" },
     { KEY_Y, false, true, false, HandleRedo, "Redo" },
     { KEY_TAB, false, false, false, ToggleEdit, "Enter/Exit edit mode" },
@@ -900,13 +900,13 @@ static void CommitSetOriginTool(const Vec2& position) {
 
     BeginUndoGroup();
 
-    AssetData* selected[MAX_ASSETS];
-    int selected_count = GetSelectedAssets(selected, MAX_ASSETS);
+    Document* selected[EDITOR_MAX_DOCUMENTS];
+    int selected_count = GetSelectedAssets(selected, EDITOR_MAX_DOCUMENTS);
     for (int i=0; i<selected_count; i++) {
-        AssetData* a = selected[i];
+        Document* a = selected[i];
         if (a->type == ASSET_TYPE_MESH) {
             RecordUndo(a);
-            SetOrigin(static_cast<MeshData*>(a), snapped_position);
+            SetOrigin(static_cast<MeshDocument*>(a), snapped_position);
             MarkModified(a);
         }
     }
@@ -915,11 +915,11 @@ static void CommitSetOriginTool(const Vec2& position) {
 }
 
 void BeginSetOriginTool() {
-    AssetData* selected[MAX_ASSETS];
-    int selected_count = GetSelectedAssets(selected, MAX_ASSETS);
+    Document* selected[EDITOR_MAX_DOCUMENTS];
+    int selected_count = GetSelectedAssets(selected, EDITOR_MAX_DOCUMENTS);
     int viable_count = 0;
     for (int i=0; i<selected_count; i++) {
-        AssetData* a = selected[i];
+        Document* a = selected[i];
         if (a->type == ASSET_TYPE_MESH)
             viable_count++;
     }
@@ -1104,7 +1104,7 @@ void InitView() {
 
     SetTexture(g_view.editor_mesh_material, ATLAS_ARRAY);
 
-    TextureData* palette_texture_data = static_cast<TextureData*>(GetAssetData(
+    TextureData* palette_texture_data = static_cast<TextureData*>(GetDocument(
         ASSET_TYPE_TEXTURE,
         GetName(g_config->GetString("editor", "palette", "palette").c_str())));
     if (palette_texture_data) {

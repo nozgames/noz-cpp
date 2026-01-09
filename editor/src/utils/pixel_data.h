@@ -4,11 +4,15 @@
 
 #pragma once
 
-struct PixelData {
-    Color32* rgba;
-    Vec2Int size;
-};
+namespace noz::editor {
 
-extern PixelData* CreatePixelData(Allocator* allocator, const Vec2Int& size);
-extern void Clear(PixelData* p, const Color32& color = COLOR32_TRANSPARENT);
-extern void Set(PixelData* p, const noz::RectInt& rect, const Color32& color);
+    struct PixelData {
+        Color32* rgba;
+        Vec2Int size;
+    };
+
+    extern PixelData* CreatePixelData(Allocator* allocator, const Vec2Int& size);
+    extern void Clear(PixelData* p, const Color32& color = COLOR32_TRANSPARENT);
+    extern void Set(PixelData* p, const RectInt& rect, const Color32& color);
+}
+

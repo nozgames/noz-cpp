@@ -2,9 +2,9 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-#include "asset_registry.h"
-#include "asset/atlas_data.h"
-#include "asset/atlas_manager.h"
+#include "document_def.h"
+#include "document/atlas_doc.h"
+#include "document/atlas_manager.h"
 #include <stb_image.h>
 
 namespace fs = std::filesystem;
@@ -72,6 +72,10 @@ static void ProcessQueuedLogMessages() {
 }
 
 extern void DrawView();
+
+
+
+
 
 static void UpdateEditor() {
     UpdateImporter();
@@ -227,10 +231,10 @@ static void InitConfig() {
 
 void InitEditor() {
     g_main_thread_id = std::this_thread::get_id();
-    g_editor.asset_allocator = CreatePoolAllocator(sizeof(GenericAssetData), MAX_ASSETS);
+    g_editor.asset_allocator = CreatePoolAllocator(sizeof(GenericAssetData), EDITOR_MAX_DOCUMENTS);
     g_editor.mesh_builder = CreateMeshBuilder(ALLOCATOR_DEFAULT, U16_MAX, U16_MAX);
 
-    InitEditorAssets();
+    InitDocumentDefs();
     InitAtlasManager();
     InitLog(HandleLog);
     Listen(EDITOR_EVENT_STATS, HandleStatsEvents);
@@ -403,16 +407,16 @@ void Main() {
 
     InitEditor();
     InitLog(HandleLog);
-    InitAssetData();
-    LoadAssetData();
+    InitDocument();
+    LoadDocuments();
 
     InitNotifications();
     InitImporter();
     InitWindow();
-    PostLoadAssetData();
+    PostLoadDocuments();
 
     MESH = g_editor.meshes;
-    MESH_COUNT = MAX_ASSETS;
+    MESH_COUNT = EDITOR_MAX_DOCUMENTS;
     FONT_DEFAULT = FONT_SEGUISB;
 
     InitView();

@@ -4,91 +4,94 @@
 
 #pragma once
 
-// @box_select
-extern void BeginBoxSelect(void (*callback)(const Bounds2& bounds));
+namespace noz::editor {
 
-// @move
-struct MoveToolOptions {
-    void (*update)(const Vec2& delta);
-    void (*commit)(const Vec2& delta);
-    void (*cancel)();
-};
+    // @box_select
+    extern void BeginBoxSelect(void (*callback)(const Bounds2& bounds));
 
-extern void BeginMoveTool(const MoveToolOptions& options);
+    // @move
+    struct MoveToolOptions {
+        void (*update)(const Vec2& delta);
+        void (*commit)(const Vec2& delta);
+        void (*cancel)();
+    };
 
-// @scale
-struct ScaleToolOptions {
-    Vec2 origin;
-    void (*update)(const Vec2& scale);
-    void (*commit)(const Vec2& scale);
-    void (*cancel)();
-};
+    extern void BeginMoveTool(const MoveToolOptions& options);
 
-extern void BeginScaleTool(const ScaleToolOptions& options);
-extern void SetScaleToolOrigin(const Vec2& origin);
+    // @scale
+    struct ScaleToolOptions {
+        Vec2 origin;
+        void (*update)(const Vec2& scale);
+        void (*commit)(const Vec2& scale);
+        void (*cancel)();
+    };
 
-// @rotate
-struct RotateToolOptions {
-    Vec2 origin;
-    void (*update)(float angle);
-    void (*commit)(float angle);
-    void (*cancel)();
-};
+    extern void BeginScaleTool(const ScaleToolOptions& options);
+    extern void SetScaleToolOrigin(const Vec2& origin);
 
-extern void BeginRotateTool(const RotateToolOptions& options);
+    // @rotate
+    struct RotateToolOptions {
+        Vec2 origin;
+        void (*update)(float angle);
+        void (*commit)(float angle);
+        void (*cancel)();
+    };
 
-// @weight
-struct WeightToolVertex {
-    Vec2 position;
-    float weight;
-    void* user_data;
-};
+    extern void BeginRotateTool(const RotateToolOptions& options);
 
-struct WeightToolOptions {
-    int vertex_count;
-    WeightToolVertex vertices[MESH_MAX_VERTICES];
-    float min_weight;
-    float max_weight;
+    // @weight
+    struct WeightToolVertex {
+        Vec2 position;
+        float weight;
+        void* user_data;
+    };
 
-    void (*update)();
-    void (*commit)();
-    void (*cancel)();
-    void (*update_vertex)(float weight, void* user_data);
-};
+    struct WeightToolOptions {
+        int vertex_count;
+        WeightToolVertex vertices[MESH_MAX_VERTICES];
+        float min_weight;
+        float max_weight;
 
-extern void BeginWeightTool(const WeightToolOptions& options);
+        void (*update)();
+        void (*commit)();
+        void (*cancel)();
+        void (*update_vertex)(float weight, void* user_data);
+    };
 
-// @select
-struct SelectToolOptions {
-    void (*update)(const Vec2& position);
-    void (*commit)(const Vec2& position);
-    void (*draw)(const Vec2& position);
-    void (*cancel)();
-};
+    extern void BeginWeightTool(const WeightToolOptions& options);
 
-extern void BeginSelectTool(const SelectToolOptions& options);
+    // @select
+    struct SelectToolOptions {
+        void (*update)(const Vec2& position);
+        void (*commit)(const Vec2& position);
+        void (*draw)(const Vec2& position);
+        void (*cancel)();
+    };
+
+    extern void BeginSelectTool(const SelectToolOptions& options);
 
 
-// @knife
+    // @knife
 
-extern void BeginKnifeTool(MeshData* mesh, bool restrict_to_selected = false);
+    extern void BeginKnifeTool(MeshDocument* mesh, bool restrict_to_selected = false);
 
-// @vertex_weight
+    // @vertex_weight
 
-struct VertexWeightToolOptions {
-    MeshData* mesh;
-    int vertex_count;
-    int vertices[MESH_MAX_VERTICES];
-    int bone_index;
-};
+    struct VertexWeightToolOptions {
+        MeshDocument* mesh;
+        int vertex_count;
+        int vertices[MESH_MAX_VERTICES];
+        int bone_index;
+    };
 
-extern void BeginVertexWeightTool(const VertexWeightToolOptions& options);
+    extern void BeginVertexWeightTool(const VertexWeightToolOptions& options);
 
-// @curve
-extern void BeginCurveTool(MeshData* mesh, u16* edge_indices, u16 edge_count);
+    // @curve
+    extern void BeginCurveTool(MeshDocument* mesh, u16* edge_indices, u16 edge_count);
 
-// @pen
-extern void BeginPenTool(MeshData* mesh, int color, float opacity);
+    // @pen
+    extern void BeginPenTool(MeshDocument* mesh, int color, float opacity);
 
-// @auto_curve
-extern void BeginAutoCurveTool(MeshData* mesh);
+    // @auto_curve
+    extern void BeginAutoCurveTool(MeshDocument* mesh);
+}

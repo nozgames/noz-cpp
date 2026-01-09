@@ -2,11 +2,11 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-constexpr int MAX_UNDO = MAX_ASSETS * 2;
+constexpr int MAX_UNDO = EDITOR_MAX_DOCUMENTS * 2;
 
 struct UndoItem {
     GenericAssetData saved_asset;
-    AssetData* asset;
+    Document* asset;
     int group_id;
 };
 
@@ -15,7 +15,7 @@ struct UndoSystem {
     RingBuffer* redo;
     int next_group_id;
     int current_group_id;
-    AssetData* temp[MAX_UNDO];
+    Document* temp[MAX_UNDO];
     int temp_count;
 };
 
@@ -35,7 +35,7 @@ static void Free(UndoItem& item) {
 
 static void CallUndoRedo() {
     for (int i=0; i<g_undo.temp_count; i++) {
-        AssetData* ea = g_undo.temp[i];
+        Document* ea = g_undo.temp[i];
         if (ea->vtable.undo_redo)
             ea->vtable.undo_redo(ea);
     }
@@ -56,7 +56,7 @@ static bool UndoInternal(bool allow_redo) {
         if (group_id != -1 && item->group_id != group_id)
             break;
 
-        AssetData* undo_asset = item->asset;
+        Document* undo_asset = item->asset;
         assert(undo_asset);
         assert(undo_asset->type == item->saved_asset.type);
 
@@ -101,7 +101,7 @@ bool Redo()
         if (group_id != -1 && redo_item.group_id != group_id)
             break;
 
-        AssetData* redo_asset = redo_item.asset;
+        Document* redo_asset = redo_item.asset;
         assert(redo_asset);
         assert(redo_asset->type == redo_item.saved_asset.type);
 
@@ -144,10 +144,10 @@ void EndUndoGroup() {
 }
 
 void RecordUndo() {
-    RecordUndo(GetAssetData());
+    RecordUndo(GetDocument());
 }
 
-void RecordUndo(AssetData* a) {
+void RecordUndo(Document* a) {
     // Maxium undo size
     if (IsFull(g_undo.undo)) {
         UndoItem& old = *(UndoItem*)GetFront(g_undo.undo);
@@ -168,7 +168,7 @@ void RecordUndo(AssetData* a) {
     }
 }
 
-void RemoveFromUndoRedo(AssetData* a) {
+void RemoveFromUndoRedo(Document* a) {
     for (u32 i=GetCount(g_undo.undo); i>0; i--) {
         UndoItem& undo_item = *(UndoItem*)GetAt(g_undo.undo, i-1);
         if (undo_item.asset != a) continue;
