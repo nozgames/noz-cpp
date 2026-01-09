@@ -188,6 +188,7 @@ static void DrawPenTool() {
 
 static void UpdatePenTool() {
     MeshData* m = g_pen_tool.mesh;
+    MeshFrameData* frame = GetCurrentFrame(m);
     Vec2 mouse_local = g_view.mouse_world_position - m->position;
 
     // Cancel
@@ -243,7 +244,7 @@ static void UpdatePenTool() {
             g_pen_tool.hovering_edge = true;
             g_pen_tool.hover_edge_index = edge_index;
             g_pen_tool.hover_edge_t = edge_t;
-            g_pen_tool.hover_snap_position = GetEdgePoint(m, edge_index, edge_t);
+            g_pen_tool.hover_snap_position = GetEdgePoint(frame, static_cast<u16>(edge_index), edge_t);
         }
     }
 

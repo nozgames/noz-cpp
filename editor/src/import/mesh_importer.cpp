@@ -16,8 +16,8 @@ struct OutlineConfig {
     float boundary_taper;
 };
 
-static Mesh* ToMeshWithAtlasQuad(MeshData* mesh_data, AtlasData* atlas, const AtlasRect& rect) {
-    if (!mesh_data || !mesh_data->impl) return nullptr;
+static Mesh* ToMeshWithAtlasQuad(MeshData* m, AtlasData* atlas, const AtlasRect& rect) {
+    if (!m || !m->impl) return nullptr;
 
     // Use tight rect around mesh bounds
     Vec2 min_pos = rect.mesh_bounds.min;
@@ -26,11 +26,11 @@ static Mesh* ToMeshWithAtlasQuad(MeshData* mesh_data, AtlasData* atlas, const At
     // 4 vertices, 2 triangles
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_DEFAULT, 4, 6);
 
-    float depth = 0.01f + 0.99f * (mesh_data->impl->depth - MESH_MIN_DEPTH) / (float)(MESH_MAX_DEPTH - MESH_MIN_DEPTH);
+    float depth = 0.01f + 0.99f * (m->impl->depth - MESH_MIN_DEPTH) / (float)(MESH_MAX_DEPTH - MESH_MIN_DEPTH);
     int atlas_idx = GetAtlasIndex(atlas);
 
     // Get bone index if skinned (single bone only)
-    int bone_index = GetSingleBoneIndex(mesh_data);
+    int bone_index = m->impl->bone_index;
 
     // Quad corners: bottom-left, bottom-right, top-right, top-left
     Vec2 corners[4] = {
@@ -56,7 +56,7 @@ static Mesh* ToMeshWithAtlasQuad(MeshData* mesh_data, AtlasData* atlas, const At
     AddTriangle(builder, 0, 1, 2);
     AddTriangle(builder, 0, 2, 3);
 
-    Mesh* result = CreateMesh(ALLOCATOR_DEFAULT, builder, mesh_data->name, false);
+    Mesh* result = CreateMesh(ALLOCATOR_DEFAULT, builder, m->name, false);
     Free(builder);
 
     // Set animation info for animated meshes

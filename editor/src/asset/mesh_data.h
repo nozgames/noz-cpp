@@ -162,7 +162,6 @@ extern int AddVertex(MeshData* m, const Vec2& position);
 extern int RotateEdge(MeshData* m, int edge_index);
 extern void DrawMesh(MeshData* m, const Mat3& transform, Material* material=nullptr);
 extern Vec2 GetFaceCenter(MeshData* m, int face_index);
-extern Vec2 GetEdgePoint(MeshData* m, int edge_index, float t);
 inline Vec2 GetVertexPoint(MeshData* m, int vertex_index) {
     return GetCurrentFrame(m)->vertices[vertex_index].position;
 }
@@ -177,12 +176,7 @@ extern int GetSelectedEdges(MeshData* m, int edges[MESH_MAX_EDGES]);
 extern void SerializeMesh(Mesh* m, Stream* stream);
 extern void SwapFace(MeshData* m, int face_index_a, int face_index_b);
 extern void SetOrigin(MeshData* m, const Vec2& origin);
-extern float GetVertexWeight(MeshData* m, int vertex_index, int bone_index);
-extern void AddVertexWeight(MeshData* m, int vertex_index, int bone_index, float weight);
-extern void SetVertexWeight(MeshData* m, int vertex_index, int bone_index, float weight);
-extern void InterpolateVertexWeights(MeshData* m, int new_vertex_index, int v0_index, int v1_index, float t);
-extern void InferVertexWeightsFromNeighbors(MeshData* m, int vertex_index);
-extern void SetSingleBone(MeshData* m, int bone_index);  // Sets entire mesh to single bone (or clears if -1)
+extern void SetBone(MeshData* m, int bone_index);  // Sets entire mesh to single bone (or clears if -1)
 extern void ClearBone(MeshData* m);  // Clears all bone weights from mesh
 
 extern void SetFaceColor(MeshData* m, u8 color);
@@ -239,10 +233,10 @@ inline bool IsValid(MeshFrameData* frame, EdgeData* e) {
 extern void DeleteEdge(MeshFrameData* frame, EdgeData* e, bool include_verts);
 extern EdgeData* GetEdge(MeshFrameData* frame, u16 edge_index);
 extern u16 GetEdge(MeshData* m, u16 v0, u16 v1);
-extern Vec2 GetEdgeMidpoint(MeshData* m, u16 edge_index);
-extern Vec2 GetEdgeControlPoint(MeshData* m, u16 edge_index);
-extern bool IsEdgeCurved(MeshData* m, u16 edge_index);
+extern Vec2 GetEdgeMidpoint(MeshFrameData* frame, u16 edge_index);
+extern Vec2 GetEdgeControlPoint(MeshFrameData* frame, u16 edge_index);
 extern void DeleteEdge(MeshFrameData* frame, u16 edge_index);
+extern Vec2 GetEdgePoint(MeshFrameData* frame, u16 edge_index, float t);
 
 inline bool IsSelected(const EdgeData* e) {
     return (e->flags & EDGE_FLAG_SELECTED) != EDGE_FLAG_NONE;
@@ -253,6 +247,9 @@ inline void SetFlags(EdgeData* e, EdgeFlags value, EdgeFlags mask) {
 }
 inline bool IsEdgeSelected(MeshFrameData* f, u16 edge_index) {
     return IsSelected(f->edges + edge_index);
+}
+inline bool HasCurve(const EdgeData* e) {
+    return LengthSqr(e->curve.offset) > FLT_EPSILON;
 }
 
 // @face

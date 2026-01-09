@@ -22,6 +22,7 @@ struct CurveTool {
 static CurveTool g_curve = {};
 
 static Vec2 CalculateCurveCircleOffset(MeshFrameData* frame, int edge_index, Vec2* out_outward_dir, float* out_circle_weight) {
+#if 0
     EdgeData& e = frame->edges[edge_index];
 
     // Find a face that uses this edge to get proper vertex ordering
@@ -72,6 +73,9 @@ static Vec2 CalculateCurveCircleOffset(MeshFrameData* frame, int edge_index, Vec
 
     // Use utility function for the tangent intersection calculation
     return CalculateCircleOffset(p0, p1, centroid);
+#else
+    return VEC2_ZERO;
+#endif
 }
 
 static void EndCurve(bool commit) {
