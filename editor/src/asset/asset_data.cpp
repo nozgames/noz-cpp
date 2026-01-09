@@ -108,66 +108,12 @@ void SetPosition(AssetData* a, const Vec2& position) {
     a->meta_modified = true;
 }
 
-void DrawSelectedEdges(MeshData* m, const Vec2& position) {
-    BindMaterial(g_view.vertex_material);
-
-    MeshFrameData* frame = GetCurrentFrame(m);
-    for (i32 edge_index=0; edge_index < frame->edge_count; edge_index++) {
-        const EdgeData& ee = frame->edges[edge_index];
-        if (!ee.selected)
-            continue;
-
-        const Vec2& v0 = frame->vertices[ee.v0].position;
-        const Vec2& v1 = frame->vertices[ee.v1].position;
-        DrawLine(v0 + position, v1 + position);
-    }
-}
-
-void DrawEdges(MeshData* m, const Vec2& position) {
-    BindMaterial(g_view.vertex_material);
-
-    MeshFrameData* frame = GetCurrentFrame(m);
-    for (i32 edge_index=0; edge_index < frame->edge_count; edge_index++) {
-        const EdgeData& ee = frame->edges[edge_index];
-        DrawLine(frame->vertices[ee.v0].position + position, frame->vertices[ee.v1].position + position);
-    }
-}
-
-void DrawEdges(MeshData* m, const Mat3& transform) {
-    BindMaterial(g_view.vertex_material);
-
-    MeshFrameData* frame = GetCurrentFrame(m);
-    for (i32 edge_index=0; edge_index < frame->edge_count; edge_index++) {
-        const EdgeData& ee = frame->edges[edge_index];
-        Vec2 p1 = TransformPoint(transform, frame->vertices[ee.v0].position);
-        Vec2 p2 = TransformPoint(transform, frame->vertices[ee.v1].position);
-        DrawLine(p1, p2);
-    }
-}
-
-void DrawSelectedFaces(MeshData* m, const Vec2& position) {
-    BindMaterial(g_view.vertex_material);
-
-    MeshFrameData* frame = GetCurrentFrame(m);
-    for (i32 face_index=0; face_index < frame->face_count; face_index++) {
-        const FaceData& f = frame->faces[face_index];
-        if (!f.selected)
-            continue;
-
-        for (int vertex_index=0; vertex_index<f.vertex_count; vertex_index++) {
-            int v0 = f.vertices[vertex_index];
-            int v1 = f.vertices[(vertex_index + 1) % f.vertex_count];
-            DrawLine(frame->vertices[v0].position + position, frame->vertices[v1].position + position);
-        }
-    }
-}
-
 void DrawFaceCenters(MeshData* m, const Vec2& position) {
     BindMaterial(g_view.vertex_material);
     MeshFrameData* frame = GetCurrentFrame(m);
     for (int i=0; i<frame->face_count; i++) {
-        FaceData& ef = frame->faces[i];
-        BindColor(ef.selected ? COLOR_VERTEX_SELECTED : COLOR_VERTEX);
+        const FaceData* f = frame->faces + i;
+        BindColor(IsSelected(f) ? COLOR_VERTEX_SELECTED : COLOR_VERTEX);
         DrawVertex(position + GetFaceCenter(m, i));
     }
 }

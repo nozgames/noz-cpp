@@ -74,4 +74,6 @@ namespace noz {
     }
 
     extern RectInt Union(const RectInt& r1, const RectInt& r2);
+
+    constexpr RectInt RECTINT_ZERO = {0,0,0,0};
 }

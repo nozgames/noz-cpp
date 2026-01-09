@@ -45,6 +45,7 @@ extern Font* FONT_SEGUISB;
 // @Shader
 extern Shader* SHADER_EDITOR;
 extern Shader* SHADER_EDITOR_MESH;
+extern Shader* SHADER_EDITOR_TEXTURE;
 extern Shader* SHADER_MESH;
 extern Shader* SHADER_POSTPROCESS_UI_COMPOSITE;
 extern Shader* SHADER_SKINNED_MESH;

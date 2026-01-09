@@ -68,7 +68,13 @@ static void CreateTexture(
         name->value);
 }
 
-Texture* CreateTexture(Allocator* allocator, int width, int height, TextureFormat format, const Name* name, TextureFilter filter) {
+Texture* CreateTexture(
+    Allocator* allocator,
+    int width,
+    int height,
+    TextureFormat format,
+    const Name* name,
+    TextureFilter filter) {
     assert(width > 0);
     assert(height > 0);
     assert(name);

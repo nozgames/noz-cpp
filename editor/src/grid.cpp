@@ -152,7 +152,7 @@ void DrawGrid(Camera* camera) {
         if (!g_grid.mesh)
             g_grid.mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
         else
-            UpdateMeshFromBuilder(g_grid.mesh, builder);
+            UpdateMesh(builder, g_grid.mesh);
 
         BindColor(COLOR_WHITE);
         BindTransform(MAT3_IDENTITY);

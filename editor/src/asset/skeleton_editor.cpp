@@ -271,7 +271,7 @@ static void DrawSkeleton() {
     if (!g_skeleton_editor.editor_mesh)
         g_skeleton_editor.editor_mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
     else
-        UpdateMeshFromBuilder(g_skeleton_editor.editor_mesh, builder);
+        UpdateMesh(builder, g_skeleton_editor.editor_mesh);
     PopScratch();
 
     BindDepth(0.0f);

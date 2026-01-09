@@ -2,6 +2,11 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
+#include "utils/rasterizer.h"
+using namespace noz;
+
+#include "utils/pixel_data.h"
+
 extern Font* FONT_SEGUISB;
 
 constexpr float FRAME_SIZE_X = 20;
@@ -38,6 +43,8 @@ enum MeshEditorMode {
 
 struct MeshEditor {
     MeshEditorMode mode;
+    MeshData* mesh_data;
+    Mesh* mesh;
     Vec2 selection_drag_start;
     Vec2 selection_center;
     int selection_opacity;
@@ -51,30 +58,24 @@ struct MeshEditor {
     bool use_negative_fixed_value;
     float fixed_value;
     Shortcut* shortcuts;
-    VertexData saved[MAX_VERTICES];
-    Vec2 saved_curves[MAX_EDGES];
+    VertexData saved_verts[MESH_MAX_VERTICES];
+    CurveData saved_curves[MESH_MAX_EDGES];
     InputSet* input;
     Mesh* color_picker_mesh;
-    MeshData* mesh_data;
     int weight_bone;
     bool xray;
     bool show_palette_picker;
     bool show_tiling;
-    Mesh* editor_mesh;
-
-    // Animation state
     Shortcut* animation_shortcuts;
     int cached_frame;              // For onion skin cache invalidation
     Mesh* prev_frame_mesh;         // Onion skin: previous frame edges
     Mesh* next_frame_mesh;         // Onion skin: next frame edges
     bool onion_skin_enabled;       // Show onion skin overlay
-    MeshFrameData clipboard;       // Frame copy/paste buffer
     bool has_clipboard;
     float playback_time;           // Animation preview time
     bool is_playing;               // Animation playing
     bool show_opacity_popup;
 
-    // Geometry clipboard for copy/paste across meshes
     struct {
         VertexData vertices[MESH_MAX_VERTICES];
         FaceData faces[MESH_MAX_FACES];
@@ -82,16 +83,19 @@ struct MeshEditor {
         int face_count;
         Vec2 center;
         bool has_content;
-    } geometry_clipboard;
+    } clipboard;
 
-    // Pixel art preview state
-    u8* preview_pixels;
-    int preview_width;
-    int preview_height;
-    Texture* preview_texture;
-    Material* preview_material;
-    bool preview_dirty;
-    Bounds2 preview_bounds;  // Cached bounds from last render (includes curves)
+    struct {
+        Material* material;
+        Texture* texture;
+        PixelData* pixels;
+        Bounds2 bounds;
+        Mesh* mesh;
+        Vec2Int size;
+        Rasterizer* rasterizer;
+    } draw;
+
+    bool dirty;
 };
 
 static MeshEditor g_mesh_editor = {};
@@ -108,33 +112,15 @@ inline MeshData* GetMeshData() {
     return (MeshData*)a;
 }
 
-// Preview rendering functions
-void MarkPreviewDirty() {
-    g_mesh_editor.preview_dirty = true;
-}
-
-static void SyncPreviewTexture(int width, int height) {
-    if (!g_mesh_editor.preview_pixels) return;
-
-    if (!g_mesh_editor.preview_texture) {
-        g_mesh_editor.preview_texture = CreateTexture(
-            ALLOCATOR_DEFAULT, g_mesh_editor.preview_pixels, width, height,
-            TEXTURE_FORMAT_RGBA8, GetName("mesh_preview"),
-            g_editor.atlas.filter);
-        g_mesh_editor.preview_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_TEXTURED_MESH);
-        SetTexture(g_mesh_editor.preview_material, g_mesh_editor.preview_texture, 0);
-    } else {
-        UpdateTexture(g_mesh_editor.preview_texture, g_mesh_editor.preview_pixels);
-    }
-}
-
-static Bounds2 RenderPreview(MeshData* m) {
+#if 0
+static Bounds2 RenderFrameEditTexture(MeshData* m, int frame_index) {
     float dpi = (float)g_editor.atlas.dpi;
     int padding = g_editor.atlas.padding;
 
+    MeshFrameData* frame = GetFrame(m, frame_index);
+
     // Get bounds for current frame (must match RenderMeshPreview calculation)
     Bounds2 bounds;
-    MeshFrameData* frame = GetCurrentFrame(m);
     if (frame->vertex_count == 0) {
         bounds = {{-0.5f, -0.5f}, {0.5f, 0.5f}};
     } else {
@@ -148,10 +134,10 @@ static Bounds2 RenderPreview(MeshData* m) {
         // Include curve control points (must match RenderMeshPreview)
         for (int i = 0; i < frame->edge_count; i++) {
             EdgeData& e = frame->edges[i];
-            if (LengthSqr(e.curve_offset) > 0.0001f) {
+            if (LengthSqr(e.curve.offset) > 0.0001f) {
                 Vec2 p0 = frame->vertices[e.v0].position;
                 Vec2 p1 = frame->vertices[e.v1].position;
-                Vec2 control = (p0 + p1) * 0.5f + e.curve_offset;
+                Vec2 control = (p0 + p1) * 0.5f + e.curve.offset;
                 bounds.min.x = Min(bounds.min.x, control.x);
                 bounds.min.y = Min(bounds.min.y, control.y);
                 bounds.max.x = Max(bounds.max.x, control.x);
@@ -160,118 +146,128 @@ static Bounds2 RenderPreview(MeshData* m) {
         }
     }
 
-    Vec2 size = GetSize(bounds);
-    int width = (int)ceilf(size.x * dpi) + padding * 2;
-    int height = (int)ceilf(size.y * dpi) + padding * 2;
-    width = Max(width, 1);
-    height = Max(height, 1);
+    // Snap bounds to pixel grid to prevent pixel shifting when bounds change
+    float pixel_size = 1.0f / dpi;
+    bounds.min.x = floorf(bounds.min.x / pixel_size) * pixel_size;
+    bounds.min.y = floorf(bounds.min.y / pixel_size) * pixel_size;
+    bounds.max.x = ceilf(bounds.max.x / pixel_size) * pixel_size;
+    bounds.max.y = ceilf(bounds.max.y / pixel_size) * pixel_size;
 
-    // Reallocate buffer if size changed
-    if (width != g_mesh_editor.preview_width || height != g_mesh_editor.preview_height) {
-        Free(g_mesh_editor.preview_pixels);
-        g_mesh_editor.preview_pixels = (u8*)Alloc(ALLOCATOR_DEFAULT, width * height * 4);
-        g_mesh_editor.preview_width = width;
-        g_mesh_editor.preview_height = height;
-        // Force texture recreation
-        if (g_mesh_editor.preview_texture) {
-            Free(g_mesh_editor.preview_texture);
-            g_mesh_editor.preview_texture = nullptr;
-            g_mesh_editor.preview_material = nullptr;
-        }
+    // Use roundf since bounds are snapped to pixel grid - avoids floating point errors
+    int content_width = (int)roundf((bounds.max.x - bounds.min.x) * dpi);
+    int content_height = (int)roundf((bounds.max.y - bounds.min.y) * dpi);
+    Vec2Int size = {
+        Max(content_width + padding * 2, 1),
+        Max(content_height + padding * 2, 1)
+    };
+
+    if (size != frame->edit_size) {
+        Free(frame->edit_pixels);
+        Free(frame->edit_texture);
+        frame->edit_texture = nullptr;
+        frame->edit_pixels = static_cast<Color32*>(Alloc(ALLOCATOR_DEFAULT, size.x * size.y *sizeof(Color32)));
     }
 
-    // Render mesh to preview buffer
-    RenderMeshPreview(m, g_mesh_editor.preview_pixels, width, height, &bounds);
+    RenderMeshPreview(m, frame->edit_pixels, size, &bounds);
 
     // Upload to GPU
-    SyncPreviewTexture(width, height);
+    if (!frame->edit_texture) {
+        frame->edit_texture = CreateTexture(
+            ALLOCATOR_DEFAULT, frame->edit_pixels, width, height,
+            TEXTURE_FORMAT_RGBA8, GetName("frame_edit"),
+            g_editor.atlas.filter);
+    } else {
+        UpdateTexture(frame->edit_texture, frame->edit_pixels);
+    }
 
-    g_mesh_editor.preview_dirty = false;
-    g_mesh_editor.preview_bounds = bounds;  // Cache for non-dirty frames
+    g_mesh_editor.mesh_dirty = false;
     return bounds;
 }
+#endif
 
 static void UpdateVertexSelection(MeshData* m) {
     MeshFrameData* frame = GetCurrentFrame(m);
     frame->selected_vertex_count = 0;
+    frame->selected_edge_count = 0;
+    frame->selected_face_count = 0;
+
     for (int vertex_index=0; vertex_index<frame->vertex_count; vertex_index++) {
-        const VertexData& v = frame->vertices[vertex_index];
-        if (!v.selected) continue;
+        const VertexData* v = frame->vertices + vertex_index;
+        if (!IsSelected(v)) continue;
         frame->selected_vertex_count++;
     }
 
-    frame->selected_edge_count = 0;
     for (int edge_index=0; edge_index<frame->edge_count; edge_index++) {
-        EdgeData& e = frame->edges[edge_index];
-        VertexData& v0 = frame->vertices[e.v0];
-        VertexData& v1 = frame->vertices[e.v1];
-        e.selected = v0.selected && v1.selected;
-        if (e.selected)
+        EdgeData* e = GetEdge(frame, edge_index);
+        VertexData* v0 = frame->vertices + e.v0;
+        VertexData* v1 = frame->vertices + e.v1;
+        SetFlags(e, IsSelected(v0) && IsSelected(v1) ? EDGE_FLAG_SELECTED : EDGE_FLAG_NONE, EDGE_FLAG_SELECTED);
+        if (IsSelected(e))
             frame->selected_edge_count++;
     }
 
-    frame->selected_face_count = 0;
     for (int face_index=0; face_index<frame->face_count; face_index++) {
-        FaceData& f = frame->faces[face_index];
-        f.selected = true;
-        for (int face_vertex_index=0; f.selected && face_vertex_index<f.vertex_count; face_vertex_index++)
-            f.selected &= frame->vertices[f.vertices[face_vertex_index]].selected;
+        FaceData* f = frame->faces + face_index;
+        u16 face_vertices[MESH_MAX_FACE_VERTICES];
+        u16 vertex_count = GetFaceVertices(m, f, face_vertices);
 
-        if (f.selected)
+        bool selected = true;
+        for (int face_vertex_index=0; selected && face_vertex_index<vertex_count; face_vertex_index++)
+            selected &= IsVertexSelected(frame, face_vertices[face_vertex_index]);
+
+        if (selected) {
             frame->selected_face_count++;
+            SetFlags(f, FACE_FLAG_SELECTED, FACE_FLAG_SELECTED);
+        } else {
+            SetFlags(f, FACE_FLAG_NONE, FACE_FLAG_SELECTED);
+        }
     }
 }
 
 static void UpdateEdgeSelection(MeshData* m) {
     MeshFrameData* frame = GetCurrentFrame(m);
     frame->selected_vertex_count = 0;
-    for (int vertex_index=0; vertex_index<frame->vertex_count; vertex_index++) {
-        VertexData& v = frame->vertices[vertex_index];
-        v.selected = false;
-    }
-
     frame->selected_face_count = 0;
-    for (int face_index=0; face_index<frame->face_count; face_index++) {
-        FaceData& f = frame->faces[face_index];
-        f.selected = false;
-    }
-
     frame->selected_edge_count = 0;
-    for (int edge_index=0; edge_index<frame->edge_count; edge_index++) {
-        EdgeData& e = frame->edges[edge_index];
-        if (!e.selected) continue;
+
+    for (u16 vertex_index=0; vertex_index<frame->vertex_count; vertex_index++)
+        SetFlags(frame->vertices + vertex_index, VERTEX_FLAG_NONE, VERTEX_FLAG_SELECTED);
+
+    for (u16 face_index=0; face_index<frame->face_count; face_index++)
+        SetFlags(frame->faces + face_index, FACE_FLAG_NONE, FACE_FLAG_SELECTED);
+
+    for (u16 edge_index=0; edge_index<frame->edge_count; edge_index++) {
+        EdgeData* e = GetEdge(frame, edge_index);
+        if (!IsSelected(e)) continue;
+
         frame->selected_edge_count++;
 
-        VertexData& v0 = frame->vertices[e.v0];
-        VertexData& v1 = frame->vertices[e.v1];
+        VertexData* v0 = frame->vertices + e->v0;
+        VertexData* v1 = frame->vertices + e->v1;
 
-        if (!v0.selected) {
-            v0.selected = true;
+        if (!IsSelected(v0)) {
+            SetFlags(v0, VERTEX_FLAG_SELECTED, VERTEX_FLAG_SELECTED);
             frame->selected_vertex_count++;
         }
 
-        if (!v1.selected) {
-            v1.selected = true;
+        if (!IsSelected(v1)) {
+            SetFlags(v1, VERTEX_FLAG_SELECTED, VERTEX_FLAG_SELECTED);
             frame->selected_vertex_count++;
         }
     }
 
-    for (int face_index=0; face_index<frame->face_count; face_index++) {
-        FaceData& f = frame->faces[face_index];
+    for (u16 face_index=0; face_index<frame->face_count; face_index++) {
+        FaceData* f = frame->faces + face_index;
 
-        int selected_edge_count = 0;
-        for (int edge_index=0; selected_edge_count < f.vertex_count - 1 && edge_index < frame->edge_count; edge_index++) {
-            EdgeData& e = frame->edges[edge_index];
-            if (!e.selected) continue;
-            bool selected =
-                e.face_count > 0 && e.face_index[0] == face_index ||
-                e.face_count > 1 && e.face_index[1] == face_index;
-            if (!selected) continue;
+        u16 selected_edge_count = 0;
+        for (u16 edge_index=0; selected_edge_count < f->edge_count; edge_index++) {
+            EdgeData* e = GetEdge(frame, edge_index);
+            if (!IsSelected(e)) continue;
             selected_edge_count++;
         }
 
-        if (selected_edge_count == f.vertex_count - 1) {
-            f.selected = true;
+        if (selected_edge_count == f.edge_count) {
+            SetFlags(f, FACE_FLAG_SELECTED, FACE_FLAG_SELECTED);
             frame->selected_face_count++;
         }
     }
@@ -280,46 +276,41 @@ static void UpdateEdgeSelection(MeshData* m) {
 static void UpdateFaceSelection(MeshData* m) {
     MeshFrameData* frame = GetCurrentFrame(m);
     frame->selected_vertex_count = 0;
-    for (int vertex_index=0; vertex_index<frame->vertex_count; vertex_index++) {
-        VertexData& v = frame->vertices[vertex_index];
-        v.selected = false;
-    }
-
     frame->selected_edge_count = 0;
-    for (int edge_index=0; edge_index<frame->edge_count; edge_index++) {
-        EdgeData& e = frame->edges[edge_index];
-        e.selected = false;
-    }
-
     frame->selected_face_count = 0;
-    for (int face_index=0; face_index<frame->face_count; face_index++) {
-        FaceData& f = frame->faces[face_index];
-        if (!f.selected)
-            continue;
+
+    for (u16 vertex_index=0; vertex_index<frame->vertex_count; vertex_index++)
+        SetFlags(frame->vertices + vertex_index, VERTEX_FLAG_NONE, VERTEX_FLAG_SELECTED);
+
+    for (u16 edge_index=0; edge_index<frame->edge_count; edge_index++)
+        SetFlags(GetEdge(frame, edge_index), EDGE_FLAG_NONE, EDGE_FLAG_SELECTED);
+
+    for (u16 face_index=0; face_index<frame->face_count; face_index++) {
+        FaceData* f = frame->faces + face_index;
+        if (!IsSelected(f)) continue;
 
         frame->selected_face_count++;
-        for (int face_vertex_index=0; face_vertex_index<f.vertex_count; face_vertex_index++) {
-            int vertex_index = f.vertices[face_vertex_index];
-            VertexData& v = frame->vertices[vertex_index];
-            if (v.selected) continue;
 
-            v.selected = true;
-            frame->selected_vertex_count++;
+        for (int face_edge_index=0; face_edge_index<f->edge_count; face_edge_index++) {
+            EdgeData* e = GetFaceEdge(frame, f, face_edge_index);
+            if (IsSelected(e)) continue;
+
+            SetFlags(e, EDGE_FLAG_SELECTED, EDGE_FLAG_SELECTED);
+            frame->selected_edge_count++;
+
+            VertexData* v0 = frame->vertices + e->v0;
+            if (!IsSelected(v0)) {
+                SetFlags(v0, VERTEX_FLAG_SELECTED, VERTEX_FLAG_SELECTED);
+                frame->selected_vertex_count++;
+            }
+
+            VertexData* v1 = frame->vertices + e->v1;
+            if (!IsSelected(v1)) {
+                SetFlags(v1, VERTEX_FLAG_SELECTED, VERTEX_FLAG_SELECTED);
+                frame->selected_vertex_count++;
+            }
         }
     }
-
-    for (int edge_index=0; edge_index<frame->edge_count; edge_index++) {
-        EdgeData& e = frame->edges[edge_index];
-        if (e.selected) continue;
-        bool selected =
-            e.face_count > 0 && frame->faces[e.face_index[0]].selected ||
-            e.face_count > 1 && frame->faces[e.face_index[1]].selected;
-        if (!selected)
-            continue;
-        e.selected = selected;
-        frame->selected_edge_count++;
-    }
-
 }
 
 static void UpdateSelectionCenter() {
@@ -328,16 +319,16 @@ static void UpdateSelectionCenter() {
     Bounds2 bounds = {VEC2_ZERO, VEC2_ZERO};
     int vertex_index = 0;
     for (; vertex_index<frame->vertex_count; vertex_index++) {
-        VertexData& v = frame->vertices[vertex_index];
-        if (!v.selected) continue;
-        bounds = {v.position, v.position};
+        VertexData* v = frame->vertices[vertex_index];
+        if (!IsSelected(v)) continue;
+        bounds = {v->position, v->position};
         break;
     }
 
     for (;vertex_index<frame->vertex_count; vertex_index++) {
-        VertexData& v = frame->vertices[vertex_index];
-        if (!v.selected) continue;
-        bounds = Union(bounds, {v.position, v.position});
+        VertexData* v = GetVertex(frame, vertex_index);
+        if (!IsSelected(v)) continue;
+        bounds = Union(bounds, {v->position, v->position});
     }
 
     if (frame->selected_vertex_count > 0)
@@ -349,9 +340,9 @@ static void UpdateSelectionCenter() {
 static void UpdateSelectionColor() {
     MeshData* m = GetMeshData();
     MeshFrameData* frame = GetCurrentFrame(m);
-    for (int face_index=0; face_index<frame->face_count; face_index++) {
-        FaceData* f = &frame->faces[face_index];
-        if (!f->selected) continue;
+    for (u16 face_index=0; face_index<frame->face_count; face_index++) {
+        FaceData* f = GetFace(frame, face_index);
+        if (!IsSelected(f)) continue;
         g_mesh_editor.selection_opacity = Clamp((int)(f->opacity * 10.0f), 0, 10);
         g_mesh_editor.selection_color = f->color;
         return;
@@ -384,14 +375,14 @@ static void ClearSelection() {
     MeshData* m = GetMeshData();
     MeshFrameData* frame = GetCurrentFrame(m);
 
-    for (int vertex_index=0; vertex_index<frame->vertex_count; vertex_index++)
-        frame->vertices[vertex_index].selected = false;
+    for (u16 vertex_index=0; vertex_index<frame->vertex_count; vertex_index++)
+        SetFlags(GetVertex(frame, vertex_index), VERTEX_FLAG_NONE, VERTEX_FLAG_SELECTED);
 
-    for (int edge_index=0; edge_index<frame->edge_count; edge_index++)
-        frame->edges[edge_index].selected = false;
+    for (u16 edge_index=0; edge_index<frame->edge_count; edge_index++)
+        SetFlags(GetEdge(frame, edge_index), EDGE_FLAG_NONE, EDGE_FLAG_SELECTED);
 
-    for (int face_index=0; face_index<frame->face_count; face_index++)
-        frame->faces[face_index].selected = false;
+    for (u16 face_index=0; face_index<frame->face_count; face_index++)
+        SetFlags(GetFace(frame, face_index), FACE_FLAG_NONE, FACE_FLAG_SELECTED);
 
     UpdateSelection();
 }
@@ -444,18 +435,18 @@ static void SaveMeshState() {
     MeshData* m = GetMeshData();
     MeshFrameData* frame = GetCurrentFrame(m);
     for (int i=0; i<frame->vertex_count; i++)
-        g_mesh_editor.saved[i] = frame->vertices[i];
+        g_mesh_editor.saved_verts[i] = frame->vertices[i];
     for (int i=0; i<frame->edge_count; i++)
-        g_mesh_editor.saved_curves[i] = frame->edges[i].curve_offset;
+        g_mesh_editor.saved_curves[i] = frame->curves[i];
 }
 
 static void RevertMeshState() {
     MeshData* m = GetMeshData();
     MeshFrameData* frame = GetCurrentFrame(m);
     for (int i=0; i < frame->vertex_count; i++)
-        frame->vertices[i] = g_mesh_editor.saved[i];
+        frame->vertices[i] = g_mesh_editor.saved_verts[i];
     for (int i=0; i < frame->edge_count; i++)
-        frame->edges[i].curve_offset = g_mesh_editor.saved_curves[i];
+        frame->curves[i] = g_mesh_editor.saved_curves[i];
 
     MarkDirty(m);
     MarkModified(m);
@@ -508,13 +499,13 @@ static bool TrySelectFace() {
     assert(g_mesh_editor.mode == MESH_EDITOR_MODE_FACE);
 
     MeshData* m = GetMeshData();
-    int hit_faces[MAX_FACES];
+    int hit_faces[MESH_MAX_FACES];
     int hit_count = HitTestFaces(
         m,
         Translate(m->position),
         g_view.mouse_world_position,
         hit_faces,
-        MAX_FACES);
+        MESH_MAX_FACES);
 
     if (hit_count == 0)
         return false;
@@ -618,19 +609,19 @@ static void DissolveSelected() {
     RecordUndo(m);
 
     // Track selected vertices before dissolving (for orphan cleanup)
-    bool was_selected[MAX_VERTICES] = {};
+    bool was_selected[MESH_MAX_VERTICES] = {};
     for (int i=0; i<GetCurrentFrame(m)->vertex_count; i++)
         was_selected[i] = GetCurrentFrame(m)->vertices[i].selected;
 
     if (g_mesh_editor.mode == MESH_EDITOR_MODE_VERTEX) {
-        DissolveSelectedVertices(m);
+        DeleteSelectedVertices(m);
     } else if (g_mesh_editor.mode == MESH_EDITOR_MODE_EDGE) {
         for (int i=GetCurrentFrame(m)->edge_count-1; i>=0; i--)
             if (GetCurrentFrame(m)->edges[i].selected)
-                DissolveEdge(m, i);
+                DeleteEdge(m, i);
         ClearSelection();
     } else if (g_mesh_editor.mode == MESH_EDITOR_MODE_FACE) {
-        DissolveSelectedFaces(m);
+        DeleteSelectedFaces(m);
     }
 
     // Remove vertices that were selected and are now orphaned
@@ -1157,7 +1148,7 @@ static void UpdateMoveTool(const Vec2& delta) {
     bool coarse_snap = IsCtrlDown(GetInputSet());
     for (int i=0; i<GetCurrentFrame(m)->vertex_count; i++) {
         VertexData& v = GetCurrentFrame(m)->vertices[i];
-        VertexData& s = g_mesh_editor.saved[i];
+        VertexData& s = g_mesh_editor.saved_verts[i];
         if (v.selected) {
             Vec2 new_pos = m->position + s.position + delta;
             new_pos = coarse_snap ? SnapToGrid(new_pos) : SnapToPixelGrid(new_pos);
@@ -1165,7 +1156,7 @@ static void UpdateMoveTool(const Vec2& delta) {
         }
     }
 
-    UpdateEdges(m);
+    Update(m);
     MarkDirty(m);
     MarkModified(m);
 }
@@ -1185,7 +1176,7 @@ static void BeginCurveToolFromSelection() {
     if (GetCurrentFrame(m)->selected_edge_count == 0)
         return;
 
-    int selected_edges[MAX_EDGES];
+    int selected_edges[MESH_MAX_EDGES];
     int count = GetSelectedEdges(m, selected_edges);
     if (count == 0)
         return;
@@ -1208,7 +1199,7 @@ static void UpdateRotateTool(float angle) {
         if (!ev.selected)
             continue;
 
-        VertexData& s = g_mesh_editor.saved[i];
+        VertexData& s = g_mesh_editor.saved_verts[i];
         Vec2 relative_pos = s.position - g_mesh_editor.selection_center;
 
         Vec2 rotated_pos;
@@ -1217,7 +1208,7 @@ static void UpdateRotateTool(float angle) {
         ev.position = g_mesh_editor.selection_center + rotated_pos;
     }
 
-    UpdateEdges(m);
+    Update(m);
     MarkDirty(m);
     MarkModified(m);
 }
@@ -1234,6 +1225,7 @@ static void BeginRotateTool() {
 
 static void UpdateScaleTool(const Vec2& scale) {
     MeshData* m = GetMeshData();
+    MeshFrameData* frame = GetCurrentFrame(m);
 
     Vec2 center = g_mesh_editor.selection_center;
     if (IsCtrlDown())
@@ -1241,25 +1233,25 @@ static void UpdateScaleTool(const Vec2& scale) {
 
     SetScaleToolOrigin(center+m->position);
 
-    for (i32 i=0; i<GetCurrentFrame(m)->vertex_count; i++) {
-        VertexData& v = GetCurrentFrame(m)->vertices[i];
+    for (i32 i=0; i < frame->vertex_count; i++) {
+        VertexData& v = frame->vertices[i];
         if (!v.selected)
             continue;
 
-        Vec2 dir = g_mesh_editor.saved[i].position - center;
+        Vec2 dir = g_mesh_editor.saved_verts[i].position - center;
         v.position = center + dir * scale;
     }
 
-    // Scale curve offsets for edges where both vertices are selected
-    for (i32 i=0; i<GetCurrentFrame(m)->edge_count; i++) {
-        EdgeData& e = GetCurrentFrame(m)->edges[i];
-        if (!GetCurrentFrame(m)->vertices[e.v0].selected || !GetCurrentFrame(m)->vertices[e.v1].selected)
+    for (i32 i=0; i < frame->edge_count; i++) {
+        EdgeData& e = frame->edges[i];
+        if (!GetCurrentFrame(m)->vertices[e.v0].selected || !frame->vertices[e.v1].selected)
             continue;
 
-        e.curve_offset = g_mesh_editor.saved_curves[i] * scale;
+        CurveData& c = frame->curves[e.curve];
+        c.offset = g_mesh_editor.saved_curves[i].offset * scale;
     }
 
-    UpdateEdges(m);
+    Update(m);
     MarkDirty(m);
     MarkModified(m);
 }
@@ -1274,6 +1266,9 @@ static void BeginScaleTool() {
     BeginScaleTool({.origin=g_mesh_editor.selection_center+m->position, .update=UpdateScaleTool, .cancel=CancelMeshTool});
 }
 
+// Weight painting disabled - meshes now render as textured quads
+// Bone selection still works via TrySelectBone() for picking bones
+#if 0
 static void UpdateWeightToolVertex(float weight, void* user_data) {
     int vertex_index = (int)(i64)user_data;
     SetVertexWeight(GetMeshData(), vertex_index, g_mesh_editor.weight_bone, weight);
@@ -1281,7 +1276,7 @@ static void UpdateWeightToolVertex(float weight, void* user_data) {
 
 static void UpdateWeightTool() {
     MeshData* m = GetMeshData();
-    UpdateEdges(m);
+    Update(m);
     MarkDirty(m);
     MarkModified();
 }
@@ -1325,6 +1320,7 @@ static void BeginWeightTool() {
     RecordUndo(m);
     BeginWeightTool(options);
 }
+#endif
 
 static void SelectAll() {
     SelectAll(GetMeshData());
@@ -1389,7 +1385,7 @@ static void CircleMesh() {
             v.position = center + dir * radius;
         }
 
-        UpdateEdges(m);
+        Update(m);
         MarkDirty(m);
         MarkModified(m);
     }});
@@ -1400,17 +1396,17 @@ static bool ExtrudeSelectedEdges(MeshData* m) {
     if (GetCurrentFrame(m)->edge_count == 0)
         return false;
 
-    int selected_edges[MAX_EDGES];
+    int selected_edges[MESH_MAX_EDGES];
     int selected_edge_count = 0;
     for (int i = 0; i < GetCurrentFrame(m)->edge_count; i++)
-        if (GetCurrentFrame(m)->edges[i].selected && selected_edge_count < MAX_EDGES)
+        if (GetCurrentFrame(m)->edges[i].selected && selected_edge_count < MESH_MAX_EDGES)
             selected_edges[selected_edge_count++] = i;
 
     if (selected_edge_count == 0)
         return false;
 
     // Find all unique vertices that are part of selected edges
-    bool vertex_needs_extrusion[MAX_VERTICES] = {};
+    bool vertex_needs_extrusion[MESH_MAX_VERTICES] = {};
     for (int i = 0; i < selected_edge_count; i++) {
         const EdgeData& ee = GetCurrentFrame(m)->edges[selected_edges[i]];
         vertex_needs_extrusion[ee.v0] = true;
@@ -1418,8 +1414,8 @@ static bool ExtrudeSelectedEdges(MeshData* m) {
     }
 
     // Create mapping from old vertex indices to new vertex indices
-    int vertex_mapping[MAX_VERTICES];
-    for (int i = 0; i < MAX_VERTICES; i++)
+    int vertex_mapping[MESH_MAX_VERTICES];
+    for (int i = 0; i < MESH_MAX_VERTICES; i++)
         vertex_mapping[i] = -1;
 
     // Create new vertices for each unique vertex that needs extrusion
@@ -1427,7 +1423,7 @@ static bool ExtrudeSelectedEdges(MeshData* m) {
         if (!vertex_needs_extrusion[i])
             continue;
 
-        if (GetCurrentFrame(m)->vertex_count >= MAX_VERTICES)
+        if (GetCurrentFrame(m)->vertex_count >= MESH_MAX_VERTICES)
             return false;
 
         int new_vertex_index = GetCurrentFrame(m)->vertex_count++;
@@ -1445,7 +1441,7 @@ static bool ExtrudeSelectedEdges(MeshData* m) {
     }
 
     // Store vertex pairs for the new edges we want to select
-    int new_edge_vertex_pairs[MAX_EDGES][2];
+    int new_edge_vertex_pairs[MESH_MAX_EDGES][2];
     int new_edge_count = 0;
 
     // Create new edges for the extruded geometry
@@ -1460,10 +1456,10 @@ static bool ExtrudeSelectedEdges(MeshData* m) {
             continue;
 
         // Create connecting edges between old and new vertices
-        if (GetCurrentFrame(m)->edge_count + 3 >= MAX_EDGES)
+        if (GetCurrentFrame(m)->edge_count + 3 >= MESH_MAX_EDGES)
             return false;
 
-        if (GetCurrentFrame(m)->face_count + 2 >= MAX_FACES)
+        if (GetCurrentFrame(m)->face_count + 2 >= MESH_MAX_FACES)
             return false;
 
         GetOrAddEdge(m, old_v0, new_v0, -1);
@@ -1471,7 +1467,7 @@ static bool ExtrudeSelectedEdges(MeshData* m) {
         GetOrAddEdge(m, new_v0, new_v1, -1);
 
         // Store the vertex pair for the new edge we want to select
-        if (new_edge_count < MAX_EDGES) {
+        if (new_edge_count < MESH_MAX_EDGES) {
             new_edge_vertex_pairs[new_edge_count][0] = new_v0;
             new_edge_vertex_pairs[new_edge_count][1] = new_v1;
             new_edge_count++;
@@ -1495,13 +1491,11 @@ static bool ExtrudeSelectedEdges(MeshData* m) {
                 if (v0_idx == old_v0 && v1_idx == old_v1) {
                     face_color = f.color;
                     face_opacity = f.opacity;
-                    face_normal = f.normal;
                     edge_reversed = false;
                     found_face = true;
                 } else if (v0_idx == old_v1 && v1_idx == old_v0) {
                     face_color = f.color;
                     face_opacity = f.opacity;
-                    face_normal = f.normal;
                     edge_reversed = true;
                     found_face = true;
                 }
@@ -1511,7 +1505,6 @@ static bool ExtrudeSelectedEdges(MeshData* m) {
         FaceData& quad = GetCurrentFrame(m)->faces[GetCurrentFrame(m)->face_count++];
         quad.color = face_color;
         quad.opacity = face_opacity;
-        quad.normal = face_normal;
         quad.selected = false;
         quad.vertex_count = 4;
 
@@ -1528,7 +1521,7 @@ static bool ExtrudeSelectedEdges(MeshData* m) {
         }
     }
 
-    UpdateEdges(m);
+    Update(m);
     MarkDirty(m);
 
     // update selection
@@ -1579,7 +1572,7 @@ static void NewFace() {
         GetCurrentFrame(m)->vertices[GetCurrentFrame(m)->vertex_count - 1] = { .position = { -0.25f,  0.25f }};
 
         FaceData& f = GetCurrentFrame(m)->faces[GetCurrentFrame(m)->face_count++];
-        f = { .color = 0, .normal = { 0, 0 }, .vertex_count = 4, .opacity = 1.0f };
+        f = { .vertex_count=4, .color=0, .opacity=1.0f };
         f.vertices[0] = GetCurrentFrame(m)->vertex_count - 4;
         f.vertices[1] = GetCurrentFrame(m)->vertex_count - 3;
         f.vertices[2] = GetCurrentFrame(m)->vertex_count - 2;
@@ -1593,7 +1586,7 @@ static void NewFace() {
         return;
     }
 
-    UpdateEdges(m);
+    Update(m);
     MarkDirty(m);
     MarkModified(m);
 
@@ -1693,21 +1686,116 @@ static void DrawXRay() {
     }
 }
 
-static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selected) {
+
+#if 0
+static void DrawTiledMesh() {
+    MeshData* m = GetMeshData();
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
+    MeshVertex v = {};
+    v.depth = 0.5f;
+    v.opacity = 1.0f;
+    v.position = quad_min; v.uv = {u_min, v_min}; AddVertex(builder, v);
+    v.position = {quad_max.x, quad_min.y}; v.uv = {u_max, v_min}; AddVertex(builder, v);
+    v.position = quad_max; v.uv = {u_max, v_max}; AddVertex(builder, v);
+    v.position = {quad_min.x, quad_max.y}; v.uv = {u_min, v_max}; AddVertex(builder, v);
+    AddTriangle(builder, 0, 1, 2);
+    AddTriangle(builder, 0, 2, 3);
+
+    Mesh* tile_quad = CreateMesh(ALLOCATOR_SCRATCH, builder, nullptr, false);
+    Free(builder);
+
+    // 8 surrounding offsets
+    Vec2 offsets[8] = {
+        {-tile_size.x, -tile_size.y},
+        {        0.0f, -tile_size.y},
+        { tile_size.x, -tile_size.y},
+        {-tile_size.x,         0.0f},
+        { tile_size.x,         0.0f},
+        {-tile_size.x,  tile_size.y},
+        {        0.0f,  tile_size.y},
+        { tile_size.x,  tile_size.y},
+    };
+
+    BindMaterial(tile_material);
+    BindColor(SetAlpha(COLOR_WHITE, 0.5f));
+    for (int i = 0; i < 8; i++) {
+        DrawMesh(tile_quad, Translate(m->position + offsets[i]));
+    }
+    BindColor(COLOR_WHITE);
+}
+#endif
+
+static void UpdateTexture() {
+    MeshData* m = GetMeshData();
+    MeshDataImpl* impl = m->impl;
+
+    Update(m);
+
+    Rasterize(
+        m,
+        impl->current_frame,
+        g_mesh_editor.draw.rasterizer,
+        g_mesh_editor.draw.pixels,
+        Vec2Int{1,1}, 1);
+
+    UpdateTexture(g_mesh_editor.draw.texture, g_mesh_editor.draw.pixels->rgba);
+
+    Free(g_mesh_editor.draw.mesh);
+
+    PushScratch();
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
+    Vec2 uv = {
+        1.0f / (float)g_mesh_editor.draw.pixels->size.x,
+        1.0f / (float)g_mesh_editor.draw.pixels->size.y
+    };
+    Vec2 st = {
+        (impl->size.x + 1) / (float)g_mesh_editor.draw.pixels->size.x,
+        (impl->size.y + 1) / (float)g_mesh_editor.draw.pixels->size.y
+    };
+
+    AddVertex(builder, MeshVertex {
+        .position = {m->bounds.min.x, m->bounds.min.y},
+        .uv = {uv.x, uv.y},
+    });
+    AddVertex(builder, MeshVertex {
+        .position = {m->bounds.max.x, m->bounds.min.y},
+        .uv = {st.x, uv.y},
+    });
+    AddVertex(builder, MeshVertex {
+        .position = {m->bounds.max.x, m->bounds.max.y},
+        .uv = {st.x, st.y},
+    });
+    AddVertex(builder, MeshVertex {
+        .position = {m->bounds.min.x, m->bounds.max.y},
+        .uv = {uv.x, st.y},
+    });
+
+    AddTriangle(builder, 0, 1, 2);
+    AddTriangle(builder, 0, 2, 3);
+    g_mesh_editor.draw.mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
+    Free(builder);
+    PopScratch();
+}
+
+static void BuildEditorMesh(MeshData* m, bool hide_selected) {
+    MeshBuilder* builder = g_editor.mesh_builder;
+    MeshFrameData* frame = GetCurrentFrame(m);
+
     float line_width = STYLE_MESH_EDGE_WIDTH * g_view.zoom_ref_scale;
     float selected_line_width = line_width * 2.5f;
     float vertex_size = STYLE_MESH_VERTEX_SIZE * g_view.zoom_ref_scale;
     float origin_size = 0.1f * g_view.zoom_ref_scale;
 
-    for (int edge_index = 0; edge_index < GetCurrentFrame(m)->edge_count; edge_index++) {
-        const EdgeData& e = GetCurrentFrame(m)->edges[edge_index];
-        Vec2 v0 = GetCurrentFrame(m)->vertices[e.v0].position + m->position;
-        Vec2 v1 = GetCurrentFrame(m)->vertices[e.v1].position + m->position;
+    for (int edge_index = 0; edge_index < frame->edge_count; edge_index++) {
+        const EdgeData& e = frame->edges[edge_index];
+        Vec2 v0 = frame->vertices[e.v0].position + m->position;
+        Vec2 v1 = frame->vertices[e.v1].position + m->position;
 
         if (IsEdgeCurved(m, edge_index)) {
+            CurveData& curve = frame->curves[e.curve];
             // Draw curved edge as line segments
             Vec2 control = GetEdgeControlPoint(m, edge_index) + m->position;
-            float weight = GetCurrentFrame(m)->edges[edge_index].curve_weight;
+            float weight = curve.weight;
             constexpr int segments = 8;
             Vec2 prev = v0;
             for (int s = 1; s <= segments; s++) {
@@ -1722,27 +1810,28 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
     }
 
     if (hide_selected) {
-        for (int i = 0; i < GetCurrentFrame(m)->vertex_count; i++) {
-            const VertexData& v = GetCurrentFrame(m)->vertices[i];
+        for (int i = 0; i < frame->vertex_count; i++) {
+            const VertexData& v = frame->vertices[i];
             if (v.selected) continue;
             AddEditorSquare(builder, v.position + m->position, vertex_size, COLOR_VERTEX);
         }
     } else if (g_mesh_editor.mode == MESH_EDITOR_MODE_VERTEX) {
-        for (int i = 0; i < GetCurrentFrame(m)->vertex_count; i++) {
-            const VertexData& v = GetCurrentFrame(m)->vertices[i];
+        for (int i = 0; i < frame->vertex_count; i++) {
+            const VertexData& v = frame->vertices[i];
             Color color = v.selected ? COLOR_VERTEX_SELECTED : COLOR_VERTEX;
             AddEditorSquare(builder, v.position + m->position, vertex_size, color);
         }
     } else if (g_mesh_editor.mode == MESH_EDITOR_MODE_EDGE) {
-        for (int edge_index = 0; edge_index < GetCurrentFrame(m)->edge_count; edge_index++) {
-            const EdgeData& e = GetCurrentFrame(m)->edges[edge_index];
+        for (int edge_index = 0; edge_index < frame->edge_count; edge_index++) {
+            const EdgeData& e = frame->edges[edge_index];
             if (!e.selected) continue;
-            Vec2 v0 = GetCurrentFrame(m)->vertices[e.v0].position + m->position;
-            Vec2 v1 = GetCurrentFrame(m)->vertices[e.v1].position + m->position;
+            Vec2 v0 = frame->vertices[e.v0].position + m->position;
+            Vec2 v1 = frame->vertices[e.v1].position + m->position;
 
             if (IsEdgeCurved(m, edge_index)) {
+                CurveData& curve = frame->curves[e.curve];
                 Vec2 control = GetEdgeControlPoint(m, edge_index) + m->position;
-                float weight = GetCurrentFrame(m)->edges[edge_index].curve_weight;
+                float weight = curve.weight;
                 constexpr int segments = 8;
                 Vec2 prev = v0;
                 for (int s = 1; s <= segments; s++) {
@@ -1756,19 +1845,20 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
             }
         }
     } else if (g_mesh_editor.mode == MESH_EDITOR_MODE_FACE) {
-        for (int face_index = 0; face_index < GetCurrentFrame(m)->face_count; face_index++) {
-            const FaceData& f = GetCurrentFrame(m)->faces[face_index];
+        for (int face_index = 0; face_index < frame->face_count; face_index++) {
+            const FaceData& f = frame->faces[face_index];
             if (!f.selected) continue;
             for (int vi = 0; vi < f.vertex_count; vi++) {
                 int v0_idx = f.vertices[vi];
                 int v1_idx = f.vertices[(vi + 1) % f.vertex_count];
-                Vec2 v0 = GetCurrentFrame(m)->vertices[v0_idx].position + m->position;
-                Vec2 v1 = GetCurrentFrame(m)->vertices[v1_idx].position + m->position;
+                Vec2 v0 = frame->vertices[v0_idx].position + m->position;
+                Vec2 v1 = frame->vertices[v1_idx].position + m->position;
 
                 int edge_index = GetEdge(m, v0_idx, v1_idx);
                 if (edge_index != -1 && IsEdgeCurved(m, edge_index)) {
+                    CurveData& curve = frame->curves[frame->edges[edge_index].curve];
                     Vec2 control = GetEdgeControlPoint(m, edge_index) + m->position;
-                    float weight = GetCurrentFrame(m)->edges[edge_index].curve_weight;
+                    float weight = curve.weight;
                     constexpr int segments = 8;
                     Vec2 prev = v0;
                     for (int s = 1; s <= segments; s++) {
@@ -1783,7 +1873,7 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
             }
         }
         for (int face_index = 0; face_index < GetCurrentFrame(m)->face_count; face_index++) {
-            const FaceData& f = GetCurrentFrame(m)->faces[face_index];
+            const FaceData& f = frame->faces[face_index];
             Vec2 center = GetFaceCenter(m, face_index) + m->position;
             Color color = f.selected ? COLOR_VERTEX_SELECTED : COLOR_VERTEX;
             AddEditorSquare(builder, center, vertex_size, color);
@@ -1828,90 +1918,68 @@ static void BuildEditorMesh(MeshBuilder* builder, MeshData* m, bool hide_selecte
     }
 
     AddEditorCircle(builder, m->position, origin_size, COLOR_ORIGIN);
+
+    if (!g_mesh_editor.mesh)
+        g_mesh_editor.mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
+    else
+        UpdateMesh(builder, g_mesh_editor.mesh);
 }
 
 static void DrawMeshEditor() {
     MeshData* m = GetMeshData();
+    MeshFrameData* frame = GetCurrentFrame(m);
 
-    // Check if mesh is in atlas - use atlas rendering for consistency with non-edit mode
+    if (g_mesh_editor.dirty) {
+        UpdateTexture();
+        BuildEditorMesh(m, DoesToolHideSelected());
+    }
+
+    // Pixels
+    BindColor(COLOR_WHITE);
+    BindTexture(g_mesh_editor.draw.texture);
+    BindShader(SHADER_EDITOR_TEXTURE);
+    BindDepth(0.0f);
+    DrawMesh(g_mesh_editor.draw.mesh, Translate(m->position));
+
+    DrawOnionSkin();
+
+    // controls
+    BindDepth(0.0f);
+    BindMaterial(g_view.editor_material);
+    BindColor(COLOR_WHITE);
+    BindTransform(MAT3_IDENTITY);
+    DrawMesh(g_mesh_editor.mesh);
+
+    //bool hide_selected = DoesToolHideSelected();
+
+#if 0
+    if (frame->edit_texture && frame->edit_width > 0) {
+        float dpi = (float)g_editor.atlas.dpi;
+        Vec2 texture_size = {
+            (float)frame->edit_width / dpi,
+            (float)frame->edit_height / dpi
+        };
+        float padding_world = (float)g_editor.atlas.padding / dpi;
+        Vec2 quad_min = edit_bounds.min - Vec2{padding_world, padding_world};
+        Vec2 quad_max = quad_min + texture_size;
+        Vec2 center = (quad_min + quad_max) * 0.5f;
+
+        // Create material on demand for this frame's texture
+        static Material* s_edit_material = nullptr;
+        if (!s_edit_material) {
+            s_edit_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_TEXTURED_MESH);
+        }
+        SetTexture(s_edit_material, frame->edit_texture, 0);
+
+        BindColor(COLOR_WHITE);
+        BindMaterial(s_edit_material);
+        BindDepth(-0.1f);
+        DrawMesh(g_view.quad_mesh, Translate(m->position + center) * Scale(Vec2{texture_size.x, -texture_size.y}));
+    }
+
+    // Keep track of atlas for tiling preview (but don't use it for main rendering)
     AtlasRect* rect = nullptr;
     AtlasData* atlas = FindAtlasForMesh(m->name, &rect);
-
-    if (atlas && rect) {
-        // Use atlas rendering path (same as non-edit mode)
-        if (!atlas->impl->pixels) {
-            RegenerateAtlas(atlas);
-        }
-
-        // Re-render mesh to atlas if dirty (for live preview updates)
-        if (m->impl->atlas_dirty) {
-            ClearRectPixels(atlas, *rect);
-            RenderMeshToAtlas(atlas, m, *rect, true);
-            m->impl->atlas_dirty = false;
-        }
-
-        SyncAtlasTexture(atlas);
-
-        if (atlas->impl->material) {
-            Vec2 min, max;
-            float u_min, v_min, u_max, v_max;
-            GetExportQuadGeometry(atlas, *rect, &min, &max, &u_min, &v_min, &u_max, &v_max);
-
-            // For animated meshes, offset UVs to show current frame
-            if (rect->frame_count > 1 && m->impl->current_frame > 0) {
-                float frame_width_pixels = (float)rect->width / (float)rect->frame_count;
-                float frame_offset_uv = (m->impl->current_frame * frame_width_pixels) / (float)atlas->impl->width;
-                u_min += frame_offset_uv;
-                u_max += frame_offset_uv;
-            }
-
-            // Build textured quad
-            MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-            MeshVertex v = {};
-            v.depth = 0.5f;
-            v.opacity = 1.0f;
-
-            v.position = min; v.uv = {u_min, v_min}; AddVertex(builder, v);
-            v.position = {max.x, min.y}; v.uv = {u_max, v_min}; AddVertex(builder, v);
-            v.position = max; v.uv = {u_max, v_max}; AddVertex(builder, v);
-            v.position = {min.x, max.y}; v.uv = {u_min, v_max}; AddVertex(builder, v);
-            AddTriangle(builder, 0, 1, 2);
-            AddTriangle(builder, 0, 2, 3);
-
-            Mesh* quad = CreateMesh(ALLOCATOR_SCRATCH, builder, nullptr, false);
-            Free(builder);
-
-            BindMaterial(atlas->impl->material);
-            BindColor(COLOR_WHITE);
-            BindDepth(-0.1f);
-            DrawMesh(quad, Translate(m->position));
-        }
-    } else {
-        // Fallback: standalone preview for meshes not in atlas
-        Bounds2 preview_bounds;
-        if (g_mesh_editor.preview_dirty || !g_mesh_editor.preview_texture) {
-            preview_bounds = RenderPreview(m);
-        } else {
-            preview_bounds = g_mesh_editor.preview_bounds;
-        }
-
-        if (g_mesh_editor.preview_material && g_mesh_editor.preview_width > 0) {
-            float dpi = (float)g_editor.atlas.dpi;
-            Vec2 texture_size = {
-                (float)g_mesh_editor.preview_width / dpi,
-                (float)g_mesh_editor.preview_height / dpi
-            };
-            float padding_world = (float)g_editor.atlas.padding / dpi;
-            Vec2 quad_min = preview_bounds.min - Vec2{padding_world, padding_world};
-            Vec2 quad_max = quad_min + texture_size;
-            Vec2 center = (quad_min + quad_max) * 0.5f;
-
-            BindColor(COLOR_WHITE);
-            BindMaterial(g_mesh_editor.preview_material);
-            BindDepth(-0.1f);
-            DrawMesh(g_view.quad_mesh, Translate(m->position + center) * Scale(Vec2{texture_size.x, -texture_size.y}));
-        }
-    }
 
     // Skip editor overlays when playing animation
     if (g_mesh_editor.is_playing)
@@ -1919,6 +1987,7 @@ static void DrawMeshEditor() {
 
     // Draw tiled copies if tiling preview is enabled
     if (g_mesh_editor.show_tiling) {
+        MeshFrameData* tile_frame = GetCurrentFrame(m);
         Vec2 tile_size = {}, quad_min = {}, quad_max = {};
         Material* tile_material = nullptr;
         float u_min = 0, v_min = 0, u_max = 1, v_max = 1;
@@ -1928,89 +1997,41 @@ static void DrawMeshEditor() {
             GetExportQuadGeometry(atlas, *rect, &quad_min, &quad_max, &u_min, &v_min, &u_max, &v_max);
             tile_size = GetSize(rect->mesh_bounds);
             tile_material = atlas->impl->material;
-        } else if (g_mesh_editor.preview_material && g_mesh_editor.preview_width > 0) {
-            // Use standalone preview
+        } else if (tile_frame->edit_texture && tile_frame->edit_width > 0) {
+            // Use per-frame edit texture for tiling
             float dpi = (float)g_editor.atlas.dpi;
             Vec2 texture_size = {
-                (float)g_mesh_editor.preview_width / dpi,
-                (float)g_mesh_editor.preview_height / dpi
+                (float)tile_frame->edit_width / dpi,
+                (float)tile_frame->edit_height / dpi
             };
             float padding_world = (float)g_editor.atlas.padding / dpi;
-            quad_min = g_mesh_editor.preview_bounds.min - Vec2{padding_world, padding_world};
+            quad_min = tile_frame->edit_bounds.min - Vec2{padding_world, padding_world};
             quad_max = quad_min + texture_size;
-            tile_size = GetSize(g_mesh_editor.preview_bounds);
-            tile_material = g_mesh_editor.preview_material;
-        }
-
-        if (tile_material) {
-            // Build tiled quad mesh
-            MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
-            MeshVertex v = {};
-            v.depth = 0.5f;
-            v.opacity = 1.0f;
-
-            v.position = quad_min; v.uv = {u_min, v_min}; AddVertex(builder, v);
-            v.position = {quad_max.x, quad_min.y}; v.uv = {u_max, v_min}; AddVertex(builder, v);
-            v.position = quad_max; v.uv = {u_max, v_max}; AddVertex(builder, v);
-            v.position = {quad_min.x, quad_max.y}; v.uv = {u_min, v_max}; AddVertex(builder, v);
-            AddTriangle(builder, 0, 1, 2);
-            AddTriangle(builder, 0, 2, 3);
-
-            Mesh* tile_quad = CreateMesh(ALLOCATOR_SCRATCH, builder, nullptr, false);
-            Free(builder);
-
-            // 8 surrounding offsets
-            Vec2 offsets[8] = {
-                {-tile_size.x, -tile_size.y},
-                {        0.0f, -tile_size.y},
-                { tile_size.x, -tile_size.y},
-                {-tile_size.x,         0.0f},
-                { tile_size.x,         0.0f},
-                {-tile_size.x,  tile_size.y},
-                {        0.0f,  tile_size.y},
-                { tile_size.x,  tile_size.y},
-            };
-
-            BindMaterial(tile_material);
-            BindColor(SetAlpha(COLOR_WHITE, 0.5f));
-            for (int i = 0; i < 8; i++) {
-                DrawMesh(tile_quad, Translate(m->position + offsets[i]));
+            tile_size = GetSize(tile_frame->edit_bounds);
+            // Create material on demand for tiling
+            static Material* s_tile_material = nullptr;
+            if (!s_tile_material) {
+                s_tile_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_TEXTURED_MESH);
             }
-            BindColor(COLOR_WHITE);
+            SetTexture(s_tile_material, tile_frame->edit_texture, 0);
+            tile_material = s_tile_material;
         }
+
+        if (tile_material)
+            DrawTiledMesh();
     }
 
-    // Draw onion skin (previous/next frame outlines)
-    DrawOnionSkin();
 
-    bool hide_selected = DoesToolHideSelected();
 
     if (g_mesh_editor.mode == MESH_EDITOR_MODE_WEIGHT && !hide_selected) {
         DrawSkeleton();
     }
 
-    constexpr u16 MAX_EDITOR_VERTS = U16_MAX;
-    constexpr u16 MAX_EDITOR_INDICES = U16_MAX;
 
-    PushScratch();
-    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, MAX_EDITOR_VERTS, MAX_EDITOR_INDICES);
-    BuildEditorMesh(builder, m, hide_selected);
 
-    if (GetVertexCount(builder) > 0) {
-        if (!g_mesh_editor.editor_mesh)
-            g_mesh_editor.editor_mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
-        else
-            UpdateMeshFromBuilder(g_mesh_editor.editor_mesh, builder);
+#endif
 
-        BindDepth(0.0f);
-        BindMaterial(g_view.editor_material);
-        BindColor(COLOR_WHITE);
-        BindTransform(MAT3_IDENTITY);
-        DrawMesh(g_mesh_editor.editor_mesh);
-    }
-    PopScratch();
-
-    if (!hide_selected) {
+    if (!DoesToolHideSelected()) {
         DrawXRay();
     }
 }
@@ -2019,7 +2040,7 @@ static void SubDivide() {
     MeshData* m = GetMeshData();
     RecordUndo(m);
 
-    int selected_edges[MAX_EDGES];
+    int selected_edges[MESH_MAX_EDGES];
     int selected_edge_count = GetSelectedEdges(m, selected_edges);
 
     for (int edge_index=0; edge_index<selected_edge_count; edge_index++) {
@@ -2027,7 +2048,7 @@ static void SubDivide() {
         SelectVertex(new_vertex, true);
     }
 
-    UpdateEdges(m);
+    Update(m);
     UpdateSelection();
     MarkModified(m);
 }
@@ -2044,7 +2065,7 @@ static void ToggleAnchor() {
         else
             RemoveTag(m, anchor_index);
 
-        UpdateEdges(m);
+        Update(m);
         MarkDirty(m);
         MarkModified(m);
     }});
@@ -2086,7 +2107,7 @@ static void SendBackward() {
         SwapFace(m, face_index, face_index - 1);
     }
 
-    UpdateEdges(m);
+    Update(m);
     MarkDirty(m);
     MarkModified(m);
 }
@@ -2107,7 +2128,7 @@ static void BringForward() {
         SwapFace(m, face_index, face_index + 1);
     }
 
-    UpdateEdges(m);
+    Update(m);
     MarkDirty(m);
     MarkModified(m);
 }
@@ -2131,7 +2152,7 @@ static void BringToFront() {
         }
     }
 
-    UpdateEdges(m);
+    Update(m);
     MarkDirty(m);
     MarkModified(m);
 }
@@ -2155,7 +2176,7 @@ static void SendToBack() {
         }
     }
 
-    UpdateEdges(m);
+    Update(m);
     MarkDirty(m);
     MarkModified(m);
 }
@@ -2229,7 +2250,7 @@ static void FlipHorizontal() {
         }
     }
 
-    UpdateEdges(m);
+    Update(m);
     MarkDirty(m);
     MarkModified(m);
 }
@@ -2241,7 +2262,7 @@ static void CopySelection() {
     if (frame->selected_face_count == 0)
         return;
 
-    auto& clip = g_mesh_editor.geometry_clipboard;
+    auto& clip = g_mesh_editor.clipboard;
     clip.vertex_count = 0;
     clip.face_count = 0;
 
@@ -2288,16 +2309,16 @@ static void CopySelection() {
 }
 
 static void PasteSelection() {
-    auto& clip = g_mesh_editor.geometry_clipboard;
+    auto& clip = g_mesh_editor.clipboard;
     if (!clip.has_content)
         return;
 
     MeshData* m = GetMeshData();
     MeshFrameData* frame = GetCurrentFrame(m);
 
-    if (frame->face_count + clip.face_count > MAX_FACES)
+    if (frame->face_count + clip.face_count > MESH_MAX_FACES)
         return;
-    if (frame->vertex_count + clip.vertex_count > MAX_VERTICES)
+    if (frame->vertex_count + clip.vertex_count > MESH_MAX_VERTICES)
         return;
 
     RecordUndo(m);
@@ -2332,16 +2353,16 @@ static void PasteSelection() {
     }
 
     MarkDirty(m);
-    UpdateEdges(m);
+    Update(m);
     UpdateSelection(MESH_EDITOR_MODE_FACE);
     MarkModified(m);
 }
 
 static void DuplicateSelected() {
     MeshData* m = GetMeshData();
-    if (GetCurrentFrame(m)->face_count + GetCurrentFrame(m)->selected_face_count > MAX_FACES)
+    if (GetCurrentFrame(m)->face_count + GetCurrentFrame(m)->selected_face_count > MESH_MAX_FACES)
         return;
-    if (GetCurrentFrame(m)->vertex_count + GetCurrentFrame(m)->selected_vertex_count > MAX_VERTICES)
+    if (GetCurrentFrame(m)->vertex_count + GetCurrentFrame(m)->selected_vertex_count > MESH_MAX_VERTICES)
         return;
 
     RecordUndo(m);
@@ -2371,19 +2392,15 @@ static void DuplicateSelected() {
     }
 
     MarkDirty(m);
-    UpdateEdges(m);
+    Update(m);
     UpdateSelection(MESH_EDITOR_MODE_FACE);
     MarkModified(m);
     BeginMoveTool();
 }
 
-
-// ===== Animation functions =====
-
-// Build edge outline mesh for onion skin display
 static Mesh* BuildEdgeMesh(MeshFrameData* frame, Mesh* existing) {
     PushScratch();
-    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, MAX_VERTICES * 4, MAX_EDGES * 6);
+    MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, MESH_MAX_VERTICES * 4, MESH_MAX_EDGES * 6);
 
     float line_width = 0.02f * g_view.zoom_ref_scale;
 
@@ -2407,7 +2424,7 @@ static Mesh* BuildEdgeMesh(MeshFrameData* frame, Mesh* existing) {
     if (!existing)
         result = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
     else {
-        UpdateMeshFromBuilder(existing, builder);
+        UpdateMesh(builder, existing);
         result = existing;
     }
 
@@ -2557,14 +2574,10 @@ static void BeginMeshEditor(AssetData* a) {
 
     g_mesh_editor.mode = MESH_EDITOR_MODE_VERTEX;
     g_mesh_editor.weight_bone = -1;
-
-    // Initialize animation state
-    g_mesh_editor.cached_frame = -1;  // Force rebuild of onion skin meshes
+    g_mesh_editor.dirty = true;
+    g_mesh_editor.cached_frame = -1;
     g_mesh_editor.is_playing = false;
     g_mesh_editor.playback_time = 0.0f;
-
-    // Mark preview dirty for new mesh
-    g_mesh_editor.preview_dirty = true;
 
     SetFocus(CANVAS_ID_OVERLAY, MESH_EDITOR_ID_EXPAND);
 }
@@ -2583,21 +2596,14 @@ static void EndMeshEditor() {
 }
 
 void ShutdownMeshEditor() {
-    if (g_mesh_editor.editor_mesh)
-        Free(g_mesh_editor.editor_mesh);
-
-    // Clean up animation state
+    Free(g_mesh_editor.draw.mesh);
+    Free(g_mesh_editor.draw.texture);
+    Free(g_mesh_editor.draw.pixels);
     Free(g_mesh_editor.prev_frame_mesh);
     Free(g_mesh_editor.next_frame_mesh);
 
-    // Clean up preview resources
-    Free(g_mesh_editor.preview_pixels);
-    Free(g_mesh_editor.preview_texture);
-    Free(g_mesh_editor.preview_material);
-
     g_mesh_editor = {};
 }
-
 
 static Shortcut g_mesh_editor_shortcuts[] = {
     { KEY_A, false, false, false, SelectAll, "Select all" },
@@ -2619,7 +2625,6 @@ static Shortcut g_mesh_editor_shortcuts[] = {
     { KEY_V, false, false, true, BeginKnifeCut, "Knife tool" },
     { KEY_N, false, false, false, BeginPenDraw, "Pen tool" },
     { KEY_E, false, true, false, ExtrudeSelected, "Extrude tool" },
-    { KEY_W, false, false, false, BeginWeightTool, "Vertex Weight tool" },
     { KEY_P, false, false, false, BeginParentTool, "Parent tool" },
 
     { KEY_V, false, false, false, InsertVertex, "Add vertex" },
@@ -2627,7 +2632,6 @@ static Shortcut g_mesh_editor_shortcuts[] = {
     { KEY_2, false, false, false, SetEdgeMode, "Edge mode" },
     { KEY_3, false, false, false, SetFaceMode, "Face mode" },
     { KEY_4, false, false, false, SetWeightMode, "Weight mode" },
-    //{ KEY_C, false, false, true, CircleMesh },
     { KEY_X, true, false, false, ToggleXRay, "Toggle X-ray" },
 
     { KEY_LEFT_BRACKET, false, true, false, SendToBack, "Send to back" },
@@ -2699,6 +2703,16 @@ void InitMeshEditor() {
     AddTriangle(builder, 0, 2, 3);
     g_mesh_editor.color_picker_mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, GetName("ColorPicker"));
     PopScratch();
+
+    g_mesh_editor.draw.pixels = CreatePixelData(ALLOCATOR_DEFAULT, Vec2Int{g_editor.atlas.size, g_editor.atlas.size});
+    g_mesh_editor.draw.rasterizer = CreateRasterizer(ALLOCATOR_DEFAULT, g_mesh_editor.draw.pixels);
+    g_mesh_editor.draw.texture = CreateTexture(
+        ALLOCATOR_DEFAULT,
+        g_editor.atlas.size,
+        g_editor.atlas.size,
+        TEXTURE_FORMAT_RGBA8,
+        GetName("mesh_editor"),
+        TEXTURE_FILTER_NEAREST);
 }
 
 static void RenameMesh(AssetData* a, const Name* new_name) {

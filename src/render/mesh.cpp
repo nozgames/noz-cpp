@@ -39,24 +39,6 @@ Mesh* GetMesh(const Name* name) {
     return nullptr;
 }
 
-static void NormalizeVertexWeights(MeshVertex* vertices, int vertex_count) {
-    for (int vertex_index=0; vertex_index<vertex_count; vertex_index++) {
-        MeshVertex& v = vertices[vertex_index];
-        float total_weight = v.bone_weights.x + v.bone_weights.y + v.bone_weights.z + v.bone_weights.w;
-        if (total_weight < F32_EPSILON) {
-            v.bone_weights.x = 1.0f;
-            v.bone_weights.y = 0.0f;
-            v.bone_weights.z = 0.0f;
-            v.bone_weights.w = 0.0f;
-        } else {
-            v.bone_weights.x /= total_weight;
-            v.bone_weights.y /= total_weight;
-            v.bone_weights.z /= total_weight;
-            v.bone_weights.w /= total_weight;
-        }
-    }
-}
-
 Bounds2 ToBounds(const MeshVertex* vertices, int vertex_count) {
     if (vertex_count == 0)
         return { VEC2_ZERO, VEC2_ZERO };
@@ -296,8 +278,6 @@ Mesh* CreateMesh(
     memcpy(mesh->vertices, vertices, sizeof(MeshVertex) * vertex_count);
     memcpy(mesh->indices, indices, sizeof(u16) * index_count);
 
-    NormalizeVertexWeights(mesh->vertices, mesh->vertex_count);
-
     if (upload)
         UploadMesh(mesh);
 
@@ -350,7 +330,6 @@ void UpdateMesh(Mesh* mesh, const MeshVertex* vertices, u16 vertex_count, const 
     }
 
     impl->bounds = ToBounds(vertices, vertex_count);
-    NormalizeVertexWeights(impl->vertices, impl->vertex_count);
 }
 
 #if !defined(NOZ_BUILTIN_ASSETS)

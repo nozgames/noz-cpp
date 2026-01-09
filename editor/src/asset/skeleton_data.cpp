@@ -34,7 +34,7 @@ static void BuildSkeletonDisplayMesh(SkeletonData* s, const Vec2& position) {
     if (!impl->display_mesh)
         impl->display_mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
     else
-        UpdateMeshFromBuilder(impl->display_mesh, builder);
+        UpdateMesh(builder, impl->display_mesh);
 
     PopScratch();
     impl->display_mesh_dirty = false;

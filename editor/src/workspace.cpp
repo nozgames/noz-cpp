@@ -226,7 +226,7 @@ static void UpdateDefaultState() {
         g_view.clear_selection_on_release = !IsShiftDown();
     }
 
-    if (g_view.drag_started && g_editor.tool.type == TOOL_TYPE_NONE) {
+    if (g_view.drag_started && g_view.drag_button == MOUSE_LEFT && g_editor.tool.type == TOOL_TYPE_NONE) {
         BeginBoxSelect(CommitBoxSelect);
         return;
     }
@@ -509,7 +509,7 @@ static void BringForward() {
 
         if (a->type == ASSET_TYPE_MESH) {
             MeshData* m = static_cast<MeshData*>(a);
-            m->impl->depth = Clamp(m->impl->depth+1, MIN_DEPTH, MAX_DEPTH);
+            m->impl->depth = Clamp(m->impl->depth+1, MESH_MIN_DEPTH, MESH_MAX_DEPTH);
             MarkDirty(m);
             MarkModified(a);
         }
@@ -548,7 +548,7 @@ static void SendBackward() {
 
         if (a->type == ASSET_TYPE_MESH) {
             MeshData* m = static_cast<MeshData*>(a);
-            m->impl->depth = Clamp(m->impl->depth-1, MIN_DEPTH, MAX_DEPTH);
+            m->impl->depth = Clamp(m->impl->depth-1, MESH_MIN_DEPTH, MESH_MAX_DEPTH);
             MarkDirty(m);
             MarkModified(a);
         }

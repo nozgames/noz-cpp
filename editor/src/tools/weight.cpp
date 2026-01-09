@@ -9,7 +9,7 @@ constexpr float CIRCLE_CONTROL_SIZE = 0.12f;
 
 struct WeightTool {
     WeightToolOptions options;
-    float initial_weights[MAX_VERTICES];
+    float initial_weights[MESH_MAX_VERTICES];
 };
 
 static WeightTool g_weight = {};

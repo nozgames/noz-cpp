@@ -250,7 +250,7 @@ void RebuildAllAtlases() {
         if (!atlas || !atlas->impl) continue;
         ClearAllRects(atlas);
         if (atlas->impl->pixels) {
-            memset(atlas->impl->pixels, 0, atlas->impl->width * atlas->impl->height * 4);
+            memset(atlas->impl->pixels, 0, atlas->impl->size.x * atlas->impl->size.y * 4);
         }
         atlas->impl->dirty = true;
         MarkModified(atlas);

@@ -4,6 +4,8 @@
 
 #pragma once
 
+struct PixelData;
+
 namespace noz { class RectPacker; }
 
 constexpr int ATLAS_MAX_RECTS = 256;
@@ -23,12 +25,11 @@ struct AtlasRect {
 };
 
 struct AtlasDataImpl {
-    int width = ATLAS_DEFAULT_SIZE;
-    int height = ATLAS_DEFAULT_SIZE;
+    Vec2Int size = {ATLAS_DEFAULT_SIZE, ATLAS_DEFAULT_SIZE};
     int dpi = ATLAS_DEFAULT_DPI;
     AtlasRect rects[ATLAS_MAX_RECTS];
     int rect_count = 0;
-    u8* pixels = nullptr;
+    PixelData* pixels = nullptr;
     bool dirty = true;
     Texture* texture = nullptr;
     Material* material = nullptr;
@@ -57,9 +58,9 @@ extern void ClearAllRects(AtlasData* atlas);
 extern AtlasData* FindAtlasForMesh(const Name* mesh_name, AtlasRect** out_rect = nullptr);
 
 // Rendering
-extern void RenderMeshToAtlas(AtlasData* atlas, struct MeshData* mesh, AtlasRect& rect, bool update_bounds = true);  // Renders all frames
-extern void RenderMeshPreview(struct MeshData* mesh, u8* pixels, int width, int height, Bounds2* out_bounds);  // Render current frame to buffer
-extern void RegenerateAtlas(AtlasData* atlas, u8* buffer = nullptr);  // Re-render meshes to buffer (or impl->pixels if null)
+extern void RenderMeshToAtlas(AtlasData* atlas, MeshData* mesh, AtlasRect& rect, bool update_bounds = true);  // Renders all frames
+extern void RenderMeshPreview(MeshData* mesh, PixelData* pixels, int width, int height, const Bounds2* bounds);  // Render current frame to buffer
+extern void RegenerateAtlas(AtlasData* atlas, PixelData* pixels = nullptr);  // Re-render meshes to buffer (or impl->pixels if null)
 extern void RebuildAtlas(AtlasData* atlas);      // Clear and reallocate all rects, mark meshes modified
 extern void SyncAtlasTexture(AtlasData* atlas);  // Upload pixels to GPU (editor only)
 

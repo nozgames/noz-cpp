@@ -21,7 +21,7 @@ static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* 
         return;
     }
 
-    u32 pixel_size = impl->width * impl->height * 4;
+    u32 pixel_size = impl->size.x * impl->size.y * 4;
 
     Stream* stream = CreateStream(ALLOCATOR_DEFAULT, pixel_size + 1024);
 
@@ -36,8 +36,8 @@ static void ImportAtlas(AssetData* a, const std::filesystem::path& path, Props* 
     WriteU8(stream, (u8)format);
     WriteU8(stream, (u8)filter_value);
     WriteU8(stream, (u8)clamp_value);
-    WriteU32(stream, impl->width);
-    WriteU32(stream, impl->height);
+    WriteU32(stream, impl->size.x);
+    WriteU32(stream, impl->size.y);
     WriteBytes(stream, impl->pixels, pixel_size);
 
     SaveStream(stream, path);

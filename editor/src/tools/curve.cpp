@@ -14,7 +14,7 @@ struct CurveToolEdge {
 
 struct CurveTool {
     MeshData* mesh;
-    CurveToolEdge edges[MAX_EDGES];
+    CurveToolEdge edges[MESH_MAX_EDGES];
     int edge_count;
     Vec2 drag_start;
 };
@@ -79,8 +79,8 @@ static void EndCurve(bool commit) {
         // Restore all original offsets and weights
         MeshFrameData* frame = GetCurrentFrame(g_curve.mesh);
         for (int i = 0; i < g_curve.edge_count; i++) {
-            frame->edges[g_curve.edges[i].edge_index].curve_offset = g_curve.edges[i].original_offset;
-            frame->edges[g_curve.edges[i].edge_index].curve_weight = g_curve.edges[i].original_weight;
+            frame->edges[g_curve.edges[i].edge_index].curve.offset = g_curve.edges[i].original_offset;
+            frame->edges[g_curve.edges[i].edge_index].curve.weight = g_curve.edges[i].original_weight;
         }
         MarkDirty(g_curve.mesh);
     }
@@ -130,8 +130,8 @@ static void UpdateCurve() {
             }
         }
 
-        edge.curve_offset = new_offset;
-        edge.curve_weight = new_weight;
+        edge.curve.offset = new_offset;
+        edge.curve.weight = new_weight;
     }
 
     MarkDirty(g_curve.mesh);
@@ -161,8 +161,8 @@ void BeginCurveTool(MeshData* mesh, int* edge_indices, int edge_count) {
     for (int i = 0; i < edge_count; i++) {
         CurveToolEdge& ce = g_curve.edges[i];
         ce.edge_index = edge_indices[i];
-        ce.original_offset = frame->edges[edge_indices[i]].curve_offset;
-        ce.original_weight = frame->edges[edge_indices[i]].curve_weight;
+        ce.original_offset = frame->edges[edge_indices[i]].curve.offset;
+        ce.original_weight = frame->edges[edge_indices[i]].curve.weight;
         ce.circle_offset = CalculateCurveCircleOffset(frame, edge_indices[i], &ce.outward_dir, &ce.circle_weight);
         ce.circle_amount = Dot(ce.circle_offset, ce.outward_dir);
     }

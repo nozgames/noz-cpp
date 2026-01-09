@@ -88,21 +88,16 @@ void AddVertex(MeshBuilder* builder, const Vec2& position, const Vec2& uv, float
         .depth = depth,
         .opacity = 1.0f,
         .uv = uv,
-        .bone_weights = { 0.0f }
+        .bone_index = 0
     };
 }
 
-void AddVertexWeight(MeshBuilder* builder, int bone_idnex, float weight) {
+void SetBone(MeshBuilder* builder, int bone_index) {
     MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);
     assert(impl->vertex_count > 0);
-    MeshVertex& v = impl->vertices[impl->vertex_count-1];
-    for (int i = 0; i < MESH_MAX_VERTEX_WEIGHTS; ++i) {
-        if (v.bone_weights[i] < F32_EPSILON) {
-            v.bone_indices[i] = bone_idnex;
-            v.bone_weights[i] = weight;
-            return;
-        }
-    }
+    assert(bone_index >= 0 && bone_index < MAX_BONES);
+    MeshVertex* v = impl->vertices + (impl->vertex_count-1);
+    v->bone_index = bone_index;
 }
 
 void AddIndex(MeshBuilder* builder, u16 index) {
@@ -264,7 +259,7 @@ Mesh* CreateMesh(Allocator* allocator, MeshBuilder* builder, const Name* name, b
     );
 }
 
-void UpdateMeshFromBuilder(Mesh* mesh, MeshBuilder* builder) {
+void UpdateMesh(MeshBuilder* builder, Mesh* mesh) {
     assert(mesh);
     assert(builder);
     MeshBuilderImpl* impl = static_cast<MeshBuilderImpl*>(builder);

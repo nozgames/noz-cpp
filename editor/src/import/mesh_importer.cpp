@@ -26,7 +26,7 @@ static Mesh* ToMeshWithAtlasQuad(MeshData* mesh_data, AtlasData* atlas, const At
     // 4 vertices, 2 triangles
     MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_DEFAULT, 4, 6);
 
-    float depth = 0.01f + 0.99f * (mesh_data->impl->depth - MIN_DEPTH) / (float)(MAX_DEPTH - MIN_DEPTH);
+    float depth = 0.01f + 0.99f * (mesh_data->impl->depth - MESH_MIN_DEPTH) / (float)(MESH_MAX_DEPTH - MESH_MIN_DEPTH);
     int atlas_idx = GetAtlasIndex(atlas);
 
     // Get bone index if skinned (single bone only)
@@ -48,10 +48,6 @@ static Mesh* ToMeshWithAtlasQuad(MeshData* mesh_data, AtlasData* atlas, const At
         v.uv = GetAtlasUV(atlas, rect, rect.mesh_bounds, corners[i]);
         v.atlas_index = atlas_idx;
 
-        if (bone_index >= 0) {
-            v.bone_indices = {bone_index, 0, 0, 0};
-            v.bone_weights = {1.0f, 0.0f, 0.0f, 0.0f};
-        }
 
         AddVertex(builder, v);
     }
@@ -66,7 +62,7 @@ static Mesh* ToMeshWithAtlasQuad(MeshData* mesh_data, AtlasData* atlas, const At
     // Set animation info for animated meshes
     if (rect.frame_count > 1) {
         float frame_width_pixels = static_cast<float>(rect.width) / static_cast<float>(rect.frame_count);
-        float frame_width_uv = frame_width_pixels / static_cast<float>(atlas->impl->width);
+        float frame_width_uv = frame_width_pixels / static_cast<float>(atlas->impl->size.x);
         SetAnimationInfo(result, rect.frame_count, 12, frame_width_uv);
     }
 

@@ -19,7 +19,7 @@ struct AutoCurveEdgeState {
 
 struct AutoCurveTool {
     MeshData* mesh;
-    AutoCurveEdgeState edges[MAX_EDGES];
+    AutoCurveEdgeState edges[MESH_MAX_EDGES];
     int edge_count;
     Vec2 centroid;
     float initial_distance;
@@ -27,12 +27,14 @@ struct AutoCurveTool {
 
 static AutoCurveTool g_auto_curve = {};
 
+#if 0
+
 static void CancelAutoCurve() {
     MeshFrameData* frame = GetCurrentFrame(g_auto_curve.mesh);
     for (int i = 0; i < g_auto_curve.edge_count; i++) {
         AutoCurveEdgeState& es = g_auto_curve.edges[i];
-        frame->edges[es.edge_index].curve_offset = es.original_offset;
-        frame->edges[es.edge_index].curve_weight = es.original_weight;
+        frame->edges[es.edge_index].curve.offset = es.original_offset;
+        frame->edges[es.edge_index].curve.weight = es.original_weight;
     }
     MarkDirty(g_auto_curve.mesh);
 }
@@ -80,7 +82,7 @@ static void UpdateAutoCurveTool() {
         // Use raw delta (not scaled) for snapping to make snap points easier to hit
         for (int i = 0; i < g_auto_curve.edge_count; i++) {
             AutoCurveEdgeState& es = g_auto_curve.edges[i];
-            EdgeData& edge = frame->edges[es.edge_index];
+            EdgeData* e = frame->edges + es.edge_index;
 
             // Boundaries at halfway between snap points
             float half_circle = es.circle_amount * 0.5f;
@@ -97,8 +99,9 @@ static void UpdateAutoCurveTool() {
                 offset = VEC2_ZERO;
                 weight = 1.0f;
             }
-            edge.curve_offset = offset;
-            edge.curve_weight = weight;
+
+            e->curve.weight = weight;
+            e->curve.offset = offset;
         }
     } else {
         // Proportional curve based on drag, relative to original
@@ -117,8 +120,8 @@ static void UpdateAutoCurveTool() {
                 amount = -es.circle_amount - original_amount;
             }
 
-            edge.curve_offset = es.original_offset + es.outward_dir * amount;
-            edge.curve_weight = 1.0f;  // Standard bezier weight for non-snapped curves
+            edge.curve.offset = es.original_offset + es.outward_dir * amount;
+            edge.curve.weight = 1.0f;  // Standard bezier weight for non-snapped curves
         }
     }
 
@@ -132,7 +135,11 @@ static Vec2 CalcCircleOffsetFromIndices(MeshFrameData* frame, const Vec2& centro
     return CalculateCircleOffset(p0, p1, centroid);
 }
 
+#endif
+
+
 void BeginAutoCurveTool(MeshData* mesh) {
+#if 0
     MeshFrameData* frame = GetCurrentFrame(mesh);
 
     if (frame->selected_face_count == 0)
@@ -158,35 +165,23 @@ void BeginAutoCurveTool(MeshData* mesh) {
 
     // Calculate combined centroid of all selected faces
     Vec2 total_centroid = VEC2_ZERO;
-    int total_verts = 0;
-
-    for (int fi = 0; fi < frame->face_count; fi++) {
-        FaceData& face = frame->faces[fi];
-        if (!face.selected)
-            continue;
-
-        for (int i = 0; i < face.vertex_count; i++) {
-            total_centroid += frame->vertices[face.vertices[i]].position;
-            total_verts++;
-        }
+    for (u16 face_index = 0; face_index < frame->face_count; face_index++) {
+        FaceData* f = GetFace(frame, face_index);
+        if (!IsSelected(f)) continue;
+        total_centroid += f->centroid;
     }
 
-    if (total_verts == 0) {
-        EndTool();
-        return;
-    }
-
-    g_auto_curve.centroid = total_centroid / (float)total_verts;
+    g_auto_curve.centroid = total_centroid / frame->selected_face_count;
 
     // Collect edges from selected faces
-    for (int fi = 0; fi < frame->face_count; fi++) {
-        FaceData& face = frame->faces[fi];
-        if (!face.selected || face.vertex_count < 3)
+    for (u16 face_index = 0; face_index < frame->face_count; face_index++) {
+        FaceData* f = GetFace(frame, face_index);
+        if (!IsSelected(f) || f.edge_count < 3)
             continue;
 
-        for (int i = 0; i < face.vertex_count; i++) {
-            int v0 = face.vertices[i];
-            int v1 = face.vertices[(i + 1) % face.vertex_count];
+        for (int i = 0; i < f.vertex_count; i++) {
+            int v0 = f.vertices[i];
+            int v1 = f.vertices[(i + 1) % f.vertex_count];
             int edge_index = GetEdge(mesh, v0, v1);
             if (edge_index < 0)
                 continue;
@@ -212,8 +207,8 @@ void BeginAutoCurveTool(MeshData* mesh) {
 
             AutoCurveEdgeState& es = g_auto_curve.edges[g_auto_curve.edge_count++];
             es.edge_index = edge_index;
-            es.original_offset = e.curve_offset;
-            es.original_weight = e.curve_weight;
+            es.original_offset = e.curve.offset;
+            es.original_weight = e.curve.weight;
             es.circle_offset = CalcCircleOffsetFromIndices(frame, g_auto_curve.centroid, v0, v1);
             es.inverted_circle_offset = es.circle_offset * -1.0f;
             es.outward_dir = dist > 0.0001f ? to_mid / dist : VEC2_ZERO;
@@ -227,4 +222,5 @@ void BeginAutoCurveTool(MeshData* mesh) {
     g_auto_curve.initial_distance = Length(g_view.mouse_world_position - centroid_world);
 
     SetSystemCursor(SYSTEM_CURSOR_SELECT);
+#endif
 }

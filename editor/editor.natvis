@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+NoZ Game Engine Debug Visualizers
+Place this file in your project directory or Visual Studio's natvis folder.
+-->
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+    <Type Name="Rasterizer">
+        <DisplayString>Rasterizer</DisplayString>
+        <Expand>
+            <ExpandedItem>(RasterizerImpl*)this</ExpandedItem>
+        </Expand>
+    </Type>
+
+</AutoVisualizer>

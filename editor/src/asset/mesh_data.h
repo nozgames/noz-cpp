@@ -5,100 +5,104 @@
 #pragma once
 
 struct AtlasData;
+struct PixelData;
+struct Rasterizer;
 
-constexpr int MAX_VERTICES = 2048;
-constexpr int MAX_FACES = 1024;
-constexpr int MAX_INDICES = 4096;
-constexpr int MAX_EDGES = MAX_VERTICES * 2;
-constexpr int MIN_DEPTH = 0;
-constexpr int MAX_DEPTH = 100;
-constexpr int MAX_FACE_VERTICES = 128;
-
+constexpr int MESH_MIN_DEPTH = 0;
+constexpr int MESH_MAX_DEPTH = 100;
 constexpr int MESH_MAX_VERTICES = 1024;
 constexpr int MESH_MAX_INDICES = 1024;
 constexpr int MESH_MAX_FACES = 256;
 constexpr int MESH_MAX_EDGES = 2048;
+constexpr int MESH_MAX_FACE_EDGES = 128;
+constexpr int MESH_MAX_FACE_VERTICES = MESH_MAX_FACE_EDGES;
+constexpr Bounds2 MESH_DEFAULT_BOUNDS = Bounds2(Vec2(-0.5f, -0.5f), Vec2(0.5f, 0.5f));
 
-struct VertexWeight {
-    int bone_index;
-    float weight;
+enum VertexFlags : u8 {
+    VERTEX_FLAG_NONE = 0,
+    VERTEX_FLAG_SELECTED = 1 << 0,
 };
 
 struct VertexData {
     Vec2 position;
-    Vec2 edge_normal;
-    bool selected;
-    int ref_count;
-    float gradient;
-    VertexWeight weights[MESH_MAX_VERTEX_WEIGHTS];
+    VertexFlags flags;
+    int edge_count;
+};
+
+struct CurveData {
+    Vec2 offset;
+    float weight;
+};
+
+enum EdgeFlags : u8 {
+    EDGE_FLAG_NONE = 0,
+    EDGE_FLAG_SELECTED = 1 << 0,
 };
 
 struct EdgeData {
-    int v0;
-    int v1;
-    int face_count;
-    int face_index[2];
-    Vec2 normal;
-    bool selected;
-    Vec2 curve_offset;    // Offset from edge midpoint for quadratic Bezier control point (0,0 = straight)
-    float curve_weight;   // Weight for rational bezier (1.0 = standard, 0.707 = circular arc)
+    u16 v0;
+    u16 v1;
+    u16 face_left;
+    u16 face_right;
+
+    struct {
+        Vec2 offset;
+        float weight;
+    } curve;
+
+    EdgeFlags flags;
+};
+
+enum FaceFlags : u8 {
+    FACE_FLAG_NONE = 0,
+    FACE_FLAG_SELECTED = 1 << 0,
 };
 
 struct FaceData {
-    int color;
-    Vec2 normal;
+    u16 edges[MESH_MAX_FACE_EDGES];
     Vec2 center;
-    bool selected;
-    int vertices[MAX_FACE_VERTICES];
-    int vertex_count;
     float opacity;
-    int island;  // Island ID - faces sharing vertices have the same island
-};
-
-struct PendingCurve {
-    int v0, v1;
-    Vec2 offset;
-    float weight;
+    u16 edge_count;
+    u16 island;
+    u8 color;
+    FaceFlags flags;
 };
 
 struct MeshFrameData {
     VertexData vertices[MESH_MAX_VERTICES];
     EdgeData edges[MESH_MAX_EDGES];
     FaceData faces[MESH_MAX_FACES];
-    int face_vertices[MESH_MAX_INDICES];
-    PendingCurve pending_curves[MESH_MAX_EDGES];
 
-    int pending_curve_count;
-    int vertex_count;
-    int edge_count;
-    int face_count;
+    u16 vertex_count;
+    u16 edge_count;
+    u16 face_count;
 
-    int selected_vertex_count;
-    int selected_edge_count;
-    int selected_face_count;
+    u16 selected_vertex_count;
+    u16 selected_edge_count;
+    u16 selected_face_count;
 
     Mesh* mesh;
     Mesh* outline;
     int outline_version;
     int hold;
+    Bounds2 bounds;
+    bool dirty;
 };
 
 struct MeshDataImpl {
-    // Frame array - frame 0 always exists
     MeshFrameData frames[MESH_MAX_FRAMES];
-    int frame_count;      // >= 1
-    int current_frame;    // Currently edited frame index
+    int frame_count;
+    int current_frame;
 
-    // Shared metadata (applies to all frames)
     SkeletonData* skeleton;
     const Name* skeleton_name;
-    AtlasData* atlas;        // Runtime: set by atlas post-load, not persisted in mesh metadata
+    u8 bone_index;
+    AtlasData* atlas;
+    Vec2Int size;
     int palette;
     int depth;
-    bool atlas_dirty;        // Needs re-render to atlas on save
-    int bone_count;          // Number of bones with weights (0 = not skinned), updated on edge rebuild
+    bool atlas_dirty;
 
-    // Animation playback state (for editor preview)
     Mesh* playing;
     float play_time;
 };
@@ -107,7 +111,6 @@ struct MeshData : AssetData {
     MeshDataImpl* impl;
 };
 
-// Frame management functions
 extern MeshFrameData* GetCurrentFrame(MeshData* m);
 extern void SetCurrentFrame(MeshData* m, int frame_index);
 extern int GetFrameCount(MeshData* m);
@@ -116,6 +119,18 @@ extern void DeleteFrame(MeshData* m, int frame_index);
 extern void CopyFrame(MeshData* m, int src_frame, MeshFrameData* dst);
 extern void PasteFrame(MeshData* m, int dst_frame, const MeshFrameData* src);
 
+inline MeshFrameData* GetCurrentFrame(MeshData* m) {
+    return &m->impl->frames[m->impl->current_frame];
+}
+
+inline MeshFrameData* GetFrame(MeshData* m, int frame) {
+    return &m->impl->frames[frame];
+}
+
+inline int GetFrameCount(MeshData* m) {
+    return m->impl->frame_count;
+}
+
 extern void InitMeshData(AssetData* a);
 extern AssetData* NewMeshData(const std::filesystem::path& path);
 extern MeshData* Clone(Allocator* allocator, MeshData* m);
@@ -123,7 +138,7 @@ extern MeshData* LoadEditorMesh(const std::filesystem::path& path);
 extern Mesh* ToMesh(MeshData* m, bool upload=true, bool use_cache=true);
 extern Mesh* ToOutlineMesh(MeshData* m);
 extern int HitTestFace(MeshData* m, const Mat3& transform, const Vec2& position);
-extern int HitTestFaces(MeshData* m, const Mat3& transform, const Vec2& position, int* faces, int max_faces=MAX_FACES);
+extern int HitTestFaces(MeshData* m, const Mat3& transform, const Vec2& position, int* faces, int max_faces=MESH_MAX_VERTICES);
 extern int HitTestVertex(MeshData* m, const Mat3& transform, const Vec2& position, float size_mult=1.0f);
 inline int HitTestVertex(MeshData* m, const Vec2& position, float size_mult=1.0f) {
     return HitTestVertex(m, Translate(m->position), position, size_mult);
@@ -137,39 +152,28 @@ inline int HitTestEdge(MeshData* m, const Vec2& position, float* where=nullptr, 
 extern Bounds2 GetSelectedBounds(MeshData* m);
 extern void MarkDirty(MeshData* m);
 extern void SetSelecteFaceColor(MeshData* m, int color);
-extern void DissolveSelectedVertices(MeshData* m);
+extern void DeleteSelectedVertices(MeshData* m);
 extern void DissolveSelectedEdges(MeshData* m);
-extern void DissolveSelectedFaces(MeshData* m);
-extern void DeleteVertex(MeshData* m, int vertex_index);
+extern void DeleteSelectedFaces(MeshData* m);
 extern void SetHeight(MeshData* m, int index, float height);
 extern int SplitEdge(MeshData* m, int edge_index, float edge_pos, bool update=true);
 extern int SplitTriangle(MeshData* m, int triangle_index, const Vec2& position);
 extern int AddVertex(MeshData* m, const Vec2& position);
 extern int RotateEdge(MeshData* m, int edge_index);
 extern void DrawMesh(MeshData* m, const Mat3& transform, Material* material=nullptr);
-extern bool IsVertexOnOutsideEdge(MeshData* m, int v0);
 extern Vec2 GetFaceCenter(MeshData* m, int face_index);
 extern Vec2 GetEdgePoint(MeshData* m, int edge_index, float t);
 inline Vec2 GetVertexPoint(MeshData* m, int vertex_index) {
     return GetCurrentFrame(m)->vertices[vertex_index].position;
 }
-extern void UpdateEdges(MeshData* m);
+extern void Update(MeshData* m, bool force=false);
+extern void Update(MeshData* m, int frame_index, bool force=false);
 extern void Center(MeshData* m);
-extern int GetEdge(MeshData* m, int v0, int v1);
-extern int GetOrAddEdge(MeshData* m, int v0, int v1, int face_index);
-extern Vec2 GetEdgeMidpoint(MeshData* m, int edge_index);
-extern Vec2 GetEdgeControlPoint(MeshData* m, int edge_index);
-extern bool IsEdgeCurved(MeshData* m, int edge_index);
 extern bool FixWinding(MeshData* m, FaceData& ef);
-extern void DrawEdges(MeshData* m, const Vec2& position);
-extern void DrawEdges(MeshData* m, const Mat3& transform);
-extern void DrawSelectedEdges(MeshData* m, const Vec2& position);
-extern void DrawSelectedFaces(MeshData* m, const Vec2& position);
 extern void DrawFaceCenters(MeshData* m, const Vec2& position);
-extern void DissolveEdge(MeshData* m, int edge_index);
 extern int CreateFace(MeshData* m);
-extern int GetSelectedVertices(MeshData* m, int vertices[MAX_VERTICES]);
-extern int GetSelectedEdges(MeshData* m, int edges[MAX_EDGES]);
+extern int GetSelectedVertices(MeshData* m, int vertices[MESH_MAX_VERTICES]);
+extern int GetSelectedEdges(MeshData* m, int edges[MESH_MAX_EDGES]);
 extern void SerializeMesh(Mesh* m, Stream* stream);
 extern void SwapFace(MeshData* m, int face_index_a, int face_index_b);
 extern void SetOrigin(MeshData* m, const Vec2& origin);
@@ -181,5 +185,101 @@ extern void InferVertexWeightsFromNeighbors(MeshData* m, int vertex_index);
 extern void SetSingleBone(MeshData* m, int bone_index);  // Sets entire mesh to single bone (or clears if -1)
 extern void ClearBone(MeshData* m);  // Clears all bone weights from mesh
 
-extern void SetFaceColor(MeshData* m, int color);
+extern void SetFaceColor(MeshData* m, u8 color);
 extern void SetFaceOpacity(MeshData* m, float opacity);
+
+extern void Rasterize(
+    MeshData* m,
+    int frame_index,
+    Rasterizer* rasterizer,
+    PixelData* pixels,
+    const Vec2Int& position,
+    int padding=1);
+
+
+// @mesh
+inline bool IsSkinned(MeshData* mesh) {
+    if (!mesh || !mesh->impl) return false;
+    return mesh->impl->skeleton_name && mesh->impl->bone_index != U8_MAX;
+}
+
+// @frame
+extern void MarkDirty(MeshFrameData* frame);
+extern void DeleteFace(MeshFrameData* frame, FaceData* f, bool include_verts=true);
+
+// @vertex
+inline bool IsValid(MeshFrameData* frame, VertexData* v) {
+    return frame && v && (v >= frame->vertices) && (v < frame->vertices + frame->vertex_count);
+}
+inline u16 GetIndex(MeshFrameData* frame, VertexData* v) {
+    return static_cast<u16>(v - frame->vertices);
+}
+inline VertexData* GetVertex(MeshFrameData* frame, u16 vertex_index) {
+    return frame->vertices + vertex_index;
+}
+inline void SetFlags(VertexData* v, VertexFlags value, VertexFlags mask) {
+    v->flags = static_cast<VertexFlags>(v->flags & ~mask);
+    v->flags = static_cast<VertexFlags>(v->flags | (value & mask));
+}
+inline bool IsSelected(const VertexData* v) {
+    return (v->flags & VERTEX_FLAG_SELECTED) != VERTEX_FLAG_NONE;
+}
+inline bool IsVertexSelected(MeshFrameData* f, u16 vertex_index) {
+    return IsSelected(f->vertices + vertex_index);
+}
+extern void DeleteVertex(MeshFrameData* frame, u16 vertex_index);
+
+// @edge
+inline u16 GetIndex(MeshFrameData* frame, EdgeData* e) {
+    return static_cast<u16>(e - frame->edges);
+}
+inline bool IsValid(MeshFrameData* frame, EdgeData* e) {
+    return frame && e && (e >= frame->edges) && (e < frame->edges + frame->edge_count);
+}
+extern void DeleteEdge(MeshFrameData* frame, EdgeData* e, bool include_verts);
+extern EdgeData* GetEdge(MeshFrameData* frame, u16 edge_index);
+extern u16 GetEdge(MeshData* m, u16 v0, u16 v1);
+extern Vec2 GetEdgeMidpoint(MeshData* m, u16 edge_index);
+extern Vec2 GetEdgeControlPoint(MeshData* m, u16 edge_index);
+extern bool IsEdgeCurved(MeshData* m, u16 edge_index);
+extern void DeleteEdge(MeshFrameData* frame, u16 edge_index);
+
+inline bool IsSelected(const EdgeData* e) {
+    return (e->flags & EDGE_FLAG_SELECTED) != EDGE_FLAG_NONE;
+}
+inline void SetFlags(EdgeData* e, EdgeFlags value, EdgeFlags mask) {
+    e->flags = static_cast<EdgeFlags>(e->flags & ~mask);
+    e->flags = static_cast<EdgeFlags>(e->flags | (value & mask));
+}
+inline bool IsEdgeSelected(MeshFrameData* f, u16 edge_index) {
+    return IsSelected(f->edges + edge_index);
+}
+
+// @face
+inline u16 GetIndex(MeshFrameData* frame, FaceData* f) {
+    return static_cast<u16>(f - frame->faces);
+}
+inline bool IsValid(MeshFrameData* frame, FaceData* f) {
+    return frame && f && (f >= frame->faces) && (f < frame->faces + frame->face_count);
+}
+inline FaceData* GetFace(MeshFrameData* frame, u16 face_index) {
+    return frame->faces + face_index;
+}
+inline EdgeData* GetFaceEdge(MeshFrameData* frame, const FaceData* f, u16 face_edge_index) {
+    return frame->edges + f->edges[face_edge_index];
+}
+extern u16 GetFaceVertices(MeshFrameData* frame, u16 face_index, u16 vertices[MESH_MAX_FACE_VERTICES]);
+inline u16 GetFaceVertices(MeshFrameData* frame, const FaceData* f, u16 vertices[MESH_MAX_FACE_VERTICES]) {
+    return GetFaceVertices(frame, (u16)(f - frame->faces), vertices);
+}
+inline void SetFlags(FaceData* f, FaceFlags value, FaceFlags mask) {
+    f->flags = static_cast<FaceFlags>(f->flags & ~mask);
+    f->flags = static_cast<FaceFlags>(f->flags | (value & mask));
+}
+inline bool IsSelected(const FaceData* f) {
+    return (f->flags & FACE_FLAG_SELECTED) != FACE_FLAG_NONE;
+}
+inline bool IsFaceSelected(MeshFrameData* f, u16 face_index) {
+    return IsSelected(f->faces + face_index);
+}
+extern int CountSharedEdges(MeshFrameData* frame, u16 face_index0, u16 face_index1);

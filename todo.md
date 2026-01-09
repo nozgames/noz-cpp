@@ -1,3 +1,9 @@
+- [ ] assert if scratch is in thread, handle scratch in threads
+- [ ] anti-alias render
+- [ ] outline color in mesh editor
+
+
+
 # incoming
 - [ ] replace randomint with min-max exclusive 
 - [ ] color override push in render buffer (PushColorOverride / PopColorOverride)

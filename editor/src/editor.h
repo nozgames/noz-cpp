@@ -102,6 +102,8 @@ struct Editor {
     int palette_map[COLOR_PALETTE_COUNT];
     int palette_count;
 
+    MeshBuilder* mesh_builder;
+
     struct {
         int size = 1024;
         int dpi = 96;

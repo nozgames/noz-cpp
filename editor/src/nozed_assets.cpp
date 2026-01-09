@@ -55,6 +55,7 @@ Font* FONT_SEGUISB = nullptr;
 // @Shader
 Shader* SHADER_EDITOR = nullptr;
 Shader* SHADER_EDITOR_MESH = nullptr;
+Shader* SHADER_EDITOR_TEXTURE = nullptr;
 Shader* SHADER_MESH = nullptr;
 Shader* SHADER_POSTPROCESS_UI_COMPOSITE = nullptr;
 Shader* SHADER_SKINNED_MESH = nullptr;
@@ -123,6 +124,7 @@ const Name* PATH_MESH_ICON_VERTEX_MODE = nullptr;
 const Name* PATH_MESH_ICON_WEIGHT_MODE = nullptr;
 const Name* PATH_SHADER_EDITOR = nullptr;
 const Name* PATH_SHADER_EDITOR_MESH = nullptr;
+const Name* PATH_SHADER_EDITOR_TEXTURE = nullptr;
 const Name* PATH_SHADER_MESH = nullptr;
 const Name* PATH_SHADER_POSTPROCESS_UI_COMPOSITE = nullptr;
 const Name* PATH_SHADER_SKINNED_MESH = nullptr;
@@ -192,6 +194,7 @@ bool LoadAssets(Allocator* allocator)
     PATH_MESH_ICON_WEIGHT_MODE = GetName("icon_weight_mode");
     PATH_SHADER_EDITOR = GetName("editor");
     PATH_SHADER_EDITOR_MESH = GetName("editor_mesh");
+    PATH_SHADER_EDITOR_TEXTURE = GetName("editor_texture");
     PATH_SHADER_MESH = GetName("mesh");
     PATH_SHADER_POSTPROCESS_UI_COMPOSITE = GetName("postprocess_ui_composite");
     PATH_SHADER_SKINNED_MESH = GetName("skinned_mesh");
@@ -292,6 +295,7 @@ bool LoadAssets(Allocator* allocator)
     // @Shader
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_EDITOR, SHADER_EDITOR);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_EDITOR_MESH, SHADER_EDITOR_MESH);
+    NOZ_LOAD_SHADER(allocator, PATH_SHADER_EDITOR_TEXTURE, SHADER_EDITOR_TEXTURE);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_MESH, SHADER_MESH);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_POSTPROCESS_UI_COMPOSITE, SHADER_POSTPROCESS_UI_COMPOSITE);
     NOZ_LOAD_SHADER(allocator, PATH_SHADER_SKINNED_MESH, SHADER_SKINNED_MESH);
@@ -306,6 +310,7 @@ bool LoadAssets(Allocator* allocator)
     static Shader* _SHADER[] = {
         SHADER_EDITOR,
         SHADER_EDITOR_MESH,
+        SHADER_EDITOR_TEXTURE,
         SHADER_MESH,
         SHADER_POSTPROCESS_UI_COMPOSITE,
         SHADER_SKINNED_MESH,
@@ -384,6 +389,7 @@ void UnloadAssets()
     // @Shader
     Free(SHADER_EDITOR);
     Free(SHADER_EDITOR_MESH);
+    Free(SHADER_EDITOR_TEXTURE);
     Free(SHADER_MESH);
     Free(SHADER_POSTPROCESS_UI_COMPOSITE);
     Free(SHADER_SKINNED_MESH);
@@ -442,6 +448,7 @@ void BindLuaAssets(noz::lua::State* state) {
     // Shader
     SetGlobal(state, "SHADER_EDITOR", SHADER_EDITOR);
     SetGlobal(state, "SHADER_EDITOR_MESH", SHADER_EDITOR_MESH);
+    SetGlobal(state, "SHADER_EDITOR_TEXTURE", SHADER_EDITOR_TEXTURE);
     SetGlobal(state, "SHADER_MESH", SHADER_MESH);
     SetGlobal(state, "SHADER_POSTPROCESS_UI_COMPOSITE", SHADER_POSTPROCESS_UI_COMPOSITE);
     SetGlobal(state, "SHADER_SKINNED_MESH", SHADER_SKINNED_MESH);
@@ -501,6 +508,7 @@ void HotloadAsset(const Name* incoming_name, AssetType incoming_type)
     // @Shader
     NOZ_RELOAD_SHADER(PATH_SHADER_EDITOR, SHADER_EDITOR);
     NOZ_RELOAD_SHADER(PATH_SHADER_EDITOR_MESH, SHADER_EDITOR_MESH);
+    NOZ_RELOAD_SHADER(PATH_SHADER_EDITOR_TEXTURE, SHADER_EDITOR_TEXTURE);
     NOZ_RELOAD_SHADER(PATH_SHADER_MESH, SHADER_MESH);
     NOZ_RELOAD_SHADER(PATH_SHADER_POSTPROCESS_UI_COMPOSITE, SHADER_POSTPROCESS_UI_COMPOSITE);
     NOZ_RELOAD_SHADER(PATH_SHADER_SKINNED_MESH, SHADER_SKINNED_MESH);

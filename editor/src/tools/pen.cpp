@@ -35,6 +35,7 @@ static PenTool g_pen_tool = {};
 static void EndPenTool(bool commit);
 
 static void CommitPenFace() {
+#if 0
     MeshData* m = g_pen_tool.mesh;
     MeshFrameData* frame = GetCurrentFrame(m);
 
@@ -60,19 +61,13 @@ static void CommitPenFace() {
                 return;
 
             int new_index = frame->vertex_count++;
-            VertexData& v = frame->vertices[new_index];
+            VertexData* v = frame->vertices + new_index;
             v = {};
-            v.position = pt.position;
-            v.selected = false;
-
-            // Initialize bone weights to -1 (will be inferred from neighbors after edges are created)
-            for (int w = 0; w < MESH_MAX_VERTEX_WEIGHTS; w++) {
-                v.weights[w].bone_index = -1;
-                v.weights[w].weight = 0.0f;
-            }
+            v->position = pt.position;
+            SetFlags(v, VERTEX_FLAG_NONE, VERTEX_FLAG_SELECTED);
 
             vertex_indices[i] = new_index;
-            pt.existing_vertex = -2;  // Mark as newly created (not -1 which means no snap)
+            pt.existing_vertex = -2;
         }
     }
 
@@ -87,12 +82,11 @@ static void CommitPenFace() {
 
     // Create face preserving user's click order
     int face_index = frame->face_count++;
-    FaceData& f = frame->faces[face_index];
-    f.vertex_count = g_pen_tool.point_count;
-    f.color = g_pen_tool.color;
-    f.opacity = g_pen_tool.opacity;
-    f.normal = {0, 0};
-    f.selected = false;
+    FaceData* f = frame->faces + face_index;
+    f->vertex_count = g_pen_tool.point_count;
+    f->color = g_pen_tool.color;
+    f->opacity = g_pen_tool.opacity;
+    SetFlags(f, FACE_FLAG_NONE, FACE_FLAG_SELECTED);
 
     // If clockwise (negative area), reverse the order to make it counter-clockwise
     if (signed_area > 0) {
@@ -103,7 +97,7 @@ static void CommitPenFace() {
             f.vertices[i] = vertex_indices[i];
     }
 
-    UpdateEdges(m);
+    Update(m);
 
     // Infer bone weights for newly created vertices from their neighbors
     for (int i = 0; i < g_pen_tool.point_count; i++) {
@@ -112,6 +106,7 @@ static void CommitPenFace() {
     }
 
     MarkDirty(m);
+#endif
 }
 
 static void EndPenTool(bool commit) {

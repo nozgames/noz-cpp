@@ -222,6 +222,8 @@ constexpr i16 I16_MAX = 32767;
 constexpr i16 I16_MIN = -32768;
 constexpr u16 U16_MAX = 0xFFFF;
 constexpr u16 U16_MIN = 0;
+constexpr i8  U8_MIN = 0;
+constexpr u8  U8_MAX = 255;
 
 constexpr Bounds2 BOUNDS2_ZERO = { VEC2_ZERO, VEC2_ZERO };
 

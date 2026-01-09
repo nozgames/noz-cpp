@@ -78,10 +78,9 @@ struct MeshVertex {
     float opacity = 1.0f;
     Vec2 uv;
     Vec2 normal;
-    Vec4Int bone_indices;
-    Vec4 bone_weights = {1.0f, 0.0f, 0.0f, 0.0f};
+    int bone_index = 0;
     int atlas_index = 0;
-    Vec4 color = {1.0f, 1.0f, 1.0f, 1.0f};  // Vertex color (RGBA)
+    Vec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
 };
 
 extern Mesh* CreateMesh(
@@ -116,7 +115,7 @@ extern void SetAnimationInfo(Mesh* mesh, int frame_count, int frame_rate, float 
 
 // @mesh_builder
 extern MeshBuilder* CreateMeshBuilder(Allocator* allocator, u16 max_vertices, u16 max_indices);
-extern void UpdateMeshFromBuilder(Mesh* mesh, MeshBuilder* builder);
+extern void UpdateMesh(MeshBuilder* builder, Mesh* mesh);
 extern void Clear(MeshBuilder* builder);
 extern const MeshVertex* GetVertices(MeshBuilder* builder);
 extern const Vec2* GetUvs(MeshBuilder* builder);
@@ -151,7 +150,7 @@ inline void AddVertex(MeshBuilder* builder, const Vec2& position, float depth) {
 inline void AddVertex(MeshBuilder* builder, const Vec2& position) {
     AddVertex(builder, {position.x, position.y}, 0.0f);
 }
-extern void AddVertexWeight(MeshBuilder* builder, int bone_idnex, float weight);
+extern void SetBone(MeshBuilder* builder, int bone_index);
 extern void AddCircle(MeshBuilder* builder, const Vec2& center, f32 radius, int segments, const Vec2& uv_color);
 extern void AddCircleStroke(MeshBuilder* builder, const Vec2& center, f32 radius, f32 thickness, int segments, const Vec2& uv_color);
 extern void AddArc(MeshBuilder* builder, const Vec2& center, f32 radius, f32 start, f32 end, int segments, const Vec2& uv_color);

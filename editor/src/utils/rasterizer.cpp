@@ -2,15 +2,15 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
+#include "pixel_data.h"
 #include "rasterizer.h"
 
 constexpr int RASTER_MAX_VERTICES = 256;
 
 struct RasterizerImpl : Rasterizer {
-    u8* pixels = nullptr;
+    PixelData* pixels = nullptr;
     bool path_started = false;
     Vec2 path_start = VEC2_ZERO;
-    Vec2Int size = VEC2INT_ZERO;
     Color32 color;
     struct {
         Vec2 verts[RASTER_MAX_VERTICES];
@@ -21,22 +21,21 @@ struct RasterizerImpl : Rasterizer {
     noz::RectInt clip;
 };
 
-Rasterizer* CreateRasterizer(Allocator* allocator) {
-    Rasterizer* rasterizer = static_cast<Rasterizer*>(Alloc(allocator, sizeof(RasterizerImpl)));
-    return rasterizer;
-}
-
-void SetTarget(Rasterizer* rasterizer, u8* pixels, int width, int height) {
-    RasterizerImpl* impl = static_cast<RasterizerImpl*>(rasterizer);
+Rasterizer* CreateRasterizer(Allocator* allocator, PixelData* pixels) {
+    RasterizerImpl* impl = static_cast<RasterizerImpl*>(Alloc(allocator, sizeof(RasterizerImpl)));
     impl->pixels = pixels;
-    impl->size.x = width;
-    impl->size.y = height;
-    impl->clip = { 0, 0, width, height };
+    impl->clip = { 0, 0, pixels->size.x, pixels->size.y };
+    return impl;
 }
 
 void SetClipRect(Rasterizer* rasterizer, int x, int y, int w, int h) {
     RasterizerImpl* impl = static_cast<RasterizerImpl*>(rasterizer);
-    impl->clip = { x, y, w, h };
+    impl->clip = {
+        Max(0,x),
+        Max(0,y),
+        Min(impl->pixels->size.x - x, w),
+        Min(impl->pixels->size.y - y, h)
+    };
 }
 
 void SetColor(Rasterizer* rasterizer, const Color& color) {
@@ -113,53 +112,49 @@ inline void BlendPixel(Color32* dst, const Color32& color) {
 
 static bool IsInPath(RasterizerImpl* impl, const Vec2& p) {
     const int vertex_count = impl->polygon.vertex_count;
-
-    // Center
     Vec2* verts = impl->polygon.verts;
-    Vec2 c = VEC2_ZERO;
-    for (int i = 0; i < vertex_count; i++)
-        c += verts[i];
 
-    c /= (float)vertex_count;
-
-    // Slightly move test point toward center (makes test more inclusive)
-    constexpr float BIAS = 0.01f;
-    Vec2 bp = p + (c - p) * BIAS;
-
+    // Use winding number algorithm with top-left fill rule
+    // This ensures pixels on shared edges are claimed by exactly one face
     int winding = 0;
     for (int i = 0; i < vertex_count; i++) {
         int j = (i + 1) % vertex_count;
         const Vec2& p0 = verts[i];
         const Vec2& p1 = verts[j];
 
-        if (p0.y <= bp.y) {
-            if (p1.y > bp.y) {
-                float cross = (p1.x - p0.x) * (bp.y - p0.y) - (bp.x - p0.x) * (p1.y - p0.y);
-                if (cross > 0) winding++;
+        // upward crossing (p0.y <= p.y < p1.y)
+        if (p0.y <= p.y) {
+            if (p1.y > p.y) {
+                float cross = (p1.x - p0.x) * (p.y - p0.y) - (p.x - p0.x) * (p1.y - p0.y);
+                // >= 0 to include points exactly on left/upward edges
+                if (cross >= 0) winding++;
             }
-        } else if (p1.y <= bp.y) {
-            float cross = (p1.x - p0.x) * (bp.y - p0.y) - (bp.x - p0.x) * (p1.y - p0.y);
+        }
+        // downward crossing (p1.y <= p.y < p0.y)
+        else if (p1.y <= p.y) {
+            float cross = (p1.x - p0.x) * (p.y - p0.y) - (p.x - p0.x) * (p1.y - p0.y);
+            // < 0 (strict) to exclude points exactly on right/downward edges
             if (cross < 0) winding--;
         }
     }
     return winding != 0;
 }
 
-void Fill(Rasterizer* rasterizer) {
+void Fill(Rasterizer* rasterizer, const Vec2Int& offset) {
     RasterizerImpl* impl = static_cast<RasterizerImpl*>(rasterizer);
 
     if (!impl->pixels) return;
     if (impl->polygon.vertex_count < 3) return;
 
-    int x_min = Max(FloorToInt(impl->bounds.min.x), impl->clip.x);
-    int y_min = Max(FloorToInt(impl->bounds.min.y), impl->clip.y);
-    int x_max = Max(CeilToInt(impl->bounds.max.x), impl->clip.x + impl->clip.w);
-    int y_max = Max(CeilToInt(impl->bounds.max.y), impl->clip.y + impl->clip.h);
+    int x_min = impl->clip.x;
+    int y_min = impl->clip.y;
+    int x_max = impl->clip.x + impl->clip.w;
+    int y_max = impl->clip.y + impl->clip.h;
 
     const Color32& color = impl->color;
 
     for (int y = y_min; y < y_max; y++) {
-        Color32* row = reinterpret_cast<Color32*>(impl->pixels + y * impl->size.x * 4);
+        Color32* row = impl->pixels->rgba + offset.x + (y + offset.y) * impl->pixels->size.x;
         float py = y + 0.5f;
 
         for (int x = x_min; x < x_max; x++)

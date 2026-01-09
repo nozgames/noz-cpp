@@ -228,20 +228,23 @@ static void InitConfig() {
 void InitEditor() {
     g_main_thread_id = std::this_thread::get_id();
     g_editor.asset_allocator = CreatePoolAllocator(sizeof(GenericAssetData), MAX_ASSETS);
+    g_editor.mesh_builder = CreateMeshBuilder(ALLOCATOR_DEFAULT, U16_MAX, U16_MAX);
 
     InitEditorAssets();
     InitAtlasManager();
     InitLog(HandleLog);
     Listen(EDITOR_EVENT_STATS, HandleStatsEvents);
     Listen(EDITOR_EVENT_IMPORTED, HandleImported);
+
 }
 
 void ShutdownEditor() {
+    Free(g_editor.mesh_builder);
+
     SaveUserConfig();
     ShutdownCommandInput();
     ShutdownView();
     ShutdownAtlasManager();
-    //ShutdownEditorServer();
     ShutdownImporter();
 }
 

@@ -46,7 +46,7 @@ struct WeightToolVertex {
 
 struct WeightToolOptions {
     int vertex_count;
-    WeightToolVertex vertices[MAX_VERTICES];
+    WeightToolVertex vertices[MESH_MAX_VERTICES];
     float min_weight;
     float max_weight;
 
@@ -78,7 +78,7 @@ extern void BeginKnifeTool(MeshData* mesh, bool restrict_to_selected = false);
 struct VertexWeightToolOptions {
     MeshData* mesh;
     int vertex_count;
-    int vertices[MAX_VERTICES];
+    int vertices[MESH_MAX_VERTICES];
     int bone_index;
 };
 

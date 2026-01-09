@@ -25,7 +25,7 @@ struct KnifeTool {
     KnifeCut cuts[256];
     int cut_count = 0;
     MeshData* mesh;
-    Vec2 vertices[MAX_VERTICES];
+    Vec2 vertices[MESH_MAX_VERTICES];
     int vertex_count;
     int cut_faces[32];  // Faces that are part of the cut path
     int cut_face_count;
@@ -250,7 +250,7 @@ static int AddKnifeVertex(MeshData* m, const Vec2& position) {
         return existing;
 
     MeshFrameData* frame = GetCurrentFrame(m);
-    if (frame->vertex_count >= MAX_VERTICES)
+    if (frame->vertex_count >= MESH_MAX_VERTICES)
         return -1;
 
     int index = frame->vertex_count++;
@@ -269,7 +269,7 @@ static bool InsertVertexInFace(MeshData* m, int face_index, int insert_pos, int 
     if (!allow_duplicates && FindVertexInFace(f, vertex_index) != -1)
         return false;
 
-    if (f.vertex_count >= MAX_FACE_VERTICES)
+    if (f.vertex_count >= MESH_MAX_FACE_VERTICES)
         return false;
 
     for (int i = f.vertex_count; i > insert_pos; i--)
@@ -282,7 +282,7 @@ static bool InsertVertexInFace(MeshData* m, int face_index, int insert_pos, int 
 
 static int SplitFaceAtPositions(MeshData* m, int face_index, int pos0, int pos1, const int* cut_vertices, int cut_vertex_count) {
     MeshFrameData* frame = GetCurrentFrame(m);
-    if (frame->face_count >= MAX_FACES)
+    if (frame->face_count >= MESH_MAX_FACES)
         return -1;
 
     FaceData& old_face = frame->faces[face_index];
@@ -291,7 +291,7 @@ static int SplitFaceAtPositions(MeshData* m, int face_index, int pos0, int pos1,
         return -1;
 
     // Copy the old face vertices
-    int old_vertices[MAX_FACE_VERTICES];
+    int old_vertices[MESH_MAX_FACE_VERTICES];
     int old_count = old_face.vertex_count;
     for (int i = 0; i < old_count; i++)
         old_vertices[i] = old_face.vertices[i];
@@ -299,7 +299,6 @@ static int SplitFaceAtPositions(MeshData* m, int face_index, int pos0, int pos1,
     // Create new face
     FaceData& new_face = frame->faces[frame->face_count];
     new_face.color = old_face.color;
-    new_face.normal = old_face.normal;
     new_face.opacity = old_face.opacity;
     new_face.selected = false;
     new_face.vertex_count = 0;
@@ -805,8 +804,8 @@ static int GetOrCreateVertex(MeshData* m, KnifePathPoint& pt) {
     if (IsEdgePoint(pt) && pt.edge_v0 >= 0 && pt.edge_v1 >= 0) {
         int edge_index = GetEdge(m, pt.edge_v0, pt.edge_v1);
         if (edge_index >= 0) {
-            Vec2 curve_offset = frame->edges[edge_index].curve_offset;
-            float curve_weight = frame->edges[edge_index].curve_weight;
+            Vec2 curve_offset = frame->edges[edge_index].curve.offset;
+            float curve_weight = frame->edges[edge_index].curve.weight;
             Vec2 p0 = frame->vertices[pt.edge_v0].position;
             Vec2 p2 = frame->vertices[pt.edge_v1].position;
 
@@ -1134,12 +1133,11 @@ static void ExecuteInnerFace(MeshData* m, KnifePathPoint* path, KnifeAction& act
     // 1. Outer face: original boundary with slit to inner loop
     // 2. Inner face: the loop itself (should have SAME winding as boundary for correct rendering)
 
-    if (frame->face_count >= MAX_FACES)
+    if (frame->face_count >= MESH_MAX_FACES)
         return;
 
     FaceData& inner_face = frame->faces[frame->face_count];
     inner_face.color = f.color;
-    inner_face.normal = f.normal;
     inner_face.opacity = f.opacity;
     inner_face.selected = false;
     inner_face.vertex_count = 0;
@@ -1164,7 +1162,7 @@ static void ExecuteInnerFace(MeshData* m, KnifePathPoint* path, KnifeAction& act
 
     // Now rebuild the outer face with the slit
     // The embedded hole must have OPPOSITE winding to boundary for triangulation to work
-    int new_vertices[MAX_FACE_VERTICES];
+    int new_vertices[MESH_MAX_FACE_VERTICES];
     int new_count = 0;
 
     // Add vertices up to and including boundary vertex
@@ -1434,7 +1432,7 @@ static void CommitKnifeCuts() {
     // Phase 3: Execute actions
     ExecuteKnifeActions(m, path, path_count, actions, action_count);
 
-    UpdateEdges(m);
+    Update(m);
     MarkDirty(m);
 
 #ifdef KNIFE_LOG
