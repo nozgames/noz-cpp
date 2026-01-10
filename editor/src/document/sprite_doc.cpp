@@ -4,9 +4,11 @@
 
 #include "sprite_doc.h"
 
+namespace noz::editor {
 
-void InitSpriteDocument(Document* a) {
+    void InitSpriteDocument(Document* a) {
+
+    }
 
 }
-
 

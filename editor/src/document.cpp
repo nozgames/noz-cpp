@@ -26,44 +26,39 @@ namespace noz::editor {
         return a->path.length > 0;
     }
 
-    static void DestroyAssetData(void* p) {
+    static void DestroyDocument(void* p) {
         Document* a = static_cast<Document*>(p);
         if (a->vtable.destructor) {
             a->vtable.destructor(a);
         }
     }
 
-    Document* CreateAssetData(const std::filesystem::path& path) {
-        // Find the asset type info from extension
-        const DocumentDef* type_info = FindDocumentDef(path.extension().string().c_str());
-        if (!type_info)
+    Document* CreateDocument(const std::filesystem::path& path) {
+        const DocumentDef* doc_def = FindDocumentDef(path.extension().string().c_str());
+        if (!doc_def)
             return nullptr;
 
-        // Allocate GenericAssetData (AssetData + void* data pointer)
-        Document* a = static_cast<Document*>(Alloc(g_editor.asset_allocator, sizeof(GenericAssetData), DestroyAssetData));
-        Set(a->path, canonical(path).string().c_str());
-        Lower(a->path);
-        a->name = MakeCanonicalAssetName(path);
-        a->bounds = Bounds2{{-0.5f, -0.5f}, {0.5f, 0.5f}};
-        a->asset_path_index = -1;
+        Document* doc = static_cast<Document*>(Alloc(ALLOCATOR_DEFAULT, doc_def->size, DestroyDocument));
+        Set(doc->path, canonical(path).string().c_str());
+        Lower(doc->path);
+        doc->def = doc_def;
+        doc->name = MakeCanonicalAssetName(path);
+        doc->bounds = Bounds2{{-0.5f, -0.5f}, {0.5f, 0.5f}};
+        doc->asset_path_index = -1;
 
         for (int i=0; i<g_editor.source_path_count; i++) {
-            if (Equals(g_editor.source_paths[i].value, a->path, g_editor.source_paths[i].length, true)) {
-                a->asset_path_index = i;
+            if (Equals(g_editor.source_paths[i].value, doc->path, g_editor.source_paths[i].length, true)) {
+                doc->asset_path_index = i;
                 break;
             }
         }
 
-        assert(a->asset_path_index != -1);
+        assert(doc->asset_path_index != -1);
 
-        // Set type from registry
-        a->type = static_cast<AssetType>(type_info->type_id);
+        if (doc_def->init_func)
+            doc_def->init_func(doc);
 
-        // Initialize via registry
-        if (type_info->init)
-            type_info->init(a);
-
-        return a;
+        return doc;
     }
 
     static void LoadAssetMetadata(Document* ea, const std::filesystem::path& path) {
@@ -109,7 +104,7 @@ namespace noz::editor {
     }
 
     void DrawFaceCenters(MeshDocument* m, const Vec2& position) {
-        BindMaterial(g_view.vertex_material);
+        BindMaterial(g_workspace.vertex_material);
         MeshFrameData* frame = GetCurrentFrame(m);
         for (u16 fi=0; fi<frame->geom.face_count; fi++) {
             const FaceData* f = GetFace(frame, fi);
@@ -215,7 +210,7 @@ namespace noz::editor {
             a->selected = false;
         }
 
-        g_view.selected_asset_count = 0;
+        g_workspace.selected_asset_count = 0;
     }
 
     void SetSelected(Document* a, bool selected) {
@@ -223,32 +218,41 @@ namespace noz::editor {
         if (a->selected == selected)
             return;
         a->selected = true;
-        g_view.selected_asset_count++;
+        g_workspace.selected_asset_count++;
     }
 
     void ToggleSelected(Document* a) {
         assert(a);
         a->selected = !a->selected;
         if (a->selected)
-            g_view.selected_asset_count++;
+            g_workspace.selected_asset_count++;
         else
-            g_view.selected_asset_count--;
+            g_workspace.selected_asset_count--;
     }
 
-    Document* GetDocument(AssetType type, const Name* name) {
-        // Iterate allocator directly (not sorted array) so this works during InitAssetData
-        for (u32 i = 0; i < EDITOR_MAX_DOCUMENTS; i++) {
-            Document* a = GetDocumentInternal(i);
-            if (a && (type == ASSET_TYPE_UNKNOWN || a->type == type) && a->name == name)
-                return a;
+    Document* FindDocument(AssetType type, const Name* name) {
+        for (int doc_index = 0; doc_index < GetDocumentCount(); doc_index++) {
+            Document* doc = GetDocument(doc_index);
+            if (doc && (type == ASSET_TYPE_UNKNOWN || doc->def->type == type) && doc->name == name)
+                return doc;
         }
 
         return nullptr;
     }
 
-    void Clone(Document* dst, Document* src) {
+    Document* Clone(Document* doc) {
+        Document* clone = CreateDocument(doc->path.value);
+        memcpy(clone, doc, doc->def->size);
+
+        if (clone->vtable.clone)
+            clone->vtable.clone(doc);
+
+        return clone;
+    }
+
+    void CloneInto(Document* dst, Document* src) {
         bool editing = dst->editing;
-        *static_cast<GenericDocument*>(dst) = *static_cast<GenericDocument*>(src);
+        memcpy(dst, src, src->def->size);
         dst->editing = editing;
 
         if (dst->vtable.clone)
@@ -256,7 +260,7 @@ namespace noz::editor {
     }
 
     Document* CreateAssetDataForImport(const std::filesystem::path& path) {
-        Document* a = CreateAssetData(path);
+        Document* a = CreateDocument(path);
         if (!a)
             return nullptr;
 
@@ -285,7 +289,7 @@ namespace noz::editor {
 
                 // Skip if asset with same name already exists (from earlier source path)
                 const Name* asset_name = MakeCanonicalAssetName(asset_path);
-                Document* existing = GetDocument(ASSET_TYPE_UNKNOWN, asset_name);
+                Document* existing = FindDocument(ASSET_TYPE_UNKNOWN, asset_name);
                 if (existing) {
                     if (strcmp(asset_name->value, "palette") == 0)
                         LogInfo("[AssetData] SKIPPING duplicate palette: %s (source_path_index=%d)", asset_path.string().c_str(), i);
@@ -294,14 +298,12 @@ namespace noz::editor {
 
                 Document* a = nullptr;
                 for (int asset_type=0; !a && asset_type<ASSET_TYPE_COUNT; asset_type++)
-                    a = CreateAssetData(asset_path);
+                    a = CreateDocument(asset_path);
 
                 if (a)
                     LoadAssetMetadata(a, asset_path);
             }
         }
-
-        SortAssets();
     }
 
     void LoadDocument(Document* a) {
@@ -344,17 +346,17 @@ namespace noz::editor {
     }
 
     void HotloadEditorAsset(AssetType type, const Name* name){
-        Document* a = GetDocument(type, name);
-        if (a != nullptr && a->vtable.reload)
-            a->vtable.reload(a);
+        Document* doc = FindDocument(type, name);
+        if (doc != nullptr && doc->vtable.reload)
+            doc->vtable.reload(doc);
     }
 
-    void MarkModified(Document* a) {
-        a->modified = true;
+    void MarkModified(Document* doc) {
+        doc->modified = true;
     }
 
-    void MarkMetaModified(Document* a) {
-        a->meta_modified = true;
+    void MarkMetaModified(Document* doc) {
+        doc->meta_modified = true;
     }
 
     std::filesystem::path GetEditorAssetPath(const Name* name, const char* ext) {
@@ -383,58 +385,47 @@ namespace noz::editor {
         Free(a);
     }
 
-    void SortAssets() {
-        u32 asset_index = 0;
-        for (u32 i=0; i<EDITOR_MAX_DOCUMENTS; i++) {
-            Document* a = GetDocumentInternal(i);
-            if (!a) continue;
-            g_editor.assets[asset_index++] = i;
-        }
-
-        assert(asset_index == GetDocumentCount());
-    }
-
-    fs::path GetTargetPath(Document* a) {
-        std::string type_name_lower = ToString(a->type);
+    fs::path GetTargetPath(Document* doc) {
+        std::string type_name_lower = ToString(doc->def->type);
         Lower(type_name_lower.data(), (u32)type_name_lower.size());
-        fs::path source_relative_path = fs::relative(a->path.value, g_editor.source_paths[a->asset_path_index].value);
+        fs::path source_relative_path = fs::relative(doc->path.value, g_editor.source_paths[doc->asset_path_index].value);
         fs::path target_short_path = type_name_lower / GetSafeFilename(source_relative_path.filename().string().c_str());
         fs::path target_path = g_editor.output_path / target_short_path;
         target_path.replace_extension("");
         return target_path;
     }
 
-    bool Rename(Document* a, const Name* new_name) {
-        assert(a);
+    bool Rename(Document* doc, const Name* new_name) {
+        assert(doc);
         assert(new_name);
 
-        if (a->name == new_name)
+        if (doc->name == new_name)
             return true;
 
         // Check if another asset already exists with this name
-        Document* existing = GetDocument(ASSET_TYPE_UNKNOWN, new_name);
-        if (existing && existing != a)
+        Document* existing = FindDocument(ASSET_TYPE_UNKNOWN, new_name);
+        if (existing && existing != doc)
             return false;
 
-        fs::path new_path = fs::path(a->path.value).parent_path() / (std::string(new_name->value) + fs::path(a->path.value).extension().string());
+        fs::path new_path = fs::path(doc->path.value).parent_path() / (std::string(new_name->value) + fs::path(doc->path.value).extension().string());
         if (fs::exists(new_path))
             return false;
 
         // Save old meta path BEFORE updating a->path
-        fs::path old_meta_path = fs::path(std::string(a->path) + ".meta");
+        fs::path old_meta_path = fs::path(std::string(doc->path) + ".meta");
 
         // Let asset type handle pre-rename logic (e.g., mesh updating its atlas)
-        if (a->vtable.editor_rename)
-            a->vtable.editor_rename(a, new_name);
+        if (doc->vtable.editor_rename)
+            doc->vtable.editor_rename(doc, new_name);
 
         try {
-            fs::rename(a->path.value, new_path);
+            fs::rename(doc->path.value, new_path);
         } catch (...) {
             return false;
         }
 
-        Set(a->path, new_path.string().c_str());
-        a->name = new_name;
+        Set(doc->path, new_path.string().c_str());
+        doc->name = new_name;
 
         fs::path new_meta_path = fs::path(new_path.string() + ".meta");
         if (fs::exists(old_meta_path)) {
@@ -476,29 +467,26 @@ namespace noz::editor {
         if (a == nullptr)
             return;
 
-        a->position = position ? *position : GetCenter(GetWorldBounds(g_view.camera));
+        a->position = position ? *position : GetCenter(GetWorldBounds(g_workspace.camera));
         MarkModified(a);
         MarkMetaModified(a);
 
         if (a->vtable.post_load)
             a->vtable.post_load(a);
 
-        SortAssets();
         SaveDocuments();
 
         ClearAssetSelection();
         SetSelected(a, true);
     }
 
-    Document* Duplicate(Document* a) {
-        fs::path new_path = GetUniqueAssetPath(a->path.value);
+    Document* Duplicate(Document* adoc) {
+        fs::path new_path = GetUniqueAssetPath(adoc->path.value);
 
-        Document* d = static_cast<Document*>(Alloc(g_editor.asset_allocator, sizeof(GenericAssetData)));
-        Clone(d, a);
+        Document* d = Clone(adoc);
         Set(d->path, new_path.string().c_str());
         d->name = MakeCanonicalAssetName(new_path);
         d->selected = false;
-        SortAssets();
         QueueImport(new_path);
         WaitForImportTasks();
         MarkModified(d);
@@ -527,7 +515,7 @@ namespace noz::editor {
 
             // Check if asset with this canonical name already exists in memory
             const Name* canonical_name = MakeCanonicalAssetName(candidate);
-            if (GetDocument(ASSET_TYPE_UNKNOWN, canonical_name))
+            if (FindDocument(ASSET_TYPE_UNKNOWN, canonical_name))
                 continue;
 
             return candidate;

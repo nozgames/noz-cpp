@@ -4,248 +4,246 @@
 
 #pragma once
 
-#include <filesystem>
+namespace noz {
+    // Forward declarations from application.h
+    extern bool IsScreenRotated();
 
-// Forward declarations from application.h
-extern bool IsScreenRotated();
+    enum InputCode;
+    typedef u32 ShaderFlags;
+    struct ApplicationTraits;
+    struct MeshVertex;
+    struct SamplerOptions;
+    struct RectInt;
 
-enum InputCode;
-typedef u32 ShaderFlags;
-struct ApplicationTraits;
-struct MeshVertex;
-struct SamplerOptions;
-struct RectInt;
+    struct PlatformBuffer;
+    struct PlatformBufferMemory {};
+    struct PlatformShader;
+    struct PlatformTexture;
+    struct PlatformSound {};
+    struct PlatformSoundHandle { u64 value;};
+    struct PlatformHttpHandle { u64 value; };
+    struct PlatformWebSocketHandle { u64 value; };
+    struct PlatformWebSocketServerHandle { u64 value; };
+    struct PlatformWebSocketConnectionHandle { u64 value; };
 
-struct PlatformBuffer;
-struct PlatformBufferMemory {};
-struct PlatformShader;
-struct PlatformTexture;
-struct PlatformSound {};
-struct PlatformSoundHandle { u64 value;};
-struct PlatformHttpHandle { u64 value; };
-struct PlatformWebSocketHandle { u64 value; };
-struct PlatformWebSocketServerHandle { u64 value; };
-struct PlatformWebSocketConnectionHandle { u64 value; };
+    // Buffer creation flags
+    enum BufferFlags : u32 {
+        BUFFER_FLAG_NONE    = 0,
+        BUFFER_FLAG_DYNAMIC = 1 << 0,  // Use GL_DYNAMIC_DRAW, optimized for frequent updates
+    };
 
-// Buffer creation flags
-enum BufferFlags : u32 {
-    BUFFER_FLAG_NONE    = 0,
-    BUFFER_FLAG_DYNAMIC = 1 << 0,  // Use GL_DYNAMIC_DRAW, optimized for frequent updates
-};
+    struct NativeTextboxStyle {
+        Color background_color;
+        Color text_color;
+        int font_size;
+        bool password;
+    };
 
-struct NativeTextboxStyle {
-    Color background_color;
-    Color text_color;
-    int font_size;
-    bool password;
-};
+    // @platform
+    extern void PlatformInit(const ApplicationTraits* traits);
+    extern void PlatformShutdown();
+    extern bool PlatformUpdate();
+    extern void PlatformLog(LogType type, const char* message);
+    extern std::filesystem::path PlatformGetSaveGamePath();
+    extern std::filesystem::path PlatformGetBinaryPath();
+    extern std::filesystem::path PatformGetCurrentPath();
 
-// @platform
-extern void PlatformInit(const ApplicationTraits* traits);
-extern void PlatformShutdown();
-extern bool PlatformUpdate();
-extern void PlatformLog(LogType type, const char* message);
-extern std::filesystem::path PlatformGetSaveGamePath();
-extern std::filesystem::path PlatformGetBinaryPath();
-extern std::filesystem::path PatformGetCurrentPath();
+    // @persistent_storage
+    // Platform-agnostic persistent storage (filesystem on desktop, localStorage on web)
+    extern bool PlatformSavePersistentData(const char* name, const void* data, u32 size);
+    extern u8* PlatformLoadPersistentData(Allocator* allocator, const char* name, u32* out_size);
 
-// @persistent_storage
-// Platform-agnostic persistent storage (filesystem on desktop, localStorage on web)
-extern bool PlatformSavePersistentData(const char* name, const void* data, u32 size);
-extern u8* PlatformLoadPersistentData(Allocator* allocator, const char* name, u32* out_size);
+    extern u64 PlatformGetTimeCounter();
+    extern u64 PlatformGetTimeFrequency();
 
-extern u64 PlatformGetTimeCounter();
-extern u64 PlatformGetTimeFrequency();
+    // @thread
+    extern void PlatformSetThreadName(const char* name);
+    extern u64 PlatformGetThreadId();
 
-// @thread
-extern void PlatformSetThreadName(const char* name);
-extern u64 PlatformGetThreadId();
+    // @window
+    extern void PlatformInitWindow(void (*on_close)());
+    extern void PlatformFocusWindow();
+    extern bool PlatformIsWindowFocused();
+    extern bool PlatformIsWindowResizing();
+    extern noz::RectInt PlatformGetWindowRect();
+    extern Vec2Int PlatformGetWindowSize();
+    extern void PlatformSetCursor(SystemCursor cursor);
+    extern void PlatformSetRenderSize(Vec2Int logical_size, Vec2Int native_size);
+    extern float PlatformGetSystemDPIScale();
 
-// @window
-extern void PlatformInitWindow(void (*on_close)());
-extern void PlatformFocusWindow();
-extern bool PlatformIsWindowFocused();
-extern bool PlatformIsWindowResizing();
-extern noz::RectInt PlatformGetWindowRect();
-extern Vec2Int PlatformGetWindowSize();
-extern void PlatformSetCursor(SystemCursor cursor);
-extern void PlatformSetRenderSize(Vec2Int logical_size, Vec2Int native_size);
-extern float PlatformGetSystemDPIScale();
+    // @render
+    extern void PlatformBeginRender();
+    extern void PlatformEndRender();
+    extern void PlatformBeginScenePass(Color clear_color);
+    extern void PlatformEndScenePass();
+    extern void PlatformFree(PlatformBuffer* buffer);
+    extern void PlatformBindVertexBuffer(PlatformBuffer* buffer);
+    extern void PlatformBindIndexBuffer(PlatformBuffer* buffer);
+    extern void PlatformBindSkeleton(const Mat3* bone_transforms, u8 bone_count);
+    extern PlatformTexture* PlatformCreateTexture(
+        void* data,
+        size_t width,
+        size_t height,
+        int channels,
+        const SamplerOptions& sampler_options,
+        const char* name);
+    extern PlatformTexture* PlatformCreateTextureArray(
+        void** layer_data,
+        int layer_count,
+        size_t width,
+        size_t height,
+        int channels,
+        const SamplerOptions& sampler_options,
+        const char* name);
+    extern void PlatformUpdateTexture(PlatformTexture* texture, void* data);
+    extern void PlatformFree(PlatformTexture* texture);
+    extern void PlatformEnablePostProcess(bool enabled);
+    extern void PlatformBeginPostProcPass();
+    extern void PlatformEndPostProcPass();
+    extern void PlatformBeginUIPass();
+    extern void PlatformEndUIPass();
+    extern void PlatformBeginCompositePass();
+    extern void PlatformEndCompositePass();
+    extern void PlatformBindSceneTexture();
+    extern void PlatformBindUITexture();
+    extern void PlatformBindSceneTextureOnly();  // Binds scene texture without setting camera
+    extern void PlatformBindUITextureOnly();     // Binds UI texture without setting camera
+    extern void PlatformSetViewport(const noz::Rect& viewport);
+    extern void PlatformBindTransform(const Mat3& transform, float depth, float depth_scale);
+    extern void PlatformBindVertexUserData(const u8* data, u32 size);
+    extern void PlatformBindFragmentUserData(const u8* data, u32 size);
+    extern void PlatformBindCamera(const Mat3& view_matrix);
+    extern void PlatformBindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission);
+    extern PlatformBuffer* PlatformCreateVertexBuffer(const MeshVertex* vertices, u16 vertex_count, const char* name, BufferFlags flags = BUFFER_FLAG_NONE);
+    extern PlatformBuffer* PlatformCreateIndexBuffer(const u16* indices, u16 index_count, const char* name, BufferFlags flags = BUFFER_FLAG_NONE);
+    extern void PlatformUpdateVertexBuffer(PlatformBuffer* buffer, const MeshVertex* vertices, u16 vertex_count);
+    extern void PlatformUpdateIndexBuffer(PlatformBuffer* buffer, const u16* indices, u16 index_count);
+    extern void PlatformDrawIndexed(u16 index_count);
+    extern void PlatformBindTexture(PlatformTexture* texture, int slot);
+    extern PlatformShader* PlatformCreateShader(
+        const void* vertex,
+        u32 vertex_size,
+        const void* fragment,
+        u32 fragment_size,
+        ShaderFlags flags,
+        const char* name = nullptr);
+    extern void PlatformFree(PlatformShader* shader);
+    extern void PlatformBindShader(PlatformShader* shader);
 
-// @render
-extern void PlatformBeginRender();
-extern void PlatformEndRender();
-extern void PlatformBeginScenePass(Color clear_color);
-extern void PlatformEndScenePass();
-extern void PlatformFree(PlatformBuffer* buffer);
-extern void PlatformBindVertexBuffer(PlatformBuffer* buffer);
-extern void PlatformBindIndexBuffer(PlatformBuffer* buffer);
-extern void PlatformBindSkeleton(const Mat3* bone_transforms, u8 bone_count);
-extern PlatformTexture* PlatformCreateTexture(
-    void* data,
-    size_t width,
-    size_t height,
-    int channels,
-    const SamplerOptions& sampler_options,
-    const char* name);
-extern PlatformTexture* PlatformCreateTextureArray(
-    void** layer_data,
-    int layer_count,
-    size_t width,
-    size_t height,
-    int channels,
-    const SamplerOptions& sampler_options,
-    const char* name);
-extern void PlatformUpdateTexture(PlatformTexture* texture, void* data);
-extern void PlatformFree(PlatformTexture* texture);
-extern void PlatformEnablePostProcess(bool enabled);
-extern void PlatformBeginPostProcPass();
-extern void PlatformEndPostProcPass();
-extern void PlatformBeginUIPass();
-extern void PlatformEndUIPass();
-extern void PlatformBeginCompositePass();
-extern void PlatformEndCompositePass();
-extern void PlatformBindSceneTexture();
-extern void PlatformBindUITexture();
-extern void PlatformBindSceneTextureOnly();  // Binds scene texture without setting camera
-extern void PlatformBindUITextureOnly();     // Binds UI texture without setting camera
-extern void PlatformSetViewport(const noz::Rect& viewport);
-extern void PlatformBindTransform(const Mat3& transform, float depth, float depth_scale);
-extern void PlatformBindVertexUserData(const u8* data, u32 size);
-extern void PlatformBindFragmentUserData(const u8* data, u32 size);
-extern void PlatformBindCamera(const Mat3& view_matrix);
-extern void PlatformBindColor(const Color& color, const Vec2& color_uv_offset, const Color& emission);
-extern PlatformBuffer* PlatformCreateVertexBuffer(const MeshVertex* vertices, u16 vertex_count, const char* name, BufferFlags flags = BUFFER_FLAG_NONE);
-extern PlatformBuffer* PlatformCreateIndexBuffer(const u16* indices, u16 index_count, const char* name, BufferFlags flags = BUFFER_FLAG_NONE);
-extern void PlatformUpdateVertexBuffer(PlatformBuffer* buffer, const MeshVertex* vertices, u16 vertex_count);
-extern void PlatformUpdateIndexBuffer(PlatformBuffer* buffer, const u16* indices, u16 index_count);
-extern void PlatformDrawIndexed(u16 index_count);
-extern void PlatformBindTexture(PlatformTexture* texture, int slot);
-extern PlatformShader* PlatformCreateShader(
-    const void* vertex,
-    u32 vertex_size,
-    const void* fragment,
-    u32 fragment_size,
-    ShaderFlags flags,
-    const char* name = nullptr);
-extern void PlatformFree(PlatformShader* shader);
-extern void PlatformBindShader(PlatformShader* shader);
+    // @clipping
+    extern void PlatformBeginClip();
+    extern void PlatformEndClipWrite();
+    extern void PlatformEndClip();
 
-// @clipping
-extern void PlatformBeginClip();
-extern void PlatformEndClipWrite();
-extern void PlatformEndClip();
+    // @websocket
+    extern void PlatformInitWebSocket();
+    extern void PlatformShutdownWebSocket();
+    extern void PlatformUpdateWebSocket();
+    extern PlatformWebSocketHandle PlatformConnectWebSocket(const char* url);
+    extern void PlatformSend(const PlatformWebSocketHandle& handle, const char* text);
+    extern void PlatformSendBinary(const PlatformWebSocketHandle& handle, const void* data, u32 size);
+    extern void PlatformClose(const PlatformWebSocketHandle& handle, u16 code, const char* reason);
+    extern void PlatformFree(const PlatformWebSocketHandle& handle);
+    extern noz::WebSocketStatus PlatformGetStatus(const PlatformWebSocketHandle& handle);
+    extern bool PlatformHasMessages(const PlatformWebSocketHandle& handle);
+    extern bool PlatformGetMessage(const PlatformWebSocketHandle& handle, noz::WebSocketMessageType* out_type, u8** out_data, u32* out_size);
+    extern void PlatformPopMessage(const PlatformWebSocketHandle& handle);
 
-// @websocket
-extern void PlatformInitWebSocket();
-extern void PlatformShutdownWebSocket();
-extern void PlatformUpdateWebSocket();
-extern PlatformWebSocketHandle PlatformConnectWebSocket(const char* url);
-extern void PlatformSend(const PlatformWebSocketHandle& handle, const char* text);
-extern void PlatformSendBinary(const PlatformWebSocketHandle& handle, const void* data, u32 size);
-extern void PlatformClose(const PlatformWebSocketHandle& handle, u16 code, const char* reason);
-extern void PlatformFree(const PlatformWebSocketHandle& handle);
-extern noz::WebSocketStatus PlatformGetStatus(const PlatformWebSocketHandle& handle);
-extern bool PlatformHasMessages(const PlatformWebSocketHandle& handle);
-extern bool PlatformGetMessage(const PlatformWebSocketHandle& handle, noz::WebSocketMessageType* out_type, u8** out_data, u32* out_size);
-extern void PlatformPopMessage(const PlatformWebSocketHandle& handle);
+    // @websocket_server
+    using PlatformWebSocketServerMessageCallback = std::function<void(PlatformWebSocketConnectionHandle, const u8* data, u32 size, bool is_binary)>;
+    using PlatformWebSocketServerConnectCallback = std::function<void(PlatformWebSocketConnectionHandle)>;
+    using PlatformWebSocketServerDisconnectCallback = std::function<void(PlatformWebSocketConnectionHandle)>;
 
-// @websocket_server
-using PlatformWebSocketServerMessageCallback = std::function<void(PlatformWebSocketConnectionHandle, const u8* data, u32 size, bool is_binary)>;
-using PlatformWebSocketServerConnectCallback = std::function<void(PlatformWebSocketConnectionHandle)>;
-using PlatformWebSocketServerDisconnectCallback = std::function<void(PlatformWebSocketConnectionHandle)>;
+    struct PlatformWebSocketServerConfig {
+        u16 port = 8080;
+        u32 max_connections = 16;
+        PlatformWebSocketServerConnectCallback on_connect;
+        PlatformWebSocketServerMessageCallback on_message;
+        PlatformWebSocketServerDisconnectCallback on_disconnect;
+    };
 
-struct PlatformWebSocketServerConfig {
-    u16 port = 8080;
-    u32 max_connections = 16;
-    PlatformWebSocketServerConnectCallback on_connect;
-    PlatformWebSocketServerMessageCallback on_message;
-    PlatformWebSocketServerDisconnectCallback on_disconnect;
-};
+    extern PlatformWebSocketServerHandle PlatformCreateWebSocketServer(const PlatformWebSocketServerConfig& config);
+    extern void PlatformDestroyWebSocketServer(const PlatformWebSocketServerHandle& handle);
+    extern void PlatformUpdateWebSocketServer(const PlatformWebSocketServerHandle& handle);
+    extern void PlatformWebSocketServerSend(const PlatformWebSocketConnectionHandle& connection, const char* text);
+    extern void PlatformWebSocketServerSendBinary(const PlatformWebSocketConnectionHandle& connection, const void* data, u32 size);
+    extern void PlatformWebSocketServerBroadcast(const PlatformWebSocketServerHandle& handle, const char* text);
+    extern void PlatformWebSocketServerBroadcastBinary(const PlatformWebSocketServerHandle& handle, const void* data, u32 size);
+    extern void PlatformWebSocketServerClose(const PlatformWebSocketConnectionHandle& connection);
+    extern u32 PlatformWebSocketServerGetConnectionCount(const PlatformWebSocketServerHandle& handle);
+    extern bool PlatformWebSocketServerIsRunning(const PlatformWebSocketServerHandle& handle);
+    extern u32 PlatformWebSocketServerGetConnectionId(const PlatformWebSocketConnectionHandle& connection);
 
-extern PlatformWebSocketServerHandle PlatformCreateWebSocketServer(const PlatformWebSocketServerConfig& config);
-extern void PlatformDestroyWebSocketServer(const PlatformWebSocketServerHandle& handle);
-extern void PlatformUpdateWebSocketServer(const PlatformWebSocketServerHandle& handle);
-extern void PlatformWebSocketServerSend(const PlatformWebSocketConnectionHandle& connection, const char* text);
-extern void PlatformWebSocketServerSendBinary(const PlatformWebSocketConnectionHandle& connection, const void* data, u32 size);
-extern void PlatformWebSocketServerBroadcast(const PlatformWebSocketServerHandle& handle, const char* text);
-extern void PlatformWebSocketServerBroadcastBinary(const PlatformWebSocketServerHandle& handle, const void* data, u32 size);
-extern void PlatformWebSocketServerClose(const PlatformWebSocketConnectionHandle& connection);
-extern u32 PlatformWebSocketServerGetConnectionCount(const PlatformWebSocketServerHandle& handle);
-extern bool PlatformWebSocketServerIsRunning(const PlatformWebSocketServerHandle& handle);
-extern u32 PlatformWebSocketServerGetConnectionId(const PlatformWebSocketConnectionHandle& connection);
+    // @input
+    extern bool PlatformIsInputButtonDown(InputCode code);
+    extern float PlatformGetInputAxisValue(InputCode code);
+    extern void PlatformUpdateInputState();
+    extern void PlatformInitInput();
+    extern void PlatformShutdownInput();
+    extern Vec2 PlatformGetMousePosition();
+    extern Vec2 PlatformGetMouseScroll();
+    extern bool PlatformIsGamepadActive();
+    extern bool PlatformIsMouseOverWindow();
 
-// @input
-extern bool PlatformIsInputButtonDown(InputCode code);
-extern float PlatformGetInputAxisValue(InputCode code);
-extern void PlatformUpdateInputState();
-extern void PlatformInitInput();
-extern void PlatformShutdownInput();
-extern Vec2 PlatformGetMousePosition();
-extern Vec2 PlatformGetMouseScroll();
-extern bool PlatformIsGamepadActive();
-extern bool PlatformIsMouseOverWindow();
+    // @mobile
+    extern bool PlatformIsMobile();
+    extern bool PlatformIsPortrait();
+    extern void PlatformRequestLandscape();
+    extern void PlatformRequestFullscreen();
+    extern bool PlatformIsFullscreen();
 
-// @mobile
-extern bool PlatformIsMobile();
-extern bool PlatformIsPortrait();
-extern void PlatformRequestLandscape();
-extern void PlatformRequestFullscreen();
-extern bool PlatformIsFullscreen();
+    // @url
+    extern void PlatformOpenUrl(const char* url);
 
-// @url
-extern void PlatformOpenUrl(const char* url);
+    // @native_text_input
+    extern void PlatformShowTextbox(const noz::Rect& rect, const Text& text, const NativeTextboxStyle& style);
+    extern void PlatformHideTextbox();
+    extern void PlatformUpdateTextboxRect(const noz::Rect& rect, int font_size);
+    extern bool PlatformUpdateTextboxText(Text& text);
+    extern bool PlatformIsTextboxVisible();
 
-// @native_text_input
-extern void PlatformShowTextbox(const noz::Rect& rect, const Text& text, const NativeTextboxStyle& style);
-extern void PlatformHideTextbox();
-extern void PlatformUpdateTextboxRect(const noz::Rect& rect, int font_size);
-extern bool PlatformUpdateTextboxText(Text& text);
-extern bool PlatformIsTextboxVisible();
+    // @audio
+    extern void PlatformInitAudio();
+    extern void PlatformShutdownAudio();
+    extern PlatformSound* PlatformCreateSound(void* data, u32 data_size, u32 sample_rate, u32 channels, u32 bits_per_sample);
+    extern void PlatformFree(PlatformSound*);
+    extern PlatformSoundHandle PlatformPlaySound(PlatformSound* sound, float volume, float pitch, bool loop);
+    extern void PlatformPlayMusic(PlatformSound* sound);
+    extern bool PlatformIsMusicPlaying();
+    extern void PlatformStopMusic();
+    extern void PlatformStopSound(const PlatformSoundHandle& handle);
+    extern void PlatformSetSoundVolume(const PlatformSoundHandle& handle, float volume);
+    extern void PlatformSetSoundPitch(const PlatformSoundHandle& handle, float pitch);
+    extern bool PlatformIsSoundPlaying(const PlatformSoundHandle& handle);
+    extern float PlatformGetSoundVolume(const PlatformSoundHandle& handle);
+    extern float PlatformGetSoundPitch(const PlatformSoundHandle& handle);
+    extern void PlatformSetMasterVolume(float volume);
+    extern void PlatformSetSoundVolume(float volume);
+    extern void PlatformSetMusicVolume(float volume);
+    extern float PlatformGetMasterVolume();
+    extern float PlatformGetSoundVolume();
+    extern float PlatformGetMusicVolume();
 
-// @audio
-extern void PlatformInitAudio();
-extern void PlatformShutdownAudio();
-extern PlatformSound* PlatformCreateSound(void* data, u32 data_size, u32 sample_rate, u32 channels, u32 bits_per_sample);
-extern void PlatformFree(PlatformSound*);
-extern PlatformSoundHandle PlatformPlaySound(PlatformSound* sound, float volume, float pitch, bool loop);
-extern void PlatformPlayMusic(PlatformSound* sound);
-extern bool PlatformIsMusicPlaying();
-extern void PlatformStopMusic();
-extern void PlatformStopSound(const PlatformSoundHandle& handle);
-extern void PlatformSetSoundVolume(const PlatformSoundHandle& handle, float volume);
-extern void PlatformSetSoundPitch(const PlatformSoundHandle& handle, float pitch);
-extern bool PlatformIsSoundPlaying(const PlatformSoundHandle& handle);
-extern float PlatformGetSoundVolume(const PlatformSoundHandle& handle);
-extern float PlatformGetSoundPitch(const PlatformSoundHandle& handle);
-extern void PlatformSetMasterVolume(float volume);
-extern void PlatformSetSoundVolume(float volume);
-extern void PlatformSetMusicVolume(float volume);
-extern float PlatformGetMasterVolume();
-extern float PlatformGetSoundVolume();
-extern float PlatformGetMusicVolume();
-
-// @http
-enum PlatformHttpStatus : u8 {
-    PLATFORM_HTTP_STATUS_NONE,
-    PLATFORM_HTTP_STATUS_PENDING,
-    PLATFORM_HTTP_STATUS_COMPLETE,
-    PLATFORM_HTTP_STATUS_ERROR
-};
+    // @http
+    enum PlatformHttpStatus : u8 {
+        PLATFORM_HTTP_STATUS_NONE,
+        PLATFORM_HTTP_STATUS_PENDING,
+        PLATFORM_HTTP_STATUS_COMPLETE,
+        PLATFORM_HTTP_STATUS_ERROR
+    };
 
 
-extern void PlatformInitHttp(const ApplicationTraits& traits);
-extern void PlatformShutdownHttp();
-extern void PlatformUpdateHttp();
-extern PlatformHttpHandle PlatformGetURL(const char* url);
-extern PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type, const char* headers, const char* method);
-extern PlatformHttpStatus PlatformGetStatus(const PlatformHttpHandle& handle);
-extern int PlatformGetStatusCode(const PlatformHttpHandle& handle);      // HTTP status code (200, 404, etc.)
-extern bool PlatformIsFromCache(const PlatformHttpHandle& handle);       // True if response came from cache
-extern Stream* PlatformReleaseResponseStream(const PlatformHttpHandle& handle);
-extern bool PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, String1024& out);
-extern void PlatformCancel(const PlatformHttpHandle& handle);            // Cancel pending request
-extern void PlatformFree(const PlatformHttpHandle& handle);           // Release completed request resources
-extern void PlatformEncodeUrl(char* out, u32 out_size, const char* input, u32 input_length);
-
-extern void Main();
+    extern void PlatformInitHttp(const ApplicationTraits& traits);
+    extern void PlatformShutdownHttp();
+    extern void PlatformUpdateHttp();
+    extern PlatformHttpHandle PlatformGetURL(const char* url);
+    extern PlatformHttpHandle PlatformPostURL(const char* url, const void* body, u32 body_size, const char* content_type, const char* headers, const char* method);
+    extern PlatformHttpStatus PlatformGetStatus(const PlatformHttpHandle& handle);
+    extern int PlatformGetStatusCode(const PlatformHttpHandle& handle);      // HTTP status code (200, 404, etc.)
+    extern bool PlatformIsFromCache(const PlatformHttpHandle& handle);       // True if response came from cache
+    extern Stream* PlatformReleaseResponseStream(const PlatformHttpHandle& handle);
+    extern bool PlatformGetResponseHeader(const PlatformHttpHandle& handle, const char* name, String1024& out);
+    extern void PlatformCancel(const PlatformHttpHandle& handle);            // Cancel pending request
+    extern void PlatformFree(const PlatformHttpHandle& handle);           // Release completed request resources
+    extern void PlatformEncodeUrl(char* out, u32 out_size, const char* input, u32 input_length);
+}

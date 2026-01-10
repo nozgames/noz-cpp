@@ -67,7 +67,6 @@ set(SOURCE_FILES
     src/math/angle.cpp
     src/name.cpp
     src/physics/physics.cpp
-    src/physics/rigid_body.cpp
     src/physics/collider.cpp
     src/physics/collision.cpp
     src/random.cpp

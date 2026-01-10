@@ -11,7 +11,6 @@ namespace noz::editor {
         float scale;
     };
 
-    extern void InitTextureDocument(Document* doc);
     extern void UpdateBounds(TextureDocument* doc);
 }
 

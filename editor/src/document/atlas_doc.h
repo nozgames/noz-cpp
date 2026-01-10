@@ -45,9 +45,9 @@ namespace noz::editor {
     extern Document* NewAtlasDocument(const std::filesystem::path& path);
 
     // Rect management
-    extern AtlasRect* AllocateRect(AtlasDocument* atlas, struct MeshDocument* mesh);  // Allocates all frames for multi-frame meshes
-    extern AtlasRect* FindRectForMesh(AtlasDocument* atlas, const Name* mesh_name);
-    extern void FreeRect(AtlasDocument* atlas, AtlasRect* rect);
+    extern AtlasRect* AllocateRect(AtlasDocument* atlas, struct MeshDocument* mdoc);  // Allocates all frames for multi-frame meshes
+    extern AtlasRect* FindRectForMesh(AtlasDocument* adoc, const Name* mesh_name);
+    extern void FreeRect(AtlasDocument* adoc, AtlasRect* rect);
     extern void ClearRectPixels(AtlasDocument* atlas, const AtlasRect& rect);
     extern void ClearAllRects(AtlasDocument* atlas);
 
@@ -55,34 +55,30 @@ namespace noz::editor {
     extern AtlasDocument* FindAtlasForMesh(const Name* mesh_name, AtlasRect** out_rect = nullptr);
 
     // Rendering
-    extern void RenderMeshToAtlas(AtlasDocument* atlas, MeshDocument* mesh, AtlasRect& rect, bool update_bounds = true);  // Renders all frames
+    extern void RenderMeshToAtlas(AtlasDocument* adoc, MeshDocument* mdoc, AtlasRect& rect, bool update_bounds = true);  // Renders all frames
     extern void RenderMeshPreview(MeshDocument* mesh, PixelData* pixels, int width, int height, const Bounds2* bounds);  // Render current frame to buffer
-    extern void RegenerateAtlas(AtlasDocument* atlas, PixelData* pixels = nullptr);  // Re-render meshes to buffer (or impl->pixels if null)
-    extern void RebuildAtlas(AtlasDocument* atlas);      // Clear and reallocate all rects, mark meshes modified
-    extern void SyncAtlasTexture(AtlasDocument* atlas);  // Upload pixels to GPU (editor only)
+    extern void RegenerateAtlas(AtlasDocument* adoc, PixelData* pixels = nullptr);  // Re-render meshes to buffer (or impl->pixels if null)
+    extern void RebuildAtlas(AtlasDocument* adoc);      // Clear and reallocate all rects, mark meshes modified
+    extern void SyncAtlasTexture(AtlasDocument* adoc);  // Upload pixels to GPU (editor only)
 
     // UV computation
-    extern Vec2 GetAtlasUV(AtlasDocument* atlas, const AtlasRect& rect, const Bounds2& mesh_bounds, const Vec2& position);
+    extern Vec2 GetAtlasUV(AtlasDocument* adoc, const AtlasRect& rect, const Bounds2& mesh_bounds, const Vec2& position);
 
     // Export mesh visualization (single outline mesh for all rects)
-    extern Mesh* GetAtlasOutlineMesh(AtlasDocument* atlas);
+    extern Mesh* GetAtlasOutlineMesh(AtlasDocument* adoc);
 
     // Export quad geometry calculation (shared between importer and visualization)
     // Returns mesh_bounds and UV coordinates for non-skinned mesh export quad (for tiling)
-    extern void GetExportQuadGeometry(AtlasDocument* atlas, const AtlasRect& rect,
+    extern void GetExportQuadGeometry(AtlasDocument* adoc, const AtlasRect& rect,
         Vec2* out_min, Vec2* out_max,
         float* out_u_min, float* out_v_min, float* out_u_max, float* out_v_max);
 
     // Returns tight pixel bounds and UV coordinates for non-skinned mesh export quad
-    extern void GetTightQuadGeometry(AtlasDocument* atlas, const AtlasRect& rect,
+    extern void GetTightQuadGeometry(AtlasDocument* adoc, const AtlasRect& rect,
         Vec2* out_min, Vec2* out_max,
         float* out_u_min, float* out_v_min, float* out_u_max, float* out_v_max);
 
     // Skinned mesh detection
-    extern bool IsSkinnedMesh(struct MeshDocument* mesh);
-    extern int GetSingleBoneIndex(struct MeshDocument* mesh);  // Returns bone index or -1 if not single-bone
-
-    // Importer
-    struct DocumentImporter;
-    extern DocumentImporter GetAtlasImporter();
+    extern bool IsSkinnedMesh(MeshDocument* mesh);
+    extern int GetSingleBoneIndex(MeshDocument* mesh);  // Returns bone index or -1 if not single-bone
 }

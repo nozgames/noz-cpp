@@ -4,17 +4,18 @@
 
 #pragma once
 
-struct Shader;
-extern Shader* SHADER_MESH;
-extern Shader* SHADER_UI;
-extern Shader* SHADER_UI_IMAGE;
-extern Shader* SHADER_UI_IMAGE_TEXTURE;
-extern Shader* SHADER_UI_VIGNETTE;
-extern Shader* SHADER_TEXT;
-extern Shader* SHADER_VFX;
+namespace noz {
+    struct Shader;
+    struct Font;
+    struct Texture;
+}
 
-struct Font;
-extern Font* FONT_DEFAULT;
-
-struct Texture;
-extern Texture* TEXTURE_WHITE;
+extern noz::Shader* SHADER_MESH;
+extern noz::Shader* SHADER_UI;
+extern noz::Shader* SHADER_UI_IMAGE;
+extern noz::Shader* SHADER_UI_IMAGE_TEXTURE;
+extern noz::Shader* SHADER_UI_VIGNETTE;
+extern noz::Shader* SHADER_TEXT;
+extern noz::Shader* SHADER_VFX;
+extern noz::Font* FONT_DEFAULT;
+extern noz::Texture* TEXTURE_WHITE;

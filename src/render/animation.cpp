@@ -2,146 +2,149 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-Animation** ANIMATION = nullptr;
-int ANIMATION_COUNT = 0;
+namespace noz {
 
-float GetDuration(Animation* animation) {
-    return static_cast<AnimationImpl*>(animation)->duration;
-}
+    Animation** ANIMATION = nullptr;
+    int ANIMATION_COUNT = 0;
 
-int GetBoneCount(Animation* animation) {
-    return static_cast<AnimationImpl*>(animation)->bone_count;
-}
+    float GetDuration(Animation* animation) {
+        return static_cast<AnimationImpl*>(animation)->duration;
+    }
 
-bool IsRootMotion(Animation* animation) {
-    AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
-    return (impl->flags & ANIMATION_FLAG_ROOT_MOTION) != 0;
-}
+    int GetBoneCount(Animation* animation) {
+        return static_cast<AnimationImpl*>(animation)->bone_count;
+    }
 
-bool IsLooping(Animation* animation) {
-    AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
-    return (impl->flags & ANIMATION_FLAG_LOOPING) != 0;
-}
+    bool IsRootMotion(Animation* animation) {
+        AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
+        return (impl->flags & ANIMATION_FLAG_ROOT_MOTION) != 0;
+    }
 
-Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
-    (void)header;
-    (void)name;
-    (void)name_table;
+    bool IsLooping(Animation* animation) {
+        AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
+        return (impl->flags & ANIMATION_FLAG_LOOPING) != 0;
+    }
 
-    AnimationImpl* impl = static_cast<AnimationImpl*>(Alloc(allocator, sizeof(AnimationImpl)));
-    impl->name = name;
+    Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
+        (void)header;
+        (void)name;
+        (void)name_table;
 
-    u8 bone_count = ReadU8(stream);
-    u8 transform_count = ReadU8(stream);
-    u8 frame_count = ReadU8(stream);
-    u8 frame_rate = ReadU8(stream);
-    AnimationFlags flags = ReadU8(stream);
+        AnimationImpl* impl = static_cast<AnimationImpl*>(Alloc(allocator, sizeof(AnimationImpl)));
+        impl->name = name;
 
-    impl->bone_count = bone_count;
-    impl->frame_count = frame_count;
-    impl->transform_count = transform_count;
-    impl->bones = static_cast<AnimationBone*>(Alloc(allocator, sizeof(AnimationBone) * bone_count));
-    impl->transforms = static_cast<BoneTransform*>(Alloc(allocator, sizeof(BoneTransform) * bone_count * transform_count));
-    impl->frames = static_cast<AnimationFrame*>(Alloc(allocator, sizeof(AnimationFrame) * (frame_count + 1)));
-    impl->transform_stride = bone_count;
-    impl->frame_rate = frame_rate;
-    impl->frame_rate_inv = 1.0f / static_cast<float>(frame_rate);
-    impl->duration = frame_count * impl->frame_rate_inv;
-    impl->flags = flags;
+        u8 bone_count = ReadU8(stream);
+        u8 transform_count = ReadU8(stream);
+        u8 frame_count = ReadU8(stream);
+        u8 frame_rate = ReadU8(stream);
+        AnimationFlags flags = ReadU8(stream);
 
-    ReadBytes(stream, &impl->bones[0], sizeof(AnimationBone) * bone_count);
-    ReadBytes(stream, &impl->transforms[0], sizeof(BoneTransform) * bone_count * transform_count);
-    ReadBytes(stream, &impl->frames[0], sizeof(AnimationFrame) * (frame_count + 1));
+        impl->bone_count = bone_count;
+        impl->frame_count = frame_count;
+        impl->transform_count = transform_count;
+        impl->bones = static_cast<AnimationBone*>(Alloc(allocator, sizeof(AnimationBone) * bone_count));
+        impl->transforms = static_cast<BoneTransform*>(Alloc(allocator, sizeof(BoneTransform) * bone_count * transform_count));
+        impl->frames = static_cast<AnimationFrame*>(Alloc(allocator, sizeof(AnimationFrame) * (frame_count + 1)));
+        impl->transform_stride = bone_count;
+        impl->frame_rate = frame_rate;
+        impl->frame_rate_inv = 1.0f / static_cast<float>(frame_rate);
+        impl->duration = frame_count * impl->frame_rate_inv;
+        impl->flags = flags;
 
-    impl->frames[impl->frame_count] = impl->frames[impl->frame_count-1];
+        ReadBytes(stream, &impl->bones[0], sizeof(AnimationBone) * bone_count);
+        ReadBytes(stream, &impl->transforms[0], sizeof(BoneTransform) * bone_count * transform_count);
+        ReadBytes(stream, &impl->frames[0], sizeof(AnimationFrame) * (frame_count + 1));
 
-    return impl;
-}
+        impl->frames[impl->frame_count] = impl->frames[impl->frame_count-1];
 
-Animation* CreateAnimation(
-    Allocator* allocator,
-    Skeleton* skeleton,
-    int frame_count,
-    int frame_rate,
-    BoneTransform* transforms,
-    int transform_count,
-    AnimationEvent* events,
-    int event_count,
-    AnimationFlags flags,
-    const Name* name) {
-    assert(skeleton);
-    assert(transforms);
-    assert(transform_count == GetBoneCount(skeleton) * frame_count);
+        return impl;
+    }
 
-    (void)transform_count;
+    Animation* CreateAnimation(
+        Allocator* allocator,
+        Skeleton* skeleton,
+        int frame_count,
+        int frame_rate,
+        BoneTransform* transforms,
+        int transform_count,
+        AnimationEvent* events,
+        int event_count,
+        AnimationFlags flags,
+        const Name* name) {
+        assert(skeleton);
+        assert(transforms);
+        assert(transform_count == GetBoneCount(skeleton) * frame_count);
 
-    AnimationImpl* impl = static_cast<AnimationImpl*>(Alloc(allocator, sizeof(AnimationImpl)));
-    impl->name = name;
-    impl->bone_count = GetBoneCount(skeleton);
-    impl->frame_count = frame_count;
-    impl->transform_count = frame_count;
-    impl->bones = nullptr;
-    impl->frames = static_cast<AnimationFrame*>(Alloc(allocator, sizeof(AnimationFrame) * (frame_count + 1)));
-    impl->transform_stride = impl->bone_count;
-    impl->frame_rate = frame_rate;
-    impl->frame_rate_inv = 1.0f / static_cast<float>(impl->frame_rate);
-    impl->duration = frame_count * impl->frame_rate_inv;
-    impl->flags = flags;
-    impl->transforms = transforms;
+        (void)transform_count;
 
-    for (int frame_index=0; frame_index<frame_count; frame_index++) {
-        AnimationFrame& f = impl->frames[frame_index];
-        f.transform0 = frame_index;
-        f.transform1 = frame_index + 1;
-        f.fraction0 = 0.0f;
-        f.fraction1 = 1.0f;
-        f.event = 0;
-        f.root_motion0 = 0.0f;
-        f.root_motion1 = transforms[frame_index * impl->bone_count].position.x;
-        transforms[frame_index * impl->bone_count].position.x = 0.0;
+        AnimationImpl* impl = static_cast<AnimationImpl*>(Alloc(allocator, sizeof(AnimationImpl)));
+        impl->name = name;
+        impl->bone_count = GetBoneCount(skeleton);
+        impl->frame_count = frame_count;
+        impl->transform_count = frame_count;
+        impl->bones = nullptr;
+        impl->frames = static_cast<AnimationFrame*>(Alloc(allocator, sizeof(AnimationFrame) * (frame_count + 1)));
+        impl->transform_stride = impl->bone_count;
+        impl->frame_rate = frame_rate;
+        impl->frame_rate_inv = 1.0f / static_cast<float>(impl->frame_rate);
+        impl->duration = frame_count * impl->frame_rate_inv;
+        impl->flags = flags;
+        impl->transforms = transforms;
 
-        if (events) {
-            for (int event_index=0; event_index<event_count; event_index++) {
-                if (events[event_index].frame == frame_index) {
-                    f.event = events[event_index].id;
-                    break;
+        for (int frame_index=0; frame_index<frame_count; frame_index++) {
+            AnimationFrame& f = impl->frames[frame_index];
+            f.transform0 = frame_index;
+            f.transform1 = frame_index + 1;
+            f.fraction0 = 0.0f;
+            f.fraction1 = 1.0f;
+            f.event = 0;
+            f.root_motion0 = 0.0f;
+            f.root_motion1 = transforms[frame_index * impl->bone_count].position.x;
+            transforms[frame_index * impl->bone_count].position.x = 0.0;
+
+            if (events) {
+                for (int event_index=0; event_index<event_count; event_index++) {
+                    if (events[event_index].frame == frame_index) {
+                        f.event = events[event_index].id;
+                        break;
+                    }
                 }
             }
         }
+
+        if (flags & ANIMATION_FLAG_LOOPING) {
+            impl->frames[frame_count - 1].transform1 = 0;
+        } else {
+            impl->frames[frame_count - 1].transform1 = impl->frames[frame_count - 1].transform0;
+        }
+
+        impl->frames[frame_count] = impl->frames[frame_count - 1];
+
+        return impl;
     }
 
-    if (flags & ANIMATION_FLAG_LOOPING) {
-        impl->frames[frame_count - 1].transform1 = 0;
-    } else {
-        impl->frames[frame_count - 1].transform1 = impl->frames[frame_count - 1].transform0;
-    }
-
-    impl->frames[frame_count] = impl->frames[frame_count - 1];
-
-    return impl;
-}
-
-void AddEvent(Animation* animation, int frame, int event_id) {
-    AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
-    if (frame < 0 || frame >= impl->frame_count) return;
-    impl->frames[frame].event = event_id;
-}
-
-void AddEvents(Animation* animation, AnimationEvent* events, int event_count) {
-    AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
-    for (int i=0; i<event_count; i++) {
-        int frame = events[i].frame;
-        int event_id = events[i].id;
-        if (frame < 0 || frame >= impl->frame_count) continue;
+    void AddEvent(Animation* animation, int frame, int event_id) {
+        AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
+        if (frame < 0 || frame >= impl->frame_count) return;
         impl->frames[frame].event = event_id;
     }
-}
 
-void AddEvents(Animation* animation, int event, int* frames, int frame_count) {
-    AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
-    for (int i=0; i<frame_count; i++) {
-        int frame = frames[i];
-        if (frame < 0 || frame >= impl->frame_count) continue;
-        impl->frames[frame].event = event;
+    void AddEvents(Animation* animation, AnimationEvent* events, int event_count) {
+        AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
+        for (int i=0; i<event_count; i++) {
+            int frame = events[i].frame;
+            int event_id = events[i].id;
+            if (frame < 0 || frame >= impl->frame_count) continue;
+            impl->frames[frame].event = event_id;
+        }
+    }
+
+    void AddEvents(Animation* animation, int event, int* frames, int frame_count) {
+        AnimationImpl* impl = static_cast<AnimationImpl*>(animation);
+        for (int i=0; i<frame_count; i++) {
+            int frame = frames[i];
+            if (frame < 0 || frame >= impl->frame_count) continue;
+            impl->frames[frame].event = event;
+        }
     }
 }

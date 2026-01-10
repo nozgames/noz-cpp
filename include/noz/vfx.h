@@ -4,28 +4,26 @@
 
 #pragma once
 
-#include "asset.h"
+namespace noz {
 
-struct Vfx;
+    struct Vfx : Asset { };
 
-struct Vfx : Asset { };
+    struct VfxHandle {
+        u32 id;
+        u32 version;
+    };
 
-struct VfxHandle
-{
-    u32 id;
-    u32 version;
-};
+    // @vfx
+    VfxHandle Play(Vfx* vfx, const Vec2& position, float depth=0.0f);
+    VfxHandle Play(Vfx* vfx, const Mat3& transform, float depth=0.0f);
+    void Stop(const VfxHandle& handle);
+    bool IsPlaying(const VfxHandle& handle);
+    void ClearVfx();
+    void DrawVfx();
+    Bounds2 GetBounds(Vfx* vfx);
 
-// @vfx
-VfxHandle Play(Vfx* vfx, const Vec2& position, float depth=0.0f);
-VfxHandle Play(Vfx* vfx, const Mat3& transform, float depth=0.0f);
-void Stop(const VfxHandle& handle);
-bool IsPlaying(const VfxHandle& handle);
-void ClearVfx();
-void DrawVfx();
-Bounds2 GetBounds(Vfx* vfx);
+    constexpr VfxHandle INVALID_VFX_HANDLE = { 0xFFFFFFFF, 0xFFFFFFFF };
 
-constexpr VfxHandle INVALID_VFX_HANDLE = { 0xFFFFFFFF, 0xFFFFFFFF };
-
-extern Vfx** VFX;
-extern int VFX_COUNT;
+    extern Vfx** VFX;
+    extern int VFX_COUNT;
+}

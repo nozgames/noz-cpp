@@ -10,8 +10,6 @@ namespace noz::editor {
         int id;
     };
 
-    extern void InitEventDocument(Document* doc);
     extern EventDocument* NewEventDocument(const std::filesystem::path& path);
-
 }
 

@@ -9,17 +9,17 @@
 
 namespace noz::editor {
 
-    static void InitLuaDocument(LuaDocument* l);
+    static void InitLuaDocument(LuaDocument* ldoc);
 
     static void DrawLuaDocument(Document* a) {
-        BindMaterial(g_view.editor_mesh_material);
+        BindMaterial(g_workspace.editor_mesh_material);
         BindColor(COLOR_WHITE);
         DrawMesh(MESH_ASSET_ICON_LUA, Translate(a->position));
     }
 
     static void DestroyLoadDocument(Document* doc) {
         assert(doc);
-        assert(doc->type == ASSET_TYPE_LUA);
+        assert(doc->def->type == ASSET_TYPE_LUA);
         LuaDocument* ldoc = static_cast<LuaDocument*>(doc);
 
         free(ldoc->byte_code.code);
@@ -60,7 +60,7 @@ namespace noz::editor {
 
     void LoadLuaDocument(Document* doc) {
         assert(doc);
-        assert(doc->type == ASSET_TYPE_LUA);
+        assert(doc->def->type == ASSET_TYPE_LUA);
         LuaDocument* ldoc = static_cast<LuaDocument*>(doc);
 
         std::string contents = ReadAllText(ALLOCATOR_DEFAULT, doc->path.value);
@@ -69,7 +69,7 @@ namespace noz::editor {
     }
 
     LuaDocument* LoadLuaDocument(const std::filesystem::path& path) {
-        LuaDocument* ldoc = static_cast<LuaDocument*>(CreateAssetData(path));
+        LuaDocument* ldoc = static_cast<LuaDocument*>(CreateDocument(path));
         assert(ldoc);
         InitLuaDocument(ldoc);
         LoadLuaDocument(ldoc);
@@ -78,7 +78,7 @@ namespace noz::editor {
 
     static void ReloadLuaDocument(Document* doc) {
         assert(doc);
-        assert(doc->type == ASSET_TYPE_LUA);
+        assert(doc->def->type == ASSET_TYPE_LUA);
         LuaDocument* ldoc = static_cast<LuaDocument*>(doc);
 
         free(ldoc->byte_code.code);
@@ -89,7 +89,7 @@ namespace noz::editor {
 
     static void CloneLuaDocument(Document* doc) {
         assert(doc);
-        assert(doc->type == ASSET_TYPE_LUA);
+        assert(doc->def->type == ASSET_TYPE_LUA);
         LuaDocument* ldoc = static_cast<LuaDocument*>(doc);
 
         u8* code = static_cast<u8*>(malloc(ldoc->byte_code.size));
@@ -100,7 +100,7 @@ namespace noz::editor {
 
     static void ImportLuaDocument(Document* doc, const std::filesystem::path& path, Props* config, Props* meta) {
         assert(doc);
-        assert(doc->type == ASSET_TYPE_LUA);
+        assert(doc->def->type == ASSET_TYPE_LUA);
         LuaDocument* ldoc = static_cast<LuaDocument*>(doc);
         LoadLuaDocument(ldoc);
 
@@ -117,8 +117,8 @@ namespace noz::editor {
         Free(stream);
     }
 
-    static void InitLuaDocument(LuaDocument* l) {
-        l->vtable = {
+    static void InitLuaDocument(LuaDocument* ldoc) {
+        ldoc->vtable = {
             .destructor = DestroyLoadDocument,
             .load = LoadLuaDocument,
             .reload = ReloadLuaDocument,

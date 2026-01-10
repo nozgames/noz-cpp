@@ -2,510 +2,509 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-extern Mesh* MESH_ASSET_ICON_VFX;
+namespace noz::editor {
 
-static void Init(VfxDocument* evfx);
+    static void InitVfxDocument(VfxDocument* vdoc);
 
-static void AllocVfxImpl(Document* a) {
-    assert(a->type == ASSET_TYPE_VFX);
-    VfxDocument* v = static_cast<VfxDocument*>(a);
-    v->impl = static_cast<VfxDataImpl*>(Alloc(ALLOCATOR_DEFAULT, sizeof(VfxDataImpl)));
-    memset(v->impl, 0, sizeof(VfxDataImpl));
-}
-
-static void CloneVfxData(Document* a) {
-    assert(a->type == ASSET_TYPE_VFX);
-    VfxDocument* v = static_cast<VfxDocument*>(a);
-    VfxDataImpl* old_impl = v->impl;
-    AllocVfxImpl(a);
-    memcpy(v->impl, old_impl, sizeof(VfxDataImpl));
-    v->impl->vfx = nullptr;
-    v->impl->handle = INVALID_VFX_HANDLE;
-}
-
-static void DestroyVfxData(Document* a) {
-    VfxDocument* v = static_cast<VfxDocument*>(a);
-    Free(v->impl);
-    v->impl = nullptr;
-}
-
-static void DrawVfxData(Document* a) {
-    VfxDocument* v = static_cast<VfxDocument*>(a);
-    VfxDataImpl* impl = v->impl;
-    assert(v);
-    assert(v->type == ASSET_TYPE_VFX);
-
-    if (!impl->playing || impl->emitter_count == 0 ) {
-        BindMaterial(g_view.shaded_material);
-        BindColor(COLOR_WHITE);
-        DrawMesh(MESH_ASSET_ICON_VFX, Translate(a->position));
-        return;
+    static void CloneVfxDocument(Document* doc) {
+        assert(doc->def->type == ASSET_TYPE_VFX);
+        VfxDocument* v = static_cast<VfxDocument*>(doc);
+        v->vfx = nullptr;
+        v->handle = INVALID_VFX_HANDLE;
     }
 
-    if (!IsPlaying(impl->handle) && impl->vfx)
-        impl->handle = Play(impl->vfx, a->position);
-}
+    static void DestroyVfxDocument(Document* doc) {
+        VfxDocument* v = static_cast<VfxDocument*>(doc);
+        Stop(v->handle);
+        Free(v->vfx);
+        v->vfx = nullptr;
+    }
 
-static bool ParseCurveType(Tokenizer& tk, VfxCurveType* curve_type) {
-    if (!ExpectIdentifier(tk))
-        return false;
+    static void DrawVfXDocument(Document* doc) {
+        VfxDocument* vdoc = static_cast<VfxDocument*>(doc);
+        assert(vdoc);
+        assert(vdoc->def->type == ASSET_TYPE_VFX);
 
-    *curve_type = VFX_CURVE_TYPE_UNKNOWN;
+        if (!vdoc->playing || vdoc->emitter_count == 0 ) {
+            BindMaterial(g_workspace.shaded_material);
+            BindColor(COLOR_WHITE);
+            DrawMesh(MESH_ASSET_ICON_VFX, Translate(doc->position));
+            return;
+        }
 
-    if (Equals(tk, "linear", true))
-        *curve_type = VFX_CURVE_TYPE_LINEAR;
-    else if (Equals(tk, "easein", true))
-        *curve_type = VFX_CURVE_TYPE_EASE_IN;
-    else if (Equals(tk, "easeout"))
-        *curve_type = VFX_CURVE_TYPE_EASE_OUT;
-    else if (Equals(tk, "easeinout"))
-        *curve_type = VFX_CURVE_TYPE_EASE_IN_OUT;
-    else if (Equals(tk, "quadratic"))
-        *curve_type = VFX_CURVE_TYPE_QUADRATIC;
-    else if (Equals(tk, "cubic"))
-        *curve_type = VFX_CURVE_TYPE_CUBIC;
-    else if (Equals(tk, "sine"))
-        *curve_type = VFX_CURVE_TYPE_SINE;
+        if (!IsPlaying(vdoc->handle) && vdoc->vfx)
+            vdoc->handle = Play(vdoc->vfx, doc->position);
+    }
 
-    return *curve_type != VFX_CURVE_TYPE_UNKNOWN;
-}
-
-static bool ParseVec2(Tokenizer& tk, VfxVec2* value)
-{
-    // Non range
-    if (!ExpectDelimiter(tk, '['))
-    {
-        Vec2 v;
-        if (!ExpectVec2(tk, &v))
+    static bool ParseCurveType(Tokenizer& tk, VfxCurveType* curve_type) {
+        if (!ExpectIdentifier(tk))
             return false;
 
-        *value = {v, v};
+        *curve_type = VFX_CURVE_TYPE_UNKNOWN;
+
+        if (Equals(tk, "linear", true))
+            *curve_type = VFX_CURVE_TYPE_LINEAR;
+        else if (Equals(tk, "easein", true))
+            *curve_type = VFX_CURVE_TYPE_EASE_IN;
+        else if (Equals(tk, "easeout"))
+            *curve_type = VFX_CURVE_TYPE_EASE_OUT;
+        else if (Equals(tk, "easeinout"))
+            *curve_type = VFX_CURVE_TYPE_EASE_IN_OUT;
+        else if (Equals(tk, "quadratic"))
+            *curve_type = VFX_CURVE_TYPE_QUADRATIC;
+        else if (Equals(tk, "cubic"))
+            *curve_type = VFX_CURVE_TYPE_CUBIC;
+        else if (Equals(tk, "sine"))
+            *curve_type = VFX_CURVE_TYPE_SINE;
+
+        return *curve_type != VFX_CURVE_TYPE_UNKNOWN;
+    }
+
+    static bool ParseVec2(Tokenizer& tk, VfxVec2* value)
+    {
+        // Non range
+        if (!ExpectDelimiter(tk, '['))
+        {
+            Vec2 v;
+            if (!ExpectVec2(tk, &v))
+                return false;
+
+            *value = {v, v};
+            return true;
+        }
+
+        // Range
+        Vec2 min = {0,0};
+        if (!ExpectVec2(tk, &min))
+            return false;
+
+        if (!ExpectDelimiter(tk, ','))
+            return false;
+
+        Vec2 max = {0,0};
+        if (!ExpectVec2(tk, &max))
+            return false;
+
+        if (!ExpectDelimiter(tk, ']'))
+            return false;
+
+        *value = { Min(min,max), Max(min,max) };
         return true;
     }
 
-    // Range
-    Vec2 min = {0,0};
-    if (!ExpectVec2(tk, &min))
-        return false;
-
-    if (!ExpectDelimiter(tk, ','))
-        return false;
-
-    Vec2 max = {0,0};
-    if (!ExpectVec2(tk, &max))
-        return false;
-
-    if (!ExpectDelimiter(tk, ']'))
-        return false;
-
-    *value = { Min(min,max), Max(min,max) };
-    return true;
-}
-
-static VfxVec2 ParseVec2(const std::string& str, const VfxVec2& default_value)
-{
-    if (str.empty())
-        return default_value;
-
-    Tokenizer tk;
-    Init(tk, str.c_str());
-    VfxVec2 value = {};
-    if (!ParseVec2(tk, &value))
-        return default_value;
-    return value;
-}
-
-static bool ParseFloat(Tokenizer& tk, VfxFloat* value)
-{
-    // Non range
-    if (!ExpectDelimiter(tk, '['))
+    static VfxVec2 ParseVec2(const std::string& str, const VfxVec2& default_value)
     {
-        float v;
-        if (!ExpectFloat(tk, &v))
-            return false;
-
-        *value = {v, v};
-        return true;
-    }
-
-    // Range
-    float min = 0.0f;
-    if (!ExpectFloat(tk, &min))
-        return false;
-
-    if (!ExpectDelimiter(tk, ','))
-        return false;
-
-    float max = 0.0f;
-    if (!ExpectFloat(tk, &max))
-        return false;
-
-    if (!ExpectDelimiter(tk, ']'))
-        return false;
-
-    *value = { Min(min,max), Max(min,max) };
-    return true;
-}
-
-static VfxFloat ParseFloat(const std::string& value, VfxFloat default_value)
-{
-    if (value.empty())
-        return default_value;
-
-    Tokenizer tk;
-    Init(tk, value.c_str());
-    ParseFloat(tk, &default_value);
-    return default_value;
-}
-
-static VfxFloatCurve ParseFloatCurve(const std::string& str, VfxFloatCurve default_value)
-{
-    Tokenizer tk;
-    Init(tk, str.c_str());
-
-    VfxFloatCurve value = { VFX_CURVE_TYPE_LINEAR };
-    if (!ParseFloat(tk, &value.start))
-        return default_value;
-
-    if (!ExpectDelimiter(tk, '='))
-    {
-        value.end = value.start;
-        return value;
-    }
-
-    if (!ExpectDelimiter(tk, '>'))
-        return default_value;
-
-    if (!ParseFloat(tk, &value.end))
-        return default_value;
-
-    if (!ExpectDelimiter(tk, ':'))
-        return value;
-
-    VfxCurveType curve_type = VFX_CURVE_TYPE_UNKNOWN;
-    if (!ParseCurveType(tk, &curve_type))
-        return default_value;
-
-    value.type = curve_type;
-    return value;
-}
-
-static VfxInt ParseInt(const std::string& value, VfxInt default_value)
-{
-    if (value.empty())
-        return default_value;
-
-    Tokenizer tk;
-    Init(tk, value.c_str());
-
-    // Single int?
-    if (!ExpectDelimiter(tk,'['))
-    {
-        i32 ivalue = 0;
-        if (!ExpectInt(tk, &ivalue))
+        if (str.empty())
             return default_value;
 
-        return { ivalue, ivalue };
+        Tokenizer tk;
+        Init(tk, str.c_str());
+        VfxVec2 value = {};
+        if (!ParseVec2(tk, &value))
+            return default_value;
+        return value;
     }
 
-    // Range
-    i32 min = 0;
-    if (!ExpectInt(tk, &min))
-        return default_value;
-
-    if (!ExpectDelimiter(tk, ','))
-        return default_value;
-
-    i32 max = 0;
-    if (!ExpectInt(tk, &max))
-        return default_value;
-
-    if (!ExpectDelimiter(tk, ']'))
-        return default_value;
-
-    return { Min(min,max), Max(min,max) };
-}
-
-static bool ParseColor(Tokenizer& tk, VfxColor* value)
-{
-    if (!ExpectDelimiter(tk, '['))
+    static bool ParseFloat(Tokenizer& tk, VfxFloat* value)
     {
-        Color cvalue = {1.0f, 1.0f, 1.0f, 1.0f};
-        if (!ExpectColor(tk, &cvalue))
+        // Non range
+        if (!ExpectDelimiter(tk, '['))
+        {
+            float v;
+            if (!ExpectFloat(tk, &v))
+                return false;
+
+            *value = {v, v};
+            return true;
+        }
+
+        // Range
+        float min = 0.0f;
+        if (!ExpectFloat(tk, &min))
             return false;
 
-        *value = {cvalue, cvalue};
+        if (!ExpectDelimiter(tk, ','))
+            return false;
+
+        float max = 0.0f;
+        if (!ExpectFloat(tk, &max))
+            return false;
+
+        if (!ExpectDelimiter(tk, ']'))
+            return false;
+
+        *value = { Min(min,max), Max(min,max) };
         return true;
     }
 
-    // Range
-    Color min = {0,0,0,0};
-    if (!ExpectColor(tk, &min))
-        return false;
-
-    if (!ExpectDelimiter(tk, ','))
-        return false;
-
-    Color max = {0,0,0,0};
-    if (!ExpectColor(tk, &max))
-        return false;
-
-    if (!ExpectDelimiter(tk, ']'))
-        return false;
-
-    *value = { min, max };
-    return true;
-}
-
-static VfxColorCurve ParseColorCurve(const std::string& str, const VfxColorCurve& default_value)
-{
-    Tokenizer tk;
-    Init(tk, str.c_str());
-
-    VfxColorCurve value = { VFX_CURVE_TYPE_LINEAR };
-    if (!ParseColor(tk, &value.start))
-        return default_value;
-
-    if (!ExpectDelimiter(tk, '='))
+    static VfxFloat ParseFloat(const std::string& value, VfxFloat default_value)
     {
-        value.end = value.start;
+        if (value.empty())
+            return default_value;
+
+        Tokenizer tk;
+        Init(tk, value.c_str());
+        ParseFloat(tk, &default_value);
+        return default_value;
+    }
+
+    static VfxFloatCurve ParseFloatCurve(const std::string& str, VfxFloatCurve default_value)
+    {
+        Tokenizer tk;
+        Init(tk, str.c_str());
+
+        VfxFloatCurve value = { VFX_CURVE_TYPE_LINEAR };
+        if (!ParseFloat(tk, &value.start))
+            return default_value;
+
+        if (!ExpectDelimiter(tk, '='))
+        {
+            value.end = value.start;
+            return value;
+        }
+
+        if (!ExpectDelimiter(tk, '>'))
+            return default_value;
+
+        if (!ParseFloat(tk, &value.end))
+            return default_value;
+
+        if (!ExpectDelimiter(tk, ':'))
+            return value;
+
+        VfxCurveType curve_type = VFX_CURVE_TYPE_UNKNOWN;
+        if (!ParseCurveType(tk, &curve_type))
+            return default_value;
+
+        value.type = curve_type;
         return value;
     }
 
-    if (!ExpectDelimiter(tk, '>'))
-        return default_value;
+    static VfxInt ParseInt(const std::string& value, VfxInt default_value)
+    {
+        if (value.empty())
+            return default_value;
 
-    if (!ParseColor(tk, &value.end))
-        return default_value;
+        Tokenizer tk;
+        Init(tk, value.c_str());
 
-    if (!ExpectDelimiter(tk, ':'))
+        // Single int?
+        if (!ExpectDelimiter(tk,'['))
+        {
+            i32 ivalue = 0;
+            if (!ExpectInt(tk, &ivalue))
+                return default_value;
+
+            return { ivalue, ivalue };
+        }
+
+        // Range
+        i32 min = 0;
+        if (!ExpectInt(tk, &min))
+            return default_value;
+
+        if (!ExpectDelimiter(tk, ','))
+            return default_value;
+
+        i32 max = 0;
+        if (!ExpectInt(tk, &max))
+            return default_value;
+
+        if (!ExpectDelimiter(tk, ']'))
+            return default_value;
+
+        return { Min(min,max), Max(min,max) };
+    }
+
+    static bool ParseColor(Tokenizer& tk, VfxColor* value)
+    {
+        if (!ExpectDelimiter(tk, '['))
+        {
+            Color cvalue = {1.0f, 1.0f, 1.0f, 1.0f};
+            if (!ExpectColor(tk, &cvalue))
+                return false;
+
+            *value = {cvalue, cvalue};
+            return true;
+        }
+
+        // Range
+        Color min = {0,0,0,0};
+        if (!ExpectColor(tk, &min))
+            return false;
+
+        if (!ExpectDelimiter(tk, ','))
+            return false;
+
+        Color max = {0,0,0,0};
+        if (!ExpectColor(tk, &max))
+            return false;
+
+        if (!ExpectDelimiter(tk, ']'))
+            return false;
+
+        *value = { min, max };
+        return true;
+    }
+
+    static VfxColorCurve ParseColorCurve(const std::string& str, const VfxColorCurve& default_value)
+    {
+        Tokenizer tk;
+        Init(tk, str.c_str());
+
+        VfxColorCurve value = { VFX_CURVE_TYPE_LINEAR };
+        if (!ParseColor(tk, &value.start))
+            return default_value;
+
+        if (!ExpectDelimiter(tk, '='))
+        {
+            value.end = value.start;
+            return value;
+        }
+
+        if (!ExpectDelimiter(tk, '>'))
+            return default_value;
+
+        if (!ParseColor(tk, &value.end))
+            return default_value;
+
+        if (!ExpectDelimiter(tk, ':'))
+            return value;
+
+        VfxCurveType curve_type = VFX_CURVE_TYPE_UNKNOWN;
+        if (!ParseCurveType(tk, &curve_type))
+            return default_value;
+
+        value.type = curve_type;
         return value;
-
-    VfxCurveType curve_type = VFX_CURVE_TYPE_UNKNOWN;
-    if (!ParseCurveType(tk, &curve_type))
-        return default_value;
-
-    value.type = curve_type;
-    return value;
-}
-
-static Bounds2 CalculateBounds(VfxDocument* v) {
-    VfxDataImpl* impl = v->impl;
-    Bounds2 bounds = {-VEC2_ONE * 0.5f, VEC2_ONE * 0.5f};
-
-    for (int i=0, c=impl->emitter_count; i<c; i++) {
-        const VfxEmitterDef& e = impl->emitters[i].def;
-        const VfxParticleDef& p = e.particle_def;
-        Bounds2 eb = { e.spawn.min, e.spawn.max };
-        float ssmax = Max(p.size.start.min,p.size.start.max);
-        float semax = Max(p.size.end.min,p.size.end.max);
-        float smax = Max(ssmax, semax);
-        eb = Expand(eb, smax);
-
-        float speed_max = Max(p.speed.start.max, p.speed.end.max);
-        float duration_max = p.duration.max;
-        eb = Expand(eb, speed_max * duration_max);
-
-        if (i == 0)
-            bounds = eb;
-        else
-            bounds = Union(bounds, eb);
     }
 
-    return bounds;
-}
+    static Bounds2 CalculateBounds(VfxDocument* vdoc) {
+        Bounds2 bounds = {-VEC2_ONE * 0.5f, VEC2_ONE * 0.5f};
 
-void Serialize(VfxDocument* v, Stream* stream) {
-    VfxDataImpl* impl = v->impl;
+        for (int i=0, c=vdoc->emitter_count; i<c; i++) {
+            const VfxEmitterDef& e = vdoc->emitters[i].def;
+            const VfxParticleDef& p = e.particle_def;
+            Bounds2 eb = { e.spawn.min, e.spawn.max };
+            float ssmax = Max(p.size.start.min,p.size.start.max);
+            float semax = Max(p.size.end.min,p.size.end.max);
+            float smax = Max(ssmax, semax);
+            eb = Expand(eb, smax);
 
-    AssetHeader header = {};
-    header.signature = ASSET_SIGNATURE;
-    header.type = ASSET_TYPE_VFX;
-    header.version = 1;
-    header.flags = 0;
-    WriteAssetHeader(stream, &header);
+            float speed_max = Max(p.speed.start.max, p.speed.end.max);
+            float duration_max = p.duration.max;
+            eb = Expand(eb, speed_max * duration_max);
 
-    WriteStruct<Bounds2>(stream, CalculateBounds(v));
-    WriteStruct(stream, impl->duration);
-    WriteBool(stream, impl->loop);
-    WriteU32(stream, impl->emitter_count);
+            if (i == 0)
+                bounds = eb;
+            else
+                bounds = Union(bounds, eb);
+        }
 
-    for (int i=0, c=impl->emitter_count; i<c; i++) {
-        const EditorVfxEmitter& emitter = impl->emitters[i];
-        WriteStruct(stream, emitter.def.rate);
-        WriteStruct(stream, emitter.def.burst);
-        WriteStruct(stream, emitter.def.duration);
-        WriteStruct(stream, emitter.def.angle);
-        WriteStruct(stream, emitter.def.spawn);
-        WriteStruct(stream, emitter.def.direction);
-
-        const VfxParticleDef& particle = emitter.def.particle_def;
-        WriteStruct(stream, particle.duration);
-        WriteStruct(stream, particle.size);
-        WriteStruct(stream, particle.speed);
-        WriteStruct(stream, particle.color);
-        WriteStruct(stream, particle.opacity);
-        WriteStruct(stream, particle.gravity);
-        WriteStruct(stream, particle.drag);
-        WriteStruct(stream, particle.rotation);
-        WriteName(stream, particle.mesh_name);
-    }
-}
-
-Vfx* ToVfx(Allocator* allocator, VfxDocument* v, const Name* name) {
-    Stream* stream = CreateStream(ALLOCATOR_DEFAULT, 8192);
-    if (!stream)
-        return nullptr;
-
-    Serialize(v, stream);
-    SeekBegin(stream, 0);
-
-    Vfx* vfx = (Vfx*)LoadAssetInternal(allocator, name, ASSET_TYPE_VFX, LoadVfx, stream);
-    Free(stream);
-
-    return vfx;
-}
-
-static void LoadVfxData(Document* a) {
-    assert(a);
-    assert(a->type == ASSET_TYPE_VFX);
-    VfxDocument* v = static_cast<VfxDocument*>(a);
-    VfxDataImpl* impl = v->impl;
-
-    Stream* input_stream = LoadStream(ALLOCATOR_DEFAULT, a->path.value);
-    if (!input_stream)
-        throw std::runtime_error("could not read file");
-
-    Props* source = Props::Load(input_stream);
-    if (!source) {
-        Free(input_stream);
-        throw std::runtime_error("could not load source file");
+        return bounds;
     }
 
-    impl->emitter_count = 0;
-    impl->duration = ParseFloat(source->GetString("VFX", "duration", "5.0"), {5,5});
-    impl->loop = source->GetBool("vfx", "loop", false);
+    static void Serialize(VfxDocument* vdoc, Stream* stream) {
+        AssetHeader header = {};
+        header.signature = ASSET_SIGNATURE;
+        header.type = ASSET_TYPE_VFX;
+        header.version = 1;
+        header.flags = 0;
+        WriteAssetHeader(stream, &header);
 
-    auto emitter_names = source->GetKeys("emitters");
-    for (const auto& emitter_name : emitter_names) {
-        if (!source->HasGroup(emitter_name.c_str()))
-            throw std::exception((std::string("missing emitter ") + emitter_name).c_str());
+        WriteStruct<Bounds2>(stream, CalculateBounds(vdoc));
+        WriteStruct(stream, vdoc->duration);
+        WriteBool(stream, vdoc->loop);
+        WriteU32(stream, vdoc->emitter_count);
 
-        std::string particle_section = source->GetString(emitter_name.c_str(), "particle", "");
-        if (particle_section.empty())
-            particle_section = emitter_name + ".particle";
+        for (int i=0, c=vdoc->emitter_count; i<c; i++) {
+            const EditorVfxEmitter& emitter = vdoc->emitters[i];
+            WriteStruct(stream, emitter.def.rate);
+            WriteStruct(stream, emitter.def.burst);
+            WriteStruct(stream, emitter.def.duration);
+            WriteStruct(stream, emitter.def.angle);
+            WriteStruct(stream, emitter.def.spawn);
+            WriteStruct(stream, emitter.def.direction);
 
-        if (!source->HasGroup(particle_section.c_str()))
-            throw std::exception((std::string("missing particle ") + particle_section).c_str());
-
-        // Emitter
-        EditorVfxEmitter& emitter = impl->emitters[impl->emitter_count++];;
-        emitter.name = GetName(emitter_name.c_str());
-        emitter.def.rate = ParseInt(source->GetString(emitter_name.c_str(), "rate", "0"), VFX_INT_ZERO);
-        emitter.def.burst = ParseInt(source->GetString(emitter_name.c_str(), "burst", "0"), VFX_INT_ZERO);
-        emitter.def.duration = ParseFloat(source->GetString(emitter_name.c_str(), "duration", "1.0"), VFX_FLOAT_ONE);
-        emitter.def.angle = ParseFloat(source->GetString(emitter_name.c_str(), "angle", "0..360"), {0.0f, 360.0f});
-        //emitter.def.radius = ParseFloat(source->GetString(emitter_name.c_str(), "radius", "0"), VFX_FLOAT_ZERO);
-        emitter.def.spawn = ParseVec2(source->GetString(emitter_name.c_str(), "spawn", "(0, 0)"), VFX_VEC2_ZERO);
-        emitter.def.direction = ParseVec2(source->GetString(emitter_name.c_str(), "direction", "(0, 0)"), VFX_VEC2_ZERO);
-
-        // Particle
-        emitter.def.particle_def.duration = ParseFloat(source->GetString(particle_section.c_str(), "duration", "1.0"), VFX_FLOAT_ONE);
-        emitter.def.particle_def.size = ParseFloatCurve(source->GetString(particle_section.c_str(), "size", "1.0"), VFX_FLOAT_CURVE_ONE);
-        emitter.def.particle_def.speed = ParseFloatCurve(source->GetString(particle_section.c_str(), "speed", "0"), VFX_FLOAT_CURVE_ZERO);
-        emitter.def.particle_def.color = ParseColorCurve(source->GetString(particle_section.c_str(), "color", "white"), VFX_COLOR_CURVE_WHITE);
-        emitter.def.particle_def.opacity = ParseFloatCurve(source->GetString(particle_section.c_str(), "opacity", "1.0"), VFX_FLOAT_CURVE_ONE);
-        emitter.def.particle_def.gravity = ParseVec2(source->GetString(particle_section.c_str(), "gravity", "(0, 0, 0)"), VFX_VEC2_ZERO);
-        emitter.def.particle_def.drag = ParseFloat(source->GetString(particle_section.c_str(), "drag", "0"), VFX_FLOAT_ZERO);
-        emitter.def.particle_def.rotation = ParseFloatCurve(source->GetString(particle_section.c_str(), "rotation", "0.0"), VFX_FLOAT_CURVE_ZERO);
-
-        std::string mesh_name = source->GetString(particle_section.c_str(), "mesh", "");
-        if (mesh_name != "")
-            emitter.def.particle_def.mesh_name = GetName(mesh_name.c_str());
+            const VfxParticleDef& particle = emitter.def.particle_def;
+            WriteStruct(stream, particle.duration);
+            WriteStruct(stream, particle.size);
+            WriteStruct(stream, particle.speed);
+            WriteStruct(stream, particle.color);
+            WriteStruct(stream, particle.opacity);
+            WriteStruct(stream, particle.gravity);
+            WriteStruct(stream, particle.drag);
+            WriteStruct(stream, particle.rotation);
+            WriteName(stream, particle.mesh_name);
+        }
     }
 
-    impl->vfx = ToVfx(ALLOCATOR_DEFAULT, v, v->name);
-    v->bounds = GetBounds(impl->vfx);
-}
+    Vfx* ToVfx(Allocator* allocator, VfxDocument* v, const Name* name) {
+        Stream* stream = CreateStream(ALLOCATOR_DEFAULT, 8192);
+        if (!stream)
+            return nullptr;
 
-static VfxDocument* LoadVfxData(const std::filesystem::path& path) {
-    std::string contents = ReadAllText(ALLOCATOR_DEFAULT, path);
-    Tokenizer tk;
-    Init(tk, contents.c_str());
+        Serialize(v, stream);
+        SeekBegin(stream, 0);
 
-    VfxDocument* v = static_cast<VfxDocument*>(CreateAssetData(path));
-    assert(v);
-    InitVfxDocument(v);
-    LoadAssetData(v);
-    MarkModified(v);
-    return v;
-}
+        Vfx* vfx = (Vfx*)LoadAssetInternal(allocator, name, ASSET_TYPE_VFX, LoadVfx, stream);
+        Free(stream);
 
-Document* NewVfxDocument(const std::filesystem::path& path) {
-    std::filesystem::path full_path = path.is_relative() ?  std::filesystem::path(g_editor.project_path) / "assets" / "vfx" / path : path;
-    full_path += ".vfx";
-
-    Stream* stream = CreateStream(ALLOCATOR_DEFAULT, 4096);
-    WriteCSTR(stream, "[vfx]\nduration = 1\n");
-    SaveStream(stream, full_path);
-    Free(stream);
-
-    QueueImport(full_path);
-    WaitForImportTasks();
-    return LoadVfxData(full_path);
-}
-
-static void ReloadVfxData(Document* a) {
-    VfxDocument* v = static_cast<VfxDocument*>(a);
-    VfxDataImpl* impl = v->impl;
-    assert(v);
-
-    Stop(impl->handle);
-    Free(impl->vfx);
-
-    try {
-        LoadVfxData(a);
-    } catch (const std::exception& e) {
-        LogError("failed to reload vfx '%s': %s", a->name->value, e.what());
+        return vfx;
     }
 
-    impl->vfx = ToVfx(ALLOCATOR_DEFAULT, v, v->name);
-    v->bounds = GetBounds(impl->vfx);
-    impl->handle = INVALID_VFX_HANDLE;;
-}
+    static void LoadVfxDocument(Document* doc) {
+        assert(doc);
+        assert(doc->def->type == ASSET_TYPE_VFX);
+        VfxDocument* vdoc = static_cast<VfxDocument*>(doc);
 
-static void PlayVfxData(Document* a) {
-    VfxDocument* v = static_cast<VfxDocument*>(a);
-    VfxDataImpl* impl = v->impl;
-    assert(v);
+        Stream* input_stream = LoadStream(ALLOCATOR_DEFAULT, doc->path.value);
+        if (!input_stream)
+            throw std::runtime_error("could not read file");
 
-    impl->playing = !impl->playing;
+        Props* source = Props::Load(input_stream);
+        if (!source) {
+            Free(input_stream);
+            throw std::runtime_error("could not load source file");
+        }
 
-    if (!impl->playing) {
-        Stop(impl->handle);
-        impl->handle = INVALID_VFX_HANDLE;
+        vdoc->emitter_count = 0;
+        vdoc->duration = ParseFloat(source->GetString("VFX", "duration", "5.0"), {5,5});
+        vdoc->loop = source->GetBool("vfx", "loop", false);
+
+        auto emitter_names = source->GetKeys("emitters");
+        for (const auto& emitter_name : emitter_names) {
+            if (!source->HasGroup(emitter_name.c_str()))
+                throw std::exception((std::string("missing emitter ") + emitter_name).c_str());
+
+            std::string particle_section = source->GetString(emitter_name.c_str(), "particle", "");
+            if (particle_section.empty())
+                particle_section = emitter_name + ".particle";
+
+            if (!source->HasGroup(particle_section.c_str()))
+                throw std::exception((std::string("missing particle ") + particle_section).c_str());
+
+            // Emitter
+            EditorVfxEmitter& emitter = vdoc->emitters[vdoc->emitter_count++];;
+            emitter.name = GetName(emitter_name.c_str());
+            emitter.def.rate = ParseInt(source->GetString(emitter_name.c_str(), "rate", "0"), VFX_INT_ZERO);
+            emitter.def.burst = ParseInt(source->GetString(emitter_name.c_str(), "burst", "0"), VFX_INT_ZERO);
+            emitter.def.duration = ParseFloat(source->GetString(emitter_name.c_str(), "duration", "1.0"), VFX_FLOAT_ONE);
+            emitter.def.angle = ParseFloat(source->GetString(emitter_name.c_str(), "angle", "0..360"), {0.0f, 360.0f});
+            //emitter.def.radius = ParseFloat(source->GetString(emitter_name.c_str(), "radius", "0"), VFX_FLOAT_ZERO);
+            emitter.def.spawn = ParseVec2(source->GetString(emitter_name.c_str(), "spawn", "(0, 0)"), VFX_VEC2_ZERO);
+            emitter.def.direction = ParseVec2(source->GetString(emitter_name.c_str(), "direction", "(0, 0)"), VFX_VEC2_ZERO);
+
+            // Particle
+            emitter.def.particle_def.duration = ParseFloat(source->GetString(particle_section.c_str(), "duration", "1.0"), VFX_FLOAT_ONE);
+            emitter.def.particle_def.size = ParseFloatCurve(source->GetString(particle_section.c_str(), "size", "1.0"), VFX_FLOAT_CURVE_ONE);
+            emitter.def.particle_def.speed = ParseFloatCurve(source->GetString(particle_section.c_str(), "speed", "0"), VFX_FLOAT_CURVE_ZERO);
+            emitter.def.particle_def.color = ParseColorCurve(source->GetString(particle_section.c_str(), "color", "white"), VFX_COLOR_CURVE_WHITE);
+            emitter.def.particle_def.opacity = ParseFloatCurve(source->GetString(particle_section.c_str(), "opacity", "1.0"), VFX_FLOAT_CURVE_ONE);
+            emitter.def.particle_def.gravity = ParseVec2(source->GetString(particle_section.c_str(), "gravity", "(0, 0, 0)"), VFX_VEC2_ZERO);
+            emitter.def.particle_def.drag = ParseFloat(source->GetString(particle_section.c_str(), "drag", "0"), VFX_FLOAT_ZERO);
+            emitter.def.particle_def.rotation = ParseFloatCurve(source->GetString(particle_section.c_str(), "rotation", "0.0"), VFX_FLOAT_CURVE_ZERO);
+
+            std::string mesh_name = source->GetString(particle_section.c_str(), "mesh", "");
+            if (mesh_name != "")
+                emitter.def.particle_def.mesh_name = GetName(mesh_name.c_str());
+        }
+
+        vdoc->vfx = ToVfx(ALLOCATOR_DEFAULT, vdoc, vdoc->name);
+        vdoc->bounds = GetBounds(vdoc->vfx);
     }
-}
 
-static void Init(VfxDocument* evfx) {
-    AllocVfxImpl(evfx);
-    VfxDataImpl* impl = evfx->impl;
+    static VfxDocument* LoadVfxDocument(const std::filesystem::path& path) {
+        std::string contents = ReadAllText(ALLOCATOR_DEFAULT, path);
+        Tokenizer tk;
+        Init(tk, contents.c_str());
 
-    impl->vfx = nullptr;
-    impl->handle = INVALID_VFX_HANDLE;
-    evfx->vtable = {
-        .destructor = DestroyVfxData,
-        .load = LoadVfxData,
-        .reload = ReloadVfxData,
-        .draw = DrawVfxData,
-        .play = PlayVfxData,
-        .clone = CloneVfxData
-    };
-}
+        VfxDocument* v = static_cast<VfxDocument*>(CreateDocument(path));
+        assert(v);
+        InitVfxDocument(v);
+        LoadVfxDocument(v);
+        MarkModified(v);
+        return v;
+    }
 
-void InitVfxData(Document* ea) {
-    assert(ea);
-    assert(ea->type == ASSET_TYPE_VFX);
-    VfxDocument* evfx = (VfxDocument*)ea;
-    Init(evfx);
+    VfxDocument* NewVfxDocument(const std::filesystem::path& path) {
+        std::filesystem::path full_path = path.is_relative() ?  std::filesystem::path(g_editor.project_path) / "assets" / "vfx" / path : path;
+        full_path += ".vfx";
+
+        Stream* stream = CreateStream(ALLOCATOR_DEFAULT, 4096);
+        WriteCSTR(stream, "[vfx]\nduration = 1\n");
+        SaveStream(stream, full_path);
+        Free(stream);
+
+        QueueImport(full_path);
+        WaitForImportTasks();
+        return LoadVfxDocument(full_path);
+    }
+
+    static void ReloadVfxDocument(Document* doc) {
+        VfxDocument* vdoc = static_cast<VfxDocument*>(doc);
+        assert(vdoc);
+
+        Stop(vdoc->handle);
+        Free(vdoc->vfx);
+
+        try {
+            LoadVfxDocument(doc);
+        } catch (const std::exception& e) {
+            LogError("failed to reload vfx '%s': %s", doc->name->value, e.what());
+        }
+
+        vdoc->vfx = ToVfx(ALLOCATOR_DEFAULT, vdoc, vdoc->name);
+        vdoc->bounds = GetBounds(vdoc->vfx);
+        vdoc->handle = INVALID_VFX_HANDLE;;
+    }
+
+    static void PlayVfxDocument(Document* doc) {
+        VfxDocument* vdoc = static_cast<VfxDocument*>(doc);
+        vdoc->playing = !vdoc->playing;
+
+        if (!vdoc->playing) {
+            Stop(vdoc->handle);
+            vdoc->handle = INVALID_VFX_HANDLE;
+        }
+    }
+
+    static void ImportVfx(Document* doc, const std::filesystem::path& path, Props* config, Props* meta) {
+        assert(doc);
+        assert(doc->def->type == ASSET_TYPE_VFX);
+        VfxDocument* vdoc = static_cast<VfxDocument*>(doc);
+
+        Stream* stream = CreateStream(nullptr, 4096);
+        Serialize(vdoc, stream);
+        SaveStream(stream, path);
+        Free(stream);
+    }
+
+    static void InitVfxDocument(VfxDocument* vdoc) {
+        vdoc->vfx = nullptr;
+        vdoc->handle = INVALID_VFX_HANDLE;
+        vdoc->vtable = {
+            .destructor = DestroyVfxDocument,
+            .load = LoadVfxDocument,
+            .reload = ReloadVfxDocument,
+            .draw = DrawVfXDocument,
+            .play = PlayVfxDocument,
+            .clone = CloneVfxDocument
+        };
+    }
+
+    static void InitVfxDocument(Document* doc) {
+        assert(doc);
+        assert(doc->def->type == ASSET_TYPE_VFX);
+        InitVfxDocument(static_cast<VfxDocument*>(doc));
+    }
+
+    void InitVfxDocumentDef() {
+        InitDocumentDef({
+            .type = ASSET_TYPE_VFX,
+            .size = sizeof(VfxDocument),
+            .init_func = InitVfxDocument,
+            .import_func = ImportVfx
+        });
+    }
 }

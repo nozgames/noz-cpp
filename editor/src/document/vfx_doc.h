@@ -24,11 +24,8 @@ namespace noz::editor {
         bool playing;
     };
 
-    extern void InitVfxDocument(Document* doc);
-    extern VfxDocument* LoadVfxDocument(const std::filesystem::path& path);
     extern VfxDocument* NewVfxDocument(const std::filesystem::path& path);
     extern VfxDocument* Clone(VfxDocument* evfx);
     extern Vfx* ToVfx(Allocator* allocator, VfxDocument* v, const Name* name);
-    extern void Serialize(VfxDocument* v, Stream* stream);
     extern void DrawEditorVfx(Document* doc);
 }

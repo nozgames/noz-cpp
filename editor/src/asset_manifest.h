@@ -4,4 +4,6 @@
 
 #pragma once
 
-extern bool GenerateAssetManifest(const std::filesystem::path& source_path, Props* config=nullptr);
+namespace noz::editor {
+    extern bool GenerateAssetManifest(const std::filesystem::path& source_path, Props* config=nullptr);
+}

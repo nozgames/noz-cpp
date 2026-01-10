@@ -131,12 +131,11 @@ namespace noz::editor {
         return m->frame_count;
     }
 
-    extern void InitMeshData(Document* doc);
     extern Document* NewMeshData(const std::filesystem::path& path);
-    extern MeshDocument* Clone(Allocator* allocator, MeshDocument* m);
+    extern MeshDocument* Clone(Allocator* allocator, MeshDocument* mdoc);
     extern MeshDocument* LoadEditorMesh(const std::filesystem::path& path);
     extern Mesh* ToMesh(MeshDocument* m, bool upload=true, bool use_cache=true);
-    extern Mesh* ToOutlineMesh(MeshDocument* m);
+    extern Mesh* ToOutlineMesh(MeshDocument* mdoc);
     extern int HitTestFace(MeshDocument* m, const Mat3& transform, const Vec2& position);
     extern int HitTestFaces(MeshDocument* m, const Mat3& transform, const Vec2& position, int* faces, int max_faces=MESH_MAX_VERTICES);
     extern int HitTestVertex(MeshDocument* m, const Mat3& transform, const Vec2& position, float size_mult=1.0f);
@@ -150,7 +149,7 @@ namespace noz::editor {
         return HitTestEdge(m, Translate(m->position), position, where, size_mult);
     }
     extern Bounds2 GetSelectedBounds(MeshDocument* m);
-    extern void MarkDirty(MeshDocument* m);
+    extern void MarkDirty(MeshDocument* mdoc);
     extern void SetSelecteFaceColor(MeshDocument* m, int color);
     extern void DeleteSelectedVertices(MeshDocument* m);
     extern void DissolveSelectedEdges(MeshDocument* m);
@@ -183,7 +182,7 @@ namespace noz::editor {
     extern void SetFaceOpacity(MeshDocument* m, float opacity);
 
     extern void Rasterize(
-        MeshDocument* m,
+        MeshDocument* mdoc,
         int frame_index,
         Rasterizer* rasterizer,
         PixelData* pixels,

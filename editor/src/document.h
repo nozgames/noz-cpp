@@ -39,12 +39,14 @@ namespace noz::editor {
         void (*editor_overlay)();
         void (*editor_help)();
         void (*editor_context_menu)();
-        void (*editor_rename)(Document* a, const Name* new_name);
+        void (*editor_rename)(Document* doc, const Name* new_name);
         Bounds2 (*editor_bounds)();
     };
 
+    struct DocumentDef;
+
     struct Document {
-        AssetType type;
+        const DocumentDef* def;
         int asset_path_index;
         const Name* name;
         String1024 path;
@@ -62,43 +64,41 @@ namespace noz::editor {
         Bounds2 bounds;
     };
 
-    extern bool IsFile(Document* a);
+    extern bool IsFile(Document* doc);
 
     extern void InitDocument();
-    extern void LoadDocument(Document* a);
-    extern void PostLoadDocument(Document* a);
+    extern void LoadDocument(Document* doc);
+    extern Document* Clone(Document* doc);
+    extern void CloneInto(Document* dst, Document* src);
+    extern void PostLoadDocument(Document* doc);
     extern void HotloadEditorAsset(AssetType type, const Name* name);
-    extern void MarkModified(Document* a);
+    extern void MarkModified(Document* doc);
     extern void MarkMetaModified();
-    extern void MarkMetaModified(Document* a);
-    extern Document* CreateAssetData(const std::filesystem::path& path);
+    extern void MarkMetaModified(Document* doc);
+    extern Document* CreateDocument(const std::filesystem::path& path);
     extern std::filesystem::path GetEditorAssetPath(const Name* name, const char* ext);
-    extern void Clone(Document* dst, Document* src);
-    extern bool OverlapPoint(Document* a, const Vec2& overlap_point);
-    extern bool OverlapPoint(Document* a, const Vec2& position, const Vec2& overlap_point);
-    extern bool OverlapBounds(Document* a, const Bounds2& bounds);
+    extern bool OverlapPoint(Document* doc, const Vec2& overlap_point);
+    extern bool OverlapPoint(Document* doc, const Vec2& position, const Vec2& overlap_point);
+    extern bool OverlapBounds(Document* doc, const Bounds2& bounds);
     extern Document* HitTestAssets(const Vec2& overlap_point);
     extern Document* HitTestAssets(const Bounds2& bit_bounds);
-    extern void DrawAsset(Document* a);
+    extern void DrawAsset(Document* doc);
     extern Document* GetFirstSelectedAsset();
-    extern void SetPosition(Document* a, const Vec2& position);
+    extern void SetPosition(Document* doc, const Vec2& position);
     extern void ClearAssetSelection();
-    extern void SetSelected(Document* a, bool selected);
-    extern void ToggleSelected(Document* a);
-    extern bool InitImporter(Document* a);
+    extern void SetSelected(Document* doc, bool selected);
+    extern void ToggleSelected(Document* doc);
     extern const Name* MakeCanonicalAssetName(const char* name);
     extern const Name* MakeCanonicalAssetName(const std::filesystem::path& path);
-    extern void DeleteAsset(Document* a);
-    extern void SortAssets();
-    extern bool Rename(Document* a, const Name* new_name);
-    extern Document* Duplicate(Document* a);
+    extern void DeleteAsset(Document* doc);
+    extern bool Rename(Document* doc, const Name* new_name);
+    extern Document* Duplicate(Document* doc);
     extern void NewAsset(AssetType asset_type, const Name* asset_name, const Vec2* position = nullptr);
-    extern std::filesystem::path GetTargetPath(Document* a);
+    extern std::filesystem::path GetTargetPath(Document* doc);
     extern std::filesystem::path GetUniqueAssetPath(const std::filesystem::path& path);
     extern int GetSelectedAssets(Document** out_assets, int max_assets);
-    inline bool IsEditing(Document* a) { return a->editing; }
-
-    inline Bounds2 GetBounds(Document* a) { return a->bounds; }
+    inline bool IsEditing(Document* doc) { return doc->editing; }
+    inline Bounds2 GetBounds(Document* doc) { return doc->bounds; }
 }
 
 #include "document/animation_doc.h"

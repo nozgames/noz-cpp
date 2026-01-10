@@ -8,98 +8,112 @@
 #define NOZ_BUILTIN_ASSETS
 #endif
 
-constexpr u32 ASSET_SIGNATURE = FourCC('N', 'O', 'Z', 'A');
+namespace noz {
 
-enum AssetType {
-    ASSET_TYPE_CUSTOM = -2,
-    ASSET_TYPE_UNKNOWN = -1,
-    ASSET_TYPE_MESH,
-    ASSET_TYPE_VFX,
-    ASSET_TYPE_SKELETON,
-    ASSET_TYPE_ANIMATION,
-    ASSET_TYPE_SOUND,
-    ASSET_TYPE_TEXTURE,
-    ASSET_TYPE_FONT,
-    ASSET_TYPE_SHADER,
-    ASSET_TYPE_EVENT,
-    ASSET_TYPE_BIN,
-    ASSET_TYPE_LUA,
-    ASSET_TYPE_ATLAS,
-    ASSET_TYPE_SPRITE,
-    ASSET_TYPE_COUNT,
-};
+    constexpr u32 ASSET_SIGNATURE = FourCC('N', 'O', 'Z', 'A');
 
-typedef u32 AssetFlags;
-constexpr AssetFlags ASSET_FLAG_NONE        = 0;
+    enum AssetType {
+        ASSET_TYPE_CUSTOM = -2,
+        ASSET_TYPE_UNKNOWN = -1,
+        ASSET_TYPE_MESH,
+        ASSET_TYPE_VFX,
+        ASSET_TYPE_SKELETON,
+        ASSET_TYPE_ANIMATION,
+        ASSET_TYPE_SOUND,
+        ASSET_TYPE_TEXTURE,
+        ASSET_TYPE_FONT,
+        ASSET_TYPE_SHADER,
+        ASSET_TYPE_EVENT,
+        ASSET_TYPE_BIN,
+        ASSET_TYPE_LUA,
+        ASSET_TYPE_ATLAS,
+        ASSET_TYPE_SPRITE,
+        ASSET_TYPE_COUNT,
+    };
 
-struct AssetHeader {
-    u32 signature;
-    AssetType type;
-    u32 version;
-    u32 flags;
-    u32 names;
-};
+    typedef u32 AssetFlags;
+    constexpr AssetFlags ASSET_FLAG_NONE        = 0;
 
-struct Asset {
-    const Name* name;
-    u32 flags;
-    AssetType type;
-    int custom_type_id;  // deprecated: use type directly for registered types
-};
+    struct AssetHeader {
+        u32 signature;
+        AssetType type;
+        u32 version;
+        u32 flags;
+        u32 names;
+    };
 
-typedef Asset* (*AssetLoaderFunc)(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
-typedef void (*AssetReloadFunc)(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
+    struct Asset {
+        const Name* name;
+        u32 flags;
+        AssetType type;
+        int custom_type_id;  // deprecated: use type directly for registered types
+    };
 
-// @asset_registry
-constexpr int MAX_ASSET_TYPES = 128;
+    typedef Asset* (*AssetLoaderFunc)(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+    typedef void (*AssetReloadFunc)(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
 
-struct AssetTypeInfo {
-    int type_id;                     // ASSET_TYPE_MESH=0, or 1001+ for extensions
-    const char* name;                // "Mesh", "CharacterSkeleton"
-    const char* short_name;          // "Mesh", "CharSkel"
-    const char* extension;           // ".mesh", ".hrskel"
-    AssetLoaderFunc loader;          // runtime loader function
-    AssetReloadFunc reload;          // hot-reload function (optional)
-};
+    // @asset_registry
+    constexpr int MAX_ASSET_TYPES = 128;
 
-extern void RegisterAssetType(const AssetTypeInfo& info);
-extern const AssetTypeInfo* GetAssetTypeInfo(int type_id);
-extern const AssetTypeInfo* FindAssetTypeByExtension(const char* ext);
-extern int GetRegisteredAssetTypeCount();
-extern void InitAssets();
+    struct AssetTypeInfo {
+        int type_id;                     // ASSET_TYPE_MESH=0, or 1001+ for extensions
+        const char* name;                // "Mesh", "CharacterSkeleton"
+        const char* short_name;          // "Mesh", "CharSkel"
+        const char* extension;           // ".mesh", ".hrskel"
+        AssetLoaderFunc loader;          // runtime loader function
+        AssetReloadFunc reload;          // hot-reload function (optional)
+    };
 
-extern bool ReadAssetHeader(Stream* stream, AssetHeader* header);
-extern bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** name_table = nullptr);
-extern bool ValidateAssetHeader(AssetHeader* header, uint32_t expected_signature);
-extern const char* GetExtensionFromAssetType(AssetType asset_type);
-extern const char* ToString(AssetType asset_type);
-extern const char* ToShortString(AssetType asset_type);
-extern const char* ToTypeString(AssetType asset_type);
-extern Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, const u8* data=nullptr, u32 data_size=0);
-extern const Name** ReadNameTable(const AssetHeader& header, Stream* stream);
-extern bool IsValidAssetType(AssetType asset_type);
-extern Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, Stream* stream);
-extern Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, const u8* data=nullptr, u32 data_size=0);
-inline const Name* GetName(Asset* asset) { return asset->name; }
-inline AssetType GetType(Asset* asset) { return asset->type; }
-inline bool IsCustomType(Asset* asset) { return asset->type == ASSET_TYPE_CUSTOM; }
-inline int GetCustomTypeId(Asset* asset) { return asset->custom_type_id; }
+    extern void RegisterAssetType(const AssetTypeInfo& info);
+    extern const AssetTypeInfo* GetAssetTypeInfo(int type_id);
+    extern const AssetTypeInfo* FindAssetTypeByExtension(const char* ext);
+    extern int GetRegisteredAssetTypeCount();
+    extern void InitAssets();
 
-// @loaders
-Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
-Asset* LoadAtlas(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
-Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
-Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
-Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
-Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
-Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
-Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
-Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
-Asset* LoadBin(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+    extern bool ReadAssetHeader(Stream* stream, AssetHeader* header);
+    extern bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** name_table = nullptr);
+    extern bool ValidateAssetHeader(AssetHeader* header, uint32_t expected_signature);
+    extern const char* GetExtensionFromAssetType(AssetType asset_type);
+    extern const char* ToString(AssetType asset_type);
+    extern const char* ToShortString(AssetType asset_type);
+    extern const char* ToTypeString(AssetType asset_type);
+    extern Asset* LoadAsset(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, const u8* data=nullptr, u32 data_size=0);
+    extern const Name** ReadNameTable(const AssetHeader& header, Stream* stream);
+    extern bool IsValidAssetType(AssetType asset_type);
+    extern Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, Stream* stream);
+    extern Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, const u8* data=nullptr, u32 data_size=0);
+    inline const Name* GetName(Asset* asset) { return asset->name; }
+    inline AssetType GetType(Asset* asset) { return asset->type; }
+    inline bool IsCustomType(Asset* asset) { return asset->type == ASSET_TYPE_CUSTOM; }
+    inline int GetCustomTypeId(Asset* asset) { return asset->custom_type_id; }
+
+    // @loaders
+    Asset* LoadTexture(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+    Asset* LoadAtlas(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+    Asset* LoadShader(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+    Asset* LoadFont(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+    Asset* LoadMesh(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+    Asset* LoadVfx(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+    Asset* LoadSound(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+    Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+    Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+    Asset* LoadBin(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 
 #if defined(NOZ_LUA)
-Asset* LoadLuaScript(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+    Asset* LoadLuaScript(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 #endif
+
+    extern Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, Stream* stream);
+
+#if !defined(NOZ_BUILTIN_ASSETS)
+    extern void ReloadAsset(const noz::Name* name, noz::AssetType asset_type, noz::Asset* asset, void (*reload)(noz::Asset*, noz::Stream*, const noz::AssetHeader& header, const noz::Name** name_table));
+    extern void ReloadVfx(noz::Asset* asset, noz::Stream* stream, const noz::AssetHeader& header, const noz::Name** name_table);
+    extern void ReloadMesh(noz::Asset* asset, noz::Stream* stream, const noz::AssetHeader& header, const noz::Name** name_table);
+    extern void ReloadShader(noz::Asset* asset, noz::Stream* stream, const noz::AssetHeader& header, const noz::Name** name_table);
+    extern void ReloadTexture(noz::Asset* asset, noz::Stream* stream, const noz::AssetHeader& header, const noz::Name** name_table);
+    extern void ReloadLuaScript(noz::Asset* asset, noz::Stream* stream, const noz::AssetHeader& header, const noz::Name** name_table);
+#endif
+}
 
 #ifdef NOZ_BUILTIN_ASSETS
 #define NOZ_ASSET_DATA(name) name ## _DATA
@@ -153,13 +167,6 @@ Asset* LoadLuaScript(Allocator* allocator, Stream* stream, AssetHeader* header, 
 #define NOZ_RELOAD_ATLAS(asset_name, asset)
 
 #if !defined(NOZ_BUILTIN_ASSETS)
-extern void ReloadAsset(const Name* name, AssetType asset_type, Asset* asset, void (*reload)(Asset*, Stream*, const AssetHeader& header, const Name** name_table));
-extern void ReloadVfx(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
-extern void ReloadMesh(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
-extern void ReloadShader(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
-extern void ReloadTexture(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
-extern void ReloadLuaScript(Asset* asset, Stream* stream, const AssetHeader& header, const Name** name_table);
-
 #define NOZ_RELOAD_VFX(asset_name, asset) \
     if(asset_name == incoming_name && incoming_type == ASSET_TYPE_VFX) { \
         ReloadAsset(asset_name, ASSET_TYPE_VFX, asset, ReloadVfx); return; }

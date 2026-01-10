@@ -4,10 +4,12 @@
 
 #pragma once
 
-struct Bin : Asset {};
+namespace noz {
+    struct Bin : Asset {};
 
-extern Stream* CreateStream(Allocator* allocator, Bin* bin);
-extern u32 GetSize(Bin* bin);
-extern const u8* GetData(Bin* bin);
+    extern Stream* CreateStream(Allocator* allocator, Bin* bin);
+    extern u32 GetSize(Bin* bin);
+    extern const u8* GetData(Bin* bin);
 
-extern Bin** BIN;
+    extern Bin** BIN;
+}

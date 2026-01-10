@@ -4,8 +4,10 @@
 
 namespace noz::editor {
 
+    extern void ImportShader(Document* a, const std::filesystem::path& path, Props* config, Props* meta);
+
     static void DrawShaderDocument(Document* doc) {
-        BindMaterial(g_view.editor_mesh_material);
+        BindMaterial(g_workspace.editor_mesh_material);
         BindColor(COLOR_WHITE);
         DrawMesh(MESH_ASSET_ICON_SHADER, Translate(doc->position));
     }
@@ -18,7 +20,7 @@ namespace noz::editor {
 
     static void InitShaderDocument(Document* doc) {
         assert(doc);
-        assert(doc->type == ASSET_TYPE_SHADER);
+        assert(doc->def->type == ASSET_TYPE_SHADER);
         InitShaderDocument(static_cast<ShaderDocument*>(doc));
     }
 
@@ -28,6 +30,7 @@ namespace noz::editor {
             .size = sizeof(ShaderDocument),
             .ext=".glsl",
             .init_func = InitShaderDocument,
+            .import_func = ImportShader
         });
     }
 }

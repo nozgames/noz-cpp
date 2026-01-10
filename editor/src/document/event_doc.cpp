@@ -4,15 +4,17 @@
 
 namespace noz::editor {
 
+    static void InitEventDocument(Document* doc);
+
     static void DrawEventDocument(Document* doc) {
-        BindMaterial(g_view.editor_mesh_material);
+        BindMaterial(g_workspace.editor_mesh_material);
         BindColor(COLOR_WHITE);
         DrawMesh(MESH_ASSET_ICON_EVENT, Translate(doc->position));
     }
 
     static void LoadEventDocument(Document* doc) {
         assert(doc);
-        assert(doc->type == ASSET_TYPE_EVENT);
+        assert(doc->def->type == ASSET_TYPE_EVENT);
         EventDocument* edoc = static_cast<EventDocument*>(doc);
 
         std::string contents = ReadAllText(ALLOCATOR_DEFAULT, doc->path.value);
@@ -25,16 +27,16 @@ namespace noz::editor {
         Tokenizer tk;
         Init(tk, contents.c_str());
 
-        EventDocument* e = static_cast<EventDocument*>(CreateAssetData(path));
-        assert(e);
-        InitEventDocument(e);
-        LoadEventDocument(e);
-        return e;
+        EventDocument* edoc = static_cast<EventDocument*>(CreateDocument(path));
+        assert(edoc);
+        InitEventDocument(edoc);
+        LoadEventDocument(edoc);
+        return edoc;
     }
 
     static void ReloadEventData(Document* a) {
         assert(a);
-        assert(a->type == ASSET_TYPE_EVENT);
+        assert(a->def->type == ASSET_TYPE_EVENT);
         EventDocument* e = static_cast<EventDocument*>(a);
         LoadEventDocument(e);
     }
@@ -53,7 +55,7 @@ namespace noz::editor {
         return LoadEventDocument(full_path);
     }
 
-    static void ImportEventDocument(Document* doc, const std::filesystem::path& path, Props* config, Props* meta) {
+    static void ImportEvent(Document* doc, const std::filesystem::path& path, Props* config, Props* meta) {
         Stream* stream = CreateStream(nullptr, 4096);
 
         AssetHeader header = {};
@@ -65,10 +67,10 @@ namespace noz::editor {
         Free(stream);
     }
 
-    static void InitEventDocument(Document* a) {
-        assert(a);
-        assert(a->type == ASSET_TYPE_EVENT);
-        EventDocument* e = static_cast<EventDocument*>(a);
+    static void InitEventDocument(Document* doc) {
+        assert(doc);
+        assert(doc->def->type == ASSET_TYPE_EVENT);
+        EventDocument* e = static_cast<EventDocument*>(doc);
         e->editor_only = true;
         e->vtable = {
             .load = LoadEventDocument,
@@ -83,6 +85,7 @@ namespace noz::editor {
             .size = sizeof(EventDocument),
             .ext = ".event",
             .init_func = InitEventDocument,
+            .import_func = ImportEvent
         });
     }
 }

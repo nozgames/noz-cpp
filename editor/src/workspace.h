@@ -92,7 +92,7 @@ namespace noz::editor {
         bool grid;
     };
 
-    extern Workspace g_view;
+    extern Workspace g_workspace;
 
     // @view
     extern void InitView();
@@ -121,14 +121,14 @@ namespace noz::editor {
     // @undo
     extern void InitUndo();
     extern void ShutdownUndo();
-    extern void RecordUndo(Document* a);
+    extern void RecordUndo(Document* doc);
     extern void RecordUndo();
     extern void BeginUndoGroup();
     extern void EndUndoGroup();
     extern bool Undo();
     extern bool Redo();
     extern void CancelUndo();
-    extern void RemoveFromUndoRedo(Document* a);
+    extern void RemoveFromUndoRedo(Document* doc);
 
     // @notifications
     extern void InitNotifications();

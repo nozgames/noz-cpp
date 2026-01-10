@@ -2,18 +2,24 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-#include "document/document_def.h"
+#include "document_def.h"
 
 namespace noz::editor {
 
+    extern void InitAnimationDocumentDef();
+    extern void InitAtasDocumentDef();
     extern void InitBinDocumentDef();
     extern void InitEventDocumentDef();
     extern void InitFontDocumentDef();
-    extern void InitShaderDocument();
-    extern void InitTextureDocumentDef();
     extern void InitLuaDocumentDef();
+    extern void InitMeshDocumentDef();
+    extern void InitShaderDocumentDef();
+    extern void InitSkeletonDocumentDef();
+    extern void InitSoundDocumentDef();
+    extern void InitTextureDocumentDef();
+    extern void InitVfxDocumentDef();
 
-    static DocumentDef g_document_defs[ASSET_TYPE_COUNT] = {};
+    DocumentDef g_document_defs[ASSET_TYPE_COUNT] = {};
 
     void InitDocumentDef(const DocumentDef& info) {
         assert(info.type >= 0 && info.type < ASSET_TYPE_COUNT);
@@ -35,20 +41,24 @@ namespace noz::editor {
     }
 
     void InitDocumentDefs() {
-        RegisterDocument({ASSET_TYPE_MESH, InitMeshData, GetMeshImporter()});
-        RegisterDocument({ASSET_TYPE_VFX, InitVfxDocument, GetVfxImporter()});
-        RegisterDocument({ASSET_TYPE_SKELETON, InitSkeletonData, GetSkeletonImporter()});
-        RegisterDocument({ASSET_TYPE_ANIMATION, InitAnimationData, GetAnimationImporter()});
-        RegisterDocument({ASSET_TYPE_SPRITE, InitSpriteDocument, GetSpriteImporter()});
-        RegisterDocument({ASSET_TYPE_SOUND, InitSoundDocument, GetSoundImporter()});
-        RegisterDocument({ASSET_TYPE_TEXTURE, InitTextureData, GetTextureImporter()});
-        RegisterDocument({ASSET_TYPE_ATLAS, InitAtlasDocument, GetAtlasImporter()});
-
+        InitAnimationDocumentDef();
+        InitAtasDocumentDef();
         InitBinDocumentDef();
         InitEventDocumentDef();
         InitFontDocumentDef();
         InitLuaDocumentDef();
-        InitShaderDocument();
+        InitMeshDocumentDef();
+        InitShaderDocumentDef();
+        InitSkeletonDocumentDef();
+        InitSoundDocumentDef();
         InitTextureDocumentDef();
+        InitVfxDocumentDef();
+
+#if !defined(NDEBUG)
+        for (int i = 0; i < ASSET_TYPE_COUNT; i++) {
+            assert(g_document_defs[i].type != ASSET_TYPE_UNKNOWN && "No DocumentDef registered for AssetType");
+            assert(g_document_defs[i].size > 0 && "DocumentDef size not set");
+        }
+#endif
     }
 }

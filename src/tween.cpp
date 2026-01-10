@@ -105,19 +105,21 @@ void ShutdownTween()
 
 #endif
 
-void InitTween() {
-}
+namespace noz {
+    void InitTween() {
+    }
 
-void ShutdownTween() {
-}
+    void ShutdownTween() {
+    }
 
-float Tween(float from, float to, float time, float duration) {
-    float t = Clamp(time / duration, 0.0f, 1.0f);
-    return from + (to - from) * t;
-}
+    float Tween(float from, float to, float time, float duration) {
+        float t = Clamp(time / duration, 0.0f, 1.0f);
+        return from + (to - from) * t;
+    }
 
-float Tween(float from, float to, float time, float duration, const std::function<float(float value)>& func) {
-    float t = func(Clamp(time / duration, 0.0f, 1.0f));
-    float v = from + (to - from) * t;
-    return v;
+    float Tween(float from, float to, float time, float duration, const std::function<float(float value)>& func) {
+        float t = func(Clamp(time / duration, 0.0f, 1.0f));
+        float v = from + (to - from) * t;
+        return v;
+    }
 }

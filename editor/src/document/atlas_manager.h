@@ -4,39 +4,42 @@
 
 #pragma once
 
-struct MeshDocument;
-struct AtlasDocument;
+namespace noz::editor {
 
-// Initialize/shutdown atlas manager
-extern void InitAtlasManager();
-extern void ShutdownAtlasManager();
+    struct MeshDocument;
+    struct AtlasDocument;
 
-// Auto-assign mesh to an atlas (lazy - finds or creates atlas as needed)
-// Returns the atlas the mesh was assigned to, or nullptr on failure
-extern AtlasDocument* AutoAssignMeshToAtlas(MeshDocument* mesh);
+    // Initialize/shutdown atlas manager
+    extern void InitAtlasManager();
+    extern void ShutdownAtlasManager();
 
-// Check if mesh needs atlas assignment (no atlas or not in any atlas)
-extern bool NeedsAtlasAssignment(MeshDocument* mesh);
+    // Auto-assign mesh to an atlas (lazy - finds or creates atlas as needed)
+    // Returns the atlas the mesh was assigned to, or nullptr on failure
+    extern AtlasDocument* AutoAssignMeshToAtlas(MeshDocument* mesh);
 
-// Manual rebuild command - clears all managed atlases, sorts by name prefix, repacks optimally
-extern void RebuildAllAtlases();
+    // Check if mesh needs atlas assignment (no atlas or not in any atlas)
+    extern bool NeedsAtlasAssignment(MeshDocument* mesh);
 
-// Register an existing atlas as managed (called during post-load for auto-managed atlases)
-extern void RegisterManagedAtlas(AtlasDocument* atlas);
+    // Manual rebuild command - clears all managed atlases, sorts by name prefix, repacks optimally
+    extern void RebuildAllAtlases();
 
-// Unregister a managed atlas
-extern void UnregisterManagedAtlas(AtlasDocument* atlas);
+    // Register an existing atlas as managed (called during post-load for auto-managed atlases)
+    extern void RegisterManagedAtlas(AtlasDocument* adoc);
 
-// Check if an atlas is auto-managed
-extern bool IsManagedAtlas(AtlasDocument* atlas);
+    // Unregister a managed atlas
+    extern void UnregisterManagedAtlas(AtlasDocument* adoc);
 
-// Get managed atlas by index
-extern AtlasDocument* GetManagedAtlas(int index);
-extern int GetManagedAtlasCount();
-extern int GetAtlasIndex(AtlasDocument* atlas);
+    // Check if an atlas is auto-managed
+    extern bool IsManagedAtlas(AtlasDocument* adoc);
 
-// Mark mesh as needing atlas re-render (call when mesh is modified)
-extern void MarkMeshAtlasDirty(MeshDocument* mesh);
+    // Get managed atlas by index
+    extern AtlasDocument* GetManagedAtlas(int index);
+    extern int GetManagedAtlasCount();
+    extern int GetAtlasIndex(AtlasDocument* adoc);
 
-// Update all dirty mesh atlases (call before saving assets)
-extern void UpdateDirtyMeshAtlases();
+    // Mark mesh as needing atlas re-render (call when mesh is modified)
+    extern void MarkMeshAtlasDirty(MeshDocument* mesh);
+
+    // Update all dirty mesh atlases (call before saving assets)
+    extern void UpdateDirtyMeshAtlases();
+}

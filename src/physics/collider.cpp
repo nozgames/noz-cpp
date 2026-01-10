@@ -2,207 +2,210 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-struct ColliderImpl : Collider {
-    Vec2* points;
-    u32 point_count;
-    Bounds2 bounds;
-};
+namespace noz {
 
-static void ColliderDestructor(void *ptr) {
-    ColliderImpl* impl = (ColliderImpl*)ptr;
-    Free(impl->points);
-}
-
-Collider* CreateCollider(Allocator* allocator, const Bounds2& bounds) {
-    ColliderImpl* impl = (ColliderImpl*)Alloc(allocator, sizeof(ColliderImpl), ColliderDestructor);
-    impl->point_count = 4;
-    impl->points = static_cast<Vec2*>(Alloc(allocator, sizeof(Vec2) * impl->point_count));
-    impl->bounds = bounds;
-    impl->points[0] = Vec2{bounds.min.x, bounds.min.y};
-    impl->points[1] = Vec2{bounds.max.x, bounds.min.y};
-    impl->points[2] = Vec2{bounds.max.x, bounds.max.y};
-    impl->points[3] = Vec2{bounds.min.x, bounds.max.y};
-    return impl;
-}
-
-Collider* CreateCollider(Allocator* allocator, const Vec2* points, u32 point_count) {
-    ColliderImpl* impl = (ColliderImpl*)Alloc(allocator, sizeof(ColliderImpl), ColliderDestructor);
-    impl->point_count = point_count;
-    impl->points = (Vec2*)Alloc(allocator, sizeof(Vec2) * point_count);
-    impl->bounds = ToBounds(points, point_count);
-    memcpy(impl->points, points, sizeof(Vec2) * point_count);
-
-    return impl;
-}
-
-Collider* CreateCollider(Allocator* allocator, Mesh* mesh) {
-    ColliderImpl* impl = (ColliderImpl*)Alloc(allocator, sizeof(ColliderImpl), ColliderDestructor);
-    impl->point_count = GetVertexCount(mesh);
-    impl->points = (Vec2*)Alloc(allocator, sizeof(Vec2) * impl->point_count);
-    impl->bounds = GetBounds(mesh);
-    for (u32 i=0; i < impl->point_count; i++)
-        impl->points[i] = GetVertices(mesh)[i].position;
-
-    return impl;
-}
-
-bool OverlapPoint(Collider* collider, const Mat3& transform, const Vec2& point) {
-    ColliderImpl* impl = (ColliderImpl*)collider;
-    Vec2 v1 = TransformPoint(transform, impl->points[impl->point_count - 1]);
-
-    for (u32 i = 0; i < impl->point_count; i++) {
-        Vec2 v2 = TransformPoint(transform, impl->points[i]);
-        Vec2 edge = v2 - v1;
-        Vec2 to_point = point - v1;
-        f32 cross = edge.x * to_point.y - edge.y * to_point.x;
-        if (cross < 0)
-            return false;
-
-        v1 = v2;
-    }
-
-    return true;
-}
-
-bool OverlapBounds(Collider* collider, const Mat3& transform, const Bounds2& bounds) {
-    ColliderImpl* impl = (ColliderImpl*)collider;
-
-    // Check if any of the bounds corners are inside the collider
-    Vec2 corners[4] = {
-        {bounds.min.x, bounds.min.y},
-        {bounds.max.x, bounds.min.y},
-        {bounds.max.x, bounds.max.y},
-        {bounds.min.x, bounds.max.y}
+    struct ColliderImpl : Collider {
+        Vec2* points;
+        u32 point_count;
+        Bounds2 bounds;
     };
 
-    for (u32 i = 0; i < 4; i++) {
-        if (OverlapPoint(collider, transform, corners[i]))
-            return true;
+    static void ColliderDestructor(void *ptr) {
+        ColliderImpl* impl = (ColliderImpl*)ptr;
+        Free(impl->points);
     }
 
-    // check if any collider edges overlap the bounds
-    Vec2 v1 = TransformPoint(transform, impl->points[impl->point_count - 1]);
-    for (u32 i = 0; i < impl->point_count; i++) {
-        Vec2 v2 = TransformPoint(transform, impl->points[i]);
-        if (Intersects(bounds, v1, v2))
-            return true;
-
-        v1 = v2;
+    Collider* CreateCollider(Allocator* allocator, const Bounds2& bounds) {
+        ColliderImpl* impl = (ColliderImpl*)Alloc(allocator, sizeof(ColliderImpl), ColliderDestructor);
+        impl->point_count = 4;
+        impl->points = static_cast<Vec2*>(Alloc(allocator, sizeof(Vec2) * impl->point_count));
+        impl->bounds = bounds;
+        impl->points[0] = Vec2{bounds.min.x, bounds.min.y};
+        impl->points[1] = Vec2{bounds.max.x, bounds.min.y};
+        impl->points[2] = Vec2{bounds.max.x, bounds.max.y};
+        impl->points[3] = Vec2{bounds.min.x, bounds.max.y};
+        return impl;
     }
 
-    return false;
-}
+    Collider* CreateCollider(Allocator* allocator, const Vec2* points, u32 point_count) {
+        ColliderImpl* impl = (ColliderImpl*)Alloc(allocator, sizeof(ColliderImpl), ColliderDestructor);
+        impl->point_count = point_count;
+        impl->points = (Vec2*)Alloc(allocator, sizeof(Vec2) * point_count);
+        impl->bounds = ToBounds(points, point_count);
+        memcpy(impl->points, points, sizeof(Vec2) * point_count);
 
-Bounds2 GetBounds(Collider* collider) {
-    return static_cast<ColliderImpl*>(collider)->bounds;
-}
+        return impl;
+    }
 
-bool Raycast(Collider* colider, const Mat3& transform, const Vec2& p0, const Vec2& p1, RaycastResult* result) {
-    return Raycast(colider, transform, p0, Normalize(p1 - p0), Length(p1 - p0), result);
-}
+    Collider* CreateCollider(Allocator* allocator, Mesh* mesh) {
+        ColliderImpl* impl = (ColliderImpl*)Alloc(allocator, sizeof(ColliderImpl), ColliderDestructor);
+        impl->point_count = GetVertexCount(mesh);
+        impl->points = (Vec2*)Alloc(allocator, sizeof(Vec2) * impl->point_count);
+        impl->bounds = GetBounds(mesh);
+        for (u32 i=0; i < impl->point_count; i++)
+            impl->points[i] = GetVertices(mesh)[i].position;
 
-bool Raycast(Collider* colider, const Mat3& transform, const Vec2& origin, const Vec2& dir, float distance, RaycastResult* result) {
-    const ColliderImpl* impl = static_cast<ColliderImpl*>(colider);
+        return impl;
+    }
 
-    Vec2 ray_end = origin + dir * distance;
+    bool OverlapPoint(Collider* collider, const Mat3& transform, const Vec2& point) {
+        ColliderImpl* impl = (ColliderImpl*)collider;
+        Vec2 v1 = TransformPoint(transform, impl->points[impl->point_count - 1]);
 
-    RaycastResult best_result = {};
-    best_result.fraction = 1.0f;
+        for (u32 i = 0; i < impl->point_count; i++) {
+            Vec2 v2 = TransformPoint(transform, impl->points[i]);
+            Vec2 edge = v2 - v1;
+            Vec2 to_point = point - v1;
+            f32 cross = edge.x * to_point.y - edge.y * to_point.x;
+            if (cross < 0)
+                return false;
 
-    Vec2 v1 = TransformPoint(transform, impl->points[impl->point_count - 1]);
-    for (u32 i = 0; i < impl->point_count; i++) {
-        Vec2 v2 = TransformPoint(transform, impl->points[i]);
-
-        Vec2 where;
-        if (OverlapLine(origin, ray_end, v1, v2, &where)) {
-            float overlap_distance = Distance(where, origin);
-            float fraction = overlap_distance / distance;
-            if (fraction < best_result.fraction) {
-                best_result.point = where;
-                best_result.fraction = fraction;
-                best_result.distance = overlap_distance;
-
-                Vec2 edge = v2 - v1;
-                best_result.normal = Normalize(Vec2{-edge.y, edge.x});
-            }
+            v1 = v2;
         }
 
-        v1 = v2;
+        return true;
     }
 
-    if (result) {
-        *result = best_result;
+    bool OverlapBounds(Collider* collider, const Mat3& transform, const Bounds2& bounds) {
+        ColliderImpl* impl = (ColliderImpl*)collider;
+
+        // Check if any of the bounds corners are inside the collider
+        Vec2 corners[4] = {
+            {bounds.min.x, bounds.min.y},
+            {bounds.max.x, bounds.min.y},
+            {bounds.max.x, bounds.max.y},
+            {bounds.min.x, bounds.max.y}
+        };
+
+        for (u32 i = 0; i < 4; i++) {
+            if (OverlapPoint(collider, transform, corners[i]))
+                return true;
+        }
+
+        // check if any collider edges overlap the bounds
+        Vec2 v1 = TransformPoint(transform, impl->points[impl->point_count - 1]);
+        for (u32 i = 0; i < impl->point_count; i++) {
+            Vec2 v2 = TransformPoint(transform, impl->points[i]);
+            if (Intersects(bounds, v1, v2))
+                return true;
+
+            v1 = v2;
+        }
+
+        return false;
     }
 
-    return best_result.fraction < 1.0f;
-}
+    Bounds2 GetBounds(Collider* collider) {
+        return static_cast<ColliderImpl*>(collider)->bounds;
+    }
 
-bool CircleCast(Collider* collider, const Mat3& transform, const Vec2& p0, const Vec2& p1, float radius, RaycastResult* result) {
-    return CircleCast(collider, transform, p0, Normalize(p1 - p0), Length(p1 - p0), radius, result);
-}
+    bool Raycast(Collider* colider, const Mat3& transform, const Vec2& p0, const Vec2& p1, RaycastResult* result) {
+        return Raycast(colider, transform, p0, Normalize(p1 - p0), Length(p1 - p0), result);
+    }
 
-bool CircleCast(Collider* collider, const Mat3& transform, const Vec2& origin, const Vec2& dir, float distance, float radius, RaycastResult* result) {
-    const ColliderImpl* impl = static_cast<ColliderImpl*>(collider);
+    bool Raycast(Collider* colider, const Mat3& transform, const Vec2& origin, const Vec2& dir, float distance, RaycastResult* result) {
+        const ColliderImpl* impl = static_cast<ColliderImpl*>(colider);
 
-    RaycastResult best_result = {};
-    best_result.fraction = 1.0f;
-
-    Vec2 v1 = TransformPoint(transform, impl->points[impl->point_count - 1]);
-    for (u32 i = 0; i < impl->point_count; i++) {
-        Vec2 v2 = TransformPoint(transform, impl->points[i]);
-
-        // Calculate edge normal (pointing outward for CCW winding)
-        Vec2 edge = v2 - v1;
-        Vec2 edge_normal = Normalize(Vec2{edge.y, -edge.x});
-
-        // Offset the edge by the radius
-        Vec2 v1_offset = v1 + edge_normal * radius;
-        Vec2 v2_offset = v2 + edge_normal * radius;
-
-        // Test ray against the offset edge
         Vec2 ray_end = origin + dir * distance;
-        Vec2 where;
-        if (OverlapLine(origin, ray_end, v1_offset, v2_offset, &where)) {
-            float overlap_distance = Distance(where, origin);
-            float fraction = overlap_distance / distance;
-            if (fraction < best_result.fraction) {
-                best_result.point = where - edge_normal * radius;
-                best_result.fraction = fraction;
-                best_result.distance = overlap_distance;
-                best_result.normal = edge_normal;
-            }
-        }
 
-        // Test ray against circle at vertex v1 (handles rounded corners)
-        // Solve: |origin + t*dir - v1|^2 = radius^2
-        Vec2 to_vertex = origin - v1;
-        float a = Dot(dir, dir);
-        float b = 2.0f * Dot(to_vertex, dir);
-        float c = Dot(to_vertex, to_vertex) - radius * radius;
-        float discriminant = b * b - 4.0f * a * c;
+        RaycastResult best_result = {};
+        best_result.fraction = 1.0f;
 
-        if (discriminant >= 0.0f) {
-            float sqrt_disc = sqrtf(discriminant);
-            float t = (-b - sqrt_disc) / (2.0f * a);
+        Vec2 v1 = TransformPoint(transform, impl->points[impl->point_count - 1]);
+        for (u32 i = 0; i < impl->point_count; i++) {
+            Vec2 v2 = TransformPoint(transform, impl->points[i]);
 
-            if (t >= 0.0f && t <= distance) {
-                float fraction = t / distance;
+            Vec2 where;
+            if (OverlapLine(origin, ray_end, v1, v2, &where)) {
+                float overlap_distance = Distance(where, origin);
+                float fraction = overlap_distance / distance;
                 if (fraction < best_result.fraction) {
-                    Vec2 hit_point = origin + dir * t;
-                    best_result.point = v1;
+                    best_result.point = where;
                     best_result.fraction = fraction;
-                    best_result.distance = t;
-                    best_result.normal = Normalize(hit_point - v1);
+                    best_result.distance = overlap_distance;
+
+                    Vec2 edge = v2 - v1;
+                    best_result.normal = Normalize(Vec2{-edge.y, edge.x});
                 }
             }
+
+            v1 = v2;
         }
 
-        v1 = v2;
+        if (result) {
+            *result = best_result;
+        }
+
+        return best_result.fraction < 1.0f;
     }
 
-    if (result) {
-        *result = best_result;
+    bool CircleCast(Collider* collider, const Mat3& transform, const Vec2& p0, const Vec2& p1, float radius, RaycastResult* result) {
+        return CircleCast(collider, transform, p0, Normalize(p1 - p0), Length(p1 - p0), radius, result);
     }
 
-    return best_result.fraction < 1.0f;
+    bool CircleCast(Collider* collider, const Mat3& transform, const Vec2& origin, const Vec2& dir, float distance, float radius, RaycastResult* result) {
+        const ColliderImpl* impl = static_cast<ColliderImpl*>(collider);
+
+        RaycastResult best_result = {};
+        best_result.fraction = 1.0f;
+
+        Vec2 v1 = TransformPoint(transform, impl->points[impl->point_count - 1]);
+        for (u32 i = 0; i < impl->point_count; i++) {
+            Vec2 v2 = TransformPoint(transform, impl->points[i]);
+
+            // Calculate edge normal (pointing outward for CCW winding)
+            Vec2 edge = v2 - v1;
+            Vec2 edge_normal = Normalize(Vec2{edge.y, -edge.x});
+
+            // Offset the edge by the radius
+            Vec2 v1_offset = v1 + edge_normal * radius;
+            Vec2 v2_offset = v2 + edge_normal * radius;
+
+            // Test ray against the offset edge
+            Vec2 ray_end = origin + dir * distance;
+            Vec2 where;
+            if (OverlapLine(origin, ray_end, v1_offset, v2_offset, &where)) {
+                float overlap_distance = Distance(where, origin);
+                float fraction = overlap_distance / distance;
+                if (fraction < best_result.fraction) {
+                    best_result.point = where - edge_normal * radius;
+                    best_result.fraction = fraction;
+                    best_result.distance = overlap_distance;
+                    best_result.normal = edge_normal;
+                }
+            }
+
+            // Test ray against circle at vertex v1 (handles rounded corners)
+            // Solve: |origin + t*dir - v1|^2 = radius^2
+            Vec2 to_vertex = origin - v1;
+            float a = Dot(dir, dir);
+            float b = 2.0f * Dot(to_vertex, dir);
+            float c = Dot(to_vertex, to_vertex) - radius * radius;
+            float discriminant = b * b - 4.0f * a * c;
+
+            if (discriminant >= 0.0f) {
+                float sqrt_disc = sqrtf(discriminant);
+                float t = (-b - sqrt_disc) / (2.0f * a);
+
+                if (t >= 0.0f && t <= distance) {
+                    float fraction = t / distance;
+                    if (fraction < best_result.fraction) {
+                        Vec2 hit_point = origin + dir * t;
+                        best_result.point = v1;
+                        best_result.fraction = fraction;
+                        best_result.distance = t;
+                        best_result.normal = Normalize(hit_point - v1);
+                    }
+                }
+            }
+
+            v1 = v2;
+        }
+
+        if (result) {
+            *result = best_result;
+        }
+
+        return best_result.fraction < 1.0f;
+    }
 }

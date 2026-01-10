@@ -38,6 +38,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <complex>
 
 // Define Windows header control macros before any Windows includes
 #ifndef NOMINMAX
@@ -52,14 +53,16 @@
 #include <noz/noz.h>
 #include "../../noz/src/internal.h"
 
-struct EditorEventStats {
-    i32 fps;
-};
+namespace noz::editor {
+    struct EditorEventStats {
+        i32 fps;
+    };
 
-enum EditorEvent {
-    EDITOR_EVENT_STATS,
-    EDITOR_EVENT_IMPORTED
-};
+    enum EditorEvent {
+        EDITOR_EVENT_STATS,
+        EDITOR_EVENT_IMPORTED
+    };
+}
 
 #include "utils/props.h"
 #include "utils/curve_utils.h"
@@ -74,5 +77,3 @@ enum EditorEvent {
 #endif
 
 #include "editor_mesh_builder.h"
-
-extern Props* g_config;

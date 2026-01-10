@@ -2,22 +2,25 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-extern void InitDebugGizmos();
-extern void InitDebugUI();
-extern void ShutdownDebugGizmos();
-extern void ShutdownDebugUI();
+namespace noz {
 
-struct Debug {
-};
+    extern void InitDebugGizmos();
+    extern void InitDebugUI();
+    extern void ShutdownDebugGizmos();
+    extern void ShutdownDebugUI();
 
-static Debug g_debug = {};
+    struct Debug {
+    };
 
-void InitDebug() {
-    InitDebugGizmos();
-    InitDebugUI();
-}
+    static Debug g_debug = {};
 
-void ShutdownDebug() {
-    ShutdownDebugUI();
-    ShutdownDebugGizmos();
+    void InitDebug() {
+        InitDebugGizmos();
+        InitDebugUI();
+    }
+
+    void ShutdownDebug() {
+        ShutdownDebugUI();
+        ShutdownDebugGizmos();
+    }
 }

@@ -68,8 +68,8 @@ namespace noz::editor {
         return result;
     }
 
-    static AssetType ReadAssetHeader(Document* ea, ManifestGenerator& generator, std::vector<const Name*>& out_names) {
-        fs::path path = fs::path(g_editor.output_path) / ToString(ea->type) / ea->name->value;
+    static AssetType ReadAssetHeader(Document* doc, ManifestGenerator& generator, std::vector<const Name*>& out_names) {
+        fs::path path = fs::path(g_editor.output_path) / ToString(doc->def->type) / doc->name->value;
         Stream* stream = LoadStream(nullptr, path);
         if (!stream)
             return ASSET_TYPE_UNKNOWN;
@@ -111,18 +111,12 @@ namespace noz::editor {
         return header.type;
     }
 
-    static bool ReadAsset(u32 item_index, void* item_ptr, void* user_data) {
-        (void)item_index;
-
-        assert(item_ptr);
-        Document* a = static_cast<Document *>(item_ptr);
-        if (a->editor_only || !a->name)
+    static bool ReadAsset(Document* doc, ManifestGenerator& generator) {
+        if (doc->editor_only || !doc->name)
             return true;
 
-        ManifestGenerator& generator = *static_cast<ManifestGenerator *>(user_data);
-
         std::vector<const Name*> names;
-        AssetType asset_type = ReadAssetHeader(a, generator, names);
+        AssetType asset_type = ReadAssetHeader(doc, generator, names);
         if (asset_type == ASSET_TYPE_UNKNOWN)
             return true;
 
@@ -131,16 +125,16 @@ namespace noz::editor {
             return true;
 
         // Use original asset type for var_name (e.g., ATLAS_BLOCKS not TEXTURE_BLOCKS)
-        const char* var_type_name = ToShortString(a->type);
-        std::string var_name = std::string(var_type_name ? var_type_name : type_name) + "_" + a->name->value;
+        const char* var_type_name = ToShortString(doc->def->type);
+        std::string var_name = std::string(var_type_name ? var_type_name : type_name) + "_" + doc->name->value;
         Upper(var_name.data(), static_cast<u32>(var_name.size()));
 
         // Skip if asset with same var_name already exists from an earlier source path
         for (auto& existing : generator.assets) {
             if (existing.var_name == var_name) {
                 // Keep the one from the earlier source path (lower asset_path_index)
-                if (a->asset_path_index < existing.asset->asset_path_index) {
-                    existing.asset = a;
+                if (doc->asset_path_index < existing.asset->asset_path_index) {
+                    existing.asset = doc;
                     existing.names = std::move(names);
                 }
                 return true;
@@ -148,7 +142,7 @@ namespace noz::editor {
         }
 
         generator.assets.push_back({
-            .asset = a,
+            .asset = doc,
             .var_name = var_name,
             .type = asset_type,
             .names = std::move(names)
@@ -190,7 +184,8 @@ namespace noz::editor {
 
         try
         {
-            Enumerate(g_editor.asset_allocator, ReadAsset, &generator);
+            for (int i = 0; i<GetDocumentCount(); i++)
+                ReadAsset(GetDocument(i), generator);
         }
         catch (const std::exception&)
         {
@@ -427,7 +422,10 @@ namespace noz::editor {
         WriteCSTR(stream, ASSET_MANIFEST_HEADER);
         WriteCSTR(stream,
             "#pragma once\n\n"
-            "#include <noz/core_assets.h>\n");
+            "#include <noz/core_assets.h>\n"
+            "\n"
+            "using namespace noz;\n"
+            "\n");
 
         for (AssetType asset_type : generator.types) {
             const char* type_name = ToString(asset_type);
@@ -468,10 +466,10 @@ namespace noz::editor {
         // Collect and sort events by name
         std::vector<std::pair<std::string, int>> events;
         for (int asset_index=0, asset_count=GetDocumentCount(); asset_index<asset_count; asset_index++) {
-            Document* a = GetDocument(asset_index);
-            if (a->type != ASSET_TYPE_EVENT) continue;
-            EventDocument* e = static_cast<EventDocument*>(a);
-            std::string var_name = a->name->value;
+            Document* doc = GetDocument(asset_index);
+            if (doc->def->type != ASSET_TYPE_EVENT) continue;
+            EventDocument* e = static_cast<EventDocument*>(doc);
+            std::string var_name = doc->name->value;
             Upper(var_name.data(), (u32)var_name.size());
             events.push_back({var_name, e->id});
         }

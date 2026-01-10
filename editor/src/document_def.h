@@ -9,12 +9,12 @@ namespace noz::editor {
     struct Document;
 
     struct DocumentDef {
-        AssetType type;
+        AssetType type = ASSET_TYPE_UNKNOWN;
         int size;
         const char* ext;
         void (*init_func)(Document* doc);
         void (*import_func) (Document* doc, const std::filesystem::path& path, Props* config, Props* meta);
-        bool (*check_depdency_func) (Document* doc, Document* dependency);
+        bool (*check_dependency_func) (Document* doc, Document* dependency);
     };
 
     extern void InitDocumentDefs();

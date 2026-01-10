@@ -4,16 +4,18 @@
 
 #pragma once
 
-constexpr EventId EVENT_FOCUS_CHANGED = -1;
-constexpr EventId EVENT_HOTLOAD = -2;
-constexpr EventId EVENT_GAMEPAD_ACTIVATED = -3;
-constexpr EventId EVENT_GAMEPAD_DEACTIVATED = -4;
+namespace noz {
+    constexpr EventId EVENT_FOCUS_CHANGED = -1;
+    constexpr EventId EVENT_HOTLOAD = -2;
+    constexpr EventId EVENT_GAMEPAD_ACTIVATED = -3;
+    constexpr EventId EVENT_GAMEPAD_DEACTIVATED = -4;
 
-struct FocusChangedEvent {
-    bool has_focus;
-};
+    struct FocusChangedEvent {
+        bool has_focus;
+    };
 
-struct AssetLoadedEvent {
-    const Name* name;
-    AssetType type;
-};
+    struct AssetLoadedEvent {
+        const Name* name;
+        AssetType type;
+    };
+}

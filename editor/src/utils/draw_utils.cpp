@@ -2,117 +2,120 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-constexpr float DEFAULT_LINE_WIDTH = 0.01f;
-constexpr float DEFAULT_VERTEX_SIZE = 0.1f;
-constexpr float DEFAULT_DASH_LENGTH = 0.1f;
-constexpr float DEFAULT_ARROW_SIZE = 0.3f;
-constexpr float ORIGIN_SIZE = 0.1f;
-constexpr float ORIGIN_BORDER_SIZE = 0.12f;
+namespace noz::editor {
 
-void DrawRect(const noz::Rect& rect)
-{
-    BindTransform(GetCenter(rect), 0, GetSize(rect) * 0.5f);
-    DrawMesh(g_view.edge_mesh);
-}
+    constexpr float DEFAULT_LINE_WIDTH = 0.01f;
+    constexpr float DEFAULT_VERTEX_SIZE = 0.1f;
+    constexpr float DEFAULT_DASH_LENGTH = 0.1f;
+    constexpr float DEFAULT_ARROW_SIZE = 0.3f;
+    constexpr float ORIGIN_SIZE = 0.1f;
+    constexpr float ORIGIN_BORDER_SIZE = 0.12f;
 
-void DrawLine(const Vec2& v0, const Vec2& v1)
-{
-    DrawLine(v0, v1, DEFAULT_LINE_WIDTH);
-}
-
-void DrawLine(const Vec2& v0, const Vec2& v1, f32 width)
-{
-    Vec2 mid = (v0 + v1) * 0.5f;
-    Vec2 dir = Normalize(v1 - v0);
-    float length = Length(v1 - v0);
-    BindTransform(TRS(mid, dir, Vec2{length * 0.5f, width * g_view.zoom_ref_scale}));
-    DrawMesh(g_view.edge_mesh);
-}
-
-void DrawDashedLine(const Vec2& v0, const Vec2& v1, f32 width, f32 length) {
-    Vec2 line_dir = Normalize(v1 - v0);
-    float line_len = Length(v1 - v0);
-
-    length *= g_view.zoom_ref_scale;
-    float scale = length * 0.5f;
-
-    int count = 0;
-    for (float pos = length/2; pos < line_len && count < 1024; pos += length * 2, count++)
+    void DrawRect(const Rect& rect)
     {
-        BindTransform(TRS(v0 + line_dir * pos, line_dir, Vec2{scale, width * g_view.zoom_ref_scale}));
-        DrawMesh(g_view.edge_mesh);
+        BindTransform(GetCenter(rect), 0, GetSize(rect) * 0.5f);
+        DrawMesh(g_workspace.edge_mesh);
     }
-}
 
-void DrawDashedLine(const Vec2& v0, const Vec2& v1) {
-    DrawDashedLine(v0, v1, DEFAULT_LINE_WIDTH, DEFAULT_DASH_LENGTH);
-}
+    void DrawLine(const Vec2& v0, const Vec2& v1)
+    {
+        DrawLine(v0, v1, DEFAULT_LINE_WIDTH);
+    }
 
-void DrawVertex(const Vec2& v) {
-    DrawVertex(v, DEFAULT_VERTEX_SIZE);
-}
+    void DrawLine(const Vec2& v0, const Vec2& v1, f32 width)
+    {
+        Vec2 mid = (v0 + v1) * 0.5f;
+        Vec2 dir = Normalize(v1 - v0);
+        float length = Length(v1 - v0);
+        BindTransform(TRS(mid, dir, Vec2{length * 0.5f, width * g_workspace.zoom_ref_scale}));
+        DrawMesh(g_workspace.edge_mesh);
+    }
 
-void DrawVertex(const Vec2& v, f32 size) {
-    BindTransform(TRS(v, 0, VEC2_ONE * g_view.zoom_ref_scale * size));
-    DrawMesh(g_view.vertex_mesh);
-}
+    void DrawDashedLine(const Vec2& v0, const Vec2& v1, f32 width, f32 length) {
+        Vec2 line_dir = Normalize(v1 - v0);
+        float line_len = Length(v1 - v0);
 
-void DrawArrow(const Vec2& v, const Vec2& dir, f32 size) {
-    BindTransform(TRS(v, dir, VEC2_ONE * g_view.zoom_ref_scale * size));
-    DrawMesh(g_view.arrow_mesh);
-}
+        length *= g_workspace.zoom_ref_scale;
+        float scale = length * 0.5f;
 
-void DrawArrow(const Vec2& v, const Vec2& dir) {
-    DrawArrow(v, dir, DEFAULT_ARROW_SIZE);
-}
+        int count = 0;
+        for (float pos = length/2; pos < line_len && count < 1024; pos += length * 2, count++)
+        {
+            BindTransform(TRS(v0 + line_dir * pos, line_dir, Vec2{scale, width * g_workspace.zoom_ref_scale}));
+            DrawMesh(g_workspace.edge_mesh);
+        }
+    }
 
-void DrawOrigin(Document* a) {
-    BindMaterial(g_view.vertex_material);
-    BindColor(COLOR_ORIGIN);
-    DrawVertex(a->position, ORIGIN_SIZE);
-}
+    void DrawDashedLine(const Vec2& v0, const Vec2& v1) {
+        DrawDashedLine(v0, v1, DEFAULT_LINE_WIDTH, DEFAULT_DASH_LENGTH);
+    }
 
-void DrawBounds(const Bounds2& bounds, const Vec2& position, const Color& color) {
-    BindMaterial(g_view.vertex_material);
-    BindColor(color);
-    Vec2 center = GetCenter(bounds) + position;
-    Vec2 size = GetSize(bounds);
-    DrawLine ({center.x - size.x * 0.5f, center.y - size.y * 0.5f}, {center.x + size.x * 0.5f, center.y - size.y * 0.5f});
-    DrawLine ({center.x + size.x * 0.5f, center.y - size.y * 0.5f}, {center.x + size.x * 0.5f, center.y + size.y * 0.5f});
-    DrawLine ({center.x + size.x * 0.5f, center.y + size.y * 0.5f}, {center.x - size.x * 0.5f, center.y + size.y * 0.5f});
-    DrawLine ({center.x - size.x * 0.5f, center.y + size.y * 0.5f}, {center.x - size.x * 0.5f, center.y - size.y * 0.5f});
-}
+    void DrawVertex(const Vec2& v) {
+        DrawVertex(v, DEFAULT_VERTEX_SIZE);
+    }
 
-void DrawBounds(Document* a, float expand, const Color& color) {
-    DrawBounds(Expand(GetBounds(a), expand), a->position, color);
-}
+    void DrawVertex(const Vec2& v, f32 size) {
+        BindTransform(TRS(v, 0, VEC2_ONE * g_workspace.zoom_ref_scale * size));
+        DrawMesh(g_workspace.vertex_mesh);
+    }
 
-void DrawBone(const Vec2& a, const Vec2& b) {
-    float l = Length(b - a);
-    float s = l * BONE_WIDTH;
-    Vec2 d = Normalize(b - a);
-    Vec2 c = a + d * s;
-    Vec2 n = Perpendicular(d);
-    Vec2 aa = c + n * s;
-    Vec2 bb = c - n * s;
+    void DrawArrow(const Vec2& v, const Vec2& dir, f32 size) {
+        BindTransform(TRS(v, dir, VEC2_ONE * g_workspace.zoom_ref_scale * size));
+        DrawMesh(g_workspace.arrow_mesh);
+    }
 
-    DrawLine(a, bb);
-    DrawLine(a, aa);
-    DrawLine(aa, b);
-    DrawLine(bb, b);
-    DrawVertex(a, BONE_ORIGIN_SIZE);
-}
+    void DrawArrow(const Vec2& v, const Vec2& dir) {
+        DrawArrow(v, dir, DEFAULT_ARROW_SIZE);
+    }
 
-void DrawBone(const Mat3& transform, const Mat3& parent_transform, const Vec2& position, float length) {
-    Vec2 p0 = TransformPoint(transform);
-    Vec2 p1 = TransformPoint(transform, Vec2 {length, 0});
-    Vec2 pp = TransformPoint(parent_transform);
-    DrawDashedLine(pp + position, p0 + position);
-    DrawBone(p0 + position, p1 + position);
-}
+    void DrawOrigin(Document* a) {
+        BindMaterial(g_workspace.vertex_material);
+        BindColor(COLOR_ORIGIN);
+        DrawVertex(a->position, ORIGIN_SIZE);
+    }
 
-void DrawBone(const Mat3& transform, float length) {
-    Vec2 p0 = TransformPoint(transform);
-    Vec2 p1 = TransformPoint(transform, Vec2 {length, 0});
-    DrawBone(p0, p1);
+    void DrawBounds(const Bounds2& bounds, const Vec2& position, const Color& color) {
+        BindMaterial(g_workspace.vertex_material);
+        BindColor(color);
+        Vec2 center = GetCenter(bounds) + position;
+        Vec2 size = GetSize(bounds);
+        DrawLine ({center.x - size.x * 0.5f, center.y - size.y * 0.5f}, {center.x + size.x * 0.5f, center.y - size.y * 0.5f});
+        DrawLine ({center.x + size.x * 0.5f, center.y - size.y * 0.5f}, {center.x + size.x * 0.5f, center.y + size.y * 0.5f});
+        DrawLine ({center.x + size.x * 0.5f, center.y + size.y * 0.5f}, {center.x - size.x * 0.5f, center.y + size.y * 0.5f});
+        DrawLine ({center.x - size.x * 0.5f, center.y + size.y * 0.5f}, {center.x - size.x * 0.5f, center.y - size.y * 0.5f});
+    }
+
+    void DrawBounds(Document* a, float expand, const Color& color) {
+        DrawBounds(Expand(GetBounds(a), expand), a->position, color);
+    }
+
+    void DrawBone(const Vec2& a, const Vec2& b) {
+        float l = Length(b - a);
+        float s = l * BONE_WIDTH;
+        Vec2 d = Normalize(b - a);
+        Vec2 c = a + d * s;
+        Vec2 n = Perpendicular(d);
+        Vec2 aa = c + n * s;
+        Vec2 bb = c - n * s;
+
+        DrawLine(a, bb);
+        DrawLine(a, aa);
+        DrawLine(aa, b);
+        DrawLine(bb, b);
+        DrawVertex(a, BONE_ORIGIN_SIZE);
+    }
+
+    void DrawBone(const Mat3& transform, const Mat3& parent_transform, const Vec2& position, float length) {
+        Vec2 p0 = TransformPoint(transform);
+        Vec2 p1 = TransformPoint(transform, Vec2 {length, 0});
+        Vec2 pp = TransformPoint(parent_transform);
+        DrawDashedLine(pp + position, p0 + position);
+        DrawBone(p0 + position, p1 + position);
+    }
+
+    void DrawBone(const Mat3& transform, float length) {
+        Vec2 p0 = TransformPoint(transform);
+        Vec2 p1 = TransformPoint(transform, Vec2 {length, 0});
+        DrawBone(p0, p1);
+    }
 }

@@ -5,59 +5,62 @@
 #include "noz/noz.h"
 #include "../platform.h"
 
-extern void PlayMusicInternal(Sound* sound);
+namespace noz {
 
-void SetMasterVolume(float volume) {
-    PlatformSetMasterVolume(volume);
-}
+    extern void PlayMusicInternal(Sound* sound);
 
-float GetMasterVolume() {
-    return PlatformGetMasterVolume();
-}
+    void SetMasterVolume(float volume) {
+        PlatformSetMasterVolume(volume);
+    }
 
-void SetSoundVolume(float volume) {
-    PlatformSetSoundVolume(volume);
-}
+    float GetMasterVolume() {
+        return PlatformGetMasterVolume();
+    }
 
-float GetSoundVolume() {
-    return PlatformGetSoundVolume();
-}
+    void SetSoundVolume(float volume) {
+        PlatformSetSoundVolume(volume);
+    }
 
-void SetMusicVolume(float volume) {
-    PlatformSetMusicVolume(volume);
-}
+    float GetSoundVolume() {
+        return PlatformGetSoundVolume();
+    }
 
-float GetMusicVolume() {
-    return PlatformGetMusicVolume();
-}
+    void SetMusicVolume(float volume) {
+        PlatformSetMusicVolume(volume);
+    }
 
-void PlayMusic(Sound* sound) {
-    if (IsMusicPlaying())
+    float GetMusicVolume() {
+        return PlatformGetMusicVolume();
+    }
+
+    void PlayMusic(Sound* sound) {
+        if (IsMusicPlaying())
+            StopMusic();
+
+        PlayMusicInternal(sound);
+    }
+
+    void StopMusic() {
+        if (!IsMusicPlaying())
+            return;
+
+        PlatformStopMusic();
+    }
+
+    bool IsMusicPlaying() {
+        return PlatformIsMusicPlaying();
+    }
+
+    void Stop(const SoundHandle& handle) {
+        PlatformStopSound({handle.value});
+    }
+
+    void InitAudio() {
+        PlatformInitAudio();
+    }
+
+    void ShutdownAudio() {
         StopMusic();
-
-    PlayMusicInternal(sound);
-}
-
-void StopMusic() {
-    if (!IsMusicPlaying())
-        return;
-
-    PlatformStopMusic();
-}
-
-bool IsMusicPlaying() {
-    return PlatformIsMusicPlaying();
-}
-
-void Stop(const SoundHandle& handle) {
-    PlatformStopSound({handle.value});
-}
-
-void InitAudio() {
-    PlatformInitAudio();
-}
-
-void ShutdownAudio() {
-    StopMusic();
-    PlatformShutdownAudio();
+        PlatformShutdownAudio();
+    }
 }

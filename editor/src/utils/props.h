@@ -1,65 +1,62 @@
 //
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
-// @STL
 
 #pragma once
 
-#include <string>
-#include <map>
-#include <vector>
+namespace noz::editor {
 
-class Props
-{
-public:
+    class Props {
+    public:
 
-    Props() = default;
-    ~Props() = default;
-    
-    // Loading
-    static Props* Load(Stream* stream);
-    static Props* Load(const char* content, size_t content_length);
+        Props() = default;
+        ~Props() = default;
 
-    // Clear all properties
-    void Clear();
-    void ClearGroup(const char* group);
-    
-    // @set
-    void SetString(const char* group, const char* key, const char* value);
-    void SetInt(const char* group, const char* key, int value);
-    void SetFloat(const char* group, const char* key, float value);
-    void SetVec3(const char* group, const char* key, Vec3 value);
-    void SetVec2(const char* group, const char* key, const Vec2& value);
-    void SetBool(const char* group, const char* key, bool value);
-    void SetColor(const char* group, const char* key, Color value);
+        // Loading
+        static Props* Load(Stream* stream);
+        static Props* Load(const char* content, size_t content_length);
 
-    // @get
-    std::string GetString(const char* group, const char* key, const char* default_value) const;
-    int GetInt(const char* group, const char* key, int default_value) const;
-    float GetFloat(const char* group, const char* key, float default_value) const;
-    bool GetBool(const char* group, const char* key, bool default_value) const;
-    Vec3 GetVec3(const char* group, const char* key, Vec3 default_value) const;
-    Vec2 GetVec2(const char* group, const char* key, const Vec2& default_value) const;
-    Color GetColor(const char* group, const char* key, Color default_value) const;
+        // Clear all properties
+        void Clear();
+        void ClearGroup(const char* group);
 
-    // @keys
-    void AddKey(const char* group, const char* key);
-    bool HasKey(const char* group, const char* key) const;
-    std::vector<std::string> GetKeys(const char* group) const;
+        // @set
+        void SetString(const char* group, const char* key, const char* value);
+        void SetInt(const char* group, const char* key, int value);
+        void SetFloat(const char* group, const char* key, float value);
+        void SetVec3(const char* group, const char* key, Vec3 value);
+        void SetVec2(const char* group, const char* key, const Vec2& value);
+        void SetBool(const char* group, const char* key, bool value);
+        void SetColor(const char* group, const char* key, Color value);
 
-    // @groups
-    bool HasGroup(const char* group) const;
-    std::vector<std::string> GetGroups() const;
+        // @get
+        std::string GetString(const char* group, const char* key, const char* default_value) const;
+        int GetInt(const char* group, const char* key, int default_value) const;
+        float GetFloat(const char* group, const char* key, float default_value) const;
+        bool GetBool(const char* group, const char* key, bool default_value) const;
+        Vec3 GetVec3(const char* group, const char* key, Vec3 default_value) const;
+        Vec2 GetVec2(const char* group, const char* key, const Vec2& default_value) const;
+        Color GetColor(const char* group, const char* key, Color default_value) const;
 
-private:
+        // @keys
+        void AddKey(const char* group, const char* key);
+        bool HasKey(const char* group, const char* key) const;
+        std::vector<std::string> GetKeys(const char* group) const;
 
-    const std::map<std::string, std::string>& GetGroup(const char* group) const;
-    std::map<std::string, std::string>& GetOrAddGroup(const char* group);
+        // @groups
+        bool HasGroup(const char* group) const;
+        std::vector<std::string> GetGroups() const;
 
-    std::map<std::string, std::map<std::string, std::string>> _properties;
+    private:
 
-    void RebuildKeyCache() const;
-};
+        const std::map<std::string, std::string>& GetGroup(const char* group) const;
+        std::map<std::string, std::string>& GetOrAddGroup(const char* group);
 
-extern Props* LoadProps(const std::filesystem::path& path);
-extern void SaveProps(Props* props, const std::filesystem::path& path);
+        std::map<std::string, std::map<std::string, std::string>> _properties;
+
+        void RebuildKeyCache() const;
+    };
+
+    extern Props* LoadProps(const std::filesystem::path& path);
+    extern void SaveProps(Props* props, const std::filesystem::path& path);
+}

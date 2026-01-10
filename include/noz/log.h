@@ -4,27 +4,30 @@
 
 #pragma once
 
-enum LogType
-{
-    LOG_TYPE_INFO,
-    LOG_TYPE_WARNING,
-    LOG_TYPE_ERROR,
-    LOG_TYPE_DEBUG
-};
+namespace noz {
 
-typedef void (*LogFunc)(LogType type, const char* message);
+    enum LogType
+    {
+        LOG_TYPE_INFO,
+        LOG_TYPE_WARNING,
+        LOG_TYPE_ERROR,
+        LOG_TYPE_DEBUG
+    };
 
-void InitLog(LogFunc callback);
-void Log(LogType type, const char* format, ...);
-void LogInfo(const char* format, ...);
-void LogWarning(const char* format, ...);
-void LogError(const char* format, ...);
-void LogFileError(const char* filename, const char* format, ...);
-void LogShutdown();
+    typedef void (*LogFunc)(LogType type, const char* message);
 
-// Debug logging macro - can be disabled in release builds
+    void InitLog(LogFunc callback);
+    void Log(LogType type, const char* format, ...);
+    void LogInfo(const char* format, ...);
+    void LogWarning(const char* format, ...);
+    void LogError(const char* format, ...);
+    void LogFileError(const char* filename, const char* format, ...);
+    void LogShutdown();
+}
+
 #ifndef NDEBUG
-    #define LogDebug(...) Log(LOG_TYPE_DEBUG, __VA_ARGS__)
+#define LogDebug(...) Log(LOG_TYPE_DEBUG, __VA_ARGS__)
 #else
-    #define LogDebug(...) ((void)0)
+#define LogDebug(...) ((void)0)
 #endif
+

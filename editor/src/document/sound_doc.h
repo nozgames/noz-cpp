@@ -6,7 +6,7 @@
 
 namespace noz::editor {
 
-    struct SoundData : Document {
+    struct SoundDocument : Document {
         SoundHandle handle;
         Sound* sound;
     };

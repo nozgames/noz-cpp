@@ -5,14 +5,14 @@
 namespace noz::editor {
 
     static void DrawBinDocument(Document* doc) {
-        BindMaterial(g_view.editor_mesh_material);
+        BindMaterial(g_workspace.editor_mesh_material);
         BindColor(COLOR_WHITE);
         DrawMesh(MESH_ASSET_ICON_BIN, Translate(doc->position));
     }
 
     static void InitBinDocument(Document* doc) {
         assert(doc);
-        assert(doc->type == ASSET_TYPE_BIN);
+        assert(doc->def->type == ASSET_TYPE_BIN);
         doc->vtable = {
             .draw = DrawBinDocument,
         };

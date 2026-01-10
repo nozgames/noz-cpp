@@ -4,6 +4,8 @@
 
 #include "platform.h"
 
-void SetThreadName(const char* name) {
-    PlatformSetThreadName(name);
+namespace noz {
+    void SetThreadName(const char* name) {
+        PlatformSetThreadName(name);
+    }
 }

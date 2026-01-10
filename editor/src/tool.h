@@ -87,11 +87,11 @@ namespace noz::editor {
     extern void BeginVertexWeightTool(const VertexWeightToolOptions& options);
 
     // @curve
-    extern void BeginCurveTool(MeshDocument* mesh, u16* edge_indices, u16 edge_count);
+    extern void BeginCurveTool(MeshDocument* mdoc, u16* edge_indices, u16 edge_count);
 
     // @pen
     extern void BeginPenTool(MeshDocument* mesh, int color, float opacity);
 
     // @auto_curve
-    extern void BeginAutoCurveTool(MeshDocument* mesh);
+    extern void BeginAutoCurveTool(MeshDocument* mdoc);
 }

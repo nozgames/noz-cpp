@@ -5,241 +5,243 @@
 #include "noz/color.h"
 #include <math.h>
 
-// Helper function to clamp float values
-static float clamp_float(float value, float min, float max)
-{
-    if (value < min) return min;
-    if (value > max) return max;
-    return value;
-}
+namespace noz {
 
-static uint8_t float_to_uint8(float value) {
-    return static_cast<uint8_t>(clamp_float(value * 255.0f, 0.0f, 255.0f));
-}
-
-Color32 color32_create(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-    Color32 color = {r, g, b, a};
-    return color;
-}
-
-Color32 ToColor32(const Color& color) {
-    return Color32 {
-        float_to_uint8(color.r),
-        float_to_uint8(color.g),
-        float_to_uint8(color.b),
-        float_to_uint8(color.a)
-    };
-}
-
-Color32 color32_from_color24(const Color24* color, uint8_t alpha)
-{
-    if (!color) 
+    // Helper function to clamp float values
+    static float clamp_float(float value, float min, float max)
     {
-        return color32_create(0, 0, 0, alpha);
+        if (value < min) return min;
+        if (value > max) return max;
+        return value;
     }
-    
-    return color32_create(color->r, color->g, color->b, alpha);
-}
 
-bool color32_is_transparent(const Color32* color)
-{
-    return color && color->a == 0;
-}
-
-bool color32_is_opaque(const Color32* color)
-{
-    return color && color->a == 255;
-}
-
-bool color32_equals(const Color32* a, const Color32* b)
-{
-    if (!a || !b) return a == b;
-    return a->r == b->r && a->g == b->g && a->b == b->b && a->a == b->a;
-}
-
-// Color24 functions
-Color24 color24_create(uint8_t r, uint8_t g, uint8_t b)
-{
-    Color24 color = {r, g, b};
-    return color;
-}
-
-Color24 color24_from_color(const Color* color)
-{
-    if (!color) 
-    {
-        return color24_create(0, 0, 0);
+    static uint8_t float_to_uint8(float value) {
+        return static_cast<uint8_t>(clamp_float(value * 255.0f, 0.0f, 255.0f));
     }
-    
-    Color24 result = 
-    {
-        float_to_uint8(color->r),
-        float_to_uint8(color->g),
-        float_to_uint8(color->b)
-    };
-    return result;
-}
 
-Color24 color24_from_color32(const Color32* color)
-{
-    if (!color) 
-    {
-        return color24_create(0, 0, 0);
+    Color32 color32_create(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+        Color32 color = {r, g, b, a};
+        return color;
     }
-    
-    return color24_create(color->r, color->g, color->b);
-}
 
-bool color24_equals(const Color24* a, const Color24* b)
-{
-    if (!a || !b) return a == b;
-    return a->r == b->r && a->g == b->g && a->b == b->b;
-}
-
-// Color functions
-Color color_create(float r, float g, float b, float a)
-{
-    Color color = {r, g, b, a};
-    return color;
-}
-
-Color color_from_color32(const Color32* color)
-{
-    if (!color) 
-    {
-        return color_create(0.0f, 0.0f, 0.0f, 1.0f);
+    Color32 ToColor32(const Color& color) {
+        return Color32 {
+            float_to_uint8(color.r),
+            float_to_uint8(color.g),
+            float_to_uint8(color.b),
+            float_to_uint8(color.a)
+        };
     }
-    
-    Color result =
-    {
-        color->r / 255.0f,
-        color->g / 255.0f,
-        color->b / 255.0f,
-        color->a / 255.0f
-    };
-    return result;
-}
 
-Color color_from_color24(const Color24* color, float alpha)
-{
-    if (!color) 
+    Color32 color32_from_color24(const Color24* color, uint8_t alpha)
     {
-        return color_create(0.0f, 0.0f, 0.0f, alpha);
+        if (!color)
+        {
+            return color32_create(0, 0, 0, alpha);
+        }
+
+        return color32_create(color->r, color->g, color->b, alpha);
     }
-    
-    Color result =
+
+    bool color32_is_transparent(const Color32* color)
     {
-        color->r / 255.0f,
-        color->g / 255.0f,
-        color->b / 255.0f,
-        alpha
-    };
-    return result;
-}
-
-bool color_is_transparent(const Color* color)
-{
-    return color && color->a <= 0.0f;
-}
-
-bool color_is_opaque(const Color* color)
-{
-    return color && color->a >= 1.0f;
-}
-
-Color color_clamped(const Color* color)
-{
-    if (!color) 
-    {
-        return color_create(0.0f, 0.0f, 0.0f, 1.0f);
+        return color && color->a == 0;
     }
-    
-    return color_create(
-        clamp_float(color->r, 0.0f, 1.0f),
-        clamp_float(color->g, 0.0f, 1.0f),
-        clamp_float(color->b, 0.0f, 1.0f),
-        clamp_float(color->a, 0.0f, 1.0f)
-    );
-}
 
-bool color_equals(const Color* a, const Color* b)
-{
-    if (!a || !b) return a == b;
-    
-    const float epsilon = 1e-6f;
-    return fabsf(a->r - b->r) < epsilon && 
-           fabsf(a->g - b->g) < epsilon && 
-           fabsf(a->b - b->b) < epsilon &&
-           fabsf(a->a - b->a) < epsilon;
-}
-
-Color color_add(const Color* a, const Color* b)
-{
-    if (!a || !b) 
+    bool color32_is_opaque(const Color32* color)
     {
-        return color_create(0.0f, 0.0f, 0.0f, 1.0f);
+        return color && color->a == 255;
     }
-    
-    return color_create(a->r + b->r, a->g + b->g, a->b + b->b, a->a + b->a);
-}
 
-Color color_subtract(const Color* a, const Color* b)
-{
-    if (!a || !b) 
+    bool color32_equals(const Color32* a, const Color32* b)
     {
-        return color_create(0.0f, 0.0f, 0.0f, 1.0f);
+        if (!a || !b) return a == b;
+        return a->r == b->r && a->g == b->g && a->b == b->b && a->a == b->a;
     }
-    
-    return color_create(a->r - b->r, a->g - b->g, a->b - b->b, a->a - b->a);
-}
 
-Color color_multiply_scalar(const Color* color, float scalar)
-{
-    if (!color) 
+    // Color24 functions
+    Color24 color24_create(uint8_t r, uint8_t g, uint8_t b)
     {
-        return color_create(0.0f, 0.0f, 0.0f, 1.0f);
+        Color24 color = {r, g, b};
+        return color;
     }
-    
-    return color_create(color->r * scalar, color->g * scalar, color->b * scalar, color->a * scalar);
-}
 
-Color color_multiply(const Color* a, const Color* b)
-{
-    if (!a || !b) 
+    Color24 color24_from_color(const Color* color)
     {
-        return color_create(0.0f, 0.0f, 0.0f, 1.0f);
-    }
-    
-    return color_create(a->r * b->r, a->g * b->g, a->b * b->b, a->a * b->a);
-}
+        if (!color)
+        {
+            return color24_create(0, 0, 0);
+        }
 
-Color color_lerp(const Color* a, const Color* b, float t)
-{
-    if (!a || !b) 
+        Color24 result =
+        {
+            float_to_uint8(color->r),
+            float_to_uint8(color->g),
+            float_to_uint8(color->b)
+        };
+        return result;
+    }
+
+    Color24 color24_from_color32(const Color32* color)
     {
-        return color_create(0.0f, 0.0f, 0.0f, 1.0f);
+        if (!color)
+        {
+            return color24_create(0, 0, 0);
+        }
+
+        return color24_create(color->r, color->g, color->b);
     }
-    
-    return color_create(
-        a->r + (b->r - a->r) * t,
-        a->g + (b->g - a->g) * t,
-        a->b + (b->b - a->b) * t,
-        a->a + (b->a - a->a) * t
-    );
+
+    bool color24_equals(const Color24* a, const Color24* b)
+    {
+        if (!a || !b) return a == b;
+        return a->r == b->r && a->g == b->g && a->b == b->b;
+    }
+
+    // Color functions
+    Color color_create(float r, float g, float b, float a)
+    {
+        Color color = {r, g, b, a};
+        return color;
+    }
+
+    Color color_from_color32(const Color32* color)
+    {
+        if (!color)
+        {
+            return color_create(0.0f, 0.0f, 0.0f, 1.0f);
+        }
+
+        Color result =
+        {
+            color->r / 255.0f,
+            color->g / 255.0f,
+            color->b / 255.0f,
+            color->a / 255.0f
+        };
+        return result;
+    }
+
+    Color color_from_color24(const Color24* color, float alpha)
+    {
+        if (!color)
+        {
+            return color_create(0.0f, 0.0f, 0.0f, alpha);
+        }
+
+        Color result =
+        {
+            color->r / 255.0f,
+            color->g / 255.0f,
+            color->b / 255.0f,
+            alpha
+        };
+        return result;
+    }
+
+    bool color_is_transparent(const Color* color)
+    {
+        return color && color->a <= 0.0f;
+    }
+
+    bool color_is_opaque(const Color* color)
+    {
+        return color && color->a >= 1.0f;
+    }
+
+    Color color_clamped(const Color* color)
+    {
+        if (!color)
+        {
+            return color_create(0.0f, 0.0f, 0.0f, 1.0f);
+        }
+
+        return color_create(
+            clamp_float(color->r, 0.0f, 1.0f),
+            clamp_float(color->g, 0.0f, 1.0f),
+            clamp_float(color->b, 0.0f, 1.0f),
+            clamp_float(color->a, 0.0f, 1.0f)
+        );
+    }
+
+    bool color_equals(const Color* a, const Color* b)
+    {
+        if (!a || !b) return a == b;
+
+        const float epsilon = 1e-6f;
+        return fabsf(a->r - b->r) < epsilon &&
+               fabsf(a->g - b->g) < epsilon &&
+               fabsf(a->b - b->b) < epsilon &&
+               fabsf(a->a - b->a) < epsilon;
+    }
+
+    Color color_add(const Color* a, const Color* b)
+    {
+        if (!a || !b)
+        {
+            return color_create(0.0f, 0.0f, 0.0f, 1.0f);
+        }
+
+        return color_create(a->r + b->r, a->g + b->g, a->b + b->b, a->a + b->a);
+    }
+
+    Color color_subtract(const Color* a, const Color* b)
+    {
+        if (!a || !b)
+        {
+            return color_create(0.0f, 0.0f, 0.0f, 1.0f);
+        }
+
+        return color_create(a->r - b->r, a->g - b->g, a->b - b->b, a->a - b->a);
+    }
+
+    Color color_multiply_scalar(const Color* color, float scalar)
+    {
+        if (!color)
+        {
+            return color_create(0.0f, 0.0f, 0.0f, 1.0f);
+        }
+
+        return color_create(color->r * scalar, color->g * scalar, color->b * scalar, color->a * scalar);
+    }
+
+    Color color_multiply(const Color* a, const Color* b)
+    {
+        if (!a || !b)
+        {
+            return color_create(0.0f, 0.0f, 0.0f, 1.0f);
+        }
+
+        return color_create(a->r * b->r, a->g * b->g, a->b * b->b, a->a * b->a);
+    }
+
+    Color color_lerp(const Color* a, const Color* b, float t)
+    {
+        if (!a || !b)
+        {
+            return color_create(0.0f, 0.0f, 0.0f, 1.0f);
+        }
+
+        return color_create(
+            a->r + (b->r - a->r) * t,
+            a->g + (b->g - a->g) * t,
+            a->b + (b->b - a->b) * t,
+            a->a + (b->a - a->a) * t
+        );
+    }
+
+    // @color32
+    Color32 color32_black = {0, 0, 0, 255};
+    Color32 color32_white = {255, 255, 255, 255};
+    Color32 color32_red = {255, 0, 0, 255};
+    Color32 color32_green = {0, 255, 0, 255};
+    Color32 color32_blue = {0, 0, 255, 255};
+    Color32 color32_transparent = {0, 0, 0, 0};
+
+    // @color24
+    Color24 color24_black = {0, 0, 0};
+    Color24 color24_white = {255, 255, 255};
+    Color24 color24_red = {255, 0, 0};
+    Color24 color24_green = {0, 255, 0};
+    Color24 color24_blue = {0, 0, 255};
 }
-
-// @color32
-Color32 color32_black = {0, 0, 0, 255};
-Color32 color32_white = {255, 255, 255, 255};
-Color32 color32_red = {255, 0, 0, 255};
-Color32 color32_green = {0, 255, 0, 255};
-Color32 color32_blue = {0, 0, 255, 255};
-Color32 color32_transparent = {0, 0, 0, 0};
-
-// @color24
-Color24 color24_black = {0, 0, 0};
-Color24 color24_white = {255, 255, 255};
-Color24 color24_red = {255, 0, 0};
-Color24 color24_green = {0, 255, 0};
-Color24 color24_blue = {0, 0, 255};
-

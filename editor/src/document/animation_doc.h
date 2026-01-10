@@ -39,24 +39,23 @@ namespace noz::editor {
         AnimationFlags flags;
     };
 
-    extern void InitAnimationDocument(AnimationDocument* doc);
     extern AnimationDocument* NewAnimationDocument(const std::filesystem::path& path);
-    extern void PostLoadDocument(AnimationDocument* doc);
-    extern void UpdateBounds(AnimationDocument* n);
-    extern void Serialize(AnimationDocument* n, Stream* stream, SkeletonDocument* s);
-    extern Animation* ToAnimation(Allocator* allocator, AnimationDocument* n);
-    extern int InsertFrame(AnimationDocument* n, int insert_at);
-    extern int DeleteFrame(AnimationDocument* n, int frame_index);
-    extern Transform& GetFrameTransform(AnimationDocument* n, int bone_index, int frame_index);
-    extern void UpdateTransforms(AnimationDocument* n, int frame_index=-1);
-    extern void UpdateSkeleton(AnimationDocument* n);
+    extern void PostLoadDocument(AnimationDocument* adoc);
+    extern void UpdateBounds(AnimationDocument* adoc);
+    extern void Serialize(AnimationDocument* adoc, Stream* stream, SkeletonDocument* s);
+    extern Animation* ToAnimation(Allocator* allocator, AnimationDocument* adoc);
+    extern int InsertFrame(AnimationDocument* adoc, int insert_at);
+    extern int DeleteFrame(AnimationDocument* adoc, int frame_index);
+    extern Transform& GetFrameTransform(AnimationDocument* adoc, int bone_index, int frame_index);
+    extern void UpdateTransforms(AnimationDocument* adoc, int frame_index=-1);
+    extern void UpdateSkeleton(AnimationDocument* adoc);
     extern void DrawAnimationData(Document* doc);
-    extern int HitTestBones(AnimationDocument* n, const Mat3& transform, const Vec2& position, int* bones, int max_bones=MAX_BONES);
-    extern int HitTestBone(AnimationDocument* n, const Mat3& transform, const Vec2& position);
-    extern int GetFrameCountWithHolds(AnimationDocument* n);
-    extern int GetFrameIndexWithHolds(AnimationDocument* n, int frame_index);
-    extern int GetRealFrameIndex(AnimationDocument* n, int frame_index);
-    inline bool IsRootMotion(AnimationDocument* n) { return (n->flags & ANIMATION_FLAG_ROOT_MOTION) != 0; }
-    inline bool IsLooping(AnimationDocument* n) { return (n->flags & ANIMATION_FLAG_LOOPING) != 0; }
-    extern void SetLooping(AnimationDocument* n, bool looping);
+    extern int HitTestBones(AnimationDocument* adoc, const Mat3& transform, const Vec2& position, int* bones, int max_bones=MAX_BONES);
+    extern int HitTestBone(AnimationDocument* adoc, const Mat3& transform, const Vec2& position);
+    extern int GetFrameCountWithHolds(AnimationDocument* adoc);
+    extern int GetFrameIndexWithHolds(AnimationDocument* adoc, int frame_index);
+    extern int GetRealFrameIndex(AnimationDocument* adoc, int frame_index);
+    inline bool IsRootMotion(AnimationDocument* adoc) { return (adoc->flags & ANIMATION_FLAG_ROOT_MOTION) != 0; }
+    inline bool IsLooping(AnimationDocument* adoc) { return (adoc->flags & ANIMATION_FLAG_LOOPING) != 0; }
+    extern void SetLooping(AnimationDocument* adoc, bool looping);
 }

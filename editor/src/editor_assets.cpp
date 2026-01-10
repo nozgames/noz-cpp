@@ -4,7 +4,7 @@
 //
 
 #include <noz/noz.h>
-#include "nozed_assets.h"
+#include "editor_assets.h"
 
 #if defined(NOZ_BUILTIN_ASSETS)
 #include "nozed_assets_build.cpp"

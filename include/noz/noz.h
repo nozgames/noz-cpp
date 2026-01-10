@@ -11,6 +11,8 @@
 #include <stddef.h>
 #include <string.h>
 #include <functional>
+#include <filesystem>
+#include <mutex>
 
 #include "noz_math.h"
 #include "string.h"

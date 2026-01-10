@@ -2,57 +2,58 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-extern Mesh* MESH_ASSET_ICON_SOUND;
+namespace noz::editor {
 
-static void AllocSoundImpl(Document* a) {
-    assert(a->type == ASSET_TYPE_SOUND);
-    SoundData* s = static_cast<SoundData*>(a);
-    s->impl = static_cast<SoundDataImpl*>(Alloc(ALLOCATOR_DEFAULT, sizeof(SoundDataImpl)));
-    memset(s->impl, 0, sizeof(SoundDataImpl));
-}
+    extern void ImportSound(Document* doc, const std::filesystem::path& path, Props* config, Props* meta);
 
-static void CloneSoundData(Document* a) {
-    assert(a->type == ASSET_TYPE_SOUND);
-    SoundData* s = static_cast<SoundData*>(a);
-    SoundDataImpl* old_impl = s->impl;
-    AllocSoundImpl(a);
-    memcpy(s->impl, old_impl, sizeof(SoundDataImpl));
-}
+    static void CloneSoundDocument(Document* doc) {
+        assert(doc->def->type == ASSET_TYPE_SOUND);
+        SoundDocument* sdoc = static_cast<SoundDocument*>(doc);
+        sdoc->handle = {};
+    }
 
-static void DestroySoundData(Document* a) {
-    SoundData* s = static_cast<SoundData*>(a);
-    Free(s->impl);
-    s->impl = nullptr;
-}
+    static void DestroySoundDocument(Document* doc) {
+        SoundDocument* s = static_cast<SoundDocument*>(doc);
+        Free(s->sound);
+        s->sound = nullptr;
+    }
 
-static void DrawSoundData(Document* a) {
-    BindMaterial(g_view.editor_mesh_material);
-    BindColor(COLOR_WHITE);
-    DrawMesh(MESH_ASSET_ICON_SOUND, Translate(a->position));
-}
+    static void DrawSoundDocument(Document* a) {
+        BindMaterial(g_workspace.editor_mesh_material);
+        BindColor(COLOR_WHITE);
+        DrawMesh(MESH_ASSET_ICON_SOUND, Translate(a->position));
+    }
 
-static void PlaySoundData(Document* a) {
-    SoundData* s = static_cast<SoundData*>(a);
-    SoundDataImpl* impl = s->impl;
-    if (!impl->sound)
-        impl->sound = static_cast<Sound*>(LoadAssetInternal(ALLOCATOR_DEFAULT, s->name, ASSET_TYPE_SOUND, LoadSound));
+    static void PlaySoundDocument(Document* doc) {
+        SoundDocument* sdoc = static_cast<SoundDocument*>(doc);
+        if (!sdoc->sound)
+            sdoc->sound = static_cast<Sound*>(LoadAssetInternal(ALLOCATOR_DEFAULT, sdoc->name, ASSET_TYPE_SOUND, LoadSound));
 
-    Play(impl->sound, 1.0f, 1.0f);
-}
+        Play(sdoc->sound, 1.0f, 1.0f);
+    }
 
-static void InitSoundData(SoundData* s) {
-    AllocSoundImpl(s);
+    static void InitSoundDocument(SoundDocument* sdoc) {
+        sdoc->vtable = {
+            .destructor = DestroySoundDocument,
+            .draw = DrawSoundDocument,
+            .play = PlaySoundDocument,
+            .clone = CloneSoundDocument,
+        };
+    }
 
-    s->vtable = {
-        .destructor = DestroySoundData,
-        .draw = DrawSoundData,
-        .play = PlaySoundData,
-        .clone = CloneSoundData,
-    };
-}
+    static void InitSoundDocument(Document* doc) {
+        assert(doc);
+        assert(doc->def->type == ASSET_TYPE_SOUND);
+        InitSoundDocument(static_cast<SoundDocument*>(doc));
+    }
 
-void InitSoundData(Document* a) {
-    assert(a);
-    assert(a->type == ASSET_TYPE_SOUND);
-    InitSoundDocument(static_cast<SoundData*>(a));
+    void InitSoundDocumentDef() {
+        InitDocumentDef({
+            .type = ASSET_TYPE_SOUND,
+            .size = sizeof(SoundDocument),
+            .ext = ".wav",
+            .init_func = InitSoundDocument,
+            .import_func = ImportSound
+        });
+    }
 }

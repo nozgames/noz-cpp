@@ -2,38 +2,41 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-float AngleDelta(const Vec2& a, const Vec2&b) {
-    float angle_a = atan2f(a.y, a.x);
-    float angle_b = atan2f(b.y, b.x);
-    float delta = angle_b - angle_a;
+namespace noz {
 
-    if (delta > noz::PI)
-        delta -= noz::TWO_PI;
-    else if (delta < -noz::PI)
-        delta += noz::TWO_PI;
+    float AngleDelta(const Vec2& a, const Vec2&b) {
+        float angle_a = atan2f(a.y, a.x);
+        float angle_b = atan2f(b.y, b.x);
+        float delta = angle_b - angle_a;
 
-    return Degrees(delta);
-}
+        if (delta > noz::PI)
+            delta -= noz::TWO_PI;
+        else if (delta < -noz::PI)
+            delta += noz::TWO_PI;
 
-float AngleDelta(float a, float b) {
-    float delta = Repeat((b - a), 360.0f);
-    if (delta > 180.0F)
-        delta -= 360.0F;
-    return delta;
-}
+        return Degrees(delta);
+    }
 
-float NormalizeAngle(float angle) {
-    while (angle < 0) angle += noz::TWO_PI;
-    while (angle >= noz::TWO_PI) angle -= noz::TWO_PI;
-    return angle;
-}
+    float AngleDelta(float a, float b) {
+        float delta = Repeat((b - a), 360.0f);
+        if (delta > 180.0F)
+            delta -= 360.0F;
+        return delta;
+    }
 
-float NormalizeAngle180(float angle) {
-    while (angle < -180.0f) angle += 360.0f;
-    while (angle > 180.0f) angle -= 360.0f;
-    return angle;
-}
+    float NormalizeAngle(float angle) {
+        while (angle < 0) angle += noz::TWO_PI;
+        while (angle >= noz::TWO_PI) angle -= noz::TWO_PI;
+        return angle;
+    }
 
-float MixAngle(float a, float b, float t) {
-    return a + Mix(0, AngleDelta(a,b), t);
+    float NormalizeAngle180(float angle) {
+        while (angle < -180.0f) angle += 360.0f;
+        while (angle > 180.0f) angle -= 360.0f;
+        return angle;
+    }
+
+    float MixAngle(float a, float b, float t) {
+        return a + Mix(0, AngleDelta(a,b), t);
+    }
 }

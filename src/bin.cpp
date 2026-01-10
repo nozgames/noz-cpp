@@ -2,44 +2,47 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-Bin** BIN = nullptr;
-int BIN_COUNT = 0;
+namespace noz {
 
-struct BinImpl : Bin {
-    u32 length;
-    u8* data;
-};
+    Bin** BIN = nullptr;
+    int BIN_COUNT = 0;
 
-Asset* LoadBin(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
-    (void)name_table;
-    (void)header;
-    (void)name;
+    struct BinImpl : Bin {
+        u32 length;
+        u8* data;
+    };
 
-    assert(stream);
-    assert(name);
-    assert(header);
+    Asset* LoadBin(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table) {
+        (void)name_table;
+        (void)header;
+        (void)name;
 
-    u32 data_size = ReadU32(stream);
+        assert(stream);
+        assert(name);
+        assert(header);
 
-    BinImpl* impl = static_cast<BinImpl*>(Alloc(allocator, sizeof(BinImpl) + data_size));
-    impl->data = reinterpret_cast<u8 *>(impl + 1);
-    impl->length = data_size;
-    ReadBytes(stream, impl->data, data_size);
+        u32 data_size = ReadU32(stream);
 
-    return impl;
-}
+        BinImpl* impl = static_cast<BinImpl*>(Alloc(allocator, sizeof(BinImpl) + data_size));
+        impl->data = reinterpret_cast<u8 *>(impl + 1);
+        impl->length = data_size;
+        ReadBytes(stream, impl->data, data_size);
 
-u32 GetSize(Bin* bin) {
-    BinImpl* impl = static_cast<BinImpl*>(bin);
-    return impl->length;
-}
+        return impl;
+    }
 
-const u8* GetData(Bin* bin) {
-    BinImpl* impl = static_cast<BinImpl*>(bin);
-    return impl->data;
-}
+    u32 GetSize(Bin* bin) {
+        BinImpl* impl = static_cast<BinImpl*>(bin);
+        return impl->length;
+    }
 
-Stream* CreateStream(Allocator* allocator, Bin* bin) {
-    BinImpl* impl = static_cast<BinImpl*>(bin);
-    return CreateStream(allocator, impl->data, impl->length);
+    const u8* GetData(Bin* bin) {
+        BinImpl* impl = static_cast<BinImpl*>(bin);
+        return impl->data;
+    }
+
+    Stream* CreateStream(Allocator* allocator, Bin* bin) {
+        BinImpl* impl = static_cast<BinImpl*>(bin);
+        return CreateStream(allocator, impl->data, impl->length);
+    }
 }

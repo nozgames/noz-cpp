@@ -2,199 +2,221 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-constexpr int MAX_UNDO = EDITOR_MAX_DOCUMENTS * 2;
+namespace noz::editor {
 
-struct UndoItem {
-    GenericAssetData saved_asset;
-    Document* asset;
-    int group_id;
-};
+    constexpr int MAX_UNDO = EDITOR_MAX_DOCUMENTS * 2;
 
-struct UndoSystem {
-    RingBuffer* undo;
-    RingBuffer* redo;
-    int next_group_id;
-    int current_group_id;
-    Document* temp[MAX_UNDO];
-    int temp_count;
-};
+    struct UndoItem {
+        Document* saved_doc;
+        Document* doc;
+        int group_id;
+    };
 
-static UndoSystem g_undo = {};
+    struct UndoSystem {
+        RingBuffer* undo;
+        RingBuffer* redo;
+        int next_group_id;
+        int current_group_id;
+        Document* temp[MAX_UNDO];
+        int temp_count;
+    };
 
-inline UndoItem* GetBackItem(RingBuffer* buffer) {
-    return (UndoItem*)GetBack(buffer);
-}
+    static UndoSystem g_undo = {};
 
-inline int GetBackGroupId(RingBuffer* buffer) {
-    return GetBackItem(buffer)->group_id;
-}
-
-static void Free(UndoItem& item) {
-    item.group_id = -1;
-}
-
-static void CallUndoRedo() {
-    for (int i=0; i<g_undo.temp_count; i++) {
-        Document* ea = g_undo.temp[i];
-        if (ea->vtable.undo_redo)
-            ea->vtable.undo_redo(ea);
+    inline UndoItem* GetBackItem(RingBuffer* buffer) {
+        return (UndoItem*)GetBack(buffer);
     }
 
-    SortAssets();
+    inline int GetBackGroupId(RingBuffer* buffer) {
+        return GetBackItem(buffer)->group_id;
+    }
 
-    g_undo.temp_count = 0;
-}
+    static void FreeUndoItem(UndoItem& item) {
+        if (item.saved_doc) {
+            Free(item.saved_doc);
+            item.saved_doc = nullptr;
+        }
+        item.group_id = -1;
+    }
 
-static bool UndoInternal(bool allow_redo) {
-    if (IsEmpty(g_undo.undo))
-        return false;
-
-    int group_id = GetBackGroupId(g_undo.undo);
-
-    while (!IsEmpty(g_undo.undo)) {
-        UndoItem* item = GetBackItem(g_undo.undo);
-        if (group_id != -1 && item->group_id != group_id)
-            break;
-
-        Document* undo_asset = item->asset;
-        assert(undo_asset);
-        assert(undo_asset->type == item->saved_asset.type);
-
-        if (allow_redo) {
-            UndoItem* redo_item = static_cast<UndoItem*>(PushBack(g_undo.redo));
-            redo_item->group_id = group_id;
-            redo_item->asset = item->asset;
-            Clone(&redo_item->saved_asset, undo_asset);
+    static void CallUndoRedo() {
+        for (int i=0; i<g_undo.temp_count; i++) {
+            Document* doc = g_undo.temp[i];
+            if (doc->vtable.undo_redo)
+                doc->vtable.undo_redo(doc);
         }
 
-        Clone(undo_asset, &item->saved_asset);
-        MarkModified(undo_asset);
-
-        g_undo.temp[g_undo.temp_count++] = undo_asset;
-
-        PopBack(g_undo.undo);
-
-        if (item->group_id == -1)
-            break;
+        g_undo.temp_count = 0;
     }
 
-    CallUndoRedo();
+    static bool UndoInternal(bool allow_redo) {
+        if (IsEmpty(g_undo.undo))
+            return false;
 
-    return true;
-}
+        int group_id = GetBackGroupId(g_undo.undo);
 
-bool Undo()
-{
-    return UndoInternal(true);
-}
+        while (!IsEmpty(g_undo.undo)) {
+            UndoItem* item = GetBackItem(g_undo.undo);
+            if (group_id != -1 && item->group_id != group_id)
+                break;
 
-bool Redo()
-{
-    if (IsEmpty(g_undo.redo))
-        return false;
+            Document* undo_asset = item->doc;
+            assert(undo_asset);
+            assert(undo_asset->def->type == item->saved_doc->def->type);
 
-    int group_id = ((UndoItem*)GetBack(g_undo.redo))->group_id;
+            if (allow_redo) {
+                UndoItem* redo_item = static_cast<UndoItem*>(PushBack(g_undo.redo));
+                redo_item->group_id = group_id;
+                redo_item->doc = item->doc;
+                redo_item->saved_doc = Clone(item->doc);
+            }
 
-    while (!IsEmpty(g_undo.redo))
+            CloneInto(item->saved_doc, undo_asset);
+            Free(item->saved_doc);
+            item->saved_doc = nullptr;
+            MarkModified(undo_asset);
+
+            g_undo.temp[g_undo.temp_count++] = undo_asset;
+
+            PopBack(g_undo.undo);
+
+            if (item->group_id == -1)
+                break;
+        }
+
+        CallUndoRedo();
+
+        return true;
+    }
+
+    bool Undo()
     {
-        UndoItem& redo_item = *(UndoItem*)GetBack(g_undo.redo);
-        if (group_id != -1 && redo_item.group_id != group_id)
-            break;
-
-        Document* redo_asset = redo_item.asset;
-        assert(redo_asset);
-        assert(redo_asset->type == redo_item.saved_asset.type);
-
-        UndoItem& undo_item = *(UndoItem*)PushBack(g_undo.undo);
-        undo_item.group_id = group_id;
-        undo_item.asset = redo_item.asset;
-        Clone(&undo_item.saved_asset, redo_asset);
-
-        Clone(redo_asset, &redo_item.saved_asset);
-        MarkModified(redo_asset);
-
-        g_undo.temp[g_undo.temp_count++] = redo_asset;
-
-        PopBack(g_undo.redo);
-
-        if (redo_item.group_id == -1)
-            break;
+        return UndoInternal(true);
     }
 
-    CallUndoRedo();
+    bool Redo()
+    {
+        if (IsEmpty(g_undo.redo))
+            return false;
 
-    return true;
-}
+        int group_id = ((UndoItem*)GetBack(g_undo.redo))->group_id;
 
-void CancelUndo()
-{
-    if (GetCount(g_undo.undo) == 0)
-        return;
+        while (!IsEmpty(g_undo.redo))
+        {
+            UndoItem& redo_item = *(UndoItem*)GetBack(g_undo.redo);
+            if (group_id != -1 && redo_item.group_id != group_id)
+                break;
 
-    UndoInternal(false);
-}
+            Document* redo_asset = redo_item.doc;
+            assert(redo_asset);
+            assert(redo_asset->def->type == redo_item.saved_doc->def->type);
 
-void BeginUndoGroup()
-{
-    g_undo.current_group_id = g_undo.next_group_id++;
-}
+            UndoItem& undo_item = *(UndoItem*)PushBack(g_undo.undo);
+            undo_item.group_id = group_id;
+            undo_item.doc = redo_item.doc;
+            undo_item.saved_doc = Clone(redo_asset);
 
-void EndUndoGroup() {
-    g_undo.current_group_id = -1;
-}
+            CloneInto(redo_item.saved_doc, redo_asset);
+            Free(redo_item.saved_doc);
+            redo_item.saved_doc = nullptr;
+            MarkModified(redo_asset);
 
-void RecordUndo() {
-    RecordUndo(GetDocument());
-}
+            g_undo.temp[g_undo.temp_count++] = redo_asset;
 
-void RecordUndo(Document* a) {
-    // Maxium undo size
-    if (IsFull(g_undo.undo)) {
-        UndoItem& old = *(UndoItem*)GetFront(g_undo.undo);
-        Free(old);
-        PopBack(g_undo.undo);
+            PopBack(g_undo.redo);
+
+            if (redo_item.group_id == -1)
+                break;
+        }
+
+        CallUndoRedo();
+
+        return true;
     }
 
-    UndoItem& item = *(UndoItem*)PushBack(g_undo.undo);
-    item.group_id = g_undo.current_group_id;
-    item.asset = a;
-    Clone(&item.saved_asset, a);
+    void CancelUndo()
+    {
+        if (GetCount(g_undo.undo) == 0)
+            return;
 
-    // Clear the redo
-    while (!IsEmpty(g_undo.redo)) {
-        UndoItem& old = *(UndoItem*)GetFront(g_undo.redo);
-        Free(old);
-        PopBack(g_undo.redo);
-    }
-}
-
-void RemoveFromUndoRedo(Document* a) {
-    for (u32 i=GetCount(g_undo.undo); i>0; i--) {
-        UndoItem& undo_item = *(UndoItem*)GetAt(g_undo.undo, i-1);
-        if (undo_item.asset != a) continue;
-        RemoveAt(g_undo.undo, i-1);
+        UndoInternal(false);
     }
 
-    for (u32 i=GetCount(g_undo.redo); i>0; i--) {
-        UndoItem& undo_item = *(UndoItem*)GetAt(g_undo.redo, i-1);
-        if (undo_item.asset != a) continue;
-        RemoveAt(g_undo.redo, i-1);
+    void BeginUndoGroup()
+    {
+        g_undo.current_group_id = g_undo.next_group_id++;
     }
-}
 
-void InitUndo()
-{
-    assert(!g_undo.undo);
-    g_undo.undo = CreateRingBuffer(ALLOCATOR_DEFAULT, sizeof(UndoItem), MAX_UNDO);
-    g_undo.redo = CreateRingBuffer(ALLOCATOR_DEFAULT, sizeof(UndoItem), MAX_UNDO);
-    g_undo.current_group_id = -1;
-    g_undo.next_group_id = 1;
-}
+    void EndUndoGroup() {
+        g_undo.current_group_id = -1;
+    }
 
-void ShutdownUndo()
-{
-    assert(g_undo.undo);
-    Free(g_undo.undo);
-    Free(g_undo.redo);
-    g_undo = {};
+    void RecordUndo() {
+        RecordUndo(GetActiveDocument());
+    }
+
+    void RecordUndo(Document* doc) {
+        // Maxium undo size
+        if (IsFull(g_undo.undo)) {
+            UndoItem& old = *(UndoItem*)GetFront(g_undo.undo);
+            FreeUndoItem(old);
+            PopBack(g_undo.undo);
+        }
+
+        UndoItem& item = *(UndoItem*)PushBack(g_undo.undo);
+        item.group_id = g_undo.current_group_id;
+        item.doc = doc;
+        item.saved_doc = Clone(doc);
+
+        // Clear the redo
+        while (!IsEmpty(g_undo.redo)) {
+            UndoItem& old = *(UndoItem*)GetFront(g_undo.redo);
+            FreeUndoItem(old);
+            PopBack(g_undo.redo);
+        }
+    }
+
+    void RemoveFromUndoRedo(Document* doc) {
+        for (u32 i=GetCount(g_undo.undo); i>0; i--) {
+            UndoItem& undo_item = *(UndoItem*)GetAt(g_undo.undo, i-1);
+            if (undo_item.doc != doc) continue;
+            FreeUndoItem(undo_item);
+            RemoveAt(g_undo.undo, i-1);
+        }
+
+        for (u32 i=GetCount(g_undo.redo); i>0; i--) {
+            UndoItem& redo_item = *(UndoItem*)GetAt(g_undo.redo, i-1);
+            if (redo_item.doc != doc) continue;
+            FreeUndoItem(redo_item);
+            RemoveAt(g_undo.redo, i-1);
+        }
+    }
+
+    void InitUndo() {
+        assert(!g_undo.undo);
+        g_undo.undo = CreateRingBuffer(ALLOCATOR_DEFAULT, sizeof(UndoItem), MAX_UNDO);
+        g_undo.redo = CreateRingBuffer(ALLOCATOR_DEFAULT, sizeof(UndoItem), MAX_UNDO);
+        g_undo.current_group_id = -1;
+        g_undo.next_group_id = 1;
+    }
+
+    void ShutdownUndo() {
+        assert(g_undo.undo);
+
+        while (!IsEmpty(g_undo.undo)) {
+            UndoItem& item = *(UndoItem*)GetBack(g_undo.undo);
+            FreeUndoItem(item);
+            PopBack(g_undo.undo);
+        }
+
+        while (!IsEmpty(g_undo.redo)) {
+            UndoItem& item = *(UndoItem*)GetBack(g_undo.redo);
+            FreeUndoItem(item);
+            PopBack(g_undo.redo);
+        }
+
+        Free(g_undo.undo);
+        Free(g_undo.redo);
+        g_undo = {};
+    }
 }

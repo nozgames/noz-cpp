@@ -71,6 +71,7 @@ namespace noz::editor {
     void EndTool();
 
     struct Editor {
+        Props* config = nullptr;
         Document* documents[EDITOR_MAX_DOCUMENTS];
         int document_count;
 

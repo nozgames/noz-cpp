@@ -4,134 +4,137 @@
 
 #define DEFAULT_CAPACITY 32
 
-struct ListImpl : List
-{
-    void* items;
-    u32 count;
-    u32 item_size;
-    u32 capacity;
-};
-
-void ListDestructor(void* ptr)
-{
-    ListImpl* impl = static_cast<ListImpl*>(ptr);
-    Free(impl->items);
-}
-
-List* CreateList(Allocator* allocator, u32 item_size, u32 capacity)
-{   
-    if (capacity == 0)
-	capacity = DEFAULT_CAPACITY;
-
-    List* list = (List*)Alloc(allocator, sizeof(ListImpl), ListDestructor);
-    ListImpl* impl = static_cast<ListImpl*>(list);
-    if (!list)
-        return nullptr;
+namespace noz {
     
-    impl->count = 0;
-    impl->capacity = capacity;
-    impl->items = Alloc(allocator, item_size * capacity);
-    if (!impl->items)
+    struct ListImpl : List
     {
-        Free(list);
-        return nullptr;
+        void* items;
+        u32 count;
+        u32 item_size;
+        u32 capacity;
+    };
+
+    void ListDestructor(void* ptr)
+    {
+        ListImpl* impl = static_cast<ListImpl*>(ptr);
+        Free(impl->items);
     }
-    
-    return list;
-}
 
-u32 GetCount(List* list)
-{
-    return static_cast<ListImpl*>(list)->count;
-}
+    List* CreateList(Allocator* allocator, u32 item_size, u32 capacity)
+    {
+        if (capacity == 0)
+            capacity = DEFAULT_CAPACITY;
 
-bool IsFull(List* list)
-{
-    assert(list);
-    ListImpl* impl = static_cast<ListImpl*>(list);
-    return impl->count == impl->capacity;
-}
+        List* list = (List*)Alloc(allocator, sizeof(ListImpl), ListDestructor);
+        ListImpl* impl = static_cast<ListImpl*>(list);
+        if (!list)
+            return nullptr;
 
-void* GetAt(List* list, u32 index)
-{
-    assert(list);
-    ListImpl* impl = static_cast<ListImpl*>(list);
-    assert(index < impl->count);
-    return (u8*)impl->items + index * impl->item_size;
-}
+        impl->count = 0;
+        impl->capacity = capacity;
+        impl->items = Alloc(allocator, item_size * capacity);
+        if (!impl->items)
+        {
+            Free(list);
+            return nullptr;
+        }
 
-static void* AddInternal(List* list)
-{
-    assert(list);
+        return list;
+    }
 
-    if (IsFull(list))
-        return nullptr;
+    u32 GetCount(List* list)
+    {
+        return static_cast<ListImpl*>(list)->count;
+    }
 
-    ListImpl* impl = static_cast<ListImpl*>(list);
-    impl->count++;
-    return GetAt(list, impl->count - 1);
-}
+    bool IsFull(List* list)
+    {
+        assert(list);
+        ListImpl* impl = static_cast<ListImpl*>(list);
+        return impl->count == impl->capacity;
+    }
 
-void* Add(List* list)
-{
-    assert(list);
+    void* GetAt(List* list, u32 index)
+    {
+        assert(list);
+        ListImpl* impl = static_cast<ListImpl*>(list);
+        assert(index < impl->count);
+        return (u8*)impl->items + index * impl->item_size;
+    }
 
-    void* item = AddInternal(list);
-    if (!item)
-        return nullptr;
+    static void* AddInternal(List* list)
+    {
+        assert(list);
 
-    ListImpl* impl = static_cast<ListImpl*>(list);
-    memset(item, 0, impl->item_size);
-    return item;
-}
+        if (IsFull(list))
+            return nullptr;
 
-void* Add(List* list, const void* value)
-{
-    assert(list);
-    assert(value);
+        ListImpl* impl = static_cast<ListImpl*>(list);
+        impl->count++;
+        return GetAt(list, impl->count - 1);
+    }
 
-    void* item = AddInternal(list);
-    if (!item)
-        return nullptr;
+    void* Add(List* list)
+    {
+        assert(list);
 
-    ListImpl* impl = static_cast<ListImpl*>(list);
-    memcpy(item, value, impl->item_size);
-    return item;
-}
+        void* item = AddInternal(list);
+        if (!item)
+            return nullptr;
 
-void Remove(List* list, const void* item)
-{
-    assert(list);
-    assert(item);
-    RemoveRange(list, item, 1);
-}
+        ListImpl* impl = static_cast<ListImpl*>(list);
+        memset(item, 0, impl->item_size);
+        return item;
+    }
 
-void RemoveRange(List* list, const void* first, int count)
-{
-    assert(list);
-    assert(first);
-    assert(count > 0);
+    void* Add(List* list, const void* value)
+    {
+        assert(list);
+        assert(value);
 
-    ListImpl* impl = static_cast<ListImpl*>(list);
-    assert(first >= impl->items);
+        void* item = AddInternal(list);
+        if (!item)
+            return nullptr;
 
-    u32 index = (u32)((u8*)first - (u8*)impl->items) / impl->item_size;
-    assert(index < impl->count);
+        ListImpl* impl = static_cast<ListImpl*>(list);
+        memcpy(item, value, impl->item_size);
+        return item;
+    }
 
-    if (index + count < impl->count)
-        memmove(GetAt(list, index), GetAt(list, index + count), impl->item_size * (impl->count - index - count));
+    void Remove(List* list, const void* item)
+    {
+        assert(list);
+        assert(item);
+        RemoveRange(list, item, 1);
+    }
 
-    impl->count -= count;
-}
+    void RemoveRange(List* list, const void* first, int count)
+    {
+        assert(list);
+        assert(first);
+        assert(count > 0);
 
-void RemoveAt(List* list, u32 index) {
-    assert(list);
-    assert(index < static_cast<ListImpl*>(list)->count);
-    RemoveRange(list, GetAt(list, index), 1);
-}
+        ListImpl* impl = static_cast<ListImpl*>(list);
+        assert(first >= impl->items);
 
-void Clear(List* list) {
-    assert(list);
-    ListImpl* impl = static_cast<ListImpl*>(list);
-    impl->count = 0;
+        u32 index = (u32)((u8*)first - (u8*)impl->items) / impl->item_size;
+        assert(index < impl->count);
+
+        if (index + count < impl->count)
+            memmove(GetAt(list, index), GetAt(list, index + count), impl->item_size * (impl->count - index - count));
+
+        impl->count -= count;
+    }
+
+    void RemoveAt(List* list, u32 index) {
+        assert(list);
+        assert(index < static_cast<ListImpl*>(list)->count);
+        RemoveRange(list, GetAt(list, index), 1);
+    }
+
+    void Clear(List* list) {
+        assert(list);
+        ListImpl* impl = static_cast<ListImpl*>(list);
+        impl->count = 0;
+    }
 }

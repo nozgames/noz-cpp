@@ -30,28 +30,27 @@ namespace noz::editor {
         Vec2 display_mesh_position;
     };
 
-    extern void InitSkeletonData(Document* doc);
     extern Document* NewSkeletonDocument(const std::filesystem::path& path);
     extern Document* CreateEditorSkeletonAsset(const std::filesystem::path& path, SkeletonDocument* skeleton);
-    extern void DrawSkeletonData(SkeletonDocument* s, const Vec2& position);
-    extern int HitTestBones(SkeletonDocument* s, const Mat3& transform, const Vec2& position, int* bones, int max_bones=MAX_BONES);
-    extern int HitTestBone(SkeletonDocument* s, const Vec2& world_pos);
-    extern int HitTestBone(SkeletonDocument* s, const Mat3& transform, const Vec2& world_pos);
-    extern void UpdateTransforms(SkeletonDocument* s);
-    extern void PostLoadEditorAssets(SkeletonDocument* s);
-    extern int FindBoneIndex(SkeletonDocument* s, const Name* name);
-    extern void Serialize(SkeletonDocument* s, Stream* stream);
-    extern Skeleton* ToSkeleton(Allocator* allocator, SkeletonDocument* s);
-    extern int ReparentBone(SkeletonDocument* s, int bone_index, int parent_index);
-    extern const Name* GetUniqueBoneName(SkeletonDocument* s);
-    extern void RemoveBone(SkeletonDocument* s, int bone_index);
-    extern int GetMirrorBone(SkeletonDocument* s, int bone_index);
+    extern void DrawSkeletonDocument(SkeletonDocument* sdoc, const Vec2& position);
+    extern int HitTestBones(SkeletonDocument* sdoc, const Mat3& transform, const Vec2& position, int* bones, int max_bones=MAX_BONES);
+    extern int HitTestBone(SkeletonDocument* sdoc, const Vec2& world_pos);
+    extern int HitTestBone(SkeletonDocument* sdoc, const Mat3& transform, const Vec2& world_pos);
+    extern void UpdateTransforms(SkeletonDocument* sdoc);
+    extern void PostLoadEditorAssets(SkeletonDocument* sdoc);
+    extern int FindBoneIndex(SkeletonDocument* sdoc, const Name* name);
+    extern void Serialize(SkeletonDocument* sdoc, Stream* stream);
+    extern Skeleton* ToSkeleton(Allocator* allocator, SkeletonDocument* sdoc);
+    extern int ReparentBone(SkeletonDocument* sdoc, int bone_index, int parent_index);
+    extern const Name* GetUniqueBoneName(SkeletonDocument* sdoc);
+    extern void RemoveBone(SkeletonDocument* sdoc, int bone_index);
+    extern int GetMirrorBone(SkeletonDocument* sdoc, int bone_index);
 
-    inline BoneData* GetParent(SkeletonDocument* es, BoneData* eb) {
-        return eb->parent_index >= 0 ? &es->bones[eb->parent_index] : nullptr;
+    inline BoneData* GetParent(SkeletonDocument* sdoc, BoneData* eb) {
+        return eb->parent_index >= 0 ? &sdoc->bones[eb->parent_index] : nullptr;
     }
 
-    inline Mat3 GetParentLocalToWorld(SkeletonDocument* doc, BoneData* eb, const Mat3& default_local_to_world) {
-        return eb->parent_index >= 0 ? doc->bones[eb->parent_index].local_to_world : default_local_to_world;
+    inline Mat3 GetParentLocalToWorld(SkeletonDocument* sdoc, BoneData* eb, const Mat3& default_local_to_world) {
+        return eb->parent_index >= 0 ? sdoc->bones[eb->parent_index].local_to_world : default_local_to_world;
     }
 }

@@ -7,6 +7,8 @@
 
 #include <noz/core_assets.h>
 
+using namespace noz;
+
 // @Mesh
 extern Mesh* MESH_ASSET_ICON_ATLAS;
 extern Mesh* MESH_ASSET_ICON_BIN;
