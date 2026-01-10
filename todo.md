@@ -1,4 +1,5 @@
-- [ ] assert if scratch is in thread, handle scratch in threads
+- [ ] Boolean operations on paths
+- [ ] - [ ] assert if scratch is in thread, handle scratch in threads
 - [ ] anti-alias render
 - [ ] outline color in mesh editor
 
@@ -114,7 +115,7 @@
 - [ ] Auto complete on commands
 - [ ] Change UI, vertex size, edge size, etc to not scale with the window size
 - [ ] Localized strings
-
+p
 # Skins
 
 - [ ] new asset type for skin

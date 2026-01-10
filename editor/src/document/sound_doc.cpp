@@ -21,7 +21,7 @@ namespace noz::editor {
     static void DrawSoundDocument(Document* a) {
         BindMaterial(g_workspace.editor_mesh_material);
         BindColor(COLOR_WHITE);
-        DrawMesh(MESH_ASSET_ICON_SOUND, Translate(a->position));
+        //DrawMesh(MESH_ASSET_ICON_SOUND, Translate(a->position));
     }
 
     static void PlaySoundDocument(Document* doc) {

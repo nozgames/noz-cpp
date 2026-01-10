@@ -9,6 +9,7 @@ namespace noz::editor::shape {
     constexpr int SHAPE_MAX_ANCHORS = 2048;
     constexpr int SHAPE_MAX_SEGMENTS = 2048;
     constexpr int SHAPE_MAX_PATHS = 1024;
+    constexpr int SHAPE_MAX_SEGMENT_SAMPLES = 16;
 
     struct Anchor {
         Vec2 position;
@@ -20,12 +21,14 @@ namespace noz::editor::shape {
         u16 anchor1;
         u16 path_left;
         u16 path_right;
+        Vec2 samples[SHAPE_MAX_SEGMENT_SAMPLES];
 
         struct {
             Vec2 offset;
             float weight;
         } curve;
 
+        u16 sample_count;
         bool active;
     };
 
@@ -45,4 +48,7 @@ namespace noz::editor::shape {
         u16 segment_count;
         u16 path_count;
     };
+
+
+    extern void UpdateSegmentSamples(Shape* shape, u16 s_idx);
 }

@@ -85,6 +85,7 @@ set(SOURCE_FILES
     src/physics/collision.cpp
     src/random.cpp
     src/rect.cpp
+
     src/render/camera.cpp
     src/render/material.cpp
     src/render/mesh_builder.cpp
@@ -92,12 +93,14 @@ set(SOURCE_FILES
     src/render/font.cpp
     src/render/texture.cpp
     src/render/shader.cpp
+    src/render/sprite.cpp
     src/render/render_buffer.cpp
     src/render/renderer.cpp
     src/render/skeleton.cpp
     src/render/animation.cpp
     src/render/animator.cpp
     src/render/blend_tree.cpp
+
     src/stream.cpp
     src/time.cpp
     src/ui/ui.cpp
@@ -360,8 +363,8 @@ if(CMAKE_GENERATOR STREQUAL "Ninja")
 endif()
 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /WX")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX  /wd4100 /wd4189")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /WX  /wd4100 /wd4189")
 endif()
 
 if (NOZ_EDITOR)

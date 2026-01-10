@@ -21,6 +21,7 @@ namespace noz {
     struct Skeleton : Asset {};
     struct MeshBuilder {};
     struct Atlas : Asset {};
+    struct Sprite : Asset {};
     struct Animator;
 
     // @renderer_traits
@@ -277,6 +278,7 @@ extern noz::Atlas** ATLAS;
 extern noz::Texture* ATLAS_ARRAY;  // Texture array containing all atlases
 extern noz::Shader** SHADER;
 extern noz::Skeleton** SKELETON;
+extern noz::Sprite** SPRITE;
 
 extern int MESH_COUNT;
 extern int FONT_COUNT;
@@ -284,3 +286,5 @@ extern int TEXTURE_COUNT;
 extern int SHADER_COUNT;
 extern int SKELETON_COUNT;
 extern int ATLAS_COUNT;
+extern int SPRITE_COUNT;
+

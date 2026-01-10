@@ -55,25 +55,21 @@ namespace noz {
     // @asset_registry
     constexpr int MAX_ASSET_TYPES = 128;
 
-    struct AssetTypeInfo {
-        int type_id;                     // ASSET_TYPE_MESH=0, or 1001+ for extensions
+    struct AssetDef {
+        AssetType type;                     // ASSET_TYPE_MESH=0, or 1001+ for extensions
         const char* name;                // "Mesh", "CharacterSkeleton"
         const char* short_name;          // "Mesh", "CharSkel"
-        const char* extension;           // ".mesh", ".hrskel"
         AssetLoaderFunc loader;          // runtime loader function
         AssetReloadFunc reload;          // hot-reload function (optional)
     };
 
-    extern void RegisterAssetType(const AssetTypeInfo& info);
-    extern const AssetTypeInfo* GetAssetTypeInfo(int type_id);
-    extern const AssetTypeInfo* FindAssetTypeByExtension(const char* ext);
-    extern int GetRegisteredAssetTypeCount();
+    extern void InitAssetDef(const AssetDef& info);
+    extern const AssetDef* GetAssetDef(AssetType type);
     extern void InitAssets();
 
     extern bool ReadAssetHeader(Stream* stream, AssetHeader* header);
     extern bool WriteAssetHeader(Stream* stream, AssetHeader* header, const Name** name_table = nullptr);
     extern bool ValidateAssetHeader(AssetHeader* header, uint32_t expected_signature);
-    extern const char* GetExtensionFromAssetType(AssetType asset_type);
     extern const char* ToString(AssetType asset_type);
     extern const char* ToShortString(AssetType asset_type);
     extern const char* ToTypeString(AssetType asset_type);
@@ -98,6 +94,7 @@ namespace noz {
     Asset* LoadSkeleton(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
     Asset* LoadAnimation(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
     Asset* LoadBin(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
+    Asset* LoadSprite(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
 
 #if defined(NOZ_LUA)
     Asset* LoadLuaScript(Allocator* allocator, Stream* stream, AssetHeader* header, const Name* name, const Name** name_table);
@@ -154,6 +151,11 @@ namespace noz {
 #define NOZ_LOAD_BIN(allocator, path, member) \
     member = static_cast<Bin*>(LoadAsset(allocator, path, ASSET_TYPE_BIN, LoadBin,  NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member)));
 
+#define NOZ_LOAD_SPRITE(allocator, path, member) \
+    member = static_cast<Sprite*>(                                                                                        \
+        LoadAsset(allocator, path, ASSET_TYPE_SPRITE, LoadSprite, NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member))       \
+    );
+
 #if defined(NOZ_LUA)
 #define NOZ_LOAD_LUA(allocator, path, member) \
     member = static_cast<noz::lua::Script*>(LoadAsset(allocator, path, ASSET_TYPE_LUA, LoadLuaScript,  NOZ_ASSET_DATA(member), NOZ_ASSET_DATA_SIZE(member)));
@@ -165,6 +167,7 @@ namespace noz {
 #define NOZ_RELOAD_ANIMATION(asset_name, asset)
 #define NOZ_RELOAD_BIN(asset_name, asset)
 #define NOZ_RELOAD_ATLAS(asset_name, asset)
+#define NOZ_RELOAD_SPRITE(asset_name, asset)
 
 #if !defined(NOZ_BUILTIN_ASSETS)
 #define NOZ_RELOAD_VFX(asset_name, asset) \

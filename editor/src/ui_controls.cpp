@@ -55,6 +55,11 @@ namespace noz::editor {
 
     }
 
+    bool EditorButton(ElementId id, Sprite* icon, bool state, bool disabled) {
+        //return EditorButton({.id = id, .icon = icon, .checked = state, .disabled = disabled});
+        return false;
+    }
+
     bool EditorButton(ElementId id, Mesh* icon, bool state, bool disabled) {
         return EditorButton({
             .id = id,

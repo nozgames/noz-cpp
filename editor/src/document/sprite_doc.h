@@ -18,6 +18,7 @@ namespace noz::editor {
     struct SpriteDocument : Document {
         SpriteFrame frames[SPRITE_MAX_FRAMES];
         u16 frame_count;
+        u8 palette;
     };
 
     extern void InitSpriteData(Document* a);

@@ -17,7 +17,6 @@ extern Mesh* MESH_ASSET_ICON_EVENT;
 extern Mesh* MESH_ASSET_ICON_FONT;
 extern Mesh* MESH_ASSET_ICON_LUA;
 extern Mesh* MESH_ASSET_ICON_SHADER;
-extern Mesh* MESH_ASSET_ICON_SOUND;
 extern Mesh* MESH_ASSET_ICON_VFX;
 extern Mesh* MESH_ICON_CIRCLE;
 extern Mesh* MESH_ICON_CLOSE;
@@ -31,7 +30,6 @@ extern Mesh* MESH_ICON_MIRROR;
 extern Mesh* MESH_ICON_ONION;
 extern Mesh* MESH_ICON_OPACITY;
 extern Mesh* MESH_ICON_OPACITY_OVERLAY;
-extern Mesh* MESH_ICON_PALETTE;
 extern Mesh* MESH_ICON_PUBLISH;
 extern Mesh* MESH_ICON_ROOT_MOTION;
 extern Mesh* MESH_ICON_SUBMENU;
@@ -62,6 +60,10 @@ extern Shader* SHADER_VFX;
 
 // @Atlas
 extern Atlas* ATLAS_EDITOR_ATLAS00;
+
+// @Sprite
+extern Sprite* SPRITE_ASSET_ICON_SOUND;
+extern Sprite* SPRITE_ICON_PALETTE;
 
 // @name
 extern const Name* NAME_A;

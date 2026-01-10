@@ -1043,7 +1043,7 @@ namespace noz::editor {
         BeginRow({.align=ALIGN_RIGHT, .spacing=6});
         if (EditorButton(MESH_EDITOR_ID_TILE, MESH_ICON_TILING, g_mesh_editor.show_tiling))
             g_mesh_editor.show_tiling = !g_mesh_editor.show_tiling;
-        if (EditorButton(MESH_EDITOR_ID_EXPAND, MESH_ICON_PALETTE, g_mesh_editor.show_palette_picker, g_editor.palette_count < 2))
+        if (EditorButton(MESH_EDITOR_ID_EXPAND, SPRITE_ICON_PALETTE, g_mesh_editor.show_palette_picker, g_editor.palette_count < 2))
             show_palette_picker = !g_mesh_editor.show_palette_picker;
         EndRow();
         EndContainer();

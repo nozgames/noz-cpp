@@ -2,44 +2,24 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
+#if defined(NOZ_BUILTIN_ASSETS)
+#define ReloadMesh nullptr
+#define ReloadVfx nullptr
+#define ReloadTexture nullptr
+#define ReloadShader nullptr
+#define ReloadLuaScript nullptr
+#endif
+
 namespace noz {
     // @asset_registry
-    static AssetTypeInfo g_asset_types[MAX_ASSET_TYPES] = {};
-    static int g_asset_type_count = 0;
+    static AssetDef g_asset_defs[ASSET_TYPE_COUNT] = {};
 
-    void RegisterAssetType(const AssetTypeInfo& info) {
-        assert(g_asset_type_count < MAX_ASSET_TYPES);
-
-        // Check for duplicate type_id
-        for (int i = 0; i < g_asset_type_count; i++) {
-            if (g_asset_types[i].type_id == info.type_id) {
-                assert(false && "Duplicate asset type_id registered");
-                return;
-            }
-        }
-
-        g_asset_types[g_asset_type_count++] = info;
+    void InitAssetDef(const AssetDef& info) {        
+        g_asset_defs[info.type] = info;
     }
 
-    const AssetTypeInfo* GetAssetTypeInfo(int type_id) {
-        for (int i = 0; i < g_asset_type_count; i++) {
-            if (g_asset_types[i].type_id == type_id)
-                return &g_asset_types[i];
-        }
-        return nullptr;
-    }
-
-    const AssetTypeInfo* FindAssetTypeByExtension(const char* ext) {
-        if (!ext) return nullptr;
-        for (int i = 0; i < g_asset_type_count; i++) {
-            if (g_asset_types[i].extension && strcmp(g_asset_types[i].extension, ext) == 0)
-                return &g_asset_types[i];
-        }
-        return nullptr;
-    }
-
-    int GetRegisteredAssetTypeCount() {
-        return g_asset_type_count;
+    const AssetDef* GetAssetDef(AssetType type) {
+        return &g_asset_defs[type];
     }
 
     bool IsValidAssetType(AssetType asset_type) {
@@ -80,25 +60,7 @@ namespace noz {
     }
 
     const char* ToString(AssetType asset_type) {
-#if 0
-        // Built-in types (for backward compatibility and performance)
-        switch (asset_type) {
-            case ASSET_TYPE_TEXTURE: return "Texture";
-            case ASSET_TYPE_MESH: return "Mesh";
-            case ASSET_TYPE_FONT: return "Font";
-            case ASSET_TYPE_SOUND: return "Sound";
-            case ASSET_TYPE_SKELETON: return "Skeleton";
-            case ASSET_TYPE_ANIMATION: return "Animation";
-            case ASSET_TYPE_VFX: return "Vfx";
-            case ASSET_TYPE_SHADER: return "Shader";
-            case ASSET_TYPE_EVENT: return "Event";
-            case ASSET_TYPE_BIN: return "Bin";
-            case ASSET_TYPE_LUA: return "Script";
-            default: break;
-        }
-#endif
-
-        const AssetTypeInfo* info = GetAssetTypeInfo(asset_type);
+        const AssetDef* info = GetAssetDef(asset_type);
         return info ? info->name : nullptr;
     }
 
@@ -108,15 +70,9 @@ namespace noz {
     }
 
     const char* ToShortString(AssetType asset_type) {
-        const AssetTypeInfo* info = GetAssetTypeInfo(asset_type);
+        const AssetDef* info = GetAssetDef(asset_type);
         if (info && info->short_name) return info->short_name;
         return ToString(asset_type);
-    }
-
-    const char* GetExtensionFromAssetType(AssetType asset_type) {
-        const AssetTypeInfo* info = GetAssetTypeInfo(asset_type);
-        if (info) return info->extension;
-        return nullptr;
     }
 
     static Stream* LoadAssetStream(Allocator* allocator, const Name* asset_name, AssetType asset_type) {
@@ -166,7 +122,6 @@ namespace noz {
     Asset* LoadAssetInternal(Allocator* allocator, const Name* asset_name, AssetType asset_type, AssetLoaderFunc loader, Stream* stream) {
         AssetHeader header = {};
         if (!ReadAssetHeader(stream, &header) || !ValidateAssetHeader(&header, asset_type)) {
-            Free(stream);
             return nullptr;
         }
 
@@ -235,51 +190,28 @@ namespace noz {
 #endif
 
     void InitAssets() {
-        // Register all built-in asset types with the registry
-        RegisterAssetType({ASSET_TYPE_MESH, "Mesh", "Mesh", ".mesh", LoadMesh,
-    #if !defined(NOZ_BUILTIN_ASSETS)
-            ReloadMesh
-    #else
-            nullptr
-    #endif
-        });
-        RegisterAssetType({ASSET_TYPE_VFX, "Vfx", "Vfx", ".vfx", LoadVfx,
-    #if !defined(NOZ_BUILTIN_ASSETS)
-            ReloadVfx
-    #else
-            nullptr
-    #endif
-        });
-        RegisterAssetType({ASSET_TYPE_SKELETON, "Skeleton", "Skeleton", ".skeleton", LoadSkeleton, nullptr});
-        RegisterAssetType({ASSET_TYPE_ANIMATION, "Animation", "Animation", ".animation", LoadAnimation, nullptr});
-        RegisterAssetType({ASSET_TYPE_SOUND, "Sound", "Sound", ".sound", LoadSound, nullptr});
-        RegisterAssetType({ASSET_TYPE_TEXTURE, "Texture", "Texture", ".texture", LoadTexture,
-    #if !defined(NOZ_BUILTIN_ASSETS)
-            ReloadTexture
-    #else
-            nullptr
-    #endif
-        });
-        RegisterAssetType({ASSET_TYPE_FONT, "Font", "Font", ".font", LoadFont, nullptr});
-        RegisterAssetType({ASSET_TYPE_SHADER, "Shader", "Shader", ".shader", LoadShader,
-    #if !defined(NOZ_BUILTIN_ASSETS)
-            ReloadShader
-    #else
-            nullptr
-    #endif
-        });
-        RegisterAssetType({ASSET_TYPE_EVENT, "Event", "Event", ".event", nullptr, nullptr});
-        RegisterAssetType({ASSET_TYPE_BIN, "Bin", "Bin", ".bin", LoadBin, nullptr});
-        RegisterAssetType({ASSET_TYPE_ATLAS, "Atlas", "Atlas", ".atlas", LoadTexture, nullptr});
+        InitAssetDef({ASSET_TYPE_MESH, "Mesh", "Mesh", LoadMesh, ReloadMesh});
+        InitAssetDef({ASSET_TYPE_VFX, "Vfx", "Vfx", LoadVfx, ReloadVfx});
+        InitAssetDef({ASSET_TYPE_SKELETON, "Skeleton", "Skeleton", LoadSkeleton, nullptr});
+        InitAssetDef({ASSET_TYPE_ANIMATION, "Animation", "Animation", LoadAnimation, nullptr});
+        InitAssetDef({ASSET_TYPE_SOUND, "Sound", "Sound", LoadSound, nullptr});
+        InitAssetDef({ASSET_TYPE_TEXTURE, "Texture", "Texture", LoadTexture, ReloadTexture});
+        InitAssetDef({ASSET_TYPE_FONT, "Font", "Font", LoadFont, nullptr});
+        InitAssetDef({ASSET_TYPE_SHADER, "Shader", "Shader", LoadShader, ReloadShader});
+        InitAssetDef({ASSET_TYPE_EVENT, "Event", "Event", nullptr, nullptr});
+        InitAssetDef({ASSET_TYPE_BIN, "Bin", "Bin", LoadBin, nullptr});
+        InitAssetDef({ASSET_TYPE_ATLAS, "Atlas", "Atlas", LoadTexture, nullptr});
+        InitAssetDef({ASSET_TYPE_SPRITE, "Sprite", "Sprite", LoadSprite, nullptr});
 
 #if defined(NOZ_LUA)
-        RegisterAssetType({ASSET_TYPE_LUA, "Script", "Lua", ".lua", LoadLuaScript,
-    #if !defined(NOZ_BUILTIN_ASSETS)
-            ReloadLuaScript
-    #else
-            nullptr
-    #endif
-        });
+        InitAssetDef({ASSET_TYPE_LUA, "Script", "Lua", LoadLuaScript, ReloadLuaScript});
+#endif
+
+#if !defined(NDEBUG)
+        for (int i = 0; i < ASSET_TYPE_COUNT; i++) {
+            assert(g_asset_defs[i].type == (AssetType)i);
+            assert(g_asset_defs[i].name != nullptr);
+        }
 #endif
     }
 }

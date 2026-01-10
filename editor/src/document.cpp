@@ -447,7 +447,7 @@ namespace noz::editor {
 
         if (!asset_name) {
             Text default_name;
-            Format(default_name, "new %s", GetAssetTypeInfo(asset_type)->short_name);
+            Format(default_name, "new %s", GetAssetDef(asset_type)->short_name);
             Lower(default_name);
             std::filesystem::path new_path = GetUniqueAssetPath(std::filesystem::path(default_name.value));
             asset_name = GetName(new_path.stem().string().c_str());

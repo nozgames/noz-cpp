@@ -210,6 +210,7 @@ namespace noz::editor {
     extern bool UpdateContextMenu();
     extern bool EditorButton(const EditorButtonConfig& config);
     extern bool EditorButton(ElementId id, Mesh* icon, bool state, bool disabled=false);
+    extern bool EditorButton(ElementId id, Sprite* icon, bool state, bool disabled = false);
     extern void BeginOverlay(ElementId id=ELEMENT_ID_NONE, Align align=ALIGN_TOP_LEFT);
     extern void EndOverlay();
 

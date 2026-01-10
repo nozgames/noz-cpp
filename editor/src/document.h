@@ -19,29 +19,7 @@ namespace noz::editor {
         Animation* animation;;
     };
 
-    struct DocumentVtable {
-        void (*destructor)(Document* doc);
-        void (*load)(Document* doc);
-        void (*reload)(Document* doc);
-        void (*post_load)(Document* doc);
-        void (*save)(Document* doc, const std::filesystem::path& path);
-        void (*load_metadata)(Document* doc, Props* meta);
-        void (*save_metadata)(Document* doc, Props* meta);
-        void (*draw)(Document* doc);
-        void (*play)(Document* doc);
-        void (*clone)(Document* doc);
-        void (*undo_redo)(Document* doc);
 
-        void (*editor_begin)(Document* doc);
-        void (*editor_end)();
-        void (*editor_update)();
-        void (*editor_draw)();
-        void (*editor_overlay)();
-        void (*editor_help)();
-        void (*editor_context_menu)();
-        void (*editor_rename)(Document* doc, const Name* new_name);
-        Bounds2 (*editor_bounds)();
-    };
 
     struct DocumentDef;
 
@@ -60,7 +38,31 @@ namespace noz::editor {
         bool loaded;
         bool post_loaded;
         bool editor_only;
-        DocumentVtable vtable;
+        
+        struct {
+            void (*destructor)(Document* doc);
+            void (*load)(Document* doc);
+            void (*reload)(Document* doc);
+            void (*post_load)(Document* doc);
+            void (*save)(Document* doc, const std::filesystem::path& path);
+            void (*load_metadata)(Document* doc, Props* meta);
+            void (*save_metadata)(Document* doc, Props* meta);
+            void (*draw)(Document* doc);
+            void (*play)(Document* doc);
+            void (*clone)(Document* doc);
+            void (*undo_redo)(Document* doc);
+
+            void (*editor_begin)(Document* doc);
+            void (*editor_end)();
+            void (*editor_update)();
+            void (*editor_draw)();
+            void (*editor_overlay)();
+            void (*editor_help)();
+            void (*editor_context_menu)();
+            void (*editor_rename)(Document* doc, const Name* new_name);
+            Bounds2 (*editor_bounds)();
+        } vtable;
+
         Bounds2 bounds;
     };
 
