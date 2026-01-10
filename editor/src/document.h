@@ -66,7 +66,7 @@ namespace noz::editor {
 
     extern bool IsFile(Document* doc);
 
-    extern void InitDocument();
+    extern void InitDocuments();
     extern void LoadDocument(Document* doc);
     extern Document* Clone(Document* doc);
     extern void CloneInto(Document* dst, Document* src);

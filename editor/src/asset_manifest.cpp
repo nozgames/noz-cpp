@@ -2,14 +2,12 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-// @STL
-
 #include "asset_manifest.h"
 
 namespace fs = std::filesystem;
 
 namespace noz::editor {
-    // Save stream only if content differs from existing file
+
     static bool SaveStreamIfChanged(Stream* stream, const fs::path& path) {
         if (fs::exists(path)) {
             Stream* existing = LoadStream(nullptr, path);

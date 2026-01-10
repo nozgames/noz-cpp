@@ -1,0 +1,22 @@
+{
+    "version": "0.2.1",
+    "defaults": {
+    },
+    "configurations": [
+        {
+            "type": "default",
+            "project": "CMakeLists.txt",
+            "projectTarget": "nozed.exe (editor\\nozed.exe)",
+            "name": "editor",
+            "args": [ "--project", "${workspaceRoot}" ],
+            "currentDir": "${cmake.buildRoot}/../",
+            "isDefaultConfiguration" : true
+        },
+        {
+            "type": "default",
+            "project": "CMakeLists.txt",
+            "projectTarget": "nozed.exe (editor\\nozed.exe)",
+            "name": "editor - game"
+        }
+    ]
+}

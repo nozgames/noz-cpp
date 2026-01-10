@@ -58,6 +58,8 @@ namespace noz::editor {
         if (doc_def->init_func)
             doc_def->init_func(doc);
 
+        g_editor.documents[g_editor.document_count++] = doc;
+
         return doc;
     }
 
@@ -272,7 +274,7 @@ namespace noz::editor {
         return a;
     }
 
-    void InitDocument() {
+    void InitDocuments() {
         for (int i=0; i<g_editor.source_path_count; i++) {
             std::vector<fs::path> asset_paths;
             GetFilesInDirectory(g_editor.source_paths[i].value, asset_paths);

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 4.1)
 
 project(nozed)
 
@@ -11,15 +11,7 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS_DEBUG "/Zi /Od")
 endif()
 
-set(NOZ_LUA ON CACHE BOOL "" FORCE)
-set(NOZ_HTTP ON CACHE BOOL "" FORCE)
-set(NOZ_WEBSOCKET ON CACHE BOOL "" FORCE)
-
 option(NOZ_EDITOR_LIB "Build nozed as a static library instead of executable" OFF)
-
-add_subdirectory(../ noz)
-
-target_compile_definitions(noz PUBLIC NOZ_EDITOR)
 
 file(GLOB SRC_FILES
     src/*.cpp
@@ -68,3 +60,4 @@ target_include_directories(nozed PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../libs
     ${CMAKE_CURRENT_SOURCE_DIR}/libs/glslang/include
 )
+

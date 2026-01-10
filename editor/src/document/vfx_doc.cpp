@@ -499,7 +499,7 @@ namespace noz::editor {
         InitVfxDocument(static_cast<VfxDocument*>(doc));
     }
 
-    void InitVfxDocumentDef() {
+	void InitVfxDocumentDef() {
         InitDocumentDef({
             .type = ASSET_TYPE_VFX,
             .size = sizeof(VfxDocument),

@@ -1,9 +1,11 @@
 # Build directories
-build/
+build/*
+!build/assets/
 out/
 
 # Visual Studio generated files
-.vs/
+.vs/*
+!.vs/launch.vs.json
 *.vcxproj.user
 *.vcxproj.filters
 

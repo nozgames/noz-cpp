@@ -74,10 +74,6 @@ namespace noz::editor {
 
     extern void DrawView();
 
-
-
-
-
     static void UpdateEditor() {
         UpdateImporter();
         ProcessQueuedLogMessages();
@@ -168,12 +164,13 @@ namespace noz::editor {
 
     static void InitConfig() {
         // Determine config path - use project path if specified, otherwise current directory
+        fs::path current_path = fs::current_path();
         fs::path config_path;
         const char* project_arg = GetArgValue("project");
         if (project_arg) {
             fs::path project_path = project_arg;
             if (project_path.is_relative()) {
-                project_path = fs::current_path() / project_path;
+                project_path = current_path / project_path;
                 std::string temp = project_path.string();
                 project_path = fs::absolute(temp);
             }
@@ -197,8 +194,8 @@ namespace noz::editor {
         }
 
         fs::path project_path = project_arg
-            ? fs::absolute(fs::path(project_arg).is_relative() ? fs::current_path() / project_arg : fs::path(project_arg))
-            : fs::current_path();
+            ? fs::absolute(fs::path(project_arg).is_relative() ? current_path / project_arg : fs::path(project_arg))
+            : current_path;
 
         // Read in the source paths
         for (auto& path : g_editor.config->GetKeys("source")) {
@@ -410,7 +407,7 @@ void Main() {
 
     InitEditor();
     InitLog(HandleLog);
-    InitDocument();
+    InitDocuments();
     LoadDocuments();
 
     InitNotifications();

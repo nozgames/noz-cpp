@@ -763,6 +763,7 @@ namespace noz::editor {
     }
 
     static void PostLoadAtlasData(Document* doc) {
+#if 0
         AtlasDocument* adoc = static_cast<AtlasDocument*>(doc);
 
         // Register as managed atlas if it has the auto-managed naming convention
@@ -795,6 +796,7 @@ namespace noz::editor {
                 }
             }
         }
+#endif
     }
 
     static void LoadAtlasMetaData(Document* a, Props* meta) {

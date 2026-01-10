@@ -15,6 +15,7 @@ namespace noz::editor {
     extern void InitMeshDocumentDef();
     extern void InitShaderDocumentDef();
     extern void InitSkeletonDocumentDef();
+    extern void InitSpriteDocumentDef();
     extern void InitSoundDocumentDef();
     extern void InitTextureDocumentDef();
     extern void InitVfxDocumentDef();
@@ -50,6 +51,7 @@ namespace noz::editor {
         InitMeshDocumentDef();
         InitShaderDocumentDef();
         InitSkeletonDocumentDef();
+        InitSpriteDocumentDef();
         InitSoundDocumentDef();
         InitTextureDocumentDef();
         InitVfxDocumentDef();

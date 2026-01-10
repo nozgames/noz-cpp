@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.1.2)
+cmake_minimum_required(VERSION 4.1.1)
 
 project(noz LANGUAGES C CXX)
 set(CMAKE_C_STANDARD 99)
@@ -8,7 +8,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
 
-# Renderer backend option (Windows only - macOS uses Metal)
 set(NOZ_RENDERER "GL" CACHE STRING "Renderer backend (VULKAN, GLES, or GL)")
 set_property(CACHE NOZ_RENDERER PROPERTY STRINGS "VULKAN" "GLES" "GL")
 
@@ -17,6 +16,14 @@ option(NOZ_WEBSOCKET "Enable WebSocket support" OFF)
 option(NOZ_WEBSOCKET_SERVER "Enable WebSocket server support" OFF)
 option(NOZ_FETCH_ZLIB "Fetch zlib (disable if already provided by parent project)" ON)
 option(NOZ_LUA "Enable lua support" OFF)
+option(NOZ_EDITOR "Enable building the editor" OFF)
+
+# Editor implies certain features - set these BEFORE FetchContent checks
+if(NOZ_EDITOR)
+    set(NOZ_LUA ON CACHE BOOL "" FORCE)
+    set(NOZ_HTTP ON CACHE BOOL "" FORCE)
+    set(NOZ_WEBSOCKET ON CACHE BOOL "" FORCE)
+endif()
 
 # Fetch zlib for gzip decompression in WebSocket messages
 if(NOZ_WEBSOCKET AND NOZ_FETCH_ZLIB)
@@ -27,7 +34,14 @@ if(NOZ_WEBSOCKET AND NOZ_FETCH_ZLIB)
         GIT_REPOSITORY https://github.com/madler/zlib.git
         GIT_TAG v1.3.1
     )
+    set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(ZLIB_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(zlib)
+endif()
+
+if(NOZ_EDITOR)
+    add_subdirectory(editor)
 endif()
 
 set(SOURCE_FILES
@@ -104,9 +118,9 @@ set(SOURCE_FILES
 )
 
 if (NOZ_LUA)
-    set(LUAU_BUILD_CLI OFF)
-    set(LUAU_BUILD_TESTS OFF)
-    set(LUAU_BUILD_WEB OFF)
+    set(LUAU_BUILD_CLI OFF CACHE BOOL "" FORCE)
+    set(LUAU_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(LUAU_BUILD_WEB OFF CACHE BOOL "" FORCE)
 
     add_subdirectory(libs/luau)
 
@@ -238,6 +252,11 @@ if (NOZ_LUA)
     target_compile_definitions(noz PUBLIC NOZ_LUA)
 endif()
 
+if(NOZ_EDITOR)
+    target_compile_definitions(noz PUBLIC NOZ_EDITOR)
+    target_include_directories(noz PRIVATE editor/res/windows)
+endif()
+
 target_precompile_headers(noz PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/pch.h)
 
 # Common include directories
@@ -292,15 +311,7 @@ if(EMSCRIPTEN)
     message(STATUS "Emscripten build - external libraries will need emscripten-compiled versions")
 
 elseif(WIN32)
-    target_link_libraries(noz
-        PUBLIC
-            winmm
-            dwmapi
-            Shcore
-            xaudio2
-            ole32
-
-    )
+    target_link_libraries(noz PUBLIC winmm dwmapi Shcore xaudio2 ole32)
 
     if(NOZ_LUA)
         target_link_libraries(noz PUBLIC Luau.VM Luau.Compiler Luau.Config Luau.Ast)
@@ -319,6 +330,11 @@ elseif(WIN32)
         endif()
         # Link zlib for gzip decompression
         target_link_libraries(noz PUBLIC zlibstatic)
+
+        target_include_directories(noz PRIVATE 
+            ${zlib_SOURCE_DIR}
+            ${zlib_BINARY_DIR}  # for zconf.h which gets generated
+        )
     endif()
     # Link WebSocket server libraries
     if(NOZ_WEBSOCKET_SERVER)
@@ -346,4 +362,8 @@ endif()
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4 /WX")
+endif()
+
+if (NOZ_EDITOR)
+set_property(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT nozed)
 endif()

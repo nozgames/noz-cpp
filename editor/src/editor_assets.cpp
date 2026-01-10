@@ -7,7 +7,7 @@
 #include "editor_assets.h"
 
 #if defined(NOZ_BUILTIN_ASSETS)
-#include "nozed_assets_build.cpp"
+#include "editor_assets_build.cpp"
 #endif
 
 // @externs
