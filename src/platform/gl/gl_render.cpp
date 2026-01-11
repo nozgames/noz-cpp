@@ -330,30 +330,31 @@ namespace noz {
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         g_gl.bound_vertex_buffer = vbo;
 
-        // Set up vertex attributes for MeshVertex
+        // Set up vertex attributes for MeshVertex (match shader locations in editor_mesh.glsl)
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, position));
 
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, depth));
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, uv));
 
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, opacity));
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, normal));
 
         glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, uv));
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, color));
 
         glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, normal));
+        glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, opacity));
 
         glEnableVertexAttribArray(5);
-        glVertexAttribIPointer(5, 1, GL_INT, sizeof(MeshVertex), (void*)offsetof(MeshVertex, bone_index));
+        glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, depth));
 
         glEnableVertexAttribArray(6);
-        glVertexAttribIPointer(6, 1, GL_INT, sizeof(MeshVertex), (void*)offsetof(MeshVertex, atlas_index));
+        glVertexAttribIPointer(6, 1, GL_INT, sizeof(MeshVertex), (void*)offsetof(MeshVertex, bone));
 
         glEnableVertexAttribArray(7);
-        glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(MeshVertex), (void*)offsetof(MeshVertex, color));
+        glVertexAttribIPointer(7, 1, GL_INT, sizeof(MeshVertex), (void*)offsetof(MeshVertex, atlas));
+
     }
 
     void PlatformBindIndexBuffer(PlatformBuffer* buffer) {
@@ -820,6 +821,11 @@ namespace noz {
                     glUniform1i(loc, i);
             }
             glUseProgram(0);
+
+            // Debug label for program (helpful when using RenderDoc or other debuggers)
+            if (glObjectLabel && name) {
+                glObjectLabel(GL_PROGRAM, shader->program, -1, name);
+            }
         }
 
         return shader;

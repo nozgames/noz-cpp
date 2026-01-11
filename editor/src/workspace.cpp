@@ -6,6 +6,7 @@
 
 namespace noz::editor {
     extern void InitMeshEditor();
+    extern void InitSpriteEditor();
     extern void InitTextureEditor();
     extern void InitSkeletonEditor();
     extern void InitAnimationEditor();
@@ -1074,6 +1075,7 @@ namespace noz::editor {
         InitTextureEditor();
         InitSkeletonEditor();
         InitAnimationEditor();
+        InitSpriteEditor();
 
         NAME_MESH = GetName("mesh");
         NAME_VFX = GetName("vfx");

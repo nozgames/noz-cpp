@@ -87,10 +87,10 @@ namespace noz {
         impl->vertex_count++;
         impl->vertices[index] = {
             .position = position,
-            .depth = depth,
-            .opacity = 1.0f,
             .uv = uv,
-            .bone_index = 0
+            .opacity = 1.0f,
+            .depth = depth,
+            .bone = 0
         };
     }
 
@@ -99,7 +99,7 @@ namespace noz {
         assert(impl->vertex_count > 0);
         assert(bone_index >= 0 && bone_index < MAX_BONES);
         MeshVertex* v = impl->vertices + (impl->vertex_count-1);
-        v->bone_index = bone_index;
+        v->bone = bone_index;
     }
 
     void AddIndex(MeshBuilder* builder, u16 index) {

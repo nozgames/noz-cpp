@@ -409,7 +409,7 @@ namespace noz::editor {
         WriteCSTR(stream, "}\n");
         WriteCSTR(stream, "\n#endif\n");
 
-        SaveStream(stream, GetManifestCppPath());
+        SaveStreamIfChanged(stream, GetManifestCppPath());
 
         Free(stream);
     }
@@ -512,7 +512,7 @@ namespace noz::editor {
 
         fs::path header_path = GetManifestCppPath();
         header_path.replace_extension(".h");
-        SaveStream(stream, header_path);
+        SaveStreamIfChanged(stream, header_path);
 
         Free(stream);
     }

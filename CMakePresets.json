@@ -20,5 +20,12 @@
                 "NOZ_EDITOR": "ON"
             }
         }
+    ],
+    "buildPresets": [
+        {
+            "name": "editor-debug",
+            "displayName": "Editor (Debug)",
+            "configurePreset": "editor-debug"
+        }
     ]
 }

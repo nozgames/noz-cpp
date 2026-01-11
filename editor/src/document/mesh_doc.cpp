@@ -1769,7 +1769,7 @@ namespace noz::editor {
             v.depth = depth;
             v.opacity = 1.0f;
             v.uv = GetAtlasUV(adoc, rect, rect.mesh_bounds, corners[i]);
-            v.atlas_index = atlas_idx;
+            v.atlas = atlas_idx;
 
 
             AddVertex(builder, v);

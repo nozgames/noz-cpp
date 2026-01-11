@@ -1,0 +1,6 @@
+{
+    "luau-lsp.plugin.enabled": true,
+    "cmake.configureArgs": [
+        "-DCMAKE_POLICY_VERSION_MINIMUM=3.50"
+    ]
+}

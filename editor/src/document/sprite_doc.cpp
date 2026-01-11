@@ -4,6 +4,8 @@
 
 #include "sprite_doc.h"
 
+using namespace noz::editor::shape;
+
 namespace noz::editor {
 
     extern void InitSpriteEditor(SpriteDocument* sdoc);
@@ -22,6 +24,7 @@ namespace noz::editor {
         shape::Anchor& a = f.shape.anchors[f.shape.anchor_count++];
         a.position.x = ExpectFloat(tk);
         a.position.y = ExpectFloat(tk);
+        SetFlags(&a, ANCHOR_FLAG_ACTIVE, ANCHOR_FLAG_ACTIVE);
     }
 
     static void ParseSegment(SpriteFrame& f, Tokenizer& tk) {
@@ -31,10 +34,18 @@ namespace noz::editor {
         s.curve.offset.x = ExpectFloat(tk);
         s.curve.offset.y = ExpectFloat(tk);
         s.curve.weight = ExpectFloat(tk, 0.0f);
+        SetFlags(&s, SEGMENT_FLAG_ACTIVE, SEGMENT_FLAG_ACTIVE);
+        s.path_left = U16_MAX;
+        s.path_right = U16_MAX;
+        s.sample_count = 0;
     }
 
     static void ParsePath(SpriteFrame& f, Tokenizer& tk) {
         shape::Path& p = f.shape.paths[f.shape.path_count++];
+        p.segment_count = 0;
+        p.stroke_color = 0;
+        p.fill_color = 0;
+        SetFlags(&p, PATH_FLAG_ACTIVE, PATH_FLAG_ACTIVE);
 
         while (!IsEOF(tk)) {
             int s_idx = ExpectInt(tk, -1);
@@ -73,6 +84,9 @@ namespace noz::editor {
                 ThrowError("invalid token '%s' in sprite", error);
             }
         }
+
+        for (u16 fi = 0; fi < sdoc->frame_count; ++fi)
+            shape::UpdateSegmentPaths(&sdoc->frames[fi].shape);
     }
 
     static void LoadSpriteDocument(Document* doc) {

@@ -8,8 +8,11 @@ namespace noz::editor {
 
     constexpr float SPRITE_EDITOR_EDGE_WIDTH = 0.02f;
     constexpr float SPRITE_EDITOR_VERTEX_SIZE = 0.12f;
+    constexpr Color SPRITE_EDITOR_VERTEX_COLOR = COLOR_BLACK;
     constexpr Color SPRITE_EDITOR_VERTEX_SELECTED_COLOR = Color32ToColor(255, 121, 0, 255);
-    constexpr Color SPRITE_EDITOR_VERTEX_VERTEX = COLOR_BLACK;
+    constexpr Color SPRITE_EDITOR_EDGE_COLOR = COLOR_BLACK;
+    constexpr Color SPRITE_EDITOR_EDGE_SELECTED_COLOR = Color32ToColor(253, 151, 11, 255);
+
 
     struct SpriteEditor {
         int current_frame = 0;
@@ -33,14 +36,21 @@ namespace noz::editor {
         SpriteFrame* f = &sdoc->frames[g_sprite_editor.current_frame];
         for (u16 p_idx = 0; p_idx < f->shape.path_count; p_idx++) {
             const shape::Path* p = &f->shape.paths[p_idx];
+            bool path_selected = shape::IsSelected(p);
             for (u16 s_idx = 0; s_idx < p->segment_count; s_idx++) {
                 const shape::Segment* s = &f->shape.segments[s_idx];
                 shape::UpdateSegmentSamples(&f->shape, s_idx);
 
+                bool seg_selected = shape::IsSelected(s);
+                Color seg_color = (seg_selected || path_selected)
+                    ? SPRITE_EDITOR_EDGE_SELECTED_COLOR
+                    : SPRITE_EDITOR_EDGE_COLOR;
+                float seg_width = (seg_selected || path_selected) ? selected_line_width : line_width;
+
                 if (s->sample_count == 0) {
                     AddEditorLine(
                         builder, f->shape.anchors[s->anchor0].position, f->shape.anchors[s->anchor1].position,
-                        line_width, hide_selected && sdoc->selected ? Color{1, 1, 1, 0.25f} : Color{1, 1, 1, 1}
+                        seg_width, seg_color
                     );
                 } else {
                     Vec2 v0 = f->shape.anchors[s->anchor0].position;
@@ -48,7 +58,7 @@ namespace noz::editor {
                         Vec2 v1 = s->samples[sample_idx + 1];
                         AddEditorLine(
                             builder, v0, v1,
-                            line_width, hide_selected && sdoc->selected ? Color{1, 1, 1, 0.25f} : Color{1, 1, 1, 1}
+                            seg_width, seg_color
                         );
                         v0 = v1;
                     }
@@ -56,8 +66,8 @@ namespace noz::editor {
                     AddEditorLine(
                         builder,
                         v0, f->shape.anchors[s->anchor1].position,
-                        line_width,
-                        hide_selected && sdoc->selected ? Color{1, 1, 1, 0.25f} : Color{1, 1, 1, 1}
+                        seg_width,
+                        seg_color
                     );
                 }
             }
@@ -65,8 +75,10 @@ namespace noz::editor {
 
         for (u16 a_idx = 0; a_idx < f->shape.anchor_count; a_idx++) {
             const shape::Anchor* a = f->shape.anchors + a_idx;
-            //Color color = IsSelected(a) ? COLOR_VERTEX_SELECTED : COLOR_VERTEX;
-            AddEditorSquare(builder, a->position, vertex_size, SPRITE_EDITOR_VERTEX_VERTEX);
+            Color vcol = shape::IsSelected(a)
+                ? SPRITE_EDITOR_VERTEX_SELECTED_COLOR
+                : SPRITE_EDITOR_VERTEX_COLOR;
+            AddEditorSquare(builder, a->position, vertex_size, vcol);
         }
         
         Free(g_sprite_editor.mesh);
@@ -90,6 +102,32 @@ namespace noz::editor {
 
         if (g_sprite_editor.zoom_version != g_workspace.zoom_version) {
             g_sprite_editor.zoom_version = g_workspace.zoom_version;
+            UpdateSpriteEditorMesh(doc, false);
+        }
+
+        // On left click run shape hit test and update selection (convert mouse to document-local space)
+        SpriteFrame* f = &doc->frames[g_sprite_editor.current_frame];
+        if (WasButtonPressed(MOUSE_LEFT)) {
+            shape::HitResult hr;
+            Vec2 local_mouse = g_workspace.mouse_world_position - doc->position;
+
+            // Clear existing selection
+            for (u16 a_idx = 0; a_idx < f->shape.anchor_count; ++a_idx) shape::ClearFlags(&f->shape.anchors[a_idx], shape::ANCHOR_FLAG_SELECTED);
+            for (u16 s_idx = 0; s_idx < f->shape.segment_count; ++s_idx) shape::ClearFlags(&f->shape.segments[s_idx], shape::SEGMENT_FLAG_SELECTED);
+            for (u16 p_idx = 0; p_idx < f->shape.path_count; ++p_idx) shape::ClearFlags(&f->shape.paths[p_idx], shape::PATH_FLAG_SELECTED);
+
+            if (shape::HitTest(&f->shape, local_mouse, &hr)) {
+                if (hr.anchor_index != U16_MAX) {
+                    shape::SetFlags(&f->shape.anchors[hr.anchor_index], shape::ANCHOR_FLAG_SELECTED, shape::ANCHOR_FLAG_SELECTED);
+                } else if (hr.segment_index != U16_MAX) {
+                    shape::SetFlags(&f->shape.segments[hr.segment_index], shape::SEGMENT_FLAG_SELECTED, shape::SEGMENT_FLAG_SELECTED);
+                } else if (hr.path_index != U16_MAX) {
+                    shape::SetFlags(&f->shape.paths[hr.path_index], shape::PATH_FLAG_SELECTED, shape::PATH_FLAG_SELECTED);
+                }
+            }
+
+            // Force mesh rebuild so selection is reflected immediately
+            g_sprite_editor.zoom_version = -1;
             UpdateSpriteEditorMesh(doc, false);
         }
 

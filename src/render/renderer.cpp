@@ -139,10 +139,11 @@ namespace noz {
     static Mesh* GetFullscreenQuad() {
         if (!g_renderer.fullscreen_quad) {
             static MeshVertex vertices[] = {
-                { {-1.0f, -1.0f}, 0.0f, 1.0f, {0.0f, 0.0f} },
-                { { 1.0f, -1.0f}, 0.0f, 1.0f, {1.0f, 0.0f} },
-                { { 1.0f,  1.0f}, 0.0f, 1.0f, {1.0f, 1.0f} },
-                { {-1.0f,  1.0f}, 0.0f, 1.0f, {0.0f, 1.0f} }
+                // position             uv               normal      color                       opacity depth  bone atlas
+                { {-1.0f, -1.0f}, {0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f,1.0f,1.0f,1.0f}, 1.0f,    0.0f, 0,   0 },
+                { { 1.0f, -1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}, {1.0f,1.0f,1.0f,1.0f}, 1.0f,    0.0f, 0,   0 },
+                { { 1.0f,  1.0f}, {1.0f, 1.0f}, {0.0f, 0.0f}, {1.0f,1.0f,1.0f,1.0f}, 1.0f,    0.0f, 0,   0 },
+                { {-1.0f,  1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}, {1.0f,1.0f,1.0f,1.0f}, 1.0f,    0.0f, 0,   0 }
             };
             static u16 indices[] = {0, 1, 2, 0, 2, 3};
             g_renderer.fullscreen_quad = CreateMesh(nullptr, 4, vertices, 6, indices, GetName("fullscreen_quad"));

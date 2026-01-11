@@ -76,13 +76,13 @@ namespace noz {
 
     struct MeshVertex {
         Vec2 position;
-        float depth;
-        float opacity = 1.0f;
         Vec2 uv;
         Vec2 normal;
-        int bone_index = 0;
-        int atlas_index = 0;
         Vec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
+        float opacity = 1.0f;
+        float depth;
+        int bone = 0;
+        int atlas = 0;
     };
 
     extern Mesh* CreateMesh(

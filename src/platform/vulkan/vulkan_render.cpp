@@ -1028,56 +1028,56 @@ static bool CreateShaderInternal(
             .location = 0,
             .binding = 0,
             .format = VK_FORMAT_R32G32_SFLOAT,
-            .offset = 0
-        },
-        // Depth
-        {
-            .location = 1,
-            .binding = 0,
-            .format = VK_FORMAT_R32_SFLOAT,
-            .offset = offsetof(MeshVertex, depth)
+            .offset = offsetof(MeshVertex, position)
         },
         // UV
         {
-            .location = 2,
+            .location = 1,
             .binding = 0,
             .format = VK_FORMAT_R32G32_SFLOAT,
             .offset = offsetof(MeshVertex, uv)
         },
         // Normal
         {
-            .location = 3,
+            .location = 2,
             .binding = 0,
             .format = VK_FORMAT_R32G32_SFLOAT,
             .offset = offsetof(MeshVertex, normal)
         },
-        // Bone indices
+        // Color
+        {
+            .location = 3,
+            .binding = 0,
+            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+            .offset = offsetof(MeshVertex, color)
+        },
+        // Opacity
         {
             .location = 4,
             .binding = 0,
-            .format = VK_FORMAT_R32G32B32A32_SINT,
-            .offset = offsetof(MeshVertex, bone_indices)
+            .format = VK_FORMAT_R32_SFLOAT,
+            .offset = offsetof(MeshVertex, opacity)
         },
-        // Bone Weights
+        // Depth
         {
             .location = 5,
             .binding = 0,
-            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
-            .offset = offsetof(MeshVertex, bone_weights)
+            .format = VK_FORMAT_R32_SFLOAT,
+            .offset = offsetof(MeshVertex, depth)
         },
-        // Atlas Index
+        // Bone index
         {
             .location = 6,
             .binding = 0,
             .format = VK_FORMAT_R32_SINT,
-            .offset = offsetof(MeshVertex, atlas_index)
+            .offset = offsetof(MeshVertex, bone)
         },
-        // Color
+        // Atlas Index
         {
             .location = 7,
             .binding = 0,
-            .format = VK_FORMAT_R32G32B32A32_SFLOAT,
-            .offset = offsetof(MeshVertex, color)
+            .format = VK_FORMAT_R32_SINT,
+            .offset = offsetof(MeshVertex, atlas)
         },
     };
 

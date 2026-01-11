@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build editor",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "${workspaceFolder}/build/editor-debug",
+        "--target",
+        "nozed",
+        "--",
+        "-v"
+      ],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$msCompile"],
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "detail": "Runs CMake build for the editor target with verbose Ninja output"
+    }
+  ]
+}
