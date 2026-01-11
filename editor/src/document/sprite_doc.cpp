@@ -93,10 +93,69 @@ namespace noz::editor {
         Free(stream);
     }
 
+    static void SaveSpriteFrame(SpriteFrame* f, Stream* stream) {
+        Shape* shape = &f->shape;
+
+        for (u16 p_idx = 0; p_idx < shape->path_count; ++p_idx) {
+            Path* path = &shape->paths[p_idx];
+
+            // Write path header with fill color
+            WriteCSTR(stream, "p c %d\n", path->fill_color);
+
+            // Write anchors
+            for (u16 a_idx = 0; a_idx < path->anchor_count; ++a_idx) {
+                Anchor* a = GetAnchor(shape, path, a_idx);
+                WriteCSTR(stream, "a %f %f", a->position.x, a->position.y);
+                if (Abs(a->curve) > FLT_EPSILON)
+                    WriteCSTR(stream, " %f", a->curve);
+                WriteCSTR(stream, "\n");
+            }
+
+            WriteCSTR(stream, "\n");
+        }
+    }
+
+    static void SaveSpriteDocument(SpriteDocument* sdoc, Stream* stream) {
+        if (HasSkin(sdoc))
+            WriteCSTR(stream, "s \"%s\"\n", sdoc->skin.skeleton_name->value);
+
+        //WriteCSTR(stream, "d %f\n", (sdoc->depth - MESH_MIN_DEPTH) / (float)(MESH_MAX_DEPTH - MESH_MIN_DEPTH));
+        WriteCSTR(stream, "c %d\n", sdoc->palette);
+        WriteCSTR(stream, "\n");
+
+        // Write each frame
+        for (u16 frame_index = 0; frame_index < sdoc->frame_count; frame_index++) {
+            SpriteFrame* f = GetFrame(sdoc, frame_index);
+
+            // Write frame header (only if multiple frames or frame has hold)
+            if (sdoc->frame_count > 1 || f->hold > 0) {
+                WriteCSTR(stream, "f");
+                if (f->hold > 0)
+                    WriteCSTR(stream, " h %d", f->hold);
+                WriteCSTR(stream, "\n");
+            }
+
+            SaveSpriteFrame(f, stream);
+
+            if (frame_index < sdoc->frame_count - 1)
+                WriteCSTR(stream, "\n");
+        }
+    }
+
+    static void SaveSpriteDocument(Document* doc, const std::filesystem::path& path) {
+        assert(doc->def->type == ASSET_TYPE_SPRITE);
+        SpriteDocument* sdoc = static_cast<SpriteDocument*>(doc);
+        Stream* stream = CreateStream(ALLOCATOR_DEFAULT, 4096);
+        SaveSpriteDocument(sdoc, stream);
+        SaveStream(stream, path);
+        Free(stream);
+    }
+    
     void InitSpriteDocument(Document* doc) {
         SpriteDocument* sdoc = static_cast<SpriteDocument*>(doc);
         sdoc->vtable.load = LoadSpriteDocument;
         sdoc->vtable.draw = DrawSpriteDocument;
+        sdoc->vtable.save = SaveSpriteDocument;
 
         InitSpriteEditor(sdoc);
     }

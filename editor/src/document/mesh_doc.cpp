@@ -1298,7 +1298,7 @@ namespace noz::editor {
 
     void LoadMeshData(MeshDocument* m, Tokenizer& tk) {
         //..PendingCurve pending_curves[MESH_MAX_EDGES];
-        int pending_curve_count = 0;
+        //int pending_curve_count = 0;
 
         while (!IsEOF(tk)) {
             if (ExpectIdentifier(tk, "f")) {
@@ -1306,7 +1306,7 @@ namespace noz::editor {
             } else if (ExpectIdentifier(tk, "frame")) {
                 if (GetCurrentFrame(m)->geom.vert_count > 0) {
                     //FinalizeFrame(m, pending_curves, pending_curve_count);
-                    pending_curve_count = 0;
+                    //pending_curve_count = 0;
 
                     // Add a new frame
                     if (m->frame_count < MESH_MAX_FRAMES) {

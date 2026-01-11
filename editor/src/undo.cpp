@@ -7,8 +7,9 @@ namespace noz::editor {
     constexpr int MAX_UNDO = EDITOR_MAX_DOCUMENTS * 2;
 
     struct UndoItem {
-        Document* saved_doc;
-        Document* doc;
+        Document* doc;      // The live document pointer
+        void* snapshot;     // Raw memory snapshot of the document
+        int size;           // Size of the snapshot
         int group_id;
     };
 
@@ -17,133 +18,184 @@ namespace noz::editor {
         RingBuffer* redo;
         int next_group_id;
         int current_group_id;
-        Document* temp[MAX_UNDO];
-        int temp_count;
+        Document* pending_callbacks[MAX_UNDO];
+        int pending_count;
     };
 
     static UndoSystem g_undo = {};
 
-    inline UndoItem* GetBackItem(RingBuffer* buffer) {
-        return (UndoItem*)GetBack(buffer);
-    }
-
-    inline int GetBackGroupId(RingBuffer* buffer) {
-        return GetBackItem(buffer)->group_id;
-    }
-
     static void FreeUndoItem(UndoItem& item) {
-        if (item.saved_doc) {
-            Free(item.saved_doc);
-            item.saved_doc = nullptr;
+        if (item.snapshot) {
+            Free(item.snapshot);
+            item.snapshot = nullptr;
         }
+        item.doc = nullptr;
+        item.size = 0;
         item.group_id = -1;
     }
 
-    static void CallUndoRedo() {
-        for (int i=0; i<g_undo.temp_count; i++) {
-            Document* doc = g_undo.temp[i];
+    // Save a snapshot of the document's current state
+    static void* SaveSnapshot(Document* doc, int* out_size) {
+        int size = doc->def->size;
+        void* snapshot = Alloc(ALLOCATOR_DEFAULT, size);
+        memcpy(snapshot, doc, size);
+        *out_size = size;
+        return snapshot;
+    }
+
+    // Restore a snapshot into the document, returns the old state
+    static void* RestoreSnapshot(Document* doc, void* snapshot, int size) {
+        // Save current state before overwriting
+        void* old_state = Alloc(ALLOCATOR_DEFAULT, size);
+        memcpy(old_state, doc, size);
+
+        // Restore the snapshot
+        bool was_editing = doc->editing;
+        memcpy(doc, snapshot, size);
+        doc->editing = was_editing;
+
+        return old_state;
+    }
+
+    static void CallPendingCallbacks() {
+        for (int i = 0; i < g_undo.pending_count; i++) {
+            Document* doc = g_undo.pending_callbacks[i];
             if (doc->vtable.undo_redo)
                 doc->vtable.undo_redo(doc);
         }
-
-        g_undo.temp_count = 0;
+        g_undo.pending_count = 0;
     }
 
-    static bool UndoInternal(bool allow_redo) {
+    bool Undo() {
         if (IsEmpty(g_undo.undo))
             return false;
 
-        int group_id = GetBackGroupId(g_undo.undo);
+        UndoItem* item = (UndoItem*)GetBack(g_undo.undo);
+        int group_id = item->group_id;
 
         while (!IsEmpty(g_undo.undo)) {
-            UndoItem* item = GetBackItem(g_undo.undo);
+            item = (UndoItem*)GetBack(g_undo.undo);
             if (group_id != -1 && item->group_id != group_id)
                 break;
 
-            Document* undo_asset = item->doc;
-            assert(undo_asset);
-            assert(undo_asset->def->type == item->saved_doc->def->type);
+            Document* doc = item->doc;
+            assert(doc);
 
-            if (allow_redo) {
-                UndoItem* redo_item = static_cast<UndoItem*>(PushBack(g_undo.redo));
-                redo_item->group_id = group_id;
-                redo_item->doc = item->doc;
-                redo_item->saved_doc = Clone(item->doc);
+            // Swap states: restore old state, save current for redo
+            void* current_state = RestoreSnapshot(doc, item->snapshot, item->size);
+
+            // Push to redo stack (evict oldest if full)
+            if (IsFull(g_undo.redo)) {
+                UndoItem& old = *(UndoItem*)GetFront(g_undo.redo);
+                FreeUndoItem(old);
+                PopFront(g_undo.redo);
             }
+            UndoItem* redo_item = (UndoItem*)PushBack(g_undo.redo);
+            redo_item->doc = doc;
+            redo_item->snapshot = current_state;
+            redo_item->size = item->size;
+            redo_item->group_id = item->group_id;
 
-            CloneInto(item->saved_doc, undo_asset);
-            Free(item->saved_doc);
-            item->saved_doc = nullptr;
-            MarkModified(undo_asset);
+            // Free the undo item's snapshot
+            Free(item->snapshot);
+            item->snapshot = nullptr;
 
-            g_undo.temp[g_undo.temp_count++] = undo_asset;
+            MarkModified(doc);
+            g_undo.pending_callbacks[g_undo.pending_count++] = doc;
 
+            int item_group_id = item->group_id;
             PopBack(g_undo.undo);
 
-            if (item->group_id == -1)
+            if (item_group_id == -1)
                 break;
         }
 
-        CallUndoRedo();
-
+        CallPendingCallbacks();
         return true;
     }
 
-    bool Undo()
-    {
-        return UndoInternal(true);
-    }
-
-    bool Redo()
-    {
+    bool Redo() {
         if (IsEmpty(g_undo.redo))
             return false;
 
-        int group_id = ((UndoItem*)GetBack(g_undo.redo))->group_id;
+        UndoItem* item = (UndoItem*)GetBack(g_undo.redo);
+        int group_id = item->group_id;
 
-        while (!IsEmpty(g_undo.redo))
-        {
-            UndoItem& redo_item = *(UndoItem*)GetBack(g_undo.redo);
-            if (group_id != -1 && redo_item.group_id != group_id)
+        while (!IsEmpty(g_undo.redo)) {
+            item = (UndoItem*)GetBack(g_undo.redo);
+            if (group_id != -1 && item->group_id != group_id)
                 break;
 
-            Document* redo_asset = redo_item.doc;
-            assert(redo_asset);
-            assert(redo_asset->def->type == redo_item.saved_doc->def->type);
+            Document* doc = item->doc;
+            assert(doc);
 
-            UndoItem& undo_item = *(UndoItem*)PushBack(g_undo.undo);
-            undo_item.group_id = group_id;
-            undo_item.doc = redo_item.doc;
-            undo_item.saved_doc = Clone(redo_asset);
+            // Swap states: restore redo state, save current for undo
+            void* current_state = RestoreSnapshot(doc, item->snapshot, item->size);
 
-            CloneInto(redo_item.saved_doc, redo_asset);
-            Free(redo_item.saved_doc);
-            redo_item.saved_doc = nullptr;
-            MarkModified(redo_asset);
+            // Push to undo stack (evict oldest if full)
+            if (IsFull(g_undo.undo)) {
+                UndoItem& old = *(UndoItem*)GetFront(g_undo.undo);
+                FreeUndoItem(old);
+                PopFront(g_undo.undo);
+            }
+            UndoItem* undo_item = (UndoItem*)PushBack(g_undo.undo);
+            undo_item->doc = doc;
+            undo_item->snapshot = current_state;
+            undo_item->size = item->size;
+            undo_item->group_id = item->group_id;
 
-            g_undo.temp[g_undo.temp_count++] = redo_asset;
+            // Free the redo item's snapshot
+            Free(item->snapshot);
+            item->snapshot = nullptr;
 
+            MarkModified(doc);
+            g_undo.pending_callbacks[g_undo.pending_count++] = doc;
+
+            int item_group_id = item->group_id;
             PopBack(g_undo.redo);
 
-            if (redo_item.group_id == -1)
+            if (item_group_id == -1)
                 break;
         }
 
-        CallUndoRedo();
-
+        CallPendingCallbacks();
         return true;
     }
 
-    void CancelUndo()
-    {
-        if (GetCount(g_undo.undo) == 0)
+    void CancelUndo() {
+        if (IsEmpty(g_undo.undo))
             return;
 
-        UndoInternal(false);
+        UndoItem* item = (UndoItem*)GetBack(g_undo.undo);
+        int group_id = item->group_id;
+
+        while (!IsEmpty(g_undo.undo)) {
+            item = (UndoItem*)GetBack(g_undo.undo);
+            if (group_id != -1 && item->group_id != group_id)
+                break;
+
+            Document* doc = item->doc;
+
+            // Restore without saving to redo
+            bool was_editing = doc->editing;
+            memcpy(doc, item->snapshot, item->size);
+            doc->editing = was_editing;
+
+            MarkModified(doc);
+            g_undo.pending_callbacks[g_undo.pending_count++] = doc;
+
+            int item_group_id = item->group_id;
+            FreeUndoItem(*item);
+            PopBack(g_undo.undo);
+
+            if (item_group_id == -1)
+                break;
+        }
+
+        CallPendingCallbacks();
     }
 
-    void BeginUndoGroup()
-    {
+    void BeginUndoGroup() {
         g_undo.current_group_id = g_undo.next_group_id++;
     }
 
@@ -153,42 +205,44 @@ namespace noz::editor {
 
     void RecordUndo() {
         RecordUndo(GetActiveDocument());
+        MarkModified();
     }
 
     void RecordUndo(Document* doc) {
-        // Maxium undo size
+        // Evict oldest if full
         if (IsFull(g_undo.undo)) {
             UndoItem& old = *(UndoItem*)GetFront(g_undo.undo);
             FreeUndoItem(old);
-            PopBack(g_undo.undo);
+            PopFront(g_undo.undo);
         }
 
-        UndoItem& item = *(UndoItem*)PushBack(g_undo.undo);
-        item.group_id = g_undo.current_group_id;
-        item.doc = doc;
-        item.saved_doc = Clone(doc);
+        // Save current state
+        UndoItem* item = (UndoItem*)PushBack(g_undo.undo);
+        item->doc = doc;
+        item->snapshot = SaveSnapshot(doc, &item->size);
+        item->group_id = g_undo.current_group_id;
 
-        // Clear the redo
+        // Clear redo stack
         while (!IsEmpty(g_undo.redo)) {
-            UndoItem& old = *(UndoItem*)GetFront(g_undo.redo);
+            UndoItem& old = *(UndoItem*)GetBack(g_undo.redo);
             FreeUndoItem(old);
             PopBack(g_undo.redo);
         }
     }
 
     void RemoveFromUndoRedo(Document* doc) {
-        for (u32 i=GetCount(g_undo.undo); i>0; i--) {
-            UndoItem& undo_item = *(UndoItem*)GetAt(g_undo.undo, i-1);
-            if (undo_item.doc != doc) continue;
-            FreeUndoItem(undo_item);
-            RemoveAt(g_undo.undo, i-1);
+        for (u32 i = GetCount(g_undo.undo); i > 0; i--) {
+            UndoItem& item = *(UndoItem*)GetAt(g_undo.undo, i - 1);
+            if (item.doc != doc) continue;
+            FreeUndoItem(item);
+            RemoveAt(g_undo.undo, i - 1);
         }
 
-        for (u32 i=GetCount(g_undo.redo); i>0; i--) {
-            UndoItem& redo_item = *(UndoItem*)GetAt(g_undo.redo, i-1);
-            if (redo_item.doc != doc) continue;
-            FreeUndoItem(redo_item);
-            RemoveAt(g_undo.redo, i-1);
+        for (u32 i = GetCount(g_undo.redo); i > 0; i--) {
+            UndoItem& item = *(UndoItem*)GetAt(g_undo.redo, i - 1);
+            if (item.doc != doc) continue;
+            FreeUndoItem(item);
+            RemoveAt(g_undo.redo, i - 1);
         }
     }
 
@@ -198,6 +252,7 @@ namespace noz::editor {
         g_undo.redo = CreateRingBuffer(ALLOCATOR_DEFAULT, sizeof(UndoItem), MAX_UNDO);
         g_undo.current_group_id = -1;
         g_undo.next_group_id = 1;
+        g_undo.pending_count = 0;
     }
 
     void ShutdownUndo() {

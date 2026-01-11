@@ -45,6 +45,7 @@ namespace noz::editor {
         Mesh* mesh;
         Mesh* raster_mesh;
         Material* raster_material;
+        InputSet* input;
 
         // UI state
         int selection_color = 0;
@@ -55,7 +56,15 @@ namespace noz::editor {
         bool is_playing = false;
     };
 
+    static void DeleteSelected();
+
     static SpriteEditor g_sprite_editor = {};
+
+    static Shortcut g_sprite_editor_shortcuts[] = {
+        { KEY_X, false, false, false, DeleteSelected, "Delete" },
+        { INPUT_CODE_NONE }
+    };
+
 
     static SpriteDocument* GetSpriteDocument() {
         return (SpriteDocument*)g_editor.active_document;
@@ -172,18 +181,19 @@ namespace noz::editor {
         g_sprite_editor.current_frame = 0;
         g_sprite_editor.zoom_version = -1;
         g_sprite_editor.raster_version = -1;
-
-        // Initialize UI state to sensible defaults for this document
         g_sprite_editor.selection_color = 0;
         g_sprite_editor.selection_opacity = 0;
         g_sprite_editor.show_palette_picker = false;
         g_sprite_editor.show_opacity_popup = false;
         g_sprite_editor.edit_fill = true;
+
+        PushInputSet(g_sprite_editor.input);
     }
 
     static void EndSpriteEditor() {
         Free(g_sprite_editor.mesh);
         g_sprite_editor.mesh = nullptr;
+        PopInputSet();
     }
     
 
@@ -463,17 +473,6 @@ namespace noz::editor {
     static void DrawSpriteEditor() {
         SpriteDocument* doc = GetSpriteDocument();
 
-        if (g_sprite_editor.zoom_version != g_workspace.zoom_version) {
-            g_sprite_editor.zoom_version = g_workspace.zoom_version;
-            UpdateSpriteEditorMesh(doc, false);
-        }
-
-        // Update rasterization when needed
-        if (g_sprite_editor.raster_version < 0) {
-            g_sprite_editor.raster_version = 0;
-            UpdateRaster(doc);
-        }
-
         SpriteFrame* f = &doc->frames[g_sprite_editor.current_frame];
         Shape* shape = &f->shape;
         Vec2 local_mouse = g_workspace.mouse_world_position - doc->position;
@@ -558,18 +557,72 @@ namespace noz::editor {
         DrawMesh(g_sprite_editor.mesh, Translate(doc->position));
     }
 
-    void SpriteEditorOverlay() {
+    static void UpdateSpriteEditor() {
+        SpriteDocument* sdoc = GetSpriteDocument();
+
+//        CheckShortcuts(g_mesh_editor.animation_shortcuts, g_mesh_editor.input);
+        CheckShortcuts(g_sprite_editor_shortcuts, g_sprite_editor.input);
+
+        if (g_sprite_editor.zoom_version != g_workspace.zoom_version) {
+            g_sprite_editor.zoom_version = g_workspace.zoom_version;
+            UpdateSpriteEditorMesh(sdoc, false);
+        }
+
+        if (g_sprite_editor.raster_version < 0) {
+            g_sprite_editor.raster_version = 0;
+            UpdateRaster(sdoc);
+        }
+    }
+
+    static void SpriteEditorOverlay() {
         SpriteEditorToolbar();
     }
 
+    static void DeleteSelected() {
+        SpriteDocument* sdoc = GetSpriteDocument();
+        SpriteFrame* f = GetFrame(sdoc, g_sprite_editor.current_frame);
+        RecordUndo();
+        DeleteSelectedAnchors(&f->shape);
+        g_sprite_editor.zoom_version = -1;
+        g_sprite_editor.raster_version = -1;
+    }
+
+    static void SpriteEditorHelp() {
+        HelpGroup("Sprite", g_sprite_editor_shortcuts);
+//        HelpGroup("Animation", g_animation_shortcuts);
+    }
+
+    static void SpriteUndoRedo(Document* doc) {
+        SpriteDocument* sdoc = static_cast<SpriteDocument*>(doc);
+        for (u16 fi = 0; fi < sdoc->frame_count; ++fi)
+            shape::UpdateSamples(&sdoc->frames[fi].shape);
+        g_sprite_editor.zoom_version = -1;
+        g_sprite_editor.raster_version = -1;
+    }
+
     void InitSpriteEditor(SpriteDocument* sdoc) {
+        sdoc->vtable.undo_redo = SpriteUndoRedo;
         sdoc->vtable.editor_begin = BeginSpriteEditor;
         sdoc->vtable.editor_end = EndSpriteEditor;
+        sdoc->vtable.editor_update = UpdateSpriteEditor;
         sdoc->vtable.editor_draw = DrawSpriteEditor;
         sdoc->vtable.editor_overlay = SpriteEditorOverlay;
+        sdoc->vtable.editor_help = SpriteEditorHelp;
     }
 
     void InitSpriteEditor() {
+        InputSet* input = g_sprite_editor.input = CreateInputSet(ALLOCATOR_DEFAULT);
+        EnableModifiers(input);
+        EnableButton(input, MOUSE_LEFT);
+        EnableButton(input, MOUSE_LEFT_DOUBLE_CLICK);
+        EnableButton(input, KEY_Q);
+        EnableButton(input, KEY_E);
+        EnableButton(input, KEY_O);
+        EnableButton(input, KEY_SPACE);
+        EnableButton(input, KEY_H);
+        EnableShortcuts(g_sprite_editor_shortcuts, g_sprite_editor.input);
+        EnableCommonShortcuts(g_sprite_editor.input);
+
         g_sprite_editor.texture = CreateTexture(
             ALLOCATOR_DEFAULT,
             g_editor.atlas.size,

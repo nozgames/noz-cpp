@@ -19,10 +19,21 @@ namespace noz::editor {
         SpriteFrame frames[SPRITE_MAX_FRAMES];
         u16 frame_count;
         u8 palette;
+        float depth;
+        struct {
+            SkeletonDocument* skeleton;
+            const Name* skeleton_name;
+            u8 bone;            
+        } skin;
     };
 
     extern void InitSpriteData(Document* a);
     inline SpriteFrame* GetFrame(SpriteDocument* sprite, u16 frame_index) {
         return &sprite->frames[frame_index];
+    }
+
+    inline bool HasSkin(SpriteDocument* sdoc) {
+        if (!sdoc) return false;
+        return sdoc->skin.skeleton_name && sdoc->skin.bone != U8_MAX;
     }
 }

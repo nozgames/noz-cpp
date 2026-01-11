@@ -383,4 +383,68 @@ namespace noz::editor::shape {
             }
         }
     }
+
+    void DeleteSelectedAnchors(Shape* shape) {
+        for (u16 p_idx = 0; p_idx < shape->path_count; ) {
+            Path* path = &shape->paths[p_idx];
+
+            u16 keep_count = 0;
+            for (u16 a_idx = 0; a_idx < path->anchor_count; ++a_idx) {
+                Anchor* a = GetAnchor(shape, path, a_idx);
+                if (!IsSelected(a))
+                    keep_count++;
+            }
+
+            if (keep_count == 0) {
+                u16 anchors_to_remove = path->anchor_count;
+                u16 anchor_start = path->anchor_start;
+
+                for (u16 i = anchor_start; i < shape->anchor_count - anchors_to_remove; ++i) {
+                    shape->anchors[i] = shape->anchors[i + anchors_to_remove];
+                }
+                shape->anchor_count -= anchors_to_remove;
+
+                for (u16 i = p_idx; i < shape->path_count - 1; ++i) {
+                    shape->paths[i] = shape->paths[i + 1];
+                    shape->paths[i].anchor_start -= anchors_to_remove;
+                }
+                shape->path_count--;
+            } else if (keep_count < path->anchor_count) {
+                u16 write_idx = path->anchor_start;
+                u16 removed = 0;
+
+                for (u16 a_idx = 0; a_idx < path->anchor_count; ++a_idx) {
+                    u16 read_idx = path->anchor_start + a_idx;
+                    Anchor* a = &shape->anchors[read_idx];
+
+                    if (!IsSelected(a)) {
+                        if (write_idx != read_idx) {
+                            shape->anchors[write_idx] = shape->anchors[read_idx];
+                        }
+                        write_idx++;
+                    } else {
+                        removed++;
+                    }
+                }
+
+                u16 old_end = path->anchor_start + path->anchor_count;
+                for (u16 i = write_idx; i < shape->anchor_count - removed; ++i) {
+                    shape->anchors[i] = shape->anchors[i + removed];
+                }
+
+                shape->anchor_count -= removed;
+                path->anchor_count = keep_count;
+
+                for (u16 i = p_idx + 1; i < shape->path_count; ++i) {
+                    shape->paths[i].anchor_start -= removed;
+                }
+
+                p_idx++;
+            } else {
+                p_idx++;
+            }
+        }
+
+        UpdateSamples(shape);
+    }
 }

@@ -73,6 +73,8 @@ namespace noz::editor::shape {
     }
     inline bool IsSelected(const Anchor* anchor) { return HasFlag(anchor, ANCHOR_FLAG_SELECTED); }
 
+    extern void DeleteSelectedAnchors(Shape* shape);
+
     // @path
     inline void SetFlags(Path* path, PathFlags mask, PathFlags flags) {
         path->flags = (PathFlags)(path->flags | flags);
