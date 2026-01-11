@@ -3,9 +3,30 @@
 //
 
 #include "shape.h"
+#include "../utils/pixel_data.h"
 #include <vector>
 
 namespace noz::editor::shape {
+
+    static bool IsInPolygon(const Vec2* verts, int vertex_count, const Vec2& p) {
+        int winding = 0;
+        for (int i = 0; i < vertex_count; i++) {
+            int j = (i + 1) % vertex_count;
+            const Vec2& p0 = verts[i];
+            const Vec2& p1 = verts[j];
+
+            if (p0.y <= p.y) {
+                if (p1.y > p.y) {
+                    float cross = (p1.x - p0.x) * (p.y - p0.y) - (p.x - p0.x) * (p1.y - p0.y);
+                    if (cross >= 0) winding++;
+                }
+            } else if (p1.y <= p.y) {
+                float cross = (p1.x - p0.x) * (p.y - p0.y) - (p.x - p0.x) * (p1.y - p0.y);
+                if (cross < 0) winding--;
+            }
+        }
+        return winding != 0;
+    }
 
     void UpdateSamples(Shape* shape) {
         for (u16 p_idx = 0; p_idx < shape->path_count; ++p_idx) {
@@ -25,9 +46,22 @@ namespace noz::editor::shape {
         Vec2 p0 = a0->position;
         Vec2 p1 = a1->position;
 
-        for (int i = 0; i < SHAPE_MAX_SEGMENT_SAMPLES; ++i) {
-            float t = static_cast<float>(i + 1) / static_cast<float>(SHAPE_MAX_SEGMENT_SAMPLES + 1);
-            a0->samples[i] = p0 + (p1 - p0) * t;
+        if (Abs(a0->curve) < FLT_EPSILON) {
+            for (int i = 0; i < SHAPE_MAX_SEGMENT_SAMPLES; ++i) {
+                float t = static_cast<float>(i + 1) / static_cast<float>(SHAPE_MAX_SEGMENT_SAMPLES + 1);
+                a0->samples[i] = p0 + (p1 - p0) * t;
+            }
+        } else {
+            Vec2 mid = (p0 + p1) * 0.5f;
+            Vec2 dir = p1 - p0;
+            Vec2 perp = Normalize(Vec2{-dir.y, dir.x});
+            Vec2 cp = mid + perp * a0->curve;
+
+            for (int i = 0; i < SHAPE_MAX_SEGMENT_SAMPLES; ++i) {
+                float t = static_cast<float>(i + 1) / static_cast<float>(SHAPE_MAX_SEGMENT_SAMPLES + 1);
+                float u = 1.0f - t;
+                a0->samples[i] = (p0 * (u * u)) + (cp * (2.0f * u * t)) + (p1 * (t * t));
+            }
         }
     }
 
@@ -284,5 +318,68 @@ namespace noz::editor::shape {
         int y_max = CeilToInt(max_pt.y * dpi);
 
         shape->raster_bounds = { x_min, y_min, x_max - x_min, y_max - y_min };
+    }
+
+    void Rasterize(Shape* shape, PixelData* pixels, const Color* palette, const Vec2Int& offset) {
+        if (shape->path_count == 0) return;
+
+        float dpi = (float)g_editor.atlas.dpi;
+
+        // Temporary vertex buffer for polygon rasterization
+        constexpr int MAX_POLY_VERTS = 256;
+        Vec2 poly_verts[MAX_POLY_VERTS];
+
+        for (u16 p_idx = 0; p_idx < shape->path_count; ++p_idx) {
+            Path* path = &shape->paths[p_idx];
+            if (path->anchor_count < 3) continue;
+
+            // Build polygon vertices in pixel space
+            // Each anchor's samples are the interpolated points AFTER that anchor (toward the next)
+            int vertex_count = 0;
+            for (u16 a_idx = 0; a_idx < path->anchor_count && vertex_count < MAX_POLY_VERTS; ++a_idx) {
+                Anchor* anchor = GetAnchor(shape, path, a_idx);
+
+                // Add anchor position
+                poly_verts[vertex_count++] = anchor->position * dpi;
+
+                // Only add samples if curve is non-zero (curved segment)
+                if (Abs(anchor->curve) > FLT_EPSILON) {
+                    for (int s = 0; s < SHAPE_MAX_SEGMENT_SAMPLES && vertex_count < MAX_POLY_VERTS; ++s) {
+                        poly_verts[vertex_count++] = anchor->samples[s] * dpi;
+                    }
+                }
+            }
+
+            if (vertex_count < 3) continue;
+
+            Color fill_color = palette[path->fill_color];
+            Color32 color32 = ColorToColor32(fill_color);
+
+            // Rasterize within raster_bounds
+            // offset maps raster_bounds origin to texture origin
+            RectInt& rb = shape->raster_bounds;
+            for (int y = 0; y < rb.h; ++y) {
+                int py = offset.y + rb.y + y;
+                if (py < 0 || py >= pixels->size.y) continue;
+
+                Color32* row = pixels->rgba + py * pixels->size.x;
+                float sample_y = rb.y + y + 0.5f;
+
+                for (int x = 0; x < rb.w; ++x) {
+                    int px = offset.x + rb.x + x;
+                    if (px < 0 || px >= pixels->size.x) continue;
+
+                    float sample_x = rb.x + x + 0.5f;
+                    if (IsInPolygon(poly_verts, vertex_count, Vec2{sample_x, sample_y})) {
+                        Color32* dst = row + px;
+                        if (color32.a == 255 || dst->a == 0) {
+                            *dst = color32;
+                        } else if (color32.a > 0) {
+                            *dst = Blend(*dst, color32);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

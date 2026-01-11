@@ -11,6 +11,7 @@ namespace noz::editor {
     extern void InitSkeletonEditor();
     extern void InitAnimationEditor();
     extern void InitStyles();
+    extern void ShutdownSpriteEditor();
 
     constexpr float SELECT_SIZE = 60.0f;
     constexpr float DRAG_MIN = 5;
@@ -1117,6 +1118,7 @@ namespace noz::editor {
 
         ShutdownMeshEditor();
         ShutdownSkeletonEditor();
+        ShutdownSpriteEditor();
 
         g_workspace = {};
 

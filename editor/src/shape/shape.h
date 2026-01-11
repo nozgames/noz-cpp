@@ -59,7 +59,7 @@ namespace noz::editor::shape {
     extern bool HitTest(Shape* shape, const Vec2& point, HitResult* result);
     extern u16 HitTestAll(Shape* shape, const Vec2& point, HitResult* results, u16 max_results);
     extern void ClearSelection(Shape* shape);
-    extern void Rasterize(Shape* shape, PixelData* pixel_data, const Vec2Int& offset);
+    extern void Rasterize(Shape* shape, PixelData* pixels, const Color* palette, const Vec2Int& offset);
     
     // @anchor
     inline void SetFlags(Anchor* anchor, AnchorFlags mask, AnchorFlags flags) {

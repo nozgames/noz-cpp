@@ -2,8 +2,8 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
+#include "../utils/pixel_data.h"
 #include "sprite_doc.h"
-#include "../editor.h"
 
 using namespace noz::editor::shape;
 
@@ -39,7 +39,12 @@ namespace noz::editor {
     struct SpriteEditor {
         u16 current_frame = 0;
         int zoom_version = 0;
+        int raster_version = 0;
+        Texture* texture;
+        PixelData* pixels;
         Mesh* mesh;
+        Mesh* raster_mesh;
+        Material* raster_material;
 
         // UI state
         int selection_color = 0;
@@ -82,28 +87,13 @@ namespace noz::editor {
                     : SPRITE_EDITOR_EDGE_COLOR;
                 float seg_width = (anchor_selected || path_selected) ? selected_line_width : line_width;
 
-                // Check if this segment is curved (anchor's curve defines offset for segment to next point)
-                if (Abs(a0->curve) < FLT_EPSILON) {
-                    // Straight line
-                    AddEditorLine(builder, a0->position, a1->position, seg_width, seg_color);
-                } else {
-                    // Curved segment - curve is offset from center perpendicular to the line
-                    Vec2 mid = (a0->position + a1->position) * 0.5f;
-                    Vec2 dir = a1->position - a0->position;
-                    Vec2 perp = Normalize(Vec2{-dir.y, dir.x});
-                    Vec2 cp = mid + perp * a0->curve;
-
-                    // Sample the quadratic bezier
-                    Vec2 v0 = a0->position;
-                    for (int i = 1; i <= SHAPE_MAX_SEGMENT_SAMPLES; i++) {
-                        float t = static_cast<float>(i) / static_cast<float>(SHAPE_MAX_SEGMENT_SAMPLES + 1);
-                        float u = 1.0f - t;
-                        Vec2 v1 = (a0->position * (u * u)) + (cp * (2.0f * u * t)) + (a1->position * (t * t));
-                        AddEditorLine(builder, v0, v1, seg_width, seg_color);
-                        v0 = v1;
-                    }
-                    AddEditorLine(builder, v0, a1->position, seg_width, seg_color);
+                // Draw line segments using precomputed samples
+                Vec2 v0 = a0->position;
+                for (int i = 0; i < SHAPE_MAX_SEGMENT_SAMPLES; i++) {
+                    AddEditorLine(builder, v0, a0->samples[i], seg_width, seg_color);
+                    v0 = a0->samples[i];
                 }
+                AddEditorLine(builder, v0, a1->position, seg_width, seg_color);
             }
 
             // Draw anchors for this path
@@ -121,9 +111,61 @@ namespace noz::editor {
         Clear(g_editor.mesh_builder);
     }
 
+    static void UpdateRaster(SpriteDocument* sdoc) {
+        SpriteFrame* f = &sdoc->frames[g_sprite_editor.current_frame];
+        Shape* shape = &f->shape;
+
+        // Update bounds and samples
+        UpdateSamples(shape);
+        UpdateBounds(shape);
+
+        RectInt& rb = shape->raster_bounds;
+        if (rb.w <= 0 || rb.h <= 0) return;
+
+        // Clear pixels and rasterize
+        Clear(g_sprite_editor.pixels);
+
+        // Get palette colors
+        int palette_index = g_editor.palette_map[sdoc->palette];
+        const Color* palette = g_editor.palettes[palette_index].colors;
+
+        // Rasterize with offset that maps raster_bounds origin to texture origin (0,0)
+        Rasterize(shape, g_sprite_editor.pixels, palette, Vec2Int{-rb.x, -rb.y});
+
+        // Update texture with new pixel data
+        UpdateTexture(g_sprite_editor.texture, g_sprite_editor.pixels->rgba);
+
+        // Build raster mesh aligned to pixel grid
+        float dpi = (float)g_editor.atlas.dpi;
+        float inv_dpi = 1.0f / dpi;
+
+        Vec2 quad_min = Vec2{(float)rb.x, (float)rb.y} * inv_dpi;
+        Vec2 quad_max = Vec2{(float)(rb.x + rb.w), (float)(rb.y + rb.h)} * inv_dpi;
+
+        // UV coordinates: pixels are written starting at (0,0) in texture
+        float tex_size = (float)g_sprite_editor.pixels->size.x;
+        Vec2 uv_min = {0.0f, 0.0f};
+        Vec2 uv_max = Vec2{(float)rb.w, (float)rb.h} / tex_size;
+
+        Free(g_sprite_editor.raster_mesh);
+
+        PushScratch();
+        MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
+        AddVertex(builder, MeshVertex{.position = {quad_min.x, quad_min.y}, .uv = {uv_min.x, uv_min.y}});
+        AddVertex(builder, MeshVertex{.position = {quad_max.x, quad_min.y}, .uv = {uv_max.x, uv_min.y}});
+        AddVertex(builder, MeshVertex{.position = {quad_max.x, quad_max.y}, .uv = {uv_max.x, uv_max.y}});
+        AddVertex(builder, MeshVertex{.position = {quad_min.x, quad_max.y}, .uv = {uv_min.x, uv_max.y}});
+        AddTriangle(builder, 0, 1, 2);
+        AddTriangle(builder, 0, 2, 3);
+        g_sprite_editor.raster_mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
+        Free(builder);
+        PopScratch();
+    }
+
     static void BeginSpriteEditor(Document* doc) {
         g_sprite_editor.current_frame = 0;
         g_sprite_editor.zoom_version = -1;
+        g_sprite_editor.raster_version = -1;
 
         // Initialize UI state to sensible defaults for this document
         g_sprite_editor.selection_color = 0;
@@ -386,6 +428,12 @@ namespace noz::editor {
             UpdateSpriteEditorMesh(doc, false);
         }
 
+        // Update rasterization when needed
+        if (g_sprite_editor.raster_version < 0) {
+            g_sprite_editor.raster_version = 0;
+            UpdateRaster(doc);
+        }
+
         // On left click run shape hit test and update selection (convert mouse to document-local space)
         SpriteFrame* f = &doc->frames[g_sprite_editor.current_frame];
         if (WasButtonPressed(MOUSE_LEFT)) {
@@ -408,6 +456,15 @@ namespace noz::editor {
             g_sprite_editor.zoom_version = -1;
         }
 
+        // Draw rasterized texture behind the shape
+        if (g_sprite_editor.raster_mesh) {
+            BindMaterial(g_sprite_editor.raster_material);
+            BindColor(COLOR_WHITE);
+            BindDepth(-0.1f);
+            DrawMesh(g_sprite_editor.raster_mesh, Translate(doc->position));
+        }
+
+        // Draw shape controls on top
         BindMaterial(g_workspace.editor_material);
         BindColor(COLOR_WHITE);
         BindDepth(0.0f);
@@ -426,5 +483,30 @@ namespace noz::editor {
     }
 
     void InitSpriteEditor() {
+        g_sprite_editor.texture = CreateTexture(
+            ALLOCATOR_DEFAULT,
+            g_editor.atlas.size,
+            g_editor.atlas.size,
+            TEXTURE_FORMAT_RGBA8,
+            GetName("sprite_editor"),
+            TEXTURE_FILTER_NEAREST);
+        g_sprite_editor.pixels = CreatePixelData(
+            ALLOCATOR_DEFAULT,
+            Vec2Int{g_editor.atlas.size, g_editor.atlas.size});
+        g_sprite_editor.raster_material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_EDITOR_TEXTURE);
+        SetTexture(g_sprite_editor.raster_material, g_sprite_editor.texture, 0);
     }    
+
+    void ShutdownSpriteEditor() {
+        Free(g_sprite_editor.texture);
+        Free(g_sprite_editor.pixels);
+        Free(g_sprite_editor.raster_mesh);
+        Free(g_sprite_editor.raster_material);
+        Free(g_sprite_editor.mesh);
+        g_sprite_editor.texture = nullptr;
+        g_sprite_editor.pixels = nullptr;
+        g_sprite_editor.raster_mesh = nullptr;
+        g_sprite_editor.raster_material = nullptr;
+        g_sprite_editor.mesh = nullptr;
+    }
 }
