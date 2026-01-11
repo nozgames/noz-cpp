@@ -47,13 +47,16 @@ namespace noz::editor {
         Material* raster_material;
         InputSet* input;
 
-        // UI state
         int selection_color = 0;
-        int selection_opacity = 0; // 0..10 (like mesh editor)
+        int selection_opacity = 0;
         bool show_palette_picker = false;
         bool show_opacity_popup = false;
-        bool edit_fill = true; // true=fill, false=stroke
+        bool edit_fill = true;
         bool is_playing = false;
+
+        Vec2 saved_positions[SHAPE_MAX_ANCHORS];
+        bool select_on_up = false;
+        u16 pending_anchor = U16_MAX;
     };
 
     static void DeleteSelected();
@@ -186,6 +189,8 @@ namespace noz::editor {
         g_sprite_editor.show_palette_picker = false;
         g_sprite_editor.show_opacity_popup = false;
         g_sprite_editor.edit_fill = true;
+        g_sprite_editor.select_on_up = false;
+        g_sprite_editor.pending_anchor = U16_MAX;
 
         PushInputSet(g_sprite_editor.input);
     }
@@ -452,7 +457,6 @@ namespace noz::editor {
         SpriteFrame* f = &doc->frames[g_sprite_editor.current_frame];
         Shape* shape = &f->shape;
 
-        // Convert world bounds to local (document-relative) bounds
         Vec2 local_min = bounds.min - doc->position;
         Vec2 local_max = bounds.max - doc->position;
 
@@ -470,6 +474,70 @@ namespace noz::editor {
         g_sprite_editor.zoom_version = -1;
     }
 
+    static void SaveAnchorState() {
+        SpriteDocument* sdoc = GetSpriteDocument();
+        SpriteFrame* f = &sdoc->frames[g_sprite_editor.current_frame];
+        Shape* shape = &f->shape;
+        for (u16 i = 0; i < shape->anchor_count; ++i)
+            g_sprite_editor.saved_positions[i] = shape->anchors[i].position;
+    }
+
+    static void UpdateMoveTool(const Vec2& delta) {
+        SpriteDocument* sdoc = GetSpriteDocument();
+        SpriteFrame* f = &sdoc->frames[g_sprite_editor.current_frame];
+        Shape* shape = &f->shape;
+        bool coarse_snap = IsCtrlDown(GetInputSet());
+
+        for (u16 i = 0; i < shape->anchor_count; ++i) {
+            Anchor* a = &shape->anchors[i];
+            if (IsSelected(a)) {
+                Vec2 new_pos = sdoc->position + g_sprite_editor.saved_positions[i] + delta;
+                new_pos = coarse_snap ? SnapToGrid(new_pos) : SnapToPixelGrid(new_pos);
+                a->position = new_pos - sdoc->position;
+            }
+        }
+
+        shape::UpdateSamples(shape);
+        g_sprite_editor.zoom_version = -1;
+        g_sprite_editor.raster_version = -1;
+    }
+
+    static void CommitMoveTool(const Vec2& delta) {
+        MarkModified();
+    }
+
+    static void CancelMoveTool() {
+        SpriteDocument* sdoc = GetSpriteDocument();
+        SpriteFrame* f = &sdoc->frames[g_sprite_editor.current_frame];
+        Shape* shape = &f->shape;
+
+        for (u16 i = 0; i < shape->anchor_count; ++i)
+            shape->anchors[i].position = g_sprite_editor.saved_positions[i];
+
+        shape::UpdateSamples(shape);
+        CancelUndo();
+        g_sprite_editor.zoom_version = -1;
+        g_sprite_editor.raster_version = -1;
+    }
+
+    static bool HasSelection() {
+        SpriteDocument* sdoc = GetSpriteDocument();
+        SpriteFrame* f = &sdoc->frames[g_sprite_editor.current_frame];
+        Shape* shape = &f->shape;
+        for (u16 i = 0; i < shape->anchor_count; ++i)
+            if (IsSelected(&shape->anchors[i]))
+                return true;
+        return false;
+    }
+
+    static void BeginMove() {
+        if (!HasSelection())
+            return;
+        SaveAnchorState();
+        RecordUndo();
+        BeginMoveTool({.update=UpdateMoveTool, .commit=CommitMoveTool, .cancel=CancelMoveTool});
+    }
+
     static void DrawSpriteEditor() {
         SpriteDocument* doc = GetSpriteDocument();
 
@@ -482,7 +550,18 @@ namespace noz::editor {
         if (!IsToolActive() && g_workspace.drag_started && g_workspace.drag_button == MOUSE_LEFT) {
             shape::HitResult hr;
             HitTest(shape, local_mouse, &hr);
-            if (hr.anchor_index == U16_MAX) {
+            if (hr.anchor_index != U16_MAX) {
+                Anchor* a = &shape->anchors[hr.anchor_index];
+                if (!IsSelected(a)) {
+                    if (!shift_down)
+                        ClearSelection(shape);
+                    SetFlags(a, ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
+                    selection_changed = true;
+                }
+                g_sprite_editor.select_on_up = false;
+                g_sprite_editor.pending_anchor = U16_MAX;
+                BeginMove();
+            } else {
                 BeginBoxSelect(HandleBoxSelect);
                 if (!shift_down) {
                     ClearSelection(shape);
@@ -491,50 +570,49 @@ namespace noz::editor {
             }
         }
 
-        // Handle click selection (not drag)
         if (WasButtonPressed(MOUSE_LEFT) && !g_workspace.drag_started) {
             shape::HitResult hr;
             bool hit = HitTest(shape, local_mouse, &hr);
             bool double_click = WasButtonPressed(MOUSE_LEFT_DOUBLE_CLICK);
 
+            g_sprite_editor.select_on_up = false;
+            g_sprite_editor.pending_anchor = U16_MAX;
+
             if (double_click) {
-                // Double-click: select entire path
                 if (hit && hr.path_index != U16_MAX) {
                     SelectPath(shape, hr.path_index, shift_down);
                     selection_changed = true;
                 }
             } else if (hit && hr.anchor_index != U16_MAX) {
-                // Click on anchor
                 Anchor* clicked_anchor = &shape->anchors[hr.anchor_index];
-                if (shift_down) {
-                    // Toggle selection
+                if (IsSelected(clicked_anchor) && !shift_down) {
+                    g_sprite_editor.select_on_up = true;
+                    g_sprite_editor.pending_anchor = hr.anchor_index;
+                } else if (shift_down) {
                     if (IsSelected(clicked_anchor))
                         ClearFlags(clicked_anchor, ANCHOR_FLAG_SELECTED);
                     else
                         SetFlags(clicked_anchor, ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
+                    selection_changed = true;
                 } else {
-                    // Select only this anchor
                     ClearSelection(shape);
                     SetFlags(clicked_anchor, ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
+                    selection_changed = true;
                 }
-                selection_changed = true;
-            } else if (hit && hr.segment_index != U16_MAX) {
-                // Click on segment - select both anchors of that segment
-                if (!shift_down)
-                    ClearSelection(shape);
-                // segment_index is the anchor index for the start of segment
-                u16 a0_idx = hr.segment_index;
-                Path* p = &shape->paths[hr.path_index];
-                u16 local_idx = a0_idx - p->anchor_start;
-                u16 a1_local = (local_idx + 1) % p->anchor_count;
-                SetFlags(&shape->anchors[a0_idx], ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
-                SetFlags(GetAnchor(shape, p, a1_local), ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
-                selection_changed = true;
             } else if (!hit && !shift_down) {
-                // Click on empty space - clear selection
                 ClearSelection(shape);
                 selection_changed = true;
             }
+        }
+
+        if (WasButtonReleased(g_sprite_editor.input, MOUSE_LEFT) && g_sprite_editor.select_on_up) {
+            if (g_sprite_editor.pending_anchor != U16_MAX) {
+                ClearSelection(shape);
+                SetFlags(&shape->anchors[g_sprite_editor.pending_anchor], ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
+                selection_changed = true;
+            }
+            g_sprite_editor.select_on_up = false;
+            g_sprite_editor.pending_anchor = U16_MAX;
         }
 
         if (selection_changed)

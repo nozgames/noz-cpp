@@ -37,8 +37,13 @@ namespace noz::editor {
             return;
         }
 
-        if (!g_workspace.drag || WasButtonPressed(GetInputSet(), KEY_ESCAPE)) {
+        if (WasButtonPressed(GetInputSet(), KEY_ESCAPE)) {
             EndMove(false);
+            return;
+        }
+
+        if (!g_workspace.drag) {
+            EndMove(g_workspace.drag_ended);
             return;
         }
 
