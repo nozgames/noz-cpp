@@ -81,7 +81,6 @@ namespace noz::editor {
                 const Anchor* a0 = GetAnchor(&f->shape, p, a_idx);
                 const Anchor* a1 = GetAnchor(&f->shape, p, (a_idx + 1) % p->anchor_count);
 
-                // Segment is selected if both anchors are selected, or if path is selected
                 bool segment_selected = (shape::IsSelected(a0) && shape::IsSelected(a1)) || path_selected;
                 Color seg_color = segment_selected
                     ? SPRITE_EDITOR_EDGE_SELECTED_COLOR
@@ -97,7 +96,6 @@ namespace noz::editor {
                 AddEditorLine(builder, v0, a1->position, seg_width, seg_color);
             }
 
-            // Draw unselected anchors for this path
             for (u16 a_idx = 0; a_idx < p->anchor_count; a_idx++) {
                 const shape::Anchor* a = GetAnchor(&f->shape, (Path*)p, a_idx);
                 if (!shape::IsSelected(a))
@@ -105,7 +103,6 @@ namespace noz::editor {
             }
         }
 
-        // Second pass: draw selected anchors on top
         for (u16 p_idx = 0; p_idx < f->shape.path_count; p_idx++) {
             const Path* p = &f->shape.paths[p_idx];
             for (u16 a_idx = 0; a_idx < p->anchor_count; a_idx++) {
