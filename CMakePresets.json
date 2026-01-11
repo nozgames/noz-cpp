@@ -1,31 +1,39 @@
 {
-    "version": 3,
-    "cmakeMinimumRequired": {
-        "major": 4,
-        "minor": 1,
-        "patch": 1
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "editor-debug",
+      "displayName": "Editor Debug",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/editor-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "NOZ_EDITOR": "ON",
+        "NOZ_RENDERER": "GL"
+      }
     },
-    "configurePresets": [
-        {
-            "name": "editor-debug",
-            "displayName": "Editor (Debug)",
-            "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build/editor-debug",
-            "architecture": {
-                "value": "x64",
-                "strategy": "external"
-            },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "NOZ_EDITOR": "ON"
-            }
-        }
-    ],
-    "buildPresets": [
-        {
-            "name": "editor-debug",
-            "displayName": "Editor (Debug)",
-            "configurePreset": "editor-debug"
-        }
-    ]
+    {
+      "name": "editor-release",
+      "displayName": "Editor Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/editor-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "NOZ_EDITOR": "ON",
+        "NOZ_RENDERER": "GL"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "editor-debug",
+      "configurePreset": "editor-debug"
+    },
+    {
+      "name": "editor-release",
+      "configurePreset": "editor-release"
+    }
+  ]
 }

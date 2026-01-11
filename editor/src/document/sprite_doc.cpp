@@ -17,45 +17,30 @@ namespace noz::editor {
         DrawMesh(g_workspace.quad_mesh, Translate(doc->position));
     }
 
-    static void ParseAnchor(SpriteFrame& f, Tokenizer& tk) {
-        if (f.shape.anchor_count >= shape::SHAPE_MAX_ANCHORS)
+    static void ParseAnchor(Shape* shape, Path* p, Tokenizer& tk) {
+        if (shape->anchor_count >= SHAPE_MAX_ANCHORS)
             ThrowError("too many anchors");
 
-        shape::Anchor& a = f.shape.anchors[f.shape.anchor_count++];
-        a.position.x = ExpectFloat(tk);
-        a.position.y = ExpectFloat(tk);
-        SetFlags(&a, ANCHOR_FLAG_ACTIVE, ANCHOR_FLAG_ACTIVE);
+        Anchor* a = &shape->anchors[shape->anchor_count++];
+        p->anchor_count++;
+        a->position.x = ExpectFloat(tk);
+        a->position.y = ExpectFloat(tk);
+        a->curve = ExpectFloat(tk, 0.0f);
     }
 
-    static void ParseSegment(SpriteFrame& f, Tokenizer& tk) {
-        shape::Segment& s = f.shape.segments[f.shape.segment_count++];
-        s.anchor0 = (u16)ExpectInt(tk);
-        s.anchor1 = (u16)ExpectInt(tk);        
-        s.curve.offset.x = ExpectFloat(tk);
-        s.curve.offset.y = ExpectFloat(tk);
-        s.curve.weight = ExpectFloat(tk, 0.0f);
-        SetFlags(&s, SEGMENT_FLAG_ACTIVE, SEGMENT_FLAG_ACTIVE);
-        s.path_left = U16_MAX;
-        s.path_right = U16_MAX;
-        s.sample_count = 0;
-    }
-
-    static void ParsePath(SpriteFrame& f, Tokenizer& tk) {
-        shape::Path& p = f.shape.paths[f.shape.path_count++];
-        p.segment_count = 0;
-        p.stroke_color = 0;
-        p.fill_color = 0;
-        SetFlags(&p, PATH_FLAG_ACTIVE, PATH_FLAG_ACTIVE);
-
-        while (!IsEOF(tk)) {
-            int s_idx = ExpectInt(tk, -1);
-            if (s_idx == -1) break;
-            p.segments[p.segment_count++] = (u16)s_idx;
-        }
+    static void ParsePath(SpriteFrame* f, Tokenizer& tk) {
+        Shape* shape = &f->shape;
+        Path* p = &shape->paths[shape->path_count++];
+        p->anchor_start = shape->anchor_count;
+        p->anchor_count = 0;
+        p->stroke_color = 0;
+        p->fill_color = 0;
 
         while (!IsEOF(tk)) {
             if (ExpectIdentifier(tk, "c")) {
-                p.fill_color = (u8)ExpectInt(tk);
+                p->fill_color = (u8)ExpectInt(tk);
+            } else if (ExpectIdentifier(tk, "a")) {
+                ParseAnchor(shape, p, tk);
             } else {
                 break;
             }
@@ -66,12 +51,8 @@ namespace noz::editor {
         SpriteFrame* f = sdoc->frames + sdoc->frame_count++;
 
         while (!IsEOF(tk)) {
-            if (ExpectIdentifier(tk, "a")) {
-                ParseAnchor(*f, tk);
-            } else if (ExpectIdentifier(tk, "s")) {
-                ParseSegment(*f, tk);
-            } else if (ExpectIdentifier(tk, "p")) {
-                ParsePath(*f, tk);
+            if (ExpectIdentifier(tk, "p")) {
+                ParsePath(f, tk);
             } else if (ExpectIdentifier(tk, "c")) {
                 sdoc->palette = (u8)ExpectInt(tk);
             } else if (ExpectIdentifier(tk, "d")) {
@@ -86,7 +67,7 @@ namespace noz::editor {
         }
 
         for (u16 fi = 0; fi < sdoc->frame_count; ++fi)
-            shape::UpdateSegmentPaths(&sdoc->frames[fi].shape);
+            shape::UpdateSamples(&sdoc->frames[fi].shape);
     }
 
     static void LoadSpriteDocument(Document* doc) {
@@ -123,7 +104,7 @@ namespace noz::editor {
     void InitSpriteDocumentDef() {
         InitDocumentDef({
             .type = ASSET_TYPE_SPRITE,
-            .size = sizeof(SpriteDocument),
+            .size = static_cast<int>(sizeof(SpriteDocument)),
             .ext = ".sprite",
             .init_func = InitSpriteDocument,
             .import_func = ImportSprite

@@ -6,57 +6,32 @@
 
 namespace noz::editor::shape {
 
-    constexpr int SHAPE_MAX_ANCHORS = 2048;
-    constexpr int SHAPE_MAX_SEGMENTS = 2048;
-    constexpr int SHAPE_MAX_PATHS = 1024;
-    constexpr int SHAPE_MAX_SEGMENT_SAMPLES = 16;
+    constexpr int SHAPE_MAX_ANCHORS = 1024;
+    constexpr int SHAPE_MAX_PATHS = 256;
+    constexpr int SHAPE_MAX_SEGMENT_SAMPLES = 8;
 
     enum AnchorFlags : u16 {
         ANCHOR_FLAG_NONE = 0,
-        ANCHOR_FLAG_ACTIVE = 1 << 0,
-        ANCHOR_FLAG_SELECTED = 1 << 1,
+        ANCHOR_FLAG_SELECTED = 1 << 0,
         ANCHOR_FLAG_ALL = U16_MAX
     };
 
     struct Anchor {
         Vec2 position;
+        float curve;
         u16 flags;
-    };
-
-    enum SegmentFlags : u16 {
-        SEGMENT_FLAG_NONE = 0,
-        SEGMENT_FLAG_ACTIVE = 1 << 0,
-        SEGMENT_FLAG_SELECTED = 1 << 1,
-        SEGMENT_FLAG_ALL = U16_MAX
-    };
-
-    struct Segment {
-        u16 anchor0;
-        u16 anchor1;
-        u16 path_left;
-        u16 path_right;
-        u16 sample_count;
-        SegmentFlags flags;
         Vec2 samples[SHAPE_MAX_SEGMENT_SAMPLES];
-
-        struct {
-            Vec2 offset;
-            float weight;
-        } curve;
     };
 
     enum PathFlags : u16 {
         PATH_FLAG_NONE = 0,
-        PATH_FLAG_ACTIVE = 1 << 0,
-        PATH_FLAG_SELECTED = 1 << 1,
-        PATH_FLAG_CLOSED = 1 << 2,
-
+        PATH_FLAG_SELECTED = 1 << 0,
         PATH_FLAG_ALL = U16_MAX
     };
 
     struct Path {
-        u16 segments[SHAPE_MAX_SEGMENTS];
-        u16 segment_count;
+        u16 anchor_start;
+        u16 anchor_count;
         u8 stroke_color;
         u8 fill_color;
         PathFlags flags;
@@ -64,11 +39,8 @@ namespace noz::editor::shape {
 
     struct Shape {
         Anchor anchors[SHAPE_MAX_ANCHORS];
-        Segment segments[SHAPE_MAX_SEGMENTS];
         Path paths[SHAPE_MAX_PATHS];
-
         u16 anchor_count;
-        u16 segment_count;
         u16 path_count;
     };
 
@@ -79,9 +51,10 @@ namespace noz::editor::shape {
     };
 
     // @shape
-    extern void UpdateSegmentSamples(Shape* shape, u16 s_idx);
-    extern void UpdateSegmentPaths(Shape* shape);
+    extern void UpdateSamples(Shape* shape);
+    extern void UpdateSamples(Shape* shape, u16 path_idx, u16 anchor_idx);
     extern bool HitTest(Shape* shape, const Vec2& point, HitResult* result);
+    extern u16 HitTestAll(Shape* shape, const Vec2& point, HitResult* results, u16 max_results);
     extern void ClearSelection(Shape* shape);
 
     // @anchor
@@ -94,21 +67,7 @@ namespace noz::editor::shape {
     inline bool HasFlag(const Anchor* anchor, AnchorFlags flag) {
         return (anchor->flags & flag) != 0;
     }
-    inline bool IsActive(const Anchor* anchor) { return HasFlag(anchor, ANCHOR_FLAG_ACTIVE); }
     inline bool IsSelected(const Anchor* anchor) { return HasFlag(anchor, ANCHOR_FLAG_SELECTED); }
-
-    // @segment
-    inline void SetFlags(Segment* seg, SegmentFlags mask, SegmentFlags flags) {
-        seg->flags = (SegmentFlags)(seg->flags | flags);
-    }
-    inline void ClearFlags(Segment* seg, SegmentFlags mask = SEGMENT_FLAG_ALL) {
-        seg->flags = (SegmentFlags)(seg->flags & ~mask);
-    }
-    inline bool HasFlag(const Segment* seg, SegmentFlags flag) {
-        return (seg->flags & flag) != 0;
-    }
-    inline bool IsActive(const Segment* seg) { return HasFlag(seg, SEGMENT_FLAG_ACTIVE); }
-    inline bool IsSelected(const Segment* seg) { return HasFlag(seg, SEGMENT_FLAG_SELECTED); }
 
     // @path
     inline void SetFlags(Path* path, PathFlags mask, PathFlags flags) {
@@ -118,8 +77,17 @@ namespace noz::editor::shape {
         path->flags = (PathFlags)(path->flags & ~mask);
     }
     inline bool HasFlag(Path* path, PathFlags flag) {
-        return (path->flags & flag) != 0;   
-    }    
-    inline bool IsActive(const Path* path) { return HasFlag((Path*)path, PATH_FLAG_ACTIVE); }
+        return (path->flags & flag) != 0;
+    }
     inline bool IsSelected(const Path* path) { return HasFlag((Path*)path, PATH_FLAG_SELECTED); }
+
+    // Helper to get anchor from path
+    inline Anchor* GetAnchor(Shape* shape, Path* path, u16 local_idx) {
+        return &shape->anchors[path->anchor_start + local_idx];
+    }
+
+    inline Anchor* GetAnchor(Shape* shape, const Path* path, u16 local_idx) {
+        return &shape->anchors[path->anchor_start + local_idx];
+    }
+
 }

@@ -2,21 +2,59 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "build editor",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--build",
-        "${workspaceFolder}/build/editor-debug",
-        "--target",
-        "nozed",
-        "--",
-        "-v"
-      ],
+      "label": "build editor (debug)",
+      "type": "process",
+      "command": "ninja",
+      "args": [],
+      "options": {
+        "cwd": "${workspaceFolder}/build/editor-debug"
+      },
       "group": { "kind": "build", "isDefault": true },
-      "problemMatcher": ["$msCompile"],
-      "presentation": { "reveal": "always", "panel": "shared" },
-      "detail": "Runs CMake build for the editor target with verbose Ninja output"
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true,
+        "showReuseMessage": false,
+        "revealProblems": "onProblem"
+      },
+      "detail": "Build editor in debug mode"
+    },
+    {
+      "label": "build editor (debug, fast)",
+      "type": "process",
+      "command": "ninja",
+      "args": [],
+      "options": {
+        "cwd": "${workspaceFolder}/build/editor-debug"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated",
+        "clear": true,
+        "showReuseMessage": false
+      },
+      "detail": "Build without problem scanning (faster for run)"
+    },
+    {
+      "label": "build editor (release)",
+      "type": "process",
+      "command": "ninja",
+      "args": [],
+      "options": {
+        "cwd": "${workspaceFolder}/build/editor-release"
+      },
+      "group": "build",
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true,
+        "showReuseMessage": false,
+        "revealProblems": "onProblem"
+      },
+      "detail": "Build editor in release mode"
     }
   ]
 }

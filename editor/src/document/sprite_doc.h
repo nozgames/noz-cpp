@@ -22,4 +22,7 @@ namespace noz::editor {
     };
 
     extern void InitSpriteData(Document* a);
+    inline SpriteFrame* GetFrame(SpriteDocument* sprite, u16 frame_index) {
+        return &sprite->frames[frame_index];
+    }
 }

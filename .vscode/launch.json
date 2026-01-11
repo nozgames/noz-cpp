@@ -14,7 +14,7 @@
             "cwd": "${workspaceRoot}/build",
             "environment": [],
             "console": "internalConsole",
-            "preLaunchTask":  "build editor",
+            "preLaunchTask":  "build editor (debug)",
             "internalConsoleOptions": "openOnSessionStart"
         }
     ]
