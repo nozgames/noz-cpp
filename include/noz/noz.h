@@ -42,6 +42,7 @@
 #include "debug.h"
 #include "rect.h"
 #include "bin.h"
+#include "rect.h"
 
 #if defined(NOZ_LUA)
 #include "noz_lua.h"

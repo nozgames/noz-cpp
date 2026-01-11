@@ -42,6 +42,8 @@ namespace noz::editor::shape {
         Path paths[SHAPE_MAX_PATHS];
         u16 anchor_count;
         u16 path_count;
+        Bounds2 bounds;
+        RectInt raster_bounds;
     };
 
     struct HitResult {
@@ -53,10 +55,12 @@ namespace noz::editor::shape {
     // @shape
     extern void UpdateSamples(Shape* shape);
     extern void UpdateSamples(Shape* shape, u16 path_idx, u16 anchor_idx);
+    extern void UpdateBounds(Shape* shape);
     extern bool HitTest(Shape* shape, const Vec2& point, HitResult* result);
     extern u16 HitTestAll(Shape* shape, const Vec2& point, HitResult* results, u16 max_results);
     extern void ClearSelection(Shape* shape);
-
+    extern void Rasterize(Shape* shape, PixelData* pixel_data, const Vec2Int& offset);
+    
     // @anchor
     inline void SetFlags(Anchor* anchor, AnchorFlags mask, AnchorFlags flags) {
         anchor->flags = (AnchorFlags)(anchor->flags | flags);

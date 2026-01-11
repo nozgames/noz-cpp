@@ -1,3 +1,7 @@
 CompileFlags:
   CompilationDatabase: build/editor-debug
-  Add: [-Wno-missing-designated-field-initializers -Wno-unused-variable -Wno-c++17-extensions]
+  Add:
+    - -Wno-missing-designated-field-initializers
+    - -Wno-unused-variable
+    - -Wno-c++17-extensions
+    - -ferror-limit=0

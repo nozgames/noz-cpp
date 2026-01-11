@@ -254,4 +254,35 @@ namespace noz::editor::shape {
             }
         }
     }
+
+    void UpdateBounds(Shape* shape) {
+        if (shape->anchor_count == 0) {
+            shape->bounds = { VEC2_ZERO, VEC2_ZERO };
+            shape->raster_bounds = { 0, 0, 0, 0 };
+            return;
+        }
+
+        Vec2 min_pt = shape->anchors[0].position;
+        Vec2 max_pt = shape->anchors[0].position;
+
+        for (u16 i = 0; i < shape->anchor_count; ++i) {
+            Anchor* anchor = &shape->anchors[i];
+            min_pt = Min(min_pt, anchor->position);
+            max_pt = Max(max_pt, anchor->position);
+            for (int s = 0; s < SHAPE_MAX_SEGMENT_SAMPLES; ++s) {
+                min_pt = Min(min_pt, anchor->samples[s]);
+                max_pt = Max(max_pt, anchor->samples[s]);
+            }
+        }
+
+        shape->bounds = { min_pt, max_pt };
+
+        float dpi = (float)g_editor.atlas.dpi;
+        int x_min = FloorToInt(min_pt.x * dpi);
+        int y_min = FloorToInt(min_pt.y * dpi);
+        int x_max = CeilToInt(max_pt.x * dpi);
+        int y_max = CeilToInt(max_pt.y * dpi);
+
+        shape->raster_bounds = { x_min, y_min, x_max - x_min, y_max - y_min };
+    }
 }
