@@ -193,9 +193,17 @@ namespace noz::editor {
         g_sprite_editor.pending_anchor = U16_MAX;
 
         PushInputSet(g_sprite_editor.input);
+        UpdateSpriteEditorMesh(static_cast<SpriteDocument*>(doc), false);
     }
 
     static void EndSpriteEditor() {
+        SpriteDocument* sdoc = GetSpriteDocument();
+
+        // Mark atlas dirty if sprite was modified during editing
+        if (sdoc && sdoc->modified) {
+            sdoc->atlas_dirty = true;
+        }
+
         Free(g_sprite_editor.mesh);
         g_sprite_editor.mesh = nullptr;
         PopInputSet();
@@ -348,8 +356,8 @@ namespace noz::editor {
                 });
 
             BeginContainer();
-            Image(MESH_ICON_OPACITY, {.align=ALIGN_CENTER, .material=g_workspace.editor_mesh_material});
-            Image(MESH_ICON_OPACITY_OVERLAY, {
+            Image(SPRITE_ICON_OPACITY, {.align=ALIGN_CENTER, .material=g_workspace.editor_mesh_material});
+            Image(SPRITE_ICON_OPACITY_OVERLAY, {
                 .align=ALIGN_CENTER,
                 .color=SetAlpha(COLOR_WHITE, opacity),
                 .material=g_workspace.editor_mesh_material});
@@ -366,8 +374,8 @@ namespace noz::editor {
     }
 
     static void OpacityContent() {
-        Image(MESH_ICON_OPACITY, {.align=ALIGN_CENTER, .material=g_workspace.editor_mesh_material});
-        Image(MESH_ICON_OPACITY_OVERLAY, {
+        Image(SPRITE_ICON_OPACITY, {.align=ALIGN_CENTER, .material=g_workspace.editor_mesh_material});
+        Image(SPRITE_ICON_OPACITY_OVERLAY, {
             .align=ALIGN_CENTER,
             .color=SetAlpha(COLOR_WHITE, g_sprite_editor.selection_opacity / 10.0f),
             .material=g_workspace.editor_mesh_material
@@ -486,18 +494,20 @@ namespace noz::editor {
         SpriteDocument* sdoc = GetSpriteDocument();
         SpriteFrame* f = &sdoc->frames[g_sprite_editor.current_frame];
         Shape* shape = &f->shape;
-        bool coarse_snap = IsCtrlDown(GetInputSet());
+        bool pixel_snap = IsCtrlDown();
 
         for (u16 i = 0; i < shape->anchor_count; ++i) {
             Anchor* a = &shape->anchors[i];
             if (IsSelected(a)) {
                 Vec2 new_pos = sdoc->position + g_sprite_editor.saved_positions[i] + delta;
-                new_pos = coarse_snap ? SnapToGrid(new_pos) : SnapToPixelGrid(new_pos);
+                if (pixel_snap)
+                    new_pos = SnapToGrid(new_pos);
                 a->position = new_pos - sdoc->position;
             }
         }
 
         shape::UpdateSamples(shape);
+        UpdateBounds(sdoc);
         g_sprite_editor.zoom_version = -1;
         g_sprite_editor.raster_version = -1;
     }
@@ -530,7 +540,7 @@ namespace noz::editor {
         return false;
     }
 
-    static void BeginMove() {
+    static void BeginMoveTool() {
         if (!HasSelection())
             return;
         SaveAnchorState();
@@ -560,7 +570,7 @@ namespace noz::editor {
                 }
                 g_sprite_editor.select_on_up = false;
                 g_sprite_editor.pending_anchor = U16_MAX;
-                BeginMove();
+                BeginMoveTool();
             } else {
                 BeginBoxSelect(HandleBoxSelect);
                 if (!shift_down) {

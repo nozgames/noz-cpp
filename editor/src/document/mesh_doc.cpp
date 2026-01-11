@@ -2,11 +2,18 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
+#if 0
+
 #include "utils/rasterizer.h"
 #include "utils/pixel_data.h"
-#include "atlas_manager.h"
+#include "atlas_doc.h"
 
 namespace noz::editor {
+
+    // Stub functions for removed mesh atlas support (meshes no longer use atlas)
+    static inline AtlasDocument* FindAtlasForMesh(const Name*, AtlasRect** = nullptr) { return nullptr; }
+    static inline AtlasRect* FindRectForMesh(AtlasDocument*, const Name*) { return nullptr; }
+    static inline void RenderMeshToAtlas(AtlasDocument*, MeshDocument*, AtlasRect&, bool = true) {}
 
     constexpr float OUTLINE_WIDTH = 0.015f;
 
@@ -1743,8 +1750,8 @@ namespace noz::editor {
         if (!mdoc) return nullptr;
 
         // Use tight rect around mesh bounds
-        Vec2 min_pos = rect.mesh_bounds.min;
-        Vec2 max_pos = rect.mesh_bounds.max;
+        Vec2 min_pos = rect.bounds.min;
+        Vec2 max_pos = rect.bounds.max;
 
         // 4 vertices, 2 triangles
         MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_DEFAULT, 4, 6);
@@ -1768,7 +1775,7 @@ namespace noz::editor {
             v.position = corners[i];
             v.depth = depth;
             v.opacity = 1.0f;
-            v.uv = GetAtlasUV(adoc, rect, rect.mesh_bounds, corners[i]);
+            v.uv = GetAtlasUV(adoc, rect, rect.bounds, corners[i]);
             v.atlas = atlas_idx;
 
 
@@ -1857,3 +1864,5 @@ namespace noz::editor {
         });
     }
 }
+
+#endif

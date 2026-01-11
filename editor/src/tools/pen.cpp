@@ -2,6 +2,8 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
+#if 0
+
 namespace noz::editor {
     
     constexpr float PEN_HIT_TOLERANCE = 0.25f;
@@ -333,3 +335,5 @@ namespace noz::editor {
         SetSystemCursor(SYSTEM_CURSOR_SELECT);
     }
 }
+
+#endif

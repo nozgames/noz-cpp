@@ -28,7 +28,7 @@ namespace noz::editor {
         if (!vdoc->playing || vdoc->emitter_count == 0 ) {
             BindMaterial(g_workspace.shaded_material);
             BindColor(COLOR_WHITE);
-            DrawMesh(MESH_ASSET_ICON_VFX, Translate(doc->position));
+            DrawMesh(SPRITE_ASSET_ICON_VFX, Translate(doc->position));
             return;
         }
 

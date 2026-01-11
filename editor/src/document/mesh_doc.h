@@ -4,6 +4,8 @@
 
 #pragma once
 
+#if 0
+
 namespace noz::editor {
     struct AtlasDocument;
     struct PixelData;
@@ -168,7 +170,6 @@ namespace noz::editor {
     extern void Update(MeshDocument* m, int frame_index, bool force=false);
     extern void Center(MeshDocument* m);
     extern bool FixWinding(MeshDocument* m, FaceData& ef);
-    extern void DrawFaceCenters(MeshDocument* m, const Vec2& position);
     extern int CreateFace(MeshDocument* m);
     extern u16 GetSelectedVertices(MeshDocument* m, u16 vertices[MESH_MAX_VERTICES]);
     extern u16 GetSelectedEdges(MeshDocument* m, u16 edges[MESH_MAX_EDGES]);
@@ -291,3 +292,5 @@ namespace noz::editor {
 
     extern bool HitTest(Geometry& geom, const Mat3& transform, const Vec2& point, GeometryHitTestResult& result);
 }
+
+#endif

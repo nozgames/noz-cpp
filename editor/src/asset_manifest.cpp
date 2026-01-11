@@ -519,7 +519,6 @@ namespace noz::editor {
 
     static const char* GetLuauTypeName(AssetType type) {
         switch (type) {
-            case ASSET_TYPE_MESH: return "Mesh";
             case ASSET_TYPE_FONT: return "Font";
             case ASSET_TYPE_TEXTURE: return "Texture";
             case ASSET_TYPE_ATLAS: return "Texture";  // Atlas loads as Texture
@@ -528,6 +527,7 @@ namespace noz::editor {
             case ASSET_TYPE_ANIMATION: return "Animation";
             case ASSET_TYPE_SHADER: return "Shader";
             case ASSET_TYPE_BIN: return "Bin";
+            case ASSET_TYPE_SPRITE: return "Sprite";
             default: return nullptr;
         }
     }
@@ -577,7 +577,6 @@ namespace noz::editor {
 
     static const char* GetLuaLoaderFunc(AssetType type) {
         switch (type) {
-            case ASSET_TYPE_MESH: return "LoadMesh";
             case ASSET_TYPE_FONT: return "LoadFont";
             case ASSET_TYPE_TEXTURE: return "LoadTexture";
             case ASSET_TYPE_ATLAS: return "LoadTexture";  // Atlas loads as Texture
@@ -586,6 +585,7 @@ namespace noz::editor {
             case ASSET_TYPE_ANIMATION: return "LoadAnimation";
             case ASSET_TYPE_SHADER: return "LoadShader";
             case ASSET_TYPE_VFX: return "LoadVfx";
+            case ASSET_TYPE_SPRITE: return "LoadSprite";
             default: return nullptr;
         }
     }

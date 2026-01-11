@@ -4,7 +4,6 @@
 
 #include "shape.h"
 #include "../utils/pixel_data.h"
-#include <vector>
 
 namespace noz::editor::shape {
 
@@ -73,101 +72,122 @@ namespace noz::editor::shape {
         result->anchor_index = U16_MAX;
         result->segment_index = U16_MAX;
         result->path_index = U16_MAX;
+        result->anchor_dist_sqr = FLT_MAX;
+        result->segment_dist_sqr = FLT_MAX;
+
+        // Find the closest anchor and segment within their hit radii
+        float best_anchor_dist_sqr = anchor_radius_sqr;
+        float best_segment_dist_sqr = segment_radius_sqr;
+        u16 best_anchor_index = U16_MAX;
+        u16 best_anchor_path = U16_MAX;
+        u16 best_segment_index = U16_MAX;
+        u16 best_segment_path = U16_MAX;
+        u16 hit_path_index = U16_MAX;
 
         for (u16 p_idx = 0; p_idx < shape->path_count; ++p_idx) {
             Path& p = shape->paths[p_idx];
 
-            // Check anchors first
+            // Check anchors - find closest one
             for (u16 a_idx = 0; a_idx < p.anchor_count; ++a_idx) {
                 const Anchor* a = GetAnchor(shape, &p, a_idx);
                 float dist_sqr = LengthSqr(point - a->position);
-                if (dist_sqr <= anchor_radius_sqr) {
-                    result->anchor_index = p.anchor_start + a_idx;
-                    result->path_index = p_idx;
-                    return true;
+                if (dist_sqr < best_anchor_dist_sqr) {
+                    best_anchor_dist_sqr = dist_sqr;
+                    best_anchor_index = p.anchor_start + a_idx;
+                    best_anchor_path = p_idx;
                 }
             }
 
-            // Check segments (edges between anchors)
+            // Check segments - find closest one
             for (u16 a_idx = 0; a_idx < p.anchor_count; ++a_idx) {
                 const Anchor* a0 = GetAnchor(shape, &p, a_idx);
                 u16 next_idx = (a_idx + 1) % p.anchor_count;
                 const Anchor* a1 = GetAnchor(shape, &p, next_idx);
 
-                auto test_edge = [&](const Vec2& ea, const Vec2& eb) -> bool {
+                auto test_edge = [&](const Vec2& ea, const Vec2& eb) {
                     Vec2 edge_dir = eb - ea;
                     float edge_length = Length(edge_dir);
-                    if (edge_length < FLT_EPSILON) return false;
-                    edge_dir = Normalize(edge_dir);
+                    if (edge_length < FLT_EPSILON) return;
+                    edge_dir = edge_dir / edge_length;
 
                     Vec2 to_point = point - ea;
                     float proj = Dot(to_point, edge_dir);
-                    // Exclude endpoints - anchors should be hit tested separately
                     if (proj > 0.0f && proj < edge_length) {
                         Vec2 closest = ea + edge_dir * proj;
                         float dist_sqr = LengthSqr(point - closest);
-                        if (dist_sqr <= segment_radius_sqr) return true;
+                        if (dist_sqr < best_segment_dist_sqr) {
+                            best_segment_dist_sqr = dist_sqr;
+                            best_segment_index = p.anchor_start + a_idx;
+                            best_segment_path = p_idx;
+                        }
                     }
-                    return false;
                 };
 
-                // Test from anchor to first sample, through samples, to next anchor
                 Vec2 v0 = a0->position;
                 for (int si = 0; si < SHAPE_MAX_SEGMENT_SAMPLES; ++si) {
                     Vec2 v1 = a0->samples[si];
-                    if (test_edge(v0, v1)) {
-                        result->segment_index = p.anchor_start + a_idx;
-                        result->path_index = p_idx;
-                        return true;
-                    }
+                    test_edge(v0, v1);
                     v0 = v1;
                 }
-                // Last segment to next anchor
-                if (test_edge(v0, a1->position)) {
-                    result->segment_index = p.anchor_start + a_idx;
-                    result->path_index = p_idx;
-                    return true;
-                }
+                test_edge(v0, a1->position);
             }
 
             // Check filled path
-            std::vector<Vec2> verts;
-            verts.reserve(p.anchor_count * (SHAPE_MAX_SEGMENT_SAMPLES + 2));
+            if (hit_path_index == U16_MAX) {
+                std::vector<Vec2> verts;
+                verts.reserve(p.anchor_count * (SHAPE_MAX_SEGMENT_SAMPLES + 2));
 
-            for (u16 a_idx = 0; a_idx < p.anchor_count; ++a_idx) {
-                const Anchor* a = GetAnchor(shape, &p, a_idx);
-                verts.push_back(a->position);
-                for (int k = 0; k < SHAPE_MAX_SEGMENT_SAMPLES; ++k) {
-                    verts.push_back(a->samples[k]);
-                }
-            }
-
-            if (verts.size() >= 3) {
-                int winding = 0;
-                for (size_t i = 0; i < verts.size(); ++i) {
-                    size_t j = (i + 1) % verts.size();
-                    const Vec2& p0 = verts[i];
-                    const Vec2& p1 = verts[j];
-
-                    if (p0.y <= point.y) {
-                        if (p1.y > point.y) {
-                            float cross = (p1.x - p0.x) * (point.y - p0.y) - (point.x - p0.x) * (p1.y - p0.y);
-                            if (cross >= 0) winding++;
-                        }
-                    } else if (p1.y <= point.y) {
-                        float cross = (p1.x - p0.x) * (point.y - p0.y) - (point.x - p0.x) * (p1.y - p0.y);
-                        if (cross < 0) winding--;
+                for (u16 a_idx = 0; a_idx < p.anchor_count; ++a_idx) {
+                    const Anchor* a = GetAnchor(shape, &p, a_idx);
+                    verts.push_back(a->position);
+                    for (int k = 0; k < SHAPE_MAX_SEGMENT_SAMPLES; ++k) {
+                        verts.push_back(a->samples[k]);
                     }
                 }
 
-                if (winding != 0) {
-                    result->path_index = p_idx;
-                    return true;
+                if (verts.size() >= 3) {
+                    int winding = 0;
+                    for (size_t i = 0; i < verts.size(); ++i) {
+                        size_t j = (i + 1) % verts.size();
+                        const Vec2& p0 = verts[i];
+                        const Vec2& p1 = verts[j];
+
+                        if (p0.y <= point.y) {
+                            if (p1.y > point.y) {
+                                float cross = (p1.x - p0.x) * (point.y - p0.y) - (point.x - p0.x) * (p1.y - p0.y);
+                                if (cross >= 0) winding++;
+                            }
+                        } else if (p1.y <= point.y) {
+                            float cross = (p1.x - p0.x) * (point.y - p0.y) - (point.x - p0.x) * (p1.y - p0.y);
+                            if (cross < 0) winding--;
+                        }
+                    }
+
+                    if (winding != 0) {
+                        hit_path_index = p_idx;
+                    }
                 }
             }
         }
 
-        return false;
+        // Store results - anchor takes priority, then segment, then path
+        if (best_anchor_index != U16_MAX) {
+            result->anchor_index = best_anchor_index;
+            result->anchor_dist_sqr = best_anchor_dist_sqr;
+            result->path_index = best_anchor_path;
+        }
+        if (best_segment_index != U16_MAX) {
+            result->segment_index = best_segment_index;
+            result->segment_dist_sqr = best_segment_dist_sqr;
+            if (result->anchor_index == U16_MAX) {
+                result->path_index = best_segment_path;
+            }
+        }
+        if (hit_path_index != U16_MAX && result->anchor_index == U16_MAX && result->segment_index == U16_MAX) {
+            result->path_index = hit_path_index;
+        }
+
+        return result->anchor_index != U16_MAX || result->segment_index != U16_MAX || result->path_index != U16_MAX;
     }
 
     u16 HitTestAll(Shape* shape, const Vec2& point, HitResult* results, u16 max_results) {

@@ -48,7 +48,7 @@ namespace noz::editor {
 
     struct WeightToolOptions {
         int vertex_count;
-        WeightToolVertex vertices[MESH_MAX_VERTICES];
+        WeightToolVertex vertices[8];
         float min_weight;
         float max_weight;
 
@@ -70,21 +70,8 @@ namespace noz::editor {
 
     extern void BeginSelectTool(const SelectToolOptions& options);
 
-
     // @knife
-
     extern void BeginKnifeTool(MeshDocument* mesh, bool restrict_to_selected = false);
-
-    // @vertex_weight
-
-    struct VertexWeightToolOptions {
-        MeshDocument* mesh;
-        int vertex_count;
-        int vertices[MESH_MAX_VERTICES];
-        int bone_index;
-    };
-
-    extern void BeginVertexWeightTool(const VertexWeightToolOptions& options);
 
     // @curve
     extern void BeginCurveTool(MeshDocument* mdoc, u16* edge_indices, u16 edge_count);

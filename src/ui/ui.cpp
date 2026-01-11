@@ -129,6 +129,7 @@ namespace noz {
     struct ImageElement : Element {
         ImageStyle style;
         Mesh* mesh = nullptr;
+        Sprite* sprite = nullptr;
         Texture* texture;
         float animated_time = 0.0f;
     };
@@ -623,6 +624,14 @@ namespace noz {
         ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
         image->texture = texture;
         image->style = style;
+    }
+
+    void Image(Sprite* sprite, const ImageStyle& style) {
+        ImageElement* image = static_cast<ImageElement*>(CreateElement(ELEMENT_TYPE_IMAGE));
+        image->sprite = sprite;
+        image->style = style;
+        if (!image->style.material)
+            image->style.material = g_ui.image_element_material;
     }
 
     void Image(Mesh* mesh, const ImageStyle& style) {

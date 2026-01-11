@@ -266,6 +266,7 @@ namespace noz {
     extern void Image(Mesh* mesh, const ImageStyle& style = {});
     extern void Image(Mesh* mesh, float time, const ImageStyle& style = {});
     extern void Image(Texture* texture, const ImageStyle& style = {});
+    extern void Image(Sprite* sprite, const ImageStyle& style = {});
     extern void Rectangle(const RectangleStyle& style = {});
     extern void Scene(const SceneStyle& style, void (*draw_scene)(void*) = nullptr);
 

@@ -3,6 +3,7 @@
 //
 
 #include "sprite_doc.h"
+#include "atlas_doc.h"
 
 using namespace noz::editor::shape;
 
@@ -11,6 +12,63 @@ namespace noz::editor {
     extern void InitSpriteEditor(SpriteDocument* sdoc);
 
     static void DrawSpriteDocument(Document* doc) {
+        SpriteDocument* sdoc = static_cast<SpriteDocument*>(doc);
+
+        // Try to draw from atlas
+        AtlasRect* rect = nullptr;
+        AtlasDocument* atlas = FindAtlasForSprite(sdoc->name, &rect);
+        if (atlas && rect) {
+            // Ensure atlas is rendered and texture is uploaded to GPU
+            if (!atlas->pixels) {
+                RegenerateAtlas(atlas);
+            }
+            SyncAtlasTexture(atlas);
+            if (!atlas->material) goto fallback;
+
+            // Get geometry at exact bounds
+            Vec2 min, max;
+            float u_min, v_min, u_max, v_max;
+            GetExportQuadGeometry(atlas, *rect, &min, &max, &u_min, &v_min, &u_max, &v_max);
+
+            // Build textured quad
+            MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4, 6);
+            MeshVertex v = {};
+            v.depth = 0.5f;
+            v.opacity = 1.0f;
+
+            // Bottom-left
+            v.position = min;
+            v.uv = {u_min, v_min};
+            AddVertex(builder, v);
+
+            // Bottom-right
+            v.position = {max.x, min.y};
+            v.uv = {u_max, v_min};
+            AddVertex(builder, v);
+
+            // Top-right
+            v.position = max;
+            v.uv = {u_max, v_max};
+            AddVertex(builder, v);
+
+            // Top-left
+            v.position = {min.x, max.y};
+            v.uv = {u_min, v_max};
+            AddVertex(builder, v);
+
+            AddTriangle(builder, 0, 1, 2);
+            AddTriangle(builder, 0, 2, 3);
+
+            Mesh* quad = CreateMesh(ALLOCATOR_SCRATCH, builder, nullptr, false);
+            Free(builder);
+
+            BindMaterial(atlas->material);
+            BindColor(COLOR_WHITE);
+            DrawMesh(quad, Translate(doc->position));
+            return;
+        }
+
+    fallback:
         BindMaterial(g_workspace.editor_material);
         BindColor(COLOR_WHITE);
         BindDepth(0.0f);
@@ -66,8 +124,20 @@ namespace noz::editor {
             }
         }
 
-        for (u16 fi = 0; fi < sdoc->frame_count; ++fi)
+        for (u16 fi = 0; fi < sdoc->frame_count; ++fi) {
             shape::UpdateSamples(&sdoc->frames[fi].shape);
+            shape::UpdateBounds(&sdoc->frames[fi].shape);
+        }
+    }
+
+    void UpdateBounds(SpriteDocument* sdoc) {
+        if (sdoc->frame_count <= 0)
+            return;
+        
+        Bounds2 bounds = sdoc->frames[0].shape.bounds;
+        for (u16 fi = 1; fi < sdoc->frame_count; ++fi)
+            bounds = Union(bounds, sdoc->frames[fi].shape.bounds);
+        sdoc->bounds = bounds;
     }
 
     static void LoadSpriteDocument(Document* doc) {
@@ -79,6 +149,7 @@ namespace noz::editor {
         Tokenizer tk;
         Init(tk, contents.c_str());
         LoadSpriteDocument(sdoc, tk);
+        UpdateBounds(sdoc);
     }
 
     static void ImportSprite(Document* doc, const std::filesystem::path& path, Props* config, Props* meta) {        

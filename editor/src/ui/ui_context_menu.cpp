@@ -101,7 +101,7 @@ namespace noz::editor {
             // Submenu arrow indicator
             if (has_children) {
                 BeginContainer({.width=STYLE_CONTEXT_MENU_TEXT_SIZE, .height=STYLE_CONTEXT_MENU_TEXT_SIZE, .align=ALIGN_CENTER_RIGHT, .padding=EdgeInsetsAll(2)});
-                Image(MESH_ICON_SUBMENU, {
+                Image(SPRITE_ICON_SUBMENU, {
                     .color=!item.enabled ?
                         STYLE_OVERLAY_DISABLED_TEXT_COLOR() :
                         (hovered || is_submenu_open)

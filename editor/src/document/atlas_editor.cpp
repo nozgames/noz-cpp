@@ -21,7 +21,7 @@ namespace noz::editor {
         BeginRow({.align=ALIGN_CENTER, .spacing=6});
 
         // Rebuild button - clears and reallocates all rects
-        if (EditorButton(ATLAS_EDITOR_ID_REBUILD, MESH_ICON_LOOP, false)) {
+        if (EditorButton(ATLAS_EDITOR_ID_REBUILD, SPRITE_ICON_LOOP, false)) {
             RebuildAtlas(adoc);
             MarkModified(adoc);
             AddNotification(NOTIFICATION_TYPE_INFO, "Atlas '%s' rebuilt", adoc->name->value);

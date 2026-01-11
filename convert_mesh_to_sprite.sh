@@ -1,10 +1,27 @@
 #!/bin/bash
 # Convert old .mesh format to new .sprite format
-# Usage: ./convert_mesh_to_sprite.sh input.mesh > output.sprite
+# Usage: ./convert_mesh_to_sprite.sh input.mesh [output.sprite]
+# If output is not specified, outputs to stdout
+# Also copies .mesh.meta to .sprite.meta if output is specified
 
 if [ -z "$1" ]; then
-    echo "Usage: $0 <input.mesh>" >&2
+    echo "Usage: $0 <input.mesh> [output.sprite]" >&2
     exit 1
+fi
+
+input_file="$1"
+output_file="$2"
+
+# If output file specified, redirect output and copy meta file
+if [ -n "$output_file" ]; then
+    exec > "$output_file"
+
+    # Copy meta file if it exists
+    meta_src="${input_file}.meta"
+    meta_dst="${output_file}.meta"
+    if [ -f "$meta_src" ]; then
+        cp "$meta_src" "$meta_dst"
+    fi
 fi
 
 awk '
@@ -102,4 +119,4 @@ END {
         print ""
     }
 }
-' "$1"
+' "$input_file"

@@ -116,7 +116,8 @@ namespace noz::editor {
     // @grid
     extern void InitGrid();
     extern void ShutdownGrid();
-    extern void DrawGrid(Camera* camera);
+    extern void DrawGrid();
+    extern void UpdateGrid(Camera* camera);
 
     // @undo
     extern void InitUndo();

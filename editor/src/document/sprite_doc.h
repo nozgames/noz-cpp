@@ -23,11 +23,16 @@ namespace noz::editor {
         struct {
             SkeletonDocument* skeleton;
             const Name* skeleton_name;
-            u8 bone;            
+            u8 bone;
         } skin;
+
+        // Atlas integration
+        struct AtlasDocument* atlas;
+        bool atlas_dirty;
     };
 
     extern void InitSpriteData(Document* a);
+    extern void UpdateBounds(SpriteDocument* sdoc);
     inline SpriteFrame* GetFrame(SpriteDocument* sprite, u16 frame_index) {
         return &sprite->frames[frame_index];
     }

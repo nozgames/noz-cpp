@@ -184,6 +184,8 @@ namespace noz {
     extern void BindMaterial(Material* material);
     extern void BindShader(Shader* shader);
     extern void BindTexture(Texture* texture);
+    extern void DrawMesh(Sprite* sprite);
+    extern void DrawMesh(Sprite* mesh, const Mat3& transform);
     extern void DrawMesh(Mesh* mesh);
     extern void DrawMesh(Mesh* mesh, const Mat3& transform, Animator& animator, int bone_index);
     extern void DrawMesh(Mesh* mesh, const Mat3& transform);

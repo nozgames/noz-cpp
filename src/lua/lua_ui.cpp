@@ -110,8 +110,8 @@ namespace noz {
         Asset* asset = lua_asset->asset;
         if (asset->type == ASSET_TYPE_TEXTURE) {
             Image(static_cast<Texture*>(asset), style);
-        } else if (asset->type == ASSET_TYPE_MESH) {
-            Image(static_cast<Mesh*>(asset), style);
+        } else if (asset->type == ASSET_TYPE_SPRITE) {
+            Image(static_cast<Sprite*>(asset), style);
         } else {
             luaL_error(L, "Image: unsupported asset type");
         }

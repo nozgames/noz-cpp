@@ -235,6 +235,7 @@ namespace noz::editor {
     static void DrawSkeleton() {
         SkeletonDocument* sdoc = GetSkeletonData();
 
+#if 0        
         BindIdentitySkeleton();
         BindColor(COLOR_WHITE);
         BindDepth(0.0);
@@ -245,6 +246,7 @@ namespace noz::editor {
                 continue;
             DrawMesh(skinned_mesh, local_to_world, g_workspace.shaded_skinned_material);
         }
+#endif        
 
         PushScratch();
         MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, 4096, 8192);
@@ -448,15 +450,15 @@ namespace noz::editor {
         }
 
         Document* hit_asset = HitTestAssets(position);
-        if (!hit_asset || hit_asset->def->type != ASSET_TYPE_MESH)
+        if (!hit_asset)
             return;
 
-        RecordUndo();
-        sdoc->skins[sdoc->skin_count++] = {
-            .asset_name = hit_asset->name,
-            .mesh = static_cast<MeshDocument*>(hit_asset),
-        };
-        UpdateTransforms(sdoc);
+        // RecordUndo();
+        // sdoc->skins[sdoc->skin_count++] = {
+        //     .asset_name = hit_asset->name,
+        //     .mesh = static_cast<MeshDocument*>(hit_asset),
+        // };
+        // UpdateTransforms(sdoc);
 
         MarkModified();
     }
@@ -466,6 +468,7 @@ namespace noz::editor {
     }
 
     static void CommitUnparentTool(const Vec2& position) {
+#if 0
         SkeletonDocument* sdoc = GetSkeletonData();
         for (int i=0; i<sdoc->skin_count; i++) {
             Skin& sm = sdoc->skins[i];
@@ -481,6 +484,7 @@ namespace noz::editor {
             MarkModified();
             return;
         }
+#endif        
     }
 
     static void BeginUnparentTool() {

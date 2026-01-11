@@ -310,6 +310,18 @@ namespace noz {
         DrawMesh(mesh);
     }
 
+    void DrawMesh(Sprite* sprite, const Mat3& transform) {
+        if (!sprite)
+            return;
+
+        BindTransform(transform);
+        DrawMesh(sprite);
+    }
+
+    void DrawMesh(Sprite* mesh) {
+        
+    }
+
     void DrawMesh(Mesh* mesh) {
         if (!mesh) return;
         if (GetVertexCount(mesh) == 0 || GetIndexCount(mesh) == 0) return;

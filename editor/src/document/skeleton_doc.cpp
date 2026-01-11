@@ -45,12 +45,15 @@ namespace noz::editor {
         BindColor(COLOR_WHITE);
         BindDepth(0.0);
         Mat3 local_to_world = Translate(sdoc->position);
+
+#if 0        
         for (int i=0; i<sdoc->skin_count; i++) {
             MeshDocument* skinned_mesh = sdoc->skins[i].mesh;
             if (!skinned_mesh)
                 continue;
             DrawMesh(skinned_mesh, local_to_world, g_workspace.shaded_skinned_material);
         }
+#endif        
 
         bool zoom_changed = sdoc->display_mesh_zoom_version != g_workspace.zoom_version;
         bool position_changed = sdoc->display_mesh_position != position;
@@ -257,6 +260,7 @@ namespace noz::editor {
             bounds = Union(bounds, TransformPoint(bone_transform, Vec2{bone_width, -bone_width}));
         }
 
+#if 0        
         for (int i=0; i<sdoc->skin_count; i++) {
             MeshDocument* skinned_mesh = sdoc->skins[i].mesh;
             if (!skinned_mesh || skinned_mesh->def->type != ASSET_TYPE_MESH)
@@ -264,6 +268,7 @@ namespace noz::editor {
 
             bounds = Union(bounds, GetBounds(skinned_mesh));
         }
+#endif        
 
         sdoc->bounds = Expand(bounds, BOUNDS_PADDING);
         sdoc->display_mesh_dirty = true;
@@ -284,6 +289,7 @@ namespace noz::editor {
         assert(doc->def->type == ASSET_TYPE_SKELETON);
         SkeletonDocument* sdoc = static_cast<SkeletonDocument*>(doc);
 
+#if 0        
         int loaded_skinned_mesh = 0;
         for (int i=0; i<sdoc->skin_count; i++) {
             Skin& sm = sdoc->skins[i];
@@ -295,6 +301,7 @@ namespace noz::editor {
         }
 
         sdoc->skin_count = loaded_skinned_mesh;
+#endif        
 
         UpdateTransforms(sdoc);
     }

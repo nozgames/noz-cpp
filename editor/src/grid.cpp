@@ -101,10 +101,8 @@ namespace noz::editor {
 
         return { fineSpacing, fineAlpha, coarseSpacing, coarseAlpha };
     }
-    void DrawGrid(Camera* camera) {
-        BindDepth(-9.0f);
-        BindMaterial(g_workspace.editor_material);
-
+    
+    void UpdateGrid(Camera* camera) {
         float pixelSize = 1.0f / (float)g_editor.atlas.dpi;
         float dpi = (float)g_editor.atlas.dpi;
         float worldWidth = GetWorldBounds(camera).max.x - GetWorldBounds(camera).min.x;
@@ -155,14 +153,21 @@ namespace noz::editor {
                 g_grid.mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
             else
                 UpdateMesh(builder, g_grid.mesh);
-
-            BindColor(COLOR_WHITE);
-            BindTransform(MAT3_IDENTITY);
-            DrawMesh(g_grid.mesh);
         }
 
+        Free(builder);
         PopScratch();
-        BindDepth(0.0f);
+    }
+
+    void DrawGrid() {
+        if (!g_grid.mesh)
+            return;
+
+        BindDepth(-9.0f);
+        BindMaterial(g_workspace.editor_material);
+        BindColor(COLOR_WHITE);
+        BindTransform(MAT3_IDENTITY);
+        DrawMesh(g_grid.mesh);
     }
 
     void InitGrid() {

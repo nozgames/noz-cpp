@@ -10,33 +10,6 @@
 using namespace noz;
 
 
-// @Mesh
-extern Mesh* MESH_ASSET_ICON_ATLAS;
-extern Mesh* MESH_ASSET_ICON_BIN;
-extern Mesh* MESH_ASSET_ICON_EVENT;
-extern Mesh* MESH_ASSET_ICON_FONT;
-extern Mesh* MESH_ASSET_ICON_LUA;
-extern Mesh* MESH_ASSET_ICON_SHADER;
-extern Mesh* MESH_ASSET_ICON_VFX;
-extern Mesh* MESH_ICON_CIRCLE;
-extern Mesh* MESH_ICON_CLOSE;
-extern Mesh* MESH_ICON_DROPDOWN;
-extern Mesh* MESH_ICON_EDGE_MODE;
-extern Mesh* MESH_ICON_EXPAND_DOWN;
-extern Mesh* MESH_ICON_EXPAND_UP;
-extern Mesh* MESH_ICON_FACE_MODE;
-extern Mesh* MESH_ICON_LOOP;
-extern Mesh* MESH_ICON_MIRROR;
-extern Mesh* MESH_ICON_ONION;
-extern Mesh* MESH_ICON_OPACITY;
-extern Mesh* MESH_ICON_OPACITY_OVERLAY;
-extern Mesh* MESH_ICON_PUBLISH;
-extern Mesh* MESH_ICON_ROOT_MOTION;
-extern Mesh* MESH_ICON_SUBMENU;
-extern Mesh* MESH_ICON_TILING;
-extern Mesh* MESH_ICON_VERTEX_MODE;
-extern Mesh* MESH_ICON_WEIGHT_MODE;
-
 // @Texture
 extern Texture* TEXTURE_EDITOR_PALETTE;
 
@@ -62,8 +35,33 @@ extern Shader* SHADER_VFX;
 extern Atlas* ATLAS_EDITOR_ATLAS00;
 
 // @Sprite
+extern Sprite* SPRITE_ASSET_ICON_ATLAS;
+extern Sprite* SPRITE_ASSET_ICON_BIN;
+extern Sprite* SPRITE_ASSET_ICON_EVENT;
+extern Sprite* SPRITE_ASSET_ICON_FONT;
+extern Sprite* SPRITE_ASSET_ICON_LUA;
+extern Sprite* SPRITE_ASSET_ICON_SHADER;
 extern Sprite* SPRITE_ASSET_ICON_SOUND;
+extern Sprite* SPRITE_ASSET_ICON_VFX;
+extern Sprite* SPRITE_ICON_CIRCLE;
+extern Sprite* SPRITE_ICON_CLOSE;
+extern Sprite* SPRITE_ICON_DROPDOWN;
+extern Sprite* SPRITE_ICON_EDGE_MODE;
+extern Sprite* SPRITE_ICON_EXPAND_DOWN;
+extern Sprite* SPRITE_ICON_EXPAND_UP;
+extern Sprite* SPRITE_ICON_FACE_MODE;
+extern Sprite* SPRITE_ICON_LOOP;
+extern Sprite* SPRITE_ICON_MIRROR;
+extern Sprite* SPRITE_ICON_ONION;
+extern Sprite* SPRITE_ICON_OPACITY;
+extern Sprite* SPRITE_ICON_OPACITY_OVERLAY;
 extern Sprite* SPRITE_ICON_PALETTE;
+extern Sprite* SPRITE_ICON_PUBLISH;
+extern Sprite* SPRITE_ICON_ROOT_MOTION;
+extern Sprite* SPRITE_ICON_SUBMENU;
+extern Sprite* SPRITE_ICON_TILING;
+extern Sprite* SPRITE_ICON_VERTEX_MODE;
+extern Sprite* SPRITE_ICON_WEIGHT_MODE;
 
 // @name
 extern const Name* NAME_A;

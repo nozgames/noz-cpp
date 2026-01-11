@@ -16,12 +16,12 @@ namespace noz {
         return 1;
     }
 
-    static int LuaLoadMesh(lua_State* L) {
+    static int LuaLoadSprite(lua_State* L) {
         const char* path = luaL_checkstring(L, 1);
         const Name* name = GetName(path);
-        Mesh* mesh = (Mesh*)LoadAsset(ALLOCATOR_DEFAULT, name, ASSET_TYPE_MESH, LoadMesh);
-        if (mesh) {
-            Wrap(L, (Asset*)mesh);
+        Sprite* sprite = static_cast<Sprite*>(LoadAsset(ALLOCATOR_DEFAULT, name, ASSET_TYPE_SPRITE, LoadSprite));
+        if (sprite) {
+            Wrap(L, (Asset*)sprite);
             return 1;
         }
         return 0;
@@ -106,7 +106,7 @@ namespace noz {
 
     void noz::lua::InitLuaAsset(lua_State* L) {
         luaL_Reg funcs[] = {
-            { "LoadMesh", LuaLoadMesh },
+            { "LoadSprite", LuaLoadSprite },
             { "LoadTexture", LuaLoadTexture },
             { "LoadShader", LuaLoadShader },
             { "LoadFont", LuaLoadFont },
@@ -125,8 +125,8 @@ namespace noz {
     LuaAsset* noz::lua::Wrap(lua_State* L, Asset* asset) {
         LuaAsset* lua_asset = static_cast<LuaAsset*>(lua_newuserdata(L, sizeof(LuaAsset)));
 
-        if (asset->type == ASSET_TYPE_MESH)
-            lua_asset->type = LUA_OBJECT_TYPE_MESH;
+        if (asset->type == ASSET_TYPE_SPRITE)
+            lua_asset->type = LUA_OBJECT_TYPE_SPRITE;
         else
             lua_asset->type = LUA_OBJECT_TYPE_UNKNOWN;
 

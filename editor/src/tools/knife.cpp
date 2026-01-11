@@ -4,6 +4,9 @@
 
 // #define KNIFE_LOG
 
+#if 0
+
+#include "shape/shape.h"
 namespace noz::editor {
     constexpr float KNIFE_HIT_TOLERANCE = 0.25f;
 
@@ -26,7 +29,7 @@ namespace noz::editor {
         KnifeCut cuts[256];
         int cut_count = 0;
         MeshDocument* mesh;
-        Vec2 vertices[MESH_MAX_VERTICES];
+        Vec2 vertices[shape::SHAPE_MAX_ANCHORS];
         int vertex_count;
         int cut_faces[32];  // Faces that are part of the cut path
         int cut_face_count;
@@ -1676,3 +1679,5 @@ namespace noz::editor {
         SetSystemCursor(SYSTEM_CURSOR_SELECT);
     }
 }
+
+#endif

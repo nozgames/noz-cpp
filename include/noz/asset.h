@@ -15,7 +15,6 @@ namespace noz {
     enum AssetType {
         ASSET_TYPE_CUSTOM = -2,
         ASSET_TYPE_UNKNOWN = -1,
-        ASSET_TYPE_MESH,
         ASSET_TYPE_VFX,
         ASSET_TYPE_SKELETON,
         ASSET_TYPE_ANIMATION,

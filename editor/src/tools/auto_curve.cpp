@@ -22,7 +22,7 @@ namespace noz::editor {
 
     struct AutoCurveTool {
         MeshDocument* mesh;
-        AutoCurveEdgeState edges[MESH_MAX_EDGES];
+        AutoCurveEdgeState edges[40];
         int edge_count;
         Vec2 centroid;
         float initial_distance;

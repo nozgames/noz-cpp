@@ -69,6 +69,7 @@ namespace noz::editor {
         if (!doc->editing)
             transform = Translate(-GetFrameTransform(adoc, 0, adoc->current_frame).position) * transform;
 
+#if 0            
         BindColor(COLOR_WHITE);
         BindSkeleton(&sdoc->bones[0].world_to_local, sizeof(BoneData), adoc->animator.bones, 0, sdoc->bone_count);
         for (int i=0; i<sdoc->skin_count; i++) {
@@ -78,6 +79,7 @@ namespace noz::editor {
 
             DrawMesh(skinned_mesh, transform, g_workspace.shaded_skinned_material);
         }
+#endif        
     }
 
     static void ParseSkeletonBone(Tokenizer& tk, SkeletonDocument* es, int bone_index, int* bone_map) {
@@ -250,6 +252,7 @@ namespace noz::editor {
             bounds = Union(bounds, TransformPoint(bone_transform, Vec2{bone_width, -bone_width}));
         }
 
+#if 0        
         for (int i=0; i<sdoc->skin_count; i++) {
             MeshDocument* skinned_mesh = sdoc->skins[i].mesh;
             if (!skinned_mesh || skinned_mesh->def->type != ASSET_TYPE_MESH)
@@ -258,6 +261,7 @@ namespace noz::editor {
             // todo: this needs to account for the skinned mesh transform
             bounds = Union(bounds, GetBounds(skinned_mesh));
         }
+#endif
 
         sdoc->bounds = Expand(bounds, BOUNDS_PADDING);
     }

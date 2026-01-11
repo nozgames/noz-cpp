@@ -2,6 +2,8 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
+#if 0
+
 namespace noz::editor {
     bool HitTest(Geometry& geom, const Mat3& transform, const Vec2& point, GeometryHitTestResult& result) {
         const float radius_sqr = g_workspace.select_size * g_workspace.select_size;
@@ -45,3 +47,5 @@ namespace noz::editor {
         return false;
     }
 }
+
+#endif

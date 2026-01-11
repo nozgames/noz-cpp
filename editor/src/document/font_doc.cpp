@@ -8,7 +8,7 @@ namespace noz::editor {
     static void DrawFontDocument(Document* a) {
         BindMaterial(g_workspace.editor_mesh_material);
         BindColor(COLOR_WHITE);
-        DrawMesh(MESH_ASSET_ICON_FONT, Translate(a->position));
+        DrawMesh(SPRITE_ASSET_ICON_FONT, Translate(a->position));
     }
 
     static void InitFontDocument(FontDocument* doc) {

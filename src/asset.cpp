@@ -190,7 +190,6 @@ namespace noz {
 #endif
 
     void InitAssets() {
-        InitAssetDef({ASSET_TYPE_MESH, "Mesh", "Mesh", LoadMesh, ReloadMesh});
         InitAssetDef({ASSET_TYPE_VFX, "Vfx", "Vfx", LoadVfx, ReloadVfx});
         InitAssetDef({ASSET_TYPE_SKELETON, "Skeleton", "Skeleton", LoadSkeleton, nullptr});
         InitAssetDef({ASSET_TYPE_ANIMATION, "Animation", "Animation", LoadAnimation, nullptr});

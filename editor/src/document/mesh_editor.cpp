@@ -2,10 +2,19 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
+#if 0
+
 #include "utils/rasterizer.h"
 #include "utils/pixel_data.h"
+#include "atlas_doc.h"
 
 namespace noz::editor {
+
+    // Stub functions for removed mesh atlas support (meshes no longer use atlas)
+    static inline AtlasDocument* FindAtlasForMesh(const Name*, AtlasRect** = nullptr) { return nullptr; }
+    static inline AtlasRect* FindRectForMesh(AtlasDocument*, const Name*) { return nullptr; }
+    static inline AtlasRect* AllocateRect(AtlasDocument*, MeshDocument*) { return nullptr; }
+    static inline void RenderMeshToAtlas(AtlasDocument*, MeshDocument*, AtlasRect&, bool = true) {}
     constexpr float FRAME_SIZE_X = 20;
     constexpr float FRAME_SIZE_Y = 40;
     constexpr float FRAME_BORDER_SIZE = 1;
@@ -936,8 +945,8 @@ namespace noz::editor {
                 });
 
             BeginContainer();
-            Image(MESH_ICON_OPACITY, {.align=ALIGN_CENTER, .material=g_workspace.editor_mesh_material});
-            Image(MESH_ICON_OPACITY_OVERLAY, {
+            Image(SPRITE_ICON_OPACITY, {.align=ALIGN_CENTER, .material=g_workspace.editor_mesh_material});
+            Image(SPRITE_ICON_OPACITY_OVERLAY, {
                 .align=ALIGN_CENTER,
                 .color=SetAlpha(COLOR_WHITE, opacity),
                 .material=g_workspace.editor_mesh_material});
@@ -954,8 +963,8 @@ namespace noz::editor {
     }
 
     static void OpacityContent() {
-        Image(MESH_ICON_OPACITY, {.align=ALIGN_CENTER, .material=g_workspace.editor_mesh_material});
-        Image(MESH_ICON_OPACITY_OVERLAY, {
+        Image(SPRITE_ICON_OPACITY, {.align=ALIGN_CENTER, .material=g_workspace.editor_mesh_material});
+        Image(SPRITE_ICON_OPACITY_OVERLAY, {
             .align=ALIGN_CENTER,
             .color=SetAlpha(COLOR_WHITE, g_mesh_editor.selection_opacity / 10.0f),
             .material=g_workspace.editor_mesh_material
@@ -1029,19 +1038,19 @@ namespace noz::editor {
         BeginContainer();
         BeginRow({.align=ALIGN_LEFT, .spacing=4});
 
-        if (EditorButton(MESH_EDITOR_ID_VERTEX_MODE, MESH_ICON_VERTEX_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_VERTEX))
+        if (EditorButton(MESH_EDITOR_ID_VERTEX_MODE, SPRITE_ICON_VERTEX_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_VERTEX))
             g_mesh_editor.mode = MESH_EDITOR_MODE_VERTEX;
-        if (EditorButton(MESH_EDITOR_ID_EDGE_MODE, MESH_ICON_EDGE_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_EDGE))
+        if (EditorButton(MESH_EDITOR_ID_EDGE_MODE, SPRITE_ICON_EDGE_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_EDGE))
             g_mesh_editor.mode = MESH_EDITOR_MODE_EDGE;
-        if (EditorButton(MESH_EDITOR_ID_FACE_MODE, MESH_ICON_FACE_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_FACE))
+        if (EditorButton(MESH_EDITOR_ID_FACE_MODE, SPRITE_ICON_FACE_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_FACE))
             g_mesh_editor.mode = MESH_EDITOR_MODE_FACE;
-        if (EditorButton(MESH_EDITOR_ID_WEIGHT_MODE, MESH_ICON_WEIGHT_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_FACE, mdoc->skeleton == nullptr))
+        if (EditorButton(MESH_EDITOR_ID_WEIGHT_MODE, SPRITE_ICON_WEIGHT_MODE, g_mesh_editor.mode == MESH_EDITOR_MODE_FACE, mdoc->skeleton == nullptr))
             g_mesh_editor.mode = MESH_EDITOR_MODE_WEIGHT;
 
         EndRow();
 
         BeginRow({.align=ALIGN_RIGHT, .spacing=6});
-        if (EditorButton(MESH_EDITOR_ID_TILE, MESH_ICON_TILING, g_mesh_editor.show_tiling))
+        if (EditorButton(MESH_EDITOR_ID_TILE, SPRITE_ICON_TILING, g_mesh_editor.show_tiling))
             g_mesh_editor.show_tiling = !g_mesh_editor.show_tiling;
         if (EditorButton(MESH_EDITOR_ID_EXPAND, SPRITE_ICON_PALETTE, g_mesh_editor.show_palette_picker, g_editor.palette_count < 2))
             show_palette_picker = !g_mesh_editor.show_palette_picker;
@@ -2006,7 +2015,7 @@ namespace noz::editor {
 
         // Keep track of atlas for tiling preview (but don't use it for main rendering)
         AtlasRect* rect = nullptr;
-        AtlasData* atlas = FindAtlasForMesh(m->name, &rect);
+        AtlasDocument* atlas = FindAtlasForMesh(m->name, &rect);
 
         // Skip editor overlays when playing animation
         if (g_mesh_editor.is_playing)
@@ -2019,11 +2028,11 @@ namespace noz::editor {
             Material* tile_material = nullptr;
             float u_min = 0, v_min = 0, u_max = 1, v_max = 1;
 
-            if (atlas && rect && atlas->impl->material) {
+            if (atlas && rect && atlas->material) {
                 // Use atlas geometry for tiling
                 GetExportQuadGeometry(atlas, *rect, &quad_min, &quad_max, &u_min, &v_min, &u_max, &v_max);
-                tile_size = GetSize(rect->mesh_bounds);
-                tile_material = atlas->impl->material;
+                tile_size = GetSize(rect->bounds);
+                tile_material = atlas->material;
             } else if (tile_frame->edit_texture && tile_frame->edit_width > 0) {
                 // Use per-frame edit texture for tiling
                 float dpi = (float)g_editor.atlas.dpi;
@@ -2755,7 +2764,7 @@ namespace noz::editor {
         if (mdoc->atlas) {
             AtlasRect* rect = FindRectForMesh(mdoc->atlas, doc->name);
             if (rect) {
-                rect->mesh_name = new_name;
+                rect->asset_name = new_name;
                 MarkModified(mdoc->atlas);
             }
         }
@@ -2795,3 +2804,5 @@ namespace noz::editor {
         m->vtable.editor_rename = RenameMesh;
     }
 }
+
+#endif

@@ -12,7 +12,8 @@
       "Bash(del \"D:\\\\git\\\\noz\\\\editor\\\\src\\\\asset\\\\animated_mesh_editor.cpp\")",
       "Bash(git -C D:/git/noz log --oneline --all)",
       "Bash(ls:*)",
-      "Bash(ninja)"
+      "Bash(ninja)",
+      "Bash(ninja:*)"
     ],
     "deny": [],
     "ask": []

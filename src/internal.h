@@ -86,7 +86,7 @@ namespace noz {
 
         enum LuaObjectType {
             LUA_OBJECT_TYPE_UNKNOWN,
-            LUA_OBJECT_TYPE_MESH,
+            LUA_OBJECT_TYPE_SPRITE,
         };
 
         struct LuaObject {

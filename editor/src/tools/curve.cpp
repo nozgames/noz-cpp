@@ -3,6 +3,7 @@
 //
 
 #include "document/atlas_manager.h"
+#include "shape/shape.h"
 
 namespace noz::editor {
     struct CurveToolEdge {
@@ -17,15 +18,15 @@ namespace noz::editor {
 
     struct CurveTool {
         MeshDocument* mesh;
-        CurveToolEdge edges[MESH_MAX_EDGES];
+        CurveToolEdge edges[shape::SHAPE_MAX_ANCHORS];
         int edge_count;
         Vec2 drag_start;
     };
 
     static CurveTool g_curve = {};
 
-    static Vec2 CalculateCurveCircleOffset(MeshFrameData* frame, int edge_index, Vec2* out_outward_dir, float* out_circle_weight) {
 #if 0
+    static Vec2 CalculateCurveCircleOffset(MeshFrameData* frame, int edge_index, Vec2* out_outward_dir, float* out_circle_weight) {
         EdgeData& e = frame->edges[edge_index];
 
         // Find a face that uses this edge to get proper vertex ordering
@@ -76,10 +77,8 @@ namespace noz::editor {
 
         // Use utility function for the tangent intersection calculation
         return CalculateCircleOffset(p0, p1, centroid);
-#else
-        return VEC2_ZERO;
-#endif
     }
+#endif
 
 #if 0
     static void EndCurve(bool commit) {
@@ -99,8 +98,8 @@ namespace noz::editor {
     }
 #endif
 
-    static void UpdateCurve() {
 #if 0
+    static void UpdateCurve() {
         // Escape cancels and reverts
         if (WasButtonPressed(GetInputSet(), KEY_ESCAPE)) {
             EndCurve(false);
@@ -147,9 +146,10 @@ namespace noz::editor {
 
         MarkDirty(g_curve.mesh);
         MarkModified(g_curve.mesh);
-#endif
     }
+#endif
 
+#if 0
     void BeginCurveTool(MeshDocument* mdoc, u16* edge_indices, u16 edge_count) {
         static ToolVtable vtable = {
             .update = UpdateCurve
@@ -183,4 +183,5 @@ namespace noz::editor {
         RecordUndo(mdoc);
         BeginDrag();
     }
+#endif    
 }

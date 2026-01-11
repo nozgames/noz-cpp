@@ -329,7 +329,7 @@ namespace noz::editor {
     constexpr Color DOPESHEET_BUTTON_BORDER_COLOR = DOPESHEET_BORDER_COLOR;
     constexpr Color DOPESHEET_EVENT_COLOR = Color8ToColor(180);
 
-    static void DopeSheetButton(ElementId id, Mesh* icon, bool state, void (*on_tap)()) {
+    static void DopeSheetButton(ElementId id, Sprite* icon, bool state, void (*on_tap)()) {
         BeginContainer({
             .width=DOPESHEET_BUTTON_SIZE,
             .height=DOPESHEET_BUTTON_SIZE,
@@ -417,7 +417,7 @@ namespace noz::editor {
             if (real_frame_index < adoc->frame_count && real_frame_index != last_real_frame_index && adoc->frames[real_frame_index].event_name != nullptr) {
                 BeginContainer({.align=ALIGN_CENTER});
                 BeginContainer({.width=DOPESHEET_FRAME_DOT_SIZE * 2, .height=DOPESHEET_FRAME_DOT_SIZE * 2});
-                Image(MESH_ASSET_ICON_EVENT, {.color = real_frame_index == current_frame ? COLOR_WHITE : DOPESHEET_EVENT_COLOR});
+                Image(SPRITE_ASSET_ICON_EVENT, {.color = real_frame_index == current_frame ? COLOR_WHITE : DOPESHEET_EVENT_COLOR});
                 EndContainer();
                 EndContainer();
             }
@@ -482,11 +482,11 @@ namespace noz::editor {
         BeginContainer({.height=DOPESHEET_BUTTON_SIZE, .margin=EdgeInsetsLeft(DOPESHEET_FRAME_MARGIN_X)});
         BeginRow({.spacing=DOPESHEET_BUTTON_SPACING});
         {
-            DopeSheetButton(ID_MIRROR, MESH_ICON_MIRROR, false, [] { Mirror(); });
+            DopeSheetButton(ID_MIRROR, SPRITE_ICON_MIRROR, false, [] { Mirror(); });
             Expanded();
-            DopeSheetButton(ID_LOOP, MESH_ICON_LOOP, IsLooping(adoc), [] { ToggleLoop(); });
-            DopeSheetButton(ID_ROOT_MOTION, MESH_ICON_ROOT_MOTION, g_animation_editor.root_motion, [] { ToggleRootMotion(); });
-            DopeSheetButton(ID_ONION_SKIN, MESH_ICON_ONION, g_animation_editor.onion_skin, [] { ToggleOnionSkin(); });
+            DopeSheetButton(ID_LOOP, SPRITE_ICON_LOOP, IsLooping(adoc), [] { ToggleLoop(); });
+            DopeSheetButton(ID_ROOT_MOTION, SPRITE_ICON_ROOT_MOTION, g_animation_editor.root_motion, [] { ToggleRootMotion(); });
+            DopeSheetButton(ID_ONION_SKIN, SPRITE_ICON_ONION, g_animation_editor.onion_skin, [] { ToggleOnionSkin(); });
         }
         EndRow();
         EndContainer();
@@ -565,11 +565,13 @@ namespace noz::editor {
         BindSkeleton(&s->bones->world_to_local, sizeof(BoneData), n->animator.bones, sizeof(Mat3), s->bone_count);
         BindTransform(GetBaseTransform());
 
+#if 0        
         for (int skin_index=0; skin_index<s->skin_count; skin_index++) {
             MeshDocument* skinned_mesh = s->skins[skin_index].mesh;
             if (!skinned_mesh) continue;
             DrawMesh(ToOutlineMesh(skinned_mesh));
         }
+#endif        
     }
 
     static void DrawOnionSkin() {
@@ -594,6 +596,7 @@ namespace noz::editor {
 
         Mat3 base_transform = GetBaseTransform() * Translate(g_animation_editor.root_motion_delta);
 
+#if 0        
         BindColor(COLOR_WHITE);
         BindSkeleton(&s->bones[0].world_to_local, sizeof(BoneData), n->animator.bones, sizeof(Mat3), s->bone_count);
         for (int i=0; i<s->skin_count; i++) {
@@ -603,6 +606,7 @@ namespace noz::editor {
 
             DrawMesh(skinned_mesh, base_transform, g_workspace.shaded_skinned_material);
         }
+#endif        
 
         if (g_animation_editor.state == ANIMATION_VIEW_STATE_PLAY)
             return;
@@ -927,7 +931,7 @@ namespace noz::editor {
 
     static void CommitParentTool(const Vec2& position) {
         Document* hit_asset = HitTestAssets(position);
-        if (!hit_asset || hit_asset->def->type != ASSET_TYPE_MESH)
+        if (!hit_asset)
             return;
 
         RecordUndo();

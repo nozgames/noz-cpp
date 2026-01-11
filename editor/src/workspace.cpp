@@ -5,7 +5,6 @@
 #include "document/atlas_manager.h"
 
 namespace noz::editor {
-    extern void InitMeshEditor();
     extern void InitSpriteEditor();
     extern void InitTextureEditor();
     extern void InitSkeletonEditor();
@@ -313,8 +312,9 @@ namespace noz::editor {
     void DrawView() {
         BindCamera(g_workspace.camera);
 
+        UpdateGrid(g_workspace.camera);
         if (g_workspace.grid)
-            DrawGrid(g_workspace.camera);
+            DrawGrid();
 
         Bounds2 camera_bounds = GetWorldBounds(g_workspace.camera);
         for (u32 i=0, c=GetDocumentCount(); i<c; i++) {
@@ -509,13 +509,6 @@ namespace noz::editor {
             RecordUndo(a);
             if (!a->selected)
                 continue;
-
-            if (a->def->type == ASSET_TYPE_MESH) {
-                MeshDocument* mdoc = static_cast<MeshDocument*>(a);
-                mdoc->depth = Clamp(mdoc->depth+1, MESH_MIN_DEPTH, MESH_MAX_DEPTH);
-                MarkDirty(mdoc);
-                MarkModified(a);
-            }
         }
         EndUndoGroup();
     }
@@ -546,13 +539,6 @@ namespace noz::editor {
             RecordUndo(a);
             if (!a->selected)
                 continue;
-
-            if (a->def->type == ASSET_TYPE_MESH) {
-                MeshDocument* mdoc = static_cast<MeshDocument*>(a);
-                mdoc->depth = Clamp(mdoc->depth-1, MESH_MIN_DEPTH, MESH_MAX_DEPTH);
-                MarkDirty(mdoc);
-                MarkModified(a);
-            }
         }
         EndUndoGroup();
     }
@@ -639,9 +625,7 @@ namespace noz::editor {
         const Name* asset_name = GetName(command.args[1]);
 
         AssetType asset_type = ASSET_TYPE_UNKNOWN;
-        if (type == NAME_MESH || type == NAME_M)
-            asset_type = ASSET_TYPE_MESH;
-        else if (type == NAME_SKELETON || type == NAME_S)
+        if (type == NAME_SKELETON || type == NAME_S)
             asset_type = ASSET_TYPE_SKELETON;
         else if (type == NAME_ANIMATION || type == NAME_A)
             asset_type = ASSET_TYPE_ANIMATION;
@@ -716,18 +700,7 @@ namespace noz::editor {
 
             RecordUndo(doc);
 
-            if (doc->def->type == ASSET_TYPE_MESH) {
-                MeshDocument* m = static_cast<MeshDocument*>(doc);
-                MeshFrameData* frame = GetCurrentFrame(m);
-
-                for (u16 vi = 0; vi < frame->geom.vert_count; vi++)
-                    frame->geom.verts[vi].position = frame->geom.verts[vi].position * scale;
-
-                MarkDirty(m);
-                MarkModified(m);
-                asset_count++;
-
-            } else if (doc->def->type == ASSET_TYPE_SKELETON) {
+            if (doc->def->type == ASSET_TYPE_SKELETON) {
                 SkeletonDocument* sdoc = static_cast<SkeletonDocument*>(doc);
                 for (int bi = 0; bi < sdoc->bone_count; bi++) {
                     sdoc->bones[bi].length *= scale;
@@ -899,11 +872,11 @@ namespace noz::editor {
         int selected_count = GetSelectedAssets(selected, EDITOR_MAX_DOCUMENTS);
         for (int i=0; i<selected_count; i++) {
             Document* a = selected[i];
-            if (a->def->type == ASSET_TYPE_MESH) {
-                RecordUndo(a);
-                SetOrigin(static_cast<MeshDocument*>(a), snapped_position);
-                MarkModified(a);
-            }
+            // if (a->def->type == ASSET_TYPE_MESH) {
+            //     RecordUndo(a);
+            //     //SetOrigin(static_cast<MeshDocument*>(a), snapped_position);
+            //     MarkModified(a);
+            // }
         }
 
         EndUndoGroup();
@@ -915,8 +888,8 @@ namespace noz::editor {
         int viable_count = 0;
         for (int i=0; i<selected_count; i++) {
             Document* a = selected[i];
-            if (a->def->type == ASSET_TYPE_MESH)
-                viable_count++;
+            // if (a->def->type == ASSET_TYPE_MESH)
+            //     viable_count++;
         }
 
         if (!viable_count)
@@ -932,12 +905,12 @@ namespace noz::editor {
         g_workspace.grid = !g_workspace.grid;
     }
 
-    static void NewMesh() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_MESH, nullptr, &pos); }
     static void NewEvent() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_EVENT, nullptr, &pos); }
     static void NewAtlas() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_ATLAS, nullptr, &pos); }
     static void NewSkeleton() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_SKELETON, nullptr, &pos); }
     static void NewAnimation() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_ANIMATION, nullptr, &pos); }
     static void NewVfx() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_VFX, nullptr, &pos); }
+    static void NewSprite() { Vec2 pos = GetContextMenuWorldPosition(); NewAsset(ASSET_TYPE_SPRITE, nullptr, &pos); }
 
     static void OpenAssetContextMenu() {
         if (g_workspace.state == VIEW_STATE_EDIT) {
@@ -951,12 +924,12 @@ namespace noz::editor {
                 .title="Asset",
                 .items = {
                     { "New", nullptr, true },
-                    { "Animation", NewAnimation, true, 1 },
-                    { "Atlas", NewAtlas, true, 1 },
-                    { "Event", NewEvent, true, 1 },
-                    { "Mesh", NewMesh, true, 1 },
-                    { "Skeleton", NewSkeleton, true, 1 },
-                    { "Vfx", NewVfx, true, 1 },
+                    { "Animation", NewAnimation, true },
+                    { "Atlas", NewAtlas, true },
+                    { "Event", NewEvent, true },
+                    { "Skeleton", NewSkeleton, true },
+                    { "Sprite", NewSprite, true },
+                    { "Vfx", NewVfx, true },
                     { nullptr, nullptr, true },
                     { "Edit", ToggleEdit, any_selected },
                     { "Duplicate", DuplicateAsset, any_selected },
@@ -1072,7 +1045,6 @@ namespace noz::editor {
         g_workspace.shortcuts = g_workspace_shortcuts;
         EnableShortcuts(g_workspace_shortcuts);
 
-        InitMeshEditor();
         InitTextureEditor();
         InitSkeletonEditor();
         InitAnimationEditor();
@@ -1113,10 +1085,8 @@ namespace noz::editor {
     }
 
     void ShutdownView() {
-        extern void ShutdownMeshEditor();
         extern void ShutdownSkeletonEditor();
 
-        ShutdownMeshEditor();
         ShutdownSkeletonEditor();
         ShutdownSpriteEditor();
 

@@ -92,7 +92,7 @@ namespace noz::editor {
             .padding=EdgeInsetsAll(STYLE_BUTTON_PADDING),
             .id=id
         });
-        Image(MESH_ICON_CLOSE);
+        Image(SPRITE_ICON_CLOSE);
         pressed = WasPressed();
         EndContainer();
 

@@ -9,7 +9,7 @@ namespace noz::editor {
     static void DrawEventDocument(Document* doc) {
         BindMaterial(g_workspace.editor_mesh_material);
         BindColor(COLOR_WHITE);
-        DrawMesh(MESH_ASSET_ICON_EVENT, Translate(doc->position));
+        DrawMesh(SPRITE_ASSET_ICON_EVENT, Translate(doc->position));
     }
 
     static void LoadEventDocument(Document* doc) {

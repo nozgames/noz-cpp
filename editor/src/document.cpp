@@ -105,19 +105,9 @@ namespace noz::editor {
         a->meta_modified = true;
     }
 
-    void DrawFaceCenters(MeshDocument* m, const Vec2& position) {
-        BindMaterial(g_workspace.vertex_material);
-        MeshFrameData* frame = GetCurrentFrame(m);
-        for (u16 fi=0; fi<frame->geom.face_count; fi++) {
-            const FaceData* f = GetFace(frame, fi);
-            BindColor(IsSelected(f) ? COLOR_VERTEX_SELECTED : COLOR_VERTEX);
-            DrawVertex(position + GetFaceCenter(m, fi));
-        }
-    }
-
     void SaveDocuments() {
-        // Update atlases for any dirty meshes before saving
-        UpdateDirtyMeshAtlases();
+        // Update atlases for any dirty sprites before saving
+        UpdateDirtySpriteAtlases();
 
         SaveAssetMetadata();
 
@@ -453,9 +443,7 @@ namespace noz::editor {
             asset_name = GetName(new_path.stem().string().c_str());
         }
 
-        if (asset_type == ASSET_TYPE_MESH)
-            a = NewMeshData(asset_name->value);
-        else if (asset_type == ASSET_TYPE_SKELETON)
+        if (asset_type == ASSET_TYPE_SKELETON)
             a = NewSkeletonDocument(asset_name->value);
         else if (asset_type == ASSET_TYPE_ANIMATION)
             a = NewAnimationDocument(asset_name->value);

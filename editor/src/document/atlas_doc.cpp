@@ -2,45 +2,14 @@
 //  NoZ - Copyright(c) 2026 NoZ Games, LLC
 //
 
-#include "utils/rasterizer.h"
 #include "utils/pixel_data.h"
 #include "utils/rect_packer.h"
 #include "atlas_manager.h"
+#include "sprite_doc.h"
 
 namespace noz::editor {
 
     extern void InitAtlasEditor(AtlasDocument* adoc);
-
-    // Calculate bounds from vertices and curve control points in a frame
-    static Bounds2 GetFrameBounds(MeshFrameData* frame) {
-        if (frame->geom.vert_count == 0)
-            return BOUNDS2_ZERO;
-
-        Bounds2 bounds = { GetVertex(frame, 0)->position, GetVertex(frame, 0)->position };
-        for (u16 vi = 1; vi < frame->geom.vert_count; vi++) {
-            VertexData* v = GetVertex(frame, vi);
-            bounds.min.x = Min(bounds.min.x, v->position.x);
-            bounds.min.y = Min(bounds.min.y, v->position.y);
-            bounds.max.x = Max(bounds.max.x, v->position.x);
-            bounds.max.y = Max(bounds.max.y, v->position.y);
-        }
-
-        // Include curve control points in bounds
-        for (u16 ei = 0; ei < frame->geom.edge_count; ei++) {
-            EdgeData* e = GetEdge(frame, ei);
-            if (LengthSqr(e->curve.offset) > FLT_EPSILON) {
-                const Vec2& p0 = GetVertex(frame, e->v0)->position;
-                const Vec2& p1 = GetVertex(frame, e->v1)->position;
-                Vec2 control = (p0 + p1) * 0.5f + e->curve.offset;
-                bounds.min.x = Min(bounds.min.x, control.x);
-                bounds.min.y = Min(bounds.min.y, control.y);
-                bounds.max.x = Max(bounds.max.x, control.x);
-                bounds.max.y = Max(bounds.max.y, control.y);
-            }
-        }
-
-        return bounds;
-    }
 
     static void DrawAtlasData(Document* doc) {
         assert(doc);
@@ -115,23 +84,23 @@ namespace noz::editor {
         }
     }
 
-    AtlasRect* FindRectForMesh(AtlasDocument* adoc, const Name* mesh_name) {
+    AtlasRect* FindRectForSprite(AtlasDocument* adoc, const Name* sprite_name) {
         for (int i = 0; i < adoc->rect_count; i++) {
-            if (adoc->rects[i].valid && adoc->rects[i].mesh_name == mesh_name) {
+            if (adoc->rects[i].valid && adoc->rects[i].asset_name == sprite_name) {
                 return &adoc->rects[i];
             }
         }
         return nullptr;
     }
 
-    AtlasDocument* FindAtlasForMesh(const Name* mesh_name, AtlasRect** out_rect) {
-        // Search all atlas assets for one containing this mesh
+    AtlasDocument* FindAtlasForSprite(const Name* sprite_name, AtlasRect** out_rect) {
+        // Search all atlas assets for one containing this sprite
         for (int i = 0, count = GetDocumentCount(); i < count; i++) {
             Document* asset = GetDocument(i);
             if (asset->def->type != ASSET_TYPE_ATLAS) continue;
 
             AtlasDocument* atlas = static_cast<AtlasDocument*>(asset);
-            AtlasRect* rect = FindRectForMesh(atlas, mesh_name);
+            AtlasRect* rect = FindRectForSprite(atlas, sprite_name);
             if (rect) {
                 if (out_rect) *out_rect = rect;
                 return atlas;
@@ -150,62 +119,17 @@ namespace noz::editor {
         return -1;
     }
 
-    AtlasRect* AllocateRect(AtlasDocument* adoc, MeshDocument* mdoc) {
-        if (mdoc->frame_count == 0) return nullptr;
-
-        // Calculate max bounds across all frames
-        Bounds2 max_bounds = GetFrameBounds(&mdoc->frames[0]);
-        for (int i = 1; i < mdoc->frame_count; i++) {
-            max_bounds = Union(max_bounds, GetFrameBounds(&mdoc->frames[i]));
-        }
-
-        Vec2 frame_size = GetSize(max_bounds);
-        int frame_width = (int)(frame_size.x * adoc->dpi) + g_editor.atlas.padding * 2;
-        int frame_height = (int)(frame_size.y * adoc->dpi) + g_editor.atlas.padding * 2;
-
-        // Total strip size: frames laid out horizontally
-        int total_width = frame_width * mdoc->frame_count;
-        int total_height = frame_height;
-
-        if (total_width > adoc->size.x || total_height > adoc->size.y) {
-            return nullptr;  // Too large for atlas
-        }
-
-        int slot = FindFreeRectSlot(adoc);
-        if (slot < 0) return nullptr;
-
-        RectPacker::Rect bin_rect;
-        int result = adoc->packer->Insert(total_width, total_height, RectPacker::method::BottomLeftRule, bin_rect);
-        if (result < 0) {
-            return nullptr;
-        }
-
-        AtlasRect& rect = adoc->rects[slot];
-        rect.x = bin_rect.x;
-        rect.y = bin_rect.y;
-        rect.width = bin_rect.w;
-        rect.height = bin_rect.h;
-        rect.mesh_name = mdoc->name;
-        rect.valid = true;
-        rect.frame_count = mdoc->frame_count;
-        rect.mesh_bounds = max_bounds;  // Store bounds for UV calculation
-
-        adoc->dirty = true;
-        adoc->outline_dirty = true;
-        return &rect;
-    }
-
     void FreeRect(AtlasDocument* adoc, AtlasRect* rect) {
         if (!rect) return;
 
-        if (rect->mesh_name) {
-            MeshDocument* mdoc = static_cast<MeshDocument*>(FindDocument(ASSET_TYPE_MESH, rect->mesh_name));
-            if (mdoc)
-                mdoc->atlas = nullptr;
+        if (rect->asset_name) {
+            SpriteDocument* sdoc = static_cast<SpriteDocument*>(FindDocument(ASSET_TYPE_SPRITE, rect->asset_name));
+            if (sdoc)
+                sdoc->atlas = nullptr;
         }
 
         rect->valid = false;
-        rect->mesh_name = nullptr;
+        rect->asset_name = nullptr;
         rect->frame_count = 1;
         adoc->dirty = true;
         adoc->outline_dirty = true;
@@ -229,14 +153,14 @@ namespace noz::editor {
 
     void ClearAllRects(AtlasDocument* adoc) {
         for (int i = 0; i < adoc->rect_count; i++) {
-            // Clear the mesh's atlas reference
-            if (adoc->rects[i].valid && adoc->rects[i].mesh_name) {
-                MeshDocument* mdoc = static_cast<MeshDocument*>(FindDocument(ASSET_TYPE_MESH, adoc->rects[i].mesh_name));
-                if (mdoc)
-                    mdoc->atlas = nullptr;
+            // Clear the asset's atlas reference
+            if (adoc->rects[i].valid && adoc->rects[i].asset_name) {
+                SpriteDocument* sdoc = static_cast<SpriteDocument*>(FindDocument(ASSET_TYPE_SPRITE, adoc->rects[i].asset_name));
+                if (sdoc)
+                    sdoc->atlas = nullptr;
             }
             adoc->rects[i].valid = false;
-            adoc->rects[i].mesh_name = nullptr;
+            adoc->rects[i].asset_name = nullptr;
             adoc->rects[i].frame_count = 1;
         }
         adoc->rect_count = 0;
@@ -255,66 +179,6 @@ namespace noz::editor {
             adoc->pixels = CreatePixelData(ALLOCATOR_DEFAULT, adoc->size);
     }
 
-    void AddFaceToPath(
-        Rasterizer* rasterizer,
-        MeshFrameData* frame,
-        FaceData& face,
-        float offset_x,
-        float offset_y);
-
-    void RenderMeshToBuffer(AtlasDocument* atlas, MeshDocument* mesh, AtlasRect& rect, PixelData* pixels, bool update_bounds) {
-#if 0
-        AtlasDocument* adoc = atlas->impl;
-        MeshDataImpl* mesh_impl = mesh->impl;
-
-        if (mesh_impl->frame_count == 0) return;
-
-        Bounds2 max_bounds = GetFrameBounds(&mesh_impl->frames[0]);
-        for (int i = 1; i < mesh_impl->frame_count; i++)
-            max_bounds = Union(max_bounds, GetFrameBounds(&mesh_impl->frames[i]));
-
-        Bounds2 render_bounds;
-        if (update_bounds) {
-            rect.mesh_bounds = max_bounds;
-            render_bounds = max_bounds;
-        } else {
-            render_bounds = rect.mesh_bounds;
-        }
-
-        float scale = (float)adoc->dpi;
-        int frame_width = rect.width / rect.frame_count;
-
-        Rasterizer* rasterizer = CreateRasterizer(ALLOCATOR_DEFAULT, pixels);
-
-        for (int frame_idx = 0; frame_idx < mesh_impl->frame_count; frame_idx++) {
-            MeshFrameData* frame = &mesh_impl->frames[frame_idx];
-            int frame_x = rect.x + frame_idx * frame_width;
-
-            SetClipRect(rasterizer, frame_x, rect.y, frame_width, rect.height);
-
-            float offset_x = frame_x + g_editor.atlas.padding - render_bounds.min.x * scale;
-            float offset_y = rect.y + g_editor.atlas.padding - render_bounds.min.y * scale;
-
-            int palette_index = g_editor.palette_map[mesh_impl->palette];
-
-            for (int face_index = 0; face_index < frame->face_count; face_index++) {
-                FaceData& face = frame->faces[face_index];
-                if (face.vertex_count < 3) continue;
-
-                SetColor(rasterizer,
-                    MultiplyAlpha(
-                        g_editor.palettes[palette_index].colors[face.color],
-                        face.opacity));
-                BeginPath(rasterizer);
-                AddFaceToPath(rasterizer, frame, face, offset_x, offset_y, scale);
-                Fill(rasterizer);
-            }
-        }
-
-        Free(rasterizer);
-#endif
-    }
-
     static void ScanPixelBounds(PixelData* pixels, int atlas_width, AtlasRect& rect) {
         int frame_width = rect.width / rect.frame_count;
 
@@ -329,7 +193,7 @@ namespace noz::editor {
                 int px = frame_x + x;
                 int py = rect.y + y;
                 int idx = (py * atlas_width + px);
-                u8 alpha = pixels->rgba[idx].a;  // RGBA format, alpha is at offset 3
+                u8 alpha = pixels->rgba[idx].a;
 
                 if (alpha > 0) {
                     if (x < rect.pixel_min_x) rect.pixel_min_x = x;
@@ -355,7 +219,7 @@ namespace noz::editor {
         if (!adoc->texture) {
             adoc->texture = CreateTexture(
                 ALLOCATOR_DEFAULT,
-                adoc->pixels,
+                adoc->pixels->rgba,
                 adoc->size.x,
                 adoc->size.y,
                 TEXTURE_FORMAT_RGBA8,
@@ -364,7 +228,7 @@ namespace noz::editor {
             adoc->material = CreateMaterial(ALLOCATOR_DEFAULT, SHADER_TEXTURED_MESH);
             SetTexture(adoc->material, adoc->texture, 0);
         } else {
-            UpdateTexture(adoc->texture, adoc->pixels);
+            UpdateTexture(adoc->texture, adoc->pixels->rgba);
         }
 
         adoc->dirty = false;
@@ -379,25 +243,133 @@ namespace noz::editor {
         if (!pixels) return;
 
         // Clear pixel buffer
-        memset(pixels, 0, adoc->size.x * adoc->size.y * 4);
+        Clear(pixels);
 
-        // Re-render all attached meshes
+        // Re-render all attached sprites
         for (int i = 0; i < adoc->rect_count; i++) {
             if (!adoc->rects[i].valid) continue;
 
-            MeshDocument* mdoc = static_cast<MeshDocument*>(FindDocument(ASSET_TYPE_MESH, adoc->rects[i].mesh_name));
-            if (mdoc)
-                RenderMeshToBuffer(adoc, mdoc, adoc->rects[i], pixels, true);
+            SpriteDocument* sdoc = static_cast<SpriteDocument*>(FindDocument(ASSET_TYPE_SPRITE, adoc->rects[i].asset_name));
+            if (sdoc)
+                RenderSpriteToAtlas(adoc, sdoc, adoc->rects[i], true);
         }
 
-        if (!pixels) {
-            adoc->dirty = true;
-        }
+        adoc->dirty = true;
     }
 
-    void RenderMeshToAtlas(AtlasDocument* adoc, MeshDocument* mdoc, AtlasRect& rect, bool update_bounds) {
+    // Calculate max raster bounds across all sprite frames
+    static RectInt GetMaxSpriteRasterBounds(SpriteDocument* sdoc) {
+        if (sdoc->frame_count == 0) {
+            return {0, 0, 0, 0};
+        }
+
+        // Update samples and bounds for all frames
+        for (u16 fi = 0; fi < sdoc->frame_count; ++fi) {
+            shape::UpdateSamples(&sdoc->frames[fi].shape);
+            shape::UpdateBounds(&sdoc->frames[fi].shape);
+        }
+
+        RectInt max_bounds = sdoc->frames[0].shape.raster_bounds;
+        for (u16 fi = 1; fi < sdoc->frame_count; ++fi) {
+            RectInt& rb = sdoc->frames[fi].shape.raster_bounds;
+            int min_x = Min(max_bounds.x, rb.x);
+            int min_y = Min(max_bounds.y, rb.y);
+            int max_x = Max(max_bounds.x + max_bounds.w, rb.x + rb.w);
+            int max_y = Max(max_bounds.y + max_bounds.h, rb.y + rb.h);
+            max_bounds = {min_x, min_y, max_x - min_x, max_y - min_y};
+        }
+
+        return max_bounds;
+    }
+
+    AtlasRect* AllocateRect(AtlasDocument* adoc, SpriteDocument* sdoc) {
+        if (sdoc->frame_count == 0) return nullptr;
+
+        // Calculate max raster bounds across all frames
+        RectInt max_bounds = GetMaxSpriteRasterBounds(sdoc);
+        if (max_bounds.w <= 0 || max_bounds.h <= 0) return nullptr;
+
+        int frame_width = max_bounds.w + g_editor.atlas.padding * 2;
+        int frame_height = max_bounds.h + g_editor.atlas.padding * 2;
+
+        // Total strip size: frames laid out horizontally
+        int total_width = frame_width * sdoc->frame_count;
+        int total_height = frame_height;
+
+        if (total_width > adoc->size.x || total_height > adoc->size.y) {
+            return nullptr;  // Too large for atlas
+        }
+
+        int slot = FindFreeRectSlot(adoc);
+        if (slot < 0) return nullptr;
+
+        RectPacker::Rect bin_rect;
+        int result = adoc->packer->Insert(total_width, total_height, RectPacker::method::BottomLeftRule, bin_rect);
+        if (result < 0) {
+            return nullptr;
+        }
+
+        // Use precise shape bounds (not raster_bounds which are floored/ceiled)
+        Bounds2 shape_bounds = sdoc->frames[0].shape.bounds;
+        for (u16 fi = 1; fi < sdoc->frame_count; ++fi) {
+            shape_bounds = Union(shape_bounds, sdoc->frames[fi].shape.bounds);
+        }
+
+        AtlasRect& rect = adoc->rects[slot];
+        rect.x = bin_rect.x;
+        rect.y = bin_rect.y;
+        rect.width = bin_rect.w;
+        rect.height = bin_rect.h;
+        rect.asset_name = sdoc->name;
+        rect.valid = true;
+        rect.frame_count = sdoc->frame_count;
+        rect.bounds = shape_bounds;
+
+        adoc->dirty = true;
+        adoc->outline_dirty = true;
+        return &rect;
+    }
+
+    void RenderSpriteToAtlas(AtlasDocument* adoc, SpriteDocument* sdoc, AtlasRect& rect, bool update_bounds) {
         EnsurePixelBuffer(adoc);
-        RenderMeshToBuffer(adoc, mdoc, rect, adoc->pixels, update_bounds);
+
+        if (sdoc->frame_count == 0) return;
+
+        // Calculate max bounds across all frames for consistent positioning
+        RectInt max_bounds = GetMaxSpriteRasterBounds(sdoc);
+        if (max_bounds.w <= 0 || max_bounds.h <= 0) return;
+
+        if (update_bounds) {
+            // Use the precise shape bounds (not raster_bounds which are floored/ceiled)
+            // This ensures geometry matches the original sprite exactly
+            Bounds2 shape_bounds = sdoc->frames[0].shape.bounds;
+            for (u16 fi = 1; fi < sdoc->frame_count; ++fi) {
+                shape_bounds = Union(shape_bounds, sdoc->frames[fi].shape.bounds);
+            }
+            rect.bounds = shape_bounds;
+        }
+
+        int frame_width = rect.width / rect.frame_count;
+        int palette_index = g_editor.palette_map[sdoc->palette];
+        const Color* palette = g_editor.palettes[palette_index].colors;
+
+        for (int frame_idx = 0; frame_idx < sdoc->frame_count; frame_idx++) {
+            SpriteFrame* f = &sdoc->frames[frame_idx];
+            shape::Shape* shape = &f->shape;
+
+            int frame_x = rect.x + frame_idx * frame_width;
+
+            // Calculate offset to map shape's raster_bounds to atlas position
+            // Rasterize adds rb.x/y internally, so we subtract max_bounds to align
+            // all frames relative to the union bounds, then add atlas position + padding
+            Vec2Int offset = {
+                frame_x + g_editor.atlas.padding - max_bounds.x,
+                rect.y + g_editor.atlas.padding - max_bounds.y
+            };
+
+            shape::Rasterize(shape, adoc->pixels, palette, offset);
+        }
+
         ScanPixelBounds(adoc->pixels, adoc->size.x, rect);
         adoc->dirty = true;
         adoc->outline_dirty = true;
@@ -411,8 +383,8 @@ namespace noz::editor {
         RectInfo rect_infos[ATLAS_MAX_RECTS];
         int rect_info_count = 0;
         for (int i = 0; i < adoc->rect_count; i++) {
-            if (adoc->rects[i].valid && adoc->rects[i].mesh_name) {
-                rect_infos[rect_info_count].name = adoc->rects[i].mesh_name;
+            if (adoc->rects[i].valid && adoc->rects[i].asset_name) {
+                rect_infos[rect_info_count].name = adoc->rects[i].asset_name;
                 rect_infos[rect_info_count].frame_count = adoc->rects[i].frame_count;
                 rect_info_count++;
             }
@@ -422,46 +394,47 @@ namespace noz::editor {
 
         ClearAllRects(adoc);
 
+        EnsurePixelBuffer(adoc);
         Clear(adoc->pixels);
 
-        // Re-allocate and render each mesh
+        // Re-allocate and render each sprite
         int success_count = 0;
         for (int i = 0; i < rect_info_count; i++) {
-            MeshDocument* mdoc = static_cast<MeshDocument*>(FindDocument(ASSET_TYPE_MESH, rect_infos[i].name));
-            if (!mdoc) {
-                LogError("RebuildAtlas: mesh '%s' not found", rect_infos[i].name->value);
+            SpriteDocument* sdoc = static_cast<SpriteDocument*>(FindDocument(ASSET_TYPE_SPRITE, rect_infos[i].name));
+            if (!sdoc) {
+                LogError("RebuildAtlas: sprite '%s' not found", rect_infos[i].name->value);
                 continue;
             }
 
-            AtlasRect* rect = AllocateRect(adoc, mdoc);
+            AtlasRect* rect = AllocateRect(adoc, sdoc);
             if (rect) {
-                RenderMeshToAtlas(adoc, mdoc, *rect);
+                RenderSpriteToAtlas(adoc, sdoc, *rect);
                 success_count++;
             } else {
                 LogError("RebuildAtlas: failed to allocate rect for '%s'", rect_infos[i].name->value);
             }
-            MarkModified(mdoc);
+            MarkModified(sdoc);
         }
 
         if (success_count < original_count) {
-            LogWarning("RebuildAtlas: only %d of %d meshes were successfully added", success_count, original_count);
+            LogWarning("RebuildAtlas: only %d of %d sprites were successfully added", success_count, original_count);
         }
 
         adoc->dirty = true;
     }
 
-    Vec2 GetAtlasUV(AtlasDocument* adoc, const AtlasRect& rect, const Bounds2& mesh_bounds, const Vec2& position) {
+    Vec2 GetAtlasUV(AtlasDocument* adoc, const AtlasRect& rect, const Bounds2& bounds, const Vec2& position) {
         // Guard against zero-sized bounds (would cause division by zero)
-        Vec2 size = GetSize(mesh_bounds);
+        Vec2 size = GetSize(bounds);
         if (size.x < F32_EPSILON || size.y < F32_EPSILON) {
-            LogError("GetAtlasUV: mesh_bounds has zero size! bounds=(%.3f,%.3f - %.3f,%.3f)",
-                mesh_bounds.min.x, mesh_bounds.min.y, mesh_bounds.max.x, mesh_bounds.max.y);
+            LogError("GetAtlasUV: bounds has zero size! bounds=(%.3f,%.3f - %.3f,%.3f)",
+                bounds.min.x, bounds.min.y, bounds.max.x, bounds.max.y);
             return {0.0f, 0.0f};
         }
 
-        // Map position from mesh space to normalized [0,1] within mesh bounds
-        float tx = (position.x - mesh_bounds.min.x) / size.x;
-        float ty = (position.y - mesh_bounds.min.y) / size.y;
+        // Map position from sprite space to normalized [0,1] within bounds
+        float tx = (position.x - bounds.min.x) / size.x;
+        float ty = (position.y - bounds.min.y) / size.y;
 
         // Map to actual pixel bounds (from pixel scan), sampling at texel centers
         // pixel_min/max are relative to frame origin, add rect.x/y for absolute position
@@ -481,22 +454,29 @@ namespace noz::editor {
         float* out_u_min, float* out_v_min, float* out_u_max, float* out_v_max) {
 
         float dpi = (float)adoc->dpi;
+        float inv_dpi = 1.0f / dpi;
 
-        // Geometry at exact mesh_bounds so adjacent tiles meet perfectly
-        *out_min = rect.mesh_bounds.min;
-        *out_max = rect.mesh_bounds.max;
+        // Compute raster-aligned bounds (pixel grid aligned)
+        // This matches how the rasterizer floors/ceils the bounds
+        int raster_min_x = FloorToInt(rect.bounds.min.x * dpi);
+        int raster_min_y = FloorToInt(rect.bounds.min.y * dpi);
+        int raster_max_x = CeilToInt(rect.bounds.max.x * dpi);
+        int raster_max_y = CeilToInt(rect.bounds.max.y * dpi);
 
-        // Calculate UV range that maps mesh_bounds to atlas pixels
-        // UVs inset by 0.5 pixels to sample at texel centers (avoids edge sampling issues)
-        Vec2 mesh_size = GetSize(rect.mesh_bounds);
-        float expected_pixel_w = mesh_size.x * dpi;
-        float expected_pixel_h = mesh_size.y * dpi;
+        // Raster size in pixels
+        int raster_w = raster_max_x - raster_min_x;
+        int raster_h = raster_max_y - raster_min_y;
 
-        // Map mesh_bounds corners to atlas pixel coordinates, sampling at texel centers
-        float pixel_at_min_x = rect.x + g_editor.atlas.padding + 0.5f;
-        float pixel_at_min_y = rect.y + g_editor.atlas.padding + 0.5f;
-        float pixel_at_max_x = rect.x + g_editor.atlas.padding + expected_pixel_w - 0.5f;
-        float pixel_at_max_y = rect.y + g_editor.atlas.padding + expected_pixel_h - 0.5f;
+        // Geometry uses raster-aligned bounds so it matches the pixel grid
+        *out_min = Vec2{(float)raster_min_x, (float)raster_min_y} * inv_dpi;
+        *out_max = Vec2{(float)raster_max_x, (float)raster_max_y} * inv_dpi;
+
+        // UVs map geometry corners to atlas pixel edges (not centers)
+        // This ensures the full pixel is sampled across the quad
+        float pixel_at_min_x = (float)(rect.x + g_editor.atlas.padding);
+        float pixel_at_min_y = (float)(rect.y + g_editor.atlas.padding);
+        float pixel_at_max_x = (float)(rect.x + g_editor.atlas.padding + raster_w);
+        float pixel_at_max_y = (float)(rect.y + g_editor.atlas.padding + raster_h);
 
         *out_u_min = pixel_at_min_x / (float)adoc->size.x;
         *out_v_min = pixel_at_min_y / (float)adoc->size.y;
@@ -508,22 +488,28 @@ namespace noz::editor {
         Vec2* out_min, Vec2* out_max,
         float* out_u_min, float* out_v_min, float* out_u_max, float* out_v_max) {
 
-        // For now, just use the full mesh_bounds like GetExportQuadGeometry
-        // Tight bounds calculation is complex due to Y-flip between pixel and world space
-        // and needs more careful implementation
-        *out_min = rect.mesh_bounds.min;
-        *out_max = rect.mesh_bounds.max;
-
         float dpi = (float)adoc->dpi;
-        Vec2 mesh_size = GetSize(rect.mesh_bounds);
-        float expected_pixel_w = mesh_size.x * dpi;
-        float expected_pixel_h = mesh_size.y * dpi;
+        float inv_dpi = 1.0f / dpi;
 
-        // Map mesh_bounds corners to atlas pixel coordinates, sampling at texel centers
-        float pixel_at_min_x = rect.x + g_editor.atlas.padding + 0.5f;
-        float pixel_at_min_y = rect.y + g_editor.atlas.padding + 0.5f;
-        float pixel_at_max_x = rect.x + g_editor.atlas.padding + expected_pixel_w - 0.5f;
-        float pixel_at_max_y = rect.y + g_editor.atlas.padding + expected_pixel_h - 0.5f;
+        // Compute raster-aligned bounds (pixel grid aligned)
+        int raster_min_x = FloorToInt(rect.bounds.min.x * dpi);
+        int raster_min_y = FloorToInt(rect.bounds.min.y * dpi);
+        int raster_max_x = CeilToInt(rect.bounds.max.x * dpi);
+        int raster_max_y = CeilToInt(rect.bounds.max.y * dpi);
+
+        // Raster size in pixels
+        int raster_w = raster_max_x - raster_min_x;
+        int raster_h = raster_max_y - raster_min_y;
+
+        // Geometry uses raster-aligned bounds
+        *out_min = Vec2{(float)raster_min_x, (float)raster_min_y} * inv_dpi;
+        *out_max = Vec2{(float)raster_max_x, (float)raster_max_y} * inv_dpi;
+
+        // UVs map geometry corners to atlas pixel edges
+        float pixel_at_min_x = (float)(rect.x + g_editor.atlas.padding);
+        float pixel_at_min_y = (float)(rect.y + g_editor.atlas.padding);
+        float pixel_at_max_x = (float)(rect.x + g_editor.atlas.padding + raster_w);
+        float pixel_at_max_y = (float)(rect.y + g_editor.atlas.padding + raster_h);
 
         *out_u_min = pixel_at_min_x / (float)adoc->size.x;
         *out_v_min = pixel_at_min_y / (float)adoc->size.y;
@@ -566,7 +552,7 @@ namespace noz::editor {
             adoc->outline_mesh = nullptr;
         }
 
-        // Count valid rects and estimate edge count (pixel hull is typically small)
+        // Count valid rects and estimate edge count
         int valid_count = 0;
         int total_edges = 0;
         for (int i = 0; i < adoc->rect_count; i++) {
@@ -588,8 +574,6 @@ namespace noz::editor {
         Vec4 yellow = {1.0f, 1.0f, 0.0f, 1.0f};
 
         // Atlas display: centered at origin, Y flipped (atlas pixel Y=0 at display top)
-        // display_x = (atlas_pixel_x - width/2) / PIXELS_PER_UNIT
-        // display_y = (height/2 - atlas_pixel_y) / PIXELS_PER_UNIT
         float half_w = (float)adoc->size.x * 0.5f;
         float half_h = (float)adoc->size.y * 0.5f;
 
@@ -646,15 +630,15 @@ namespace noz::editor {
         WriteCSTR(stream, "d %d\n", adoc->dpi);
         WriteCSTR(stream, "\n");
 
-        // Save rects: r "mesh_name" x y w h frame_count bounds_min_x bounds_min_y bounds_max_x bounds_max_y pixel_bounds
+        // Save rects: r "asset_name" x y w h frame_count bounds pixel_bounds
         for (int i = 0; i < adoc->rect_count; i++) {
-            if (adoc->rects[i].valid && adoc->rects[i].mesh_name) {
+            if (adoc->rects[i].valid && adoc->rects[i].asset_name) {
                 const AtlasRect& r = adoc->rects[i];
                 WriteCSTR(stream, "r \"%s\" %d %d %d %d %d %.6f %.6f %.6f %.6f %d %d %d %d\n",
-                    r.mesh_name->value,
+                    r.asset_name->value,
                     r.x, r.y, r.width, r.height, r.frame_count,
-                    r.mesh_bounds.min.x, r.mesh_bounds.min.y,
-                    r.mesh_bounds.max.x, r.mesh_bounds.max.y,
+                    r.bounds.min.x, r.bounds.min.y,
+                    r.bounds.max.x, r.bounds.max.y,
                     r.pixel_min_x, r.pixel_min_y, r.pixel_max_x, r.pixel_max_y);
             }
         }
@@ -665,9 +649,9 @@ namespace noz::editor {
 
     static void ParseRect(AtlasDocument* adoc, Tokenizer& tk) {
         if (!ExpectQuotedString(tk))
-            ThrowError("missing rect mesh name");
+            ThrowError("missing rect asset name");
 
-        const Name* mesh_name = GetName(tk);
+        const Name* asset_name = GetName(tk);
 
         int x, y, w, h;
         if (!ExpectInt(tk, &x)) ThrowError("missing rect x");
@@ -675,12 +659,12 @@ namespace noz::editor {
         if (!ExpectInt(tk, &w)) ThrowError("missing rect width");
         if (!ExpectInt(tk, &h)) ThrowError("missing rect height");
 
-        // frame_count (required now, was optional before)
+        // frame_count
         int frame_count = 1;
         ExpectInt(tk, &frame_count);
 
-        // mesh_bounds (optional for backwards compatibility)
-        Bounds2 mesh_bounds = BOUNDS2_ZERO;
+        // bounds (optional for backwards compatibility)
+        Bounds2 bounds = BOUNDS2_ZERO;
         float bmin_x = 0.0f;
         float bmin_y = 0.0f;
         float bmax_x = 0.0f;
@@ -688,7 +672,7 @@ namespace noz::editor {
         bool has_bounds = ExpectFloat(tk, &bmin_x) && ExpectFloat(tk, &bmin_y) &&
                           ExpectFloat(tk, &bmax_x) && ExpectFloat(tk, &bmax_y);
         if (has_bounds) {
-            mesh_bounds = {{bmin_x, bmin_y}, {bmax_x, bmax_y}};
+            bounds = {{bmin_x, bmin_y}, {bmax_x, bmax_y}};
         }
 
         // pixel_bounds (optional for backwards compatibility)
@@ -704,13 +688,13 @@ namespace noz::editor {
         int slot = FindFreeRectSlot(adoc);
         if (slot >= 0) {
             AtlasRect& rect = adoc->rects[slot];
-            rect.mesh_name = mesh_name;
+            rect.asset_name = asset_name;
             rect.x = x;
             rect.y = y;
             rect.width = w;
             rect.height = h;
             rect.frame_count = frame_count;
-            rect.mesh_bounds = mesh_bounds;
+            rect.bounds = bounds;
             rect.pixel_min_x = pixel_min_x;
             rect.pixel_min_y = pixel_min_y;
             rect.pixel_max_x = pixel_max_x;
@@ -763,7 +747,6 @@ namespace noz::editor {
     }
 
     static void PostLoadAtlasData(Document* doc) {
-#if 0
         AtlasDocument* adoc = static_cast<AtlasDocument*>(doc);
 
         // Register as managed atlas if it has the auto-managed naming convention
@@ -776,27 +759,23 @@ namespace noz::editor {
             adoc->dpi = g_editor.atlas.dpi;
             RebuildAtlas(adoc);
             MarkModified(doc);
-            return;  // RebuildAtlas handles mesh binding and rendering
+            return;  // RebuildAtlas handles asset binding and rendering
         }
 
-        // Bind meshes to this atlas and render pixels
+        // Bind sprites to this atlas and render pixels
         for (int i = 0; i < adoc->rect_count; i++) {
-            if (adoc->rects[i].valid && adoc->rects[i].mesh_name) {
-                MeshDocument* mdoc = static_cast<MeshDocument*>(FindDocument(ASSET_TYPE_MESH, adoc->rects[i].mesh_name));
-                if (mdoc) {
-                    mdoc->atlas = adoc;
+            if (adoc->rects[i].valid && adoc->rects[i].asset_name) {
+                // Check if bounds are valid (non-zero size)
+                Vec2 size = GetSize(adoc->rects[i].bounds);
+                bool bounds_valid = size.x > F32_EPSILON && size.y > F32_EPSILON;
 
-                    // Check if bounds are valid (non-zero size)
-                    Vec2 size = GetSize(adoc->rects[i].mesh_bounds);
-                    bool bounds_valid = size.x > F32_EPSILON && size.y > F32_EPSILON;
-
-                    // If bounds are invalid (old file format), update them from mesh
-                    // Otherwise preserve bounds loaded from atlas file to prevent race conditions
-                    RenderMeshToAtlas(adoc, mdoc, adoc->rects[i], !bounds_valid);
+                SpriteDocument* sdoc = static_cast<SpriteDocument*>(FindDocument(ASSET_TYPE_SPRITE, adoc->rects[i].asset_name));
+                if (sdoc) {
+                    sdoc->atlas = adoc;
+                    RenderSpriteToAtlas(adoc, sdoc, adoc->rects[i], !bounds_valid);
                 }
             }
         }
-#endif
     }
 
     static void LoadAtlasMetaData(Document* a, Props* meta) {
@@ -887,22 +866,22 @@ namespace noz::editor {
         WriteU8(stream, (u8)clamp_value);
         WriteU32(stream, adoc->size.x);
         WriteU32(stream, adoc->size.y);
-        WriteBytes(stream, adoc->pixels, pixel_size);
+        WriteBytes(stream, adoc->pixels->rgba, pixel_size);
 
         SaveStream(stream, path);
         Free(stream);
     }
 
     static bool CheckAtlasDependency(Document* doc, Document* dependency) {
-        if (dependency->def->type != ASSET_TYPE_MESH) {
+        if (dependency->def->type != ASSET_TYPE_SPRITE) {
             return false;
         }
 
         AtlasDocument* adoc = static_cast<AtlasDocument*>(doc);
 
-        // Check if this mesh/animated mesh is attached to the atlas
+        // Check if this sprite is attached to the atlas
         for (int i = 0; i < adoc->rect_count; i++) {
-            if (adoc->rects[i].valid && adoc->rects[i].mesh_name == dependency->name) {
+            if (adoc->rects[i].valid && adoc->rects[i].asset_name == dependency->name) {
                 return true;
             }
         }

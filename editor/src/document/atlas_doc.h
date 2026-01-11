@@ -8,6 +8,7 @@ namespace noz { class RectPacker; }
 
 namespace noz::editor {
     struct PixelData;
+    struct SpriteDocument;
 
     constexpr int ATLAS_MAX_RECTS = 256;
     constexpr int ATLAS_DEFAULT_DPI = 96;
@@ -16,10 +17,10 @@ namespace noz::editor {
 
     struct AtlasRect {
         int x, y, width, height;         // Full rect (for animated: width = frame_width * frame_count)
-        const Name* mesh_name;           // Which mesh/animated mesh owns this rect
+        const Name* asset_name;          // Which sprite owns this rect
         bool valid;                      // Is this rect in use?
-        int frame_count;                 // Number of frames (1 = static mesh, >1 = animated strip)
-        Bounds2 mesh_bounds;             // Mesh bounds in world space (for UV calculation)
+        int frame_count;                 // Number of frames (1 = static, >1 = animated strip)
+        Bounds2 bounds;                  // Sprite bounds in world space (for UV calculation)
         int pixel_min_x, pixel_min_y;    // Actual rendered content bounds (from pixel scan)
         int pixel_max_x, pixel_max_y;    // Relative to rect origin
         // For animated: frame_width = width / frame_count, frames are laid out left-to-right
@@ -45,40 +46,35 @@ namespace noz::editor {
     extern Document* NewAtlasDocument(const std::filesystem::path& path);
 
     // Rect management
-    extern AtlasRect* AllocateRect(AtlasDocument* atlas, struct MeshDocument* mdoc);  // Allocates all frames for multi-frame meshes
-    extern AtlasRect* FindRectForMesh(AtlasDocument* adoc, const Name* mesh_name);
+    extern AtlasRect* AllocateRect(AtlasDocument* atlas, SpriteDocument* sdoc);  // Allocates all frames for sprites
+    extern AtlasRect* FindRectForSprite(AtlasDocument* adoc, const Name* sprite_name);
     extern void FreeRect(AtlasDocument* adoc, AtlasRect* rect);
     extern void ClearRectPixels(AtlasDocument* atlas, const AtlasRect& rect);
     extern void ClearAllRects(AtlasDocument* atlas);
 
-    // Find the atlas containing a mesh (searches all atlases)
-    extern AtlasDocument* FindAtlasForMesh(const Name* mesh_name, AtlasRect** out_rect = nullptr);
+    // Find the atlas containing a sprite (searches all atlases)
+    extern AtlasDocument* FindAtlasForSprite(const Name* sprite_name, AtlasRect** out_rect = nullptr);
 
     // Rendering
-    extern void RenderMeshToAtlas(AtlasDocument* adoc, MeshDocument* mdoc, AtlasRect& rect, bool update_bounds = true);  // Renders all frames
-    extern void RenderMeshPreview(MeshDocument* mesh, PixelData* pixels, int width, int height, const Bounds2* bounds);  // Render current frame to buffer
-    extern void RegenerateAtlas(AtlasDocument* adoc, PixelData* pixels = nullptr);  // Re-render meshes to buffer (or impl->pixels if null)
-    extern void RebuildAtlas(AtlasDocument* adoc);      // Clear and reallocate all rects, mark meshes modified
+    extern void RenderSpriteToAtlas(AtlasDocument* adoc, SpriteDocument* sdoc, AtlasRect& rect, bool update_bounds = true);  // Renders all frames
+    extern void RegenerateAtlas(AtlasDocument* adoc, PixelData* pixels = nullptr);  // Re-render sprites to buffer (or pixels if null)
+    extern void RebuildAtlas(AtlasDocument* adoc);      // Clear and reallocate all rects, mark sprites modified
     extern void SyncAtlasTexture(AtlasDocument* adoc);  // Upload pixels to GPU (editor only)
 
     // UV computation
-    extern Vec2 GetAtlasUV(AtlasDocument* adoc, const AtlasRect& rect, const Bounds2& mesh_bounds, const Vec2& position);
+    extern Vec2 GetAtlasUV(AtlasDocument* adoc, const AtlasRect& rect, const Bounds2& bounds, const Vec2& position);
 
-    // Export mesh visualization (single outline mesh for all rects)
+    // Export outline visualization (single outline mesh for all rects)
     extern Mesh* GetAtlasOutlineMesh(AtlasDocument* adoc);
 
     // Export quad geometry calculation (shared between importer and visualization)
-    // Returns mesh_bounds and UV coordinates for non-skinned mesh export quad (for tiling)
+    // Returns bounds and UV coordinates for sprite export quad (for tiling)
     extern void GetExportQuadGeometry(AtlasDocument* adoc, const AtlasRect& rect,
         Vec2* out_min, Vec2* out_max,
         float* out_u_min, float* out_v_min, float* out_u_max, float* out_v_max);
 
-    // Returns tight pixel bounds and UV coordinates for non-skinned mesh export quad
+    // Returns tight pixel bounds and UV coordinates for sprite export quad
     extern void GetTightQuadGeometry(AtlasDocument* adoc, const AtlasRect& rect,
         Vec2* out_min, Vec2* out_max,
         float* out_u_min, float* out_v_min, float* out_u_max, float* out_v_max);
-
-    // Skinned mesh detection
-    extern bool IsSkinnedMesh(MeshDocument* mesh);
-    extern int GetSingleBoneIndex(MeshDocument* mesh);  // Returns bone index or -1 if not single-bone
 }

@@ -50,6 +50,8 @@ namespace noz::editor::shape {
         u16 anchor_index = U16_MAX;
         u16 segment_index = U16_MAX;
         u16 path_index = U16_MAX;
+        float anchor_dist_sqr = FLT_MAX;
+        float segment_dist_sqr = FLT_MAX;
     };
 
     // @shape
