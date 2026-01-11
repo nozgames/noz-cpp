@@ -13,7 +13,7 @@ namespace noz::editor {
     extern void InitStyles();
     extern void ShutdownSpriteEditor();
 
-    constexpr float SELECT_SIZE = 60.0f;
+    constexpr float SELECT_SIZE = 20.0f;
     constexpr float DRAG_MIN = 5;
     constexpr float DEFAULT_DPI = 72.0f;
     constexpr float ZOOM_MIN = 0.01f;

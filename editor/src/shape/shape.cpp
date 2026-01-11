@@ -66,9 +66,8 @@ namespace noz::editor::shape {
     }
 
     bool HitTest(Shape* shape, const Vec2& point, HitResult* result) {
-        const float anchor_screen_px = 10.0f;
-        float anchor_radius_world = Abs((noz::ScreenToWorld(noz::editor::g_workspace.camera, Vec2{0, anchor_screen_px}) - noz::ScreenToWorld(noz::editor::g_workspace.camera, VEC2_ZERO)).y);
-        const float anchor_radius_sqr = anchor_radius_world * anchor_radius_world;
+        const float anchor_radius = noz::editor::g_workspace.select_size;
+        const float anchor_radius_sqr = anchor_radius * anchor_radius;
         const float segment_radius_sqr = noz::editor::g_workspace.select_size * noz::editor::g_workspace.select_size;
 
         result->anchor_index = U16_MAX;
@@ -103,7 +102,8 @@ namespace noz::editor::shape {
 
                     Vec2 to_point = point - ea;
                     float proj = Dot(to_point, edge_dir);
-                    if (proj >= 0.0f && proj <= edge_length) {
+                    // Exclude endpoints - anchors should be hit tested separately
+                    if (proj > 0.0f && proj < edge_length) {
                         Vec2 closest = ea + edge_dir * proj;
                         float dist_sqr = LengthSqr(point - closest);
                         if (dist_sqr <= segment_radius_sqr) return true;
@@ -209,7 +209,8 @@ namespace noz::editor::shape {
 
                     Vec2 to_point = point - ea;
                     float proj = Dot(to_point, edge_dir);
-                    if (proj >= 0.0f && proj <= edge_length) {
+                    // Exclude endpoints - anchors should be hit tested separately
+                    if (proj > 0.0f && proj < edge_length) {
                         Vec2 closest = ea + edge_dir * proj;
                         float dist_sqr = LengthSqr(point - closest);
                         if (dist_sqr <= segment_radius_sqr) return true;

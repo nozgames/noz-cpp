@@ -81,11 +81,12 @@ namespace noz::editor {
                 const Anchor* a0 = GetAnchor(&f->shape, p, a_idx);
                 const Anchor* a1 = GetAnchor(&f->shape, p, (a_idx + 1) % p->anchor_count);
 
-                bool anchor_selected = shape::IsSelected(a0) || shape::IsSelected(a1);
-                Color seg_color = (anchor_selected || path_selected)
+                // Segment is selected if both anchors are selected, or if path is selected
+                bool segment_selected = (shape::IsSelected(a0) && shape::IsSelected(a1)) || path_selected;
+                Color seg_color = segment_selected
                     ? SPRITE_EDITOR_EDGE_SELECTED_COLOR
                     : SPRITE_EDITOR_EDGE_COLOR;
-                float seg_width = (anchor_selected || path_selected) ? selected_line_width : line_width;
+                float seg_width = segment_selected ? selected_line_width : line_width;
 
                 // Draw line segments using precomputed samples
                 Vec2 v0 = a0->position;
@@ -96,13 +97,21 @@ namespace noz::editor {
                 AddEditorLine(builder, v0, a1->position, seg_width, seg_color);
             }
 
-            // Draw anchors for this path
+            // Draw unselected anchors for this path
             for (u16 a_idx = 0; a_idx < p->anchor_count; a_idx++) {
                 const shape::Anchor* a = GetAnchor(&f->shape, (Path*)p, a_idx);
-                Color vcol = shape::IsSelected(a)
-                    ? SPRITE_EDITOR_VERTEX_SELECTED_COLOR
-                    : SPRITE_EDITOR_VERTEX_COLOR;
-                AddEditorSquare(builder, a->position, vertex_size, vcol);
+                if (!shape::IsSelected(a))
+                    AddEditorSquare(builder, a->position, vertex_size, SPRITE_EDITOR_VERTEX_COLOR);
+            }
+        }
+
+        // Second pass: draw selected anchors on top
+        for (u16 p_idx = 0; p_idx < f->shape.path_count; p_idx++) {
+            const Path* p = &f->shape.paths[p_idx];
+            for (u16 a_idx = 0; a_idx < p->anchor_count; a_idx++) {
+                const shape::Anchor* a = GetAnchor(&f->shape, (Path*)p, a_idx);
+                if (shape::IsSelected(a))
+                    AddEditorSquare(builder, a->position, vertex_size, SPRITE_EDITOR_VERTEX_SELECTED_COLOR);
             }
         }
 
@@ -420,6 +429,40 @@ namespace noz::editor {
         EndOverlay();
     }
 
+    static void SelectPath(Shape* shape, u16 path_index, bool add_to_selection) {
+        if (!add_to_selection)
+            ClearSelection(shape);
+
+        Path* p = &shape->paths[path_index];
+        SetFlags(p, PATH_FLAG_SELECTED, PATH_FLAG_SELECTED);
+        for (u16 a_idx = 0; a_idx < p->anchor_count; ++a_idx) {
+            SetFlags(GetAnchor(shape, p, a_idx), ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
+        }
+    }
+
+    static void HandleBoxSelect(const Bounds2& bounds) {
+        SpriteDocument* doc = GetSpriteDocument();
+        SpriteFrame* f = &doc->frames[g_sprite_editor.current_frame];
+        Shape* shape = &f->shape;
+
+        // Convert world bounds to local (document-relative) bounds
+        Vec2 local_min = bounds.min - doc->position;
+        Vec2 local_max = bounds.max - doc->position;
+
+        if (!IsShiftDown())
+            ClearSelection(shape);
+
+        for (u16 i = 0; i < shape->anchor_count; ++i) {
+            Anchor* a = &shape->anchors[i];
+            if (a->position.x >= local_min.x && a->position.x <= local_max.x &&
+                a->position.y >= local_min.y && a->position.y <= local_max.y) {
+                SetFlags(a, ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
+            }
+        }
+
+        g_sprite_editor.zoom_version = -1;
+    }
+
     static void DrawSpriteEditor() {
         SpriteDocument* doc = GetSpriteDocument();
 
@@ -434,27 +477,74 @@ namespace noz::editor {
             UpdateRaster(doc);
         }
 
-        // On left click run shape hit test and update selection (convert mouse to document-local space)
         SpriteFrame* f = &doc->frames[g_sprite_editor.current_frame];
-        if (WasButtonPressed(MOUSE_LEFT)) {
+        Shape* shape = &f->shape;
+        Vec2 local_mouse = g_workspace.mouse_world_position - doc->position;
+        bool shift_down = IsShiftDown();
+        bool selection_changed = false;
+
+        // Start box select on drag
+        if (!IsToolActive() && g_workspace.drag_started && g_workspace.drag_button == MOUSE_LEFT) {
+            // Check if we're starting drag on empty space (not on an anchor/segment)
             shape::HitResult hr;
-            Vec2 local_mouse = g_workspace.mouse_world_position - doc->position;
-
-            // Clear existing selection
-            ClearSelection(&f->shape);
-
-            // if (HitTest(&f->shape, local_mouse, &hr)) {
-            //     if (hr.anchor_index != U16_MAX) {
-            //         SetFlags(&f->shape.anchors[hr.anchor_index], shape::ANCHOR_FLAG_SELECTED, shape::ANCHOR_FLAG_SELECTED);
-            //     } else if (hr.segment_index != U16_MAX) {
-            //         SetFlags(&f->shape.segments[hr.segment_index], shape::SEGMENT_FLAG_SELECTED, shape::SEGMENT_FLAG_SELECTED);
-            //     } else if (hr.path_index != U16_MAX) {
-            //         SetFlags(&f->shape.paths[hr.path_index], shape::PATH_FLAG_SELECTED, shape::PATH_FLAG_SELECTED);
-            //     }
-            // }
-
-            g_sprite_editor.zoom_version = -1;
+            bool hit = HitTest(shape, local_mouse, &hr);
+            if (!hit) {
+                BeginBoxSelect(HandleBoxSelect);
+                if (!shift_down) {
+                    ClearSelection(shape);
+                    selection_changed = true;
+                }
+            }
         }
+
+        // Handle click selection (not drag)
+        if (WasButtonPressed(MOUSE_LEFT) && !g_workspace.drag_started) {
+            shape::HitResult hr;
+            bool hit = HitTest(shape, local_mouse, &hr);
+            bool double_click = WasButtonPressed(MOUSE_LEFT_DOUBLE_CLICK);
+
+            if (double_click) {
+                // Double-click: select entire path
+                if (hit && hr.path_index != U16_MAX) {
+                    SelectPath(shape, hr.path_index, shift_down);
+                    selection_changed = true;
+                }
+            } else if (hit && hr.anchor_index != U16_MAX) {
+                // Click on anchor
+                Anchor* clicked_anchor = &shape->anchors[hr.anchor_index];
+                if (shift_down) {
+                    // Toggle selection
+                    if (IsSelected(clicked_anchor))
+                        ClearFlags(clicked_anchor, ANCHOR_FLAG_SELECTED);
+                    else
+                        SetFlags(clicked_anchor, ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
+                } else {
+                    // Select only this anchor
+                    ClearSelection(shape);
+                    SetFlags(clicked_anchor, ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
+                }
+                selection_changed = true;
+            } else if (hit && hr.segment_index != U16_MAX) {
+                // Click on segment - select both anchors of that segment
+                if (!shift_down)
+                    ClearSelection(shape);
+                // segment_index is the anchor index for the start of segment
+                u16 a0_idx = hr.segment_index;
+                Path* p = &shape->paths[hr.path_index];
+                u16 local_idx = a0_idx - p->anchor_start;
+                u16 a1_local = (local_idx + 1) % p->anchor_count;
+                SetFlags(&shape->anchors[a0_idx], ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
+                SetFlags(GetAnchor(shape, p, a1_local), ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
+                selection_changed = true;
+            } else if (!hit && !shift_down) {
+                // Click on empty space - clear selection
+                ClearSelection(shape);
+                selection_changed = true;
+            }
+        }
+
+        if (selection_changed)
+            g_sprite_editor.zoom_version = -1;
 
         // Draw rasterized texture behind the shape
         if (g_sprite_editor.raster_mesh) {
