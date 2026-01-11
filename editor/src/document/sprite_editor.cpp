@@ -479,12 +479,10 @@ namespace noz::editor {
         bool shift_down = IsShiftDown();
         bool selection_changed = false;
 
-        // Start box select on drag
         if (!IsToolActive() && g_workspace.drag_started && g_workspace.drag_button == MOUSE_LEFT) {
-            // Check if we're starting drag on empty space (not on an anchor/segment)
             shape::HitResult hr;
-            bool hit = HitTest(shape, local_mouse, &hr);
-            if (!hit) {
+            HitTest(shape, local_mouse, &hr);
+            if (hr.anchor_index == U16_MAX) {
                 BeginBoxSelect(HandleBoxSelect);
                 if (!shift_down) {
                     ClearSelection(shape);
