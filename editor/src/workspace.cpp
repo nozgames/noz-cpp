@@ -375,6 +375,9 @@ namespace noz::editor {
 
         if (g_editor.tool.type != TOOL_TYPE_NONE && g_editor.tool.vtable.draw)
             g_editor.tool.vtable.draw();
+
+        if (g_workspace.grid)
+            DrawPixelGrid();
     }
 
     static void UpdateAssetNames() {

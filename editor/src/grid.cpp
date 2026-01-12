@@ -7,8 +7,10 @@ namespace noz::editor {
     constexpr float GRID_MAX_ALPHA = 0.6f;
 
     struct Grid {
-        Mesh* mesh;
+        Mesh* coarse_mesh;
+        Mesh* pixel_mesh;
         float snap_spacing;
+        bool pixel_grid_visible;
     };
 
     static Grid g_grid = {};
@@ -126,11 +128,9 @@ namespace noz::editor {
         float spacing3 = pixelSize;
         float alpha3 = pixelGridAlpha * GRID_MAX_ALPHA * 0.5f;  // bit dimmer
 
-        if (alpha3 > F32_EPSILON) {
-            spacing1 = spacing2;
-            alpha1 = alpha2;
-            spacing2 = spacing3;
-            alpha2 = alpha3;
+        g_grid.pixel_grid_visible = alpha3 > F32_EPSILON;
+
+        if (g_grid.pixel_grid_visible) {
             g_grid.snap_spacing = spacing3;
         } else {
             g_grid.snap_spacing = spacing2 * 0.5f;
@@ -142,36 +142,69 @@ namespace noz::editor {
 
         PushScratch();
 
-        MeshBuilder* builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, MAX_GRID_LINES * VERTS_PER_LINE, MAX_GRID_LINES * INDICES_PER_LINE);
-        BuildGridLines(builder, camera, spacing1, MultiplyAlpha(STYLE_GRID_COLOR(), alpha1));
-        BuildGridLines(builder, camera, spacing2, MultiplyAlpha(STYLE_GRID_COLOR(), alpha2));
+        // course
+        MeshBuilder* coarse_builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, MAX_GRID_LINES * VERTS_PER_LINE, MAX_GRID_LINES * INDICES_PER_LINE);
+        BuildGridLines(coarse_builder, camera, spacing1, MultiplyAlpha(STYLE_GRID_COLOR(), alpha1));
+        BuildGridLines(coarse_builder, camera, spacing2, MultiplyAlpha(STYLE_GRID_COLOR(), alpha2));
+        BuildZeroGrid(coarse_builder, camera, STYLE_GRID_COLOR());
 
-        BuildZeroGrid(builder, camera, STYLE_GRID_COLOR());
-
-        if (GetVertexCount(builder) > 0) {
-            if (!g_grid.mesh)
-                g_grid.mesh = CreateMesh(ALLOCATOR_DEFAULT, builder, NAME_NONE, true);
+        if (GetVertexCount(coarse_builder) > 0) {
+            if (!g_grid.coarse_mesh)
+                g_grid.coarse_mesh = CreateMesh(ALLOCATOR_DEFAULT, coarse_builder, NAME_NONE, true);
             else
-                UpdateMesh(builder, g_grid.mesh);
+                UpdateMesh(coarse_builder, g_grid.coarse_mesh);
+        }
+        Free(coarse_builder);
+
+        // pixel
+        if (g_grid.pixel_grid_visible) {
+            MeshBuilder* pixel_builder = CreateMeshBuilder(ALLOCATOR_SCRATCH, MAX_GRID_LINES * VERTS_PER_LINE, MAX_GRID_LINES * INDICES_PER_LINE);
+            BuildGridLines(pixel_builder, camera, spacing3, MultiplyAlpha(STYLE_GRID_COLOR(), alpha3 * GRID_MAX_ALPHA * 0.5f));
+
+            if (GetVertexCount(pixel_builder) > 0) {
+                if (!g_grid.pixel_mesh)
+                    g_grid.pixel_mesh = CreateMesh(ALLOCATOR_DEFAULT, pixel_builder, NAME_NONE, true);
+                else
+                    UpdateMesh(pixel_builder, g_grid.pixel_mesh);
+            }
+            Free(pixel_builder);
         }
 
-        Free(builder);
         PopScratch();
     }
 
     void DrawGrid() {
-        if (!g_grid.mesh)
-            return;
-
-        BindDepth(-9.0f);
         BindMaterial(g_workspace.editor_material);
         BindColor(COLOR_WHITE);
+        BindDepth(-9.0f);
         BindTransform(MAT3_IDENTITY);
-        DrawMesh(g_grid.mesh);
+
+        // Draw coarse/world grid at bottom depth
+        if (g_grid.coarse_mesh) {
+            DrawMesh(g_grid.coarse_mesh);
+        }
+
+        // Draw pixel grid at top depth when visible
+        if (!g_grid.pixel_grid_visible && g_grid.pixel_mesh) {
+            DrawMesh(g_grid.pixel_mesh);
+        }
+    }
+
+    void DrawPixelGrid() {
+        // Draw pixel grid at top depth when visible
+        if (g_grid.pixel_grid_visible && g_grid.pixel_mesh) {
+            BindMaterial(g_workspace.editor_material);
+            BindColor(COLOR_WHITE);
+            BindDepth(-9.0f);
+            BindTransform(MAT3_IDENTITY);
+            DrawMesh(g_grid.pixel_mesh);
+        }
     }
 
     void InitGrid() {
-        g_grid.mesh = nullptr;
+        g_grid.coarse_mesh = nullptr;
+        g_grid.pixel_mesh = nullptr;
+        g_grid.pixel_grid_visible = false;
     }
 
     Vec2 SnapToPixelGrid(const Vec2& position) {
@@ -196,8 +229,8 @@ namespace noz::editor {
     }
 
     void ShutdownGrid() {
-        if (g_grid.mesh)
-            Free(g_grid.mesh);
+        Free(g_grid.coarse_mesh);
+        Free(g_grid.pixel_mesh);
         g_grid = {};
     }
 }
