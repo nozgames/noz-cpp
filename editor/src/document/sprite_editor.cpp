@@ -11,10 +11,12 @@ namespace noz::editor {
 
     constexpr float SPRITE_EDITOR_EDGE_WIDTH = 0.02f;
     constexpr float SPRITE_EDITOR_VERTEX_SIZE = 0.12f;
+    constexpr float SPRITE_EDITOR_MIDPOINT_SIZE = 0.08f;
     constexpr Color SPRITE_EDITOR_VERTEX_COLOR = COLOR_BLACK;
     constexpr Color SPRITE_EDITOR_VERTEX_SELECTED_COLOR = Color32ToColor(255, 121, 0, 255);
     constexpr Color SPRITE_EDITOR_EDGE_COLOR = COLOR_BLACK;
     constexpr Color SPRITE_EDITOR_EDGE_SELECTED_COLOR = Color32ToColor(253, 151, 11, 255);
+    constexpr Color SPRITE_EDITOR_MIDPOINT_COLOR = Color32ToColor(80, 80, 80, 255);
 
     constexpr ElementId SPRITE_EDITOR_ID_TOOLBAR = OVERLAY_BASE_ID + 0;
     constexpr ElementId SPRITE_EDITOR_ID_EXPAND = OVERLAY_BASE_ID + 1;
@@ -55,8 +57,14 @@ namespace noz::editor {
         bool is_playing = false;
 
         Vec2 saved_positions[SHAPE_MAX_ANCHORS];
+        float saved_curves[SHAPE_MAX_ANCHORS];
         bool select_on_up = false;
         u16 pending_anchor = U16_MAX;
+
+        u16 curve_drag_anchor = U16_MAX;
+        Vec2 curve_drag_start;
+
+        u16 hovered_midpoint = U16_MAX;
     };
 
     static void DeleteSelected();
@@ -77,18 +85,17 @@ namespace noz::editor {
         const float line_width = SPRITE_EDITOR_EDGE_WIDTH * g_workspace.zoom_ref_scale;
         const float selected_line_width = line_width * 2.5f;
         const float vertex_size = SPRITE_EDITOR_VERTEX_SIZE * g_workspace.zoom_ref_scale;
+        const float midpoint_size = SPRITE_EDITOR_MIDPOINT_SIZE * g_workspace.zoom_ref_scale;
 
         MeshBuilder* builder = g_editor.mesh_builder;
         SpriteFrame* f = &sdoc->frames[g_sprite_editor.current_frame];
 
-        // Draw paths - each path has its own anchors, segments are implicit between consecutive anchors
         for (u16 p_idx = 0; p_idx < f->shape.path_count; p_idx++) {
             const Path* p = &f->shape.paths[p_idx];
             bool path_selected = shape::IsSelected(p);
 
             if (p->anchor_count < 2) continue;
 
-            // Draw segments between consecutive anchors (closed path)
             for (u16 a_idx = 0; a_idx < p->anchor_count; a_idx++) {
                 const Anchor* a0 = GetAnchor(&f->shape, p, a_idx);
                 const Anchor* a1 = GetAnchor(&f->shape, p, (a_idx + 1) % p->anchor_count);
@@ -99,13 +106,20 @@ namespace noz::editor {
                     : SPRITE_EDITOR_EDGE_COLOR;
                 float seg_width = segment_selected ? selected_line_width : line_width;
 
-                // Draw line segments using precomputed samples
                 Vec2 v0 = a0->position;
                 for (int i = 0; i < SHAPE_MAX_SEGMENT_SAMPLES; i++) {
                     AddEditorLine(builder, v0, a0->samples[i], seg_width, seg_color);
                     v0 = a0->samples[i];
                 }
                 AddEditorLine(builder, v0, a1->position, seg_width, seg_color);
+            }
+
+            for (u16 a_idx = 0; a_idx < p->anchor_count; a_idx++) {
+                u16 global_idx = p->anchor_start + a_idx;
+                if (global_idx == g_sprite_editor.hovered_midpoint) {
+                    const Anchor* a = GetAnchor(&f->shape, p, a_idx);
+                    AddEditorCircle(builder, a->midpoint, midpoint_size, SPRITE_EDITOR_MIDPOINT_COLOR);
+                }
             }
 
             for (u16 a_idx = 0; a_idx < p->anchor_count; a_idx++) {
@@ -191,6 +205,7 @@ namespace noz::editor {
         g_sprite_editor.edit_fill = true;
         g_sprite_editor.select_on_up = false;
         g_sprite_editor.pending_anchor = U16_MAX;
+        g_sprite_editor.hovered_midpoint = U16_MAX;
 
         PushInputSet(g_sprite_editor.input);
         UpdateSpriteEditorMesh(static_cast<SpriteDocument*>(doc), false);
@@ -545,9 +560,100 @@ namespace noz::editor {
     static void BeginMoveTool() {
         if (!HasSelection())
             return;
+        g_sprite_editor.hovered_midpoint = U16_MAX;
         SaveAnchorState();
         RecordUndo();
         BeginMoveTool({.update=UpdateMoveTool, .commit=CommitMoveTool, .cancel=CancelMoveTool});
+    }
+
+    static void SaveCurveState() {
+        SpriteDocument* sdoc = GetSpriteDocument();
+        SpriteFrame* f = &sdoc->frames[g_sprite_editor.current_frame];
+        Shape* shape = &f->shape;
+        for (u16 i = 0; i < shape->anchor_count; ++i)
+            g_sprite_editor.saved_curves[i] = shape->anchors[i].curve;
+    }
+
+    static void UpdateCurveTool(const Vec2& delta) {
+        SpriteDocument* sdoc = GetSpriteDocument();
+        SpriteFrame* f = &sdoc->frames[g_sprite_editor.current_frame];
+        Shape* shape = &f->shape;
+        u16 anchor_idx = g_sprite_editor.curve_drag_anchor;
+        if (anchor_idx == U16_MAX) return;
+
+        u16 path_idx = U16_MAX;
+        u16 local_idx = 0;
+        for (u16 p = 0; p < shape->path_count; ++p) {
+            Path* path = &shape->paths[p];
+            if (anchor_idx >= path->anchor_start && anchor_idx < path->anchor_start + path->anchor_count) {
+                path_idx = p;
+                local_idx = anchor_idx - path->anchor_start;
+                break;
+            }
+        }
+        if (path_idx == U16_MAX) return;
+
+        Path* path = &shape->paths[path_idx];
+        Anchor* a0 = GetAnchor(shape, path, local_idx);
+        Anchor* a1 = GetAnchor(shape, path, (local_idx + 1) % path->anchor_count);
+
+        Vec2 dir = a1->position - a0->position;
+        Vec2 normal = Normalize(Vec2{-dir.y, dir.x});
+        float curve_delta = Dot(delta, normal);
+        a0->curve = g_sprite_editor.saved_curves[anchor_idx] + curve_delta;
+
+        shape::UpdateSamples(shape);
+        g_sprite_editor.zoom_version = -1;
+        g_sprite_editor.raster_version = -1;
+    }
+
+    static void CommitCurveTool(const Vec2& delta) {
+        g_sprite_editor.curve_drag_anchor = U16_MAX;
+        MarkModified();
+    }
+
+    static void CancelCurveTool() {
+        SpriteDocument* sdoc = GetSpriteDocument();
+        SpriteFrame* f = &sdoc->frames[g_sprite_editor.current_frame];
+        Shape* shape = &f->shape;
+
+        for (u16 i = 0; i < shape->anchor_count; ++i)
+            shape->anchors[i].curve = g_sprite_editor.saved_curves[i];
+
+        shape::UpdateSamples(shape);
+        g_sprite_editor.curve_drag_anchor = U16_MAX;
+        CancelUndo();
+        g_sprite_editor.zoom_version = -1;
+        g_sprite_editor.raster_version = -1;
+    }
+
+    static void BeginCurveTool(u16 anchor_index) {
+        g_sprite_editor.hovered_midpoint = U16_MAX;
+        g_sprite_editor.curve_drag_anchor = anchor_index;
+        SaveCurveState();
+        RecordUndo();
+        BeginMoveTool({.update=UpdateCurveTool, .commit=CommitCurveTool, .cancel=CancelCurveTool});
+    }
+
+    static void InsertAnchorAtMidpoint(u16 anchor_index) {
+        SpriteDocument* sdoc = GetSpriteDocument();
+        SpriteFrame* f = &sdoc->frames[g_sprite_editor.current_frame];
+        Shape* shape = &f->shape;
+
+        g_sprite_editor.hovered_midpoint = U16_MAX;
+
+        RecordUndo();
+        u16 new_idx = shape::SplitSegment(shape, anchor_index);
+        if (new_idx != U16_MAX) {
+            ClearSelection(shape);
+            SetFlags(&shape->anchors[new_idx], ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
+            SaveAnchorState();
+            BeginMoveTool({.update=UpdateMoveTool, .commit=CommitMoveTool, .cancel=CancelMoveTool});
+        }
+
+        UpdateBounds(sdoc);
+        g_sprite_editor.zoom_version = -1;
+        g_sprite_editor.raster_version = -1;
     }
 
     static void DrawSpriteEditor() {
@@ -559,9 +665,23 @@ namespace noz::editor {
         bool shift_down = IsShiftDown();
         bool selection_changed = false;
 
+        if (!IsToolActive()) {
+            shape::HitResult hover_hr;
+            HitTest(shape, local_mouse, &hover_hr);
+            u16 new_hovered = (hover_hr.segment_index != U16_MAX || hover_hr.midpoint_index != U16_MAX)
+                ? (hover_hr.midpoint_index != U16_MAX ? hover_hr.midpoint_index : hover_hr.segment_index)
+                : U16_MAX;
+            if (new_hovered != g_sprite_editor.hovered_midpoint) {
+                g_sprite_editor.hovered_midpoint = new_hovered;
+                g_sprite_editor.zoom_version = -1;
+            }
+        }
+
         if (!IsToolActive() && g_workspace.drag_started && g_workspace.drag_button == MOUSE_LEFT) {
             shape::HitResult hr;
             HitTest(shape, local_mouse, &hr);
+            bool alt_down = IsAltDown();
+
             if (hr.anchor_index != U16_MAX) {
                 Anchor* a = &shape->anchors[hr.anchor_index];
                 if (!IsSelected(a)) {
@@ -573,9 +693,15 @@ namespace noz::editor {
                 g_sprite_editor.select_on_up = false;
                 g_sprite_editor.pending_anchor = U16_MAX;
                 BeginMoveTool();
+            } else if (hr.midpoint_index != U16_MAX) {
+                g_sprite_editor.select_on_up = false;
+                g_sprite_editor.pending_anchor = U16_MAX;
+                if (alt_down) {
+                    BeginCurveTool(hr.midpoint_index);
+                } else {
+                    InsertAnchorAtMidpoint(hr.midpoint_index);
+                }
             } else if (hr.segment_index != U16_MAX) {
-                // Segment hit - select both connected anchors
-                // Find the path containing this segment
                 for (u16 p_idx = 0; p_idx < shape->path_count; ++p_idx) {
                     Path* p = &shape->paths[p_idx];
                     if (hr.segment_index >= p->anchor_start && hr.segment_index < p->anchor_start + p->anchor_count) {
@@ -583,7 +709,6 @@ namespace noz::editor {
                         u16 next_local_idx = (local_idx + 1) % p->anchor_count;
                         Anchor* a0 = GetAnchor(shape, p, local_idx);
                         Anchor* a1 = GetAnchor(shape, p, next_local_idx);
-                        // Only change selection if segment anchors aren't both already selected
                         if (!IsSelected(a0) || !IsSelected(a1)) {
                             if (!shift_down)
                                 ClearSelection(shape);
@@ -598,6 +723,7 @@ namespace noz::editor {
                 g_sprite_editor.pending_anchor = U16_MAX;
                 BeginMoveTool();
             } else {
+                g_sprite_editor.hovered_midpoint = U16_MAX;
                 BeginBoxSelect(HandleBoxSelect);
                 if (!shift_down) {
                     ClearSelection(shape);

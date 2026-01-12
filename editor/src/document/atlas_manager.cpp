@@ -301,7 +301,7 @@ namespace noz::editor {
     }
 
     // Calculate required rect size for a sprite
-    static void GetRequiredRectSize(SpriteDocument* sdoc, AtlasDocument* adoc, int* out_width, int* out_height) {
+    void GetRequiredRectSize(SpriteDocument* sdoc, AtlasDocument* adoc, int* out_width, int* out_height) {
         if (sdoc->frame_count == 0) {
             *out_width = 0;
             *out_height = 0;
@@ -333,6 +333,7 @@ namespace noz::editor {
     }
 
     void UpdateDirtySpriteAtlases() {
+#if 0        
         for (int doc_index = 0; doc_index < GetDocumentCount(); doc_index++) {
             Document* doc = GetDocument(doc_index);
             if (doc->def->type != ASSET_TYPE_SPRITE) continue;
@@ -387,5 +388,6 @@ namespace noz::editor {
                 }
             }
         }
+#endif            
     }
 }

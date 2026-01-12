@@ -29,6 +29,7 @@ namespace noz {
     extern bool IsButtonDown(InputCode code);
     inline bool IsShiftDown() { return IsButtonDown(KEY_LEFT_SHIFT) || IsButtonDown(KEY_RIGHT_SHIFT); }
     inline bool IsShiftDown(InputSet* map) { return IsButtonDown(map, KEY_LEFT_SHIFT) || IsButtonDown(map, KEY_RIGHT_SHIFT); }
+    inline bool IsAltDown() { return IsButtonDown(KEY_LEFT_ALT) || IsButtonDown(KEY_RIGHT_ALT); }
     inline bool IsAltDown(InputSet* map) { return IsButtonDown(map, KEY_LEFT_ALT) || IsButtonDown(map, KEY_RIGHT_ALT); }
     inline bool IsCtrlDown(InputSet* map) { return IsButtonDown(map, KEY_LEFT_CTRL) || IsButtonDown(map, KEY_RIGHT_CTRL); }
     inline bool IsCtrlDown() { return IsButtonDown(KEY_LEFT_CTRL) || IsButtonDown(KEY_RIGHT_CTRL); }

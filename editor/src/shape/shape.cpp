@@ -50,6 +50,7 @@ namespace noz::editor::shape {
                 float t = static_cast<float>(i + 1) / static_cast<float>(SHAPE_MAX_SEGMENT_SAMPLES + 1);
                 a0->samples[i] = p0 + (p1 - p0) * t;
             }
+            a0->midpoint = (p0 + p1) * 0.5f;
         } else {
             Vec2 mid = (p0 + p1) * 0.5f;
             Vec2 dir = p1 - p0;
@@ -61,6 +62,7 @@ namespace noz::editor::shape {
                 float u = 1.0f - t;
                 a0->samples[i] = (p0 * (u * u)) + (cp * (2.0f * u * t)) + (p1 * (t * t));
             }
+            a0->midpoint = (p0 * 0.25f) + (cp * 0.5f) + (p1 * 0.25f);
         }
     }
 
@@ -68,20 +70,25 @@ namespace noz::editor::shape {
         const float anchor_radius = noz::editor::g_workspace.select_size;
         const float anchor_radius_sqr = anchor_radius * anchor_radius;
         const float segment_radius_sqr = noz::editor::g_workspace.select_size * noz::editor::g_workspace.select_size;
+        const float midpoint_radius_sqr = anchor_radius_sqr * 0.5f;
 
         result->anchor_index = U16_MAX;
         result->segment_index = U16_MAX;
+        result->midpoint_index = U16_MAX;
         result->path_index = U16_MAX;
         result->anchor_dist_sqr = FLT_MAX;
         result->segment_dist_sqr = FLT_MAX;
+        result->midpoint_dist_sqr = FLT_MAX;
 
-        // Find the closest anchor and segment within their hit radii
         float best_anchor_dist_sqr = anchor_radius_sqr;
         float best_segment_dist_sqr = segment_radius_sqr;
+        float best_midpoint_dist_sqr = midpoint_radius_sqr;
         u16 best_anchor_index = U16_MAX;
         u16 best_anchor_path = U16_MAX;
         u16 best_segment_index = U16_MAX;
         u16 best_segment_path = U16_MAX;
+        u16 best_midpoint_index = U16_MAX;
+        u16 best_midpoint_path = U16_MAX;
         u16 hit_path_index = U16_MAX;
 
         for (u16 p_idx = 0; p_idx < shape->path_count; ++p_idx) {
@@ -130,6 +137,13 @@ namespace noz::editor::shape {
                     v0 = v1;
                 }
                 test_edge(v0, a1->position);
+
+                float midpoint_dist_sqr = LengthSqr(point - a0->midpoint);
+                if (midpoint_dist_sqr < best_midpoint_dist_sqr) {
+                    best_midpoint_dist_sqr = midpoint_dist_sqr;
+                    best_midpoint_index = p.anchor_start + a_idx;
+                    best_midpoint_path = p_idx;
+                }
             }
 
             // Check filled path
@@ -170,24 +184,30 @@ namespace noz::editor::shape {
             }
         }
 
-        // Store results - anchor takes priority, then segment, then path
         if (best_anchor_index != U16_MAX) {
             result->anchor_index = best_anchor_index;
             result->anchor_dist_sqr = best_anchor_dist_sqr;
             result->path_index = best_anchor_path;
         }
+        if (best_midpoint_index != U16_MAX) {
+            result->midpoint_index = best_midpoint_index;
+            result->midpoint_dist_sqr = best_midpoint_dist_sqr;
+            if (result->anchor_index == U16_MAX) {
+                result->path_index = best_midpoint_path;
+            }
+        }
         if (best_segment_index != U16_MAX) {
             result->segment_index = best_segment_index;
             result->segment_dist_sqr = best_segment_dist_sqr;
-            if (result->anchor_index == U16_MAX) {
+            if (result->anchor_index == U16_MAX && result->midpoint_index == U16_MAX) {
                 result->path_index = best_segment_path;
             }
         }
-        if (hit_path_index != U16_MAX && result->anchor_index == U16_MAX && result->segment_index == U16_MAX) {
+        if (hit_path_index != U16_MAX && result->anchor_index == U16_MAX && result->midpoint_index == U16_MAX && result->segment_index == U16_MAX) {
             result->path_index = hit_path_index;
         }
 
-        return result->anchor_index != U16_MAX || result->segment_index != U16_MAX || result->path_index != U16_MAX;
+        return result->anchor_index != U16_MAX || result->midpoint_index != U16_MAX || result->segment_index != U16_MAX || result->path_index != U16_MAX;
     }
 
     u16 HitTestAll(Shape* shape, const Vec2& point, HitResult* results, u16 max_results) {
@@ -402,6 +422,107 @@ namespace noz::editor::shape {
                 }
             }
         }
+    }
+
+    u16 InsertAnchor(Shape* shape, u16 after_anchor_index, const Vec2& position, float curve) {
+        if (shape->anchor_count >= SHAPE_MAX_ANCHORS)
+            return U16_MAX;
+
+        u16 path_idx = U16_MAX;
+        u16 local_idx = U16_MAX;
+        for (u16 p = 0; p < shape->path_count; ++p) {
+            Path* path = &shape->paths[p];
+            if (after_anchor_index >= path->anchor_start && after_anchor_index < path->anchor_start + path->anchor_count) {
+                path_idx = p;
+                local_idx = after_anchor_index - path->anchor_start;
+                break;
+            }
+        }
+        if (path_idx == U16_MAX)
+            return U16_MAX;
+
+        u16 insert_pos = after_anchor_index + 1;
+
+        for (u16 i = shape->anchor_count; i > insert_pos; --i) {
+            shape->anchors[i] = shape->anchors[i - 1];
+        }
+
+        Anchor* new_anchor = &shape->anchors[insert_pos];
+        *new_anchor = {};
+        new_anchor->position = position;
+        new_anchor->curve = curve;
+        new_anchor->flags = ANCHOR_FLAG_NONE;
+
+        shape->anchor_count++;
+        shape->paths[path_idx].anchor_count++;
+
+        for (u16 p = path_idx + 1; p < shape->path_count; ++p) {
+            shape->paths[p].anchor_start++;
+        }
+
+        UpdateSamples(shape, path_idx, local_idx);
+        UpdateSamples(shape, path_idx, local_idx + 1);
+
+        return insert_pos;
+    }
+
+    u16 SplitSegment(Shape* shape, u16 anchor_index) {
+        if (shape->anchor_count >= SHAPE_MAX_ANCHORS)
+            return U16_MAX;
+
+        u16 path_idx = U16_MAX;
+        u16 local_idx = 0;
+        for (u16 p = 0; p < shape->path_count; ++p) {
+            Path* path = &shape->paths[p];
+            if (anchor_index >= path->anchor_start && anchor_index < path->anchor_start + path->anchor_count) {
+                path_idx = p;
+                local_idx = anchor_index - path->anchor_start;
+                break;
+            }
+        }
+        if (path_idx == U16_MAX)
+            return U16_MAX;
+
+        Path* path = &shape->paths[path_idx];
+        Anchor* a0 = &shape->anchors[anchor_index];
+        Anchor* a1 = GetAnchor(shape, path, (local_idx + 1) % path->anchor_count);
+
+        Vec2 p0 = a0->position;
+        Vec2 p1 = a1->position;
+        Vec2 midpoint_pos = a0->midpoint;
+        float original_curve = a0->curve;
+
+        float curve0 = 0.0f;
+        float curve1 = 0.0f;
+
+        if (Abs(original_curve) > FLT_EPSILON) {
+            Vec2 chord_mid = (p0 + p1) * 0.5f;
+            Vec2 dir = p1 - p0;
+            Vec2 perp = Normalize(Vec2{-dir.y, dir.x});
+            Vec2 cp = chord_mid + perp * original_curve;
+
+            Vec2 cp0 = (p0 + cp) * 0.5f;
+            Vec2 cp1 = (cp + p1) * 0.5f;
+
+            Vec2 mid0 = (p0 + midpoint_pos) * 0.5f;
+            Vec2 dir0 = midpoint_pos - p0;
+            Vec2 perp0 = Normalize(Vec2{-dir0.y, dir0.x});
+            curve0 = Dot(cp0 - mid0, perp0);
+
+            Vec2 mid1 = (midpoint_pos + p1) * 0.5f;
+            Vec2 dir1 = p1 - midpoint_pos;
+            Vec2 perp1 = Normalize(Vec2{-dir1.y, dir1.x});
+            curve1 = Dot(cp1 - mid1, perp1);
+        }
+
+        u16 new_idx = InsertAnchor(shape, anchor_index, midpoint_pos, 0.0f);
+        if (new_idx != U16_MAX) {
+            shape->anchors[anchor_index].curve = curve0;
+            shape->anchors[new_idx].curve = curve1;
+            UpdateSamples(shape);
+        }
+
+        return new_idx;
     }
 
     void DeleteSelectedAnchors(Shape* shape) {

@@ -21,6 +21,7 @@ namespace noz::editor::shape {
         float curve;
         u16 flags;
         Vec2 samples[SHAPE_MAX_SEGMENT_SAMPLES];
+        Vec2 midpoint;
     };
 
     enum PathFlags : u16 {
@@ -49,9 +50,11 @@ namespace noz::editor::shape {
     struct HitResult {
         u16 anchor_index = U16_MAX;
         u16 segment_index = U16_MAX;
+        u16 midpoint_index = U16_MAX;
         u16 path_index = U16_MAX;
         float anchor_dist_sqr = FLT_MAX;
         float segment_dist_sqr = FLT_MAX;
+        float midpoint_dist_sqr = FLT_MAX;
     };
 
     // @shape
@@ -76,6 +79,8 @@ namespace noz::editor::shape {
     inline bool IsSelected(const Anchor* anchor) { return HasFlag(anchor, ANCHOR_FLAG_SELECTED); }
 
     extern void DeleteSelectedAnchors(Shape* shape);
+    extern u16 InsertAnchor(Shape* shape, u16 after_anchor_index, const Vec2& position, float curve = 0.0f);
+    extern u16 SplitSegment(Shape* shape, u16 anchor_index);
 
     // @path
     inline void SetFlags(Path* path, PathFlags mask, PathFlags flags) {
