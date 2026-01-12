@@ -183,7 +183,7 @@ namespace noz::editor {
     static void BeginSpriteEditor(Document* doc) {
         g_sprite_editor.current_frame = 0;
         g_sprite_editor.zoom_version = -1;
-        g_sprite_editor.raster_version = -1;
+        g_sprite_editor.raster_version = 0;
         g_sprite_editor.selection_color = 0;
         g_sprite_editor.selection_opacity = 0;
         g_sprite_editor.show_palette_picker = false;
@@ -194,18 +194,20 @@ namespace noz::editor {
 
         PushInputSet(g_sprite_editor.input);
         UpdateSpriteEditorMesh(static_cast<SpriteDocument*>(doc), false);
+        UpdateRaster(static_cast<SpriteDocument*>(doc));
     }
 
     static void EndSpriteEditor() {
         SpriteDocument* sdoc = GetSpriteDocument();
 
-        // Mark atlas dirty if sprite was modified during editing
-        if (sdoc && sdoc->modified) {
-            sdoc->atlas_dirty = true;
-        }
+        sdoc->atlas_dirty |= sdoc && sdoc->modified;
 
         Free(g_sprite_editor.mesh);
+        Free(g_sprite_editor.raster_mesh);
+
         g_sprite_editor.mesh = nullptr;
+        g_sprite_editor.raster_mesh = nullptr;
+
         PopInputSet();
     }
     
@@ -571,6 +573,30 @@ namespace noz::editor {
                 g_sprite_editor.select_on_up = false;
                 g_sprite_editor.pending_anchor = U16_MAX;
                 BeginMoveTool();
+            } else if (hr.segment_index != U16_MAX) {
+                // Segment hit - select both connected anchors
+                // Find the path containing this segment
+                for (u16 p_idx = 0; p_idx < shape->path_count; ++p_idx) {
+                    Path* p = &shape->paths[p_idx];
+                    if (hr.segment_index >= p->anchor_start && hr.segment_index < p->anchor_start + p->anchor_count) {
+                        u16 local_idx = hr.segment_index - p->anchor_start;
+                        u16 next_local_idx = (local_idx + 1) % p->anchor_count;
+                        Anchor* a0 = GetAnchor(shape, p, local_idx);
+                        Anchor* a1 = GetAnchor(shape, p, next_local_idx);
+                        // Only change selection if segment anchors aren't both already selected
+                        if (!IsSelected(a0) || !IsSelected(a1)) {
+                            if (!shift_down)
+                                ClearSelection(shape);
+                            SetFlags(a0, ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
+                            SetFlags(a1, ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
+                            selection_changed = true;
+                        }
+                        break;
+                    }
+                }
+                g_sprite_editor.select_on_up = false;
+                g_sprite_editor.pending_anchor = U16_MAX;
+                BeginMoveTool();
             } else {
                 BeginBoxSelect(HandleBoxSelect);
                 if (!shift_down) {
@@ -608,6 +634,28 @@ namespace noz::editor {
                     ClearSelection(shape);
                     SetFlags(clicked_anchor, ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
                     selection_changed = true;
+                }
+            } else if (hit && hr.segment_index != U16_MAX) {
+                // Segment click - select both connected anchors
+                for (u16 p_idx = 0; p_idx < shape->path_count; ++p_idx) {
+                    Path* p = &shape->paths[p_idx];
+                    if (hr.segment_index >= p->anchor_start && hr.segment_index < p->anchor_start + p->anchor_count) {
+                        u16 local_idx = hr.segment_index - p->anchor_start;
+                        u16 next_local_idx = (local_idx + 1) % p->anchor_count;
+                        Anchor* a0 = GetAnchor(shape, p, local_idx);
+                        Anchor* a1 = GetAnchor(shape, p, next_local_idx);
+                        // If both anchors already selected, don't change selection immediately (might be starting a drag)
+                        if (IsSelected(a0) && IsSelected(a1) && !shift_down) {
+                            // Do nothing - wait to see if this becomes a drag
+                        } else {
+                            if (!shift_down)
+                                ClearSelection(shape);
+                            SetFlags(a0, ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
+                            SetFlags(a1, ANCHOR_FLAG_SELECTED, ANCHOR_FLAG_SELECTED);
+                            selection_changed = true;
+                        }
+                        break;
+                    }
                 }
             } else if (!hit && !shift_down) {
                 ClearSelection(shape);
